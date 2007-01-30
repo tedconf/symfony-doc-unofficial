@@ -671,11 +671,9 @@ Actions are not secure by default, so when there is no `security.yml` or no ment
 
 The default login and secure pages are pretty simple, and you will probably want to customize them. You can configure which actions are to be called in case of insufficient privileges in the application `settings.yml` by changing the value of the properties shown in Listing 6-24.
 
-![][8]
-
-   [8]:
-
 Figure 6-1 - The default secure action page
+
+![The default secure action page](/images/book/F0601.jpg "The default secure action page")
 
 Listing 6-24 - Default Security Actions Are Defined in `apps/myapp/config/security.yml`
 
@@ -789,11 +787,9 @@ Validating the action input--mostly request parameters--is a repetitive and tedi
 
 Let's start with an example. When a user makes a request for `myAction`, symfony always looks for a method called `validateMyAction()` first. If it is found, then symfony executes it. The return value of this validation method determines the next method to be executed: if it returns `true`, then `executeMyAction()` is executed; otherwise, `handleErrorMyAction()` is executed. And, if in the latter case, handleErrorMyAction() doesn't exist, symfony looks for a generic handleError() method. If that doesn't exist either, it simply returns `sfView::ERROR` to render the `myActionError. php` template. Figure 6-2 depicts this process.
 
-![][9]
-
-   [9]:
-
 Figure 6-2 - The validation process
+
+![The validation process](/images/book/F0602.png "The validation process")
 
 So the key to validation is to respect the naming conventions for the action methods:
 
@@ -839,11 +835,9 @@ The security process can be understood as a filter by which all requests must pa
 
 Symfony actually sees the processing of a request as a chain of filters. When a request is received by the framework, the first filter (which is always the `sfRenderingFilter`) is executed. At some point, it calls the next filter in the chain, then the next, and so on. When the last filter (which is always `sfExecutionFilter`) is executed, the previous filter can finish, and so on back to the rendering filter. Figure 6-3 illustrates this idea with a sequence diagram, using an artificially small filter chain (the real one contains more filters).
 
-![][10]
-
-   [10]:
-
 Figure 6-3 - Sample filter chain
+
+![Sample filter chain](/images/book/F0603.png "Sample filter chain")
 
 This process justifies the structure of the filter classes. They all extend the `sfFilter` class, and contain one `execute()` method, expecting a `$filterChain` object as parameter. Somewhere in this method, the filter passes to the next filter in the chain by calling $filterChain->execute(). See Listing 6-30 for an example. So basically, filters are divided into two parts:
 
@@ -905,15 +899,8 @@ You can customize the filter chain in various ways:
   * Add your own declarations somewhere in the chain (usually after the `security` filter) to add a custom filter (as discussed in the next section). Be aware that the `rendering` filter must be the first entry, and the `execution` filter must be the last entry of the filter chain.
   * Override the default class and parameters of the default filters (notably to modify the security system and use your own security filter).
 
-![][11]
-
-   [11]:
-
-Tip  The `enabled: off` parameter works well to disable your own filters, but you can deactivate the default filters via the `settings.yml` file, by modifying the values of the `web_debug`, `use_security`, `cache`, and `use_flash` settings. This is because each of the default filters has a `condition` parameter that tests the value of these settings.
-
-![][12]
-
-   [12]:
+>**TIP**
+>The `enabled: off` parameter works well to disable your own filters, but you can deactivate the default filters via the `settings.yml` file, by modifying the values of the `web_debug`, `use_security`, `cache`, and `use_flash` settings. This is because each of the default filters has a `condition` parameter that tests the value of these settings.
 
 ### Building Your Own Filter
 
