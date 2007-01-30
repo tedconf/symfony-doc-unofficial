@@ -55,7 +55,7 @@ Listing 6-1 - The Default Production Front Controller
 
     sfContext::getInstance()->getController()->dispatch();
 
-The constants definition corresponds to the first step described in the previous section. Then the front controller includes the application config.php, which takes care of steps 2 through 4. The call to the dispatch() method of the `sfController` object (which is the core controller object of the symfony MVC architecture) dispatches the request, taking care of steps 5 through 7. The last steps are handled by the filter chain, as explained later in this chapter.
+The constants definition corresponds to the first step described in the previous section. Then the front controller includes the application config.php, which takes care of steps 2 through 4. The call to the `dispatch()` method of the `sfController` object (which is the core controller object of the symfony MVC architecture) dispatches the request, taking care of steps 5 through 7. The last steps are handled by the filter chain, as explained later in this chapter.
 
 ### Calling Another Front Controller to Switch the Environment
 
@@ -105,7 +105,7 @@ Listing 6-3 - Sample Batch Script
 
     // add code here
 
-You can see that the only missing line is the call to the dispatch() method of the sfController object, which can be used only with a web server, not in a batch process. Defining an application and an environment gives you access to a specific configuration. Including the application `config.php` initiates the context and the autoloading.
+You can see that the only missing line is the call to the `dispatch()` method of the sfController object, which can be used only with a web server, not in a batch process. Defining an application and an environment gives you access to a specific configuration. Including the application `config.php` initiates the context and the autoloading.
 
 >**TIP**
 >The symfony CLI offers an `init-batch` task, which automatically creates a skeleton similar to the one in Listing 6-3 in the `batch/` directory. Just pass it an application name, an environment name, and a batch name as arguments.
@@ -325,14 +325,14 @@ The action class provides two methods to execute another action:
 
   * If the action forwards the call to another action:
 
-    [php]
-    $this->forward('otherModule', 'index');
+        [php]
+        $this->forward('otherModule', 'index');
 
   * If the action results in a web redirection:
 
-    [php]
-    $this->redirect('otherModule/index');
-    $this->redirect('http://www.google.com/');
+        [php]
+        $this->redirect('otherModule/index');
+        $this->redirect('http://www.google.com/');
 
 >**NOTE**
 >The code located after a forward or a redirect in an action is never executed. You can consider that these calls are equivalent to a `return` statement. They throw an `sfStopException` to stop the execution of the action; this exception is later caught by symfony and simply ignored.
@@ -358,7 +358,7 @@ Listing 6-12 - Use of the `forward404()` Method
 >**TIP**
 >If you are looking for the error 404 action and template, you will find them in the `$sf_symfony_ data_dir/modules/default/` directory. You can customize this page by adding a new `default` module to your application, overriding the one located in the framework, and by defining an `error404` action and an error404Success template inside. Alternatively, you can set the error_404_module and error_404_ action constants in the `settings.yml` file to use an existing action.
 
-Experience shows that, most of the time, an action makes a redirect or a forward after testing something, such as in Listing 6-12. That's why the sfActions class has a few more methods, named forwardIf(), forwardUnless(), forward404If(), forward404Unless(), redirectI`f()`, and `r`edirectUnless(). These methods simply take an additional parameter representing a condition that triggers the execution if tested true (for the xxxIf() methods) or false (for the xxxUnless() methods), as illustrated in Listing 6-13.
+Experience shows that, most of the time, an action makes a redirect or a forward after testing something, such as in Listing 6-12. That's why the sfActions class has a few more methods, named `forwardIf()`, `forwardUnless()`, `forward404If()`, `forward404Unless()`, `redirectIf()`, and `redirectUnless()`. These methods simply take an additional parameter representing a condition that triggers the execution if tested true (for the `xxxIf()` methods) or false (for the `xxxUnless()` methods), as illustrated in Listing 6-13.
 
 Listing 6-13 - Use of the `forward404If()` Method
 
@@ -839,9 +839,9 @@ Figure 6-3 - Sample filter chain
 
 ![Sample filter chain](/images/book/F0603.png "Sample filter chain")
 
-This process justifies the structure of the filter classes. They all extend the `sfFilter` class, and contain one `execute()` method, expecting a `$filterChain` object as parameter. Somewhere in this method, the filter passes to the next filter in the chain by calling $filterChain->execute(). See Listing 6-30 for an example. So basically, filters are divided into two parts:
+This process justifies the structure of the filter classes. They all extend the `sfFilter` class, and contain one `execute()` method, expecting a `$filterChain` object as parameter. Somewhere in this method, the filter passes to the next filter in the chain by calling `$filterChain->execute()`. See Listing 6-30 for an example. So basically, filters are divided into two parts:
 
-  * The code before the call to $filterChain->execute() executes before the action execution.
+  * The code before the call to `$filterChain->execute()` executes before the action execution.
   * The code after the call to `$filterChain->execute()` executes after the action execution and before the rendering.
 
 Listing 6-30 - Filter Class Struture
@@ -892,8 +892,8 @@ You can customize the filter chain in various ways:
 
   * Disable some filters from the chain by adding an `enabled: off` parameter. For instance, to disable the web debug filter, write:
 
-    web_debug:
-      enabled: off
+        web_debug:
+          enabled: off
 
   * Do not remove an entry from the `filters.yml` to disable a filter; symfony would throw an exception in this case.
   * Add your own declarations somewhere in the chain (usually after the `security` filter) to add a custom filter (as discussed in the next section). Be aware that the `rendering` filter must be the first entry, and the `execution` filter must be the last entry of the filter chain.
@@ -937,7 +937,7 @@ Listing 6-33 - Sample Filter Class File, Saved in `apps/myapp/lib/rememberFilter
       }
     }
 
-In some cases, instead of continuing the filter chain execution, you will need to forward to a specific action at the end of a filter. sfFilter doesn't have a forward() method, but sfController does, so you can simply do that by calling the following:
+In some cases, instead of continuing the filter chain execution, you will need to forward to a specific action at the end of a filter. `sfFilter` doesn't have a `forward()` method, but `sfController` does, so you can simply do that by calling the following:
 
     [php]
     return $this->getController()->forward('mymodule', 'myAction');
@@ -1053,15 +1053,15 @@ Listing 6-38 - Module Configuration, in `apps/myapp/modules/mymodule/config/modu
       is_internal: false
       view_name:   sfPhpView
 
-The enabled parameter allows you to disable all actions of a module. All actions are redirected to the module_disabled_module/module_disabled_action action (as defined in settings.yml).
+The enabled parameter allows you to disable all actions of a module. All actions are redirected to the `module_disabled_module`/`module_disabled_action` action (as defined in `settings.yml`).
 
 The is_internal parameter allows you to restrict the execution of all actions of a module to internal calls. For example, this is useful for mail actions that you must be able to call from another action, to send an e-mail message, but not from the outside.
 
-The view_name parameter defines the view class. It must inherit from sfView. Overriding this value allows you to use other view systems, with other templating engines, such as Smarty.
+The view_name parameter defines the view class. It must inherit from `sfView`. Overriding this value allows you to use other view systems, with other templating engines, such as Smarty.
 
 Summary
 -------
 
-In symfony, the controller layer is split into two parts: the front controller, which is the unique entry point to the application for a given environment, and the actions, which contain the page logic. An action has the ability to determine how its view will be executed, by returning one of the sfView constants. Inside an action, you can manipulate the different elements of the context, including the request object (sfRequest) and the current user session object (sfUser).
+In symfony, the controller layer is split into two parts: the front controller, which is the unique entry point to the application for a given environment, and the actions, which contain the page logic. An action has the ability to determine how its view will be executed, by returning one of the `sfView` constants. Inside an action, you can manipulate the different elements of the context, including the request object (`sfRequest`) and the current user session object (`sfUser`).
 
-Combining the power of the session object, the action object, and the security configuration provides a complete security system, with access restriction and credentials. Special validate() and handleError() methods in actions allow handling of request validation. And if the preExecute() and postExecute() methods are made for reusability of code inside a module, the filters authorize the same reusability for all the applications by making controller code executed for every request.
+Combining the power of the session object, the action object, and the security configuration provides a complete security system, with access restriction and credentials. Special `validate()` and `handleError()` methods in actions allow handling of request validation. And if the `preExecute()` and `postExecute()` methods are made for reusability of code inside a module, the filters authorize the same reusability for all the applications by making controller code executed for every request.
