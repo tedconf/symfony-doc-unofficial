@@ -30,36 +30,20 @@ Listing 12-1 - Activating the Cache, in `myapp/config/settings.yml`
       .settings:
         cache:                  on
 
-    ### Caching an Action
+### Caching an Action
 
+Actions displaying static information (not depending on database or session-dependent data) or actions reading information from a database but without modifying it (typically, GET requests) are often ideal for caching. Figure 12-1 shows which elements of the page are cached in this case: either the action result (its template) or the action result together with the layout.
 
-
-    Actions displaying static information (not depending on database or session-dependent data) or actions reading information from a database but without modifying it (typically, GET requests) are often ideal for caching. Figure 12-1 shows which elements of the page are cached in this case: either the action result (its template) or the action result together with the layout.
-
-
-
-    ![][29]
-
-
-       [29]:
+![][29]
+ [29]:
 
 Figure 12-1 - Caching an action
 
+For instance, consider a user/list action that returns the list of all users of a website. Unless a user is modified, added, or removed (and this matter will be discussed later in the "Removing Items from the Cache" section), this list always displays the same information, so it is a good candidate for caching.
 
+Cache activation and settings, action by action, are defined in a cache.yml file located in the module config/ directory. See Listing 12-2 for an example.
 
-    For instance, consider a user/list action that returns the list of all users of a website. Unless a user is modified, added, or removed (and this matter will be discussed later in the "Removing Items from the Cache" section), this list always displays the same information, so
-    it is a good candidate for caching.
-
-
-
-
-    Cache activation and settings, action by action, are defined in a cache.yml file located in the module config/ directory. See Listing 12-2 for an example.
-
-
-
-    Listing 12-2 - Activating the Cache for an Action, in myapp/modules/user/config/cache.yml
-
-
+Listing 12-2 - Activating the Cache for an Action, in `myapp/modules/user/config/cache.yml`
 
     list:
       enabled:     on
@@ -129,10 +113,12 @@ Listing 12-4 - Caching a Partial, in `myapp/modules/user/config/cache.yml`
 
 Now all the templates using this partial won't actually execute the PHP code of the partial, but will use the cached version instead.
 
+    [php]
     <?php include_partial('user/my_partial') ?>
 
 Just as for actions, partial caching is also relevant when the result of the partial depends on parameters. The cache system will store as many versions of a template as there are different values of parameters.
 
+    [php]
     <?php include_partial('user/my_other_partial', array('foo' => 'bar')) ?>
 
 >**TIP**
@@ -194,6 +180,7 @@ You can declare additional fragments in the same template; however, you need to 
 
 As with actions and components, cached fragments can take a lifetime in seconds as a second argument of the call to the `cache()` helper.
 
+    [php]
     <?php if (!cache('users', 43200)): ?>
 
 The default cache lifetime (86400 seconds, or one day) is used if no parameter is given to the helper.
@@ -250,6 +237,7 @@ Clear the cache (to autoload the new filter class), and the conditional cache is
 
 The addCache() method of the sfViewCacheManager object expects a module name, an action name, and an associative array with the same parameters as the ones you would define in a `cache.yml` file. For instance, if you want to define that the `article/show` action must be cached with the layout and with a lifetime of 3600 seconds, then write the following:
 
+    [php]
     $context->getViewCacheManager()->addCache('article', 'show', array(
       'withLayout' => true,
       'lifeTime'   => 3600,
@@ -262,11 +250,11 @@ The addCache() method of the sfViewCacheManager object expects a module name, an
 >
 >The default view cache storage factory is the `sfFileCache` class:
 >
->    view_cache:
->        class: sfFileCache
->        param:
->          automaticCleaningFactor: 0
->          cacheDir:                %SF_TEMPLATE_CACHE_DIR%
+>     view_cache:
+>         class: sfFileCache
+>         param:
+>           automaticCleaningFactor: 0
+>           cacheDir:                %SF_TEMPLATE_CACHE_DIR%
 >
 >You can replace the `class` with your own cache storage class or with one of the symfony alternative classes (`sfSQLiteCache` for instance). The parameters defined under the `param` key are passed to the `initialize()` method of your class as an associative array. Any view cache storage class must imple- ment all methods found in the abstract `sfCache` class. Refer to the API documentation (`http://www. symfony-project.com/api/symfony.html`) for more information on this subject.
 
@@ -393,17 +381,17 @@ Listing 12-11 - Clearing Template Fragments from the Cache
 >
 >For instance, imagine that the current application has a `publication` module where publications are listed (`list` action) and described (`show` action), along with the details of their author (an instance of the `User` class). Modifying one User record will affect all the descriptions of the user's publications and the list of publications. This means that you need to add to the `update` action of the `user` module, something like this:
 >
->    [php]
->    $c = new Criteria();
->    $c->add(PublicationPeer::AUTHOR_ID, $this->getRequestParameter('id'));
->    $publications = PublicationPeer::doSelect($c);
+>     [php]
+>     $c = new Criteria();
+>     $c->add(PublicationPeer::AUTHOR_ID, $this->getRequestParameter('id'));
+>     $publications = PublicationPeer::doSelect($c);
 >
->    $cacheManager = sfContext::getInstance()->getViewCacheManager();
->    foreach ($publications as $publication)
->    {
->      $cacheManager->remove('publication/show?id='.$publication->getId());
->    }
->    $cacheManager->remove('publication/list');
+>     $cacheManager = sfContext::getInstance()->getViewCacheManager();
+>     foreach ($publications as $publication)
+>     {
+>       $cacheManager->remove('publication/show?id='.$publication->getId());
+>     }
+>     $cacheManager->remove('publication/list');
 >
 >When you start using the HTML cache, you need to keep a clear view of the dependencies between the model and the actions, so that new errors don't appear because of a misunderstood relationship. Keep in mind that all the actions that modify the model should probably contain a bunch of calls to the `remove()` method if the HTML cache is used somewhere in the application.
 >
@@ -481,6 +469,7 @@ Listing 12-12 - Settings for a `staging` Environment, in `myapp/config/settings.
 
 In addition, create a new front controller by copying the production one (probably `myproject/web/index.php`) to a new `myapp_staging.php`. Edit it to change the `SF_ENVIRONMENT` and `SF_DEBUG` values, as follows:
 
+    [php]
     define('SF_ENVIRONMENT', 'staging');
     define('SF_DEBUG',        true);
 
@@ -564,6 +553,7 @@ The server can then compare the value kept by the client and the one returned by
 
 In symfony, you can set the `Last-Modified` response header just as you would for another header. For instance, you can use it like this in an action:
 
+    [php]
     $this->getResponse()->setHttpHeader('Last-Modified', $this->getResponse()->getDate($timestamp));
 
 This date can be the actual date of the last update of the data used in the page, given from your database or your file system. The `getDate()` method of the `sfResponse` object converts a timestamp to a formatted date in the format needed for the `Last-Modified` header (RFC1123).

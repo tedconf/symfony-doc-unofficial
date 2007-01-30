@@ -348,19 +348,19 @@ A URL with request parameters appearing as GET variables can be interpreted by a
 >
 >You don't need to mention a file extension for an asset. Symfony automatically adds `.png`, `.js`, or `.css` to an image, JavaScript, or style sheet helper call. Also, symfony will automatically look for those assets in the `web/images/`, `web/js/`, and `web/css/` directories. Of course, if you want to include a specific file format or a file from a specific location, just use the full file name or the full file path as an argument. And don't bother to specify an `alt` attribute if your media file has an explicit name, since symfony will determine it for you.
 >
->    [php]
->    <?php echo image_tag('test') ?>
->    <?php echo image_tag('test.gif') ?>
->    <?php echo image_tag('/my_images/test.gif') ?>
->     => <img href="/images/test.png" alt="Test" />
->        <img href="/images/test.gif" alt="Test" />
->        <img href="/my_images/test.gif" alt="Test" />
+>     [php]
+>     <?php echo image_tag('test') ?>
+>     <?php echo image_tag('test.gif') ?>
+>     <?php echo image_tag('/my_images/test.gif') ?>
+>      => <img href="/images/test.png" alt="Test" />
+>         <img href="/images/test.gif" alt="Test" />
+>         <img href="/my_images/test.gif" alt="Test" />
 >
 >To fix the size of an image, use the `size` attribute. It expects a width and a height in pixels, separated by an `x`.
 >
->    [php]
->    <?php echo image_tag('test', 'size=100x20')) ?>
->     => <img href="/images/test.png" alt="Test" width="100" height="20"/>
+>     [php]
+>     <?php echo image_tag('test', 'size=100x20')) ?>
+>      => <img href="/images/test.png" alt="Test" width="100" height="20"/>
 >
 >If you want the asset inclusion to be done in the `<head>` section (for JavaScript files and style sheets), you should use the `use_stylesheet()` and `use_javascript()` helpers in your templates, instead of the `_tag()` versions in the layout. They add the asset to the response, and these assets are included before the `</head>` tag is sent to the browser.
 
@@ -392,11 +392,11 @@ Listing 9-14 - Getting Absolute URLs Instead of Relative URLs
 >
 >The `mail_to()` helper takes two parameters: the actual e-mail address and the string that should be displayed. Additional options accept an `encode` parameter to output something pretty unreadable in HTML, which is understood by browsers but not by robots.
 >
->    [php]
->    <?php echo mail_to('myaddress@mydomain.com', 'contact') ?>
->     => <a href="mailto:myaddress@mydomain.com'>contact</a>
->    <?php echo mail_to('myaddress@mydomain.com', 'contact', 'encode=true') ?>
->     => <a href="&#109;&#x61;... &#111;&#x6d;">&#x63;&#x74;... e&#115;&#x73;</a>
+>     [php]
+>     <?php echo mail_to('myaddress@mydomain.com', 'contact') ?>
+>      => <a href="mailto:myaddress@mydomain.com'>contact</a>
+>     <?php echo mail_to('myaddress@mydomain.com', 'contact', 'encode=true') ?>
+>      => <a href="&#109;&#x61;... &#111;&#x6d;">&#x63;&#x74;... e&#115;&#x73;</a>
 >
 >Encoded e-mail messages are composed of characters transformed by a random decimal and hexadecimal entity encoder. This trick stops most of the address-harvesting spambots for now, but be aware that the harvesting techniques evolve rapidly.
 
@@ -489,37 +489,37 @@ Now an `article/delete` URL can't match the `article_by_id` rule anymore, becaus
 >
 >A good security guideline for routing is to hide primary keys and replace them with significant strings as much as possible. What if you wanted to give access to articles from their title rather than from their ID? It would make external URLs look like this:
 >
->    http://www.example.com/article/Finance_in_France
+>     http://www.example.com/article/Finance_in_France
 >
 >To that extent, you need to create a new `permalink` action, which will use a `slug` parameter instead of an `id` one, and add a new rule for it:
 >
->    article_by_id:
->      url:          /article/:id
->      param:        { module: article, action: read }
->      requirements: { id: \d+ }
+>     article_by_id:
+>       url:          /article/:id
+>       param:        { module: article, action: read }
+>       requirements: { id: \d+ }
 >
->    article_by_slug:
->      url:          /article/:slug
->      param:        { module: article, action: permalink }
+>     article_by_slug:
+>       url:          /article/:slug
+>       param:        { module: article, action: permalink }
 >
 >The `permalink` action needs to determine the requested article from its title, so your model must provide an appropriate method.
 >
->    [php]
->    public function executePermalink()
->    {
->      $article = ArticlePeer::retrieveBySlug($this->getRequestParameter('slug');
->      $this->forward404Unless($article);  // Display 404 if no article matches slug
->      $this->article = $article;          // Pass the object to the template
->    }
+>     [php]
+>     public function executePermalink()
+>     {
+>       $article = ArticlePeer::retrieveBySlug($this->getRequestParameter('slug');
+>       $this->forward404Unless($article);  // Display 404 if no article matches slug
+>       $this->article = $article;          // Pass the object to the template
+>     }
 >
 >You also need to replace the links to the `read` action in your templates with links to the `permalink` one, to enable correct formatting of internal URIs.
 >
->    [php]
->    // Replace
->    <?php echo link_to('my article', 'article/read?id='.$article->getId()) ?>
+>     [php]
+>     // Replace
+>     <?php echo link_to('my article', 'article/read?id='.$article->getId()) ?>
 >
->    // With
->    <?php echo link_to('my article', 'article/permalink?slug='.$article->getSlug()) ?>
+>     // With
+>     <?php echo link_to('my article', 'article/permalink?slug='.$article->getSlug()) ?>
 >
 >Thanks to the `requirements` line, an external URL like `/article/Finance_in_France` matches the `article_by_slug` rule, even though the `article_by_id` rule appears first.
 >
