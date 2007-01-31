@@ -12,7 +12,7 @@ Databases are relational. PHP 5 and symfony are object-oriented. In order to mos
 
 The main benefit of an ORM is reusability, allowing the methods of a data object to be called from various parts of the application, even from different applications. The ORM layer also encapsulates the data logic--for instance, the calculation of a forum user rating based on how many contributions were made and how popular these contributions are. When a page needs to display such a user rating, it simply calls a method of the data model, without worrying about the details of the calculation. If the calculation changes afterwards, you will just need to modify the rating method in the model, leaving the rest of the application unchanged.
 
-Using objects instead of records, and classes instead of tables, has another benefit: They allow you to add new accessors to your objects that don't necessarily match a column in a table. For instance, if you have a table called `client` with two fields named `first_name` and `last_name`, you might like to be able to require just a `Name`. In an object-oriented world, it is as easy as adding a new accessor method to the `Client` class, as in Listing 8-1. From the application point of view, there is no difference between the FirstName, LastName, and Name attributes of the Client class. Only the class itself can determine which attributes correspond to a database column.
+Using objects instead of records, and classes instead of tables, has another benefit: They allow you to add new accessors to your objects that don't necessarily match a column in a table. For instance, if you have a table called `client` with two fields named `first_name` and `last_name`, you might like to be able to require just a `Name`. In an object-oriented world, it is as easy as adding a new accessor method to the `Client` class, as in Listing 8-1. From the application point of view, there is no difference between the `FirstName`, `LastName`, and `Name` attributes of the `Client` class. Only the class itself can determine which attributes correspond to a database column.
 
 Listing 8-1 - Accessors Mask the Actual Table Structure in a Model Class
 
@@ -59,7 +59,7 @@ Symfony's syntax for schemas uses the YAML format. The `schema.yml` files must b
 
 ### Schema Example
 
-How do you translate a database structure into a schema? An example is the best way to understand it. Imagine that you have a blog database with two tables: blog_article and blog_comment, with the structure shown in Figure 8-1.
+How do you translate a database structure into a schema? An example is the best way to understand it. Imagine that you have a blog database with two tables: `blog_article` and `blog_comment`, with the structure shown in Figure 8-1.
 
 Figure 8-1 - A blog database table structure
 
@@ -84,7 +84,7 @@ Listing 8-3 - Sample `schema.yml`
         content:     longvarchar
         created_at:
 
-Notice that the name of the database itself (`blog`) doesn't appear in the `schema.yml` file. Instead, the database is described under a connection name (`propel` in this example). This is because the actual connection settings can depend on the environment in which your application runs. For instance, when you run your application in the development environment, you will access a development database (maybe blog_dev), but with the same schema as the production database. The connection settings will be specified in the `databases.yml` file, described in the "Database Connections" section later in this chapter. The schema doesn't contain any detailed connection to settings, only a connection name, to maintain database abstraction.
+Notice that the name of the database itself (`blog`) doesn't appear in the `schema.yml` file. Instead, the database is described under a connection name (`propel` in this example). This is because the actual connection settings can depend on the environment in which your application runs. For instance, when you run your application in the development environment, you will access a development database (maybe `blog_dev`), but with the same schema as the production database. The connection settings will be specified in the `databases.yml` file, described in the "Database Connections" section later in this chapter. The schema doesn't contain any detailed connection to settings, only a connection name, to maintain database abstraction.
 
 ### Basic Schema Syntax
 
@@ -192,7 +192,7 @@ Field, column | Property
 
 ### Retrieving the Column Value
 
-When symfony builds the model, it creates one base object class for each of the tables defined in the `schema.yml`. Each of these classes comes with default constructors, accessors, and mutators based on the column definitions: The `new`, `get``XXX``()`, and `set``XXX``()` methods help to create objects and give access to the object properties, as shown in Listing 8-7.
+When symfony builds the model, it creates one base object class for each of the tables defined in the `schema.yml`. Each of these classes comes with default constructors, accessors, and mutators based on the column definitions: The `new`, `getXXX()`, and `setXXX()` methods help to create objects and give access to the object properties, as shown in Listing 8-7.
 
 Listing 8-7 - Generated Object Class Methods
 
@@ -227,7 +227,7 @@ The `article_id` column in the `blog_comment` table implicitly defines a foreign
   * `$comment->setArticleId($id)`: To define the related `Article` object from an ID
   * `$article->getComments()`: To get the related `Comment` objects
 
-The getArticleId() and setArticleId() methods show that you can consider the article_id column as a regular column and set the relationships by hand, but they are not very interesting. The benefit of the object-oriented approach is much more apparent in the three other methods. Listing 8-9 shows how to use the generated setters.
+The `getArticleId()` and `setArticleId()` methods show that you can consider the article_id column as a regular column and set the relationships by hand, but they are not very interesting. The benefit of the object-oriented approach is much more apparent in the three other methods. Listing 8-9 shows how to use the generated setters.
 
 Listing 8-9 - Foreign Keys Are Translated into a Special Setter
 
@@ -475,14 +475,14 @@ Additionally, the getters for date columns accept a date format as an argument:
 >       $this->articles = $tag->getPopularArticles(10);
 >     }
 >
->The action creates an object of class `Tag` from the request parameter. Then all the code needed to query the database is located in a ->getPopularArticles() method of this class. It makes the action more readable, and the model code can easily be reused in another action.
+>The action creates an object of class `Tag` from the request parameter. Then all the code needed to query the database is located in a `getPopularArticles()` method of this class. It makes the action more readable, and the model code can easily be reused in another action.
 >
 >Moving code to a more appropriate location is one of the techniques of refactoring. If you do it often, your code will be easy to maintain and to understand by other developers. A good rule of thumb about when to do refactoring to the data layer is that the code of an action should rarely contain more than ten lines of PHP code.
 
 Database Connections
 --------------------
 
-The data model is independent from the database used, but you will definitely use a database. The minimum information required by symfony to send requests to the project database is the name, the access codes, and the type of database. These connection settings should be entered in the databases.yml file located in the config/ directory. Listing 8-17 shows an example of such a file.
+The data model is independent from the database used, but you will definitely use a database. The minimum information required by symfony to send requests to the project database is the name, the access codes, and the type of database. These connection settings should be entered in the `databases.yml` file located in the `config/` directory. Listing 8-17 shows an example of such a file.
 
 Listing 8-17 - Sample Database Connection Settings, in `myproject/config/databases.yml`
 
@@ -595,7 +595,7 @@ Listing 8-22 - Using Custom Model Methods Is Like Using the Generated Methods
 
 If some of the generated methods in the `Base` classes don't fit your requirements, you can still override them in the custom classes. Just make sure that you use the same method signature (that is, the same number of arguments).
 
-For instance, the `$article->getComments()` method returns an array of `Comment` objects, in no particular order. If you want to have the results ordered by creation date, with the latest comment coming first, then override the `getComments()` method, as shown in Listing 8-23. Be aware that the original getComments() method (found in lib/model/om/BaseArticle.php) expects a criteria value and a connection value as parameters, so your function must do the same.
+For instance, the `$article->getComments()` method returns an array of `Comment` objects, in no particular order. If you want to have the results ordered by creation date, with the latest comment coming first, then override the `getComments()` method, as shown in Listing 8-23. Be aware that the original `getComments()` method (found in `lib/model/om/BaseArticle.php`) expects a criteria value and a connection value as parameters, so your function must do the same.
 
 Listing 8-23 - Overriding Existing Model Methods, in `lib/model/Article.php`
 
