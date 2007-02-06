@@ -65,7 +65,7 @@ One possibility would be to have Novel implements two interfaces instead of havi
 
 ### Mixing Classes
 
-The sfMixer class takes another approach to the problem, taking an existing class and extending it a posteriori, provided that the class contains the proper hooks. The process involves two steps:
+The `sfMixer` class takes another approach to the problem, taking an existing class and extending it a posteriori, provided that the class contains the proper hooks. The process involves two steps:
 
   * Declaring a class as extendable
   * Registering extensions (or mixins), after the class declaration
@@ -102,7 +102,7 @@ When the `getISBN()` method of the `Novel` class is called, everything happens a
 
 ### Declaring a Class As Extendable
 
-To declare a class as extendable, you must insert one or several "hooks" into the code, which the sfMixer class can later identify. These hooks are calls to the sfMixer::callMixins() method. Many of the symfony classes already contain such hooks, including `sfRequest`, `sfResponse`, `sfController`, `sfUser`, `sfAction`, and others.
+To declare a class as extendable, you must insert one or several "hooks" into the code, which the `sfMixer` class can later identify. These hooks are calls to the `sfMixer::callMixins()` method. Many of the symfony classes already contain such hooks, including `sfRequest`, `sfResponse`, `sfController`, `sfUser`, `sfAction`, and others.
 
 The hook can be placed in different parts of the class, according to the desired degree of extensibility:
 
@@ -274,7 +274,7 @@ Listing 17-10 - The Extension Mechanism Is Dynamic and Can Occur Even After Inst
 
 ### Extending with More Precision
 
-The `sfMixer::callMixins()` instruction is actually a shortcut to something a little bit more elaborate. It automatically loops over the list of registered mixins and calls them one by one, passing to it the current object and the current method parameters. In short, an `sfMixer:: callMixins()` call behaves more or less like Listing 17-11.
+The `sfMixer::callMixins()` instruction is actually a shortcut to something a little bit more elaborate. It automatically loops over the list of registered mixins and calls them one by one, passing to it the current object and the current method parameters. In short, an `sfMixer::callMixins()` call behaves more or less like Listing 17-11.
 
 Listing 17-11 - `callMixin()` Loops Over the Registered Mixins and Executes Them
 
@@ -323,7 +323,7 @@ Listing 17-12 - Replacing `callMixin()` by a Custom Loop
 >
 >Propel behaviors, discussed previously in Chapter 8, are a special kind of mixin: They extend Propel-generated objects. Let's look at an example.
 >
->The Propel objects corresponding to the tables of the database all have a delete() method, which deletes the related record from the database. But for an `Invoice` class, for which you can't delete a record, you may want to alter the `delete()` method to be able to keep the record in the database and change the value of an is_deleted attribute to true instead. Usual object retrieval methods (doSelect(), retrieveByPk()) would only consider the records for which `is_deleted` is false. You would also need to add another method called `forceDelete()`, which would allow you to really delete the record. In fact, all these modifications can be packaged into a new class, called `ParanoidBehavior`. The final `Invoice` class extends the Propel `BaseInvoice` class and has methods of the `ParanoidBehavior` mixed in.
+>The Propel objects corresponding to the tables of the database all have a delete() method, which deletes the related record from the database. But for an `Invoice` class, for which you can't delete a record, you may want to alter the `delete()` method to be able to keep the record in the database and change the value of an is_deleted attribute to true instead. Usual object retrieval methods (`doSelect()`, `retrieveByPk()`) would only consider the records for which `is_deleted` is false. You would also need to add another method called `forceDelete()`, which would allow you to really delete the record. In fact, all these modifications can be packaged into a new class, called `ParanoidBehavior`. The final `Invoice` class extends the Propel `BaseInvoice` class and has methods of the `ParanoidBehavior` mixed in.
 >
 >So a behavior is a mixin on a Propel object. Actually, the term "behavior" in symfony covers one more thing: the fact that the mixin is packaged as a plug-in. The `ParanoidBehavior` class just mentioned corresponds to a real symfony plug-in called `sfPropelParanoidBehaviorPlugin`. Refer to the symfony wiki ([http://www.symfony-project.com/trac/wiki/sfPropelParanoidBehaviorPlugin](http://www.symfony-project.com/trac/wiki/sfPropelParanoidBehaviorPlugin)) for details on installation and use of this plug-in.
 >
@@ -421,6 +421,7 @@ Note that this setting is distinct from the rules defined in `autoload.yml` (see
 
 This means that the other framework components benefit from the autoload mechanism, and you can use them even more easily than within their own environment. For instance, if you want to use the `Zend_Search` component in the Zend Framework to implement an equivalent of the Lucene search engine in PHP, you have to write this:
 
+    [php]
     require_once 'Zend/Search/Lucene.php';
     $doc = new Zend_Search_Lucene_Document();
     $doc->addField(Zend_Search_Lucene_Field::Text('url', $docUrl));
@@ -428,6 +429,7 @@ This means that the other framework components benefit from the autoload mechani
 
 With symfony and the Zend Framework bridge, it is simpler. Just write this:
 
+    [php]
     $doc = new Zend_Search_Lucene_Document(); // The class is autoloaded
     $doc->addField(Zend_Search_Lucene_Field::Text('url', $docUrl));
     ...
@@ -459,7 +461,7 @@ Some of these plug-ins are contributions from the community, and some come from 
   * `sfShoppingCartPlugin`: Allows shopping cart management
   * `sfPagerNavigationPlugin`: Provides classical and Ajax pager controls, based on an `sfPager` object
   * `sfGuardPlugin`: Provides authentication, authorization, and other user management features above the standard security feature of symfony
-  * sfPrototypePlugin: Provides prototype and script.aculo.us JavaScript files as a standalone library
+  * `sfPrototypePlugin`: Provides prototype and script.aculo.us JavaScript files as a standalone library
   * `sfSuperCachePlugin`: Writes pages in cache directory under the web root to allow the web server to serve them as fast as possible
   * `sfOptimizerPlugin`: Optimizes your application's code to make it execute faster in the production environment (see the next chapter for details)
   * `sfErrorLoggerPlugin`: Logs every 404 and 500 error in a database and provides an administration module to browse these errors
@@ -468,7 +470,7 @@ Some of these plug-ins are contributions from the community, and some come from 
 The wiki also proposes plug-ins designed to extend your Propel objects, also called behaviors. Among them, you will find the following:
 
   * `sfPropelParanoidBehaviorPlugin`: Disables object deletion and replaces it with the updating of a `deleted_at` column
-  * `sfP`ropelOptimisticLockBehaviorPlugin: Implements optimistic locking for Propel objects
+  * `sfPropelOptimisticLockBehaviorPlugin`: Implements optimistic locking for Propel objects
 
 You should regularly check out the symfony wiki, because new plug-ins are added all the time, and they bring very useful shortcuts to many aspects of web application programming.
 
@@ -510,7 +512,7 @@ These three types of installation all use a PEAR package, so the term "PEAR plug
 
 #### Archive Plug-Ins
 
-Some plug-ins come as a simple archive of files. To install those, just unpack the archive into your project's `plugins/` directory. If the plug-in contains a `web/` subdirectory, make a copy or a symlink of this directory into the project's web/ directory, as demonstrated in Listing 17-18. Finally, don't forget to clear the cache.
+Some plug-ins come as a simple archive of files. To install those, just unpack the archive into your project's `plugins/` directory. If the plug-in contains a `web/` subdirectory, make a copy or a symlink of this directory into the project's `web/` directory, as demonstrated in Listing 17-18. Finally, don't forget to clear the cache.
 
 Listing 17-18 - Installing a Plug-In from an Archive
 
@@ -633,7 +635,7 @@ Listing 17-23 - File Structure of a Plug-In
 
 Plug-ins can contain a lot of things. Their content is automatically taken into account by your application at runtime and when calling tasks with the command line. But for plug-ins to work properly, you must respect a few conventions:
 
-  * Database schemas are detected by the `propel-` tasks. When you call `propel-build-model` in your project, you rebuild the project model and all the plug-in models with it. Note that a plug-in schema must always have a package attribute under the shape plugins.pluginName. `lib.model`, as shown in Listing 17-24.
+  * Database schemas are detected by the `propel-` tasks. When you call `propel-build-model` in your project, you rebuild the project model and all the plug-in models with it. Note that a plug-in schema must always have a package attribute under the shape `plugins.pluginName`. `lib.model`, as shown in Listing 17-24.
 
 Listing 17-24 - Example Schema Declaration in a Plug-In, in `myPlugin/config/schema.yml`
 
@@ -658,7 +660,7 @@ Listing 17-24 - Example Schema Declaration in a Plug-In, in `myPlugin/config/sch
 
 There are some elements that the `plugin-install` task cannot handle on its own, and which require manual setup during installation:
 
-  * Custom application configuration can be used in the plug-in code (for instance, by using `sfConfig::get('app_myplugin_foo')`), but you can't put the default values in an `app.yml` file located in the plug-in config/ directory. To handle default values, use the second argument of the sfConfig::get() method. The settings can still be overridden at the application level (see Listing 17-25 for an example).
+  * Custom application configuration can be used in the plug-in code (for instance, by using `sfConfig::get('app_myplugin_foo')`), but you can't put the default values in an `app.yml` file located in the plug-in `config/` directory. To handle default values, use the second argument of the `sfConfig::get()` method. The settings can still be overridden at the application level (see Listing 17-25 for an example).
   * Custom routing rules have to be added manually to the application `routing.yml`.
   * Custom filters have to be added manually to the application `filters.yml`.
   * Custom factories have to be added manually to the application `factories.yml`.

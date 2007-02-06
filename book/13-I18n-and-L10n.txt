@@ -69,7 +69,7 @@ Listing 13-2 - Setting and Retrieving the Culture in an Action
 >       params: ...
 >
 >
->To avoid manually setting the sf_culture request parameter in every link_to(), symfony automatically adds the user culture to the default routing parameters. It also works inbound because symfony will automatically change the user culture if the `sf_culture` parameter is found in the URL.
+>To avoid manually setting the sf_culture request parameter in every `link_to()`, symfony automatically adds the user culture to the default routing parameters. It also works inbound because symfony will automatically change the user culture if the `sf_culture` parameter is found in the URL.
 
 ### Determining the Culture Automatically
 
@@ -157,7 +157,7 @@ The date helpers can accept an additional format parameter to force a culture-in
 
 If it is necessary to show data in the user's culture, as for retrieving data, you should, as much as possible, push users of your application to input already internationalized data. This approach will save you from trying to figure out how to convert data with varying formats and uncertain locality. For instance, who might enter a monetary value with comma separators in an input box?
 
-You can frame the user input format either by hiding the actual data (as in a `select_ country_tag()`) or by separating the different components of complex data into several simple inputs.
+You can frame the user input format either by hiding the actual data (as in a `select_country_tag()`) or by separating the different components of complex data into several simple inputs.
 
 For dates, however, this is often not possible. Users are used to entering dates in their cultural format, and you need to be able to convert such data to an internal (and international) format. This is where the `sfI18N` class applies. Listing 13-5 demonstrates how this class is used.
 
@@ -188,22 +188,17 @@ Listing 13-6 - Sample Schema for i18n Data, in `config/schema.yml`
 
     my_connection:
       my_product:
-        _attributes: { phpName: Product,
-    isI18N: true, i18nTable: my_product_i18n
-     }
-        id:          { type: integer, required: true, primaryKey: true,
-                       autoincrement: true }
+        _attributes: { phpName: Product, isI18N: true, i18nTable: my_product_i18n }
+        id:          { type: integer, required: true, primaryKey: true, autoincrement: true }
         price:       { type: float }
 
       my_product_i18n:
         _attributes: { phpName: ProductI18n }
-        id:          { type: integer, required: true, primaryKey: true,
-                       foreignTable: my_product, foreignReference: id }
-        culture:     { isCulture: true, type: varchar, size: 7, required: true,
-                       primaryKey: true }
+        id:          { type: integer, required: true, primaryKey: true, foreignTable: my_product, foreignReference: id }
+        culture:     { isCulture: true, type: varchar, size: 7, required: true, primaryKey: true }
         name:        { type: varchar, size: 50 }
 
-Notice the isI18N and i18nTable attributes in the first table, and the special culture column in the second. All these are symfony-specific Propel enhancements.
+Notice the `isI18N` and `i18nTable` attributes in the first table, and the special `culture` column in the second. All these are symfony-specific Propel enhancements.
 
 The symfony automations can make this much faster to write. If the table containing internationalized data has the same name as the main table with `_i18n` as a suffix, and they are related with a column named `id` in both tables, you can omit the `id` and `culture` columns in the `_i18n` table as well as the specific i18n attributes for the main table; symfony will infer them. It means that symfony will see the schema in Listing 13-7 as the same as the one in Listing 13-6.
 
@@ -241,7 +236,7 @@ Listing 13-8 - Dealing with i18n Objects
     echo $product->getName();
      => 'Nom du produit'
 
-If you'd rather not have to remember to change the culture each time you use an i18n object, you can also change the hydrate() method in the object class. See an example in Listing 13-9.
+If you'd rather not have to remember to change the culture each time you use an i18n object, you can also change the `hydrate()` method in the object class. See an example in Listing 13-9.
 
 Listing 13-9 - Overriding the `hydrate()` Method to Set the Culture, in `myproject/lib/model/Product.php`
 
@@ -289,7 +284,7 @@ Listing 13-12 - A Single-Language Template
     [php]
     Welcome to our website. Today's date is <?php echo format_date(date()) ?>
 
-For symfony to translate the phrases of a template, they must be identified as text to be translated. This is the purpose of the __() helper (two underscores), a member of the I18N helper group. So all your templates need to enclose the phrases to translate in such function calls. Listing 13-12, for example, can be modified to look like Listing 13-13 (as you will see in the "Handling Complex Translation Needs" section later in this chapter, there is an even better way to call the translation helper in this example).
+For symfony to translate the phrases of a template, they must be identified as text to be translated. This is the purpose of the `__()` helper (two underscores), a member of the I18N helper group. So all your templates need to enclose the phrases to translate in such function calls. Listing 13-12, for example, can be modified to look like Listing 13-13 (as you will see in the "Handling Complex Translation Needs" section later in this chapter, there is an even better way to call the translation helper in this example).
 
 Listing 13-13 - A Multiple-Language-Ready Template
 
@@ -301,13 +296,13 @@ Listing 13-13 - A Multiple-Language-Ready Template
     <?php echo format_date(date()) ?>
 
 >**TIP**
->If your application uses the I18N helper group for every page, it is probably a good idea to include it in the standard_helpers setting in the settings.yml file, so that you avoid repeating use_helper('I18N') for each template.
+>If your application uses the I18N helper group for every page, it is probably a good idea to include it in the `standard_helpers` setting in the `settings.yml` file, so that you avoid repeating `use_helper('I18N')` for each template.
 
 ### Using Dictionary Files
 
 Each time the `__()` function is called, symfony looks for a translation of its argument in the dictionary of the current user's culture. If it finds a corresponding phrase, the translation is sent back and displayed in the response. So the user interface translation relies on a dictionary file.
 
-The dictionary files are written in the XML Localization Interchange File Format (XLIFF), named according to the pattern `messages.<[/code>`language code``].xml`, and stored in the application `i18n/` directory.
+The dictionary files are written in the XML Localization Interchange File Format (XLIFF), named according to the pattern `messages.[language code].xml`, and stored in the application `i18n/` directory.
 
 XLIFF is a standard format based on XML. As it is well known, you can use third-party translation tools to reference all text in your website and translate it. Translation firms know how to handle such files and to translate an entire site just by adding a new XLIFF translation.
 
@@ -349,18 +344,18 @@ If additional translations need to be done, simply add a new `messages.``XX``.xm
 
 ### Managing Dictionaries
 
-If your messages.XX.xml file becomes too long to be readable, you can always split the translations into several dictionary files, named by theme. For instance, you can split the `messages.fr.xml` file into these three files in the application `i18n/` directory:
+If your `messages.XX.xml` file becomes too long to be readable, you can always split the translations into several dictionary files, named by theme. For instance, you can split the `messages.fr.xml` file into these three files in the application `i18n/` directory:
 
   * `navigation.fr.xml`
   * `terms_of_service.fr.xml`
   * `search.fr.xml`
 
-Note that as soon as a translation is not to be found in the default `messages.``XX``.xml` file, you must declare which dictionary is to be used each time you call the `__()` helper, using its third argument. For instance, to output a string that is translated in the navigation.fr.xml dictionary, write this:
+Note that as soon as a translation is not to be found in the default `messages.XX.xml` file, you must declare which dictionary is to be used each time you call the `__()` helper, using its third argument. For instance, to output a string that is translated in the `navigation.fr.xml` dictionary, write this:
 
     [php]
     <?php echo __('Welcome to our website', null, 'navigation') ?>
 
-Another way to organize translation dictionaries is to split them by module. Instead of writing a single `messages.``XX``.xml` file for the whole application, you can write one in each `modules/<[/code>`module_name``]/i18n/` directory. It makes modules more independent from the application, which is necessary if you want to reuse them, such as in plug-ins (see Chapter 17).
+Another way to organize translation dictionaries is to split them by module. Instead of writing a single `messages.XX.xml` file for the whole application, you can write one in each `modules/[module_name]/i18n/` directory. It makes modules more independent from the application, which is necessary if you want to reuse them, such as in plug-ins (see Chapter 17).
 
 ### Handling Other Elements Requiring Translation
 
@@ -376,7 +371,7 @@ The following are other elements that may require translation:
 
 ### Handling Complex Translation Needs
 
-Translation only makes sense if the __() argument is a full sentence. However, as you sometimes have formatting or variables mixed with words, you could be tempted to cut sentences into several chunks, thus calling the helper on senseless phrases. Fortunately, the `__()` helper offers a replacement feature based on tokens, which will help you to have a meaningful dictionary that is easier to handle by translators. As with HTML formatting, you can leave it in the helper call as well. Listing 13-16 shows an example.
+Translation only makes sense if the `__()` argument is a full sentence. However, as you sometimes have formatting or variables mixed with words, you could be tempted to cut sentences into several chunks, thus calling the helper on senseless phrases. Fortunately, the `__()` helper offers a replacement feature based on tokens, which will help you to have a meaningful dictionary that is easier to handle by translators. As with HTML formatting, you can leave it in the helper call as well. Listing 13-16 shows an example.
 
 Listing 13-16 - Translating Sentences That Contain Code
 
@@ -399,7 +394,7 @@ Listing 13-16 - Translating Sentences That Contain Code
 
 In this example, the token is `%1%`, but it can be anything, since the replacement function used by the translation helper is `strtr()`.
 
-One of the common problems with translation is the use of the plural form. According to the number of results, the text changes but not in the same way according to the language. For instance, the last sentence in Listing 13-16 is not correct if `count_logged()` returns 0 or 1. You could do a test on the return value of this function and choose which sentence to use accordingly, but that would represent a lot of code. Additionally, different languages have different grammar rules, and the declension rules of plural can be quite complex. As this problem is very common, symfony provides a helper to deal with it, called format_number_choice(). Listing 13-17 demonstrates how to use this helper.
+One of the common problems with translation is the use of the plural form. According to the number of results, the text changes but not in the same way according to the language. For instance, the last sentence in Listing 13-16 is not correct if `count_logged()` returns 0 or 1. You could do a test on the return value of this function and choose which sentence to use accordingly, but that would represent a lot of code. Additionally, different languages have different grammar rules, and the declension rules of plural can be quite complex. As this problem is very common, symfony provides a helper to deal with it, called `format_number_choice()`. Listing 13-17 demonstrates how to use this helper.
 
 Listing 13-17 - Translating Sentences Depending on the Value of Parameters
 
