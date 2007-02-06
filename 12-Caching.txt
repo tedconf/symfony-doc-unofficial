@@ -38,9 +38,9 @@ Figure 12-1 - Caching an action
 
 ![Caching an action](/images/book/F1201.png "Caching an action")
 
-For instance, consider a user/list action that returns the list of all users of a website. Unless a user is modified, added, or removed (and this matter will be discussed later in the "Removing Items from the Cache" section), this list always displays the same information, so it is a good candidate for caching.
+For instance, consider a `user/list` action that returns the list of all users of a website. Unless a user is modified, added, or removed (and this matter will be discussed later in the "Removing Items from the Cache" section), this list always displays the same information, so it is a good candidate for caching.
 
-Cache activation and settings, action by action, are defined in a cache.yml file located in the module config/ directory. See Listing 12-2 for an example.
+Cache activation and settings, action by action, are defined in a cache.yml file located in the module `config/` directory. See Listing 12-2 for an example.
 
 Listing 12-2 - Activating the Cache for an Action, in `myapp/modules/user/config/cache.yml`
 
@@ -121,7 +121,7 @@ Just as for actions, partial caching is also relevant when the result of the par
 >**TIP**
 >The action cache is more powerful than the partial cache, since when an action is cached, the template is not even executed; if the template contains calls to partials, these calls are not performed. Therefore, partial caching is useful only if you don't use action caching in the calling action or for partials included in the layout.
 
-A little reminder from Chapter 7: A component is a light action put on top of a partial, and a component slot is a component for which the action varies according to the calling actions. These two inclusion types are very similar to partials, and support caching in the same way. For instance, if your global layout includes a component called `day` with `include_ ` component('general/day')` in order to show the current date, set the `cache.yml` file of the `general` module as follows to enable the cache on this component:
+A little reminder from Chapter 7: A component is a light action put on top of a partial, and a component slot is a component for which the action varies according to the calling actions. These two inclusion types are very similar to partials, and support caching in the same way. For instance, if your global layout includes a component called `day` with `include_component('general/day')` in order to show the current date, set the `cache.yml` file of the `general` module as follows to enable the cache on this component:
 
     _day:
       enabled: on
@@ -189,7 +189,7 @@ The `cache.yml` file is one way to define cache settings, but it has the inconve
 
 Why would you want to change the cache settings dynamically? A good example is a page that is different for authenticated users and for anonymous ones, but the URL remains the same. Imagine an `article/show` page with a rating system for articles. The rating feature is disabled for anonymous users. For those users, rating links trigger the display of a login form. This version of the page can be cached. On the other hand, for authenticated users, clicking a rating link makes a POST request and creates a new rating. This time, the cache must be disabled for the page so that symfony builds it dynamically.
 
-The right place to define dynamic cache settings is in a filter executed before the sfCacheFilter. Indeed, the cache is a filter in symfony, just like the web debug toolbar and the security features. In order to enable the cache for the `article/show` page only if the user is not authenticated, create a `conditionalCacheFilter` in the application `lib/` directory, as shown in Listing 12-6.
+The right place to define dynamic cache settings is in a filter executed before the `sfCacheFilter`. Indeed, the cache is a filter in symfony, just like the web debug toolbar and the security features. In order to enable the cache for the `article/show` page only if the user is not authenticated, create a `conditionalCacheFilter` in the application `lib/` directory, as shown in Listing 12-6.
 
 Listing 12-6 - Configuring the Cache in PHP, in `myapp/lib/conditionalCacheFilter.class.php`
 
@@ -230,7 +230,7 @@ Listing 12-7 - Registering Your Custom Filter, in `myapp/config/filters.yml`
 
 Clear the cache (to autoload the new filter class), and the conditional cache is ready. It will enable the cache of the pages defined in the pages parameter only for users who are not authenticated.
 
-The addCache() method of the sfViewCacheManager object expects a module name, an action name, and an associative array with the same parameters as the ones you would define in a `cache.yml` file. For instance, if you want to define that the `article/show` action must be cached with the layout and with a lifetime of 3600 seconds, then write the following:
+The `addCache()` method of the `sfViewCacheManager` object expects a module name, an action name, and an associative array with the same parameters as the ones you would define in a `cache.yml` file. For instance, if you want to define that the `article/show` action must be cached with the layout and with a lifetime of 3600 seconds, then write the following:
 
     [php]
     $context->getViewCacheManager()->addCache('article', 'show', array(
@@ -261,9 +261,9 @@ You can do this by hand, page by page, with a simple command-line call:
 
     > curl http://myapp.example.com/user/list.html > web/user/list.html
 
-After that, every time that the user/list action is requested, Apache finds the corresponding `list.html` page and bypasses symfony completely. The trade-off is that you can't control the page cache with symfony anymore (lifetime, automatic deletion, and so on), but the speed gain is very impressive.
+After that, every time that the `user/list` action is requested, Apache finds the corresponding `list.html` page and bypasses symfony completely. The trade-off is that you can't control the page cache with symfony anymore (lifetime, automatic deletion, and so on), but the speed gain is very impressive.
 
-Alternatively, you can use the sfSuperCache symfony plug-in, which automates the process and supports lifetime and cache clearing. Refer to Chapter 17 for more information about plug-ins.
+Alternatively, you can use the `sfSuperCache` symfony plug-in, which automates the process and supports lifetime and cache clearing. Refer to Chapter 17 for more information about plug-ins.
 
 >**SIDEBAR**
 >Other Speedup tactics
@@ -326,7 +326,7 @@ Listing 12-9 - Clearing the Cache for a Given Action, in `modules/user/actions/a
       ...
     }
 
-Removing cached partials, components, and component slots is a little trickier. As you can pass them any type of parameter (including objects), it is almost impossible to identify their cached version after the fact. Let's focus on partials, as the explanation is the same for the other template components. Symfony identifies a cached partial with a special prefix (`sf_cache_ partial`), the name of the module, and the name of the partial, plus a hash of all the parameters used to call it, as follows:
+Removing cached partials, components, and component slots is a little trickier. As you can pass them any type of parameter (including objects), it is almost impossible to identify their cached version after the fact. Let's focus on partials, as the explanation is the same for the other template components. Symfony identifies a cached partial with a special prefix (`sf_cache_partial`), the name of the module, and the name of the partial, plus a hash of all the parameters used to call it, as follows:
 
     [php]
     // A partial called by
@@ -352,7 +352,7 @@ Listing 12-10 - Clearing Partials from the Cache
 
 You cannot use this method to clear all occurrences of a partial in the cache. You will learn how to clear these in the "Clearing the Cache Manually" section later in this chapter.
 
-To clear template fragments, use the same remove() method. The key identifying the fragment in the cache is composed of the same `sf_cache_partial` prefix, the module name, the action name, and the `sf_cache_key` (the unique name of the cache fragment included by the `cache()` helper). Listing 12-11 shows an example.
+To clear template fragments, use the same `remove()` method. The key identifying the fragment in the cache is composed of the same `sf_cache_partial` prefix, the module name, the action name, and the `sf_cache_key` (the unique name of the cache fragment included by the `cache()` helper). Listing 12-11 shows an example.
 
 Listing 12-11 - Clearing Template Fragments from the Cache
 
@@ -473,7 +473,7 @@ That's it--you have a new environment. Use it by adding the front controller nam
     http://myapp.example.com/myapp_staging.php/user/list
 
 >**TIP**
->Instead of copying an existing one, you can create a new front controller with the `symfony` command line. For instance, to create a `staging` environment for the `myapp` application, called `myapp_staging.php` and where `SF_DEBUG` is `true`, just call `symfony init-controller myapp staging myapp_ ` staging.php true`.
+>Instead of copying an existing one, you can create a new front controller with the `symfony` command line. For instance, to create a `staging` environment for the `myapp` application, called `myapp_staging.php` and where `SF_DEBUG` is `true`, just call `symfony init-controller myapp staging myapp_staging.php true`.
 
 ### Monitoring Performance
 
