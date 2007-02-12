@@ -72,7 +72,7 @@ In many cases, as the email sending process is just a detour in the logic of an 
       $this->logMessage($raw_email, 'debug');
     }
 
-The email sending is delegated to a `sendPassword` action of a `mail` module. The `->sendEmail()` method of the `sfAction` class is a special kind of `->forward()` that executes another action but comes back afterward (it doesn't stop the execution of the current action). In addition, it returns a raw email that can be written into a log file (you will find more information about the way to log information in the [debug chapter](debug.txt)).
+The email sending is delegated to a `sendPassword` action of a `mail` module. The `sendEmail()` method of the `sfAction` class is a special kind of `forward()` that executes another action but comes back afterward (it doesn't stop the execution of the current action). In addition, it returns a raw email that can be written into a log file (you will find more information about the way to log information in [Chapter 16](http://www.symfony-project.com/book/trunk/16-Application-Management-Tools#Debugging)).
 
 The `mail/sendPassword` deals with the `sfMail` object, but it doesn't need to define the mailer (it is taken from a configuration file) nor to initialize it:
 
@@ -99,7 +99,7 @@ The `mail/sendPassword` deals with the `sfMail` object, but it doesn't need to d
       $this->mail = $mail;    
     }
     
-Notice that the action doesn't need to call the `->send()` method for the `sfMail` object; being called by a `->sendEmail()`, it knows that it needs to finish by sending its `$this->mail` `sfMail` object. And where is the mail? will you ask. That's the beauty of the MVC separation: the body of the mail itself is to be written in the template `sendPasswordSuccess.php`:
+Notice that the action doesn't need to call the `send()` method for the `sfMail` object; being called by a `sendEmail()`, it knows that it needs to finish by sending its `$this->mail` `sfMail` object. And where is the mail? will you ask. That's the beauty of the MVC separation: the body of the mail itself is to be written in the template `sendPasswordSuccess.php`:
 
     [php]
     Dear customer,
@@ -130,7 +130,7 @@ This stipulates the mailer program to be used to send mails, and deactivates the
 Send HTML email
 ---------------
 
-Most of the time, emails are to be sent in HTML format, or even in a multipart format (enclosing both HTML and text format). To handle it directly with the `sfMail` object, use the `->setContentType()` method and specify an alternate body:
+Most of the time, emails are to be sent in HTML format, or even in a multipart format (enclosing both HTML and text format). To handle it directly with the `sfMail` object, use the `setContentType()` method and specify an alternate body:
 
     [php]
     $mail->setContentType('text/html');
@@ -181,7 +181,7 @@ If you use an alternate action, you will just need to use an alternate template 
 Embed images
 ------------
 
-HTML emails can contain images directly embedded in the body. To add an embedded image, use the `->addEmbeddedImage()` method of the `sfMail` object:
+HTML emails can contain images directly embedded in the body. To add an embedded image, use the `addEmbeddedImage()` method of the `sfMail` object:
 
     [php]
     $mail->addEmbeddedImage(sfConfig::get('sf_web_dir').'/images/my_company_logo.gif', 'CID1', 'My Company Logo', 'base64', 'image/gif');
@@ -200,6 +200,8 @@ The first argument is the path to the image, the second is a reference of the im
       The My Company webmaster
       <img src="cid:CID1" />
     </p>
+    
+>**Tip**: You can also embed imaged directly from the template, without any code in the action. Refer to the `embedded_image()` helper description in the [code snippets section](http://www.symfony-project.com/snippets/snippet/27).
 
 Attachments
 -----------
@@ -222,14 +224,14 @@ In addition to recipients, emails often need to be sent as carbon copy ('cc:') o
     $mail->addCc('carbon_copy@my-companyt.com ');    
     $mail->addBcc('blind_carbon_copy@my-company.com');
 
-The `sfMail` methods used to set emails (`->setSender()`, `->setFrom()`, `->addReplyTo()`, `->addAddress()`, `->addCc()`, `->addBcc()`) can use two syntaxes:
+The `sfMail` methods used to set emails (`setSender()`, `setFrom()`, `addReplyTo()`, `addAddress()`, `addCc()`, `addBcc()`) can use two syntaxes:
 
     [php]
     $mail->setFrom('me@symfony-project.com', 'Symfony');
     // is equivalent to
     $mail->setFrom('me@symfony-project.com <Symfony>');
 
-In addition, to minimize the code in case of multiple recipients, `sfMail` has an `->addAddresses()` method:
+In addition, to minimize the code in case of multiple recipients, `sfMail` has an `addAddresses()` method:
 
     [php]
     $mail->addAddress('client1@client.com <Jules>');
@@ -243,42 +245,59 @@ In addition, to minimize the code in case of multiple recipients, `sfMail` has a
 Once you've built your `sfMail` object, you might want to check its content. Fortunately, all the setter methods described above have an equivalent getter method, and you can clear the properties previously set:
 
     [php]
-    ->setCharset($charset)
-    ->getCharset()
-    ->setContentType($content_type)
-    ->getContentType()
-    ->setPriority($priority)
-    ->getPriority()
-    ->setEncoding($encoding)
-    ->getEncoding()
-    ->setSubject($subject)
-    ->getSubject()
-    ->setBody($body)
-    ->getBody()
-    ->setAltBody($text)
-    ->getAltBody()
-    ->setMailer($type = 'mail')
-    ->getMailer()
-    ->setSender($address, $name = null)
-    ->getSender()
-    ->setFrom($address, $name = null)
-    ->getFrom()
-    ->addAddresses($addresses)
-    ->addAddress($address, $name = null)
-    ->addCc($address, $name = null)
-    ->addBcc($address, $name = null)
-    ->addReplyTo($address, $name = null)
-    ->clearAddresses()
-    ->clearCcs()
-    ->clearBccs()
-    ->clearReplyTos()
-    ->clearAllRecipients()
-    ->addAttachment($path, $name = '', $encoding = 'base64', $type = 'application/octet-stream')
-    ->addStringAttachment($string, $filename, $encoding = 'base64', $type = 'application/octet-stream')
-    ->addEmbeddedImage($path, $cid, $name = '', $encoding = 'base64', $type = 'application/octet-stream')
-    ->setAttachments($attachments)
-    ->clearAttachments()
-    ->addCustomHeader($name, $value)
-    ->clearCustomHeaders()
-    ->setWordWrap($wordWrap)
-    ->getWordWrap()
+    setCharset($charset)
+    getCharset()
+    setContentType($content_type)
+    getContentType()
+    setPriority($priority)
+    getPriority()
+    setEncoding($encoding)
+    getEncoding()
+    setSubject($subject)
+    getSubject()
+    setBody($body)
+    getBody()
+    setAltBody($text)
+    getAltBody()
+    setMailer($type = 'mail')
+    getMailer()
+    setSender($address, $name = null)
+    getSender()
+    setFrom($address, $name = null)
+    getFrom()
+    addAddresses($addresses)
+    addAddress($address, $name = null)
+    addCc($address, $name = null)
+    addBcc($address, $name = null)
+    addReplyTo($address, $name = null)
+    clearAddresses()
+    clearCcs()
+    clearBccs()
+    clearReplyTos()
+    clearAllRecipients()
+    addAttachment($path, $name = '', $encoding = 'base64', $type = 'application/octet-stream')
+    addStringAttachment($string, $filename, $encoding = 'base64', $type = 'application/octet-stream')
+    addEmbeddedImage($path, $cid, $name = '', $encoding = 'base64', $type = 'application/octet-stream')
+    setAttachments($attachments)
+    clearAttachments()
+    addCustomHeader($name, $value)
+    clearCustomHeaders()
+    setWordWrap($wordWrap)
+    getWordWrap()
+    
+Sending emails from outside an action
+-------------------------------------
+
+If you want to send emails outside of an action (for instance in a batch process), you don't have any actions object to call the `sendEmail()` method on. Fortunately, this method is also available on the `sfController` object. So here is how you would call an emailing action in a batch script:
+
+    [php]
+    <?php
+
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
+    define('SF_APP',         'myapp');
+    define('SF_ENVIRONMENT', 'test');
+    define('SF_DEBUG',       false);
+
+    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
+
+    $raw_email = sfContext::getInstance()->getController()->sendEmail('mail', 'sendPassword');

@@ -23,7 +23,7 @@ In symfony, the setter and getter for cookies are methods of different objects, 
     // cookie setter with options
     $this->getResponse()->setCookie('mycookie', $value, $expire, $path, $domain, $secure);
     
-The syntax of the `->setCookie()` method is the same as the one of the basic PHP `setcookie()` function (refer to the [PHP manual](http://www.php.net/setcookie) for more information). The main advantage of using the `sfWebResponse` method is that symfony logs cookies, and that you can keep on reading and modifying them until the response is actually sent.
+The syntax of the `setCookie()` method is the same as the one of the basic PHP `setcookie()` function (refer to the [PHP manual](http://www.php.net/setcookie) for more information). The main advantage of using the `sfWebResponse` method is that symfony logs cookies, and that you can keep on reading and modifying them until the response is actually sent.
 
 >**Note**: If you want to manipulate cookies outside of an action, you will need to access the `Request` and `Answer` objects without shortcut:
 >
@@ -31,8 +31,8 @@ The syntax of the `->setCookie()` method is the same as the one of the basic PHP
 >     $response = sfContext::getInstance()->getResponse();
 >
 
-Persistent sessions
--------------------
+Example of cookie use: Persistent sessions
+------------------------------------------
 
 A good use for cookies (apart from basic session handling, which is completely transparent in symfony) is the persistent sessions functionality. Most of the login forms offer a "remember me" check-box which, when clicked, allows the user to bypass the login process for future sessions.
 
@@ -84,7 +84,7 @@ The model has a `User` class with at the very least a `login` and a `password` f
 
 >**Note**: The verification of the login and password could also be handled in a custom validator for a better domain model logic, as explained in the [askeet tutorial](http://www.symfony-project.com/askeet/6).
 
-Now, let's have a look at this `->signIn()` method in the `myUser` class:
+Now, let's have a look at this `signIn()` method in the `myUser` class:
 
     [php]
     class myUser extends sfBasicSecurityUser
@@ -115,7 +115,7 @@ By adding a new `remember_key` column to the `User` table (and rebuilding the mo
 
 Don't forget to add a `remember_me` checkbox to the `modules/security/templates/indexSuccess.php` form for this to work.
 
-The `->signIn()` method of the `myUser` class has to be modified to set the remember key both in the database and in the cookie:
+The `signIn()` method of the `myUser` class has to be modified to set the remember key both in the database and in the cookie:
 
     [php]
     public function signIn($user, $remember = false)
@@ -209,3 +209,8 @@ One last thing: If the user logs out, don't forget to remove the cookie!
     }
 
 >**Note**: This solution works only for non-secure pages, since the security check for secure pages occurs _before_ the custom `remember` filter. Consequently, if a user with a proper cookie tries to access a secure page without having logged to the site in a non-secure page before, he/she will be redirected to the login page as anybody else. If you want the remember me feature to work for secure pages as well, the implementation has to be slightly different. You must create a `myBasicSecurityFilter` class, specializing the `sfBasicSecurityFilter` class, and put the cookie control in it. Then, in the `factories.yml`, change the name of the `security_filter` class to this `myBasicSecurityFilter`. The details of the implementation are left to your sagacity.
+
+Persistent sessions: don't reinvent the wheel
+---------------------------------------------
+
+The code descibed above can be quite a pain to rewrite for every new project. Fortunately, you can use the `sfGuardPlugin` for this purpose. Not only does it automate user management, permissions and credentials with a database, it also includes the "remember me" feature with a technique similar to that described here. So, the good way to enable persistent sessions is to [install the sfGuard plugin](http://www.symfony-project.com/trac/wiki/sfGuardPlugin).

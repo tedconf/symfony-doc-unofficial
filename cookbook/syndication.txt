@@ -20,7 +20,7 @@ description | email
 body        |
 created_at  |
 
-The `Post` class is extended by a `->getStrippedTitle()` method that transforms the title into a string that can be used in an URI, replacing spaces by dashes, upper case by lower case, and removing all special characters:
+The `Post` class is extended by a `getStrippedTitle()` method that transforms the title into a string that can be used in an URI, replacing spaces by dashes, upper case by lower case, and removing all special characters:
 
     [php]
     public function getStrippedTitle()
@@ -46,7 +46,7 @@ The `Author` class is extended by a custom `->getName()` method as follows:
       return $this->getFirstName().' '.$this->getLastName()
     }
 
-If you need more details about the way to extend the model, refer to the [model chapter](model.txt).
+If you need more details about the way to extend the model, refer to [Chapter 8](http://www.symfony-project.com/book/trunk/08-Inside-the-Model-Layer#Extending%20the%20Model).
 
 The `routing.yml` contains the following rule:
 
@@ -54,7 +54,7 @@ The `routing.yml` contains the following rule:
         url:   /permalink/:stripped_title
         param: { module: post, action: read }
 
-If you need more details about the routing system, refer to the [routing chapter](routing.txt).
+If you need more details about the routing system, refer to [Chapter 9](http://www.symfony-project.com/book/trunk/09-Links-and-the-Routing-System).
 
 A special `feed` module is built for the occasion, and all the actions and templates will be placed in it.
 
@@ -109,11 +109,13 @@ Install the plug-in
 
 Symfony provides a `sfFeed` plug-in that automates most of the feed generation. To install it, use the symfony command line:
 
-    $ symfony plugin-install local symfony/sfFeed
+    $ symfony plugin-install http://plugins.symfony_project.com/sfFeedPlugin
     
-This installs the classes of the plug-in in the `myapp/lib/symfony/plugins/` directory, because the `local` option tells symfony to install the plug-in for the current application only. You could have installed it for all your projects by replacing `local` by `global`.
+This installs the classes of the plug-in in the `plugins/` directory. TO let symfony autoload them, you need to clear the configuration cache:
 
-If you want to learn more about plug-ins, how they extend the framework and how you can package the features that you use across several projects into a plug-in, read the [plug-in chapter](http://www.symfony-project.com/content/book/page/plugin.html) of the symfony book.
+    $ symfony cc
+
+If you want to learn more about plug-ins, how they extend the framework and how you can package the features that you use across several projects into a plug-in, refer to [Chapter 17](http://www.symfony-project.com/book/trunk/17-Extending-Symfony#Plug-Ins) of the symfony book.
 
 Build the feed by hand
 ----------------------
@@ -244,32 +246,32 @@ The magic of the `sfFeed` object
 
 The getter functions of the `Post` object are so clear that even symfony can understand them. That's because the `sfFeed` class has built-in mechanisms to deduce relevant information from well-organised classes:
 
--   To set the item `title`, it looks for a `->getFeedTitle()`, a `->getTitle()`, a `->getName()` or a `->__toString()` method.
+-   To set the item `title`, it looks for a `getFeedTitle()`, a `getTitle()`, a `getName()` or a `__toString()` method.
 
-    In the example, the `Post` object has a `->getName()` method.
+    In the example, the `Post` object has a `getName()` method.
 
--   To set the `link`, it looks for an feed item route name (defined by a `setFeedItemsRouteName()` call). If there is one, it looks in the route url for parameters for which it could find a getter in the object methods. If not, it looks for a `->getFeedLink()`, `->getLink()`, `->getUrl()` method.
+-   To set the `link`, it looks for an feed item route name (defined by a `setFeedItemsRouteName()` call). If there is one, it looks in the route url for parameters for which it could find a getter in the object methods. If not, it looks for a `getFeedLink()`, `getLink()`, `getUrl()` method.
 
-    In the example, one route name is defined above in the action (`@permalink`). The routing rule contains a `:stripped_title` parameter and the `Post` object has a `->getStripped_Title()` method, so the `sfFeed` object is able to define the URIs to link to.
+    In the example, one route name is defined above in the action (`@permalink`). The routing rule contains a `:stripped_title` parameter and the `Post` object has a `getStripped_Title()` method, so the `sfFeed` object is able to define the URIs to link to.
 
--   To set the author's email, it looks for a `getFeedAuthorEmail` or a `getAuthorEmail`. If there is no such method, it looks for a `->getAuthor()`, `->getUser()` or `->getPerson()` method. If the result returned is an object, it looks in this object for a `getEmail` or a `getMail` method.
+-   To set the author's email, it looks for a `getFeedAuthorEmail` or a `getAuthorEmail`. If there is no such method, it looks for a `getAuthor()`, `getUser()` or `getPerson()` method. If the result returned is an object, it looks in this object for a `getEmail` or a `getMail` method.
 
-    In the example, the `Post` object has a `->getAuthor()`, and the `Author` object has a `->getName()`. The same kind of rules is used for the author's name and URL.
+    In the example, the `Post` object has a `getAuthor()`, and the `Author` object has a `getName()`. The same kind of rules is used for the author's name and URL.
 
--   To set the publication date, it looks for a `->getFeedPubdate()`, `->getPubdate()`, `->getCreatedAt()` or a `->getDate()` method.
+-   To set the publication date, it looks for a `getFeedPubdate()`, `getPubdate()`, `getCreatedAt()` or a `getDate()` method.
 
     In the example, the `Post` object has a `getCreatedAt`
 
-The same goes for the other possible fields of an Atom feed (including the categories, the summary, the unique id, etc.), and you are advised to [browse the source of the `sfFeed` class](http://www.symfony-project.com/trac/browser/plugins/sfFeed/lib) to discover all the deduction mechanisms.
+The same goes for the other possible fields of an Atom feed (including the categories, the summary, the unique id, etc.), and you are advised to [browse the source of the `sfFeed` class](http://www.symfony-project.com/trac/browser/plugins/sfFeedPlugin/lib) to discover all the deduction mechanisms.
 
 All in all, the way the accessors of the `Post` and `Author` objects are built allow the built-in shortcuts of the `sfFeed` to work, and the creation of the feed to be so simple.
 
 Define custom values for the feed
 ---------------------------------
 
-In the list presented above, you can see that the first method name that the `sfFeed` object looks for is always a `->getFeedXXX()`. This allows you to specify a custom value for each of the fields of a feed item by simply extended the model.
+In the list presented above, you can see that the first method name that the `sfFeed` object looks for is always a `getFeedXXX()`. This allows you to specify a custom value for each of the fields of a feed item by simply extended the model.
 
-For instance, if you don't want the author's email to be published in the feed, just add the following `->getFeedAuthorEmail()` method to the `Post` object:
+For instance, if you don't want the author's email to be published in the feed, just add the following `getFeedAuthorEmail()` method to the `Post` object:
 
     [php]
     public function getFeedAuthorEmail()
@@ -277,7 +279,7 @@ For instance, if you don't want the author's email to be published in the feed, 
       return '';
     }
 
-This method will be found before the `->getAuthor()` method, and the feed will not disclose the publishers' email addresses.
+This method will be found before the `getAuthor()` method, and the feed will not disclose the publishers' email addresses.
 
 Use other formats
 -----------------

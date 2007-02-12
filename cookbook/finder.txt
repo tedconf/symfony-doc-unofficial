@@ -9,9 +9,9 @@ Some scripts in your applications may need to access files without necessarily k
 The `sfFinder` class
 --------------------
 
-The `sfFinder` class if a file finder class based on the Perl File::Find::Rule module. It can find either files or directories (or both), and filters the search by a set of user-defined _rules_. The basic usage is the following:
+The `sfFinder` class if a file finder class based on the Perl [`File::Find::Rule`](http://search.cpan.org/~rclamp/File-Find-Rule/) module. It can find either files or directories (or both), and filters the search by a set of user-defined _rules_. The basic usage is the following:
 
-1. Create a `sfFinder` object for your search by calling the class method `::type()`. You must precise what kind of result you expect (either `file`, `dir` or `any`)
+1. Create a `sfFinder` object for your search by calling the class method `type()`. You must precise what kind of result you expect (either `file`, `dir` or `any`)
 
         [php]
         $finder = sfFinder::type('file');
@@ -21,7 +21,7 @@ The `sfFinder` class if a file finder class based on the Perl File::Find::Rule m
         [php]
         $finder = $finder->name('*.php');
         
-3. Launch the search by calling the `->in()` method, setting the root directory of the search as argument
+3. Launch the search by calling the `in()` method, setting the root directory of the search as argument
 
         [php]
         $files = $finder->in('/home/production/myproject');
@@ -33,7 +33,7 @@ All these method calls can be chained to one single line, which is often easier 
     // can be read as
     // find files with name matching '*.php' in the '/home/production/myproject' directory
 
-The `->in()` method returns an array of files, that can easily be used for file manipulation:
+The `in()` method returns an array of files, that can easily be used for file manipulation:
 
     [php]
     foreach ($files as $file)
@@ -54,9 +54,9 @@ The rules used to refine the search are written as method calls of an `sfFinder`
     $finder2 = sfFinder::type('file')->name('*.php')->size('> 10K');    // is also a sfFinder object
     $files = $finder1->in('/home/production/myproject');                // is an array of file paths
 
-All rules may be invoked several times, except for the `->in()` method.
+All rules may be invoked several times, except for the `in()` method.
 
-Some rules are cumulative (`->name()` for example) whereas others are destructive (like `->maxdepth()`). For destructive rules, only the most recent method call counts:
+Some rules are cumulative (`name()` for example) whereas others are destructive (like `maxdepth()`). For destructive rules, only the most recent method call counts:
 
     [php]
     // this one will filter for file names satisfying both conditions
@@ -74,13 +74,13 @@ Filter rules
         
 ### Filter by name
 
-To filter the results on file names, add calls to the `->name()` method with patterns in [glob][1] or [regular expression][2] format:
+To filter the results on file names, add calls to the `name()` method with patterns in [glob][1] or [regular expression][2] format:
 
     [php]
     $finder = sfFinder::type('file')->name('*.php');
     $finder = sfFinder::type('file')->name('/.*\.php/');
 
-You can even exclude certain file names from the result, doing negative filtering with the `->not_name()` method:
+You can even exclude certain file names from the result, doing negative filtering with the `not_name()` method:
 
     [php]
     $finder = sfFinder::type('file')->not_name('Base*');
@@ -88,7 +88,7 @@ You can even exclude certain file names from the result, doing negative filterin
 
 ### Filter by size
 
-You can filter your search on file size by calling the `->size()` method, which expects a string containing a comparison as argument. The method also understands magnitudes:
+You can filter your search on file size by calling the `size()` method, which expects a string containing a comparison as argument. The method also understands magnitudes:
 
     [php]
     // search only for files bigger than 10 kilobytes
@@ -102,16 +102,16 @@ The symbols used for magnitude are the [binary prefix][3] defined by the Interna
 
 ### Limiting the search depth
 
-By default, a search made by the `sfFinder` object is recursive and scans all the subdirectories. You can override this default behaviour by using the `->maxdepth()` method to set the maximum depth of search in the file tree structure:
+By default, a search made by the `sfFinder` object is recursive and scans all the subdirectories. You can override this default behaviour by using the `maxdepth()` method to set the maximum depth of search in the file tree structure:
 
     [php]
     // search in directory and subdirectories
     $finder = sfFinder::type('file');
-    // search only in the directory passed to the ->in() method,
+    // search only in the directory passed to the in() method,
     // and not in any subdirectory
     $finder = sfFinder::type('file')->maxdepth(1);
     
-Of course, you can also specify a minimum depth by calling the `->mindepth()` method.
+Of course, you can also specify a minimum depth by calling the `mindepth()` method.
 
 By default, the minimum depth is 0 and the maximum depth is infinite (or close to).
 
@@ -119,7 +119,7 @@ By default, the minimum depth is 0 and the maximum depth is infinite (or close t
 
 If you want to exclude directories from the search, you can use two methods:
 
-- the `->prune()` method stops the search in the part of the tree structure where the pattern given as argument is found. See it as an interdiction to go and see what's in a directory:
+- the `prune()` method stops the search in the part of the tree structure where the pattern given as argument is found. See it as an interdiction to go and see what's in a directory:
 
         [php]
         // ignore the content of '.svn' folders
@@ -127,7 +127,7 @@ If you want to exclude directories from the search, you can use two methods:
 
     The finder doesn't go deeper in any of the `.svn` folders, but the `.svn` folders themselves are still part of the results.
     
-- the `->discard()` method removes the files or folders that match the argument from the result, but doesn't stop the tree structure exploration.
+- the `discard()` method removes the files or folders that match the argument from the result, but doesn't stop the tree structure exploration.
 
         [php]
         // remove the '.svn' folders from the result
@@ -138,10 +138,12 @@ These two methods are often used in conjunction, when a directory _and_ its cont
     [php]
     // remove the '.svn' folders and their content from the result
     $finder = sfFinder::type('any')->prune('.svn')->discard('.svn');
+    
+>**Tip**: To exclude the files and directories added by version control programs, `sfFinder` provides a shortcut method: `ignore_version_control()`. It will prune and discard and prune all files and directories looking like `.svn`, `CVS`, `_darcs`, `.arch-params`, `.monotone`, and `.bzr`.
 
 ### Search starting point
 
-The `->in()` method is used to specify where the `sfFinder` has to look for files or directories. It can take a file path or an array of file paths as argument:
+The `in()` method is used to specify where the `sfFinder` has to look for files or directories. It can take a file path or an array of file paths as argument:
 
     [php]
     // search in a single location
@@ -159,7 +161,7 @@ It can accept either absolute or relative paths:
     
 ### Returning relative paths
 
-By default, the paths returned by the `->in()` method are absolute paths. You can choose to receive an array of relative paths in place, by chaining the call to the `->relative()` method before calling `->in()`:
+By default, the paths returned by the `in()` method are absolute paths. You can choose to receive an array of relative paths in place, by chaining the call to the `relative()` method before calling `in()`:
 
     [php]
     // paths results are relative to the root directory
