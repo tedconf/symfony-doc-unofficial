@@ -1,7 +1,7 @@
 Chapter 8 - Inside The Model Layer
 ==================================
 
-Much of the discussion so far has been devoted to building pages, and processing requests and responses. But the business logic of a web application relies mostly on its data model. Symfony's default model component is based on an object/relational mapping layer known as the Propel project (`http://propel.phpdb.org/`). In a symfony application, you access data stored in a database and modify it through objects; you never address the database explicitly. This maintains a high level of abstraction and portability.
+Much of the discussion so far has been devoted to building pages, and processing requests and responses. But the business logic of a web application relies mostly on its data model. Symfony's default model component is based on an object/relational mapping layer known as the Propel project ([http://propel.phpdb.org/](http://propel.phpdb.org/)). In a symfony application, you access data stored in a database and modify it through objects; you never address the database explicitly. This maintains a high level of abstraction and portability.
 
 This chapter explains how to create an object data model, and the way to access and modify the data in Propel. It also demonstrates the integration of Propel in Symfony.
 
@@ -12,7 +12,7 @@ Databases are relational. PHP 5 and symfony are object-oriented. In order to mos
 
 The main benefit of an ORM is reusability, allowing the methods of a data object to be called from various parts of the application, even from different applications. The ORM layer also encapsulates the data logic--for instance, the calculation of a forum user rating based on how many contributions were made and how popular these contributions are. When a page needs to display such a user rating, it simply calls a method of the data model, without worrying about the details of the calculation. If the calculation changes afterwards, you will just need to modify the rating method in the model, leaving the rest of the application unchanged.
 
-Using objects instead of records, and classes instead of tables, has another benefit: They allow you to add new accessors to your objects that don't necessarily match a column in a table. For instance, if you have a table called `client` with two fields named `first_name` and `last_name`, you might like to be able to require just a `Name`. In an object-oriented world, it is as easy as adding a new accessor method to the `Client` class, as in Listing 8-1. From the application point of view, there is no difference between the FirstName, LastName, and Name attributes of the Client class. Only the class itself can determine which attributes correspond to a database column.
+Using objects instead of records, and classes instead of tables, has another benefit: They allow you to add new accessors to your objects that don't necessarily match a column in a table. For instance, if you have a table called `client` with two fields named `first_name` and `last_name`, you might like to be able to require just a `Name`. In an object-oriented world, it is as easy as adding a new accessor method to the `Client` class, as in Listing 8-1. From the application point of view, there is no difference between the `FirstName`, `LastName`, and `Name` attributes of the `Client` class. Only the class itself can determine which attributes correspond to a database column.
 
 Listing 8-1 - Accessors Mask the Actual Table Structure in a Model Class
 
@@ -59,13 +59,11 @@ Symfony's syntax for schemas uses the YAML format. The `schema.yml` files must b
 
 ### Schema Example
 
-How do you translate a database structure into a schema? An example is the best way to understand it. Imagine that you have a blog database with two tables: blog_article and blog_comment, with the structure shown in Figure 8-1.
-
-![][21]
-
-   [21]:
+How do you translate a database structure into a schema? An example is the best way to understand it. Imagine that you have a blog database with two tables: `blog_article` and `blog_comment`, with the structure shown in Figure 8-1.
 
 Figure 8-1 - A blog database table structure
+
+![A blog database table structure](/images/book/F0801.png "A blog database table structure")
 
 The related `schema.yml` file should look like Listing 8-3.
 
@@ -86,7 +84,7 @@ Listing 8-3 - Sample `schema.yml`
         content:     longvarchar
         created_at:
 
-Notice that the name of the database itself (`blog`) doesn't appear in the `schema.yml` file. Instead, the database is described under a connection name (`propel` in this example). This is because the actual connection settings can depend on the environment in which your application runs. For instance, when you run your application in the development environment, you will access a development database (maybe blog_dev), but with the same schema as the production database. The connection settings will be specified in the `databases.yml` file, described in the "Database Connections" section later in this chapter. The schema doesn't contain any detailed connection to settings, only a connection name, to maintain database abstraction.
+Notice that the name of the database itself (`blog`) doesn't appear in the `schema.yml` file. Instead, the database is described under a connection name (`propel` in this example). This is because the actual connection settings can depend on the environment in which your application runs. For instance, when you run your application in the development environment, you will access a development database (maybe `blog_dev`), but with the same schema as the production database. The connection settings will be specified in the `databases.yml` file, described in the "Database Connections" section later in this chapter. The schema doesn't contain any detailed connection to settings, only a connection name, to maintain database abstraction.
 
 ### Basic Schema Syntax
 
@@ -186,23 +184,15 @@ In symfony, your data is accessed through objects. If you are used to the relati
 
 But first, let's make sure we share the same vocabulary. Relational and object data model use similar concepts, but they each have their own nomenclature:
 
-Relational  Object-Oriented
-
-Table
-
-Class
-
-Row, record
-
-Object
-
-Field, column
-
-Property
+Relational    | Object-Oriented
+------------- | ---------------
+Table         | Class
+Row, record   | Object
+Field, column | Property
 
 ### Retrieving the Column Value
 
-When symfony builds the model, it creates one base object class for each of the tables defined in the `schema.yml`. Each of these classes comes with default constructors, accessors, and mutators based on the column definitions: The `new`, `get``XXX``()`, and `set``XXX``()` methods help to create objects and give access to the object properties, as shown in Listing 8-7.
+When symfony builds the model, it creates one base object class for each of the tables defined in the `schema.yml`. Each of these classes comes with default constructors, accessors, and mutators based on the column definitions: The `new`, `getXXX()`, and `setXXX()` methods help to create objects and give access to the object properties, as shown in Listing 8-7.
 
 Listing 8-7 - Generated Object Class Methods
 
@@ -237,7 +227,7 @@ The `article_id` column in the `blog_comment` table implicitly defines a foreign
   * `$comment->setArticleId($id)`: To define the related `Article` object from an ID
   * `$article->getComments()`: To get the related `Comment` objects
 
-The getArticleId() and setArticleId() methods show that you can consider the article_id column as a regular column and set the relationships by hand, but they are not very interesting. The benefit of the object-oriented approach is much more apparent in the three other methods. Listing 8-9 shows how to use the generated setters.
+The `getArticleId()` and `setArticleId()` methods show that you can consider the article_id column as a regular column and set the relationships by hand, but they are not very interesting. The benefit of the object-oriented approach is much more apparent in the three other methods. Listing 8-9 shows how to use the generated setters.
 
 Listing 8-9 - Foreign Keys Are Translated into a Special Setter
 
@@ -270,7 +260,7 @@ Listing 8-10 - Foreign Keys Are Translated into Special Getters
 
 The `getArticle()` method returns an object of class `Article`, which benefits from the `getTitle()` accessor. This is much better than doing the join yourself, which may take a few lines of code (starting from the `$comment->getArticleId()` call).
 
-The `$comments` variable in Listing 8-10 contains an array of objects of class `Comment`. You can display the first one with `$comments[0]` or iterate through the collection with `foreach ` ($comments as $comment)`.
+The `$comments` variable in Listing 8-10 contains an array of objects of class `Comment`. You can display the first one with `$comments[0]` or iterate through the collection with `foreach ($comments as $comment)`.
 
 >**NOTE**
 >Objects from the model are defined with a singular name by convention, and you can now understand why. The foreign key defined in the `blog_comment` table causes the creation of a `getComments()` method, named by adding an `s` to the `Comment` object name. If you gave the model object a plural name, the generation would lead to a method named `getCommentss()`, which doesn't make sense.
@@ -359,70 +349,28 @@ The class constants passed as parameters to the add() methods refer to the prope
 >**NOTE**
 >Why use `CommentPeer::AUTHOR` instead of `blog_comment.AUTHOR`, which is the way it will be output in the SQL query anyway? Suppose that you need to change the name of the author field to `contributor` in the database. If you used `blog_comment.AUTHOR`, you would have to change it in every call to the model. On the other hand, by using `CommentPeer::AUTHOR`, you simply need to change the column name in the `schema.yml` file, keep `phpName` as `AUTHOR`, and rebuild the model.
 
-Table 8-1 - compares the SQL syntax with the `Criteria` object syntax.
+Table 8-1 compares the SQL syntax with the `Criteria` object syntax.
 
-Table 8-1.  SQL and Criteria Object Syntax
-SQL  Criteria
+Table 8-1 - SQL and Criteria Object Syntax
 
-`WHERE column = value`
-
-`->add(column, value);`
-
-`WHERE column <> value`
-
-`->add(column, value, Criteria::NOT_EQUAL);`
-
-Other Comparison Operators
-
-`> , <`
-
-`Criteria::GREATER_THAN, Criteria::LESS_THAN`
-
-`>=, <=`
-
-`Criteria::GREATER_EQUAL, Criteria::LESS_EQUAL`
-
-`IS NULL, IS NOT NULL`
-
-`Criteria::ISNULL, Criteria::ISNOTNULL`
-
-`LIKE, ILIKE`
-
-`Criteria::LIKE, Criteria::ILIKE`
-
-`IN, NOT IN`
-
-`Criteria::IN, Criteria::NOT_IN`
-
-Other SQL Keywords
-
-`ORDER BY column ASC`
-
-`->addAscendingOrderByColumn(column);`
-
-`ORDER BY column DESC`
-
-`->addDescendingOrderByColumn(column);`
-
-`LIMIT limit`
-
-`->setLimit(limit)`
-
-`OFFSET offset`
-
-`->setOffset(offset) `
-
-`FROM table1, table2 WHERE table1.col1 = table2.col2`
-
-`->addJoin(col1, col2)`
-
-`FROM table1 LEFT JOIN table2 ON table1.col1 = table2.col2`
-
-`->addJoin(col1, col2, Criteria::LEFT_JOIN)`
-
-`FROM table1 RIGHT JOIN table2 ON table1.col1 = table2.col2`
-
-`->addJoin(col1, col2, Criteria::RIGHT_JOIN)`
+SQL                                                          | Criteria
+------------------------------------------------------------ | -----------------------------------------------
+`WHERE column = value`                                       | `->add(column, value);`
+`WHERE column <> value`                                      | `->add(column, value, Criteria::NOT_EQUAL);`
+**Other Comparison Operators**                               | 
+`> , <`                                                      | `Criteria::GREATER_THAN, Criteria::LESS_THAN`
+`>=, <=`                                                     | `Criteria::GREATER_EQUAL, Criteria::LESS_EQUAL`
+`IS NULL, IS NOT NULL`                                       | `Criteria::ISNULL, Criteria::ISNOTNULL`
+`LIKE, ILIKE`                                                | `Criteria::LIKE, Criteria::ILIKE`
+`IN, NOT IN`                                                 | `Criteria::IN, Criteria::NOT_IN`
+**Other SQL Keywords**                                       |
+`ORDER BY column ASC`                                        | `->addAscendingOrderByColumn(column);`
+`ORDER BY column DESC`                                       | `->addDescendingOrderByColumn(column);`
+`LIMIT limit`                                                | `->setLimit(limit)`
+`OFFSET offset`                                              | `->setOffset(offset) `
+`FROM table1, table2 WHERE table1.col1 = table2.col2`        | `->addJoin(col1, col2)`
+`FROM table1 LEFT JOIN table2 ON table1.col1 = table2.col2`  | `->addJoin(col1, col2, Criteria::LEFT_JOIN)`
+`FROM table1 RIGHT JOIN table2 ON table1.col1 = table2.col2` | `->addJoin(col1, col2, Criteria::RIGHT_JOIN)`
 
 >**TIP**
 >The best way to discover and understand which methods are available in generated classes is to look at the `Base` files in the `lib/model/om/` folder after generation. The method names are pretty explicit, but if you need more comments on them, set the `propel.builder.addComments` parameter to `true` in the `config/propel.ini` file and rebuild the model.
@@ -457,7 +405,7 @@ The peer classes also provide `doDelete()`, `doInsert()`, and `doUpdate()` metho
 Finally, if you just want the first object returned, replace `doSelect()` with a `doSelectOne()` call. This may be the case when you know that a `Criteria` will return only one result, and the advantage is that this method returns an object rather than an array of objects.
 
 >**TIP**
->When a `doSelect()` query returns a large number of results, you might want to display only a subset of it in your response. Symfony provides a pager class called sfPropelPager, which automates the pagination of results. Check the API documentation at `http://www.symfony-project.com/api/symfony.html` for more information and usage examples.
+>When a `doSelect()` query returns a large number of results, you might want to display only a subset of it in your response. Symfony provides a pager class called sfPropelPager, which automates the pagination of results. Check the API documentation at [http://www.symfony-project.com/api/symfony.html](http://www.symfony-project.com/api/symfony.html) for more information and usage examples.
 
 ### Using Raw SQL Queries
 
@@ -519,22 +467,22 @@ Additionally, the getters for date columns accept a date format as an argument:
 >
 >For example, imagine the code needed in a blog to retrieve the ten most popular articles for a given tag (passed as request parameter). This code should not be in an action, but in the model. In fact, if you need to display this list in a template, the action should simply look like this:
 >
->    [php]
->    public function executeShowPopularArticlesForTag()
->    {
->      $tag = TagPeer::retrieveByName($this->getRequestParameter('tag'));
->      $this->foward404Unless($tag);
->      $this->articles = $tag->getPopularArticles(10);
->    }
+>     [php]
+>     public function executeShowPopularArticlesForTag()
+>     {
+>       $tag = TagPeer::retrieveByName($this->getRequestParameter('tag'));
+>       $this->foward404Unless($tag);
+>       $this->articles = $tag->getPopularArticles(10);
+>     }
 >
->The action creates an object of class `Tag` from the request parameter. Then all the code needed to query the database is located in a ->getPopularArticles() method of this class. It makes the action more readable, and the model code can easily be reused in another action.
+>The action creates an object of class `Tag` from the request parameter. Then all the code needed to query the database is located in a `getPopularArticles()` method of this class. It makes the action more readable, and the model code can easily be reused in another action.
 >
 >Moving code to a more appropriate location is one of the techniques of refactoring. If you do it often, your code will be easy to maintain and to understand by other developers. A good rule of thumb about when to do refactoring to the data layer is that the code of an action should rarely contain more than ten lines of PHP code.
 
 Database Connections
 --------------------
 
-The data model is independent from the database used, but you will definitely use a database. The minimum information required by symfony to send requests to the project database is the name, the access codes, and the type of database. These connection settings should be entered in the databases.yml file located in the config/ directory. Listing 8-17 shows an example of such a file.
+The data model is independent from the database used, but you will definitely use a database. The minimum information required by symfony to send requests to the project database is the name, the access codes, and the type of database. These connection settings should be entered in the `databases.yml` file located in the `config/` directory. Listing 8-17 shows an example of such a file.
 
 Listing 8-17 - Sample Database Connection Settings, in `myproject/config/databases.yml`
 
@@ -647,7 +595,7 @@ Listing 8-22 - Using Custom Model Methods Is Like Using the Generated Methods
 
 If some of the generated methods in the `Base` classes don't fit your requirements, you can still override them in the custom classes. Just make sure that you use the same method signature (that is, the same number of arguments).
 
-For instance, the `$article->getComments()` method returns an array of `Comment` objects, in no particular order. If you want to have the results ordered by creation date, with the latest comment coming first, then override the `getComments()` method, as shown in Listing 8-23. Be aware that the original getComments() method (found in lib/model/om/BaseArticle.php) expects a criteria value and a connection value as parameters, so your function must do the same.
+For instance, the `$article->getComments()` method returns an array of `Comment` objects, in no particular order. If you want to have the results ordered by creation date, with the latest comment coming first, then override the `getComments()` method, as shown in Listing 8-23. Be aware that the original `getComments()` method (found in `lib/model/om/BaseArticle.php`) expects a criteria value and a connection value as parameters, so your function must do the same.
 
 Listing 8-23 - Overriding Existing Model Methods, in `lib/model/Article.php`
 
@@ -683,7 +631,7 @@ There is no behavior bundled by default in symfony, but they can be installed vi
 
 After rebuilding the model, deleted `Article` objects will remain in the database, invisible to the queries using the ORM, unless you temporarily disable the behavior with `sfPropelParanoidBehavior::disable()`.
 
-Check the list of symfony plug-ins in the wiki to find behaviors (http://www.symfony-project. com/`trac/wiki/SymfonyPlugins#Propelbehaviorplugins`). Each has its own documentation and installation guide.
+Check the list of symfony plug-ins in the wiki to find behaviors ([http://www.symfony-project.com/trac/wiki/SymfonyPlugins#Propelbehaviorplugins](http://www.symfony-project.com/trac/wiki/SymfonyPlugins#Propelbehaviorplugins)). Each has its own documentation and installation guide.
 
 Extended Schema Syntax
 ----------------------
@@ -723,20 +671,20 @@ Listing 8-25 - Attributes for i18n Tables
 >Consider these two schemas:
 >
 >
->    // In config/business-schema.yml
->    propel:
->      blog_article:
->        _attributes: { phpName: Article }
->      id:
->      title: varchar(50)
+>      // In config/business-schema.yml
+>      propel:
+>        blog_article:
+>          _attributes: { phpName: Article }
+>        id:
+>        title: varchar(50)
 >
->    // In config/stats-schema.yml
->    propel:
->      stats_hit:
->        _attributes: { phpName: Hit }
->      id:
->      resource: varchar(100)
->      created_at:
+>      // In config/stats-schema.yml
+>      propel:
+>        stats_hit:
+>          _attributes: { phpName: Hit }
+>        id:
+>        resource: varchar(100)
+>        created_at:
 >
 >
 >Both schemas share the same connection (`propel`), and the `Article` and `Hit` classes will be generated under the same `lib/model/` directory. Everything happens as if you had written only one schema.
@@ -744,20 +692,20 @@ Listing 8-25 - Attributes for i18n Tables
 >You can also have different schemas use different connections (for instance, `propel` and `propel_bis`, to be defined in `databases.yml`) and organize the generated classes in subdirectories:
 >
 >
->    // In config/business-schema.yml
->    propel:
->      blog_article:
->        _attributes: { phpName: Article, package: lib.model.business }
->      id:
->      title: varchar(50)
+>      // In config/business-schema.yml
+>      propel:
+>        blog_article:
+>          _attributes: { phpName: Article, package: lib.model.business }
+>        id:
+>        title: varchar(50)
 >
->    // In config/stats-schema.yml
->    propel_bis:
->      stats_hit:
->        _attributes: { phpName: Hit, package.lib.model.stat }
->      id:
->      resource: varchar(100)
->      created_at:
+>      // In config/stats-schema.yml
+>      propel_bis:
+>        stats_hit:
+>          _attributes: { phpName: Hit, package.lib.model.stat }
+>        id:
+>        resource: varchar(100)
+>        created_at:
 >
 >
 >Many applications use more than one schema. In particular, some plug-ins have their own schema and package to avoid messing with your own classes (see Chapter 17 for details).
@@ -922,7 +870,7 @@ Listing 8-34 - Sample `schema.xml`, Corresponding to Listing 8-3
         </table>
      </database>
 
-The description of the `schema.xml` format can be found in the documentation and the "Getting Started" sections of the Propel project website (`http://propel.phpdb.org/docs/user_guide/chapters/appendices/AppendixB-SchemaReference.html`).
+The description of the `schema.xml` format can be found in the documentation and the "Getting Started" sections of the Propel project website ([http://propel.phpdb.org/docs/user_guide/chapters/appendices/AppendixB-SchemaReference.html](http://propel.phpdb.org/docs/user_guide/chapters/appendices/AppendixB-SchemaReference.html)).
 
 The YAML format was designed to keep the schemas simple to read and write, but the trade-off is that the most complex schemas can't be described with a `schema.yml` file. On the other hand, the XML format allows for full schema description, whatever its complexity, and includes database vendor-specific settings, table inheritance, and so on.
 
@@ -948,7 +896,7 @@ If you start your application by writing the `schema.yml` file, symfony can gene
 
     > symfony propel-build-sql
 
-A `lib.model.schema.sql` file will be created in `myproject/data/sql/`. Note that the generated SQL code will be optimized for the database system defined in the phptype parameter of the propel.ini file.
+A `lib.model.schema.sql` file will be created in `myproject/data/sql/`. Note that the generated SQL code will be optimized for the database system defined in the `phptype` parameter of the `propel.ini` file.
 
 You can use the schema.sql file directly to build the tables. For instance, in MySQL, type this:
 
@@ -982,26 +930,26 @@ Instead of generating a `schema.yml` file, this will create a `schema.xml` file 
 >The `propel-build-sql` and `propel-build-schema` tasks don't use the connection settings defined in the `databases.yml` file. Rather, these tasks use the connection settings in another file, called `propel.ini` and stored in the project `config/` directory:
 >
 >
->    propel.database.createUrl = mysql://login:passwd@localhost
->    propel.database.url       = mysql://login:passwd@localhost/blog
+>      propel.database.createUrl = mysql://login:passwd@localhost
+>      propel.database.url       = mysql://login:passwd@localhost/blog
 >
 >
 >This file contains other settings used to configure the Propel generator to make generated model classes compatible with symfony. Most settings are internal and of no interest to the user, apart from a few:
 >
 >
->    // Base classes are autoloaded in symfony
->    // Set this to true to use include_once statements instead
->    // (Small negative impact on performance)
->    propel.builder.addIncludes = false
+>      // Base classes are autoloaded in symfony
+>      // Set this to true to use include_once statements instead
+>      // (Small negative impact on performance)
+>      propel.builder.addIncludes = false
 >
->    // Generated classes are not commented by default
->    // Set this to true to add comments to Base classes
->    // (Small negative impact on performance)
->    propel.builder.addComments = false
+>      // Generated classes are not commented by default
+>      // Set this to true to add comments to Base classes
+>      // (Small negative impact on performance)
+>      propel.builder.addComments = false
 >
->    // Behaviors are not handled by default
->    // Set this to true to be able to handle them
->    propel.builder.AddBehaviors = false
+>      // Behaviors are not handled by default
+>      // Set this to true to be able to handle them
+>      propel.builder.AddBehaviors = false
 >
 >
 >After you make a modification to the `propel.ini` settings, don't forget to rebuild the model so the changes will take effect.

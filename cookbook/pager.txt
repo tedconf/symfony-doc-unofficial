@@ -9,9 +9,9 @@ Symfony provides a pager component: the `sfPropelPager` object. It can separate 
 The `sfPropelPager` object
 --------------------------
 
-The `sfPropelPager` class uses the Propel abstraction layer, as described in the [Model](model.txt) chapter.
+The `sfPropelPager` class uses the Propel abstraction layer, as described in the [Model](http://www.symfony-project.com/book/trunk/08-Inside-the-Model-Layer) chapter.
 
-This chapter will illustrate the way to use the `sfPropelPager` methods with a simple example : displaying a list of articles ten by ten. Assume that the `Article` object has `->getPublished()`, `->getTitle()`, `->getOverview()` and `->getContent()` accessor methods.
+This chapter will illustrate the way to use the `sfPropelPager` methods with a simple example : displaying a list of articles ten by ten. Assume that the `Article` object has `getPublished()`, `getTitle()`, `getOverview()` and `getContent()` accessor methods.
 
 If you wanted to have the non-paginated result of a criteria request showing only published articles, you would need:
 
@@ -60,13 +60,13 @@ The differences start after the criteria definition, since this action:
 
 The template `listSuccess.php` can now access the `sfPropelPager` object. This object knows the current page and the list of all the pages. It has methods to access pages and objects in pages. Let's see how to manipulate it.
 
-To display the total number of results, use the `->getNbResults()` method:
+To display the total number of results, use the `getNbResults()` method:
 
     [php]
     <?php echo $pager->getNbResults() ?> results found.<br />
     Displaying results <?php echo $pager->getFirstIndice() ?> to  <?php echo $pager->getLastIndice() ?>.
 
-To display the articles of the requested page, use the `->getResults()` method of the `pager` object to retrieve the objects in the page:
+To display the articles of the requested page, use the `getResults()` method of the `pager` object to retrieve the objects in the page:
 
     [php]
     <?php foreach ($pager->getResults() as $article): ?>
@@ -77,11 +77,11 @@ To display the articles of the requested page, use the `->getResults()` method o
 Navigating across pages
 -----------------------
 
-The pager object knows if the number of results exceeds the maximum number that can be displayed in one page (10 in this example) thanks to the `->haveToPaginate()` method.
+The pager object knows if the number of results exceeds the maximum number that can be displayed in one page (10 in this example) thanks to the `haveToPaginate()` method.
 
-To add the page navigation links at the bottom of the list (« < > »), use the navigation methods `->getFirstPage()`, `->getPreviousPage()`, `->getNextPage()` and `->getLastPage()`. The current page is given by `->getPage()`. All these methods return an integer : the rank of the requested page. 
+To add the page navigation links at the bottom of the list (« < > »), use the navigation methods `getFirstPage()`, `getPreviousPage()`, `getNextPage()` and `getLastPage()`. The current page is given by `getPage()`. All these methods return an integer: the rank of the requested page. 
 
-To point to a specific page, loop through the collection of links obtained by a call to the `->getLinks()` method:
+To point to a specific page, loop through the collection of links obtained by a call to the `getLinks()` method:
 
     [php]
     <?php if ($pager->haveToPaginate()): ?>
@@ -100,6 +100,8 @@ This should render something like:
 &nbsp;&nbsp;&nbsp;[&laquo;](#) [&lt;](#) [1](#) - 2 - [3](#) - [4](#) - [5](#) [&gt;](#) [&raquo;](#)
 
 Once the article displayed, to allow a direct navigation to the previous or the next article without going back to the paginated list, you will need a cursor.
+
+>**Tip**: The above code is automated by the `sfPagerNavigation` plugin. Refer to its [description page](http://www.symfony-project.com/trac/wiki/sfPagerNavigationPlugin) for more information on installation and use.
 
 Navigating across objects
 -------------------------
@@ -136,9 +138,9 @@ The `read` action will need to know how to handle a `cursor` parameter:
       }
     }
 
-The `->getObjectByCursor($cursor)` method sets the cursor at a specified position and returns the object at that very position. 
+The `getObjectByCursor($cursor)` method sets the cursor at a specified position and returns the object at that very position. 
 
-You can set the cursor without getting the resulting object with the `->setCursor($cursor)` method. And once the cursor is set, you can grab the current object at this position (`->getCurrent()`) but also the previous one (`->getPrevious()`) and the next one (`->getNext()`). 
+You can set the cursor without getting the resulting object with the `setCursor($cursor)` method. And once the cursor is set, you can grab the current object at this position (`getCurrent()`) but also the previous one (`getPrevious()`) and the next one (`getNext()`). 
 
 This means that the `read` action can pass to the template the necessary information for an article-by-article navigation with a few modifications:
 
@@ -165,7 +167,7 @@ This means that the `read` action can pass to the template the necessary informa
       }
     }
 
->**Note**:The `->getPrevious()` and `->getNext()` methods return `null` if there is no previous or next object.
+>**Note**: The `getPrevious()` and `getNext()` methods return `null` if there is no previous or next object.
 
 The `readSuccess.php` template could look like:
 
@@ -219,7 +221,7 @@ Add the following to the `listSuccess.php` template:
 Changing the number of results per page
 ---------------------------------------
 
-The `->setMaxPerPage($max)` method changes the number of results displayed per page, without the need to reprocess the pager (no need to call `init()` again). If you pass the value `0` for parameter, the pager will display all the results in one single page.
+The `setMaxPerPage($max)` method changes the number of results displayed per page, without the need to reprocess the pager (no need to call `init()` again). If you pass the value `0` for parameter, the pager will display all the results in one single page.
 
     [php]
     class articleActions extends sfActions
@@ -249,7 +251,7 @@ So you can add the following to the `listSuccess.php` template:
 Changing the select method
 --------------------------
 
-If you need to optimize the performance of an action relying on a `sfPropelPager`, you might want to force the pager to use a `doSelectJoinXXX()` instead of a simple `doSelect()`. This is easily achieved by the `->setPeerMethod()` method of the `sfPropelPager` object:
+If you need to optimize the performance of an action relying on a `sfPropelPager`, you might want to force the pager to use a `doSelectJoinXXX()` instead of a simple `doSelect()`. This is easily achieved by the `setPeerMethod()` method of the `sfPropelPager` object:
 
     [php]
     $pager->setPeerMethod('doSelectJoinUser');
@@ -277,4 +279,4 @@ You may need sometimes to keep a certain context in a pager object. That's why t
 
 These parameters are never used directly by the pager.
 
-To learn more about custom parameters, refer to the [parameter holder chapter](parameter_holder.txt).
+To learn more about custom parameters, refer to the [Chapter 2](http://www.symfony-project.com/book/trunk/02-Exploring-Symfony-s-Code#Parameter%20Holders).

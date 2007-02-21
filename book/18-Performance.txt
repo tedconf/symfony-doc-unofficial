@@ -3,7 +3,7 @@ Chapter 18 - Performance
 
 If you expect your website will attract a crowd, performance and optimization issues should be a major factor during the development phase. Rest assured, performance has always been a chief concern among the core symfony developers.
 
-While the advantages gained by accelerating the development process result in some overhead, the core symfony developers have always been cognizant of performance requirements. Accordingly, every class and every method have been closely inspected and optimized to be as fast as possible. The basic overhead, which you can measure by comparing the time to display a "hello, world" message with and without symfony, is minimal. As a result, the framework is scalable and reacts well to stress tests. And as the ultimate proof, some websites with extremely high traffic (that is, websites with millions of active subscribers and a lot of server-pressuring Ajax interactions) use symfony and are very satisfied with its performance. Check the list of websites developed with symfony in the wiki (`http://www.symfony-project.com/trac/wiki/ApplicationsDevelopedWithSymfony`) for names.
+While the advantages gained by accelerating the development process result in some overhead, the core symfony developers have always been cognizant of performance requirements. Accordingly, every class and every method have been closely inspected and optimized to be as fast as possible. The basic overhead, which you can measure by comparing the time to display a "hello, world" message with and without symfony, is minimal. As a result, the framework is scalable and reacts well to stress tests. And as the ultimate proof, some websites with extremely high traffic (that is, websites with millions of active subscribers and a lot of server-pressuring Ajax interactions) use symfony and are very satisfied with its performance. Check the list of websites developed with symfony in the wiki ([http://www.symfony-project.com/trac/wiki/ApplicationsDevelopedWithSymfony](http://www.symfony-project.com/trac/wiki/ApplicationsDevelopedWithSymfony)) for names.
 
 But, of course, high-traffic websites often have the means to expand the server farm and upgrade hardware as they see fit. If you don't have the resources to do this, or if you want to be sure the full power of the framework is always at your disposal, there are a few tweaks that you can use to further speed up your symfony application. This chapter lists some of the recommended performance optimizations at all levels of the framework and they are mostly for advanced users. Some of them were already mentioned throughout the previous chapters, but you will find it useful to have them all in one place.
 
@@ -23,7 +23,7 @@ On the other hand, make sure you deactivate any debug utility, such as the Xdebu
 >**NOTE**
 >You might be wondering about the overhead caused by the `mod_rewrite` extension: it is negligible. Of course, loading an image with rewriting rules is slower than loading an image without, but the slowdown is orders of magnitude below the execution of any PHP statement.
 
-Some symfony developers like to use `syck`, which is a YAML parser packaged as a PHP extension, as an alternative to the symfony internal parser. It is faster, but symfony's caching system already minimizes the overhead of YAML parsing, so the benefit is nonexistent in a production environment. You should also be aware that `syck` isn't completely mature yet, and that it may cause errors when you use it. However, if you are interested, install the extension (`http://whytheluckystiff.net/syck/`), and symfony will use it automatically.
+Some symfony developers like to use `syck`, which is a YAML parser packaged as a PHP extension, as an alternative to the symfony internal parser. It is faster, but symfony's caching system already minimizes the overhead of YAML parsing, so the benefit is nonexistent in a production environment. You should also be aware that `syck` isn't completely mature yet, and that it may cause errors when you use it. However, if you are interested, install the extension ([http://whytheluckystiff.net/syck/](http://whytheluckystiff.net/syck/)), and symfony will use it automatically.
 
 >**TIP**
 >When one server is not enough, you can still add another and use load balancing. As long as the `uploads/` directory is shared and you use database storage for sessions, a symfony project will react seamlessly in a load-balanced architecture.
@@ -43,7 +43,7 @@ If your entire application doesn't require the use of the model layer, you can a
       .settings:
         use_database: off
 
-The generated model classes (in lib/model/om/) are already optimized--they don't contain comments, and they benefit from the autoloading system. Relying on autoloading instead of manually including files means that classes are loaded only if it is really necessary. So in case one model class is not needed, having classes autoloaded will save execution time, while the alternative method of using `include` statements won't. As for the comments, they document the use of the generated methods but lengthen the model files--resulting in a minor overhead on slow disks. As the generated method names are pretty explicit, the comments are turned off by default.
+The generated model classes (in `lib/model/om/`) are already optimized--they don't contain comments, and they benefit from the autoloading system. Relying on autoloading instead of manually including files means that classes are loaded only if it is really necessary. So in case one model class is not needed, having classes autoloaded will save execution time, while the alternative method of using `include` statements won't. As for the comments, they document the use of the generated methods but lengthen the model files--resulting in a minor overhead on slow disks. As the generated method names are pretty explicit, the comments are turned off by default.
 
 These two enhancements are symfony-specific, but you can revert to the Propel defaults by changing two settings in your `propel.ini` file, as follows:
 
@@ -94,7 +94,7 @@ Listing 18-2 - Retrieving Details About a Related Class in a Loop
     <?php endforeach; ?>
     </ul>
 
-If the $articles array contains ten objects, the getAuthor() method will be called ten times, which in turn executes one database query each time it is called to hydrate one object of class `Author`, as in Listing 18-3.
+If the `$articles` array contains ten objects, the `getAuthor()` method will be called ten times, which in turn executes one database query each time it is called to hydrate one object of class `Author`, as in Listing 18-3.
 
 Listing 18-3 - Foreign Key Getters Issue One Database Query
 
@@ -211,7 +211,7 @@ Listing 18-8 - Using a Custom Method to Prepare a Temporary Array
     <?php endforeach; ?>
     </ul>
 
-It's up to you to build a fast-processing getArticleTitlesWithNbComments() method in the model--for instance, by bypassing the whole object-relational mapping and database abstraction layers.
+It's up to you to build a fast-processing `getArticleTitlesWithNbComments()` method in the model--for instance, by bypassing the whole object-relational mapping and database abstraction layers.
 
 ### Bypassing the ORM
 
@@ -232,7 +232,7 @@ Listing 18-9 - Using Direct Creole Access for Optimized Model Methods, in `lib/m
           ArticlePeer::ID, CommentPeer::ARTICLE_ID,
           ArticlePeer::ID
         );
-        $statement = $connnection->prepareStatement($query);
+        $statement = $connection->prepareStatement($query);
         $resultset = $statement->executeQuery();
         $results = array();
         while ($resultset->next())
@@ -268,7 +268,7 @@ Listing 18-10 - Adding a Single Column Index, in `config/schema.yml`
 
 You can use the alternative `index: unique` syntax to define a unique index instead of a classic one. You can also define multiple column indices in `schema.yml` (refer to Chapter 8 for more details about the indexing syntax). You should strongly consider doing this, because it is often a good way to speed up a complex query.
 
-After adding an index to a schema, you should do the same in the database itself, either by issuing an ADD INDEX query directly in the database or by calling the propel-build-all command (which will not only rebuild the table structure, but also erase all the existing data).
+After adding an index to a schema, you should do the same in the database itself, either by issuing an `ADD INDEX` query directly in the database or by calling the `propel-build-all` command (which will not only rebuild the table structure, but also erase all the existing data).
 
 >**TIP**
 >Indexing tends to make `SELECT` queries faster, but `INSERT`, `UPDATE`, and `DELETE` queries are slower. Also, database engines use only one index per query, and they infer the index to be used for each query based on internal heuristics. Adding an index can sometimes be disappointing in terms of performance boost, so make sure you measure the improvements.
@@ -289,7 +289,7 @@ This may or may not improve the overall database performance, depending on numer
 >**SIDEBAR**
 >MySQL-specific tips
 >
->Many settings of the MySQL configuration, found in the my.cnf file, may alter database performance. Make sure you read the online documentation (http://dev.mysql.com/doc/refman/5.0/en/option-files.html) on this subject.
+>Many settings of the MySQL configuration, found in the my.cnf file, may alter database performance. Make sure you read the online documentation ([http://dev.mysql.com/doc/refman/5.0/en/option-files.html](http://dev.mysql.com/doc/refman/5.0/en/option-files.html)) on this subject.
 >
 >One of the tools provided by MySQL is the slow queries log. All SQL statements that take more than `long_query_time` seconds to execute (this is a setting that can be changed in the `my.cnf`) are logged in a file that is quite difficult to construe by hand, but that the `mysqldumpslow` command summarizes usefully. This is a great tool to detect the queries that require optimizations.
 
@@ -300,7 +300,7 @@ According to how you design and implement the view layer, you may notice small s
 
 ### Using the Fastest Code Fragment
 
-If you don't use the caching system, you have to be aware that an include_component() is slightly slower than an `include_partial()`, which itself is slightly slower than a simple PHP `include`. This is because symfony instantiates a view to include a partial and an object of class sfComponent to include a component, which collectively add some minor overhead beyond what's required to include the file.
+If you don't use the caching system, you have to be aware that an `include_component()` is slightly slower than an `include_partial()`, which itself is slightly slower than a simple PHP `include`. This is because symfony instantiates a view to include a partial and an object of class `sfComponent` to include a component, which collectively add some minor overhead beyond what's required to include the file.
 
 However, this overhead is insignificant, unless you include a lot of partials or components in a template. This may happen in lists or tables, and every time you call an `include_partial()` helper inside a `foreach` statement. When you notice that a large number of partial or component inclusions have a significant impact on your performance, you may consider caching (see Chapter 12), and if caching is not an option, then switch to simple `include` statements.
 
@@ -390,13 +390,13 @@ Chapter 12 already described how to cache parts of a response or all of it. The 
 During application development, you have to clear the cache in various situations:
 
   * When you create a new class: Adding a class to an autoloading directory (one of the project's `lib/` folders) is not enough to have symfony find it automatically. You must clear the autoloading configuration cache so that symfony browses again all the directories of the `autoload.yml` file and references the location of autoloadable classes--including the new ones.
-  * When you change the configuration in production: The configuration is parsed only during the first request in production. Further requests use the cached version instead. So a change in the configuration in the production environment (or any environment where SF_DEBUG is turned off) doesn't take effect until you clear the cached version of the file.
+  * When you change the configuration in production: The configuration is parsed only during the first request in production. Further requests use the cached version instead. So a change in the configuration in the production environment (or any environment where `SF_DEBUG` is turned off) doesn't take effect until you clear the cached version of the file.
   * When you modify a template in an environment where the template cache is enabled: The valid cached templates are always used instead of existing templates in production, so a template change is ignored until the template cache is cleared or outdated.
   * When you update an application with the `sync` command: This case usually covers the three previous modifications.
 
 The problem with clearing the whole cache is that the next request will take quite long to process, because the configuration cache needs to be regenerated. Besides, the templates that were not modified will be cleared from the cache as well, losing the benefit of previous requests.
 
-That means it's a good idea to clear only the cache files that really need to be regenerated. Use the options of the clear-cache task to define a subset of cache files to clear, as demonstrated in Listing 18-14.
+That means it's a good idea to clear only the cache files that really need to be regenerated. Use the options of the `clear-cache` task to define a subset of cache files to clear, as demonstrated in Listing 18-14.
 
 Listing 18-14 - Clearing Only Selective Parts of the Cache
 
@@ -409,7 +409,7 @@ Listing 18-14 - Clearing Only Selective Parts of the Cache
     // Clear only the configuration cache of the myapp application
     > symfony clear-cache myapp config
 
-You can also remove files by hand in the `cache/` directory, or clear template cache files selectively from the action with the $cacheManager->remove() method, as described in Chapter 12.
+You can also remove files by hand in the `cache/` directory, or clear template cache files selectively from the action with the `$cacheManager->remove()` method, as described in Chapter 12.
 
 All these techniques will minimize the negative performance impact of any of the changes listed previously.
 
@@ -454,7 +454,7 @@ Listing 18-15 - Generating the Template Cache, in `batch/generate_cache.php`
 
 ### Using a Database Storage System for Caching
 
-The default storage system for the template cache in symfony is the file system: Fragments of HTML or serialized response objects are stored under the cache/ directory of a project. Symfony proposes an alternative way to store cache: a SQLite database. Such a database is a simple file that PHP natively knows how to query very efficiently.
+The default storage system for the template cache in symfony is the file system: Fragments of HTML or serialized response objects are stored under the `cache/` directory of a project. Symfony proposes an alternative way to store cache: a SQLite database. Such a database is a simple file that PHP natively knows how to query very efficiently.
 
 To tell symfony to use SQLite storage instead of file system storage for the template cache, open the `factories.yml` file and edit the `view_cache` entry as follows:
 
@@ -528,7 +528,7 @@ Listing 18-18 - Using the Process Cache Safely
     }
 
 >**TIP**
->If you want to go further into memory caching, make sure you take a look at the memcache extension for PHP. It can help decrease the database load on load-balanced applications, and PHP 5 provides an OO interface to it (`http://www.php.net/memcache/`).
+>If you want to go further into memory caching, make sure you take a look at the memcache extension for PHP. It can help decrease the database load on load-balanced applications, and PHP 5 provides an OO interface to it ([http://www.php.net/memcache/](http://www.php.net/memcache/)).
 
 Deactivating the Unused Features
 --------------------------------
@@ -574,7 +574,7 @@ Listing 18-21 - Turning Features Off, in `myapp/config/filters.yml`
 
 Some features are useful only in development, so you should not activate them in production. This is already the case by default, since the production environment in symfony is really optimized for performance. Among the performance-impacting development features, the `SF_DEBUG` mode is the most severe. As for the symfony logs, the feature is also turned off in production by default.
 
-You may wonder how to get information about failed requests in production if logging is disabled, and argue that problems arise not only in development. Fortunately, symfony can use the `sfErrorLoggerPlugin` plug-in, which runs in the background in production and logs the details of 404 and 500 errors in a database. It is much faster than the file logging feature, because the plug-in methods are called only when a request fails, while the logging mechanism, once turned on, adds a nonnegligible overhead whatever the level. Check the installation instructions and manual at `http://www.symfony-project.com/trac/wiki/sfErrorLoggerPlugin`.
+You may wonder how to get information about failed requests in production if logging is disabled, and argue that problems arise not only in development. Fortunately, symfony can use the `sfErrorLoggerPlugin` plug-in, which runs in the background in production and logs the details of 404 and 500 errors in a database. It is much faster than the file logging feature, because the plug-in methods are called only when a request fails, while the logging mechanism, once turned on, adds a nonnegligible overhead whatever the level. Check the installation instructions and manual at [http://www.symfony-project.com/trac/wiki/sfErrorLoggerPlugin](http://www.symfony-project.com/trac/wiki/sfErrorLoggerPlugin).
 
 >**TIP**
 >Make sure you regularly check the server error logs--they also contain very valuable information about 404 and 500 errors.
@@ -590,7 +590,7 @@ Loading ten files requires more I/O operations than loading one long file, espec
 
 So merging a large number of files and stripping out the comments they contain is an operation that improves performance. Symfony already does that optimization; it's called the core compilation. At the beginning of the first request (or after the cache is cleared), a symfony application concatenates all the core framework classes (`sfActions`, `sfRequest`, `sfView`, and so on) into one file, optimizes the file size by removing comments and double blanks, and saves it in the cache, in a file called `config_core_compile.yml.php`. Each subsequent request only loads this single optimized file instead of the 30 files that compose it.
 
-If your application has classes that must always be loaded, and especially if they are big classes with lots of comments, it may be beneficial to add them to the core compile file. To do so, just add a core_compile.yml file in your application config/ directory, and list in it the classes that you want to add, as in Listing 18-22.
+If your application has classes that must always be loaded, and especially if they are big classes with lots of comments, it may be beneficial to add them to the core compile file. To do so, just add a `core_compile.yml` file in your application `config/` directory, and list in it the classes that you want to add, as in Listing 18-22.
 
 Listing 18-22 - Adding Your Classes to the Core Compile File, in `myapp/config/core_compile.yml`
 
@@ -621,7 +621,7 @@ Even if the `sfConfig` registry is very well optimized, the number of calls to i
 
 And that's not all, because an evident test like the preceding one also gets optimized to an empty string.
 
-To apply the optimizations, you must first install the plug-in from `http://www.symfony-project.com/trac/wiki/sfOptimizerPlugin` and then call the `optimize` task, specifying an application and an environment:
+To apply the optimizations, you must first install the plug-in from [http://www.symfony-project.com/trac/wiki/sfOptimizerPlugin](http://www.symfony-project.com/trac/wiki/sfOptimizerPlugin) and then call the `optimize` task, specifying an application and an environment:
 
     > symfony optimize myapp prod
 

@@ -155,6 +155,8 @@ The `submit_image_tag()` helper uses the same syntax and has the same advantages
 >**NOTE**
 >For radio buttons, the `id` attribute is not set by default to the value of the `name` attribute, but to a combination of the name and the value. That's because you need to have several radio button tags with the same name to obtain the automated "deselecting the previous one when selecting another" feature, and the `id=name` convention would imply having several HTML tags with the same `id` attribute in your page, which is strictly forbidden.
 
+-
+
 >**SIDEBAR**
 >Handling form submission
 >
@@ -162,31 +164,31 @@ The `submit_image_tag()` helper uses the same syntax and has the same advantages
 >
 >A good practice is to use the same action to display and handle the form. According to the request method (GET or POST), either the form template is called or the form is handled and the request is redirected to another action.
 >
->    [php]
->    // In mymodule/actions/actions.class.php
->    public function executeEditAuthor()
->    {
->      if ($this->getRequest()->getMethod() != sfRequest::POST)
->      {
->        // Display the form
->        return sfView::SUCCESS;
->      }
->      else
->      {
->        // Handle the form submission
->        $name = $this->getRequestParameter('name');
->        ...
->        $this->redirect('mymodule/anotheraction');
->      }
->    }
+>     [php]
+>     // In mymodule/actions/actions.class.php
+>     public function executeEditAuthor()
+>     {
+>       if ($this->getRequest()->getMethod() != sfRequest::POST)
+>       {
+>         // Display the form
+>         return sfView::SUCCESS;
+>       }
+>       else
+>       {
+>         // Handle the form submission
+>         $name = $this->getRequestParameter('name');
+>         ...
+>         $this->redirect('mymodule/anotheraction');
+>       }
+>     }
 >
 >For this to work, the form target must be the same action as the one displaying it.
 >
->    [php]
->    // In mymodule/templates/editAuthorSuccess.php
->    <?php echo form_tag('mymodule/editAuthor') ?>
+>     [php]
+>     // In mymodule/templates/editAuthorSuccess.php
+>     <?php echo form_tag('mymodule/editAuthor') ?>
 >
->    ...
+>     ...
 
 Symfony offers specialized form helpers to do asynchronous requests in the background. The next chapter, which focuses on Ajax, provides more details.
 
@@ -194,11 +196,9 @@ Symfony offers specialized form helpers to do asynchronous requests in the backg
 
 Forms are often used to retrieve dates. Dates in the wrong format are the main reason for form-submission failures. The `input_date_tag()` helper can assist the user in entering a date with an interactive JavaScript calendar, if you set the `rich` option to `true`, as shown in Figure 10-1.
 
-![][24]
-
-   [24]:
-
 Figure 10-1 - Rich date input tag
+
+![Rich date input tag](/images/book/F1001.png "Rich date input tag")
 
 If the `rich` option is omitted, the helper echoes three `<select>` tags populated with a range of months, days, and years. You can display these drop-downs separately by calling their helpers (`select_day_tag()`, `select_month_tag()`, and `select_year_tag()`). The default values of these elements are the current day, month, and year. Listing 10-3 shows the input date helpers.
 
@@ -208,6 +208,8 @@ Listing 10-3 - Input Date Helpers
     <?php echo input_date_tag('dateofbirth', '2005-05-03', 'rich=true') ?>
      => a text input tag together with a calendar widget
 
+    // The following helpers require the Date helper group
+    <?php use_helper('Date') ?>
     <?php echo select_day_tag('day', 1, 'include_custom=Choose a day') ?>
     => <select name="day" id="day">
           <option value="">Choose a day</option>
@@ -217,7 +219,7 @@ Listing 10-3 - Input Date Helpers
           <option value="31">31</option>
         </select>
 
-    <?php echo select_month_tag('month', 1, 'include_custom=Choose a monthuse_short_month=true') ?>
+    <?php echo select_month_tag('month', 1, 'include_custom=Choose a month use_short_month=true') ?>
     => <select name="month" id="month">
           <option value="">Choose a month</option>
           <option value="1" selected="selected">Jan</option>
@@ -226,7 +228,7 @@ Listing 10-3 - Input Date Helpers
           <option value="12">Dec</option>
         </select>
 
-    <?php echo select_year_tag('year', 2007, 'include_custom=Choose a yearyear_end=2010') ?>
+    <?php echo select_year_tag('year', 2007, 'include_custom=Choose a year year_end=2010') ?>
      => <select name="year" id="year">
           <option value="">Choose a year</option>
           <option value="2006">2006</option>
@@ -264,13 +266,11 @@ Listing 10-5 - Incorrect Date Formats in Date Helpers
 
 Rich text editing is also possible in a `<textarea>` tag, thanks to the integration of the TinyMCE and FCKEditor widgets. They provide a word-processor-like interface with buttons to format text as bold, italic, and other styles, as shown in Figure 10-2.
 
-![][25]
-
-   [25]:
-
 Figure 10-2 - Rich text editing
 
-Both widgets require manual installation. As the procedure is the same for the two widgets, only the TinyMCE rich text editing is described here. You need to download the editor from the project website (`http://tinymce.moxiecode.com/`) and unpack it in a temporary folder. Copy the `tinymce/jscripts/tiny_mce/` directory into your project `web/js/` directory, and define the path to the library in `settings.yml`, as shown in Listing 10-6.
+![Rich text editing](/images/book/F1002.png "Rich text editing")
+
+Both widgets require manual installation. As the procedure is the same for the two widgets, only the TinyMCE rich text editing is described here. You need to download the editor from the project website ([http://tinymce.moxiecode.com/](http://tinymce.moxiecode.com/)) and unpack it in a temporary folder. Copy the `tinymce/jscripts/tiny_mce/` directory into your project `web/js/` directory, and define the path to the library in `settings.yml`, as shown in Listing 10-6.
 
 Listing 10-6 - Setting Up the TinyMCE Library Path
 
@@ -278,7 +278,7 @@ Listing 10-6 - Setting Up the TinyMCE Library Path
       .settings:
         rich_text_js_dir:  js/tiny_mce
 
-Once this is done, toggle the use of rich text editing in text areas by adding the `rich=true` option. You can also specify custom options for the JavaScript editor using the tinymce_options option. Listing 10-7 shows examples.
+Once this is done, toggle the use of rich text editing in text areas by adding the `rich=true` option. You can also specify custom options for the JavaScript editor using the `tinymce_options` option. Listing 10-7 shows examples.
 
 Listing 10-7 - Rich Text Area
 
@@ -290,7 +290,7 @@ Listing 10-7 - Rich Text Area
 
 ### Country and Language Selection
 
-You may need to display a country selection field. But since country names are not the same in all languages, the options of a country drop-down list should vary according to the user culture (see Chapter 13 for more information about cultures). As shown in Listing 10-8, the `select_ `country_tag() helper does it all for you: It internationalizes country names and uses the standard ISO country codes for values.
+You may need to display a country selection field. But since country names are not the same in all languages, the options of a country drop-down list should vary according to the user culture (see Chapter 13 for more information about cultures). As shown in Listing 10-8, the `select_country_tag()` helper does it all for you: It internationalizes country names and uses the standard ISO country codes for values.
 
 Listing 10-8 - Select Country Tag Helper
 
@@ -463,7 +463,7 @@ Listing 10-15 - A Form with Only Object Helpers
              <?php echo object_textarea_tag($author, 'getAddress') ?>
     </form>
 
-The `update` action of the `author` module, called when the form is submitted, can simply update the object with the fromArray() modifier generated by Propel, as shown in Listing 10-16.
+The `update` action of the `author` module, called when the form is submitted, can simply update the object with the `fromArray()` modifier generated by Propel, as shown in Listing 10-16.
 
 Listing 10-16 - Handling a Form Submission Based on Object Form Helpers
 
@@ -482,7 +482,7 @@ Listing 10-16 - Handling a Form Submission Based on Object Form Helpers
 Form Validation
 ---------------
 
-Chapter 6 explained how to use the `validate``XXX``()` methods in the action class to validate the request parameters. However, if you use this technique to validate a form submission, you will end up rewriting the same portion of code over and over. Symfony provides an alternative form-validation technique, relying on only a YAML file, instead of PHP code in the action class.
+Chapter 6 explained how to use the `validateXXX()` methods in the action class to validate the request parameters. However, if you use this technique to validate a form submission, you will end up rewriting the same portion of code over and over. Symfony provides an alternative form-validation technique, relying on only a YAML file, instead of PHP code in the action class.
 
 To demonstrate the form-validation features, let's first consider the sample form shown in Listing 10-17. It is a classic contact form, with `name`, `email`, `age`, and `message` fields.
 
@@ -546,7 +546,7 @@ Listing 10-18 - Validating Request Parameters with Reusable Validators, in `modu
       return true;
     }
 
-If a user submits the form in Listing 10-17 with the value `a` in the `name` field, the `execute()` method of the `sfStringValidator` will return `false` (because the string length is less than the minimum of two characters). The validateSend() method will then fail, and the handleErrorSend() method will be called instead of the `executeSend()` method.
+If a user submits the form in Listing 10-17 with the value `a` in the `name` field, the `execute()` method of the `sfStringValidator` will return `false` (because the string length is less than the minimum of two characters). The `validateSend()` method will then fail, and the `handleErrorSend()` method will be called instead of the `executeSend()` method.
 
 >**TIP**
 >The `setError()` method of the `sfRequest` method gives information to the template so that it can display an error message (as explained in the "Displaying the Error Messages in the Form" section later in this chapter). The validators set the errors internally, so you can define different errors for the different cases of nonvalidation. That's the purpose of the `min_error` and `max_error` initialization parameters of the `sfStringValidator`.
@@ -578,9 +578,9 @@ Listing 10-19 - Validation File, in `modules/contact/validate/send.yml`
 In a validation file, the `fields` header lists the fields that need to be validated, if they are required, and the validators that should be tested on them when a value is present. The parameters of each validator are the same as those you would use to initialize the validator manually. A field can be validated by as many validators as necessary.
 
 >**NOTE**
->The validation process doesn't stop when a validator fails. Symfony tests all the validators and declares the validation failed if at least one of them fails. And even if some of the rules of the validation file fail, symfony will still look for a `validate``XXX``()` method and execute it. So the two validation techniques are complementary. The advantage is that, in a form with multiple failures, all the error messages are shown.
+>The validation process doesn't stop when a validator fails. Symfony tests all the validators and declares the validation failed if at least one of them fails. And even if some of the rules of the validation file fail, symfony will still look for a `validateXXX()` method and execute it. So the two validation techniques are complementary. The advantage is that, in a form with multiple failures, all the error messages are shown.
 
-Validation files are located in the module `validate/` directory, and named by the action they must validate. For example, Listing 10-19 must be stored in a file called validate/send.yml.
+Validation files are located in the module `validate/` directory, and named by the action they must validate. For example, Listing 10-19 must be stored in a file called `validate/send.yml`.
 
 ### Redisplaying the Form
 
@@ -647,7 +647,7 @@ With this new configuration, when the user types an invalid name, the form is di
 
 ### Displaying the Error Messages in the Form
 
-The error messages defined as validator parameters are added to the request when a field fails validation (just as you can add an error manually with the setError() method, as in Listing 10-18). The `sfRequest` object provides two useful methods to retrieve the error message: `hasError()` and `getError()`, which each expect a field name as parameter. In addition, you can display an alert at the top of the form to draw attention to the fact that one or many of the fields contain invalid data with the `hasErrors()` method. Listings 10-22 and 10-23 demonstrate how to use these methods.
+The error messages defined as validator parameters are added to the request when a field fails validation (just as you can add an error manually with the `setError()` method, as in Listing 10-18). The `sfRequest` object provides two useful methods to retrieve the error message: `hasError()` and `getError()`, which each expect a field name as parameter. In addition, you can display an alert at the top of the form to draw attention to the fact that one or many of the fields contain invalid data with the `hasErrors()` method. Listings 10-22 and 10-23 demonstrate how to use these methods.
 
 Listing 10-22 - Displaying Error Messages at the Top of the Form, in `templates/indexSuccess.php`
 
@@ -734,7 +734,7 @@ By default, the automatic repopulation works for text inputs, check boxes, radio
 >**NOTE**
 >The `fillin` feature works by parsing the response content in XML just before sending it to the user. If the response is not a valid XHTML document, `fillin` might not work.
 
-You might want to transform the values entered by the user before writing them back in a form input. Escaping, URL rewriting, transformation of special characters into entities, and all the other transformations that can be called through a function can be applied to the fields of your form if you define the transformation under the converters: key, as shown in Listing 10-27.
+You might want to transform the values entered by the user before writing them back in a form input. Escaping, URL rewriting, transformation of special characters into entities, and all the other transformations that can be called through a function can be applied to the fields of your form if you define the transformation under the `converters:` key, as shown in Listing 10-27.
 
 Listing 10-27 - Converting Input Before `fillin`, in `validate/send.yml`
 
@@ -760,7 +760,7 @@ Symfony contains some standard validators that can be used for your forms:
   * `sfFileValidator`
   * `sfCallbackValidator`
 
-Each has a default set of parameters and error messages, but you can easily override them through the initialize() validator method or in the YAML file. The following sections describe the validators and show usage examples.
+Each has a default set of parameters and error messages, but you can easily override them through the `initialize()` validator method or in the YAML file. The following sections describe the validators and show usage examples.
 
 #### String Validator
 
@@ -975,7 +975,7 @@ Listing 10-30 - Sample Complete Validation File
 Complex Validation
 ------------------
 
-The validation file satisfies most needs, but when the validation is very complex, it might not be sufficient. In this case, you can still return to the `validate``XXX``()` method in the action, or find the solution to your problem in the following sections.
+The validation file satisfies most needs, but when the validation is very complex, it might not be sufficient. In this case, you can still return to the `validateXXX()` method in the action, or find the solution to your problem in the following sections.
 
 ### Creating a Custom Validator
 
@@ -1127,4 +1127,4 @@ The validation process now executes as follows:
 Summary
 -------
 
-Writing forms in symfony templates is facilitated by the standard form helpers and their smart options. When you design a form to edit the properties of an object, the object form helpers simplify the task a great deal. The validation files, validation helpers, and repopulation feature reduce the work necessary to build a robust and user-friendly server control on the value of a field. And even the most complex validation needs can be handled, either by writing a custom validator or by creating a `validate``XXX``()` method in the action class.
+Writing forms in symfony templates is facilitated by the standard form helpers and their smart options. When you design a form to edit the properties of an object, the object form helpers simplify the task a great deal. The validation files, validation helpers, and repopulation feature reduce the work necessary to build a robust and user-friendly server control on the value of a field. And even the most complex validation needs can be handled, either by writing a custom validator or by creating a `validateXXX()` method in the action class.
