@@ -453,7 +453,7 @@ Name                             | Function                               |  Sam
 **Client Browser Information**   |                                        |
 `getLanguages()`                 | Array of accepted languages            | `Array( ` ` [0] => fr ` ` [1] => fr_FR ` ` [2] => en_US ` ` [3] => en )`
 `getCharsets()`                  | Array of accepted charsets             | `Array( ` ` [0] => ISO-8859-1 ` ` [1] => UTF-8 ` ` [2] => * )`
-getAcceptableContentType()       | Array of accepted content types        | `Array( [0] => text/xml [1] => text/html`
+getAcceptableContentTypes()      | Array of accepted content types        | `Array( [0] => text/xml [1] => text/html`
 
 * *Works only with prototype*
 
@@ -470,8 +470,8 @@ Listing 6-15 - Accessing the `sfRequest` Object Methods from an Action
       {
         $hasFoo = $this->getRequest()->hasParameter('foo');
         $hasFoo = $this->hasRequestParameter('foo');  // Shorter version
-        $foo     = $this->getRequest()->getParameter('foo');
-        $foo     = $this->getRequestParameter('foo');  // Shorter version
+        $foo    = $this->getRequest()->getParameter('foo');
+        $foo    = $this->getRequestParameter('foo');  // Shorter version
       }
     }
 
@@ -940,7 +940,7 @@ Listing 6-33 - Sample Filter Class File, Saved in `apps/myapp/lib/rememberFilter
 In some cases, instead of continuing the filter chain execution, you will need to forward to a specific action at the end of a filter. `sfFilter` doesn't have a `forward()` method, but `sfController` does, so you can simply do that by calling the following:
 
     [php]
-    return $this->getController()->forward('mymodule', 'myAction');
+    return $this->getContext()->getController()->forward('mymodule', 'myAction');
 
 >**NOTE**
 >The `sfFilter` class has an `initialize()` method, executed when the filter object is created. You can override it in your custom filter if you need to deal with filter parameters (defined in `filters.yml`, as described next) in your own way.
@@ -1025,9 +1025,11 @@ Listing 6-37 - Secure Communication Filter
       {
         $context = $this->getContext();
         $request = $context->getRequest();
+
         if (!$request->isSecure())
         {
           $secure_url = str_replace('http', 'https', $request->getUri());
+
           return $context->getController()->redirect($secure_url);
           // We don't continue the filter chain
         }
