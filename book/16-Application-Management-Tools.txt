@@ -111,14 +111,39 @@ Listing 16-5 - Adding a Custom Log Message from Anywhere
 >**SIDEBAR**
 >Customizing the logging
 >
->Symfony's logging system is very simple, yet it is also easy to customize. You can specify your own logging object by calling `sfLogger::getInstance()->registerLogger()`. For instance, if you want to use `PEAR::Log`, just add the following to your application's `config.php`:
+>**New in development version**
+>
+>Symfony's logging system is very simple, yet it is also easy to customize.
+>The only prerequisite is that logger classes must implement the `sfLoggerInterface` interface, which defines a `log()` method. Symfony calls the `log()` method with two parameters: `$message` (the message to be logged), `$priority` (the log level).
+>
+>The `myLogger` class defines a simple logger using the PHP `error_log` function:
+>
+>     [php]
+>     class myLogger implements sfLoggerInterface
+>     {
+>       public function log($message, $priority)
+>       {
+>         error_log(sprintf('%s (%s)', $message, sfLogger::getPriorityName($priority)));
+>       }
+>     }
+>
+>If you want to register your own logger class, you can call the `sfLogger::getInstance()->registerLogger()` method.
+>For instance, if you want to use `PEAR::Log`, add the following to your application's `config.php`:
 >
 >     [php]
 >     require_once('Log.php');
->     $log = Log::singleton('error_log', PEAR_LOG_TYPE_SYSTEM, 'symfony');
+>     require_once('Log/error_log.php');
+>
+>     // Define a thin wrapper to implement the interface
+>     // for the logger we want to use with symfony
+>     class Log_my_error_log extends Log_error_log implements sfLoggerInterface
+>     {
+>     }
+>
+>     // Register the class
+>     $log = Log::singleton('my_error_log', PEAR_LOG_TYPE_SYSTEM, 'symfony');
 >     sfLogger::getInstance()->registerLogger($log);
 >
->If you want to register your own logger class, the only prerequisite is that it must define a `log()` method. Symfony calls this method with two parameters: `$message` (the message to be logged) and `$priority` (the level).
 
 #### Purging and Rotating Log Files
 
