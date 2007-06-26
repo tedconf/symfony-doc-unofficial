@@ -873,6 +873,12 @@ The default filter chain is defined in an application configuration file called 
 Listing 6-31 - Default Filter Chain, in `myapp/config/filters.yml`
 
     rendering: ~
+
+    #csrf:
+    #  class: sfCSRFFilter
+    #  param:
+    #    secret: my$ecret # change to something unique
+
     web_debug: ~
     security:  ~
 
@@ -907,6 +913,16 @@ You can customize the filter chain in various ways:
 
 >**TIP**
 >The `enabled: off` parameter works well to disable your own filters, but you can deactivate the default filters via the `settings.yml` file, by modifying the values of the `web_debug`, `use_security`, `cache`, and `use_flash` settings. This is because each of the default filters has a `condition` parameter that tests the value of these settings.
+
+**New in development version**
+
+>**SIDEBAR**
+>The CSRF Filter
+>
+>If you have a closer look at the default `filters.yml` configuration file, you will see a filter named `csrf` which is not enabled by default. The CSRF filter provides protection against Cross Site Request Forgeries (http://en.wikipedia.org/wiki/Csrf).
+>As soon as you enable this filter, you are protected against CSRF attacks. Don't forget to customize the `secret` parameter as this is used to compute a unique token for your forms.
+>The CSRF filter automatically adds a hidden field called `_csrf_token` for every form before the response is sent to the browser. The token value is made of the user `session_id` and the `secret` parameter.
+>When a form is submitted in `POST`, the CSRF filter checks for the token value. If the token is not present or if the value is not the excepted one, it sends a `sfException` exception.
 
 ### Building Your Own Filter
 
