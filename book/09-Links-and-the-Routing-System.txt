@@ -608,19 +608,24 @@ Listing 9-23 - Setting a Suffix for One URL, in `myapp/config/routing.yml`
 
 As is true of most of the configuration files, the `routing.yml` is a solution to define routing rules, but not the only one. You can define rules in PHP, either in the application `config.php` file or in the front controller script, but before the call to `dispatch()`, because this method determines the action to execute according to the present routing rules. Defining rules in PHP authorizes you to create dynamic rules, depending on configuration or other parameters.
 
-The object that handles the routing rules is the `sfRouting` singleton. It is available from every part of the code by requiring `sfRouting::getInstance()`. Its `prependRoute()` method adds a new rule on top of the existing ones defined in `routing.yml`. It expects four parameters, which are the same as the parameters needed to define a rule: a route label, a pattern, an associative array of default values, and another associative array for requirements. For instance, the routing.yml rule definition shown in Listing 9-18 is equivalent to the PHP code shown in Listing 9-24.
+The object that handles the routing rules is the `sfRouting` factory. It is available from every part of the code by requiring `sfContext::getInstance()->getRouting()`. Its `prependRoute()` method adds a new rule on top of the existing ones defined in `routing.yml`. It expects four parameters, which are the same as the parameters needed to define a rule: a route label, a pattern, an associative array of default values, and another associative array for requirements. For instance, the routing.yml rule definition shown in Listing 9-18 is equivalent to the PHP code shown in Listing 9-24.
+
+** New in development version **
+
+>**NOTE**
+>The routing class is configurable in the `factories.yml` configuration file (to change the default routing class, see chapter 17). This chapter talks about the `sfPatternRouting` class, which is the routing class configured by default.
 
 Listing 9-24 - Defining a Rule in PHP
 
     [php]
-    sfRouting::getInstance()->prependRoute(
+    sfContext::getInstance()->getRouting()->prependRoute(
       'article_by_id',                                  // Route name
       '/article/:id',                                   // Route pattern
       array('module' => 'article', 'action' => 'read'), // Default values
       array('id' => '\d+'),                             // Requirements
     );
 
-The sfRouting singleton has other useful methods for handling routes by hand: `clearRoutes()`, `hasRoutes()`, `getRoutesByName()`, and so on. Refer to the API documentation ([http://www.symfony-project.com/api/symfony.html](http://www.symfony-project.com/api/symfony.html)) to learn more.
+The sfRouting singleton has other useful methods for handling routes by hand: `clearRoutes()`, `hasRoutes()` and so on. Refer to the API documentation ([http://www.symfony-project.com/api/symfony.html](http://www.symfony-project.com/api/symfony.html)) to learn more.
 
 >**TIP**
 >Once you start to fully understand the concepts presented in this book, you can increase your understanding of the framework by browsing the online API documentation or, even better, the symfony source. Not all the tweaks and parameters of symfony can be described in this book. The online documentation, however, is limitless.
@@ -636,14 +641,16 @@ Listing 9-25 - Using `sfRouting` to Get Information About the Current Route
     // If you require a URL like
     http://myapp.example.com/article/21
 
+    $routing = sfContext::getInstance()->getRouting();
+
     // Use the following in article/read action
-    $uri = sfRouting::getInstance()->getCurrentInternalUri();
+    $uri = $routing->getCurrentInternalUri();
      => article/read?id=21
 
-    $uri = sfRouting::getInstance()->getCurrentInternalUri(true);
+    $uri = $routing->getCurrentInternalUri(true);
      => @article_by_id?id=21
 
-    $rule = sfRouting::getInstance()->getCurrentRouteName();
+    $rule = $routing->getCurrentRouteName();
      => article_by_id
 
     // If you just need the current module/action names,
