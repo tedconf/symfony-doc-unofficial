@@ -475,22 +475,20 @@ Both these methods are very effective, and even if they only apply to static pag
 
 ### Caching the Result of a Function Call
 
-If a function doesn't rely on context-sensitive values nor on randomness, calling it twice with the same parameters should return the same result. That means the second call could very well be avoided if the result had been stored the first time. That's exactly what the `sfFunctionCache` class does. This class has a `call()` method, which expects a callable and a set of parameters. When called, this method creates an md5 hash with all its arguments and looks in the cache directory for a file named by this hash. If such a file is found, the function returns the result stored in the file. If not, the sfFunctionCache executes the function, stores the result in the cache, and returns it. So the second execution of Listing 18-16 will be faster than the first one.
+If a function doesn't rely on context-sensitive values nor on randomness, calling it twice with the same parameters should return the same result. That means the second call could very well be avoided if the result had been stored the first time. That's exactly what the `sfFunctionCache` class does. This class has a `call()` method, which expects a callable and a set of parameters. When called, this method creates an md5 hash with all its arguments and looks in the cache for a key named by this hash. If such a key is found, the function returns the result stored in the cache. If not, the `sfFunctionCache` executes the function, stores the result in the cache, and returns it. So the second execution of Listing 18-16 will be faster than the first one.
 
 Listing 18-16 - Caching the Result of a Function
 
     [php]
-    $function_cache_dir = sfConfig::get('sf_cache_dir').'/function';
-    $fc = new sfFunctionCache($function_cache_dir);
+    $cache = new sfFileCache(sfConfig::get('sf_cache_dir').'/function');
+    $fc = new sfFunctionCache($cache);
     $result1 = $fc->call('cos', M_PI);
     $result2 = $fc->call('preg_replace', '/\s\s+/', ' ', $input);
 
-The `sfFunctionCache` constructor expects an absolute directory path as argument (the directory must exist prior to the object instantiation). The first argument of the `call()` method must be a callable, so it can be a function name, an array of a class name and static method name, or an array of an object name and public method name. As for the other arguments of the `call()` method, you can include as many as you need--they are all handed to the callable.
-
-This object is especially useful for CPU-intensive functions, because the file I/O overhead exceeds the time required to process a simple function. It relies on the `sfFileCache` class, which is the component also used by the symfony template cache engine. Refer to the API documentation for more details.
+The `sfFunctionCache` constructor expects a cache object. The first argument of the `call()` method must be a callable, so it can be a function name, an array of a class name and static method name, or an array of an object name and public method name. As for the other arguments of the `call()` method, you can include as many as you need--they are all handed to the callable.
 
 >**CAUTION**
->The `clear-cache` task erases only the contents of the `cache/` file. If you store the function cache somewhere else, it will not be cleared automatically when you clear the cache through the command line.
+>If you use a file based cache object as in the example, it's better to give a cache directory under the `cache/` directory, as it will be cleanup automatically by the `clear-cache` task. If you store the function cache somewhere else, it will not be cleared automatically when you clear the cache through the command line.
 
 ### Caching Data in the Server
 
