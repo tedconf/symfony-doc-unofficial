@@ -132,9 +132,6 @@ Listing 19-1 - Miscellaneous Configuration Settings, in `myapp/config/settings.y
 
     # Remove comments in core framework classes as defined in the core_compile.yml
     strip_comments:         on
-    # Functions called when a class is requested and not already loaded
-    # Expects an array of callables. Used by the framework bridges.
-    autoloading_functions:  ~
     # Session timeout, in seconds
     timeout:                1800
     # Maximum number of forwards followed by the action before raising an exception
@@ -243,13 +240,25 @@ Listing 19-2 - Default Autoloading Configuration, in `$sf_symfony_data_dir/confi
 
 A rule path can contain wildcards and use the file path parameters from the `constants.php` file (see the next section). If you use these parameters in the configuration file, they must appear in uppercase and begin and end with `%`.
 
-Editing your own `autoload.yml` will add new locations to symfony's autoloading, but you may want to extend this mechanism and add your own autoloading handler to symfony's handler. This is possible through the `autoloading_functions` parameter in the `settings.yml` file. It expects an array of callables as a value, as follows:
+Editing your own `autoload.yml` will add new locations to symfony's autoloading, but you may want to extend this mechanism and add your own autoloading handler to symfony's handler. As symfony uses the standard `spl_autoload_register()` function to manage class autoloading, you can register more callbacks in the application `config.php` file:
 
-    .settings:
-      autoloading_functions:
-        - [myToolkit, autoload]
+    [php]
+    // include project configuration
+    include(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
 
-When symfony encounters a new class, it will first try its own autoloading system (and use the locations defined in `autoload.yml`). If it doesn't find a class definition, it will then try the other autoloading functions from `settings.yml`, until the class is found. So you can add as many autoloading mechanisms as you want--for instance, to provide a bridge to other framework components (see Chapter 17).
+    // symfony bootstraping
+    require_once($sf_symfony_lib_dir.'/util/sfCore.class.php');
+    sfCore::bootstrap($sf_symfony_lib_dir, $sf_symfony_data_dir);
+
+    // insert your own autoloading callables here
+    spl_autoload_register(array('myToolkit', 'autoload'));
+
+    if (sfConfig::get('sf_debug'))
+    {
+      spl_autoload_register(array('sfAutoload', 'autoloadAgain'));
+    }
+
+When the PHP autoloading system encounters a new class, it will first try the symfony autoloading method (and use the locations defined in `autoload.yml`). If it doesn't find a class definition, all the other callables registered with `spl_autoload_register()` will be called, until the class is found. So you can add as many autoloading mechanisms as you want--for instance, to provide a bridge to other framework components (see Chapter 17).
 
 Custom File Structure
 ---------------------
