@@ -558,14 +558,7 @@ You can temporarily disable your application--for instance, when you need to upg
 
     > symfony disable APPLICATION_NAME ENVIRONMENT_NAME
 
-By default, a disabled application displays the `default/unavailable` action (stored in the framework), but you can customize the module and action to be used in this case in the `settings.yml` file. Listing 16-16 shows an example.
-
-Listing 16-16 - Setting the Action to Execute for an Unavailable Application, in `myapp/config/settings.yml`
-
-    all:
-      .settings:
-        unavailable_module:     mymodule
-        unavailable_action:     maintenance
+By default, a disabled application displays the `$sf_symfony_data_dir/web/errors/unavailable.php` page, but if you create your own `unavailable.php` file in your project's `web/errors/` directory, symfony will use it instead.
 
 The `enable` task reenables the application and clears the cache.
 
@@ -574,9 +567,7 @@ The `enable` task reenables the application and clears the cache.
 >**SIDEBAR**
 >Displaying an unavailable page when clearing the cache
 >
->If you set the `check_lock` parameter to `on` in the `settings.yml` file, symfony will lock the application when the cache is being cleared, and all the requests arriving before the cache is finally cleared are then redirected to a page saying that the application is temporarily unavailable. If the cache is large, the delay to clear it may be longer than a few milliseconds, and if your site's traffic is high, this is a recommended setting.
->
->This unavailable page is not the same as the one displayed when you call symfony disable (because while the cache is being cleared, symfony cannot work normally). It is located in the `$sf_symfony_data_dir/web/errors/` directory, but if you create your own `unavailable.php` file in your project's `web/errors/` directory, symfony will use it instead. The `check_lock` parameter is deactivated by default because it has a very slight negative impact on performance.
+>If you set the `check_lock` parameter to `on` in the `settings.yml` file, symfony will lock the application when the cache is being cleared, and all the requests arriving before the cache is finally cleared are then redirected to a page saying that the application is temporarily unavailable. If the cache is large, the delay to clear it may be longer than a few milliseconds, and if your site's traffic is high, this is a recommended setting. This unavailable page is the same as the one displayed when you call the symfony `disable` task. The `check_lock` parameter is deactivated by default because it has a very slight negative impact on performance.
 >
 >The `clear-controllers` task clears the `web/` directory of all controllers other than the ones running in a production environment. If you do not include the development front controllers in the `rsync_exclude.txt` file, this command guarantees that a backdoor will not reveal the internals of your application.
 >
