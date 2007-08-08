@@ -51,28 +51,21 @@ You can find many details in these files, including the actual SQL queries sent 
 
 #### Symfony Log Level Configuration
 
-There are eight levels of symfony log messages: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, and `debug`, which are the same as the `PEAR::Log` package ([http://pear.php.net/package/Log/](http://pear.php.net/package/Log/)) levels. You can configure the maximum level to be logged in each environment in the `logging.yml` configuration file of each application, as demonstrated in Listing 16-3.
+There are eight levels of symfony log messages: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, and `debug`, which are the same as the `PEAR::Log` package ([http://pear.php.net/package/Log/](http://pear.php.net/package/Log/)) levels. You can configure the maximum level to be logged in each environment in the `factories.yml` configuration file of each application, as demonstrated in Listing 16-3.
 
-Listing 16-3 - Default Logging Configuration, in `myapp/config/logging.yml`
+Listing 16-3 - Default Logging Configuration, in `myapp/config/factories.yml`
 
     prod:
-      enabled: off
-      level:   err
+      logger:
+        param:
+          level: err
 
-    dev:
+By default, in all environments except the production environment, all the messages are logged (up to the least important level, the `debug` level). In the production environment, logging is disabled by default; if you change `logging_enabled` to `on` in `settings.yml`, only the most important messages (from `crit` to `emerg`) appear in the logs.
 
-    test:
-
-    #all:
-    #  enabled:  on
-    #  level:    debug
-
-By default, in all environments except the production environment, all the messages are logged (up to the least important level, the `debug` level). In the production environment, logging is disabled by default; if you change `enabled` to `on`, only the most important messages (from `crit` to `emerg`) appear in the logs.
-
-You can change the logging level in the `logging.yml` file for each environment to limit the type of logged messages.
+You can change the logging level in the `factories.yml` file for each environment to limit the type of logged messages.
 
 >**TIP**
->The values of the logging parameters are accessible during execution through the `sfConfig` object with the `sf_logging_` prefix. For instance, to see if logging is enabled, call `sfConfig::get('sf_ logging_enabled')`.
+>To see if logging is enabled, call `sfConfig::get('sf_logging_enabled')`.
 
 #### Adding a Log Message
 
@@ -106,36 +99,18 @@ Listing 16-5 - Adding a Custom Log Message from Anywhere
 >**New in development version**
 >
 >Symfony's logging system is very simple, yet it is also easy to customize.
->The only prerequisite is that logger classes must implement the `sfLoggerInterface` interface, which defines a `log()` method. Symfony calls the `log()` method with two parameters: `$message` (the message to be logged), `$priority` (the log level).
+>The only prerequisite is that logger classes must extends the `sfLogger` class, which defines a `doLog()` method. Symfony calls the `doLog()` method with two parameters: `$message` (the message to be logged), and `$priority` (the log level).
 >
 >The `myLogger` class defines a simple logger using the PHP `error_log` function:
 >
 >     [php]
->     class myLogger implements sfLoggerInterface
+>     class myLogger extends sfLogger
 >     {
->       public function log($message, $priority)
+>       protected function doLog($message, $priority)
 >       {
 >         error_log(sprintf('%s (%s)', $message, sfLogger::getPriorityName($priority)));
 >       }
 >     }
->
->If you want to register your own logger class, you can call the `sfLogger::getInstance()->registerLogger()` method.
->For instance, if you want to use `PEAR::Log`, add the following to your application's `config.php`:
->
->     [php]
->     require_once('Log.php');
->     require_once('Log/error_log.php');
->
->     // Define a thin wrapper to implement the interface
->     // for the logger we want to use with symfony
->     class Log_my_error_log extends Log_error_log implements sfLoggerInterface
->     {
->     }
->
->     // Register the class
->     $log = Log::singleton('my_error_log', PEAR_LOG_TYPE_SYSTEM, 'symfony');
->     sfLogger::getInstance()->registerLogger($log);
->
 
 #### Purging and Rotating Log Files
 
