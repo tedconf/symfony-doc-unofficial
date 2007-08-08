@@ -58,8 +58,6 @@ Listing 16-3 - Default Logging Configuration, in `myapp/config/logging.yml`
     prod:
       enabled: off
       level:   err
-      rotate:  on
-      purge:   off
 
     dev:
 
@@ -68,14 +66,10 @@ Listing 16-3 - Default Logging Configuration, in `myapp/config/logging.yml`
     #all:
     #  enabled:  on
     #  level:    debug
-    #  rotate:   off
-    #  period:   7
-    #  history:  10
-    #  purge:    on
 
 By default, in all environments except the production environment, all the messages are logged (up to the least important level, the `debug` level). In the production environment, logging is disabled by default; if you change `enabled` to `on`, only the most important messages (from `crit` to `emerg`) appear in the logs.
 
-You can change the logging level in the `logging.yml` file for each environment to limit the type of logged messages. The `rotate`, `period`, `history`, and `purge` settings are described in the upcoming "Purging and Rotating Log Files" section.
+You can change the logging level in the `logging.yml` file for each environment to limit the type of logged messages.
 
 >**TIP**
 >The values of the logging parameters are accessible during execution through the `sfConfig` object with the `sf_logging_` prefix. For instance, to see if logging is enabled, call `sfConfig::get('sf_ logging_enabled')`.
@@ -145,22 +139,15 @@ Listing 16-5 - Adding a Custom Log Message from Anywhere
 
 #### Purging and Rotating Log Files
 
-Don't forget to periodically purge the `log/` directory of your applications, because these files have the strange habit of growing by several megabytes in a few days, depending, of course, on your traffic. Symfony provides a special `log-purge` task for this purpose, which you can launch regularly by hand or put in a cron table. For example, the following command erases the symfony log files in applications and environments where the logging.yml file specifies purge: on (which is the default value):
+Don't forget to periodically purge the `log/` directory of your applications, because these files have the strange habit of growing by several megabytes in a few days, depending, of course, on your traffic. Symfony provides a special `log-purge` task for this purpose, which you can launch regularly by hand or put in a cron table. For example, the following command erases the symfony log files:
 
     > symfony log-purge
 
-For both better performance and security, you probably want to store symfony logs in several small files instead of one single large file. The ideal storage strategy for log files is to back up and empty the main log file regularly, but to keep only a limited number of backups. You can enable such a log rotation and specify the parameters in `logging.yml`. For instance, with a `period` of `7` days and a `history` (number of backups) of `10`, as shown in Listing 16-6, you would work with one active log file plus ten backup files containing seven days' worth of history each. Whenever the next period of seven days ends, the current active log file goes into backup, and the oldest backup is erased.
+For both better performance and security, you probably want to store symfony logs in several small files instead of one single large file. The ideal storage strategy for log files is to back up and empty the main log file regularly, but to keep only a limited number of backups. You can enable such a log rotation with a `period` of `7` days and a `history` (number of backups) of `10`, as shown in Listing 16-6. You would work with one active log file plus ten backup files containing seven days' worth of history each. Whenever the next period of seven days ends, the current active log file goes into backup, and the oldest backup is erased.
 
-Listing 16-6 - Configuring Log Rotation, in `myapp/config/logging.yml`
+Listing 16-6 - Launching Log Rotation
 
-    prod:
-      rotate:  on
-      period:  7       ## Log files are rotated every 7 days by default
-      history: 10      ## A maximum history of 10 log files is kept
-
-To execute the log rotation, periodically execute the `log-rotate` task. This task only purges files for which `rotate` is `on`. You can specify a single application and environment when calling the task:
-
-    > symfony log-rotate myapp prod
+    > symfony --period=7 --history=10 log-rotate myapp prod
 
 The backup log files are stored in the `logs/history/` directory and suffixed with the date they were saved.
 
