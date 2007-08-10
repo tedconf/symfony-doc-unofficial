@@ -1,0 +1,410 @@
+symfony advent calendar day thirteen: Tags
+==========================================
+
+Previously on symfony
+---------------------
+
+The askeet application can serve data trough a web page, a RSS feed, or email. Questions can be asked and answered. But the organization of questions is still to be developed. Organizing questions in categories and subcategories could end up in an inextricable tree structure, with thousands of branches and no easy way to know in which sub-branch a question you are looking for may be. 
+
+However, web 2.0 applications have come out with a new way of organizing items: tags. Tags are words, just as categories are. But the differences are that there is no hierarchy of tags, and that an item can have several tags. While finding a cat with categories could prove cumbersome (animal/mammal/four-legged/feline/, or other mysterious category names), it is very simple with tags (pet+cute). Add to that the ability for all users to add tags to a given question, and you get the famous concept of [folksonomy][1].
+
+Guess what? That's exactly what we are going to do with the askeet questions. It will take us some time (today and tomorrow), but the result is worth the pain. It will also be the occasion to show how to do complex SQL requests to a database using a Creole connection. Let's go.
+
+The `QuestionTag` class
+-----------------------
+
+There are several ways to implement tags. We chose to add a `QuestionTag` table with the following structure:
+
+![ERD](/images/askeet/mcd3.gif)
+
+When a user tags a question, it creates a new record in the `question_tag` table, linked to both the `user` table and the `question` table. There are two versions of the tag recorded: The one entered by the user, and a normalized version (all lower case, without any special character) used for indexing.
+
+### Schema update
+
+As usual, adding a table to a symfony project is done by appending its Propel definition to the `schema.xml` file:
+
+    [xml]
+    ...
+    <table name="ask_question_tag" phpName="QuestionTag">
+      <column name="question_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_question">
+        <reference local="question_id" foreign="id" />
+      </foreign-key>
+      <column name="user_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_user">
+        <reference local="user_id" foreign="id" />
+      </foreign-key>
+      <column name="created_at" type="timestamp" />
+      <column name="tag" type="varchar" size="100" />
+      <column name="normalized_tag" type="varchar" size="100" primaryKey="true" />
+      <index name="normalized_tag_index">
+        <index-column name="normalized_tag" />
+      </index>
+    </table>
+
+Rebuild the object model:
+
+    $ symfony propel-build-model
+    
+### Custom class
+
+Add a new `Tag.class.php` in the `askeet/lib/` directory with the following methods:
+
+    [php]
+    <?php
+    
+    class Tag
+    {
+      public static function normalize($tag)
+      {
+        $n_tag = strtolower($tag);
+    
+        // remove all unwanted chars
+        $n_tag = preg_replace('/[^a-zA-Z0-9]/', '', $n_tag);
+    
+        return trim($n_tag);
+      }
+    
+      public static function splitPhrase($phrase)
+      {
+        $tags = array();
+        $phrase = trim($phrase);
+    
+        $words = preg_split('/(")/', $phrase, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+        $delim = 0;
+        foreach ($words as $key => $word)
+        {
+          if ($word == '"')
+          {
+            $delim++;
+            continue;
+          }
+          if (($delim % 2 == 1) && $words[$key - 1] == '"')
+          {
+            $tags[] = trim($word);
+          }
+          else
+          {
+            $tags = array_merge($tags, preg_split('/\s+/', trim($word), -1, PREG_SPLIT_NO_EMPTY));
+          }
+        }
+    
+        return $tags;
+      }
+    }
+    
+    ?>    
+
+The first method returns a normalized tag, the second one takes a phrase as argument and returns an array of tags. These two methods will be of great use when manipulating tags. 
+
+The interest of adding the class in the `lib/` directory is that it will be loaded automatically and only when needed, without needing to require it. It's called **autoloading**.
+
+### Extend the model
+
+In the new `askeet/lib/model/QuestionTag.php`, add the following method to set the `normalized_tag` when the `tag` is set:
+
+    [php]
+    public function setTag($v)
+    {
+      parent::setTag($v);
+  
+      $this->setNormalizedTag(Tag::normalize($v));
+    }
+
+The helper class that we just created is already of great use: It reduces the code of this method to only two lines.
+
+### Add some test data
+
+Append a file to the `askeet/data/fixtures/` directory with some tag test data in it:
+
+    QuestionTag:
+      t1: { question_id: q1, user_id: fabien, tag: relatives }
+      t2: { question_id: q1, user_id: fabien, tag: girl }
+      t4: { question_id: q1, user_id: francois, tag: activities }
+      t6: { question_id: q2, user_id: francois, tag: 'real life' }
+      t5: { question_id: q2, user_id: fabien, tag: relatives }
+      t5: { question_id: q2, user_id: fabien, tag: present }
+      t6: { question_id: q2, user_id: francois, tag: 'real life' }
+      t7: { question_id: q3, user_id: francois, tag: blog }
+      t8: { question_id: q3, user_id: francois, tag: activities }
+      
+Make sure this file comes after the other files of the directory in the alphabetical order, so that the `sfPropelData` object can link these new records with the related records of the `Question` and `User` tables. You can now repopulate your database by calling:
+
+    $ php batch/load_data.php
+
+We are now ready to work on tags in the actions. But first, let us extend the model for the `Question` class.
+
+Display the tags of a question
+------------------------------
+
+Before adding anything to the controller layer, let's add a new `tag` module so that things keep organized:
+
+    $ symfony init-module frontend tag
+
+### Extend model
+
+We will need to display the whole list of words tagged by all users for a given question. As the ability to retrieve the related tags should be a method of the `Question` class, we will extend it (in `askeet/lib/model/Question.php`). The trick here is to group double entries to avoid double tags (two identical tags should only appear once in the result). The new method has to return a tag array:
+
+    [php]
+    public function getTags()
+    {
+      $c = new Criteria();
+      $c->clearSelectColumns();
+      $c->addSelectColumn(QuestionTagPeer::NORMALIZED_TAG);
+      $c->add(QuestionTagPeer::QUESTION_ID, $this->getId());
+      $c->setDistinct();
+      $c->addAscendingOrderByColumn(QuestionTagPeer::NORMALIZED_TAG);
+      
+      $tags = array();
+      $rs = QuestionTagPeer::doSelectRS($c);
+      while ($rs->next())
+      {
+        $tags[] = $rs->getString(1);
+      }
+      
+      return $tags;
+    }
+
+This time, as we need only one column (the `normalized_tag`), there is no point to ask Propel to return an array of `Tag` objects populated from the database (this process, by the way, is called *hydrating*). So we do a simple query that we parse into an array, which is much faster.
+
+### Modify the view
+
+The question detail page should now display the list of tags for a given question. We will use the sidebar for that. As it has been built as a component slot during the [seventh day](7.txt), we can set a specific component for this bar in the question module only. 
+
+So in `askeet/apps/frontend/modules/question/config/view.yml`, add the following configuration:
+
+    showSuccess:
+      components:
+        sidebar: [sidebar, question]
+
+This component of the `sidebar` module is not yet created, but it is quite simple (in `modules/sidebar/actions/components.class.php`):
+
+    [php]
+    public function executeQuestion()
+    {
+      $this->question = QuestionPeer::getQuestionFromTitle($this->getRequestParameter('stripped_title'));
+    }
+
+The longest part to write is the fragment (`modules/sidebar/templates/_question.php`):
+
+    [php]
+    <?php include_partial('sidebar/default') ?>
+
+    <h2>question tags</h2>
+
+    <ul id="question_tags">
+      <?php include_partial('tag/question_tags', array('question' => $question, 'tags' => $question->getTags())) ?> 
+    </ul>
+
+We choose to insert the list of tags as a fragment because it will be refreshed by an AJAX request a bit later.
+
+This partial has to be created in `modules/tag/templates/_question_tags.php`:
+
+    [php]
+    <?php foreach($tags as $tag): ?>
+      <li><?php echo link_to($tag, '@tag?tag='.$tag, 'rel=tag') ?></li>
+    <?php endforeach; ?>
+
+The `rel=tag` attribute is a [MicroFormat](http://microformats.org/wiki/rel-tag). It is by no means compulsory, but as it costs nothing to add it here, we'll let it stay.
+
+Add the `@tag` routing rule in the `routing.yml`:
+
+    tag:
+      url:   /tag/:tag
+      param: { module: tag, action: show }
+
+### Test it
+
+Display the detail of the first question and look for the list of tags in the sidebar:
+
+    http://askeet/question/what-can-i-offer-to-my-step-mother
+    
+![tag list for a question](/images/askeet/tag_list_question.gif)
+
+Display a short list of popular tags for a question
+---------------------------------------------------
+
+The sidebar is a good place to show the whole list of tags for a question. But what about the tags displayed in the list of questions? For each question, we should only display a subset of tags. But which ones? We will choose the most popular ones, i.e. the tags than have been given to this question most often. We will probably have to encourage users to keep on tagging a question with existing tags to increase the popularity of relevant tags for this question. If all users don't do that, maybe "moderators" will do it.
+
+### Extend the model
+
+Anyway, this means that we have to add a `->getPopularTags()` method to our `Question` object. But this time, the request to the database is not simple. Using Propel to do it would multiply the number of requests and take way too much time. Symfony allows you to use the power of SQL when it is the best solution, so we will just need a Creole connection to the database and execute a regular SQL query.
+
+This query should be something like:
+
+    [sql]
+    SELECT normalized_tag AS tag, COUNT(normalized_tag) AS count
+    FROM question_tag
+    WHERE question_id = $id
+    GROUP BY normalized_tag
+    ORDER BY count DESC
+    LIMIT $max
+     
+However, using the actual column and table names creates a dependency to the database and bypasses the data abstraction layer. If, in the future, you decide to rename a column or a table, this raw SQL query will not work anymore. That's why the symfony version of the request doesn't use the current names but the abstracted ones instead. It is slightly harder to read, but it is much easier to maintain.
+
+    [php]
+    public function getPopularTags($max = 5)
+    {
+      $tags = array();
+  
+      $con = Propel::getConnection();
+      $query = '
+        SELECT %s AS tag, COUNT(%s) AS count
+        FROM %s
+        WHERE %s = ?
+        GROUP BY %s
+        ORDER BY count DESC
+      ';
+  
+      $query = sprintf($query,
+        QuestionTagPeer::NORMALIZED_TAG,
+        QuestionTagPeer::NORMALIZED_TAG,
+        QuestionTagPeer::TABLE_NAME,
+        QuestionTagPeer::QUESTION_ID,
+        QuestionTagPeer::NORMALIZED_TAG
+      );
+  
+      $stmt = $con->prepareStatement($query);
+      $stmt->setInt(1, $this->getId());
+      $stmt->setLimit($max);
+      $rs = $stmt->executeQuery();
+      while ($rs->next())
+      {
+        $tags[$rs->getString('tag')] = $rs->getInt('count');
+      }
+  
+      return $tags;
+    }
+
+First, a connection to the database is opened in `$con`. The SQL query is built by replacing `%s` tokens in a string by the column and table names that come from the abstraction layer. A `Statement` object containing the query and a `ResultSet` object containing the result of the query are created. These are Creole objects, and their use is described in detail in the [Creole documentation][2]. The `->setInt()` method of the `Statement` object replaces the first `?` in the SQL query by the question `id`. The `$max` argument is used to limit the number of results returned with the `->setLimit()` method.
+
+The method returns an associative array of normalized tags and popularity, ordered by descending popularity, with only one request to the database.
+
+### Modify the view
+
+Now we can add the list of tags for a question, which is formatted in a `_list.php` fragment in the `modules/question/templates/` directory:
+
+    [php]
+    <?php use_helpers('Text', 'Date', 'Global', 'Question') ?>
+    
+    <?php foreach($question_pager->getResults() as $question): ?>
+      <div class="question">
+        <div class="interested_block" id="block_<?php echo $question->getId() ?>">
+          <?php include_partial('question/interested_user', array('question' => $question)) ?>
+        </div>
+    
+        <h2><?php echo link_to($question->getTitle(), '@question?stripped_title='.$question->getStrippedTitle()) ?></h2>
+    
+        <div class="question_body">
+          <div>asked by <?php echo link_to($question->getUser(), '@user_profile?nickname='.$question->getUser()->getNickname()) ?> on <?php echo format_date($question->getCreatedAt(), 'f') ?></div>
+          <?php echo truncate_text(strip_tags($question->getHtmlBody()), 200) ?>
+        </div>
+        
+        tags: <?php echo tags_for_question($question) ?>
+    
+      </div>
+    <?php endforeach; ?>
+    
+    <div id="question_pager">
+      <?php echo pager_navigation($question_pager, $rule) ?>
+    </div>
+
+Because we want to separate the tags by a `+` sign, and to avoid too much code in the template to deal with the limits, we write a `tags_for_question()` helper function in a new `lib/helper/QuestionHelper.php` helper library:
+
+    [php]
+    function tags_for_question($question, $max = 5)
+    {
+      $tags = array();
+    
+      foreach ($question->getPopularTags($max) as $tag => $count)
+      {
+        $tags[] = link_to($tag, '@tag?tag='.$tag);
+      }
+    
+      return implode(' + ', $tags);
+    } 
+
+### Test
+
+The list of questions now displays the popular tags for each question:
+
+    http://askeet/
+
+![popular tags for the question list](/images/askeet/popular_tags_question_list.gif)
+
+Display the list of questions tagged with a word
+------------------------------------------------
+
+Each time we displayed a tag, we added a link to a `@tag` routing rule. This is supposed to link to a page that displays the popular questions tagged with a given tag. It is simple to write, so we won't delay it anymore.
+
+### The `tag/show` action
+
+Create a `show` action in the `tag` module:
+
+    [php]
+    public function executeShow()
+    {
+      $this->question_pager = QuestionPeer::getPopularByTag($this->getRequestParameter('tag'), $this->getRequestParameter('page'));
+    }
+
+### Extend the model
+
+As usual, the code that deals with the model is placed in the model, this time in the `QuestionPeer` class since it returns a set of `Question` objects. We want the popular question by interested users, so this time, there is no need for a complex request. Propel can do it with a single `->doSelect()` call:
+
+    [php]
+    public static function getPopularByTag($tag, $page)
+    {
+      $c = new Criteria();
+      $c->add(QuestionTagPeer::NORMALIZED_TAG, $tag);
+      $c->addDescendingOrderByColumn(QuestionPeer::INTERESTED_USERS);
+      $c->addJoin(QuestionTagPeer::QUESTION_ID, QuestionPeer::ID, Criteria::LEFT_JOIN);
+      
+      $pager = new sfPropelPager('Question', sfConfig::get('app_pager_homepage_max'));
+      $pager->setCriteria($c);
+      $pager->setPage($page);
+      $pager->init();
+
+      return $pager;
+    }
+  
+The method returns a pager of questions, ordered by popularity.
+
+### Create the template
+
+The `modules/tag/templates/showSuccess.php` template is as simple as you expect it to be:
+
+    [php]
+    <h1>popular questions for tag "<?php echo $sf_params->get('tag') ?>"</h1>
+    
+    <?php include_partial('question/list', array('question_pager' => $question_pager, 'rule' => '@tag?tag=.'$sf_params->get(tag))) ?>
+
+### Add the `page` parameter in the routing rule
+
+In the `routing.yml`, add a `:page` parameter with a default value in the `@tag` routing rule:
+
+    tag:
+      url:   /tag/:tag/:page
+      param: { module: tag, action: show, page: 1 }
+
+
+### Test it
+
+Navigate to the `activities` tag page to see all the questions tagged with this word:
+
+    http://askeet/tag/activities
+    
+![list of questions tagged 'activities](/images/askeet/tagged_question_list.gif)
+
+See you Tomorrow
+----------------
+
+The Creole database abstraction layer allows symfony to do complex SQL requests. On top of that, the Propel object-relational mapping gives you the tools to work in an object-oriented world, useful methods that keep you from worrying about the database, and it transforms requests into simple sentences.
+
+Some of you may worry about the important load that the above requests may put on the database. Optimizations are still possible - for instance, you could create a `popular_tags` column in the `Question` table, updated by a transaction each time a related `QuestionTag` is created. The list of questions would then be much less heavy. But the benefits of the cache system - which we will discuss in a few days - make this optimization useless.
+
+Tomorrow, we will finish the tag features of the askeet application. Users will be able to add tags to a question, and a global tag bubble will be made available. Make sure you come back to read about it. 
+
+The full code of the askeet application as of today can be grabbed from the [askeet SVN repository](http://svn.askeet.com/tags/release_day_13/), tagged `/tags/release_day_13/`. If you have any questions about today's tutorial, feel free to ask them in the [askeet forum](http://www.symfony-project.com/forum/index.php/f/8/).
+
+[1]: http://en.wikipedia.org/wiki/Folksonomy                      "Folksonomy definition at Wikipedia"
+[2]: http://creole.phpdb.org/trac/wiki/Documentation/CreoleGuide  "Creole Guide"

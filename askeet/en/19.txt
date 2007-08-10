@@ -1,0 +1,259 @@
+symfony advent calendar day nineteen: Performance and cache
+===========================================================
+
+Previously on symfony
+---------------------
+
+As the advent calendar days pass, you are getting more comfortable with the symfony framework and its concepts. Developing an application like askeet is not very demanding if you follow the good practices of agile development. However, one thing that you should do as soon as a prototype of your website is ready is to test and optimize its performance.
+
+The overhead caused by a framework is a general concern, especially if your site is hosted in a shared server. Although symfony doesn't slow down the server response time very much, you might want to see it yourself and tweak the code to speed up the page delivery. So today's tutorial will be focused on the performance measurement and improvement.
+
+Load testing tools
+------------------
+
+Unit tests, described during [the fifteenth day](15.txt), can validate that the application works as expected *if there is only one user connected to it at a time*. But as soon as you release your application on the Internet - and that's the least we can wish for you - hordes of hectic fans will rush to it simultaneously, and performance issues may occur. The web server might even fail and need a manual restart, and this is a really painful experience that you should prevent at all costs. This is especially important during the early days of your application, when the first users quickly draw conclusions about it and decide to spread the word or not.
+
+To avoid performance issues, it is necessary to simulate numerous concurrent access to your website to see how it reacts - before releasing it. This is called [load testing](http://en.wikipedia.org/wiki/Load_testing). Basically, you program an automate to post concurrent requests to your web server, and measure the return time.
+
+>**Note**: Whatever load testing tool you choose, you should execute it on a different server than the one running the website. This is because the testing tools are generally CPU consuming, and their own activity could perturb the results of the server performance. In addition, do your tests in a local network, to avoid disturbance due to the external network components (proxy, firewall, cache, router, ISP, etc.).
+
+### JMeter
+
+The most common load testing tool is **[JMeter](http://jakarta.apache.org/jmeter/)**, and it is an open-source Java application maintained by the Apache foundation. It has impressive [online documentation](http://jakarta.apache.org/jmeter/usermanual/index.html) to help you get started using it, including a good introduction about [load testing](http://jakarta.apache.org/jmeter/usermanual/boss.html).
+
+To install it, retrieve the latest stable version (currently 2.1.1) in the [Jmeter download page](http://jakarta.apache.org/site/downloads/index.html#jmeter_binaries). You'll also need the latest version of the [Java runtime environment](http://en.wikipedia.org/wiki/Java_programming_language#Java_Runtime_Environment) which you can find on [Sun's site](http://java.com/en/download/index.jsp). To start JMeter, locate and run the `jmeter.bat` file (in Windows platforms) or type `java jmeter.jar` (in Linux platforms).
+
+The way to setup a load testing plan, called 'Web test plan', is described in detail in the [related page](http://jakarta.apache.org/jmeter/usermanual/build-web-test-plan.html) of the JMeter documentation, so we will not describe it here.
+
+![JMeter web test plan results](/images/askeet/jmeter.gif)
+
+>**Note**: Not only does JMeter report about average response time for a given request or set of requests, it can also do assertions on the content of the page it receives. So, in addition to using JMeter as a load testing tool, you can build scenarios to do regression tests and unit tests.
+
+### Apache's ab
+
+The second tool recommended by symfony is ApacheBench, or **ab**, another nice utility brought to you by the Apache foundation. Its [online manual](http://httpd.apache.org/docs/2.2/programs/ab.html) is less detailed than JMeter's, but as ab is a command line tool, it is easier to use.
+
+In Linux, it comes standard with the Apache package, so if you have an installed Apache server, you should find it in `/usr/local/apache/bin/ab`. In Windows platforms, it is much harder to find, so you'd better download it directly from [symfony](http://www.symfony-project.com/downloads/ab.zip).
+
+The use of this benchmarking tool is very simple:
+
+    $ /usr/local/bin/apache2/bin/ab -c 1 -n 1 http://www.askeet.com/
+    This is ApacheBench, Version 2.0.41-dev <$Revision: 1.121.2.12 $> apache-2.0
+    Copyright   1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+    Copyright   1998-2002 The Apache Software Foundation, http://www.apache.org/
+   
+    Benchmarking www.askeet.com (be patient).....done
+   
+   
+    Server Software:        Apache
+    Server Hostname:        www.askeet.com
+    Server Port:            80
+   
+    Document Path:          /
+    Document Length:        15525 bytes
+   
+    Concurrency Level:      1
+    Time taken for tests:   0.596104 seconds
+    Complete requests:      1
+    Failed requests:        0
+    Write errors:           0
+    Total transferred:      15874 bytes
+    HTML transferred:       15525 bytes
+    Requests per second:    1.68 [#/sec] (mean)
+    Time per request:       596.104 [ms] (mean)
+    Time per request:       596.104 [ms] (mean, across all concurrent requests)
+    Transfer rate:          25.16 [Kbytes/sec] received
+   
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:       61   61   0.0     61      61
+    Processing:   532  532   0.0    532     532
+    Waiting:      359  359   0.0    359     359
+    Total:        593  593   0.0    593     593
+
+>**Note**: you need to provide a page name (at least `/` like in the above example) because targeting only a host will give an incorrectly formatted URL error.
+
+The `-c` and `-n` parameters define the number of simultaneous threads, and the total number of requests to execute. The most interesting data in the result is the last line: the average total connection time (second number from the left). In the example above, there is only one connection, so the connection time is not very accurate. To have a better view of the actual performance of a page, you need to average several requests and launch them in parallel:
+
+    $ /usr/local/bin/apache2/bin/ab -c 10 -n 20 http://www.askeet.com/
+    ...
+   
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:       59   88  19.9     89     130
+    Processing:   831 1431 510.9   1446    3030
+    Waiting:      632 1178 465.1   1212    2781
+    Total:        906 1519 508.4   1556    3089
+   
+    Percentage of the requests served within a certain time (ms)
+      50%   1556
+      66%   1569
+      75%   1761
+      80%   1827
+      90%   2285
+      95%   3089
+      98%   3089
+      99%   3089
+     100%   3089 (longest request)
+
+You should always start by a `ab -c 1 -n 1` to have an idea of the time taken by the test itself before executing it on a larger number of requests. Then, increase the number of total requests (like `ab -c 1 -n 30`) until you have a reasonably low standard deviation. Only then will you have a significant average connection time measure, and you will be ready for the actual load test. Add threads little by little (and don't forget to increase the total number of requests accordingly, like `ab -c 10 -n 300`) and see the connection time increase as your server load is being handled. When the average loading times pass beyond a few seconds, it means that your server is outnumbered and can probably not support more concurrent threads. You have determined the maximum charge of your service. This is called a stress test.
+
+>**Note**: Please be kind enough not to stress test any running website in the Internet but your own. Doing stress test on a foreign site is considered as a [denial-of-service attack](http://en.wikipedia.org/wiki/Denial-of-service_attack). The [askeet website](http://www.askeet.com/) is no different, so once again, please do not stress test it.
+
+The load tests will provide you with two important pieces of information: the average loading time of a specific page, and the maximum capacity of your server. The first one is very useful to monitor performance improvements.
+
+Improve performances with the cache
+-----------------------------------
+
+There are a lot of ways to increase the performance of a given page, including code profiling, database request optimization, addition of indexes, creation of an alternative light web server dedicated to the media of the website, etc. Existing techniques are either cross-language or PHP-specific, and browsing the web or buying a good book about it will teach you how to become a performance guru.
+
+Symfony adds a certain overload to web requests, since the configuration and the framework classes are loaded for each request, and because the MVC separation and the ORM abstraction result in more code to execute. Although this overhead is relatively low (as compared to other frameworks or languages), symfony also provides ways to balance the response time with **caching**. The result of an action, or even a full page, can be written in a file on the hard disk of the web server, and this file is reused when a similar request is requested again. This considerably boosts performance, since all the database accesses, decoration, and action execution are bypassed completely. You will find more information about caching in symfony in the [cache chapter](http://www.symfony-project.com/content/book/page/cache.html) of the symfony book.
+
+We will try to use HTML cache to speed up the delivery of the popular tags page. As it includes a complex SQL query, it is a good candidate for caching. First, let's see how long it takes to load it with the current code:
+
+    $ ab -c 1 -n 30 http://askeet/popular_tags
+    ...
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:        0    0   0.0      0       0
+    Processing:   147  148   2.4    148     154
+    Waiting:      138  139   2.3    139     145
+    Total:        147  148   2.4    148     154
+    ...
+
+### Put the result of the action in the cache
+
+>**Warning**: The following will not work on symfony 0.6. Please jump to the next section until this tutorial is updated.
+
+The action executed to display the list of popular tags is `tag/popular`. To put the result of this action in cache, all we have to do is to create a `cache.yml` file in the `askeet/apps/frontend/modules/tag/config/` directory with:
+
+    popular:
+      activate:   on
+      type:       slot
+   
+    all:
+      lifeTime:   600
+
+This activates the `slot` type cache for this action. The result of the action (the view) will be stored in a file in the `cache/frontend/prod/template/askeet/popular_tags/slot.cache` file, and this file will be used instead of calling the action for the next 600 seconds (10 minutes) after it has been created. This means that the popular tags page will be processed every ten minutes, and in between, the cache version will be used in place.
+
+The caching is done at the first request, so you just need to browse to:
+
+    http://askeet/popular_tags
+   
+...to create a cache version of the template. Now, all the calls to this page for the next 10 minutes should be faster, and we will check that immediately by running the Apache benchmarking tool again:
+
+    $ ab -c 1 -n 30 http://askeet/popular_tags   
+    ...
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:        0    0   0.0      0       0
+    Processing:   137  138   2.0    138     144
+    Waiting:      128  129   2.0    129     135
+    Total:        137  138   2.0    138     144
+    ...
+
+We passed from an average of 148ms to 138ms, that's a 7% increase in performance. The cache system improves the performance in a significant way. 
+
+>**Note**: The `slot` type doesn't bypass the decoration of the page (i.e. the insertion of the template in the layout). We can not put the whole page in cache in this case because the layout contains elements that depend on the context (the user name in the top bar for instance). But for non-dynamic layouts, symfony also provides a `page` type which is even more efficient.
+
+### Build a staging environment
+
+By default, the cache system is deactivated in the development environment and activated in the production environment. This is because cached pages, if not configured properly, can create new errors. A good practice concerning the test of a web application including cached page is to build a new test environment, similar to the production one, but with all the debug and trace tools available in the development environment. We often call it the 'staging' environment. If an error occurs in the staging environment but not in the development environment, then there are many chances that this error is caused by a problem with the cache.
+
+When you develop a functionality, make sure that it works properly in the development environment first. Then, change the cache parameters of the related actions to improve performance, and test it again in the staging environment to see if the caching system doesn't create functional perturbation. If everything works fine, you just need to execute load tests in the production environment to measure the improvement. If the behaviour of the application is different than in the development environment, you need to review the way you configured the cache. [Unit tests](15.txt) can be of great help to make this procedure systematic.
+
+In order to create the staging environment, you need to add a new front controller and to define the environment's settings.
+
+Copy the production front controller (`askeet/web/index.php`) into a `askeet/web/frontend_staging.php` file, and change its definition to:
+
+    [php]
+    <?php
+    
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
+    define('SF_APP',         'frontend');
+    define('SF_ENVIRONMENT', 'staging');
+    define('SF_DEBUG',       false);
+    
+    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
+    
+    sfContext::getInstance()->getController()->dispatch();
+    
+    ?>
+
+Now, open the `askeet/apps/frontend/config/settings.yml`, and add the following lines:
+
+    staging:
+      .settings:
+        web_debug:              on
+        cache:                  on
+        no_script_name:         off
+
+That's it, the staging environment, with web debug and cache activated, is ready to be used by requesting:
+
+    http://askeet/frontend_staging.php/
+
+### Put a template fragment in the cache
+
+As many of the askeet pages are made of dynamic elements (a question description, for instance, contains an 'interested?' link which might be turned into simple text if the user displaying it already clicked on it), there are not many `slot` cache type candidates in our actions. But we can put chunks of templates in cache, like for instance the list of tags for a specific question. This one is trickier than the popular tag cloud, because the cache of this chunk has to be cleared every time a user adds a tag to this question. But don't worry, symfony makes it easy to handle.
+
+To measure the improvement, we need to know the current average loading time of the `question/show` page.
+
+    $ ab -c 1 -n 30 http://askeet/question/what-can-i-offer-to-my-step-mother
+
+First of all, the list of tags for a question has two versions: one for unregistered users (it is a tag cloud), and the other for registered users (it is a list of tags with delete links for the tags entered by the user himself). We can only put in cache the tag cloud for unregistered users (the other one is dynamic). It is located in the `tag/_question_tags` template partial. Open it (`askeet/apps/frontend/modules/tag/templates/_question_tags.php`) and enclose the fragment that has to be cached in a special `if(!cache())` statement:
+
+    [php]
+    ...
+    <?php if ($sf_user->isAuthenticated()): ?>
+    ...
+    <?php else: ?>
+      <?php if (!cache('question_tags', 3600)): ?>
+        <?php include_partial('tag/tag_cloud', array('tags' => QuestionTagPeer::getPopularTagsFor($question))) ?>
+        <?php cache_save() ?>
+      <?php endif ?>
+    <?php endif ?>
+
+The `if(!cache())` statement will check if a version of the fragment enclosed (called `fragment_question_tags.cache`) already exists in the cache, with an age not older than one hour (3600 seconds). If this is the case, the cache version is used, and the code between the `if(!cache())` and the `endif` is not executed. If not, then the code is executed and its result saved in a fragment file with `cache_save()`.
+
+Let us see the performance improvement caused by the fragment cache:
+
+    $ ab -c 1 -n 30 http://askeet/question/what-can-i-offer-to-my-step-mother
+   
+Of course, the improvement is not as significant as with a `slot` type cache, but doing lots of little optimizations like this one can bring an appreciable enhancement to your application.
+
+>**Note**: Even if originally called by the `sidebar/question` action, the cache fragment file is located in `cache/frontend/prod/template/askeet/question/what-can-i-offer-to-my-step-mother/fragment_question_tags.cache`. This is because the code of a slot depends on the main action called.
+
+### Clear selective parts of the cache
+
+The tag list of a question can change within the lifetime of the fragment. Each time a user adds or removes a tag to a question, the tag list may change. This means that the related action have to be able to clear the cache for the fragment. This is made possible by the `->remove()` method of the `viewCacheManager` object.
+
+Just modify the `add` and `remove` actions of the `tag` module by adding at the end of each one:
+
+    [php]
+    // clear the question tag list fragment in cache
+    $this->getContext()->getViewCacheManager()->remove('@question?stripped_title='.$this->question->getStrippedTitle(), 'fragment_question_tags');
+
+You can now check that the tag list fragment cache doesn't create incoherences in the pages displayed by adding to or removing a tag from a question, and seeing the list of tag properly updated accordingly.
+
+You can also enable cache in the development environment to see which parts of a page are in cache. Change your `settings.yml` configuration:
+
+    dev:
+      .settings:
+        cache:                  on
+
+And now, you can see when a page, fragment or slot is already in cache:
+
+![fragment in cache](/images/askeet/fragment_cache.gif)
+
+or when it is a fresh copy:
+
+![fragment not in cache](/images/askeet/fragment_no_cache.gif)
+
+See you Tomorrow
+----------------
+
+Symfony doesn't create a high overhead, and provides easy ways to accurately tune the performance of a web application. The cache system is powerful and adaptive. Once again, if some parts of this tutorial still seem somehow obscure to you, don't hesitate to refer to the [cache chapter](http://www.symfony-project.com/content/book/page/cache.html) of the symfony book. It is very detailed and contains lots of new examples.
+
+Tomorrow, we will start to think about the management of the website activity. Protection against spam or correction of erroneous entries are among the functionality required by a website as soon as it is open to semi-anonymous publication. We could either create an askeet back-office for that, or give access to a new set of options to users with a certain profile. Anyway, it will surely take less than an hour, since we will develop it with symfony.
+
+Make sure you keep aware of the latest [askeet](http://www.askeet.com/) news by visiting the [forum](http://www.symfony-project.com/forum/index.php/f/8/) or looking at the [askeet timeline](http://trac.askeet.com/trac/timeline), in which you will find bug reports, version details, and wiki changes.

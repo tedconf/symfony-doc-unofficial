@@ -1,0 +1,408 @@
+Hari Kedua - Symfony advent calendar
+======================================
+Mensetup Data model
+=====================
+
+Diterjemahkan Oleh : [Wildan Maulana](mailto:wildan-maulana@fisika.ui.ac.id)
+
+Sebelumnya di Symfony
+---------------------
+
+Selama tutorial yang panjang [hari pertama](1.txt) tetapi menarik, kita
+sudah melihat bagaimana menginstall symfony  framework, mensetup aplikasi 
+baru  dan linkungan development, serta mengamankan code dengan source
+version control. Ngomong-ngomong, code untuk aplikasi yang dibuat selama
+hari pertama  sudah terdapat pada repository SVN askeet di : 
+
+    http://svn.askeet.com/
+
+Objektif untuk hari kedua adalah untuk mendefinisikan  apakah hasil akhirnya
+dari segi fungsionalitas, membuat data model awal, dan mulai membuat code.
+Ini termasuk menggenerate object-relational mapping dan menggunakannya
+secara interaltif untuk membuat, mengambil dan mengupdate record di database
+dengan application scaffolding.    
+
+Ini cukup banyal. Jadi, mari kita mulai !
+
+The project unveiled
+--------------------
+
+Apa yang ingin Anda tahu ? Ini pertanyaan yang menarik. Ada banyak hal yang
+menarik, seperti : 
+
+* What shall I do tonight with my girlfriend? (Apa yang harus saya lakukan
+malam ini dengan kekasih saya ?)
+* How can I generate traffic to my blog? (Bagaimana saya dapat menaikkan
+traffic ke blog saya ?)
+* What's the best web application framework? (Apakah web application
+framework yang terbaik ? )
+* What's the best affordable restaurant in Paris? (Restoran  manakah yang
+termurah plus terbaik di Paris ? )
+* What's the answer to life, the universe, and everything? (Apakah jawaban
+untuk hidup,alam semesta, dan segalanya ?)
+
+
+Semua pertanyaan ini tidak hanya memiliki sebuah jawaban, dan jawaban
+terbaiknya tentu saja bergantung pendapat orang. Bahkan, pertanyaan yang
+hanya memiliki sebuah jawaban sering kurang menarik (seperti, berapa 1 +1 ?)
+apalagi masalah macam ini ingin dipecahkan di web. Ini tidak adil. 
+
+
+Perkenalkan [askeet](http://www.askeet.com). Sebuah website yang didekasikan
+untuk menolong orang mencari jawaban untuk pertanyaan mereka. Siapakah yang
+akan menjawab pertanyaan-pertannyaan itu ? Setiap orang. Dan setiap orang
+akan dapat merating jawaban orang lain, sehingga jawaban yang paling populer
+akan lebih terlihat. Seiring bertambahnya pertanyaan, maka akan menjadi
+mustahil untuk mengelompokkan pertanyaan-pertanyaan ini dalam kategori dan
+subkategori, sehingga sebagai solusinya, pembuat pertanyaan akan dapat men
+memberikan tag pada pertanyaannya dengan kata apapun yang ia suka,  "à la" [del.icio.us](http://del.icio.us/).
+Tentu saja, kepopuleran tag harus ditampilkan melalui tag bubble. 
+Jika seseorang ingin mengikuti jawaban ke suatu pertanyaan tertentu, dia
+dapat mendaftarkan diri ke RSS feed pertanyaan ini. Semua fungsionalitas ini
+harus elegan dan dan ringan, sehingga semua interaksi yang tidak terlalu
+memerlukan halaman baru harus mamanfaatkan AJAX. Terakhir, back-end (bagian
+administrasi) juga diperlukan untuk mengadministrasi pertanyaan dan jawaban
+yang dilaporkan sebagai spam. atau menaikkan rating pertanyaan yang oleh
+administrator dianggap menarik.   
+
+Kemudian Anda bertanya: Sudahkan Saya melihat website semacam ini di web ? 
+Yah.., kalau Anda sudah pernah melihatnya, maka Kami terperangkap, tapi jika
+Anda menunjuk pada [faqts](http://www.faqts.com),
+[eHow](http://www.ehow.com), [Ask Jeeves](http://www.ask.com) atau yang
+mirip dengan ini semua, tanpa jawaban yang kolaboratif, tanpa AJAX, tanpa
+RSS, dan tanpa tag, ini bukanlah website yang sama. Kita berbicara tentang
+aplikasi web 2.0 disini. 
+
+
+Hal yang penting mengenai askeet adalah ia bukan hanya sebuah website, ia
+adalah sebuah aplikasi yang dapat didownload oleh siapapun, menginstallnya
+di rumah atau di intranet perusahaan, mengoptimalisasinya dan menambahkan
+fiturnya juga. Source code nya akan di release dengan license open-source.
+Kepala HR Anda mencari sebuah knowledge management system ? Anda ingin
+mengikuti semua trik yang Anda pelajaru tentang cara memperbaiki mobil Anda
+? Anda tidak ingin membuat bagian Frequently Asked Question dari website
+Anda ? Ana tidak perlu mencari lagi, karena ada askeet. Yah .., ini akan
+Ada, ini adalah hadiah Natal dari kami. 
+
+Dari mana harus memulai ?
+--------------------------
+
+Jadi bagaimana Anda akan memulai membuat aplikasi symfony Anda ? Ini
+semuanya tergantung pada Anda ? Anda dapat menulis cerita, membuat rencana
+main dan mencari rekan untuk melakuka pair programming (membuat program
+secara berpasangan) jika Anda adalah pengadopsi [XP][1], atau menulis sebuah
+spesifikasi detail dari website, beserta semua object, state, interaksi dan
+lain-lainya, jika Anda adalah pengge,at [UML][2]
+
+Tetapi tutorial ini bukanlah tentang teknik pengembangan aplikasi secara
+umum, jadi kita akan mulai dengan relational data model sederhana, dan
+menambahkan fitur yang lain satu persatu. Apa yang kita perlukan adalah
+aplikasi yang dapat digunakan setiap akhir tutorial  per hari, bukan
+kumpulan code besar yang tidak pernah menghasilkan apa-apa. Dalam dunia yang
+ideal, kita dapat menulis unti test untuk setiap fitur yang kita tambahkan,
+tapi jujur saha, kita tidak akan memiliki cukup waktu untuk ini. Tetapi satu
+hari tetap  akan didekaasikan untuk membuat sebuah unit test, jadi tetaplah
+membaca.   
+
+Untuk project ini, kita akan menggunakan database Mysql dengan tipe tabel
+InnoDB untuk mengambil keuntungan adanya integrity constraint dan dukungan
+transaksi. Kita dapat saja menggunakan database SQLite untuk langkah
+pertama, untuk menghindari keperluan mensetting database yang sebenarnya
+akan dipakai nanti. Ini hanya memerlukan beberapa perubahan kecil di file 
+`databases.yml`, yang akan kami sisakan untuk Anda selidiki sebagai latihan. 
+
+Data Model
+----------
+
+### Relational model
+
+Tentu saja, akan ada tabel 'question' dan 'answer'. Kita juga akan perlu
+tabel 'user', dan kita akan menyimpan ketertarikan user pada sebuah
+pertanyaan di tabel 'interest', dan relevansi yang diberikan oleh seseorang
+ke sebuah pertanyaan pada tabel 'relevancy'.
+
+User harus diidentifikasi terlebih dahulu untuk menambahkan pertanyaan,
+untuk merating jawaban yang berhubungan, atau untuk mendeklarasikan
+ketertarikan pada suatu pertanyaan. User tidak perlu  diidentifikasi untuk
+menambahkan jawaban, tetapi jawaban akan selalu di link ke user sehingga
+user dengan jawaban yang pupuler akan  dapat  dibedakan. Jawaban yang
+dimasukkan tanpa identifikasi akan diperlihatkan sebagai kontribusi dari
+generic user. yang bernama 'Anonymous Coward'. Akan lebih mudah untuk
+memahaminya dengan entitty relationship diagram.  
+
+
+![ERD](/images/askeet/mcd1.gif)
+
+Perhatikan, kami mendeklarasikan field `created_at` untuk setiap tabel.
+Symfont mengenal field macam ini dan akan mengeset nilainya dengan waktu
+sistem yang sekarang ketika record itu dibuat. Sama juga dengan field
+`updated_at` : Nilainya diset dengan sistem waktu setiap kali record diupdate.
+
+### `schema.xml`
+
+Relational model harus diterjemahkan ke file konfigurasi agar symfony dapat
+memahaminya. Inilah tujuan dari file `schema.xml`, yang terletak pada
+direktori `askeet/config/`. Ada dua cara untuk menulis file ini : dengan
+tangan yaitu cara yang kita suka, atau dari database yang sudah ada. Kita
+lihat terlebih dahulu solusi pertama : 
+Pertama-tama kita harus mengubah nama sample yang diinstall secara default. 
+
+    $ svn rename config/schema.xml.sample config/schema.xml
+
+Sintaks  yang digunakan pada `schema.xml`, dijelaskan secara detail di
+[Website Propel][3], sintaksnya relatif sederhana: Sintaks ini berbentuk
+file XML, dimana tag `<table>` mengandung `<column>`, `<foreign-key>` dan
+tag `<index>`. Setelah Anda menulisnya sekali, Anda akan dapat menulis
+semuanya. Berikut ini adalah `schema.xml` yang sesuai denan relational model
+yang telah dijelaskan sebelumnya : 
+
+    [xml]
+    <?xml version="1.0" encoding="UTF-8"?>
+     <database name="propel" defaultIdMethod="native" noxsd="true">
+       <table name="ask_question" phpName="Question">
+         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+         <column name="user_id" type="integer" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="title" type="longvarchar" />
+         <column name="body" type="longvarchar" />
+         <column name="created_at" type="timestamp" />
+         <column name="updated_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_answer" phpName="Answer">
+         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+         <column name="question_id" type="integer" />
+         <foreign-key foreignTable="ask_question">
+           <reference local="question_id" foreign="id"/>
+         </foreign-key>
+         <column name="user_id" type="integer" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="body" type="longvarchar" />
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_user" phpName="User">
+         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+         <column name="nickname" type="varchar" size="50" />
+         <column name="first_name" type="varchar" size="100" />
+         <column name="last_name" type="varchar" size="100" />
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_interest" phpName="Interest">
+         <column name="question_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_question">
+           <reference local="question_id" foreign="id"/>
+         </foreign-key>
+         <column name="user_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_relevancy" phpName="Relevancy">
+         <column name="answer_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_answer">
+           <reference local="answer_id" foreign="id"/>
+         </foreign-key>
+         <column name="user_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="score" type="integer" />
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+     </database>
+
+Perhatikan pada file ini nama database nya diset menjadi `propel`. tanpa
+peduli apa nama database sebenarnya. Parameter ini digunakan untuk melakukan
+koneksi dari layer Propel ke framework symfony. Nama sebenarnya dari
+database akan didefinisikan pada file konfigurasi `databases.yml` (lihat
+dibawah). 
+
+Ada cara lain untuk membuat file `schema.xml` jika anda sudah memiliki
+database. Jika Anda sudah familiar dengan tool design database yang grafis,
+Anda akan lebih suka membuat schema dari database MySQL yang digenerate. 
+Sebelum Anda melakukan hal tersebut, Anda hanya perlu mengedit file
+`propel.ini`  yang terletal di direktori `askeet/config/` dan masukkan
+setingan koneksi ke database Anda :
+
+    propel.database.url = mysql://username:password@localhost/databasename
+
+...dimana `username`,`password`,`localhost`, dan `databasename` adalah
+...setingan koneksi dari database Anda. Sekarang Anda dapat menggunakan
+...perintah `propel-build-schema` (dari direktori askeet) untuk menggenerate
+...`schema.xml` dari database. 
+
+    $ symfony propel-build-schema
+    
+>**Catatan**: Beberapa tool ada yang bisa membantu Anda untuk membuat database
+>secara grafis (misalnya [Fabforce DbDesigner](http://www.fabforce.net/dbdesigner4/)) dan menggenerate
+>`schema.xml` secara langsung. (dengan [DB Designer 4 TO Propel Schema
+>Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php)).
+
+
+### Pembuatan model Object 
+
+Untuk menggunakan engine InnoDB, sebuah baris harus ditambahkan pada file
+`propel.ini` di direktori `askeet/config/` :
+
+    propel.mysql.tableType = InnoDB
+
+Setelah `schema.xml` dibuat, Anda dapat menggenerate model object yang
+berdasarkan pada relational model. Pada symfony, object relational mapping
+ini ditangani o;eh Propel, tetapi diegkapsulasi ke perintah symfony : 
+
+    $ symfony propel-build-model
+    
+Perintah ini (yang perlu Anda gunakan dari direktori proyek askeet) akan
+menggenerate clas-class yang berhubungan dengan semua tabel yang
+didefinisikan pada schema, bersama dengan accesor standar(method `->get()` dan
+`->set()`). Anda dapat melihat code yang digenerate ini pada direktori
+`askeet/lib/model/om/`. Jika Anda bertanya-tanya kenapa ada dua buah class
+per tabel, silahkan cek [bab
+model](http://symfony-project.com/content/book/page/model.html) pada buku
+symfony. Class-class ini akan ditulis ulang kembali setiap kali anda
+melakukan `build-model`, dan ini akan sering terjadi pada proyek ini. Jadi,
+jika  Anda ingin menambahkan method ke model object, Anda harus memodifikasi
+class-class yang terletak di direktori `askeet/lib/model/` - class-class ini
+merupakan warisan (inherit) dari class-class yang ada di `/om`.
+
+Database
+------------
+
+### Koneksi
+
+Sekarang symfony telah memiliki model object dari database, sekarang saatnya
+mengkoneksikan proyek Anda dengan database MySQL. Pertama-tama, Anda harus
+membuat sebuah database di MySQL: 
+
+    $ mysqladmin -u youruser -p create askeet
+
+Sekarang buka file konfigurasi `askeet/config/databases.yml`. Jika ini
+adalah pertama kalinya Anda menggunakan symfony, Anda akan menemukan kalau
+file konfigurasi symfony ditulis dalam [YAML][4]. Sintaks ini sangat
+sederhana, tapi ada satu aturan yang sangat penting dalam file YAML: jangan
+menggunakan tab, selalu gunakan spasi. Setelah Anda mengetahui hal ini, Anda
+sudah siap untuk mengedit file dan menuliskam setingan koneksi yang benar ke
+database Anda di bawah kategori `all:` :
+
+    all:
+      propel:
+        class:          sfPropelDatabase
+        param:
+          phptype:  mysql
+          host:     localhost
+          database: askeet
+          username: youruser
+          password: yourpasswd
+
+Jika Anda ingin tahu lebih banyak tentang konfigurasi symfony dan file YAML,
+bacalah [bab Konfigurasi dalam
+Praktek](http://www.symfony-project.com/content/book/page/configuration_practice.html)
+pada buku symfony.
+
+### Build
+
+Jika Anda tidak menulis file `schema.xml` dengan tangan, Anda mungkin telah
+memiliki tabel-tabel ini di database Anda. Anda dapat melewatkan bagian ini.
+
+Untuk Anda penggemar kwyboard, ini adalah sebuah kejutan. Anda tidak perlu
+memnbuat tabel dab kolom pada MySQL database. Anda melakukannya sekali di
+`schema.xml`, jadi symfony akan membuatkan semua  statemen SQL untuk Anda:
+
+    $ symfony propel-build-sql
+
+Perintah ini akan membuat `schema.xml` pada direktori `askeet/data/sql/`.
+Gunakan perintah SQL ini pada MySQL:
+
+    $ mysql -u youruser -p askeet < data/sql/schema.sql
+
+Mengetes akses data melalui CRUD
+---------------------------------
+
+Sangatlah menyenanfkan melihat apa yang kita kerjakan itu berguna. Sampai
+sekarang, browser Anda belum pernah digunakan, padahal kita seharusnnya
+membuat aplikasi web...
+Jadi mari kita membuat beberapa tenpale dan action symfony untuk
+memanipulasi data di tabel 'question'. Ini akan memperbolehkan Anda untuk
+membuat beberapa pertanyaan dan menampilkannya : .
+
+Pada direktori `askeet/`, ketik :
+
+    $ symfony propel-generate-crud frontend question Question
+    
+Ini akan menngenerate scaffolding untuk module `question` pada aplikasi
+`frontend` yang berdasarkan pada model object Propel `Question`, dengan
+action Create Retrieve, Update Delete (yang disingkat dengan akronim CRUD).
+Jangan binung: Scaffolding bukanlah aplikasi yang siap digunakan, melainkan
+struktur dasar dimana dengan struktur dasar ini Anda dapat membangun
+fitur-fitur baru, menambahkan business rule dan mengkostumisasi tampilannya. 
+
+Daftar semua action yang dibuat oleh generator CRUD adalah:
+
+| Nama Action  | Penjelasan 
+|--------------|------------
+| list         | menunjukkan semua record pada tabel
+| index        | diforward ke action list
+| show         | memperlihatkan semua field dalam suatu record
+| edit         | menampilkan sebuah form untuk membuat record baru atau mengedit data yang sudah ada
+| update       | memodifikasi sebuah record tergantung pada parameter yang diberikan di request, kemudian diforward ke show 
+| delete       | mengahapus suatu record pada tabel
+
+Anda dapat membaca tentang action-action yang digenerate pada [bab
+scaffolding](http://www.symfony-project.com/content/book/page/generator.html)
+dari buku symfony. 
+
+Pada direktori, `askeet/apps/frontend/modules/`, perhatikan ada module baru,
+yaitu `question`, coba browse source nya.
+
+Setiap kali Anda perlu menambahkan class baru yang perlu autoloaded, jangan
+lupa untuk membersihkan cache config (untuk mereload cache autoloading):
+
+    $ symfony cc frontend config
+
+Anda sekarang dapat mengetesnya online dengan merequest:
+
+    http://askeet/question
+
+![Create a new record](/images/askeet/CRUD1.gif)
+![List all records](/images/askeet/CRUD2.gif)
+
+Silahkan bermain-mainlah dengannya. Tambahkan beberapa pertanyaan,
+mengeditnya, melist dan menghapusnya. Jika bekerja, maka ini berarti object
+model telah benar, koneksi ke database benar, dan mapping antara relational
+model antara database dan model symfony benat. Ini merupakan test
+fungsional yang bagus.
+
+Sampai Jumpa Besok
+------------------
+
+Anda tidak menulis sebaris kode PHP pun, tetapi Anda telah memiliki aplikasi
+dasar untuk digunakan. Ini tidak buruk untuk hari kedua. Besok, kita akan
+mulai menulis beberapa code untuk memiliki halaman selamat datang yang
+menampilkan daftar pertanyaan.
+
+Kita juga akan menambahkan data test  ke database kami dengan menggunakan
+batch process, dan mempelajari bagaimana meng-ekstend model.  
+
+Sekarang Anda tahu apa yang akan dilakukan oleh aplikasi, Anda mungkin bisa
+membayangkan fitur tambahan yang dapat ditambahkan. Silahkan memberikan usul
+tentang fitur yang ingin ditambahkan dengan menggunakan [mailing-list
+askeet](mailto:askeet-subscribe@symfony-project.com), ide yang paling
+populer akan menjadi tanbahan untuk hari ke 21 pada symfony advent calendar.
+
+Silahkan melihat-lihat source tutorial hari ini (tag `release_day_2`) pada : 
+
+    http://svn.askeet.com/tags/release_day_2
+
+[1]:  http://www.xprogramming.com/xpmag/whatisxp.htm    "(XP) Extreme Programming Explained"
+[2]:  http://www.uml.org/                               "Unified Modeling Language"
+[3]:  http://propel.phpdb.org/trac/                     "Propel"
+[4]:  http://www.yaml.org/                              "YAML"

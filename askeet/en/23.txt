@@ -1,0 +1,217 @@
+symfony advent calendar day twenty-three: Internationalization
+==============================================================
+
+Previously on symfony
+---------------------
+
+Now that you learned how to transfer a symfony application to a production host, the askeet application can run anywhere. But what if someone decided to use it in a non-English speaking country like, say, France?
+
+Askeet being an open-source project, we hope that people from all over the world will use it shortly. Not only does that mean that all the files of the project have to be encoded in [utf-8](http://en.wikipedia.org/wiki/UTF-8), the application also has to propose a multilingual interface and content localization.
+
+Think about the multinational companies that are going to install askeet on their Intranet to have a knowledge management base. They will definitely require that users can switch interface language or content rather than install one askeet per language... Fortunately, the choices made during the [eighteenth day](18.txt) to implement universes will ease our task a lot, and symfony has native support for internationalized interfaces.
+
+Localization
+------------
+
+What if the call to an address like:
+
+    http://fr.askeet.com/
+    
+...displayed only the French questions? Well, this is quite easy, because since the [eighteenth day](18.txt), such an URI is understood as a universe.
+
+### Content
+
+Creating a question in a language universe will have it tagged automatically with the language tag (here: 'fr'). And, if you browse the 'fr' universe, only the questions with the 'fr' tag will appear.
+
+So the universe filter already takes care of content localization. That was an easy move.
+
+### Look and feel
+
+The universes can have their own stylesheet. This means that the look and feel of a localized askeet can be easily adapted as well, with the same mechanism. Next, please.
+
+### Language-dependent functions
+
+The database indexing system built during the [twenty-first day](http://www.symfony-project.com/askeet/22) relies on a stemming algorithm which is language-dependant. In a localized version, it has to be adapted.
+
+For now, there is no available stemming library for other languages than English in PHP, but what if there was one, or what if someone decided to port one of the [Perl stemming libraries](http://search.cpan.org/search?query=stem&mode=all) to PHP?
+
+Then, in the `myTools::stemPhrase()` method, we should call a [factory method](http://en.wikipedia.org/wiki/Factory_method_pattern) instead of a simple PorterStemmer (left as an exercise for now).
+
+### Database content
+
+Imagine an international website proposing a list of hotels around the world. Each hotel is shown with a text description of the rooms, the service and the opening hours. There are thousands of hotels, so this content is to be stored in a database. The problem is that there must be as many versions of the descriptions as there are translations of the site.
+
+Symfony provides a way to structure data in order to handle such cases. As for the example above, there would be a `Hotel` class for the fares, address and not-to-be-translated content, and a `HotelI18n` class for the localized content. As the Propel accessors abstract this separation, even if the `description` was located in the `HotelI18n` table, you would still access it with a simple:
+
+    [php]
+    $description = $hotel->getDescription();
+
+To understand how this works, refer to the [i18n chapter](http://www.symfony-project.com/content/book/page/i18n.html) of the symfony book.
+
+Fortunately, the filter system of the askeet universes replaces the need for content adaptation, so we won't use it here..
+
+Internationalization
+--------------------
+
+As it is a long word, developers often refer to [internationalization](http://en.wikipedia.org/wiki/Internationalization_and_localization) as 'i18n'. For those who don't know why, just count the letters in the word 'internationalization', and you will also understand why 'localization' is referred to as 'l10n'. In web application development, i18n mostly concerns the translation of text content and the use of local formats for the interface.
+
+### Set the culture
+
+A lot of built-in i18n features in symfony are based on a parameter of the user session called the **culture**. The culture is the combination of the country and the language of the user, and it determines how the text and culture-dependant information will be displayed.
+
+When the askeet application recognizes a universe as a localization, it has to set the corresponding culture. When should a permanent tag be recognized as a localization? We choose to allow only the ones for which the interface is translated (see below), so the fact that a universe is a localization is determined by the existence of an XML translation file in the project `i18n/` directory.
+
+The universes are discovered in the `askeet/apps/frontend/lib/myTagFilter.class.php` filter, so we just need to modify it a little bit:
+
+    [php]
+    public function execute ($filterChain)
+    {
+      ...
+      // is there a tag in the hostname?
+      $request  = $this->getContext()->getRequest();
+      $hostname = $request->getHost();
+      if (!preg_match($this->getParameter('host_exclude_regex'), $hostname) && $pos = strpos($hostname, '.'))
+      {
+        $tag = Tag::normalize(substr($hostname, 0, $pos));
+   
+        // add a permanent tag constant
+        sfConfig::set('app_permanent_tag', $tag);
+   
+        // add a custom stylesheet
+        $request->setAttribute('app/tag_filter', $tag, 'helper/asset/auto/stylesheet');
+     
+        // is the tag a culture?
+        if (is_readable(sfConfig::get('sf_app_i18n_dir').'/global/messages.'.strtolower($tag).'.xml'))
+        {
+          $this->getContext()->getUser()->setCulture(strtolower($tag));
+        }
+        else
+        {
+          $this->getContext()->getUser()->setCulture('en');
+        }
+      }
+      ...
+    }
+
+>**Note**: The language tags that will be recognized are to be coded in two lower-case characters, as described in the [ISO 639-1 norm](http://www.w3.org/WAI/ER/IG/ert/iso639.htm) (for instance `fr` for French). When dealing with internationalization, always prefer ISO codes for countries and languages, so that your code can comply with international standards and be understood by foreign developers.
+
+You will find more information about internationalization and cultures in the [i18n chapter](http://www.symfony-project.com/content/book/page/i18n.html) of the symfony book.
+
+### Dates, Times, Numbers, Currency, Measurements 
+
+The way to display a date in France is not the same as in the US. What an American would write:
+
+    December 16, 2005 9:26 PM
+   
+...is written by a French
+
+    16 décembre 2005 21:26
+
+If you remember well, each time we had to display a date in an askeet template, we used the `format_date()` helper. This helper formats the date given as parameter according to the user culture. As the culture is set in the `myTagFilter.class.php` filter, the date formatting will be done automatically.
+
+![date formatting in French askeet](/images/askeet/french_date.gif)
+
+This is a another good practice for international projects: always use the i18n helpers when you have to output a date, a time, a number, a currency or a measurement. Symfony provides helpers for most of them (see the [i18 helpers chapter](http://www.symfony-project.com/content/book/page/templating_i18n_helpers.html) of the symfony book for more information).
+
+### Interface translation
+
+The interface of the askeet project contains text. In a localized version, the text of the interface should be displayed in the language of the user culture.
+
+To enable interface translation, all the texts of the askeet templates have to be enclosed in a special i18n helper, `__()`. In addition, the helper must be declared at the top of the template. For instance, to enable interface translation in the home page, open the `askeet/apps/frontend/modules/question/templates/listSuccess.php` template and change it to:
+
+    [php]
+    <?php use_helper('I18N') ?>
+    
+    <h1><?php echo __('popular questions') ?></h1>
+    
+    <?php include_partial('list', array('question_pager' => $question_pager)) ?>
+
+>**Note**: Instead of having to add the `i18n` helper on top of each template, you can just add it once to the application `settings.yml` in `askeet/apps/frontend.config/`:
+>
+>     all:
+>       .settings:
+>    
+>         standard_helpers:       Partial,Cache,Form,I18N
+>
+
+For each language in which the interface is translated, a `messages.xx.xml` file must be created in the `askeet/apps/frontend/i18n/` directory, where `xx` is the language of the translation. This XML file is a [XLIFF](http://www.xliff.org/) dictionary, showing the translated version of the text from the source language (English for askeet).
+
+For instance, to enable a French translation, you must create a `messages.fr.xml` with the following content:
+
+    [xml]
+    <?xml version="1.0" ?>
+    <xliff version="1.0">
+      <file orginal="global" source-language="en_US" datatype="plaintext">
+        <body>  
+          <trans-unit id="1">
+            <source>popular questions</source>
+            <target>questions populaires</target>
+          </trans-unit>             
+        </body>
+      </file>
+    </xliff>
+
+The syntax of the XLIFF file is explained in detail in the [i18N chapter](http://www.symfony-project.com/content/book/page/i18n.html) of the symfony book.
+
+Now, the big part of the job is to browse all the templates (and template fragments) to find the text to translate. Each time you find a sentence, you have to enclose it between `<?php echo __('` and `') ?>`, and create a new `<trans-unit>` tag in the `messages.fr.xml` file. Fortunately, all the templates in symfony projects are localized in `templates/` directories, so you don't need to browse all the files of your project.
+
+>**Note**: A translation only makes sense if the translation files contains full sentences. However, as you sometimes have formatting or variables in the text, you can add a second argument to the `__()` helper to do substitution. For instance, to mark the following template text:
+>
+>     [php]
+>     There are <?php echo count_logged() ?> persons logged.
+>
+>...use only one `__())` call to avoid splitting the sentence into two parts that can't be understood on their own:
+>
+>     [php]
+>     <?php echo __('There are %1% persons logged', array('%1%' => count_logged())) ?>
+>
+
+Finally, to allow the automatic translation, you have to set the `i18n` parameter to `on` in the application `settings.yml`:
+
+    all:
+      .settings:
+    
+        i18n:                on
+
+Now browse to `fr.askeet.com` and watch the translated interface:
+
+![askeet in French](/images/askeet/askeet_fr.gif)
+
+### Automated translation
+
+Some tools exist to automate the task of enclosing source text and creating `messages.xx.xml` files. Unfortunately, none will be able to do the enclosing as well as you would do. Only you can determine where to start and where to end the `__()` call. Although we don't use them, we provide a link to the websites where you will find resources about automated translation tools:
+
+* The `xgettext` command from the [GNU getText tool](http://en.wikipedia.org/wiki/Gettext) provides a way to extract text from PHP code. It produces a `.pot` file (list of the terms) that can be declined into a series of `.po` files (list of the terms translated in one language).
+* The `po2xliff` command from the [XLIFF tools](http://xliff-tools.freedesktop.org/wiki/Projects/XliffPoTools) turns `.po` files into `messages.xx.xml` XLIFF files.
+* For Windows users, the [Okapi framework](http://okapi.sourceforge.net/) can be a good alternative.
+* To edit the translation files, [poedit](http://www.poedit.org/index.php) proposes an intuitive interface (this is especially useful since most of the human translators *don't* understand either XML or `.po` files).
+
+### Don't forget
+
+Once the text from the templates is marked for translation, there is still a close code inspection to be done. As a matter of fact, text messages can hide in unexpected parts of your application. Make sure you do an inventory to find the following "hidden" text:
+
+* Image folders (images can include text)
+ 
+  If you need to localize images, put them in a sub directory corresponding to their culture, and add the culture to the `image_tag()` helper call:
+ 
+          [php]
+           <?php echo image_tag($sf_user->getCulture().'/myimage.png') ?>
+
+* The alternative text for images, the button labels and all the text messages that are parameters of `<?php` and `?>` instructions.
+
+* The JavaScript messages can be located in helpers (as in `link_to('click', '@rule', 'confirm=Are you sure?')`), in JavaScript tags in your templates, or in included `.js` files
+
+All in all, if you don't design an application with i18n in mind from the beginning, there is a high risk that you will forget some untranslated text somewhere. Our best advice is to think about i18n before starting to develop, and if you know that your application will probably be translated, keep in mind to use `__('')` each time you write text that will be displayed to the end user.
+
+>**Note**: There are some hidden text messages in the `validate/` directories of your modules, that appear when a form is not properly validated. The cool thing is that you don't have to do a special treatment to these texts if they appear in the XLIFF translation. Symfony will automatically find the translation in a `<trans-unit>` node, and use it instead of the original text of the YAML files.
+
+![error messages](/images/askeet/error_fr.gif)
+
+See you Tomorrow
+----------------
+
+[Askeet](http://www.askeet.com/) is making its way to be a really useful open-source application. Being an i18n-compatible application, it becomes available to the non-English speakers (roughly 90% of the world population).
+
+The modified source of the application, including i18n, is available in the [SVN repository](http://svn.askeet.com/tags/release_day_23/) and can be browsed directly from the [askeet trac](http://trac.askeet.com/trac/browser/tags/release_day_23). Your comments on the [forum](http://www.symfony-project.com/forum/index.php/f/8/) are welcome.
+
+And tomorrow is already the last day of the symfony advent calendar series. Don't miss it.

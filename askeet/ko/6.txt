@@ -1,0 +1,360 @@
+symfony advent calendar day six: security and form validation
+=============================================================
+
+지난 줄거리
+-----------
+
+[5일째](5.txt) 에는 템플릿과 액션들을 건드려보았습니다. 폼과 페이저에 관해서는 빠삭하게 알게 되셨을 것입니다. 오늘 하게 될 부분은 로그인되지 않았거나 승인되지 않은 사용자가 특정 페이지를 접근하는 것을 막도록 하겠습니다. 이 과정에서 폼 값을 확인하는 것도 함께 살펴볼 계획입니다. 이 과정에서 사용자 클래스가 사용될 것이니, 이에 대해 아직 잘 모르신다면 온라인 문서중 [사용자 확장 부분](http://www.symfony-project.com/content/book/page/custom_helper.html) 을 살펴보시기 바랍니다.
+
+로그인 폼값 확인하기 (Validation)
+---------------------------------
+
+### 검증 (Validation) 파일
+
+로그인 폼에는 `nickname` 과 `password` 를 입력할 수 있도록 되어 있습니다. 하지만 만약 사용자가 부정확한 정보를 입력한다면 어떻게 될까요? 이러한 경우에 대처하기 위해서 심포니는 폼값 확인 시스템이 있습니다. `/fronted/modules/user/validate` 디렉토리에 `login.yml` 파일을 생성하여 아래 내용을 입력합니다.
+
+    methods:
+      post: [nickname, password]
+    
+    names:
+      nickname:
+        required:     true
+        required_msg: your nickname is required
+        validators:   nicknameValidator
+    
+      password:
+        required:     true
+        required_msg: your password is required
+    
+    nicknameValidator:
+        class:        sfStringValidator
+        param:
+          min:        5
+          min_error:  nickname must be 5 or more characters
+
+먼저 `methods` 아래로 검토해야할 필드들을 폼이 전송된 메쏘드와 함께 적습니다 (POST 메쏘드만 사용하는 이유는 GET 메쏘드로 넘어온 값들은 로그인 폼을 표시하기 위해 전달된 값들이기 때문에 검토할 필요가 없기 때문입니다). 그리고 `names` 아래로 각각의 필드가 가져야 하는 값들을 에러메시지와 함께 입력합니다. 마지막으로는 'nickname' 필드가 가져야 하는 값에 대한 규칙을 정해진 필드를 사용해 정의합니다. 이 예제에서는 심포니가 기본적으로 제공하는 `sfStringValidator` 를 사용하여 문자열의 형태를 검사합니다 (심포니의 폼 기본 검토 규칙들을 알고 싶으시다면 온라인 문서중 [폼값 확인하기 부분](http://www.symfony-project.com/content/book/page/validate_form.html) 을 참고하시기 바랍니다.
+
+### 에러 처리
+
+자 그럼 사용자가 잘못된 데이터를 입력할 경우 어떻게 되나요? `login.yml` 파일에 쓰여진 조건이 만족되지 않을 경우에 컨트롤러는 원래 호출하도록된 `userAction` 클래스의 `executeLogin()` 메쏘드 대신에 `userAction` 클래스의 `handleErrorLogin()` 메쏘드를 호출합니다. 만약 해당 메쏘드가 존재하지 않는다면 기본적으로 `loginError.php` 를 출력합니다. 사실 그게 기본 `handleError()` 메쏘드가 하는일입니다.
+
+    [php]
+    public function handleError()
+    {
+      return sfView::ERROR;
+    }
+
+그럼 새로운 템플릿을 작성해야 하는 건가요? 에러 페이지를 작성하는 대신에, 에러 메시지를 문제가 생긴 폼 옆에 출력하고 로그인 폼을 다시 보여주도록 할 것입니다. 그럼 에러가 발생했을때의 대처방식을 수정하고 로그인 템플릿인 `loginSuccess.php` 템플릿을 수정하도록 하겠습니다.
+
+    [php]
+    public function handleErrorLogin()
+    {
+      return sfView::SUCCESS;
+    }
+
+>**참고**: 액션이름과 그것의 `return` 값, 그리고 템플릿 파일과 관계된 이름 규약은 온라인 문서중 [뷰 부분](http://www.symfony-project.com/content/book/page/view.html) 에서 다루고 있습니다.
+
+### 템플릿 에러 헬퍼들
+
+이제 `loginSuccess.php` 가 다시 호출되도록 하였으니 템플릿에 에러를 출력하도록 하겠습니다. `Validation` 헬퍼 모음의 `form_error()` 헬퍼를 사용할 것입니다. 두개의 `form-row` 부분을 아래와 같이 수정합니다.
+
+    [php]
+    <?php use_helper('Validation') ?>
+
+    <div class="form-row">
+      <?php echo form_error('nickname') ?>
+      <label for="nickname">nickname:</label>
+      <?php echo input_tag('nickname', $sf_params->get('nickname')) ?>
+    </div>
+    
+    <div class="form-row">
+      <?php echo form_error('password') ?>
+      <label for="password">password:</label>
+      <?php echo input_password_tag('password') ?>
+    </div>
+ 
+`form_error()` 헬퍼는 인자로 받은 값에 해당하는 필드에 에러가 발생되었을때, `login.yml` 에 정의된 에러 메시지를 출력할 것입니다.
+
+사용자 이름에 5글자보다 짧게 입력하거나 둘 중의 아무것이나 빈 칸으로 남겨둔채 확인버튼을 눌러서 폼값 확인이 잘 작동하는지 살펴보겠습니다. 에러 메세지가 마술처럼 관계된 필드에 나타나는 것을 확인하실 수 있으실 것입니다.
+
+![로그인 폼 에러메시지](/images/askeet/login_form_error.gif)
+
+이제 비밀번호가 필수항목이 되었습니다만, 아직 아무런 비밀번호도 데이터베이스에 저장되어 있지 않습니다. 사실 아무 비밀번호나 입력하더라도 로그인이 될 것입니다. 상당히 좋은 보안체계이죠?
+
+### 에러 메세지 스타일 정의
+
+위에서 폼을 테스트하실때 저희가 캡춰한 이미지와는 다르게 나타나는것을 보셨을 것입니다. 그것은 우리가 `web/main.css` 에 있는 `.form_error` 스타일 클래스를 정의하였기 때문입니다. `form_error()` 헬퍼가 에러메시지를 출력할때는 기본적으로 `.form_error` 스타일이 사용됩니다. 아래와 같이 해당 스타일을 정의하면 캡춰한 이미지와 동일한 스타일을 확인하실 수 있으실 것입니다.
+
+    [css]
+    .form_error
+    {
+      padding-left: 85px;
+      color: #d8732f;
+    }
+    
+사용자 인증하기
+---------------
+
+### 사용자 폼값 확인 규칙
+
+어제 우리는 `login` 액션에서 사용자이름이 데이터베이스에 존재하는지를 확인하도록 코드를 작성했습니다. 이 작업도 폼값 확인 부분에서 하는것이 맞을 것 같습니다. 이제 그 코드를 액션파일에서 들어내고 사용자 폼값 확인 규칙을 생성하여 그쪽으로 보내도록 하겠습니다. 복잡해 보이신다고요? 사실은 그렇지만도 않습니다. `login.yml` 파일을 열고 아래와 같이 수정합니다.
+
+    ...
+    names:
+      nickname:
+        required:      true
+        required_msg:  your nickname is required
+        validators:    [nicknameValidator, userValidator]
+    ...
+    userValidator:
+        class:         myLoginValidator
+        param:
+          password:    password
+          login_error: this account does not exist or you entered a wrong password
+
+`nickname` 필드에 `myLoginValidator` 라는 새로운 폼값 확인 규칙을 추가하였습니다. 이 규칙이 아직은 존재하지 않습니다만, 사용자를 인증하기 위해서는 비밀번호가 필요하기때문에, `password` 라는 이름으로 비밀번호를 전달합니다.
+
+### 비밀번호 저장
+
+잠시만요. 우리 데이터 모델과 테스트 데이터에는 비밀번호가 아직 없습니다. 먼저 사용자들의 비밀번호를 저장하도록 하겠습니다. 하지만 아시다시피 비밀번호를 데이터베이스에 일반 평문으로 저장하는 것은 보안상 좋지 않기 때문에, 우리는 비밀번호를 랜덤 키로 [sha1 해쉬](http://en.wikipedia.org/wiki/SHA_hash_functions) 하여 저장하도록 하겠습니다. 만약 이 '소금' (주 - 비밀번호에 더하는 랜덤키를 'salt' 라고 합니다) 방식이 익숙하지 않다면 [비밀번호 깨트리기 실례](http://en.wikipedia.org/wiki/Password_cracking) 를 한 번 보시기 바랍니다.
+
+`schema.xml` 파일을 여시고 `User` 테이블에 다음을 추가합니다.
+
+    [xml]
+    <column name="email" type="varchar" size="100" />
+    <column name="sha1_password" type="varchar" size="40" />
+    <column name="salt" type="varchar" size="32" />
+
+`symfony propel-build-model` 을 실행하셔서 모델을 새로 작성합니다. `symfony propel-build-sql` 명령을 통해서 생성한 `schema.sql` 을 사용하던지 직접 데이터베이스에 접속하셔서 하시던지, 데이터베이스에 이 필드들을 추가하여야 합니다. 이제 `askeet/lib/model/User.php` 파일을 열고 `setPassword()` 메쏘드를 추가합니다.
+
+    [php]
+    public function setPassword($password)
+    {
+      $salt = md5(rand(100000, 999999).$this->getNickname().$this->getEmail());
+      $this->setSalt($salt);
+      $this->setSha1Password(sha1($salt.$password));
+    }
+
+일반적인 비밀번호 저장방식과 다를바없어보이지만, 위 방식으로 임의의 `소금` (32글자 해쉬된 임의의 문자열) 과 해쉬된 비밀번호 (40 글자 문자열) 를 저장합니다.
+
+### 테스트 데이터에 비밀번호 추가
+
+[3일째](3.txt) 에 만들었던 데이터 파일 기억나시나요? 비밀번호와 이메일을 테스트 데이터에 추가합니다. `askeet/data/fixtures/test_data.yml` 파일을 열고 아래와 같이 수정합니다.
+
+    User:
+      ...
+      fabien:
+        nickname:   fabpot
+        first_name: Fabien
+        last_name:  Potencier
+        password:   symfony
+        email:      fp@example.com
+    
+      francois:
+        nickname:   francoisz
+        first_name: François
+        last_name:  Zaninotto
+        password:   adventcal
+        email:      fz@example.com
+
+`User` 클래스에 `setPassword()` 메쏘드가 이미 정의되어 있으므로, `sfPropelData` 객체는 `sha1_password` 와 `salt` 컬럼을 자동으로 생성하여 줄 것입니다. 이제 아래 명령을 호출합니다. 
+
+    $ php batch/load_data.php
+
+>**참고**: `sfPropelData` 객체는 `실제` 데이터베이스 컬럼에 기반하여 생성된 메쏘드가 아니더라도 사용이 가능합니다.
+>
+>이에 대한 좀 더 자세한 내용은 온라인 문서중 [데이터베이스 자료 입력하기 부분](http://www.symfony-project.com/content/book/page/populate.html) 을 참조하시기 바랍니다.
+
+>**참고**: 'Anonymous Coward' 사용자에 대해서 비밀번호를 지정할 필요는 없습니다. 우리는 해당 사용자를 로그인하지 못 하도록 할 계획입니다. 그리고 위 비밀번호는 우리가 사용하는 비밀번호들과는 전혀 연관이 없으니 헛고생하지 마시기 바랍니다.
+
+### 사용자 폼값 확인 규칙
+
+이제 `myLoginValidator` 를 작성해보겠습니다. 파일은 모듈이 접근 가능한 `askeet/lib/` 나 `askeet/aps/frontend/lib/`, 또는 `askeet/apps/frontend/modules/user/lib/` 중 어느곳에 만드셔도 무방합니다. 지금은 전체 어플리케이션에서 이 규칙을 사용할 것이라고 가정하고 `askeet/apps/frontend/lib/` 아래에 `myLoginValidator.class.php` 라는 이름으로 파일을 만들도록 하겠습니다.
+
+    [php]
+    <?php
+    
+    class myLoginValidator extends sfValidator
+    {    
+      public function initialize($context, $parameters = null)
+      {
+        // initialize parent
+        parent::initialize($context);
+    
+        // set defaults
+        $this->setParameter('login_error', 'Invalid input');
+    
+        $this->getParameterHolder()->add($parameters);
+    
+        return true;
+      }
+
+      public function execute(&$value, &$error)
+      {
+        $password_param = $this->getParameter('password');
+        $password = $this->getContext()->getRequest()->getParameter($password_param);
+    
+        $login = $value;
+
+        // anonymous is not a real user
+        if ($login == 'anonymous')
+        {
+          $error = $this->getParameter('login_error');
+          return false;
+        }
+    
+        $c = new Criteria();
+        $c->add(UserPeer::NICKNAME, $login);
+        $user = UserPeer::doSelectOne($c);
+    
+        // nickname exists?
+        if ($user)
+        {
+          // password is OK?
+          if (sha1($user->getSalt().$password) == $user->getSha1Password())
+          {
+            $this->getContext()->getUser()->setAuthenticated(true);
+            $this->getContext()->getUser()->addCredential('subscriber');
+  
+            $this->getContext()->getUser()->setAttribute('subscriber_id', $user->getId(), 'subscriber');
+            $this->getContext()->getUser()->setAttribute('nickname', $user->getNickname(), 'subscriber');
+      
+            return true;
+          }
+        }
+    
+        $error = $this->getParameter('login_error');
+        return false;
+      }
+    }
+
+폼값 확인 클래스 (validator) 가 시점에서 - 여기서는 `login` 폼이 제출된 후겠지요 - `initialize()` 메쏘드가 먼저 호출됩니다. 해당 메쏘드는 `login_error` 메세지의 기본값으로 `Invalid Input` 을 저장하고 `login.yml` 파일의 `parma:` 헤더 아래 있던 값들을 파라미터 홀더 객체로 병합합니다.
+
+그리고는 `execute()` 메쏘드가 호출됩니다. `$password_param` 은 `login.yml` 파일의 `password` 헤더 아래에 있던 필드의 이름입니다. 이 필드 이름을 사용하여 사용자 요청값들 중에서 비밀번호를 찾습니다. 따라서 `$password` 변수에는 실제 사용자가 입력한 비밀번호가 들어가게 됩니다. `$value` 변수에는 현재 필드의 값, 즉 `myLoginValidator` 클래스는 `nickname` 필드를 확인하기 위해 호출되었으므로, 사용자가 입력한 이름이 들어가게 됩니다. 드디어 폼값 확인 클래스가 사용자를 확인하는데 필요로 하는 데이터들이 모두 모였습니다.
+
+이후의 코드들은 `login` 액션에서 따온것들입니다. 하지만 비밀번호가 올바른지 확인하는 부분이 추가되었습니다 (지난번에는 항상 참이었죠?). 사용자가 입력한 비밀번호를 저장되어 있던 소금값과 합하여 해쉬하고, 이를 기존의 해쉬된 비밀번호와 비교합니다.
+
+만약 로그인 아이디와 비밀번호가 정확하다면, 폼값 확인 클래스는 `참` 을 반환하고 원래의 액션인 `executeLogin()` 이 실행될 것입니다. 만약 그렇지 않다면 `거짓` 을 반환하고, `handleErrorLogin()` 메쏘드가 실행될 것입니다.
+
+### 액션에서 코드 제거하기
+
+자 이제 사용자를 확인하는 코드는 폼값 확인 클래스로 옮겨졌으니, 기존 코드를 `login` 액션에서 제거하도록 하겠습니다. 액션이 POST 메쏘드로 호출되는 경우, 사용자의 요청은 폼값 확인 모듈로부터 폼값이 올바른지 확인을 받게 되므로  `executeLogin()` 가 실행되었다면, 해당 사용자의 아이디와 비밀번호는 정확하다고 볼 수 있습니다. 따라서 `executeLogin()` 메쏘드에서는 `referer` 페이지로 사용자를 이동시키기만 하면 됩니다.
+
+    [php]
+    public function executeLogin()
+    {
+      if ($this->getRequest()->getMethod() != sfRequest::POST)
+      {
+        // display the form
+        $this->getRequest()->getParameterHolder()->set('referer', $this->getRequest()->getReferer());
+        
+        return sfView::SUCCESS;
+      }
+      else
+      {
+        // handle the form submission
+        // redirect to last page
+        return $this->redirect($this->getRequestParameter('referer', '@homepage'));
+      }
+    }
+
+테스트 사용자중 하나의 정보를 이용해서 로그인을 시도해보십시오 (자동으로 적재되어야하는 폼값 확인 클래스가 생성되었기 때문에, 실행전에 캐시를 지우셔야 합니다).
+
+이용 제한
+---------
+
+특정 액션에 대해 이용을 제한하고 싶으시다면 모듈의 `config/` 디렉토리에 `security.yml` 파일을 추가하셔서 다음과 같이 내용을 채우셔야 합니다.
+
+    all:
+      is_secure:   on
+      credentials: subscriber
+
+이렇게 할 경우 해당 모듈은 사용자가 인증된 사용자이고 `subscriber` 라는 증명값 (credential) 을 가지고 있는 경우에 한해 이용할 수 있게됩니다.
+
+askeet 에서는 새로운 질문을 하거나, 질문에 대한 흥미도를 추가하거나, 또는 답변에 점수를 매길때에만 로그인이 필요하도록 할 것입니다. 그 외의 다른 모든 액션은 로그인된 사용자가 아니어도 이용이 가능할 것입니다.
+
+예를들어, `question/add` 액션에 대해서 (아직 작성되지 않았지만) 이용을 제한하고 싶다면, `askeet/apps/frontend/modules/question/config/` 디렉토리의 `security.yml` 파일을 다음과 같이 만들면 됩니다.
+
+    add:
+      is_secure:   on
+      credentials: subscriber
+
+    all:
+      is_secure:   off
+
+리펙토링 한판?
+--------------
+
+자 마지막으로 끝내기 전에, 우리가 가장 좋아하는 코드를올바른곳에옮기기 게임을 한 판 하도록 하죠.
+
+비밀번호를 확인하고 사용자가 확인되었을때, 사용자의 권한을 증명하고 나중을 위해 사용자의 `id` 를 저장하는 네줄의 코드가 있습니다. 이 코드들을 `myUser` 클래스 (데이터베이스의 `User` 에 대한 클래스가 아니라 세션에 관한 클래스) 의 메쏘드로 만들 수 있습니다. `askeet/apps/frontend/lib/myUser.php` 클래스에 다음 메쏘드를 추가합니다.
+
+    [php]
+    public function signIn($user)
+    {
+      $this->setAttribute('subscriber_id', $user->getId(), 'subscriber');
+      $this->setAuthenticated(true);
+
+      $this->addCredential('subscriber');
+      $this->setAttribute('nickname', $user->getNickname(), 'subscriber');
+    }
+
+    public function signOut()
+    {
+      $this->getAttributeHolder()->removeNamespace('subscriber');
+
+      $this->setAuthenticated(false);
+      $this->clearCredentials();
+    }
+
+이제 `myLoginValidator` 클래스의 `$this->getContext()->getUser()` 로 시작하는 네 줄을 아래와 같이 수정합니다.
+
+    [php]
+    $this->getContext()->getUser()->signIn($user);
+
+`user/logout` 액션 역시 (잊으신건 아니죠?) 아래와 같이 수정합니다.
+
+    [php]
+    public function executeLogout()
+    {
+      $this->getUser()->signOut();
+    
+      $this->redirect('@homepage');
+    }
+
+`subscriber_id` 와 `nickname` 세션값들 역시 게터 메쏘드로 추상화될 수 있을 것입니다. `myUser` 클래스에 다음 세 메쏘드들을 추가합니다.
+
+    [php]
+    public function getSubscriberId()
+    {
+      return $this->getAttribute('subscriber_id', '', 'subscriber');
+    }
+  
+    public function getSubscriber()
+    {
+      return UserPeer::retrieveByPk($this->getSubscriberId());
+    }
+
+    public function getNickname()
+    {
+      return $this->getAttribute('nickname', '', 'subscriber');
+    }
+
+`layout.php` 에서도 새로운 메쏘드들을 사용하도록 하겠습니다. 아래 코드를
+
+    [php]
+    <li><?php echo link_to($sf_user->getAttribute('nickname', '', 'subscriber').' profile', 'user/profile') ?></li>
+    
+아래와 같이 바꾸십시오.
+
+    [php]
+    <li><?php echo link_to($sf_user->getNickname().' profile', 'user/profile') ?></li>
+
+수정사항을 테스트하는 것을 잊지 마십시오. 이전과 로그인 프로세스가 동일하게 처리되어야 합니다 (하지만 코드는 훨씬 깔끔하죠).
+
+내일 이시간에
+-------------
+
+내일은 뷰 설정을 살펴보고, CSS 를 수정하고, 일관된 (consistent) 컴포넌트들과고 페이지 헤더를 살펴보겠습니다. 
+
+오늘 작성된 코드들은 [askeet SVN 저장소](http://svn.askeet.com/tags/release_day_6/) 에서 `release_day_6` 태그로 다운로드 가능합니다. askeet 에 대한 질문은 [askeet 포럼](http://www.symfony-project.com/forum/index.php/f/8/) 에서 자유롭게 해주시기 바랍니다. 21일째 무엇을 할지는 여러분에게 달려 있다는 것도 잊지 말아주시구요.

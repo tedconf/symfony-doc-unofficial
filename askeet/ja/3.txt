@@ -1,0 +1,357 @@
+﻿symfony アドイベント カレンダー ３日目: MVC構造へダイブ
+=================================================================
+
+前回までのsymfony
+---------------------
+
+[２日目](2.txt) リレーショナルデータモデルからオブジェクトモデルを作る方法を勉強し、 できあがったオブジェクトから足場（scaffolding）の生成を行いました。 また、前回までに作成したアプリケーションのコードは下のaskeet SVN リポジトリから見ることが出来ます:
+
+    http://svn.askeet.com/
+
+３日目の目標は、もっと良いサイトのレイアウトを持つこと、トップページに質問のリストを持つこと、質問毎に関心を持ったユーザーの数を表示すること、テストデータを用意する為にサンプルのテキストファイルからデータベースにデータを入れ込む事です。
+
+このチュートリアルを読む為には、symfonyブック [コントローラーの章](http://www.symfony-project.com/content/book/page/controller.html) で説明する symfonyのプロジェクト、アプリケーション、モジュール、アクションの概念をよく理解しておく必要があります。
+
+MVCモデル
+-------------
+
+今日は [MVC 構造][1] の世界への最初のダイブです。どういう事かというと、いろんな場所のファイルから１つのページを構成すると言うことです。
+
+データを操作する為のコードがページそのものを表示する部分から独立しているのなら、それは **モデル** (通常は `askeet/lib/model/`)に位置するべきです。最終的に表示する部分であれば、**ビュー**; に位置するべきで、symfonyでは、ビュー層はテンプレートディレクトリ (例えば `askeet/apps/frontend/modules/question/templates/`) と設定ファイルになります。これら全てを統括し、サイトを組み立てる部分はコントローラーで、symfonyでは、特定のページのコントローラーはアクションと呼ばれます(`askeet/apps/frontend/modules/question/actions/` のアクションを見てください)。 このモデルの詳細は、symfonyブックの [symfonyへのMVCを組込の章](http://www.symfony-project.com/content/book/page/mvc.html) を読んでください。
+
+今回行うビューでは少ししか変化がありませんが、多くのファイルを変更することになりますので、やっていることを見失わないように気を付けてください。ファイルの構成やいろいろなレイヤーへのコードの分割は後々にはよりいっそう意味を持ち、とても便利な物になってくるはずです。
+
+レイアウトの変更
+-----------------
+
+アプリケーションにおいての [デコレーターデザインパターン][2]では、アプリケーションによって呼び出されたテンプレートの内容は、全体共通なテンプレートに取り込まれるか、レイアウト自体へ取り込まれます。言い換えれば、レイアウトというのは、全体に共通なものを持ち、アクションの最終結果を”装飾”するようなものです。 デフォルトのレイアウトを開き、 (`askeet/apps/frontend/templates/layout.php` にあります) 下のように変更してみてください:
+
+    [php]
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+    
+    <?php echo include_http_metas() ?>
+    <?php echo include_metas() ?>
+    
+    <?php echo include_title() ?>
+    
+    <link rel="shortcut icon" href="/favicon.ico" />
+    
+    </head>
+    <body>
+    
+      <div id="header">
+        <ul>
+          <li><?php echo link_to('about', '@homepage') ?></li>
+        </ul>
+        <h1><?php echo link_to(image_tag('askeet_logo.gif', 'alt=askeet'), '@homepage') ?></h1>
+      </div>
+    
+      <div id="content">
+        <div id="content_main">
+          <?php echo $sf_data->getRaw('sf_content') ?>
+          <div class="verticalalign"></div>
+        </div>
+    
+        <div id="content_bar">
+          <!-- Nothing for the moment -->
+          <div class="verticalalign"></div>
+        </div>
+      </div>
+    
+    </body>
+    </html>
+
+>**注意**: HTMLの構造は出来るだけセマンティックになるようにしています。また、スタイルは出来るだけCSSに収まるようにしています。CSSの文法はこのチュートリアルの範囲内ではない為、スタイルシートについてはここでは説明しませんが、ダウンロードが必要な方は、 [SVN リポジトリ](http://svn.askeet.com/tags/release_day_3/web/css/) からダウンロードできます。
+>
+>2つのスタイルシートを用意します。 (`main.css` と `layout.css`). これらを `askeet/web/css/` ディレクトリにコピーし、これらのスタイルシートをオートロードできるように `frontend/config/view.yml` を変更してください:
+>
+>     stylesheets:    [main, layout]
+>
+
+現在のレイアウトはまだ簡単なものですが、１週間ぐらいの内に再構成します。 このテンプレートで重要な箇所は、 <head> 部分で、ここは通常自動生成され、 sf_content 変数はアクションの結果を持っています。
+
+変更した部分が反映されているか、トップページを見てチェックしてください。 - 今回は開発環境（dev）を呼び出してみましょう:
+
+    http://askeet/frontend_dev.php/
+    
+![updated layout](/images/askeet/congratulations_new.gif)
+    
+環境について少し
+------------------------------
+
+もし、 `http://askeet/frontend_dev.php/` と `http://askeet/` がどのように違うのか分からない場合は、symfonyブックの[設定の章](http://www.symfony-project.com/content/book/page/configuration.html) を読んでみてください。今のところこれらの違いは、違う環境だが同じアプリケーションを呼び出していると言うこと、と理解しておいてください。 環境というのはそれぞれ独自の設定であり、それぞれにおいて、フレームワークの機能がONだったりOFFだったりしています。
+
+この `/frontend_dev.php/` である場合、URLは **開発環境** 呼び出します。ここでは設定ファイルは毎回のリクエストで読み込まれ、HTMLのキャッシュは行われず、半透明になったデバッグ用のツールが右上に表示されます。 `/` URL（`/index.php/` に同じ）では、 **本番環境** 設定ファイルは”コンパイル”されていて、デバックツールは表示されず、より早く表示される事を目的に設定されています。
+
+これら２つのPHPスクリプト（`frontend_dev.php` と `index.php`）は **フロントコントローラー** によって呼び出され、アプリケーション全てのリクエストはこのコントローラーによって処理されます。コントローラーは `askeet/web/` ディレクトリにあるので確認してみてください。実際は、 `index.php` ファイルは、 `frontend_prod.php` と命名されるべきですが、 `frontend` は最初に作ったアプリケーションなので、symfonyはデフォルトのアプリケーションとして理解して、 `index.php` に名前を変更しています。これによって、`/` を呼び出すことだけで本番環境のアプリケーションを呼び出すことが出来ます。ロントコントローラーや、一般的なMVCモデルにおけるコントローラー層について詳しく知りたい場合は、symfonyブックの [コントローラーの章](http://www.symfony-project.com/content/book/page/controller.html) を参照してください。
+
+一般的な方法 / 使い分けとしては、自分で盛り込みたい機能を十分納得がいくまで開発環境においてテストし、その後、本番環境に移行して処理スピードや”より適切な”URLを確認してください。
+
+>**注意**: 本番環境において正しい結果を表示する為に、新しいクラスや設定ファイルを変更した時は、常にキャッシュをクリアすることを忘れないでください。
+
+デフォルトのホームページ（トップページ）への再定義
+-----------------------------
+
+今のところ、トップページを表示した時には、'Congratulations' としか表示されません。トップページとしてよりよくする為に、質問のリストを表示します (`question` モジュールの `list` アクションである `question/list` を呼び出します)。 これをするには、 `askeet/apps/frontend/config/routing.yml` にあるfrontendアプリケーションのルーティング設定ファイルを開き、 `homepage:` セクションを次のように変更してください:
+
+    homepage:
+      url:   /
+      param: { module: question, action: list }
+
+トップページを開発環境で更新してみてください。 (`http://askeet/frontend_dev.php/`); 質問のリストが表示されているはずです。
+
+>**注意**: 興味深い人なら、 'Congratulations' を表示していたページを探したかもしれません。結果としてそのようなページは  `askeet` プロジェクトディレクトリには見つからず不思議に思っていたのではないでしょうか？実は、 `default/index` アクションのテンプレートディレクトリは symfony data ディレクトリというプロジェクトから独立した場所に定義されています。 オーバーライド（上書き）したい場合は、 `default` モジュールを作ってそれぞれのアクションを定義することが出来ます。
+
+このルーティングシステムの機能は近いうちに詳細を紹介しますが、興味があるなら、symfonyブックの [ルーティングの章](http://www.symfony-project.com/content/book/page/routing.html) を読んでみてください。
+
+テストデータの定義
+----------------
+
+トップページに表示されているリストは、質問を追加するまではまだ空のままの状態です。アプリケーションを開発する場合、必要となるテストデータを用意すると便利です。しかしながら、テストデータを手で入れるとなると（又は、データベースのCRUDインターフェースから直に）、かなり手間です。これを解消する為に、symfonyではテキストファイルからデータをデータベースに設定することが出来るようになっています。
+
+それでは `askeet/data/fixtures/` ディレクトリにテストデータを作っていきましょう (このディレクトリは用意されてないので作成してください)。 このディレクトリに `test_data.yml` という名前でファイルを作り、下の内容を入れてください:
+
+    User:
+      anonymous:
+        nickname:   anonymous
+        first_name: Anonymous
+        last_name:  Coward
+
+      fabien:
+        nickname:   fabpot
+        first_name: Fabien
+        last_name:  Potencier
+    
+      francois:
+        nickname:   francoisz
+        first_name: Fran巽ois
+        last_name:  Zaninotto
+    
+    Question:
+      q1:
+        title: What shall I do tonight with my girlfriend?
+        user_id: fabien
+        body:  |
+          We shall meet in front of the Dunkin'Donuts before dinner, 
+          and I haven't the slightest idea of what I can do with her. 
+          She's not interested in programming, space opera movies nor insects.
+          She's kinda cute, so I really need to find something 
+          that will keep her to my side for another evening.
+    
+      q2:
+        title: What can I offer to my step mother?
+        user_id: anonymous
+        body:  |
+          My stepmother has everything a stepmother is usually offered
+          (watch, vacuum cleaner, earrings, del.icio.us account). 
+          Her birthday comes next week, I am broke, and I know that 
+          if I don't offer her something sweet, my girlfriend 
+          won't look at me in the eyes for another month.
+    
+      q3:
+        title: How can I generate traffic to my blog?
+        user_id: francois
+        body:  |
+          I have a very swell blog that talks 
+          about my class and mates and pets and favorite movies.
+          
+    Interest:
+      i1: { user_id: fabien, question_id: q1 }
+      i2: { user_id: francois, question_id: q1 }
+      i3: { user_id: francois, question_id: q2 }
+      i4: { user_id: fabien, question_id: q2 }
+
+まず始めに、 [YAML][3] に気づくかと思います。symfonyに詳しい人でなければ、このYAMLフォーマットは知らないかもしれません。このフォーマットはsymfonyのフレームワークの設定ででは頻繁に使われるフォーマットですが、別段特別なものではありません。 - XMLやINIファイルを使いたいのであれば、簡単に設定ファイルハンドラーを追加することができ、symfonyに読み込ませることができます。時間があれば、YAMLとsymfony設定ファイルについてをsymfonyブックの [設定の実践の章](http://www.symfony-project.com/content/book/page/configuration_practice.html) を読んでください。今のところは、YAML文法についてよく分からなければ、このチュートリアルではYMALを広範囲で使っているので、 [ここを今すぐ読み始めて][3] ください。（訳注：こっちの方が分かりやすいかも http://ja.wikipedia.org/wiki/YAML）
+
+それでは、テストデータのファイルに話を戻しましょう。 ここではオブジェクトのインスタンスを定義し、内部的な名前として命名しています。この名前はとても有益で、`id`  (一般的には自動採番で設定不要なもの)を定義せずともオブジェクト間で関連性を持つ事ができます。例えば最初に作った `fabien` という名前の `User` クラス。最初の `q1` という名前の `Question`。これらの名前を使えば、関連性を持つ `Interest` オブジェクトのインスタンスを作ることが簡単になります:
+
+    Interest:
+      i1:
+        user_id: fabien
+        question_id: q1
+
+先程のデータファイルで使っていた短いYAML文法と同じ意味です。このようなデータの設定についての詳細は、symfonyブックの [データファイルの章](http://www.symfony-project.com/content/book/page/populate.html) を読んでください。
+
+>**注意**: `created_at` and `updated_at` の項目には、値の設定は必要ありません。symfony はこれらの項目について、デフォルトで何を設定すべきか理解しています。（訳注：作成日時 更新日時は設定せずともデータを追加 / 更新する際に更新される）
+
+データを設定する為のバッチ作成
+---------------------------------------
+
+次のステップとして、実際にデータを設定していきます。これにはコマンドラインから呼び出せるPHPスクリプトを使っていきます - バッチですね。
+
+### バッチのスケルトン
+
+`load_data.php` というファイルを `askeet/batch/` ディレクトリに作って下のような内容にしてください:
+
+    [php]
+    <?php
+    
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
+    define('SF_APP',         'frontend');
+    define('SF_ENVIRONMENT', 'dev');
+    define('SF_DEBUG',       true);
+    
+    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
+    
+    // initialize database manager
+    $databaseManager = new sfDatabaseManager();
+    $databaseManager->initialize();
+    
+    ?>
+
+ここではまだ何もしてません： パス、アプリケーション、環境を定義して設定を呼び出し、読込み、そしてデータベースマネージャーを初期化してます。何か色々やってますよね：でもこれによってこのコードから下は、symfonyのオートローディング、Propelオブジェクトへの透過的な接続、 symfonyのルートクラスの呼び出しなど様々な機能が利用可能になります。
+
+>**注意**: もしsymfonyのフロントコントローラー (例えば `askeet/web/index.php`) を見たことがあるなら、とてもよく似てると気づかれたかもしれません。それはすべてのウェブリクエストは同じオブジェクト、設定にアクセスする事が必要であり、バッチもそれに漏れないからです。
+
+### データのインポート
+
+バッチの大元が準備できたところで、仕事を割り当てましょう。このバッチでは: 
+
+1. YAMLファイルを読み込む
+2. Propelオブジェクトのインスタンスを作る
+2. データベース上のテーブルにレコードを追加する
+
+なんだか難しそうですが、symfonyでは `sfPropelData` のおかげで、これらをたったの２行で行うことができます。 次のコードを `askeet/batch/load_data.php` の `?>` の前に追加してください:
+
+    [php]
+    $data = new sfPropelData();
+    $data->loadData(sfConfig::get('sf_data_dir').DIRECTORY_SEPARATOR.'fixtures');
+
+たったこれだけです。 `sfPropelData` が作成され、指定のディレクトリ `fixtures` に存在する全てのファイルを読込み、 `databases.yml` 設定ファイルに定義されているデータベースへデータを追加します。
+
+>**注意**: `DIRECTORY_SEPARATOR` 定数はWindowsや*nixプラットフォームで互換性を持つように使われています。
+
+### バッチの実行
+
+やっと最後ですが、さっきの数行のコードが手入力などの手間から解放されるか確認してみましょう。次をコマンドラインから入力してください:
+
+    $ cd /home/sfprojects/askeet/batch
+    $ php load_data.php
+    
+データベースへの変更を確認するには、開発環境のトップページを更新してみてください:
+
+    http://askeet/frontend_dev.php
+    
+![loaded data](/images/askeet/fixtures.gif)
+
+バンザーイ。データが反映されてますね。
+
+>**注意**: デフォルトでは、 `sfPropelData` オブジェクトは、新しいデータを追加する前に全てのデータを一旦削除します。随時追加するには下のようにしてください:
+>
+>     [php]
+>     $data = new sfPropelData();
+>     $data->setDeleteCurrentData(false);
+>     $data->loadData(sfConfig::get('sf_data_dir').DIRECTORY_SEPARATOR.'fixtures');
+
+モデル内でのデータアクセス
+-------------------------------
+
+`question` モジュールの `list` アクションを呼び出した時に表示されるページは、 `executeList()` メソッドの処理を (`askeet/apps/frontend/modules/question/actions/action.class.php` にあります) このテンプレートである `askeet/apps/frontend/modules/question/templates/listSuccess.php` に渡した結果です。これはsymfonyブックの [コントロールの章](http://www.symfony-project.com/content/book/page/controller.html) 説明されている名前変換によるものです。実行されているコードを見てみましょう:
+    
+actions.class.php:
+
+    [php]
+    public function executeList ()
+    {
+      $this->questions = QuestionPeer::doSelect(new Criteria());
+    }
+
+listSuccess.php:
+
+    [php]
+    ...
+    <?php foreach ($questions as $question): ?>
+    <tr>
+        <td><?php echo link_to($question->getId(), 'question/show?id='.$question->getId()) ?></td>
+        <td><?php echo $question->getTitle() ?></td>
+        <td><?php echo $question->getBody() ?></td>
+        <td><?php echo $question->getCreatedAt() ?></td>
+        <td><?php echo $question->getUpdatedAt() ?></td>
+      </tr>
+    <?php endforeach; ?>
+
+ステップ毎で見てみるとこのようになります:
+
+1. アクションは、空の抽出基準での `Question` テーブルレコードを引き出します。 - つまりはQuestionの全てのデータ
+2. レコードのリストは配列 (`$questions`) に入れられ、テンプレートに渡されます
+3. テンプレートはアクションから渡された全ての質問データを順に実行します
+4. テンプレートは各レコードの各項目を表示します
+
+`->getId()` 、 `->getTitle()` 、 `->getBody()` のようなメソッドは、事前に `symfony propel-build-model` コマンドの呼び出し ( [昨日](2.txt) の覚えてます？) 生成されており、これらが `id` 、 `title` 、 `body`などの項目データを取得します。これらは標準的な getter で、プレフィックス `get` とキャメルケースされた項目名で構成されています - そしてPropelは標準的な setter も兼ね備えており、そのプレフィックスは `set` です。 [Propel ドキュメント][4] を読むと、この各クラスへのアクセッサーが解説されています。
+
+また不思議な `QuestionPeer::doSelect(new Criteria())` の呼び出しは、Propelの標準的なメソッドです。 Propel ドキュメントに詳しく書かれています。
+
+まぁ分からなくても気にしないでください。このチュートリアルを進めて行くにしたがって分かってきます。
+
+question/list テンプレートの変更
+---------------------------------
+
+データベースに質問（question）への関心（interest）データが設定されました。これによって１つの質問での関心の数が簡単に引き出せるはずです。Propelによって生成された `BaseQuestion.php` クラスを見たことがあるなら `askeet/lib/model/om/` ディレクトリ、 `->getInterests()` メソッドに気づいたかもしれません。テーブル定義の際にPropelは `question_id` 外部キーが `Interest` テーブル定義にあったのを知っていて、１つの質問には複数の関心が関連づけられているだろうと理解しています。これによってとても簡単に、質問に対する関心の数を表示するという事が `askeet/apps/frontend/modules/question/templates/` にある `listSuccess.php` テンプレートを編集することで可能になります。加えて、汚いテーブル構造を止め、綺麗なDIVに変更します:
+
+    [php]
+    <?php use_helper('Text') ?>
+    
+    <h1>popular questions</h1> 
+    
+    <?php foreach($questions as $question): ?>
+      <div class="question">
+        <div class="interested_block">
+          <div class="interested_mark" id="interested_in_<?php echo $question->getId() ?>">
+            <?php echo count($question->getInterests()) ?>
+          </div>
+        </div>
+      
+        <h2><?php echo link_to($question->getTitle(), 'question/show?id='.$question->getId()) ?></h2>
+      
+        <div class="question_body">
+          <?php echo truncate_text($question->getBody(), 200) ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
+
+気づいているかと思いますが、 `foreach` ループは元々の `listSuccess.php` と同じです。 `link_to()` と `truncate_text()` 関数はsymfony提供の **テンプレートヘルパー** です。前者は同じモジュール内の別アクションへハイパーリンクを作っているもので、後者は質問の内容を200文字以内に切りつめています。 `link_to()` ヘルパーは自動的にロードされていますが、 `truncate_text()` を使うには、 `Text` ヘルパーグループの呼び出しを定義しなければなりません。
+
+では、開発環境のトップページを更新して新しいテンプレートを確認してみましょう。
+
+    http://askeet/frontend_dev.php/
+    
+![better question list](/images/askeet/question_list_day3.gif)
+
+関心を示しているユーザーの数が各質問の横に表示されています。このキャプチャ画像のような表示をさせるには、 [`main.css`](http://svn.askeet.com/tags/release_day_3/web/css/main.css) スタイルシートをダウンロードして、 `askeet/web/css/` ディレクトリに配置してください。
+
+クリーンアップ
+-------
+
+`propel-generate-crud` コマンドは必要のないアクションやテンプレートまで生成します。必要のないものは今回で削除してしまいましょう。
+
+`askeet/apps/frontend/modules/question/actions/actions.class.php` での要らないアクションは:
+
+* `executeIndex`
+* `executeEdit`
+* `executeUpdate`
+* `executeCreate`
+* `executeDelete`
+
+`askeet/apps/frontend/modules/question/templates/` での要らないテンプレートは:
+
+* `editSuccess.php`
+
+それではまた明日
+----------------
+
+今日はMVCへの大きな第一歩でした。レイアウト、テンプレート、アクション、そしてPropelオブジェクトモデルでのオブジェクトに触れることにより、MVCベースのアプリケーションでの各レイヤーへも触れることができました。 各レイヤーでの連携がまだ分からなくても心配しないでください。徐々に分かるようになってきます。
+
+いろんなファイルを開いてきましたが、プロジェクト内でどのようにファイルが構成されているか確認するには、symfonyブックの [ファイル構造の章](http://www.symfony-project.com/content/book/page/file_structure.html) を読んでみてください。
+
+明日はまた良い一日です: ビューをいじったり、より複雑なルーティングポリシーをセットアップしたり、モデルの変更や、より複雑なデータ操作やテーブル間の連携を勉強していきます。
+
+それまでは、よく寝て、今日のチュートリアルのソースを眺めてみてください (`release_day_3` タグ):
+
+    http://svn.askeet.com/tags/release_day_3
+
+[1]: http://en.wikipedia.org/wiki/Model-view-controller "Model-View-Controller definition at Wikipedia"
+[2]: http://en.wikipedia.org/wiki/Decorator_pattern     "Decorator pattern definition at Wikipedia"
+[3]: http://www.yaml.org/                               "YAML"
+[4]: http://propel.phpdb.org/docs/user_guide/           "Propel documentation"

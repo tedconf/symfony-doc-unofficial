@@ -1,0 +1,222 @@
+Symfony Adventskalender Tag 1: Ein Projekt beginnen
+======================================================
+
+Die Herausforderung
+-------------
+
+Der Symfony Adventskalender ist ein Projekt aus 24 kleineren Übungen, welche Tag für Tag zwischen dem 1. Dezember und Weihnachten veröffentlicht werden. Jeden Tag, auch an den Wochenenden, wird eine neue Übung veröffentlicht. Für alle Übungen werden wir weniger als eine Stunde brauchen und sie sind eine gute Gelegenheit, die Entwicklung einer Web 2.0 Anwendung mit Symfony von A bis Z anschaulich darzustellen. An Weihnachten wird die fertige Anwendung schließlich im Internet veröffentlicht und der Source Code als Open Source freigegeben. Die fertige Web 2.0 Anwendung kann richtig benutzt werden, ist interessant, nützlich und macht Spaß.
+
+Vierundzwanzig Mal weniger als eine Stunde, macht weniger als einen Tag, und genau so viel braucht unserer Meinung nach ein Entwickler um Symfony zu erlernen. Jeden Tag werden wir die Anwendung erweitern und neue Funktionen hinzufügen. Diese Gelegenheit werden wir auch dazu nutzen, euch alle Vorteile von Symfony, als auch ein paar gute Praktiken bei der Symfony Webentwicklung zu zeigen. Jeden Tag kann man sehen, wie schnell und effizient die Entwicklung einer Webanwendung mit Symfony ist.
+
+Doch weil das noch nicht genug ist, und wir auch faul sind, nehmen wir uns für den 21. Dezember, dem Tag an dem der Winter beginnt, noch nichts vor. Die Community wählt aus zahlreichen Vorschlägen die nützlichste Funktion aus, die wir an diesem Tag ohne Vorbereitung voll funktionsfähig in die Webanwendung integrieren werden. Das wird der "Hol Dir einen Symfony-Experten für einen Tag" Tag sein.
+
+Das Projekt
+-----------
+
+Die Anwendung die wir entwickeln wollen könnte eine von diesen typischen Beispielanwendungen sein: eine Aufgabenliste, ein Telefonbuch oder ein Internet-Buchladen. Aber wir möchten Symfony für ein originelles Projekt einsetzen, etwas brauchbares, mit zahlreichen Funktionen und für den Bedarf. Wir möchten beweisen, dass Symfony für komplexe Aufgaben geschaffen ist, und man klar strukturiert und mit wenig Aufwand professionelle Anwendungen erstellen kann.
+
+Wir hoffen, dass auch viele User die Anwendung benutzen werden um zu zeigen, dass eine Symfony Webseite auch einer größeren Belastung stand hält. Deswegen muss die Anwendung auch einen echten Nutzen bringen, auf einen vorhandenen Bedarf zugeschnitten sein - oder einen Neuen schaffen. Der Start der Webseite wird ein echter Belastungstest sein: das heißt, dass wir euch alle dazu brauchen um die Seite zu Bookmarken/Diggen/Bloggen und im echten Leben bekannt zu machen, so dass wir feststellen können, wie viele Besucher sie wirklich tragen kann.
+
+Was das Projekt genau ist, wird erst morgen verraten. Wir haben heute noch viel zu tun und die Beschreibung aller Funktionen einer Web 2.0 Anwendung dauert zu lange. Das gibt euch noch die Gelegenheit darüber zu Diskutieren oder Annahmen aufzustellen. Wir brauchen jedoch einen Namen für das Projekt. Es heißt **Askeet**.
+
+Heute auf dem Plan
+--------------
+
+Das heutige Ziel ist es, eine Webpage der Anwendung in einem Webbrowser anzuzeigen und ein professionelles Umfeld für die Entwicklung vorzubereiten. Dazu gehört die Installation von Symfony, die Erstellung einer Anwendung, die Konfiguration des Webservers und die Vorbereitung einer Versionsverwaltung für den Programmcode.
+
+Es sollte für alle, die die vorhergehenden Übungen bereits gemeistert haben, leicht sein, und für alle Anderen nicht allzu schwer sein. Wir denken, dass jeder etwas Neues dazulernen kann.
+
+Wir gehen davon aus, dass ihr auf einem Unix oder einem ähnlichem System arbeitet, und Apache, MySQL und PHP5 bereits installiert sind. Wenn ihr auf einem Windows Rechner arbeitet, auch kein Problem, alles wird funktionieren. Ihr müsst nur ein paar Befehle in der 'cmd' Konsole eintippen.
+
+Installation von Symfony
+--------------------
+
+Der einfachste Weg Symfony zu installieren ist die Paketverwaltung von [PEAR][1]. Um jedoch die Channels von PEAR nutzen zu können - und damit auch den Symfony Channel - müsst ihr auf die PEAR 1.4.0 Version oder höher upgraden (wenn ihr eine niedrigere PHP Version als 5.1.0 habt, welche PEAR 1.4.5 bereits enthält):
+
+    $ pear upgrade PEAR
+
+>**Hinweis**: Wenn ihr irgendwelche Probleme mit PEAR feststellt, schaut euch das Kapitel über die [Installation](http://www.symfony-project.com/content/book/page/installation.html) in der Symfony Dokumentation an.
+
+Jetzt könnt ihr den 'symfony' Channel hinzufügen:
+
+    $ pear channel-discover pear.symfony-project.com
+
+Nun installieren wir die letzte stabile Version von Symfony mit allen abhängigen Paketen:
+
+    $ pear install symfony/symfony-beta
+
+Wenn ihr das [phing][2] Paket nicht habt, müsst ihr es zusätzlich installieren:
+
+    $ pear install http://phing.info/pear/phing-current.tgz
+
+Um festzustellen ob alles geklappt hat, prüfen wir die Version von Symfony in der Konsole:
+
+    $ symfony -V
+
+Wenn ihr wissen wollt, was dieser neue Befehl alles für euch tun kann, dann gebt `symfony -T` in der Konsole ein, um euch eine Liste aller verfügbaren Optionen anzuzeigen. Ihr könnt euch auch das Kapitel über die [Installation](http://www.symfony-project.com/content/book/page/installation.html) von Symfony anschauen wenn ihr wissen wollt, wie man Symfony auch aus einem tgz-Archiv, oder einem SVN Repository installieren kann. Ein [Beitrag](http://www.symfony-project.com/trac/wiki/InstallingSymfonyWithoutPear) im Wiki von Symfony zeigt euch auch eine Installation komplett ohne PEAR.
+
+Erstellen eines Projektes
+-------------
+
+In Symfony werden alle **Anwendungen** die sich das gleiche Datenmodell teilen in **Projekte** zusammengefasst. Für das Askeet Projekt können wir bereits festlegen, dass es eine Webseite (Frontend) und eine Administrationsseite (Backend) haben wird: das macht zwei Anwendungen. Da die Anwendungen sich innerhalb eines Projektes befinden müssen, werden wir erst einmal ein Projekt anlegen. Alles was wir dazu brauchen ist ein Verzeichnis und den Befehl `symfony init-project`:
+
+    $ mkdir /home/sfprojects/askeet
+    $ cd /home/sfprojects/askeet
+    $ symfony init-project askeet
+
+Jetzt legen wir die Frontend-Anwendung mit dem `symfony init-app` Befehl an: 
+
+    $ symfony init-app frontend
+
+Wow, das war schnell.
+
+>**Hinweis**: Windows-Usern wird empfohlen, Symfony und alle Projekte in einem Verzeichnis ohne Leerzeichen - dazu gehört auch das Verzeichnis `Dokumente und Einstellungen` - zu erstellen.
+
+Web-Konfiguration
+-----------------
+
+### Konfiguration des Webservers
+
+Jetzt ist es an der Zeit die Apache-Konfiguration anzupassen, damit die neue Anwendung erreichbar ist. Im Umfeld unserer professionellen Entwicklung bevorzugen wir es, die neue Anwendung als einen Virtual Host anzulegen, und das werden wir hier erläutern. Wenn ihr lieber einen Alias benutzen möchtet, könnt ihr das im Kapitel über die [Webserver Konfiguration](http://www.symfony-project.com/content/book/page/web_server.html) nachlesen.
+
+Öffnet die Datei `httpd.conf` aus eurem `Apache/conf/` Verzeichnis und fügt folgendes am Ende ein:
+
+    <VirtualHost *:80>
+      ServerName askeet
+      DocumentRoot "/home/sfprojects/askeet/web"
+      DirectoryIndex index.php
+      Alias /sf /usr/local/lib/php/data/symfony/web/sf
+
+      <Directory "/home/sfprojects/askeet/web">
+       AllowOverride All
+      </Directory>
+    </VirtualHost>
+
+>**Hinweis**: Der `/sf` Alias muss auf das Symfony Verzeichnis eures PEAR-Datenverzeichnisses zeigen. Um das zu prüfen, tippt ihr einfach den Befehl `pear config-show` in der Konsole ein. Symfony braucht Zugang zu diesem Verzeichnis um bestimmte Bilder zu laden, für Java-Skripte, und damit die Debug-Leiste und die AJAX Helper richtig funktionieren.
+
+Auf Windows-Systemen müsst ihr die `Alias` Zeile durch etwas wie das hier ersetzen:
+
+      Alias /sf "C:\php\pear\data\symfony\web\sf"
+       
+### Den Domain-Namen festlegen
+
+Der Domain-Name `askeet` muss lokal angelegt werden. 
+
+Auf einem Linux-System muss es in der Datei `/etc/hosts` gemacht werden. Wenn ihr unter Windows XP arbeitet, findet ihr diese Datei im Verzeichnis `C:\WINDOWS\system32\drivers\etc\`.
+
+Fügt die folgende Zeile ein:
+
+    127.0.0.1         askeet
+
+>**Hinweis**: Dazu sind Administratoren-Rechte erforderlich.
+
+Wenn ihr einen neuen Host nicht anlegen wollt, könnt ihr mit der `Listen` Direktive von Apache die Seite auch über einen anderen Port erreichbar machen. Damit könnt ihr weiterhin die `localhost` Domain benutzen.
+
+### Testen der neuen Konfiguration
+
+Startet den Apache nun neu und prüft, ob ihr die neue Anwendung erreichen könnt:
+
+    http://askeet/
+
+![Congratulations](/images/askeet/congratulations.gif)
+
+>**Hinweis**: Symfony kann durch das `mod_rewrite` Modul den /index.php/ Teil aus den URLs entfernen.
+>Wenn ihr das nicht braucht, oder wenn der Webserver diese Funktion nicht unterstützt, könnt ihr die Datei `.htaccess` im `web/` Verzeichnis löschen.
+>Wenn Apache nicht mit `mod_rewrite` kompiliert wurde, prüft nach, ob ihr das mod_rewrite DSO installiert und die folgenden Zeilen in der `httpd.conf` habt:
+>
+>     AddModule mod_rewrite.c
+>     LoadModule rewrite_module modules/mod_rewrite.so
+>
+>Mehr zum Thema Smart-URLs könnt ihr im [Kapitel über das Routing](http://www.symfony-project.com/content/book/page/routing.html) nachlesen.
+
+Als nächstes solltet ihr auch versuchen, die Anwendung im Entwicklungs-Modus aufzurufen. Tippt die folgende URL ein:
+
+    http://askeet/frontend_dev.php/
+    
+Eine Debug-Leiste sollte sich rechts oben in der Ecke befinden und wenn die kleinen Grafiken richtig angezeigt werden, war die `Alias sf/` Konfiguration richtig.
+
+![web debug toolbar](/images/askeet/web_debug1.gif)
+
+Die Vorgehensweise ist ein wenig anders wenn ihr für die Entwicklung den IIS in einer Windows Umgebung verwenden wollt. Eine Anleitung dazu findet ihr in [diesem Kapitel](http://www.symfony-project.com/content/book/page/web_server_iis.html).
+
+Subversion
+----------
+
+Sehr wichtig für uns ist es, sich keine Sorgen machen zu müssen, den bereits vorhandenen Code versehentlich unbrauchbar zu machen. Und weil wir schnell arbeiten möchten, weil wir jeden Schritt rückgängig machen wollen wenn sich eine Erweiterung oder Funktion als schlecht oder ineffizient herausstellt, weil wir mit mehreren Personen an diesem Projekt arbeiten und Zugriff auf die täglichen Versionen haben wollen, werden wir [Subversion][3] für diesen Zweck verwenden. Wir gehen davon aus, dass ihr bereits einen Subversion Server installiert oder Zugang zu Einem habt.
+
+Als Erstes erstellen wir ein Repository für das `askeet` Projekt:
+
+    $ svnadmin create $SVNREP_DIR/askeet
+    $ svn mkdir -m "layout creation" file:///$SVNREP_DIR/askeet/trunk file:///$SVNREP_DIR/askeet/tags file:///$SVNREP_DIR/askeet/branches
+
+Als Nächstes erstellen wir den ersten Import, ohne die temporären Dateien in den Ordnern `cache/` und `log/`:
+
+    $ cd /home/sfprojects/askeet
+    $ rm -rf cache/*
+    $ rm -rf log/*
+    $ svn import -m "initial import" . file:///$SVNREP_DIR/askeet/trunk
+
+Jetzt verabschieden wir uns vom ursprünglich erstellten Anwendungsverzeichnis und verwenden mittels Auschecken die SVN Version:
+
+    $ cd /home/sfprojects
+    $ mv askeet askeet.origin
+    $ svn co file:///$SVNREP_DIR/askeet/trunk/ askeet/
+    $ ls askeet
+
+    $ rm -rf askeet.origin
+
+Mehr gibt es nicht zu tun. Beim Einchecken eurer Arbeitsversion in das Repository könnten auch unnötige Dateien, wie die in den Verzeichnissen `cache` und `log` kopiert werden. Dazu kann für SVN eine Ignorieren-Liste erstellt werden.
+
+    $ cd /home/sfprojects/askeet
+    $ svn propedit svn:ignore cache
+
+Der eingestellte Standard-Editor von SVN sollte nun starten. Wir definieren, dass die Unterverzeichnisse von `cache/` beim Einchecken von SVN ignoriert werden:
+
+    *
+
+Speichern und Schließen. Das war's. 
+
+Das Gleiche nochmal für das `log/` Verzeichnis:
+
+    $ svn propedit svn:ignore log
+
+Das Folgende eingeben:
+
+    *
+
+Wir dürfen jetzt nicht vergessen, die Zugriffsrechte des cache und log Verzeichnisses auf den richtigen Level zu setzen, damit der Webserver sie beschreiben kann. Auf der Konsole:
+
+    $ chmod 777 cache
+    $ chmod 777 log
+
+>**Hinweis**: Windows Benutzer können den bewährten [TortoiseSVN][4] Client für die Verwaltung des Subversion Repository nutzen.
+
+Wenn Du mehr über die Versionsverwaltung wissen möchtest, schau im Kapitel über die [Projekterstellung](http://www.symfony-project.com/content/book/page/project_creation.html) der Symfony Dokumentation nach.
+
+>**Hinweis**: Das Askeet SVN Repository ist öffentlich zugänglich. Ihr findet es unter:
+>
+>       http://svn.askeet.com/
+>
+>Probier es gleich aus.
+>
+>Der heute erstellte Code wurde im Repository eingecheckt. Ihr könnt es unter der Bezeichnung `release_day_1` auschecken:
+>
+>       $ svn co http://svn.askeet.com/tags/release_day_1/ askeet/
+
+Wir sehen uns morgen
+----------------
+
+Es ist bereits fast eine Stunde vergangen! Wir sprachen über Vieles, und es gab nichts Neues für die, die Symfony bereits kennen. Aber schaut einmal, was wir morgen alles angehen werden:
+
+* was unsere Anwendung machen wird
+* Erstellung des Datenmodells und die Abbildung der objektorientierten Daten
+* Gerüst eines Moduls
+
+Nebenbei, wenn ihr über Askeet auf den neuesten Stand bleiben wollt, tragt euch einfach in die [Askeet Mailing-Liste](mailto:askeet-subscribe@symfony-project.com) ein, oder besucht das eigene [Forum](http://www.symfony-project.com/forum/index.php/f/8/).
+
+Wir hoffen, dass wir uns morgen sehen!
+
+[1]: http://pear.php.net                  "Pear"
+[2]: http://phing.info/wiki/index.php     "phing"
+[3]: http://subversion.tigris.org/        "Subversion"
+[4]: http://tortoisesvn.tigris.org/       "TortoiseSVN"

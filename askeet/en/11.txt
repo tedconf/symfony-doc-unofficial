@@ -1,0 +1,212 @@
+symfony advent calendar day eleven: syndication feed
+====================================================
+
+Previously on symfony
+---------------------
+
+The askeet application is ready to be launched in a (early) beta stage. As a matter of fact, it could already seduce lots of users since the core features (ask questions, read answers, contribute new answers) are built. The trouble is that recurrent users will find it difficult to keep up-to-date with the latest events on the askeet website. You need to provide them with fresh news without effort, and there is a media for that: news feed. So let's add news feed to askeet today.
+
+Popular questions feed
+----------------------
+
+### Link to the feed in the head
+
+What we want is an [RSS][1] popular questions feed inserted in the `<head>` of the global layout. The resulting HTML should look like:
+
+    [php]
+    <link rel="alternate" type="application/rss+xml" title="Popular questions on askeet" href="http://askeet/frontend_dev.php/feed/popular" />
+    
+To do this, open the `layout.php` and add in the `<head>`:
+
+    [php]
+    <?php echo auto_discovery_link_tag('rss', 'feed/popular') ?>
+
+That's all. The `auto_discovery_link_tag` helper (autoloaded with the `AssetHelper.php` helper library) transforms the `module/action` into a site URI, passing by the routing engine.
+
+### Install the plug-in
+
+Symfony provides a `sfFeed` plug-in that automates most of the feed generation. To install it, you will use the symfony command line.
+
+    $ symfony plugin-install local symfony/sfFeed
+    
+This installs the classes of the plug-in in the `askeet/lib/symfony/plugins/` directory, because the `local` option tells symfony to install the plug-in for the current application only. You could have installed it for all your projects by replacing `local` by `global`.
+
+If you want to learn more about plug-ins, how they extend the framework and how you can package the features that you use across several projects into a plug-in, read the [plug-in chapter](http://www.symfony-project.com/content/book/page/plugin.html) of the symfony book.
+
+Don't forget to clear the cache since the project `lib/` forlder was modified because of the plugin. By the way, if you experiment problems with the `plugin-install` command (which will probably happen if you don't use a PEAR-installed version of symfony), copy the files located in the `lib/plugins/symfony/plugins/sfFeed/` directory from the SVN repository.
+
+We will talk about this `sfFeed` class later. But first, we need to write a few lines of code.
+
+### Create the action
+
+The feed points to a `popular` action of the `feed` action. To create it, type:
+
+    $ symfony init-module frontend feed
+    
+Then edit the `askeet/apps/frontend/modules/feed/actions/action.class.php` and add in the following method:
+
+    [php]
+    public function executePopular()
+    {
+      // questions
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(QuestionPeer::INTERESTED_USERS);
+      $c->setLimit(sfConfig::get('app_feed_max'));
+      $questions = QuestionPeer::doSelectJoinUser($c);
+
+      $feed = sfFeed::newInstance('rss201rev2');
+
+      // channel
+      $feed->setTitle('Popular questions on askeet');
+      $feed->setLink('@homepage');
+      $feed->setDescription('A list of the most popular questions asked on the askeet site, rated by the community.');
+
+      // items
+      $feed->setFeedItemsRouteName('@question');
+      $feed->setItems($questions);
+
+      $this->feed = $feed;
+    }
+
+Define the `app_feed_max_question` custom parameter in your `askeet/apps/frontend/config/app.yml` configuration file:
+
+    all:
+      feed:
+        max: 10
+
+### Change the view configuration
+
+By default, the result of our `feed/popular` action will be decorated by the layout, and will have a `text/html` content-type. That's not what we want. So create a `view.yml` in the `askeet/apps/frontend/modules/feed/config/` directory containing:
+
+    all:
+      has_layout: off
+      template:   feed
+    
+This deactivates the decorator and forces the output template to `feedSuccess.php`, whatever the action.
+
+### Write the template
+
+That's because the template is very simple and can be reused for other feeds. Just write this simple `askeet/apps/frontend/modules/feed/templates/feedSuccess.php` template:
+
+    [php]
+    <?php echo $feed->getFeed() ?>
+    
+### Test it 
+
+Now clear the cache (because the configuration has changed), refresh any page of the site, and notice the feed icon of your favorite web browser. Check the feed by requesting manually:
+
+    http://askeet/feed/popular
+
+The result is:
+
+    [xml]
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0">
+      <channel>
+      <title>Popular questions on askeet</title>
+      <link>http://askeet/frontend_dev.php/</link>
+      <description>A list of the most popular questions asked on the askeet site, rated by the community.</description>
+      <language>en</language>
+    <item>
+
+      <title>What can I offer to my step mother?</title>
+      <description>My stepmother has everything a stepmother is usually offered
+    (watch, vacuum cleaner, earrings, [del.icio.us](http://del.icio.us) account).
+    Her birthday comes next week, I am broke, and I know that
+    if I don't offer her something *sweet*, my girlfriend
+    won't look at me in the eyes for another month.</description>
+      <link>http://askeet/frontend_dev.php/question/what-can-i-offer-to-my-step-mother</link>
+      <guid>11</guid>
+      <pubDate>Sat, 10 Dec 2005 09:44:11 +0100</pubDate>
+    </item>
+    <item>
+
+      <title>What shall I do tonight with my girlfriend?</title>
+      <description>We shall meet in front of the __Dunkin'Donuts__ before dinner,
+    and I haven't the slightest idea of what I can do with her.
+    She's not interested in _programming_, _space opera movies_ nor _insects_.
+    She's kinda cute, so I __really__ need to find something
+    that will keep her to my side for another evening.</description>
+      <link>http://askeet/frontend_dev.php/question/what-shall-i-do-tonight-with-my-girlfriend</link>
+      <guid>10</guid>
+      <author>fp@example.com (Fabien Potencier)</author>
+      <pubDate>Sat, 10 Dec 2005 09:44:11 +0100</pubDate>
+
+    </item>
+    <item>
+      <title>How can I generate traffic to my blog?</title>
+      <description>I have a very swell blog that talks
+    about my class and mates and pets and favorite movies.</description>
+      <link>http://askeet/frontend_dev.php/question/how-can-i-generate-traffic-to-my-blog</link>
+      <guid>12</guid>
+      <author>fz@example.com (François Zaninotto)</author>
+
+      <pubDate>Sat, 10 Dec 2005 09:44:12 +0100</pubDate>
+    </item>
+      </channel>
+    </rss>
+
+That fast?
+
+The magic
+---------
+
+Now you might say: how did symfony know where to find the question's author, his/her email, and how did symfony guess about the URI to a question detail? The answer is: That's magic.
+
+If you don't believe in magic, then come beyond the curtain and meet the `sfFeed` class. This class is able to interpret the names of the methods of the object that is passed as a parameter to its `->setItems()` methods. The `Question` object has a `->getUser()` method, so it is used to find the author of a question. The `User` object has a `->getEmail()` method, so this one is also used to determine the author's email. And the rule name passed to the `->setFeedItemsRouteName()` method is:
+
+    question:
+      url:   /question/:stripped_title
+      param: { module: question, action: show }
+ 
+It contains a `stripped_title` parameter, so the `->getStrippedTitle()` method of the `Question` object is called to determine the question URI.
+
+All that happens because the getter method names make sense - and the `sfFeed` class understands objects designed that way. The inference mechanisms of this class are described in detail in the [feed chapter](http://www.symfony-project.com/content/book/page/syndication.html) of the symfony book - refer to it to see how to ask, for instance, a feed without email addresses even if a `->getEmail()` method exists for the object's author.
+
+>**Note**: The view of the feed has a XML content-type, so symfony will be smart enough not to add the web debug toolbar to it (otherwise the XML would'nt be valid anymore). If you ever need to disable the web debug toolbar manually, you can always call:
+>
+>        sfConfig::set('sf_web_debug', false);
+>
+>(find more about the web debug toolbar in the [debug chapter](http://www.symfony-project.com/content/book/page/debug.html) of the symfony book).
+
+Interface improvements
+----------------------
+
+### Routing
+
+The URL of a feed is as important as a regular one, so append the following to the `routing.yml`:
+
+    # feeds
+    feed_popular_questions:
+      url:   /feed/popular
+      param: { module: feed, action: popular }
+
+### RSS image
+
+Whenever a link to a list had a corresponding field, a nice RSS icon is displayed, together with a link to the RSS. As this will happen quite a few times, create a `link_to_feed()` function in the `GlobalHelper.php`:
+
+    [php]
+    function link_to_feed($name, $uri)
+  	{
+  	  return link_to(image_tag('feed.gif', array('alt' => $name, 'title' => $name, 'align' => 'absmiddle')), $uri);
+  	}
+
+You will find the `feed.gif` image in the SVN repository.
+
+Now, edit the `modules/sidebar/templates/defaultSuccess.php` as follows:
+
+    [php]
+    <li><?php echo link_to('popular questions', '@popular_questions') ?> <?php echo link_to_rss('popular questions', '@feed_popular_questions') ?></li>
+
+See you Tomorrow
+----------------
+
+This tutorial was supposed to last one hour, and only fifteen minutes passed. You are worried? Don't. That's another one of the lessons of agile programming: If you find a very simple solution to your problem, it is probably the right one. There is no need to pass too much time to develop a feature if it already works. And you now know that only fifteen minutes are necessary to setup, test and launch a RSS feed. After all, symfony offers professional web tools for lazy folks, so enjoy your free time and leave your computer for today. 
+
+If you want some more symfony stuff, try making a new feed for the latest questions, the latest answers in general, and the latest answers to a question in particular. It should not take you more than fifteen more minutes, so you will have time to download the full code from the [askeet SVN repository](http://svn.askeet.com/tags/release_day_11/), tagged `release_day_11`, and check if you did it well. Beware that there is one hidden difficulty - pay attention to the routing rule used for the feed of the latest comments.
+
+And if you still have a few minutes left, go to the [askeet forum](http://www.symfony-project.com/forum/index.php/f/8/) and express yourself.
+
+Tomorrow, we will send emails with symfony, because we are sure that some of our users will forget their access codes. Until then, sleep tight.
+
+[1]: http://blogs.law.harvard.edu/tech/rss  "RSS 2.01 specifications"

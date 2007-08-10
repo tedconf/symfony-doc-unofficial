@@ -1,0 +1,223 @@
+Día uno del calendario de Symfony: Comenzando un proyecto
+=========================================================
+
+El desafío
+----------
+
+El calendario de symfony consta de 24 clases particulares, publicadas día-por-día entre el 1ro de diciembre y navidad. Es por esto que, cada día incluyendo fines de semana, una nueva clase particular será publicada. Cada clase es de menos de una hora, y será la ocasión para poder ver el desarrollo de un sitio en Web 2.0, de la A a la Z. Para navidad, el resultado del curso será puesto en línea, y el código fuente será de tipo abierto. La aplicación será usable, interesante, útil, y divertida.
+
+Veinticuatro son las clases de menos de una hora que haremos por día, y ese es exactamente el tiempo que pensamos que un desarrollador necesita para aprender symfony. Cada día iremos agregando nuevas características, y nos basaremos en este desarrollo para demostrarle cómo aprovechar la funcionalidad de symfony así como las buenas prácticas de desarrollo sobre la Web. Cada día, usted verá como rápida y eficientemente puede desarrollar una aplicación Web con symfony, y así usted deseará saber más.
+
+Considerando que no sería un buen desafío esto solamente, y también porque somos perezosos, no tenemos planes para el día 21 (invierno). La característica que la mayor parte de la comunidad requiera será agregada a la clase de ese día, sin la preparación, y nosotros le haremos el trabajo. Será el día de `conseguir-uno-symfony-gurú-para-un-día`.
+
+El proyecto
+-----------
+
+La aplicación que se diseñará podría haber sido trivial, como una lista de tareas, una agenda de teléfono, o un catálogo de libros. Pero deseamos utilizar symfony en un proyecto original, algo útil, con características numerosas y un tamaño importante. La meta es demostrar que symfony realmente puede ser utilizado en situaciones complejas, para desarrollar aplicaciones profesionales con estilo y poco esfuerzo.
+
+También esperamos que una porción de gente utilice realmente la aplicación, para demostrar que un website generado por symfony puede absorber una carga importante de audiencia. Esto es porque una aplicación necesita dar un servicio real, y contestar a una necesidad existente - o crear una nueva. El lanzamiento del website será una buena prueba de carga real; esto también significa que lo necesitaremos, humilde lector, para que utilice el sitio y comprobaremos cuántas visitas pueden soportar en la vida real el website.
+
+El contenido del proyecto será mantenido en secreto para el otro día. Todavía tenemos mucho que hacer hoy sin describir las características completas de la aplicación Web 2.0. Es necesario esperar un cierto tiempo para discutir y para generar hipótesis adicionales. Sin embargo, necesitamos un nombre, así que vamos llamarlo: **askeet**
+
+Que hay para hoy
+----------------
+
+El objetivo del día es mostrar una página de la aplicación en el navegador web, y la configuración un ambiente profesional de desarrollo. Esto incluye la instalación de symfony, la creación de la aplicación, la configuración del web server, y la configuración de un sistema de control de la versión de código fuente.
+
+Esto debe ser fácil para los que ya han usado symfony, y no muy duro para los que no. Todos deberán aprender algo nuevo.
+
+Asumiremos que usted utiliza Unix como sistema operativo con Apache, MySQL y PHP 5 instalados en él. Si usted trabaja en un sistema operativo Windows, no se preocupe: también funcionará muy bien, sólo tendrá que escribir algunos comandos en la consola (cmd).
+
+Instalación de Symfony
+----------------------
+
+La manera más simple de instalar symfony es utilizar el paquete [PEAR][1]. Sin embargo, para poder utilizar los canales - y tener acceso al canal symfony - usted necesita actualizarlo a PEAR 1.4.0 o superior (a menos que usted funciona PHP 5.1.0, que ya incluye PEAR 1.4.5):
+
+    $ pear upgrade PEAR
+
+>**Nota**: Si usted experimenta algún problema al usar PEAR, vaya al siguiente capítulo [Instalación](http://www.symfony-project.com/content/book/page/installation.html).
+
+Ahora usted puede sumar el canal `symfony`:
+
+    $ pear channel-discover pear.symfony-project.com
+
+Ya estas listo para instalar la última versión estable de Symfony con todas sus dependencias:
+
+    $ pear install symfony/symfony-beta
+
+Si no tiene el paquete [phing][2], debes instalarlo también:
+
+    $ pear install http://phing.info/pear/phing-current.tgz
+
+Revise que Symfony se encuentra bien instalado usando la siguiente línea de comando para ver la versión instalada:
+
+    $ symfony -V
+
+Si eres curioso sobre lo que puede hacer esta nueva herramienta de línea de comando, escriba `symfony - T` para enumerar las opciones disponibles. También puedes leer el capítulo  [Instalación](http://www.symfony-project.com/content/book/page/installation.html) para ver cómo instalar Symfony desde un archivo TGZ o desde el repositorio SVN. Una contribución de la comunidad también detalla una instalación de tipo no-PEAR en [el wiki de Symfony](http://www.symfony-project.com/trac/wiki/InstallingSymfonyWithoutPear).
+
+Configuración del proyecto
+--------------------------
+
+En Symfony, las **aplicaciones** que comparte el mismo modelo de los datos se reagrupan en **proyectos**. Para el proyecto askeet, podemos ya divulgar que habrá un `frontend` y un `backend`: esto define dos aplicaciones. El proyecto que es la cáscara de las aplicaciones, tiene que ser creado primero. Para hace eso, todo lo que usted necesita es un directorio y el comando de consola `init-project`:
+
+    $ mkdir /home/sfprojects/askeet
+    $ cd /home/sfprojects/askeet
+    $ symfony init-project askeet
+
+Ahora ya es hora de crear la aplicación `frontend` con el comando de Symfony `init-app`:
+
+    $ symfony init-app frontend
+
+Guauuu, que fue rápido.
+
+>**Nota**: Aconsejamos a los usuarios de Windows no trabajar o configurar su nuevo proyecto de Symfony en directorios, cuyo `path` contenga espacio en blancos - esto incluye al directorio `Documents and Settings`.
+
+Configuración del Web Service
+-----------------------------
+
+### Configuración del Web Server
+
+Es tiempo de cambiar la configuración de su Apache para hacer accesible la nueva aplicación. En un contexto profesional, es mejor configurar una nueva aplicación como virtual host, y eso es lo que haremos aquí. Sin embargo, si usted prefiere agregarlo como Alias, hallará como hacerlo en el capítulo [Configuración del Web Server](http://www.symfony-project.com/content/book/page/web_server.html).
+
+Abra el archivo `httpd.conf` de su directorio `Apache/conf/` y sume lo siguiente al final de éste:
+
+    <VirtualHost *:80>
+      ServerName askeet
+      DocumentRoot `/home/sfprojects/askeet/web`
+      DirectoryIndex index.php
+      Alias /sf /usr/local/lib/php/data/symfony/web/sf
+
+      <Directory `/home/sfprojects/askeet/web`>
+       AllowOverride All
+      </Directory>
+    </VirtualHost>
+
+>**Nota** el Alias `/sf` tiene que apuntar a la carpeta Symfony en su directorio de datos de la PEAR. Para determinarlo, escriba el comando de consola `pear config-show`. Las aplicaciones de Symfony necesitan tener acceso a esta carpeta para conseguir ciertas imágenes y los archivos de Javascript, para hacer funcionar correctamente barra de herramientas de debug la Web y de los helpers de AJAX.
+
+En Windows, necesitas reemplazar la línea de Alias por algo parecido a esto:
+
+      Alias /sf `C:\php\pear\data\symfony\web\sf`
+       
+### Declarando el dominio de nombres
+
+El nombre de dominimo `askeet` será declarado localmente. 
+
+Si usa Linux, tiene que hacerlo en el archivo `/etc/hosts`. Si usted usa Windows XP, este archivo está situado en el directorio `C:\WINDOWS\system32\drivers\etc\`.
+
+Sume la siguiente línea:
+
+    127.0.0.1         askeet
+
+>**Nota**: necesitas tener derechos de administrador para hacer esto.
+
+Si usted no desea configurar un nuevo host, deberá agregar una declaración `Listen` para servir su website en otro puerto. Esto permitirá que usted utilice el dominio `localhost`.
+
+### Verificando la configuración
+
+Reinicie el Apache, y revise que tenga acceso a la nueva aplicación:
+
+    http://askeet/
+
+![Felicitaciones](/images/askeet/congratulations.gif)
+
+>**Note**: Symfony usa el módulo `mod_rewrite` para remover la parte /index.php/ de la URLs.
+>Si usted no desea utilizarlo o si su web server no proporciona una algo equivalente, usted puede quitar el archivo `.htaccess` situado en el directorio `web/`.
+>Si su versión de Apache no fue compilado con `mod_rewrite`, compruebe si tiene instalado el mod_rewrite DSO y las siguientes líneas en su `httpd.conf`:
+>
+>     AddModule mod_rewrite.c
+>     LoadModule rewrite_module modules/mod_rewrite.so
+>
+>Pueden aprender más sobre pequeñas URLs en el capítulo  [Enrutamiento](http://www.symfony-project.com/content/book/page/routing.html).
+
+Usted debe también tener acceso a la aplicación en el ambiente del desarrollo. Escriba adentro el siguiente URL:
+
+    http://askeet/frontend_dev.php/
+    
+La caja de herramienta de debug de la Web en la esquina superior derecha incluye pequeñas imágenes provistas por la configuración correcta de su `Alias sf/`.
+
+![Herramientas de debug Web](/images/askeet/web_debug1.gif)
+
+De nuevo, la configuración es algo diferente si usted utiliza un servidor IIS en un ambiente de Windows. Encuentre cómo configurarla en [tutorial relacionado](http://www.symfony-project.com/tutorial/symfony_on_iis.html).
+
+Subversion
+----------
+
+Uno buen principio de la gente perezosa es no preocuparse por que el código existente que se rompa. Deseamos trabajar rápidamente, volver a una versión anterior si una modificación es ineficaz, permitir que más de una persona trabaje en el proyecto, y también que usted tuviera acceso a todas las versiones diarias la aplicación. Es por esto que vamos a adoptar un control de la versión para el código fuente. Utilizaremos [Subversion][3] para este propósito. Se asume que ya ha instalado el servidor de Subversion o que tienen acceso a un servidor de este tipo.
+
+Primero, crear un nuevo repositorio para el proyecto `askeet`:
+
+    $ svnadmin create $SVNREP_DIR/askeet
+    $ svn mkdir -m `layout creation` file:///$SVNREP_DIR/askeet/trunk file:///$SVNREP_DIR/askeet/tags file:///$SVNREP_DIR/askeet/branches
+
+Siguiente, necesitas hacer la primera importación, omitiendo los archivos temporales de `cache/` y `log/`:
+
+    $ cd /home/sfprojects/askeet
+    $ rm -rf cache/*
+    $ rm -rf log/*
+    $ svn import -m "initial import" . file:///$SVNREP_DIR/askeet/trunk
+
+Ahora mueva el directorio original la aplicación y haga un checkout de la versión del SVN:
+
+    $ cd /home/sfprojects
+    $ mv askeet askeet.origin
+    $ svn co file:///$SVNREP_DIR/askeet/trunk/ askeet/
+    $ ls askeet
+
+    $ rm -rf askeet.origin
+
+Hay una cosa restante a configurar. Si hace commit de su directorio de trabajo al repositorio, usted puede copiar algunos archivos indeseados, como los que están situados en los directorios `cache` y `log` de su proyecto. Entonces necesita especificar una lista de ignorados en el SVN para este proyecto.
+
+    $ cd /home/sfprojects/askeet
+    $ svn propedit svn:ignore cache
+
+El editor de textos predeterminado esta configurado para ser utilizado por SVN. Agregue los directorios secundarios de `askeet` que SVN debe ignorar al enviar:
+
+    *
+
+Sálvelo y salga. Has terminado. 
+
+Repita el proceso para el directorio `Log`:
+
+    $ svn propedit svn:ignore log
+
+    *
+
+Ahora, cerciórese de fijar los permisos de escritura en el directorio `cache y `log` en los niveles apropiados, de modo que su web server pueda escribir sobre ellos. En la línea de comando:
+
+    $ chmod 777 cache
+    $ chmod 777 log
+
+>**Nota**: Los usuarios de Windows puede usar el excelente cliente [TortoiseSVN][4] para manejar el repositorio de subversion.
+
+Si usted desea saber más sobre control de la versión de código fuente, revise el capítulo [creación del proyecto](http://www.symfony-project.com/content/book/page/project_creation.html) en el libro symfony.
+
+>**Nota**: El repositorio SVN de askeet es público. Puedes acceder a él en:
+>
+>       http://svn.askeet.com/
+>
+>A continuación, haga checkout.
+>
+>Todos los días son agregados nuevos cambios, puedes hacer checkout de la Tag `release_day_1`:
+>
+>       $ svn co http://svn.askeet.com/tags/release_day_1/ askeet/
+
+Nos vemos mañana
+----------------
+
+¡Bien, es ya una hora! Hablamos mucho, y no hicimos nada nuevo para los que adoptaron symfony tempranamente. Pero  les paso los puntos a tratar para nuestro segundo día del calendario symfony:
+
+* la aplicación haremos
+* construyendo el modelo de datos y la generación mapeo de los objetos relacionados
+* andamio de un módulo
+
+Si deseas permanecer en contacto con las últimas noticias de askeet, usted puede suscribirse a la [lista de askeet](mailto:askeet-subscribe@symfony-project.com) o vaya al [Foro deicado](http://www.symfony-project.com/forum/index.php/f/8).
+
+¡Asegúrese de volver mañana!
+
+[1]: http://pear.php.net                  "Pear"
+[2]: http://phing.info/wiki/index.php     "phing"
+[3]: http://subversion.tigris.org/        "Subversion"
+[4]: http://tortoisesvn.tigris.org/       "TortoiseSVN"
+
+
+

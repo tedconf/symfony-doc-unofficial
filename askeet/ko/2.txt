@@ -1,0 +1,283 @@
+symfony advent calendar day two: setting up a data model
+========================================================
+
+지난 줄거리
+-----------
+
+[지난 시간](1.txt)에는 심포니 설치 방법, 새로운 어플리케이션과 그 개발환경을 설정하는 방법, 그리고 소스 버전 컨트롤 소프트웨어를 통해 소스를 안전하게 관리하는 방법들을 알아보았습니다. 지난 시간에 만들어진 소스는 askeet SVN 저장소에서 다운로드 가능합니다.
+
+    http://svn.askeet.com/
+
+오늘은 기능적인 측면에서 우리가 만들고자 하는 것이 무엇인지 정의하고, 데이터 모델의 뼈대를 만든 후에 코딩을 시작할 것입니다. 이를 위해 객체-관계 연결 (object-relational mapping) 을 생성하고, 이를 바탕으로 데이터베이스 레코드를 생성, 검색, 그리고 수정하는 어플리케이션 거푸집 (scaffolding) 을 만들것입니다.
+
+휴, 많군요. 자 시작해 볼겠습니다.
+
+프로젝트 공개
+-------------
+
+무엇을 알고 싶으십니까? 매우 흥미로운 질문이죠. 세상에는 정말 많은 흥미로운 질문들이 있습니다.
+
+* 오늘 밤에 여자친구와 무엇을 하면 좋을까?
+* 내 블로그에 사람들을 어떻게 끌어들일까?
+* 무엇이 가장 훌륭한 웹 어플리케이션 프레임웍인가?
+* 파리에서 가장 저렴한 식당은 어디일까?
+* 삶에 대한, 우주에 대한, 그리고 다른 모든 것들에 대한 답은 무엇인가?
+
+이 모든 질문들에 대한 답은 하나만 있는 것도 아니고, 최고의 대답이란 것도 개인에 따라 다를 수 있습니다. 사실 `1+1 은?` 처럼 답이 하나뿐인 질문들은 보통 재미없는 것이 많지요.
+
+[askeet](http://www.askeet.com/) 에 물어보십시오. askeet 은 사람들이 궁금해 하는 것들에 대한 답을 주기 위해 만들어진 사이트입니다. 껄끄럽고 어려운 질문들에는 누가 답변을 하나요? 모두입니다. 또한 모든 사람들은 다른 사람들이 한 답변을 평가할 수 있고, 가장 높게 평가받은 답변이 가장 잘 보이도록 될 것입니다. 질문이 많아질 수록 카테고리를 통해 질문들을 정리하기 어려울 것이므로, [del.icio.us](http://del.icio.us/) "스타일로", 질문자는 자신이 원하는 어떠한 단어로든 태그를 만들 수 있도록 할 것입니다. 태그가 인기도에 따라서 태그 버블 형태로 보여지는 것은 당영하겠지요. 만약 한 질문을 모니터하고 싶은 경우를 위해 각각의 질문들은 RSS 형태로도 제공될 것입니다. 이 모든 기능들이 멋지고 가볍기때문에 특별히 새로운 페이지가 필요한 경우가 아니라면 AJAX 형태로 만들어질 것입니다. 그리고 마지막으로 관리자 모드에서는 스팸으로 신고된 질문이나 답변들을 수정하거나, 관리자가 찾은 좋은 질문들을 좀 더 노출되도록 할 수 있어야 할 것입니다.
+
+"이런 웹 사이트들은 이미 있지 않나?" 하고 생각할지도 모르겠습니다. 실제로 그렇게 생각하신다면, 음, 들켰나요? 하지만 [faqt](http://www.faqts.com/), [eHow](http://www.ehow.com/), [Ask Jeeves](http://www.ask.com/) 또는 이와 유사한 다른 사이트들을 한 번 살펴보세요. 여러 사람이 하나의 답변을 함께 만들어 갈 수도 없고, AJAX 기능도 없고, RSS 기능도 없고, 태그 기능도 없으니, 똑같은 웹 사이트라고 할 수 없는 없습니다. 우리는 웹 2.0 어플리케이션을 만들것입니다.
+
+askeet 의 가장 큰 다른 점은, 그것이 단순히 웹 사이트가 아니라, 누구나 다운로드해서 설정을 바꾸고 기능을 추가한 후 집이나 회사 인트라넷에서 사용 가능한 어플리케이션이라는 점입니다. 소스 코드는 오픈 소스 라이선스로 배포될 것입니다. 여러분의 HR 팀장이 지식 관리 시스템을 찾고 계십니까? 차를 고치는데 필요했던 트릭들을 정리해 놓고 싶으세요? 여러분의 웹사이트를 위해 FAQ 를 개발하고 싶진 않으시겠죠? 이제 그만 찾으셔도 좋습니다. askeet 이 있으니까요. 아, askeet 이 있을 것입니다. 우리의 크리스 마스 선물이라고 생각해주세요.
+
+어디서부터 시작해야 할까?
+-------------------------
+
+심포니 어플리케이션을 만드는 일을 어떻게 시작할지는 여러분께 달려있습니다. 여러분이 만약 [XP][1] 에 익숙하다면, 먼저 스토리를 작성하고, 계획을 세운 후, 짝 프로그래밍 (pair programming) 을 함께 할 파트너를 찾야야 할 것입니다. 만약 당신이 [UML][2] 신도라면 먼저 웹사이트에 관한 상세한 스펙을 작성하고, 모든 객체들과 상태들, 그리고 그들간의 상호작용에 관한 표를 그릴것입니다.
+
+하지만 이 튜토리얼은 일반적인 응용프로그램 개발에 관한 것이 아니기 때문에, 우리는 간단한 관계형 자료 모델을 세운 후 하나씩 기능을 추가하는 방향으로 일을 진행하고자 합니다. 우리가 하고자 하는 것은 하루가 끝날때 쯤에는 완벽하게 작동하는 어플리케이션을 만들고 싶은 것이지, 엄청난 양의 절대로 작동하지 않는 진행중인 코드를 만들고 싶진 않습니다. 이상적으로는 우리가 추가하고자 하는 모든 기능에 대해서 유닛 테스트를 작성해야 하지만, 솔직히 그렇게 할 시간이 부족합니다. 이 튜토리얼을 진행할 24일중 하루는 유닛 테스트에 집중하도록 할테니 계속 읽어주세요.
+
+통합성을 위한 제약조건 (integrity constraints) 과 트랜잭션 (transaction) 을 사용하기 위해, 이번 프로젝트에는 MySQL 데이터베이스와 InnoDB 테이블을 사용할 것입니다. 실제 데이터베이스 사용을 할 수 없는 경우에는 초반의 경우에 한해 SQLite 데이터베이스를 사용할 수도 있습니다. 이를 위해서는 `databases.yml` 파일을 수정해야 하는데, 이는 여러분에게 맡기도록 하겠습니다.
+
+데이터 모델
+-----------
+
+### 관계형 모델
+
+명백하게도 우리는 'question' 테이블과 'answer' 테이블이 필요합니다. 'user' 테이블도 필요할 것이며, 사용자들의 흥미로와 하는 질문에 대한 정보를 저장할 'interest' 테이블, 그리고 사용자들이 답변에 대한 평가에 관한 정보를 저장할 'relevancy' 테이블도 필요합니다.
+
+사용자 정보는 질문을 추가하고, 답변을 평가하거나 질문에 대한 관심을 평가하는데 사용될 것입니다. 답변을 등록하는 과정에는 사용자 정보가 필요없지만, 답변들은 사용자와 연결되도록 해서 좋은 답변을 하는 사용자를 구별해 낼 수 있도록 할 것입니다. 사용자 정보 없이 입력된 답변은 'Anonymous Coward' 라고 불리는 일반적인 사용자 이름으로 표시될 것입니다. 엔티티 관계표를 보면 훨씬 이해하기 쉬울 것입니다.
+
+![ERD](/images/askeet/mcd1.gif)
+
+각 테이블이 `created_at` 필드를 가지고 있는것을 주목하십시오. 심포니는 `created_at` 필드를 인식해서, 자료가 생성될때 자동으로 생성시각을 기록할 것입니다. 비슷한 것으로 `updated_at` 필드가 있습니다. 심포니는 레코드가 업데이트될때, 해당 필드에 업데이트되는 시각을 기록할 것입니다.
+
+### `schema.xml`
+
+심포니가 이해하기 위해서는 관계모델을 설정파일로 바꾸어주어야 합니다. 심포니가 이해할 수 있는 관계모델을 기술하는 것이 `askeet/config/` 디렉토리에 있는 `schema.xml` 파일입니다.
+
+이 파일을 만드는 방법에는 두가지가 있습니다. 첫번째는 손으로 직접 만드는 것이고 (이것이 우리가 좋아하는 방법입니다.), 기존의 데이터베이스 구조를 바탕으로 생성하는 방법이 있습니다. 먼저 첫번째 방법을 살펴보도록 하겠습니다. 시작하기 전에, 설치시에 함께 설치되는 예제 파일의 이름을 바꿉니다.
+
+    $ svn rename config/schema.xml.sample config/schema.xml
+
+`schema.xml` 파일의 자세한 구조는 [Propel 웹사이트][3] 에서 자세히 알 수 있지만, 상대적으로 간단한 형태입니다. 이 파일은 `<column>`, `<foreign-key>` 그리고 `<index>` 태그를 포함하는 `<table>` 테그들을 가지는 XML 파일입니다. 한 번만 이 파일을 만들어 보면, 금방 익숙해지실 것입니다. 아래에는 우리가 위에 설명했던 관계자료 모델입니다.
+
+    [xml]
+    <?xml version="1.0" encoding="UTF-8"?>
+     <database name="propel" defaultIdMethod="native" noxsd="true">
+       <table name="ask_question" phpName="Question">
+         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+         <column name="user_id" type="integer" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="title" type="longvarchar" />
+         <column name="body" type="longvarchar" />
+         <column name="created_at" type="timestamp" />
+         <column name="updated_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_answer" phpName="Answer">
+         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+         <column name="question_id" type="integer" />
+         <foreign-key foreignTable="ask_question">
+           <reference local="question_id" foreign="id"/>
+         </foreign-key>
+         <column name="user_id" type="integer" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="body" type="longvarchar" />
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_user" phpName="User">
+         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+         <column name="nickname" type="varchar" size="50" />
+         <column name="first_name" type="varchar" size="100" />
+         <column name="last_name" type="varchar" size="100" />
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_interest" phpName="Interest">
+         <column name="question_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_question">
+           <reference local="question_id" foreign="id"/>
+         </foreign-key>
+         <column name="user_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_relevancy" phpName="Relevancy">
+         <column name="answer_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_answer">
+           <reference local="answer_id" foreign="id"/>
+         </foreign-key>
+         <column name="user_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="score" type="integer" />
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+     </database>
+
+(주 - 아래 schema.yml 파일은 schema.xml 파일과 동일한 구조를 기술합니다.)
+
+    propel:
+        ask_question:
+            _attributes: { phpName: Question }
+            id:
+            user_id:
+            title: longvarchar
+            body: longvarchar
+            created_at:
+            updated_at:
+        
+        ask_answer:
+            _attributes: { phpName: Answer }
+            id:
+            question_id:
+            user_id:
+            body: longvarchar
+            created_at:
+        
+        ask_user:
+            _attributes: { phpName: User }
+            id:
+            nickname: varchar(50)
+            firstname: varchar(100)
+            lastname: varchar(100)
+            created_at:
+        
+        ask_interest:
+            _attributes: { phpName: Interest }
+            question_id:
+            user_id:
+            created_at:
+        
+        ask_relevancy:
+            _attributes: { phpName: Relevancy }
+            answer_id:
+            user_id:
+            score: integer
+            created_at:
+
+실제 데이터베이스 이름과 관계없이 이 파일에는 `propel` 이라는 데이터 베이스 이름이 사용되었습니다. 이 값은 심포니 프레임웍이 Propel 과 자료를 주고 받을때 사용하는 값입니다. 실제 데이터베이스 관련 정보는 조금 후에 설정파일들 중 `databases.yml` 에 기록되어질 것입니다. 
+
+`schema.xml` 파일을 기록하는 다른 방법은 실제 데이터베이스의 구조를 활용하는 것입니다. 만약 여러분이 그래픽 데이터베이스 디자인 툴을 사용하는데 익숙하시다면, 생성된 MySQL 데이터베이스로 부터 파일을 생성하는게 편리할 것입니다. 이를 시작하기 전에, 여러분은 `askeet/config/` 디렉토리에 있는 `propel.ini` 파일을 수정해서 데이터베이스에 연결이 가능하도록 해야 합니다.
+
+    propel.database.url = mysql://username:password@localhost/databasename
+
+`username`, `password`, `localhost` 그리고 `databasename` 부분이 여러분이 여러분의 데이터베이스 연결 정보로 바꾸어 주어야 하는 항목들입니다. 이제 `askeet/` 디렉토리에서 `propel-build-schema` 명령을 내림으로써 `schema.xml` 파일을 만들 수 있습니다.
+
+    $ symfony propel-build-schema
+    
+>**참고**: 몇몇 툴들은 데이터베이스 구조를 그래픽적으로 만들 수 있도록 도와주고 (예를 들면 [Fabforce 의 Dbdesigner](http://www.fabforce.net/dbdesigner4/)), `schema.xml` 파일까지 생성시켜 줍니다. ([DB Designer 4 TO Propel Schema Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php)).
+
+### 객체 모델 생성
+
+InnoDB 엔진을 사용하기 위해서 `askeet/config/` 디렉토리의 `propel.ini` 파일에 아래 줄을 추가합니다.
+
+    propel.mysql.tableType = InnoDB
+
+`schema.xml` 이 생성된 후에는, 데이터베이스 관계 모델을 바탕으로 객체모델을 생성할 수 있습니다. 객체-관계 연결은 Propel 이 담당하지만, 아래와 같은 심포니 커맨드 라인 툴을 통해서 사용이 가능합니다.
+
+    $ symfony propel-build-model
+    
+이 명령으로 데이터베이스 스키마에 정의된 테이블에 상응하는 클래스들이 생성되며, 이들 클래스는 표준 접근자 (`->get()`, `->set()` 메써드) 들을 가지고 있습니다. (askeet 프로젝트의 가장 상위 디렉토리에서 명령을 내려야 합니다.) 생성된 코드들은 `askeet/lib/model/om/` 디렉토리에 있습니다. 해당 디렉토리를 보시면 각각의 테이블마다 두개의 클래스가 있는 것을 발견하실 것입니다. (이에 대한 이유를 알고 싶으시면 온라인 문서들 중 [모델 챕터](http://www.symfony-project.com/content/book/page/model.html) 를 참고하시기 바랍니다.) 이들 클래스는 여러분이 `build-model` 명령을 내릴때마다 새로 쓰여질 것입니다. 프로젝트를 진행하는 동안 관계 모델의 수정이 필요한 경우는 상당히 많기 때문에, 만약 여러분이 객체 모델에 메써드를 추가하고 싶으시다면, `askeet/lib/model/` 디렉토리의 클래스를 수정하시는게 좋습니다. 이들 클래스는 `/om` 디렉토리의 클래스들을 상속하기 때문에 이런 문제로부터 자유롭습니다.
+
+데이터 베이스
+-------------
+
+### 연결
+
+이제 심포니가 데이터베이스의 객체 모델을 가지게 되었으니, MySQL 데이터 베이스에 연결할 차례입니다. 먼저, MySQL 데이터 베이스를 생성합니다.
+
+    $ mysqladmin -u youruser -p create askeet
+
+자 이제 `askeet/config/databases.yml` 파일을 엽니다. 만약 이번이 심포니를 처음 사용하시는 것이라면, 심포니 설정파일이 [YAML][4] 형식으로 쓰여졌다는 것을 처음 발견하실 겁니다. YAML 문법은 한가지 제약을 제외하곤 상당히 간단합니다. YAML 의 제약조건은 탭을 써선 안 된다는 것입니다. 탭대신 스페이스를 쓰십시오. 이것만 알고 계시면 다른 것은 문제 될 것이 없습니다. 여러분의 실제 데이터베이스 연결 정보를 `all:` 카테고리 아래에 기록하십시오.
+
+    all:
+      propel:
+        class:      sfPropelDatabase
+        param:
+          phptype:  mysql
+          host:     localhost
+          database: askeet
+          username: youruser
+          password: yourpasswd
+
+만약 YAML 파일과 심포니 설정에 관해 더 알고 싶으시다면 온라인 문서 중 [설정](http://www.symfony-project.com/content/book/page/configuration_practice.html) 부분을 참고하시기 바랍니다.
+
+### 테이블 생성
+
+여러분이 `schema.xml` 파일은 직접 작성하는대신 기존 데이터베이스 구조를 바탕으로 해당 파일을 생성했다면, 여러분은 이미 이 파일을 가지고 있습니다. 이번 단계는 건너 뛰셔도 좋습니다.
+
+키보드를 좋아하시는 여러분들께 놀라운 소식이 있습니다. 여러분은 MySQL 데이터베이스에 테이블이나 컬럼을 만드실 필요가 없습니다. 여러분은 이미 `schema.xml` 파일을 만들었고, 심포니가 이를 바탕으로 SQL 문장을 만들어 줄 것입니다.
+
+    $ symfony propel-build-sql
+
+이 명령은 `askeet/data/sql` 디렉토리에 `schema.sql` 파일을 만듭니다. 이를 MySQL 에 사용하면 됩니다.
+
+    $ mysql -u youruser -p askeet < data/sql/schema.sql
+
+CRUD 를 이용한 테스트 데이터 입력
+---------------------------------
+
+작업이 잘 되었는지 확인하는 것은 언제나 좋은 일입니다. 우리는 웹 어플리케이션을 만들고 있음에도 불구하고, 아직까진 브라우저를 사용한적이 없네요... 자, 그럼 기본적인 심포니 탬플릿과 액션들을 추가해서 'question' 테이블의 테이터를 조작해보도록 합시다. 이를 통해 질문들을 입력하고 보여주는 것이 가능할 것입니다.
+
+`askeet/` 디렉토리에서 다음을 입력하십시오.
+
+    $ symfony propel-generate-crud frontend question Question
+    
+이 명령은 `Question` Propel 객체 모델을 바탕으로하는 거푸집 (scaffolding) 을 `frontend` 어플리케이션의 `question` 모듈에 추가합니다. 거푸집에는 기본적인 생성 (Create), 검색 (Retrieve), 수정 (Update), 삭제 (Delete) 기능이 포함됩니다. (CRUD 약자가 여기서 생겨났습니다.) 지금 생성된 거푸집은 완성된 어플리케이션이 아닙니다. 혼동하지 마십시오. 이들은 여러분이 새로운 기능을 추가하고, 비즈니스 로직을 추가하고, 외관을 변경할 수 있는 기본적인 구조입니다.
+
+CRUD 제너레이터에 의해 생성된 액션들은 다음과 같습니다.
+
+| 액션   | 설명
+|--------|------------------------------------------------------
+| list   | 테이블의 모든 레코드를 보여준다.
+| index  | list 액션으로 전달 (forward) 한다.
+| show   | 해당 레코드의 모든 필드를 보여준다.
+| edit   | 새로운 열을 삽입하거나 기존 자료를 수정하기 위한 폼을 보여준다.
+| update | 요청 정보를 바탕으로 레코드를 수정하고, show 액션으로 전달 (forward) 한다.
+| delete | 레코드를 삭제한다.
+
+다른 액션들에 관해서는 온라인 문서중 [거푸집 관련](http://www.symfony-project.com/content/book/page/scaffolding.html) 부분에 설명되어 있습니다.
+
+`askeet/apps/frontend/modules/` 디렉토리에 `question` 모듈이 생성되었으니, 한 번 소스를 둘러보시길 바랍니다.
+
+자동으로 적재되어야 하는 새로운 클래스를 추가하신 경우 설정파일을 새로 적재해야 한다는 사실을 잊지마세요. 아래 명령어로 설정파일을 새롭게 적재할 수 있습니다.
+
+    $ symfony cc frontend config
+
+이제 다음 URL 로 테스트를 할 수 있습니다.
+
+    http://askeet/question
+
+![자료 등록](/images/askeet/CRUD1.gif)
+![자료 목록](/images/askeet/CRUD2.gif)
+
+자, 우리 시스템을 가지고 좀 놀아보세요. 질문도 추가하고, 수정하기도 하고, 삭제하기도 하시면서 말이죠. 만약 여러분 시스템이 잘 작동한다는 것은 우리의 객체 모델이 잘 짜여져 있고, 데이터베이스 관계 모델과 심포니 객체 모델이 서로 함께 잘 움직이고 있다는 뜻이기도합니다.
+
+다음 이 시간에
+--------------
+
+PHP 코드 한 줄 쓰지 않고 기본적인 어플리케이션을 갖게 되었습니다. 이틀째 치곤 나쁘지 않은 것 같네요. 내일에는 질문목록들을 가지는 메인 페이지를 만들기 위한 코드를 작성할 것입니다. 또한 일괄 작업 (batch process) 를 통해 테스트 데이터를 등록하고 모델을 확장하는 방법을 배울 것입니다.
+
+이제 여러분은 우리의 어플리케이션이 무엇을 할 것인지 아셨을 것입니다. 어떤 기능들이 추가되면 좋을지를 한 번 생각해보시고 여러분의 의견을 [메일링 리스트](mailto:askeet-subscribe@symfony-project.com) 에 알려주세요. 가장 인기좋은 아이디어가 21일째에 추가될 것입니다.
+
+오늘 사용되었던 코드들은 아래 SVN 주소에 있습니다. (`release_day_2` 테그)
+
+    http://svn.askeet.com/tags/release_day_2
+
+[1]:  http://www.xprogramming.com/xpmag/whatisxp.htm    "(XP) Extreme Programming Explained"
+[2]:  http://www.uml.org/                               "Unified Modeling Language"
+[3]:  http://propel.phpdb.org/trac/                     "Propel"
+[4]:  http://www.yaml.org/                              "YAML"
