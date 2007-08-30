@@ -575,26 +575,26 @@ A recurrent problem with user attributes is the cleaning of the user session onc
 The flash attribute is an ephemeral attribute that you can define and forget, knowing that it will disappear after the very next request and leave the user session clean for the future. In your action, define the flash attribute like this:
 
     [php]
-    $this->setFlash('attrib', $value);
+    $this->getUser()->setFlash('notice', $value);
 
 The template will be rendered and delivered to the user, who will then make a new request to another action. In this second action, just get the value of the flash attribute like this:
 
     [php]
-    $value = $this->getFlash('attrib');
+    $value = $this->getUser()->getFlash('notice');
 
-Then forget about it. After delivering this second page, the `attrib` flash attribute will be flushed. And even if you don't require it during this second action, the flash will disappear from the session anyway.
+Then forget about it. After delivering this second page, the `notice` flash attribute will be flushed. And even if you don't require it during this second action, the flash will disappear from the session anyway.
 
-If you need to access a flash attribute from a template, use the `$sf_flash` object:
+If you need to access a flash attribute from a template, use the `$sf_user` object:
 
     [php]
-    <?php if ($sf_flash->has('attrib')): ?>
-      <?php echo $sf_flash->get('attrib') ?>
+    <?php if ($sf_user->hasFlash('notice')): ?>
+      <?php echo $sf_user->getFlash('notice') ?>
     <?php endif; ?>
 
 or just:
 
     [php]
-    <?php echo $sf_flash->get('attrib') ?>
+    <?php echo $sf_user->getFlash('notice') ?>
 
 Flash attributes are a clean way of passing information to the very next request.
 
@@ -889,7 +889,6 @@ Listing 6-31 - Default Filter Chain, in `myapp/config/filters.yml`
 
     cache:     ~
     common:    ~
-    flash:     ~
     execution: ~
 
 These declarations have no parameter (the tilde character, `~`, means "null" in YAML), because they inherit the parameters defined in the symfony core. In the core, symfony defines `class` and `param` settings for each of these filters. For instance, Listing 6-32 shows the default parameters for the `rendering` filter.
@@ -915,7 +914,7 @@ You can customize the filter chain in various ways:
   * Override the default class and parameters of the default filters (notably to modify the security system and use your own security filter).
 
 >**TIP**
->The `enabled: off` parameter works well to disable your own filters, but you can deactivate the default filters via the `settings.yml` file, by modifying the values of the `web_debug`, `use_security`, `cache`, and `use_flash` settings. This is because each of the default filters has a `condition` parameter that tests the value of these settings.
+>The `enabled: off` parameter works well to disable your own filters, but you can deactivate the default filters via the `settings.yml` file, by modifying the values of the `web_debug`, `use_security`, and `cache` settings. This is because each of the default filters has a `condition` parameter that tests the value of these settings.
 
 **New in development version**
 
@@ -988,7 +987,6 @@ Listing 6-34 - Sample Filter Activation File, Saved in `apps/myapp/config/filter
 
     cache:     ~
     common:    ~
-    flash:     ~
     execution: ~
 
 When activated, the filter is executed for each request. The filter configuration file can contain one or more parameter definitions under the `param` key. The filter class has the ability to get the value of these parameters with the getParameter() method. Listing 6-35 demonstrates how to get a filter parameter value.
