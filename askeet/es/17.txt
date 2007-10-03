@@ -1,0 +1,322 @@
+Día diecisiete del calendario de symfony: API
+=============================================
+
+Anteriormente en symfony
+------------------------
+
+La aplicación askeet fue puesta [online](http://www.askeet.com) [ayer](16.txt), y ya tenemos un montón de sugerencias sobre añadir y personalizar características. La introducción del usuario es fundamental para el diseño de una aplicación web 2.0, e incluso si el concepto de la aplicación es nuevo, debe ser probado tan pronto como sea posible.
+
+Pero añadiremos funcionalidades no planeadas el día 21. Antes de eso, hemos programado un puñado de técnicas avanzadas de desarrollo de aplicaciones web para mostrártelas a través de askeet, y la primera que va a ser revelada hoy es la programación de una API externa que requiere autenticación HTTP.
+
+Como hicimos un montón de pequeños cambios ayer, te aconsejamos que empieces el tutorial de hoy con una versión reciente descargada del repositorio de askeet etiquetada como [día 16](http://svn.askeet.com/tags/release_day_17/).
+
+La API
+------
+
+Una [Application Programming Interface](http://en.wikipedia.org/wiki/Application_programming_interface), o **API**, es una interfaz de desarrollo para un servicio concreto en tu aplicación, de forma que pueda ser incluido en sitios web externos. Piensa en [Google Maps](http://www.google.com/apis/maps/) o [Flickr](http://www.flickr.com/services/api/response.rest.html), que se usan para ampliar montones de páginas web en Internet gracias a sus APIs.
+
+Askeet no será la excepción, y creemos que para aumentar la popularidad del servicio, esto debe estar disponible para otros sitios web. El desarrollo del feed RSS [día 11](11.txt) fue una primera aproximación a este requerimiento, pero podemos hacerlo mucho mejor.
+
+Askeet proveerá una API de **respuestas a preguntas hechas por el usuario**. El acceso a esta API estará restringida a usuarios registrados de askeet, a través de autenticación HTTP. El formato de respuesta elegido para la API es [Representational State Transfer](http://en.wikipedia.org/wiki/REST), o REST - que significa que la respuesta es un sencillo bloque XML similar a la salida de las principales APIs de la web:
+
+    [xml]
+    <?xml version="1.0" encoding="utf-8" ?>
+    <rsp stat="ok" version="1.0">
+      <question href="http://www.askeet.com/question/what-shall-i-do-tonight-with-my-girlfriend" time="2005-11-21T21:19:18Z" >
+        <title>What shall I do tonight with my girlfriend?</title>
+        <tags>
+          <tag>activities</tag>
+          <tag>relatives</tag>
+          <tag>girl</tag>
+        <tags>
+        <answers>
+          <answer relevancy="50" time="2005-11-22T12:21:53Z">You can try to read her poetry. Chicks love that kind of things.</answer>
+          <answer relevancy="0" time="2005-11-22T15:45:03Z">Don't bring her to a doughnuts shop. Ever. Girls don't like to be seen eating with their fingers - although it's nice.</answer>
+        </answers>
+      </question>
+    </rsp>
+
+Implementaremos la API en un nuevo módulo del `frontend` de la aplicación, así que usaremos la línea de comandos para construir el esqueleto del módulo:
+
+    $ symfony init-module frontend api
+
+Autenticación HTTP
+------------------
+
+Elegimos limitar el uso de la API a usuarios registrados de askeet. Por tanto, usaremos el proceso de autenticación HTTP, que es un mecanismo de autenticación basado en el protocolo HTTP. Ésta es la diferencia respecto a la autenticación web que hemos visto anteriormente ya que no requiere una página web - todos los intercambios tienen lugar en las cabeceras HTTP.
+
+Necesitaremos el método de autenticación incluido en un validador personalizado durante el [día seis](6.txt), así que antes de nada haremos algunas refactorizaciones y relocalizaremos el código de login en la clase `UserPeer` del modelo:
+
+    [php]
+    public static function getAuthenticatedUser($login, $password)
+    {
+      $c = new Criteria();
+      $c->add(UserPeer::NICKNAME, $login);
+      $user = UserPeer::doSelectOne($c);
+
+      // nickname exists?
+      if ($user)
+      {
+        // password is OK?
+        if (sha1($user->getSalt().$password) == $user->getSha1Password())
+        {
+          return $user;
+        }
+      }
+
+      return null;
+    }
+
+El nuevo método de la clase `UserPeer::getAutenticatedUser()` ya puede ser usado en `myLoginValidator.class.php` (te lo dejamos a ti) y en el nuevo servicio web `api/index`:
+
+    [php]
+    <?php
+    
+    class apiActions extends sfActions
+    {
+      public function preExecute()
+      {
+        sfConfig::set('sf_web_debug', false);
+      }
+
+      public function executeIndex()
+      {
+        $user = $this->authenticateUser();
+        if (!$user)
+        {
+          $this->error_code    = 1;
+          $this->error_message = 'login failed';
+
+          $this->forward('api', 'error');
+        }
+        // do some stuff
+      }
+
+      private function authenticateUser()
+      {
+        if (isset($_SERVER['PHP_AUTH_USER']))
+        {
+          if ($user = UserPeer::getAuthenticatedUser($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']))
+          {
+            $this->getContext()->getUser()->signIn($user);
+
+            return $user;
+          }
+        }
+
+        header('WWW-Authenticate: Basic realm="askeet API"');
+        header('HTTP/1.0 401 Unauthorized');
+      }
+
+      public function executeError()
+      {
+      }
+    }
+    
+    ?>
+
+Lo primero, antes de ejecutar cualquier acción del módulo API (así en el método `preExecute()`), desactivaremos la barra de herramientas de depuración web. La vista de esta acción es XML, la inserción de la barra de herramientas podría producir una respuesta no válida.
+
+La primera cosa que la acción `index` hará es comprobar si se ha provisto un login y una clave, y si coinciden con una cuenta de askeet. Si no es el caso, el método `authenticateUser()` establece la cabecera de la respuesta HTTP a '401'. Esto creará una ventana de autenticación HTTP que aparecerá en el navegador del usuario; el usuario tendrá que reenviar la petición con el login y la clave.
+
+    // primera petición al API, sin autenticación
+    GET /api/index HTTP/1.1
+    Host: mysite.example.com
+    User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8) Gecko/20051111 Firefox/1.5
+    Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+    ...  
+    
+    // la API devuelve una cabecera 401 sin contenido
+    HTTP/1.x 401 Authorization Required
+    Date: Thu, 15 Dec 2005 10:32:44 GMT
+    Server: Apache
+    WWW-Authenticate: Basic realm="Order Answers Feed"
+    Content-Length: 401
+    Keep-Alive: timeout=15, max=100
+    Connection: Keep-Alive
+    Content-Type: text/html; charset=iso-8859-1
+    
+    // una ventana de login aparecerá en la ventana del usuario.
+    // Una vez que el usuario introduce su login/clave, se envía un nuevo GET al servidor
+    GET /api/index HTTP/1.1
+    Host: mysite.example.com
+    User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8) Gecko/20051111 Firefox/1.5
+    Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+    ...
+    Authorization: Basic ZmFicG90OnN5bWZvbnk=
+
+Un atributo `Authorization` se añade a la petición HTTP, que es enviada de nuevo. Contiene una cadena 'login:password' codificada en [base 64][http://en.wikipedia.org/wiki/Base64]. Esto es lo que el `$_SERVER['PHP_AUTH_USER']` y el `$_SERVER['PHP_AUTH_PW']` busca en nuestro método `authenticateUser()`.
+
+>**Note**: Base64 no devuelve una versión cifrada de su entrada. Descodificar una cadena cifrada en base64 es [muy fácil][http://makcoder.sourceforge.net/demo/base64.php], y esto revela la clave en claro. Por ejemplo, al descodificar la cadena `ZmFicG90OnN5bWZvbnk=` devuelve `fabpot:symfony`. Así que tienes que considerar que la clave viaja en claro en Internet (como cuando se introduce en un formulario web) y puede ser interceptada. Por esto la autenticación HTTP debe estar restringida a contenidos y servicios no críticos. Se podría ganar protección adicional requiriendo el protocolo HTTPS para las llamadas a la API.
+
+Si se provee un login y una clave y existe el usuario en la base de datos, entonces la acción `index` se ejecuta. De otra forma, se redirije a la acción `error`(vacía) y muestra la plantilla `errorSuccess.php`:
+
+    [php]
+    <?php echo '<?' ?>xml version="1.0" encoding="utf-8" ?>
+    <rsp stat="fail" version="1.0">
+      <err code="<?php echo $error_code ?>" msg="<?php echo $error_message ?>" />
+    </rsp>
+
+De acuerdo, tienes que establecer todas las vistas del módulo `api` en un content-type XML, y desactivar el decorador. Esto se hace añadiendo un archivo `view.yml` en el directorio `askeet/apps/frontend/modules/api/config/`:
+
+    all:
+      has_layout: off
+    
+      http_metas:
+        content-type: text/xml
+
+>**Note**: La razón por la que la acción `index` devuelve `forward('api', 'error')` en vez de `sfView::ERROR` en caso de error es porque todas las acciones del módulo `api` usan la misma vista. Imagina que dos acciones `index` y otra, por ejemplo `popular`, terminan con `sfView::ERROR`: tendríamos que servir dos vistas de error idénticas  (`indexError.php` y `popularError.php`) con el mismo contenido. La elección de `forward()` limita la repetición de código. Sin embargo, esto fuerza la ejecución de otra acción. Se puede alcanzar un resultado parecido de una forma mucho más económica llamando a `return array('api', 'errorSuccess');`: Esta indica la *vista* que tiene que ejecutarse, y evita la acción completamente.
+
+Respuesta de la API
+-------------------
+
+Construir una respuesta XML es exactamente igual que construir una página XHTML. Así que nada de lo siguiente debería sorprenderte ahora que llevas a la espalda 16 días de symfony.
+
+### Acción `api/index`
+
+    [php]
+    public function executeQuestion()
+    {
+      $user = $this->authenticateUser();
+      if (!$user)
+      {
+        $this->error_code    = 1;
+        $this->error_message = 'login failed';
+ 
+        $this->forward('api', 'error');
+      }
+      
+      if (!$this->getRequestParameter('stripped_title'))
+      {
+        $this->error_code    = 2;
+        $this->error_message = 'The API returns answers to a specific question. Please provide a stripped_title parameter';
+
+        $this->forward('api', 'error');
+      }
+      else
+      {
+        // get the question
+        $question = QuestionPeer::getQuestionFromTitle($this->getRequestParameter('stripped_title'));
+
+        if ($question->getUserId() != $user->getId())
+        {
+          $this->error_code    = 3;
+          $this->error_message = 'You can only use the API for the questions you asked';
+
+          $this->forward('api', 'error');
+        }
+        else
+        {
+          // get the answers
+          $this->answers  = $question->getAnswers();
+          $this->question = $question;
+        }
+      }
+    }
+
+### Plantilla `questionSuccess.php`
+
+    [php]
+    <?php echo '<?' ?>xml version="1.0" encoding="utf-8" ?>
+    <rsp stat="ok" version="1.0">
+      <question href="<?php echo url_for('@question?stripped_title='.$question->getStrippedTitle(), true) ?>" time="<?php echo strftime('%Y-%m-%dT%H:%M:%SZ', $question->getCreatedAt('U')) ?>">
+        <title><?php echo $question->getTitle() ?></title>
+        <tags>
+          <?php foreach ($sf_user->getSubscriber()->getTagsFor($question) as $tag): ?>
+          <tag><?php echo $tag ?></tag>
+          <?php endforeach ?>
+        </tags>
+        <answers>
+          <?php foreach ($answers as $answer): ?>
+          <answer relevancy="<?php echo $answer->getRelevancyUpPercent() ?>" time="<?php echo strftime('%Y-%m-%dT%H:%M:%SZ', $answer->getCreatedAt('U')) ?>"><?php echo $answer->getBody() ?></answer>
+          <?php endforeach ?>
+        </answers>
+      </question>
+    </rsp>
+
+Añade una nueva regla de enrutamiento para esta llamada de la API:
+
+    api_question:
+      url:   /api/question/:stripped_title
+      param: { module: api, action: question }
+
+### Pruébalo
+
+Como la respuesta REST de una API es un sencillo XML, puedes probarlo con un simple navegador llamando a:
+
+    http://askeet/api/question/what-shall-i-do-tonight-with-my-girlfriend
+
+Integrar una API externa
+------------------------
+
+Integrar una API externa no es más difícil que leer XML con PHP. Como no hay un interés inmediato en integrar una API externa en askeet, describiremos en unas pocas palabras cómo integrar la API de askeet en un sitio externo - ya esté construido con symfony o no.
+
+PHP5 viene empaquetado con [SimpleXML](http://www.zend.com/php5/articles/php5-simplexml.php), una conjunto de herramientas muy fácil de usar para interpretar y recorrer un documento XML. Con SimpleXML, los nombres de los elementos se mapean automáticamente como propiedades de un objeto, y esto se hace recursivamente. Los atributos se mapean para accesos iterativos.
+
+Para reconstruir la lista de respuestas a una pregunta dada a través de la API en una página simple, todo lo que hay que escribir son unas pocas líneas de código PHP:
+
+    [php]
+    <?php $xml = simplexml_load_file(dirname(__FILE__).'/question.xml') ?>
+
+    <h1><?php echo $xml->question->title ?></h1>
+    <p>Published on <?php echo $xml->question['time'] ?></p>
+
+    <h2>Tags</h2>
+    <ul>
+      <?php foreach ($xml->question->tags->tag as $tag): ?>
+      <li><?php echo $tag ?></li>
+      <?php endforeach ?>
+    </ul>
+
+    <h2>Answers to this question from askeet users</h2>
+    <ul>
+    <?php foreach ($xml->question->answers->answer as $answer): ?>
+      <li>
+        <?php echo $answer ?>
+        <br />
+        Relevancy: <?php echo $answer['relevancy'] ?>% - Pulished on <?php echo $answer['time'] ?>
+      </li>
+    <?php endforeach ?>
+    </ul>
+
+Donación Paypal
+---------------
+
+Ya que hablamos sobre APIs externas, algunas son muy simples de integrar y pueden aportar mucho a tu sitio. La API de donación [Paypal](http://www.paypal.com) es un simple trozo de código HTML en el que el correo electrónico del propietario de la cuenta debe incluirse.
+
+
+¿No debería ser una buena motivación para los usuarios de askeet que contestan generosamente las preguntas la posibilidad de recibir una pequeña donación de todos los usuarios contentos que encuentran sus respuestas útiles?
+
+Lo primero, añade una columna `has_paypal` a la tabla `User` en el `schema.xml`:
+
+    [xml]
+    <column name="has_paypal" type="boolean" default="0" />
+
+Reconstruye el modelo, y añade a la plantilla `user/show` el siguiente código:
+
+    [php]
+    <?php if ($subscriber->getHasPaypal()): ?>
+    <p>If you appreciated this user's contributions, you can grant him a small donation.</p>
+    <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+      <input type="hidden" name="cmd" value="_xclick">
+      <input type="hidden" name="business" value="<?php echo $subscriber->getEmail() ?>">
+      <input type="hidden" name="item_name" value="askeet">
+      <input type="hidden" name="return" value="http://www.askeet.com">
+      <input type="hidden" name="no_shipping" value="1">
+      <input type="hidden" name="no_note" value="1">
+      <input type="hidden" name="tax" value="0">
+      <input type="hidden" name="bn" value="PP-DonationsBF">
+      <input type="image" src="http://images.paypal.com/images/x-click-but04.gif" border="0" name="submit" alt="Donate to this user">
+    </form>
+    <?php endif ?>
+
+Ahora se le debe dar la oportunidad a un usuario de definir una cuenta Paypal enlazada a su dirección de correo. Esto será una buena ocasión para permitir a un usuario modificar su perfil. Si un usuario identificado muestra su propio perfil, debe aparecer un enlace 'edit profile'. Esto llevará a la acción `user/edit`, usada para mostrar el formulario y manejar el envío de éste. El formulario `edit profile` permitirá la modificación de la clave y del correo electrónico. El nombre de usuario, que se usa como clave, no puede ser modificado. Ya que estás familiarizado con symfony desde ahora, el código no será descrito aquí pero será incluido en el repositorio SVN.
+
+Nos vemos mañana
+----------------
+
+Desarrollar un ser vicio web o integrar uno externo no debería darte ningún problema con symfony.
+
+Mañana será el momento de hablar sobre filtros, y de dividir askeet.com in subproyectos tales como php.askeet.com y symfony.askeet.com son solo unas pocas líneas de código. Si no estás convencido sobre la velocidad de desarrollo y el poder de symfony, cambiarás de parecer.
+
+Como es habitual, el código de hoy ha sido enviado al [repositorio SVN de askeet](http://svn.askeet.com/tags/release_day_17/), bajo la etiqueta `/tags/release_day_17`. Las preguntas y sugerencias sobre askeet y el tutorial del calendario de symfony son bienvenidas en el [foro de askeet](http://www.symfony-project.com/forum/index.php/f/8/). Nos vemos mañana!

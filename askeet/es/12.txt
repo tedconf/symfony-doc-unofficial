@@ -1,0 +1,266 @@
+Calendario de Symfony día doce: Correo Electrónico
+==================================================
+
+Previamente en symfony
+----------------------
+
+Ayer, la aplicación askeet fue extendida para transmitir contenido en otro medio, canales RSS. Symfony no es solo acerca de páginas web, y el tutorial de hoy lo ilustrara nuevamente. Enviaremos un correo electrónico aprovechándonos de la implementación MVC
+    
+Recuperación de password
+------------------------
+
+El formulario de login (el AJAX en todas las página, y el clásico accedido por el menú superior) requiere un apodo y un password, pero ocurre muy a menudo que los usuarios lo olvidan. Debemos proporcionar un mecanismo para permitirle conectarse nuevamente en este caso.
+
+Como no guardamos el password en limpio, estaremos obligados a resetearlo a un password aleatorio, y enviarlo al usuario por correo electrónico. Por ahora, un usuario no puede modificar su password, así que el password aleatorio no será fácil de recordar, pero corregiremos esto más tarde.
+
+### Formulario de reset password
+
+En el modulo del usuario `user`, crearemos una nueva acción que mostrara un formulario solicitando una dirección de correo. En `askeet/apps/frontend/modules/user/actions/action.class.php`, agregue:
+
+    [php]
+    public function executePasswordRequest()
+    {
+    }
+    
+En `modules/user/templates/`, crea lo siguiente `passwordRequestSuccess.php`:
+
+    [php]
+    <h2>Receive your login details by email</h2>
+    <p>Did you forget your password? Enter your email to receive your login details:</p>
+    <?php echo form_tag('@user_require_password') ?>
+      <?php echo form_error('email') ?>
+      <label for="email">email:</label>
+      <?php echo input_tag('email', $sf_params->get('email'), 'style=width:150px') ?><br />
+      <?php echo submit_tag('Send') ?>
+    </form>
+
+Este formulario debe ser accesible desde el formulario de login, así que agregué en cada uno de ellos (en `layout.php` y en `loginSuccess.php`):
+
+    [php]
+    <?php echo link_to('Forgot your password?', '@user_require_password') ?>
+
+Agregue la regla de solicitud de password en el `routing.yml` de la aplicación:
+
+    user_require_password:
+      url:   /password_request
+      param: { module: user, action: passwordRequest }
+
+### Validación del formulario
+
+Primero, estableceremos las reglas de validación para el envió del formulario. Cree un archive `passwordRequest.yml` en el directorio `modules/user/validate/`:
+
+    methods:
+      post:            [email]
+    
+    names:
+      email:
+        required:      Yes
+        required_msg:  You must provide an email
+        validators:    emailValidator
+
+    emailValidator:
+        class:         sfEmailValidator
+        param:
+          email_error: 'You didn''t enter a valid email address (for example: name@domain.com). Please try again.'
+
+A continuación, has que el formulario `passwordRequest` sea mostrado con el mensaje de error si un error es detectado agregando al `askeet/apps/frontend/modules/user/actions/actions.class.php`:
+
+    [php]
+    public function handleErrorPasswordRequest()
+    {
+      return sfView::SUCCESS;
+    }
+
+### Manejando la solicitud
+
+Como fue descripto durante el [día seis](6.txt), utilizaremos la misma acción para manejar el envío del formulario, así que modifíquelo para:
+
+    [php]
+    public function executePasswordRequest()
+    {
+      if ($this->getRequest()->getMethod() != sfRequest::POST)
+      {
+        // display the form
+        return sfView::SUCCESS;
+      }
+
+      // handle the form submission
+      $c = new Criteria();
+      $c->add(UserPeer::EMAIL, $this->getRequestParameter('email'));
+      $user = UserPeer::doSelectOne($c);
+
+      // email exists?
+      if ($user)
+      {
+        // set new random password
+        $password = substr(md5(rand(100000, 999999)), 0, 6);
+        $user->setPassword($password);
+
+        $this->getRequest()->setAttribute('password', $password);
+        $this->getRequest()->setAttribute('nickname', $user->getNickname());
+
+        $raw_email = $this->sendEmail('mail', 'sendPassword');
+        $this->logMessage($raw_email, 'debug');
+
+        // save new password
+        $user->save();
+
+        return 'MailSent';
+      }
+      else
+      {
+        $this->getRequest()->setError('email', 'There is no askeet user with this email address. Please try again');
+
+        return sfView::SUCCESS;
+      }
+    }
+
+Si el usuario existe, la acción determina un password aleatorio para proporcionarle al usuario. Entonces pasa la solicitud a otra acción (`mail/sendPassword`) y obtiene el resultado en la variable `#raw_email`. El método `->sendEmail()` de la clase `sfAction` es una especie de `->forward()` especial que ejecuta otra acción pero retorna después (no detiene la ejecución de la acción actual). Además, retorna un correo electrónico crudo que puede ser escrito a un archivo de registro (encontrara más información acerca de el modo de loguear información en el [capitulo de depuración](http://www.symfony-project.com/content/book/page/debug.html) del libro de symfony).
+
+Si el correo electrónico se envía exitosamente, la acción específica que la plantilla especial debe utilizar en lugar del la que usa por defecto `passwordRequestMailSent.php`: `return 'mailsent';` lanzará la plantilla `passwordRequestMailSent.php`.
+
+>**Nota**: Hemos seguido el ejemplo de [día 6](6.txt), la verificación de la existencia de la dirección de correos electrónicos deberían haber sido realizado en un validador custom. Pero ud. sabe que "Existe Más De Una Forma De Hacerlo", y el uso del método `->setError()` evita una doble petición a la base de datos, y la creación de un archivo de validación más largo.
+
+Así que cree una nueva plantilla `passwordRequestMailSent.php` para la página de confirmación:
+
+    [php]
+    <h2>Confirmation - login information sent</h2>
+    
+    <p>Your login information was sent to</p>
+    <p><?php echo $sf_params->get('email') ?></p>
+    <p>You should receive it shortly, so you can proceed to 
+    the <?php echo link_to('login page', '@login') ?>.</p>
+
+Enviar un correos electrónico
+-----------------------------
+
+Vale, así que si un usuario ingresa una dirección de correo electrónico valido, una acción es llamada. Ahora necesitamos crearla.
+    
+### Acción de envió de correo electrónico
+
+Cree un nuevo modulo `mail`:
+
+    $ symfony init-module frontend mail
+
+Agregue una nueva acción `sendPassword` a este módulo:
+
+    [php]
+    public function executeSendPassword()
+    {
+      $mail = new sfMail();
+      $mail->addAddress($this->getRequestParameter('email'));
+      $mail->setFrom('Askeet <askeet@symfony-project.com>');
+      $mail->setSubject('Askeet password recovery');
+  
+      $mail->setPriority(1);
+    
+      $mail->addEmbeddedImage(sfConfig::get('sf_web_dir').'/images/askeet_logo.gif', 'CID1', 'Askeet Logo', 'base64', 'image/gif');
+  
+      $this->mail = $mail;
+
+      $this->nickname = $this->getRequest()->getAttribute('nickname');
+      $this->password = $this->getRequest()->getAttribute('password');
+    }
+
+La acción utiliza el objeto `sfMail`, que es una interfaz a un sender de correo. Todos las cabeceras del correo electrónico están definidas en la acción, pero como el cuerpo será más complicado que un simple texto, elegiremos utilizar una plantilla para esto, de otro modo, podríamos usar un simple método `->setBody()`.
+
+Imágenes embebida son agregados por una llamada al método `->addEmbeddedImage()`, y el path de la imagen en el servidor, una única ID para insertarlo en la plantilla, y alterar texto y una descripción del formato deben ser pasado como argumento.
+
+>**Nota**: El objeto `sfMail` es también un buena forma de agregar adjunto a un correo:
+>
+>     [php]
+>     // document attachment
+>     $mail->addAttachment(sfConfig::get('sf_data_dir').'/MyDocument.doc');
+>     // string attachment
+>     $mail->addStringAttachment('this is some cool text to embed', 'file.txt');
+>
+
+Encontrara más detalles acerca del objeto `sfMail` en el [capítulo de correo](http://www.symfony-project.com/content/book/page/email.html) del libro de symfony.
+
+### Plantilla de correo
+
+Una vez que la acción es ejecutada, la vista del correo maneja las variables definidas `sendPasswordSuccess.php`, que es la plantilla HTML por defecto para el cuerpo del correo electrónico:
+
+    [php]
+    <p>Dear askeet user,</p>
+    
+    <p>A request for <?php echo $mail->getSubject() ?> was sent to this address.</p>
+    
+    <p>For safety reasons, the askeet website does not store passwords in clear.
+    When you forget your password, askeet creates a new one that can be used in place.</p>
+    
+    <p>You can now connect to your askeet profile with:</p>
+    
+    <p>
+    nickname: <strong><?php echo $nickname ?></strong><br/>
+    password: <strong><?php echo $password ?></strong>
+    </p>
+    
+    <p>To get connected, go to the <?php echo link_to('login page', '@login') ?>
+    and enter these codes.</p>
+    
+    <p>We hope to see you soon on <img src="cid:CID1" /></p>
+
+    <p>The askeet email robot</p>    
+
+Justo como cualquier otra plantilla, los helpers estándares (como el `link_to()` utilizado aquí) trabaja sin problemas en una plantilla de correo electrónico. También puede insertar cualquier HTML para la presentación que necesite para hacer el correo electrónico luzca bien.
+
+Embebiendo una imagen es tan simple como pasar un parámetro `sid`: correspondiente a la id única de la imagen cargada en la acción.
+
+### Plantilla de correo alternativa
+
+Si la vista encuentra un `sendPasswordSuccess.altbody.php`, será utilizado para agregar un cuerpo (texto) alternativo al correo electrónico. Esto le permite definir plantillas solo-texto para cliente que no acepten HTML:
+
+    [php]
+    Dear askeet user,
+    
+    A request for <?php echo $mail->getSubject() ?> was sent to this address.
+    
+    For safety reasons, the askeet website does not store passwords in clear.
+    When you forget your password, askeet creates a new one that can be used in place.
+    
+    You can now connect to your askeet profile with:
+    
+    nickname: <?php echo $nickname ?>
+    password: <?php echo $password ?>
+    
+    To get connected, go to the login page (http://www.askeet.com/login)
+    and enter these codes.
+    
+    We hope to see you soon on askeet!
+    
+    The askeet email robot
+
+### Configuración
+
+El `sfMail` siendo la vista definida para la acción, puede aceptar configuración adicional. Cree un archivo de configuración `mailer.yml`:
+
+    dev:
+      deliver:    off
+    
+    all:
+      mailer:     sendmail
+
+Este señala el programa a ser utilizado par enviar correos, y desactiva el envió de correo en el entorno de desarrollo - los correo electrónico en los datos de prueba son falsos igualmente.
+
+No quiere que los usuario tengan acceso directo a esta acción. Así que cree un `module.yml` en el directorio del modulo ` config/` con:
+
+    all:
+      is_internal: on    
+
+### Pruebas
+
+Pruebe el nuevo sistema de recuperación de password creando un usuario custom en la data de prueba con su correo electrónico personal, lance el batch `import_data.php`
+
+Limpie el cache y navegue a la página de recuperación de password en el entorno de producción. Después de entrar su dirección de correo electrónico y enviando el formulario, debería recibir el correo electrónico próximamente.
+
+![email](XXX.gif)
+
+Le veo mañana
+-------------
+
+El sistema de correo electrónico en symfony es ambos simple y poderoso. Correos electrónico simples son fáciles de enviar como es posible; correos electrónico complejos no son más complejos de escribir que complejo página HTML, y toma completo ventaja de la arquitectura MVC. Así que para su próxima campaña de correo electrónico, quizás debería utilizar symfony en lugar de una solución de mailing comercial...
+
+Sin embargo, mañana será el día de etiquetas. Las preguntas Askeet serán etiquetadas, las etiquetas se podrán buscar, y le dará la más simpática nube de etiquetas que alguna vez haya soñado.
+
+Como es usual, el código de hoy estará disponible en el [repositorio SVN de askeet](http://svn.askeet.com/tags/release_day_12/), etiquetado `/tags/release_day_12`. Todavía estamos indeciso acerca de que platicar durante el día 21, así que deje su sugerencia en el [lista de correo de askeet](mailto:askeet-subscribe@symfony-project.com) o en el [foro de askeet](http://www.symfony-project.com/forum/index.php/f/8/).

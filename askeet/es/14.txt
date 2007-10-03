@@ -1,0 +1,309 @@
+Día trece del calendario de symfony: Etiquetas, parte II
+========================================================
+
+Anteriormente en symfony
+------------------------
+
+Durante el tutorial de ayer, construimos la primera parte de las características de la [folksonomía][1] de symfony. La clase `QuestionTag` y otras extensiones al modelo nos ayudaron a mostrar las etiquetas de una pregunta en la lista de preguntas y en el detalle de la pregunta. Además, también se desarrolló la lista de preguntas populares para una etiqueta dada.
+
+Hay dos cosas que faltan concerniente a las etiquetas, y ambas suenan bastante 'web 2.0': La capacidad de añadir una etiqueta nueva en un formulario AJAX, y la nube de etiquetas global de askeet. ¿Estás listo para experimentar los métodos de desarrollo ágil de symfony?
+
+Añadir etiquetas a una pregunta
+-------------------------------
+
+### El formulario
+
+No solo queremos darle a un usuario registrado la capacidad de añadir una etiqueta a una pregunta, también queremos sugerir una de las etiquetas asignadas a otras preguntas si coinciden con las primeras letras que escribe. Esto se llama autocompletado. Si alguna vez has trasteado con [google suggest][2], sabes de lo que hablo.
+
+Ayer, creamos un fragmento que se inserta en la barra lateral cuando se muestra el detalle de una pregunta. Edita el archivo `askeet/apps/frontend/modules/sidebar/templates/_question.php` para añadir un formulario al final:
+
+    [php]
+    ...
+    <?php if ($sf_user->isAuthenticated()): ?>
+      <div>Add your own:
+        <?php echo form_remote_tag(array(
+          'url'    => '@tag_add',
+          'update' => 'question_tags',
+        )) ?>
+          <?php echo input_hidden_tag('question_id', $question->getId()) ?>
+          <?php echo input_auto_complete_tag('tag', '', 'tag/autocomplete', 'autocomplete=off', 'use_style=true') ?>
+          <?php echo submit_tag('Tag') ?>
+        </form>
+      </div>
+    <?php endif; ?>
+
+Por supuesto, como una etiqueta tiene que estar enlazada con un usuario, la adición de una nueva etiqueta está restringida a usuarios autentificados. Hablaremos en un momento sobre el helper `form_remote_tag()`. Pero primero, echemos un vistazo a la etiqueta `input` de autocompletado. Ésta especifica una acción (aquí, `tag/autocomplete`)  para conseguir el array de opciones coincidentes.
+
+### Autocompletado
+
+La lista que la acción debería devolver es una lista de etiquetas introducidas por el usuario que coinciden con lo introducido en el campo `tag`, sin duplicados, ordenado alfabéticamente. La petición SQL que devuelve esto es:
+
+    [sql]
+    SELECT DISTINCT tag AS tag
+    FROM question_tag
+    WHERE user_id = $id AND tag LIKE $entry
+    ORDER BY tag
+
+Añade esta acción al archivo `modules/tag/actions/action.class.php`:
+
+    [php]
+    public function executeAutocomplete()
+    {
+      $this->tags = QuestionTagPeer::getTagsForUserLike($this->getUser()->getSubscriberId(), $this->getRequestParameter('tag'), 10);
+    }
+
+Como de costumbre, el núcleo de la petición de la base de datos reside en el modelo. Añade el siguiente método a la clase `QuestionTagPeer`:
+
+    [php]
+    public static function getTagsForUserLike($user_id, $tag, $max = 10)
+    {
+      $tags = array();
+
+      $con = Propel::getConnection();
+      $query = '
+        SELECT DISTINCT %s AS tag
+        FROM %s
+        WHERE %s = ? AND %s LIKE ?
+        ORDER BY %s
+      ';
+
+      $query = sprintf($query,
+        QuestionTagPeer::TAG,
+        QuestionTagPeer::TABLE_NAME,
+        QuestionTagPeer::USER_ID,
+        QuestionTagPeer::TAG,
+        QuestionTagPeer::TAG
+      );
+
+      $stmt = $con->prepareStatement($query);
+      $stmt->setInt(1, $user_id);
+      $stmt->setString(2, $tag.'%');
+      $stmt->setLimit($max);
+      $rs = $stmt->executeQuery();
+      while ($rs->next())
+      {
+        $tags[] = $rs->getString('tag');
+      }
+
+      return $tags;
+    }
+
+Ahora la acción determina la lista de etiquetas, solo necesitamos darle forma en la plantilla `autocompleteSuccess.php`:
+
+    [php]
+    <ul>
+    <?php foreach ($tags as $tag): ?>
+      <li><?php echo $tag ?></li>
+    <?php endforeach; ?>
+    </ul>
+
+Añade una nueva regla de enrutamiento en `routing.yml` (y úsala en vez de la forma `module/action` en la llamada `input_auto_complete_tag()` del elemento parcial `_question.php`):
+
+    tag_autocomplete:
+      url:   /tag_autocomplete
+      param: { module: tag, action: autocomplete }
+
+Y configura tu `view.yml`:
+
+    autocompleteSuccess:
+      has_layout:   off
+      components:   []
+
+A continuación, puedes intentarlo: Después de registrarte con una cuenta existente (por ejemplo: fabpot/symfony), muestra una pregunta y fíjate en el nuevo campo en la barra lateral. Escribe las primeras letras de una etiqueta que ya introdujera este usuario (por ejemplo: relatives) y observa el div que aparece debajo del campo, sugiriendo la entrada apropiada.
+
+![autocompletado](/images/askeet/autocomplete.gif)
+
+### Formulario remoto
+
+Cuando el formulario es enviado, no hay necesidad de recargar la página entera: Solo tienen que recargarse la lista de etiquetas y el formulario para añadir una etiqueta. Ése es el propósito del helper `form_remote_tag()`, el cual específica la acción a llamar cuando el formulario es enviado (`tag/add`), y la zona de la página que se actualizará por el resultado de esta acción (el elemento con identificador 'question_tags'). Esto ya se explicó durante el [octavo día](8.txt), con el formulario AJAX para añadir una pregunta.
+
+Creemos el método `executeAdd()` en las acciones de `tag`:
+
+    [php]
+    public function executeAdd()
+    {
+      $this->question = QuestionPeer::retrieveByPk($this->getRequestParameter('question_id'));
+      $this->forward404Unless($this->question);
+
+      $userId = $this->getUser()->getSubscriberId();
+      $phrase = $this->getRequestParameter('tag');
+      $this->question->addTagsForUser($phrase, $userId);
+
+      $this->tags = $this->question->getTags();
+    }
+
+Y el método `addTagsForUser` en la clase `Question:
+
+    [php]
+    public function addTagsForUser($phrase, $userId)
+    {
+      // split phrase into individual tags
+      $tags = Tag::splitPhrase($phrase);
+
+      // add tags
+      foreach ($tags as $tag)
+      {
+        $questionTag = new QuestionTag();
+        $questionTag->setQuestionId($this->getId());
+        $questionTag->setUserId($userId);
+        $questionTag->setTag($tag);
+        $questionTag->save();
+      }
+    }
+
+La plantilla `addSuccess.php` determinará el código que reemplazará la zona `update`. Como de costumbre con las acciones AJAX, esto contiene un sencillo `include_partial()`:
+
+    [php]
+    <?php include_partial('tag/question_tags', array('question' => $question, 'tags' => $tags)) ?>
+
+Añade una nueva regla de enrutamiento en `routing.yml`:
+
+    tag_add:
+      url:   /tag_add
+      param: { module: tag, action: add }
+
+Y configura tu `view.yml`:
+
+    addSuccess:
+      has_layout:    off
+      components:    []
+
+### Pruébalo
+
+Pruébalo: Identifícate en el sitio, muestra los detalles de una pregunta, introduce una nueva etiqueta y envíalo. La lista completa se actualiza, y la nueva etiqueta se inserta donde debería en orden alfabético
+
+Mostrar la nube de etiquetas
+----------------------------
+
+La folksonmía permite estimar la popularidad de una etiqueta. Pero la cantidad de etiquetas hacen una lista difícil de leer. La solución que más satisface, visualmente hablando, es incrementar el tamaño de las etiquetas de acuerdo a su popularidad, de forma que las etiquetas más populares - las que son más dadas por los usuarios - aparecen inmediatamente. Echa un vistazo a la [página de etiquetas populares de del.icio.us][3] para entender lo que es una nube de etiquetas.
+
+El 80% de las visitas a un sitio web se interesa por menos del 20% de su contenido, esta es una regla que muchos sitios web comprueban todos los días, y probablemente askeet no será diferente. Así que si askeet propone una lista de etiquetas, tendrá que ordenarlas por popularidad también, para limitar la molestia de las etiquetas más impopulares ('grandma', 'chocolate') y para aumentar la visibilidad de las más populares ('php', 'real life', 'useful').
+
+### Extender la clase `QuestionTagPeer`
+
+La clase que provee la lista de etiquetas populares no puede ser otra clase que `QuestionTagPeer`. Extiéndela con un método nuevo, en el que experimentaremos una forma alternativa de escribir sentencias SQL:
+
+    [php]
+    public static function getPopularTags($max = 5)
+    {
+      $tags = array();
+ 
+      $con = Propel::getConnection();
+      $query = '
+        SELECT '.QuestionTagPeer::NORMALIZED_TAG.' AS tag,
+        COUNT('.QuestionTagPeer::NORMALIZED_TAG.') AS count
+        FROM '.QuestionTagPeer::TABLE_NAME.'
+        GROUP BY '.QuestionTagPeer::NORMALIZED_TAG.'
+        ORDER BY count DESC';
+        
+      $stmt = $con->prepareStatement($query);
+      $stmt->setLimit($max);
+      $rs = $stmt->executeQuery();
+      $max_popularity = 0;
+      while ($rs->next())
+      {
+        if (!$max_popularity)
+        {
+          $max_popularity = $rs->getInt('count');
+        }
+ 
+        $tags[$rs->getString('tag')] = floor(($rs->getInt('count') / $max_popularity * 3) + 1);
+      }
+ 
+      ksort($tags);
+ 
+      return $tags;
+    }
+
+Limitamos el número de grados de popularidad a 4, ya que de otra forma la nube de etiquetas será ilegible. El resultado de este método es un array asociativo de nombres de etiquetas y popularidad. Estamos listos para mostrarla.
+
+### Mostrar una nube de etiquetas
+
+Crea una sencilla acción `popular` en el módulo `tag`:
+
+    [php]
+    public function executePopular()
+    {
+      $this->tags = QuestionTagPeer::getPopularTags(sfConfig::get('app_tag_cloud_max'));
+    }
+
+Casi tan simple como la acción es la plantilla `popularSuccess.php`:
+
+    [php]
+    <h1>popular tags</h1>
+    
+    <ul id="tag_cloud">
+      <?php foreach($tags as $tag => $count): ?>
+      <li class="tag_popularity_<?php echo $count ?>"><?php echo link_to($tag, '@tag?tag='.$tag, 'rel=tag') ?></li>
+      <?php endforeach; ?>
+    </ul>
+
+No olvides añadir una regla de enrutamiento para esta nueva acción en el archivo de configuración `routing.yml`:
+
+    popular_tags:
+      url:   /popular_tags
+      param: { module: tag, action: popular }
+
+Y el parámetro `app_tag_cloud_max` en la aplicación `app.yml`:
+
+    all:
+      tag:
+        cloud_max:   40
+
+Todo está listo: muestra la nube de etiquetas llamando a
+
+    http://askeet/popular_tags
+
+### Darle estilo a los elementos de la lista de etiquetas
+
+¿Pero dónde está la nube? Todo lo que la acción devuelve es una lista de etiquetas en orden alfabético. La verdadera forma se la da una hoja de estilos, tal como recomiendan los estándares web. Añade las siguientes declaraciones a la hoja de estilos `main.css` (situada en `askeet/web/css`).
+
+    [css]
+    ul#tag_cloud
+    {
+      list-style: none;
+    }
+    
+    ul#tag_cloud li
+    {
+      list-style: none;
+      display: inline;
+    }
+    
+    ul#tag_cloud li.tag_popularity_1
+    {
+      font-size: 60%;
+    }
+    
+    ul#tag_cloud li.tag_popularity_2
+    {
+      font-size: 100%;
+    }
+    
+    ul#tag_cloud li.tag_popularity_3
+    {
+      font-size: 130%;
+    }
+    
+    ul#tag_cloud li.tag_popularity_4
+    {
+      font-size: 160%;
+    }
+    
+Recarga la página de etiquetas populares, y voila!
+
+![nube de etiquetas](/images/askeet/tag_cloud.gif)
+
+Nos vemos mañana
+----------------
+
+Añadir taxonomía a tu sitio no es una gran problema con symfony. Peticiones complejas, formularios con autocompletado y recargas parciales de una página tras el envío de un formulario solo necesita unas pocas líneas de código.
+
+Pero la facilidad para desarrollar aplicaciones no debe hacerte olvidar los buenos principios del desarrollo, y siempre deberías probar todos los cambios que hagas. La mejor herramienta para permitir desarrollar y refactorizar a menudo son las [pruebas unitarias][4], el último gran avance en programación, y mañana nos centraremos en ellas.
+
+Hasta entonces, puedes postear tus sugerencias para el día 21 a la [lista de correo de askeet](mailto:askeet-subscribe@symfony-project.com). Si quieres descargar el código de la aplicación hasta ahora, dirígete al [repositorio SVN de askeet](http://svn.askeet.com/tags/release_day_14/), y a la etiqueta  `/tags/release_day_14`.
+
+[1]: http://en.wikipedia.org/wiki/Folksonomy       "Definición de folksonomía en la Wikipedia"
+[2]: http://www.google.com/webhp?complete=1&hl=en  "Google suggest"
+[3]: http://del.icio.us/tag/                       "Etiquetas populares de de.icio.us"
+[4]: http://en.wikipedia.org/wiki/Unit_test        "Definición de Prueba unitaria (Unit test) en la Wikipedia"

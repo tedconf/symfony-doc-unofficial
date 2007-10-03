@@ -1,0 +1,261 @@
+ Día diecinueve del Calendario de symfony: Rendimiento y cache
+===========================================================
+
+Anteriormente en symfony
+---------------------
+
+A medida que van pasando los días del calendario, te estarás sintiendo más confortable con el symfony framework y sus conceptos. Desarrollar una aplicación con askeet no es muy complicado si sigues las buenas prácticas del desarrollo ágil. De todas formas, una cosa que deberías hacer tan pronto cómo tengas un prototipo de tu sitio web es probar y optimizar su rendimiento.
+
+La carga generado por el framework es una preocupación importante, especialmente si tu sito está alojado en un servidor compartido. Aunque symfony no reduce mucho el tiempo de respuesta del servidor, deberías verlo y modificar el código para acelerar la entrega de las páginas. Por lo tanto, el tutorial de hoy estará enfocado en las medidas de rendimiento y la mejora.
+
+Cargando herramientas de test
+------------------
+
+Las pruebas unitarios, descritas en el [decimoquinto día](15.txt), pueden afirmar que la aplicación funciona como era de esperar *si sólo hay un usuario online en un tiempo dado*. Pero cuando se libere la aplicación en Internet - y es lo mínimo que deseamos para ti - muchísimos fans se conectaran simultáneamente y nos podremos encontrar con problemas de rendimiento. Incluso el servidor web podría caer y necesitar de una arrancada manual, y esa es una experiencia muy dolorosa que deberías prevenir a todo coste. Es especialmente importante durante los primeros días de tu aplicación, cuando los primeros usuarios obtienen las primeras conclusiones y deciden contárselo al resto del mundo o no.
+
+Para evitar problemas de rendimiento, es necesario simular un buen número de accesos concurrentes a tu sitio web y ver cómo reaccionas - antes de publicarlo. A esto se le llama [prueba de carga](http://en.wikipedia.org/wiki/Load_testing). Básicamente, tendrás que programar un autómata para que haga muchas entrada de manera concurrente a tu servidor y medir el tiempo de respuesta.
+
+>**Note**: Cualquiera que sea la herramienta de prueba que elijas, la deberías ejecutar en un host diferente que del servidor web de tu aplicación. Eso es porqué las herramientas de prueba generalmente consumen mucha CP, y su actividad pueden alterar los resultados de la prueba de rendimiento. Además de esto, haz los tests en la misma red local, para evitar problemas de red externos al propio framework (proxys, firewalls, caches, routers, problemas con la línea del ISP, etc.)
+
+### JMeter
+
+La herramienta más común para la prueba de carga es **[JMeter](http://jakarta.apache.org/jmeter/)**, es una aplicación de código abierto escrita en Java y mantenida por la fundación Apache. Tiene una [documentación online](http://jakarta.apache.org/jmeter/usermanual/index.html) impresionante para ayudarte a empezar a usarla, incluido una buena introducción a las [pruebas de carga](http://jakarta.apache.org/jmeter/usermanual/boss.html)
+
+Para instalártela, obtiene la última versión estable (actualmente la 2.1.1) en la [página de descarga del Jmeter](http://jakarta.apache.org/site/downloads/index.html#jmeter_binaries). También vas a necesitar la última versión del [entorno de ejecución de Java](http://en.wikipedia.org/wiki/Java_programming_language#Java_Runtime_Environment), que puedes encontrar en el [sitio web de Sun](http://java.com/en/download/index.jsp). Para ejecutar el JMeter, localiza y ejecuta el fichero `jmeter.bat` (en entornos Windows) o teclea `java jmeter.jar` (en entornos Linux).
+
+La manera de configurar un plan para la prueba de carga se llama 'Plan de prueba Web', y se describe con detalle en [esta página](http://jakarta.apache.org/jmeter/usermanual/build-web-test-plan.html) de la documentación del JMeter, por lo tanto no lo vamos a describir aquí.
+
+![Resultados del Plan de prueba web del JMeter](/images/askeet/jmeter.gif)
+
+>**Note**: JMeter no sólo da información del tiempo medio de respuesta para una o varias peticiones, también puede hacer `**assertions**` en el contenido de la página que recibe. Por lo tanto, además de usar JMeter como una herramienta de prueba de carga, puedes crear escenarios para hacer pruebas de regresión y pruebas unitarias.
+
+### El ab de Apache
+
+La segunda herramienta recomendada por symfony es ApacheBench, o **ab**, otra buena utilidad que nos trae la fundación Apache. Su [manual online](http://httpd.apache.org/docs/2.2/programs/ab.html) es menos detallado que el del JMeters, pero como ab es una herramienta de la línea de comandos, es más fácil de usar.
+
+En linux, viene por defecto con el paquete de Apache, por lo tanto si tienes instalado un servidor Apache, tendrías que encontrarlo en `/usr/local/apache/bin/ab`. En las plataformas Windows, es mucho más difícil de encontrarlo, por lo tanto deberías descargarlo directamente de [symfony](http://www.symfony-project.com/downloads/ab.zip).
+
+El uso de esta herramienta de `benchmarking` es muy simple:
+
+    $ /usr/local/bin/apache2/bin/ab -c 1 -n 1 http://www.askeet.com/
+    This is ApacheBench, Version 2.0.41-dev <$Revision: 1.121.2.12 $> apache-2.0
+    Copyright   1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+    Copyright   1998-2002 The Apache Software Foundation, http://www.apache.org/
+   
+    Benchmarking www.askeet.com (be patient).....done
+   
+    Server Software:        Apache
+    Server Hostname:        www.askeet.com
+    Server Port:            80
+   
+    Document Path:          /
+    Document Length:        15525 bytes
+   
+    Concurrency Level:      1
+    Time taken for tests:   0.596104 seconds
+    Complete requests:      1
+    Failed requests:        0
+    Write errors:           0
+    Total transferred:      15874 bytes
+    HTML transferred:       15525 bytes
+    Requests per second:    1.68 [#/sec] (mean)
+    Time per request:       596.104 [ms] (mean)
+    Time per request:       596.104 [ms] (mean, across all concurrent requests)
+    Transfer rate:          25.16 [Kbytes/sec] received
+   
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:       61   61   0.0     61      61
+    Processing:   532  532   0.0    532     532
+    Waiting:      359  359   0.0    359     359
+    Total:        593  593   0.0    593     593
+
+>**Note**: necesitas darle un nombre de página (como mínimo `/` como en el ejemplo anterior) porque apuntar sólo a un host nos dará un error de formato de la URL.
+
+Los parámetros `-c` y `-n` definen el número de `threats` simultáneos, y el número total de peticiones a ejecutar. El dato más interesantes de los resultados está en la última línea: el tiempo total medio de conexión. (segundo número empezando por la izquierda). En el ejemplo anterior, sólo hay una conexión, por lo tanto el tiempo de conexión no es muy preciso. Para tener una mejor vista del rendimiento actual de una página, necesitas hacer muchas peticiones y lanzarlas en paralelo:
+
+    $ /usr/local/bin/apache2/bin/ab -c 10 -n 20 http://www.askeet.com/
+    ...
+   
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:       59   88  19.9     89     130
+    Processing:   831 1431 510.9   1446    3030
+    Waiting:      632 1178 465.1   1212    2781
+    Total:        906 1519 508.4   1556    3089
+   
+    Percentage of the requests served within a certain time (ms)
+      50%   1556
+      66%   1569
+      75%   1761
+      80%   1827
+      90%   2285
+      95%   3089
+      98%   3089
+      99%   3089
+     100%   3089 (longest request)
+
+Siempre deberías empezar con `ab -c 1 -n 1` para tener una idea del tiempo empleado por el test en si mismo antes de ejecutarlo con un número grande de peticiones. Entonces, incrementa el número total de peticiones (algo como `ab -c 1 -n 30`) hasta que tengas una desviación estándar razonablemente baja. Sólo después tendrás una medida del tiempo medio de conexión acurada, y estarás apunto para la prueba de carga actual. Añade `threats` poco a poco (y no te olvides de incrementar el número total de peticiones, como `ab -c 10 -n 300`) y observa como el tiempo de conexión aumenta a medida que el servidor intenta manejar toda la carga.
+
+>**Nota**: Por favor sé amable y no hagas esos test en ningún otro servidor de internet que no sea el tuyo. Hacer pruebas de carga con servidores ajenos al tuyo es considerado un [ataque de denegación de servicio](http://en.wikipedia.org/wiki/Denial-of-service_attack). El [sitio web de askeet](http://www.askeet.com/) no es distinto, por lo tanto, una vez más, por favor no le hagas pruebas de carga.
+
+Las pruebas de carga te darán dos informaciones importantes: el tiempo medio de carga para una página específica, y la máxima capacidad de tu servidor. La primera es muy útil para monitorear los ajustes de rendimiento.
+
+Ajustes de rendimiento con la cache
+-----------------------------------
+
+Hay muchas maneras de incrementar el rendimiento de una página, incluido el `**code profiling**`, optimización de las peticiones a base de datos, añadir índices, poner un servidor web ligero alternativo dedicado a la `**media**` del sitio web, etc. Las técnicas existentes son de `**cruzamiento de lenguajes**` o específicas de PHP, y navegar por la web o comprar un buen libro acerca de esas técnicas te enseñará como convertirte en un gurú del rendimiento.
+
+Symfony añade una cierta sobrecarga a las peticiones web, ya que la configuración y las clases del framework se cargan para cada petición y porqué la separación MVC y la abstracción ORM resultan en más código a ejecutar. Aunque esta sobrecarga es relativamente poca (comparándola con la de otros frameworks o lenguajes), symfony también ofrece ajustar el tiempo de respuesta con el **caching**. El resultado de una acción, o incluso de una página entera, se puede escribir en un fichero en el disco duro del servidor web y rehusarse cuando se recibe una petición similar otra vez. Eso aumenta considerablemente el rendimiento, ya que no se tienen que hacer todos los accesos a base de datos, decoraciones y ejecuciones de la acción. Encontrarás más información acerca de la cache de symfony en el [capítulo de la cache](http://www.symfony-project.com/content/book/page/cache.html) del libro de symfony.
+
+Vamos a tratar de usar la cache para el HTML y así mejorar la velocidad de entrega de la página de etiquetas populares. Como incluye una consulta SQL compleja, es una buena candidata para que le hagamos caching. Primero, vamos a ver cuando tarda a cargar con el código actual:
+
+    $ ab -c 1 -n 30 http://askeet/popular_tags
+    ...
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:        0    0   0.0      0       0
+    Processing:   147  148   2.4    148     154
+    Waiting:      138  139   2.3    139     145
+    Total:        147  148   2.4    148     154
+    ...
+
+### Poner el resultado de una acción en la cache
+
+>**Warning**: El contendido que sigue no funciona en symfony 0.6. Por favor salta a la siguiente sección hasta que este tutorial se actualizado
+
+
+La acción ejecutada para mostrar la lista de etiquetas populares es `tag/popular`. Para poner el resultado de esta acción en la cache, todo lo que tenemos que hacer es crear el fichero `cache.yml` en el directorio `askeet/apps/frontend/modules/tag/config/` con el siguiente contenido:
+
+    popular:
+      activate:   on
+      type:       slot
+   
+    all:
+      lifeTime:   600
+
+Eso activará el tipo de `slot` cache para esta acción. El resultado de la acción (la vista) se guardará en el fichero `cache/frontend/prod/template/askeet/popular_tags/slot.cache`, y se usará este fichero en lugar de llamar la acción por los próximos 600 segundos (10 minutos) después del tiempo de su creación. Esto significa que la página de etiquetas populares será procesada cada diez minutos, y entre procesado y procesado, se usará la versión de la cache en su lugar.
+
+El caching se hace a la primera petición, por lo tanto sólo necesitar navegar a:
+
+
+    http://askeet/popular_tags
+   
+...para crear la versión de la cache de la plantilla. Ahora, todas las llamadas a esta página durante los próximos 10 minutos tendrían que ser más rápidas. Podemos comprobar esto inmediatamente ejecutando la herramienta de `benchmarking` de Apache otra vez:
+
+    $ ab -c 1 -n 30 http://askeet/popular_tags   
+    ...
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:        0    0   0.0      0       0
+    Processing:   137  138   2.0    138     144
+    Waiting:      128  129   2.0    129     135
+    Total:        137  138   2.0    138     144
+    ...
+
+Hemos passado de una media de 148ms a 138ms, eso es un 7% de augmento en el rendimiento. El sistema de cache mejora el rendimiento de una manera significativa.
+
+>**Note**: El tipo `slot` no hace saltar la decoración de la página (i.e. el inserir la plantilla en el layout). En este caso no podemos meter toda la página en la cache porqué el layout contiene elementos que dependen del contexto (el nombre de usuario en la barra superior por ejemplo). Pero para los layouts no dinámicos, symfony también provee una tipo de `página` que es aún más eficiente.
+
+### Construyendo una plataforma de desarrollo
+
+Por defecto, el sistema de cache viene desactivado en el entorno de desarrollo y activado en el de producción. Esto es así porque la páginas cacheadas, si no están bien configuradas, pueden crear errores nuevos.  Una buena práctica para las pruebas de una aplicación web incluyendo las páginas cacheadas, es crear un entorno de pruebas parecido al de producción, pero con todas las herramientas de debug y trazabilidad disponibles en el entorno de desarrollo. A menudo lo llamamos entorno de `staging`. Si ocurre un error en el entorno `staging` pero no en el entorno de desarrollo, hay muchas posibilidades que el error esté causado por un problema con la cache.
+
+Cuando desarrollas una funcionalidad, primero tienes que asegurarte que funciona correctamente en el entorno de desarrollo. Luego, cambia los parámetros de la cache de las acciones relacionadas para mejorar el rendimiento y prueba otra vez con el entorno de `staging` para ver si el sistema de cache no crea ninguna perturbación. Si todo funciona correctamente, sólo tienes que ejecutar las pruebas de carga en el entorno de producción para medir la mejora producida. Si el comportamiento de la aplicación es diferente que en el entorno de desarrollo, necesitarás revisar la configuración de la cache. El capítulo de [pruebas unitarias](15.txt) puede serte de gran ayuda para hacer este procedimiento sistemático.
+
+Para crear el entorno de `staging`, necesitarás añadir un nuevo controlador frontal y definir la configuración del entorno.
+
+Copia el controlador frontal de producción (`askeet/web/index.php`) en el fichero `askeet/web/frontend_staginng.php` y cambia su definición a:
+
+    [php]
+    <?php
+    
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
+    define('SF_APP',         'frontend');
+    define('SF_ENVIRONMENT', 'staging');
+    define('SF_DEBUG',       false);
+    
+    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
+    
+    sfContext::getInstance()->getController()->dispatch();
+    
+    ?>
+
+Ahora, abre el fichero `askeet/apps/frontend/config/settings.yml`, y añade las siguientes líneas:
+
+    staging:
+      .settings:
+        web_debug:              on
+        cache:                  on
+        no_script_name:         off
+
+Eso es el entorno de `staging` con el debugging i la cache activados, y está a punto para recibir peticiones:
+
+    http://askeet/frontend_staging.php/
+
+### Añadir un fragmento de la plantilla en la cache
+
+Ya que muchas de las páginas de askeet están hechas de elementos dinámicos (la descripción de una pregunta, por ejemplo, contiene un vínculo 'interested?' que se debería transformar en un simple texto si el usuario que lo mira ya ha hecho clic en él), no hay muchos `slots` candidatos para ser cacheados en nuestras acciones. Pero podemos poner partes de las plantillas en la cache, como por ejemplo la lista de etiquetas para una cuestión específica. Esta es más difícil que la nube de etiquetas populares porque la cache de estas partes se tiene que borrar cada vez que un usuario añade una etiqueta a una pregunta. Pero no te preocupes, symfony hace fácil manejar esto.
+
+Para medir la mejora, necesitamos saber el tiempo medio de carga actual de la página `question/show`.
+
+
+    $ ab -c 1 -n 30 http://askeet/question/what-can-i-offer-to-my-step-mother
+
+Primero, la lista de etiquetas de una pregunta tiene dos versiones: una para usuarios no registrador (es una nube de etiquetas), y otra para usuarios registrados (es una lista de etiquetas con vínculos para eliminar las etiquetas que ha entrado el usuario mismo). Sólo podemos poner en la cache la nube de etiquetas para usuarios no registrados (la otra es dinámica). Se encuentra en la plantilla parcial `tag/_question_tags`. Ábrela (`askeet/apps/frontend/modules/tag/templates/_question_tags.php`) y agrupa el fragmento que tiene que ser cacheado en una sentencia especial `if(!cache())`:
+
+    [php]
+    ...
+    <?php if ($sf_user->isAuthenticated()): ?>
+    ...
+    <?php else: ?>
+      <?php if (!cache('question_tags', 3600)): ?>
+        <?php include_partial('tag/tag_cloud', array('tags' => QuestionTagPeer::getPopularTagsFor($question))) ?>
+        <?php cache_save() ?>
+      <?php endif ?>
+    <?php endif ?>
+
+La sentencia `if(!cache())` comprobará si la versión del fragmento que agrupa (llamado `fragment_question_tags.cache`) ya existe en la cache con un tiempo de vida no superior a una hora (3600 segundos). Si este es el caso, se utiliza la versión de la cache y el código entre `if(!cache())` y el `endif` no es ejecutado. Sino, se ejecuta el código y el resultado se guarda en un fichero llamado `cache_save()`.
+
+Vamos a usar la mejora de rendimiento que nos aporta el fragmento de código cacheado:
+
+    $ ab -c 1 -n 30 http://askeet/question/what-can-i-offer-to-my-step-mother
+   
+Por supuesto, la mejora no es tan significativa como un cache de tipo slot, pero haciendo muchas pequeñas optimizaciones como estas pueden llevar a una mejora considerable de tu aplicación.
+
+>**Nota**: Aunque si fuera originalmente llamada por la acción `sideber/question`, el fichero de fragmento de la cache se encuentra en `cache/frontend/prod/template/askeet/question/what-can-i-offer-to-my-step-mother/fragment_question_tags.cache`. Esto es porque el código de un slot depende de la acción principal llamada.
+
+### Limpiar partes selectivas de la cache
+
+La lista de etiquetas de una pregunta puede cambiar durante la vida de un fragmento. Cada vez que un usuario añade o quita una etiqueta de una pregunta, la lista de tags puede cambiar. Esto significa que la acción asociada tiene que ser capaz de limpiar el fragmento de la cache. Esto es posible con el método `->remove()` del objeto `viewCacheManager`.
+
+Sólo modifica las acciones `add` y `remove` del módulo `etiqueta` (`tag`) añadiendo al final de cada una:
+
+    [php]
+    // limpiar la lista de etiquetas del fragmento en la cache
+    $this->getContext()->getViewCacheManager()->remove('@question?stripped_title='.$this->question->getStrippedTitle(), 'fragment_question_tags');
+
+Ahora puedes comprobar que la lista de etiquetas en la cache no crea incoherencias en la páginas mostradas al añadir o eliminar una etiqueta de una pregunta y ver la lista de etiquetas actualizada correctamente.
+
+También puedes habilitar la cache en el entorno de desarrollo para ver qué partes de una página están en la cache. Modifica la configuración de `settings.yml`:
+
+    dev:
+      .settings:
+        cache:                  on
+
+Y ahora, puedes ver que cuando un página, fragmento o slot está en la cache:
+
+![fragment in cache](/images/askeet/fragment_cache.gif)
+
+o cuando es una copia actualizada:
+
+![fragment not in cache](/images/askeet/fragment_no_cache.gif)
+
+Nos vemos mañana
+----------------
+
+Symfony no crea una sobrecarga alta, y te da maneras fáciles para afinar el rendimiento de una aplicación web. El sistema de cache es potente y adaptable. Otra vez más, si algunas partes de este tutorial te parecen complicadas en alguna forma, no dudes a consultar el [capítulo de la cache](http://www.symfony-project.com/content/book/page/cache.html) del libro de symfony
+
+Mañana, empezaremos a ver la gestión de la actividad del sitio web. La protección en contra del spam o la corrección de entradas erróneas están entre las funcionalidades requeridas por un sitio web que pronto se verá abierta a la publicación semi-anónima. También podríamos crear un `back-office` para eso, o dar acceso a un nuevo grupo de opciones a usuarios con un cierto perfil. De todas formas, nos tomará menos de una hora ya que lo vamos a desarrollar con symfony
+
+Estate seguro que te sigues las últimas noticias de [askeet](http://www.askeet.com/) visitando el [fórum](http://www.symfony-project.com/forum/index.php/f/8/) o mirando a la [previsión de askeet](http://trac.askeet.com/trac/timeline), donde encontrarás reportes de `bugs`, detalles de las versiones y cambios en el wiki.

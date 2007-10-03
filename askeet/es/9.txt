@@ -1,0 +1,281 @@
+Calendario de symfony día nueve: Mejoras locales
+====================================================
+
+Previamente en symfony
+----------------------
+
+Durante el [día ocho](8.txt), agregamos interacciones AJAX a askeet sin ningún dolor, La aplicación es ahora bastante usable, pero podría usar un montón de pequeñas mejoras. Texto enriquecido debería permitirse en el `body` de la pregunta, y las claves primarias no deberían aparecer en las URIs. Todo esto no es difícil de acomodar con symfony: hoy será una buena ocasión para practicar lo que ya has aprendido, y verificar que ya conoces como manipular todas las capas de la arquitectura MVC.
+
+Permitiendo texto enriquecido en preguntas y respuestas
+-------------------------------------------------------
+
+### Markdown
+
+Los body de las preguntas y respuestas solo aceptan texto plano por ahora. Para permitir formateado básico - negrita, itálica, hyperenlaces, imágenes, etc, . utilizaremos una librería externa en lugar de reinventar la rueda.
+
+Si ya has echado un vistazo a la documentación de symfony en formato de texto, probablemente sepas que somos grandes [Markdown](http://daringfireball.net/projects/markdown/) fans. Markdown es una herramienta de conversión de texto-a-HTML, y una sintaxis para el formateado de texto. La gran ventaja de Markdown sobre, por ejemplo, Wiki o sintaxis de foro, es que un archivo de texto markdown es muy legible:
+
+    Prueba de texto Markdown
+    ------------------
+    
+    Este es un **muy simple** ejemplo de [Markdown][1].
+    Lo mejor de markdown es su característica de _auto-escape_ para trozos de código:
+    
+        <a href="http://www.symfony-project.com">enlace a symfony</a>
+    
+    >Los `<` y `>` son apropiadamente escapados como `&lt;` y `&gt;`,
+    >y no son interpretados por ninguna navegador
+    
+    [1]: http://daringfireball.net/projects/markdown/   "Markdown"
+
+El Markdown se procesa como sigue:
+
+>Prueba de texto Markdown
+>------------------
+>
+>Este es un **muy simple** ejemplo de [Markdown](http://daringfireball.net/projects/markdown/).
+>Lo mejor de markdown es su característica de _auto-escape_ para trozos de código:
+>
+>      <a href="http://www.symfony-project.com">enlace a symfony</a>
+>
+>>Los `<` y `>` son apropiadamente escapados como `&lt;` y `&gt;`,
+>>y no son interpretados por ninguna navegador
+
+### Librería Markdown
+
+Aunque originalmente escrito en [Perl](http://www.perl.com/), Markdown esta disponible como una librería PHP en [PHP Markdown](http://www.michelf.com/projects/php-markdown/). Ésta es la que utilizaremos. Descarga el archivo `markdown.php` y ubicalo en la carpeta `lib` del proyecto askeet (`askeet/lib`). Eso es todo: Ahora esta disponible a todas las clases de la aplicación askeet, suponiendo que la requires primero:
+
+    [php]
+    require_once('markdown.php');   
+
+Podríamos llamara a la conversión Markdown cada vez que mostramos el body de un mensaje, pero eso requeriría demasiada carga en nuestros server. En lugar convertimos el texto a HTML cuando la pregunta es creada, y guardamos la versión HTML del body en la tabla `Question`. Probablemente ya te hayas acostumbrando a esto, por lo que la extensión del modelo no será una sorpresa.
+
+### Extender el modelo
+
+Primero, agrega una columna a la tabla `Question` en el `schema.xml`:
+
+    [php]
+    <column name="html_body" type="longvarchar" />
+
+Luego, regenere el modelo y actualice la base de datos:
+
+    $ symfony propel-build-model
+    $ symfony propel-build-sql
+    $ symfony propel-insert-sql
+
+### Sobreescriva el método `setBody`
+
+Cuando el método `->setBody()` de la clase `Question` es llamado, la columna `html_body` debe también ser actualizada con la conversión Markdown del texto del body. Abre el archivo del modelo `askeet/lib/model/Question.php`, y cree:
+
+    [php]
+    public function setBody($v)
+    {
+      parent::setBody($v);
+  
+      require_once('markdown.php');
+      
+      // strip all HTML tags
+      $v = htmlentities($v, ENT_QUOTES, 'UTF-8');
+            
+      $this->setHtmlBody(markdown($v));
+    }
+
+Aplicando la función `htmlentities()` antes de setear el HTML protege askeet de ataques cross-site-script (XSS) pues todos los tags `<script>` son escapados.
+
+### Actualiza los datos de prueba
+
+Vamos a agregar algo de formateado Markdown a algunas de las preguntas de los datos de prueba (en `askeet/data/fixtures/test_data.yml`), para ser capaces de verificar que la conversión funciona adecuadamente:
+
+    Question:
+      q1:
+        title: What shall I do tonight with my girlfriend?
+        user_id: fabien
+        body:  |
+          We shall meet in front of the __Dunkin'Donuts__ before dinner, 
+          and I haven't the slightest idea of what I can do with her. 
+          She's not interested in _programming_, _space opera movies_ nor _insects_.
+          She's kinda cute, so I __really__ need to find something 
+          that will keep her to my side for another evening.
+    
+      q2:
+        title: What can I offer to my step mother?
+        user_id: anonymous
+        body:  |
+          My stepmother has everything a stepmother is usually offered
+          (watch, vacuum cleaner, earrings, [del.icio.us](http://del.icio.us) account). 
+          Her birthday comes next week, I am broke, and I know that 
+          if I don't offer her something *sweet*, my girlfriend 
+          won't look at me in the eyes for another month.
+
+Ahora puedes rellenar la base de datos:
+
+    $ php batch/load_data.php
+
+### Modificando las plantillas
+
+La plantillas `showSuccess.php` del modulo `question` puede ser modificado levemente:
+
+    [php]
+    ...
+    <div class="question_body">
+      <?php echo $question->getHtmlBody() ?>
+    </div>
+    ...
+    
+La plantilla del fragmento lista (`_list.php`) también muestra el body, pero en una versión truncada:
+
+    [php]
+    <div class="question_body">
+      <?php echo truncate_text(strip_tags($question->getHtmlBody()), 200) ?>
+    </div>
+
+Todo esta listo para la prueba final: mostrar las tres páginas que fueron modificadas y observar que el texto formateado proveniente de los datos de prueba:
+
+    http://askeet/question/list
+    http://askeet/recent
+    http://askeet/question/show/stripped_title/what-shall-i-do-tonight-with-my-girlfriend    
+
+![texto de markdown](/images/askeet/markdown_question.gif)
+
+Lo mismo par el `body` para `Answer`: Una columna alterna `html_body` debe ser creada en el modelo, el método `->setBody()` necesita ser sobreescrito, y las respuestas mostradas en `question/show` deben utilizar el método `->getHtmlBody()` en lugar de `->getBody()`. Como el código es exactamente el mismo de arriba, no lo describimos aquí, pero lo encontraras en el código de hoy en el SVN.
+
+Esconde todos los `id`
+----------------------
+
+Otra buena practica en las acciones symfony es evitar tanto como sea posible pasar claves primarias como parámetros de la petición. Esto es porque nuestras claves primarias son mayoritariamente auto-incrementadas, y esto da a los hackers demasiada información acerca de los registros en la base de datos. Ademas, la URI mostrada no significa nada, y esto es malo para los motores de búsqueda.
+
+Tome la página del perfil del usuario, por ejemplo. Por ahora, utiliza el `id` del usuario como parámetro. Pero si nos aseguramos que el `nickname` es único, podría ser utilizado como parámetro para la petición. Vamos a hacerlo.
+
+### Cambie la acción
+
+Edite la acción `user/show`:
+
+    [php]
+    public function executeShow()
+    {
+      $this->subscriber = UserPeer::retrieveByNickname($this->getRequestParameter('nickname'));
+      $this->forward404Unless($this->subscriber);
+    
+      $this->interests = $this->subscriber->getInterestsJoinQuestion();
+      $this->answers   = $this->subscriber->getAnswersJoinQuestion();
+      $this->questions = $this->subscriber->getQuestions();
+    }
+
+### Cambie el modelo
+
+Agregue el siguiente método a la clase `UserPeer` en el directorio `askeet/lib/model`.
+
+    [php]
+    public static function retrieveByNickname($nickname)
+    {
+      $c = new Criteria();
+      $c->add(self::NICKNAME, $nickname);
+
+      return self::doSelectOne($c);
+    }
+ 
+### Cambie la plantilla
+
+La página que muestra un enlace al perfil del usuario debe ahora mencionar el `nickname` del usuario en lugar de su `id`.
+
+En las plantillas `question/showSuccess.php`, `question/_list.php`, remplace:
+
+    [php]
+    <?php echo link_to($question->getUser(), 'user/show?id='.$question->getUserId()) ?>
+
+por:
+
+    [php]
+    <?php echo link_to($question->getUser(), 'user/show?nickname='.$question->getUser()->getNickname()) ?>
+    
+El mismo tipo de modificación es necesaria para las plantillas `answers/_answer.php`.
+
+### Agregando las reglas de ruteo
+
+Agregue nuevas reglas en la configuración de ruteo  para esta acción para que el patrón de la `url` muestra un parámetro:
+
+    user_profile:
+      url:   /user/:nickname
+      param: { module: user, action: show }    
+
+Después de un `symfony clear-cache`, lo último por hacer es probar tus modificaciones.
+
+Enrutado
+---------
+
+Después de las adicciones de hoy, muchas de las acciones escritas asta ahora utilizan el enrutado por defecto, por lo que el nombre del módulo y la acción son frecuentemente mostrado en la barra de dirección del navegador. Ya has aprendido como corregir esto, así que definamos un patrón URL para todas las acciones. Edite el archivo `askeet/apps/frontend/config/routing.yml`:
+
+    # question
+    question:
+      url:   /question/:stripped_title
+      param: { module: question, action: show }
+
+    popular_questions:
+      url:   /index/:page
+      param: { module: question, action: list, page: 1 }
+
+    recent_questions:
+      url:   /recent/:page
+      param: { module: question, action: recent, page: 1 }
+
+    add_question:
+      url:   /add_question
+      param: { module: question, action: add }
+
+    # answer
+    recent_answers:
+      url:   /recent/answers/:page
+      param: { module: answer, action: recent, page: 1 }
+
+    # user
+    login:
+      url:   /login
+      param: { module: user, action: login }
+
+    logout:
+      url:   /logout
+      param: { module: user, action: logout }
+
+    user_profile:
+      url:   /user/:nickname
+      param: { module: user, action: show }
+
+    # default rules
+    homepage:
+      url:   /
+      param: { module: question, action: list }
+
+    default_symfony:
+      url:   /symfony/:action/*
+      param: { module: default }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
+
+Si tu navegas en el entorno de producción, estas aconsejado de borrar el cache antes de probar esta modificación a la configuración.
+
+Una buena práctica del enrutado de symfony es utilizar nombre en el helper `link_to()` en lugar de el `módulo/actión`. No solo es más rápido (en motor de ruteo no tiene que paresear la configuración de enrutado para encontrar la ruta a aplicar), pero también permite modificar la acción detrás del nombre de una regla más tarde. El [capítulo de enrutado](http://www.symfony-project.com/content/book/page/routing.html) del libro de symfony explica en más detalles.
+
+    [php]
+    <?php link_to('@user_profile?id='.$user->getId()) ?>
+    // is better than
+    <?php link_to('user/show?id='.$user->getId()) ?>
+ 
+Askeet sigue buenas prácticas de symfony, así el código que descargaras al final del tutorial de este día contiene solo nombres de reglas en los helpers de enlaces. Remplazando `acción/módulo`por `@rule` en todas las plantillas y helpers especializados no es muy divertido de hacer, así que el último concejo concernientes a enrutado es: Escribe las reglas de enrutado mientras creas acciones, y utiliza los nombres de las reglas en los helpers de enlaces desde el principio.
+
+Nos vemos mañana
+--------------
+
+Los cambios de hoy fueron más largos de leer que de entender. Además, las modificaciones descritas en el tutorial fueron repetidas para casos similares en el código final. Aunque ninguna característica real fue agregada hoy, el código cambió mucho.
+
+Si siente que no aprendió mucho de symfony hoy, quiere decir que esta casi listo para comenzar su propio proyecto. El proceso de crear una acción, modificar el modelo para hacerlo servir la acción como es necesario, escribir plantillas simples para mostrar la acción y editar la configuración para integrarla la nueva acción en la lógica de la aplicación y editar la configuración para integrar la nueva acción son las bases del desarrollo en symfony.
+
+Todas las buenas prácticas expuesta aquí (utiliza librería externas en lugar de reescrivirlas en symfony, no mostrar claves primarias en la aplicación, utilizando nombre de reglas de enrutado en lugar de `módulo/acción`) mantendrán tu aplicación limpia, segura, rápida y mantenible.
+
+Pero la aplicación askeet esta lejos de terminada! La funcionalidad más evidente faltante es la habilidad de agregar nuevas preguntas y de agregar un nuevo usuario. Eso es lo que desarrollaremos mañana.
+
+Tienes sugerencias acerca de las características adicionales para el día 21? Asegurate de enviarlas a la [lista de correos de askeet](mailto:askeet-subscribe@symfony-project.com). Permanece en sintonía!
