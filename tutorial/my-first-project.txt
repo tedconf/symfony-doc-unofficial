@@ -68,7 +68,7 @@ This configuration file uses the YAML syntax. It's a very simple language that a
     
 This schema describes the structure of two the tables needed for the weblog. `Post` and `Comment` are the names of the related classes to be generated. Save the file, open a command line, browse to the `sf_sandbox/` directory and type:
 
-    $ php symfony propel-build-model
+    $ php symfony propel:build-model
 
 >**Note**: Make sure to be at the root of your project (`sf_sandbox/`) when you call the `symfony` command.
 
@@ -76,22 +76,22 @@ A few classes are created in the `sf_sandbox/lib/model/` directory. These are th
 
 Now type in the command line:
 
-    $ php symfony propel-build-sql
+    $ php symfony propel:build-sql
 
 A `lib.model.schema.sql` file is created in `sf_sandbox/data/sql/`. This SQL query can be used to initialize a database with the same table structure. You could create a database in MySQL with the command line or a web interface (as described in the [model chapter](http://www.symfony-project.com/book/trunk/08-Inside-the-Model-Layer)). Luckily, the symfony sandbox is configured to work out of the box with a simple SQLite file, so no database initialization is required. By default, the `sf_sandbox` project will use a database called `sandbox.db` located in `sf_sandbox/data/`. To build the table structure based on the the SQL file, type:
 
-    $ php symfony propel-insert-sql
+    $ php symfony propel:insert-sql
 
->**Note**: Don't worry if there is a warning at that point, it is normal. The `insert-sql` command removes existing tables before adding the ones of your `lib.model.schema.sql`, and there is no table to remove at that time.
+>**Note**: Don't worry if there is a warning at that point, it is normal. The `propel:insert-sql` command removes existing tables before adding the ones of your `lib.model.schema.sql`, and there is no table to remove at that time.
 
 Create the application scaffolding
 ----------------------------------
 
 The basic features of a weblog are to be able to Create, Retrieve, Update and Delete (CRUD) posts and comments. As you are new to symfony, you will not create symfony code from scratch, but rather let it create a scaffolding that you may use and modify as needed. Symfony can interpret the data model to generate the CRUD interface automatically:
 
-    $ php symfony propel-generate-crud frontend post Post
-    $ php symfony propel-generate-crud frontend comment Comment
-    $ php symfony clear-cache
+    $ php symfony propel:generate-crud frontend post Post
+    $ php symfony propel:generate-crud frontend comment Comment
+    $ php symfony cache:clear
 
     On *nix systems, you will have to change some rights:
     $ chmod 777 data
@@ -110,7 +110,7 @@ Find more about [scaffolding](http://www.symfony-project.com/book/trunk/14-Gener
 
 >**Note**: In the URLs above, the name of the main script - called *front controller* in symfony - was changed from `index.php` to `frontend_dev.php`. The two scripts access the same application (`frontend`), but in different environments. With `frontend_dev.php`, you access the application in the **development environment**, which provides handy development tools like the debug toolbar on the top right of the screen and the live configuration engine. That's why the processing of each page is slower than when using `index.php`, which is the front controller of the **production environment**, optimized for speed. If you want to keep on using the production environment, replace `frontend_dev.php/` by `index.php/` in the following URLs, but don't forget to clear the cache before watching the changes:
 >
->     $ php symfony clear-cache
+>     $ php symfony cache:clear
 >     
 >     http://localhost/sf_sandbox/web/index.php/
 
@@ -159,7 +159,7 @@ While you are at it, you can change the title of your pages. Edit the view confi
 
 The home page itself needs to be changed. It uses the default template of the `default` module, which is kept in the framework but not in your application directory. To override it, you have to create a custom `main` module:
 
-    $ php symfony init-module frontend main
+    $ php symfony generate:module frontend main
 
 By default, the `index` action shows a default congratulations screen. To remove it, edit the `sf_sandbox/apps/frontend/modules/main/actions/actions.class.php` and remove the content of the `executeIndex()` method as follows:
 
@@ -272,23 +272,23 @@ By:
 The form in the `comment/create` page points to a `comment/update` action, which redirects to `comment/show` when submitted (this is the default behaviour in generated CRUDs). For the weblog, that means that after adding a comment to a post, the detail of the comment is displayed. It is better to display the post with the comments at that point. So open the `modules/comment/actions/actions.class.php` and look for the `executeUpdate()` method. Note that the `created_at` field is not defined by the action: symfony knows that a field named `created_at` has to be set to the system time when a record is created. The final redirect of the action has to be modified to point to the correct action. Change it to:
 
     [php]
-    public function executeUpdate ()
+    public function executeUpdate($request)
     {
-      if (!$this->getRequestParameter('id', 0))
+      if (!$request->getParameter('id'))
       {
         $comment = new Comment();
       }
       else
       {
-        $comment = CommentPeer::retrieveByPk($this->getRequestParameter('id'));
+        $comment = CommentPeer::retrieveByPk($request->getParameter('id'));
         $this->forward404Unless($comment);
       }
 
-      $comment->setId($this->getRequestParameter('id'));
-      $comment->setPostId($this->getRequestParameter('post_id'));
-      $comment->setAuthor($this->getRequestParameter('author'));
-      $comment->setEmail($this->getRequestParameter('email'));
-      $comment->setBody($this->getRequestParameter('body'));
+      $comment->setId($request->getParameter('id'));
+      $comment->setPostId($request->getParameter('post_id'));
+      $comment->setAuthor($request->getParameter('author'));
+      $comment->setEmail($request->getParameter('email'));
+      $comment->setBody($request->getParameter('body'));
 
       $comment->save();
 
@@ -389,10 +389,10 @@ The problem is that post titles can contain special characters like spaces. If y
 Now you can create a `permalink` action for the `post` module. Add the following method to the `modules/post/actions/actions.class.php`:
 
     [php]
-    public function executePermalink()
+    public function executePermalink($request)
     {
       $posts = PostPeer::doSelect(new Criteria());
-      $title = $this->getRequestParameter('title');
+      $title = $request->getParameter('title');
       foreach ($posts as $post)
       {
         if ($post->getStrippedTitle() == $title)
@@ -402,7 +402,7 @@ Now you can create a `permalink` action for the `post` module. Add the following
       }
       $this->forward404Unless($post);
 
-      $this->getRequest()->setParameter('id', $post->getId());
+      $request->setParameter('id', $post->getId());
 
       $this->forward('post', 'show');
     }
@@ -462,10 +462,10 @@ Generation of the backend
 
 For you to write posts, let's create a backend application by typing in the command line (still from the `sf_sandbox` project directory):
 
-    $ php symfony init-app backend
-    $ php symfony propel-init-admin backend post Post
-    $ php symfony propel-init-admin backend comment Comment
-    
+    $ php symfony generate:app backend
+    $ php symfony propel:init-admin backend post Post
+    $ php symfony propel:init-admin backend comment Comment
+
 This time, we use the [admin generator](http://www.symfony-project.com/book/trunk/14-Generators). It offers much more features and customization than the very basic CRUD generator.
 
 Just like you did for the `frontend` application, edit the layout (`apps/backend/templates/layout.php`) to add global navigation:
@@ -544,7 +544,7 @@ Repeat the operation for the `comment` module. Now you can't access these module
 
 But the logging action doesn't exist! Ok, so you can easily add it. First, create the `security` module skeleton:
 
-    $ php symfony init-module backend security
+    $ php symfony generate:module backend security
 
 This new module will be used to handle the login form and the request. Edit the `apps/backend/modules/security/templates/indexSuccess.php` to create the login form:
 
@@ -568,9 +568,9 @@ This new module will be used to handle the login form and the request. Edit the 
 Add the `login` action that is called by the form to the `security` module (in the `apps/backend/modules/security/actions/actions.class.php` file):
 
     [php]
-    public function executeLogin()
+    public function executeLogin($request)
     {
-      if ($this->getRequestParameter('login') == 'admin' && $this->getRequestParameter('password') == 'password')
+      if ($request->getParameter('login') == 'admin' && $request->getParameter('password') == 'password')
       {
         $this->getUser()->setAuthenticated(true);
 
@@ -578,7 +578,7 @@ Add the `login` action that is called by the form to the `security` module (in t
       }
       else
       {
-        $this->getRequest()->setError('login', 'incorrect entry');
+        $request->setError('login', 'incorrect entry');
 
         return $this->forward('security', 'index');
       }
