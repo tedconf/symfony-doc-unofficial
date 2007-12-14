@@ -414,7 +414,6 @@ Listing 15-9 - Default Functional Test for a New Module, in `tests/functional/fr
 
     // Create a new test browser
     $browser = new sfTestBrowser();
-    $browser->initialize();
 
     $browser->
       get('/foobar/index')->
@@ -459,7 +458,6 @@ Listing 15-11 - Simulating Requests with the `sfTestBrowser` Object
 
     // Create a new test browser
     $b = new sfTestBrowser();
-    $b->initialize();
 
     $b->get('/foobar/show/id/1');                   // GET request
     $b->post('/foobar/show', array('id' => 1));     // POST request
@@ -506,7 +504,6 @@ Listing 15-13 - Simulating Form Input with the `sfTe stBrowser` Object
 
     // Example functional test for this form
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->get('/foobar/edit/id/1');
 
     // Option 1: POST request
@@ -536,7 +533,6 @@ Listing 15-14 - The Test Browser Doesn't Automatically Follow Redirects
 
     // Example functional test for this action
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->get('/foobar/edit?id=1')->
         click('go', array('name' => 'dummy'))->
         isRedirected()->   // Check that request is redirected
@@ -559,7 +555,6 @@ Once it has made a first request, the `sfTestBrowser` object can give access to 
 >     [php]
 >     // Create a new browser
 >     $b = new sfBrowser();
->     $b->initialize();
 >     $b->get('/foobar/show/id/1')->
 >         setField('name', 'dummy')->
 >         click('go');
@@ -576,7 +571,6 @@ Listing 15-15 - The Test Browser Provides Testing Abilities with the `test()` Me
 
     [php]
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->get('/foobar/edit/id/1');
     $request  = $b->getRequest();
     $context  = $b->getContext();
@@ -606,7 +600,6 @@ Listing 15-17 - Testing Directly with `sfTestBrowser`
 
     [php]
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->get('/foobar/edit/id/1')->
         isRequestParameter('id', 1)->
         isStatusCode()->
@@ -632,7 +625,6 @@ Listing 15-18 - Testing Redirections with `sfTestBrowser`
 
     [php]
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->
         get('/foobar/edit/id/1')->
         click('go', array('name' => 'dummy'))->
@@ -657,7 +649,6 @@ Listing 15-19 - The Test Browser Gives Access to the Response Content As a DOM O
 
     [php]
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->get('/foobar/edit/id/1');
     $dom = $b->getResponseDom();
     $b->test()->is($dom->getElementsByTagName('input')->item(1)->getAttribute('type'),'text');
@@ -668,7 +659,6 @@ Listing 15-20 - The Test Browser Gives Access to the Response Content As an `sfD
 
     [php]
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->get('/foobar/edit/id/1');
     $c = new sfDomCssSelector($b->getResponseDom())
     $b->test()->is($c->getTexts('form input[type="hidden"][value="1"]'), array('');
@@ -681,7 +671,6 @@ Listing 15-21 - The Test Browser Gives Access to the Elements of the Response by
 
     [php]
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->get('/foobar/edit/id/1')->
         checkResponseElement('form input[type="hidden"][value="1"]', true)->
         checkResponseElement('form textarea[name="text1"]', 'foo')->
@@ -701,7 +690,6 @@ Listing 15-22 - Using the Position Option to Match an Element at a Certain Posit
 
     [php]
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->get('/foobar/edit?id=1')->
         checkResponseElement('form textarea', 'foo')->
         checkResponseElement('form textarea', 'bar', array('position' => 1));
@@ -712,7 +700,6 @@ Listing 15-23 - Using the Count Option to Count the Number of Matches
 
     [php]
     $b = new sfTestBrowser();
-    $b->initialize();
     $b->get('/foobar/edit?id=1')->
         checkResponseElement('form input', true, array('count' => 3));
 
@@ -748,8 +735,7 @@ Before using the `sfTestBrowser` object, you have to initialize it. If you need 
 Listing 15-26 - Setting Up the Test Browser with Hostname and IP
 
     [php]
-    $b = new sfTestBrowser();
-    $b->initialize('myapp.example.com', '123.456.789.123');
+    $b = new sfTestBrowser('myapp.example.com', '123.456.789.123');
 
 ### The test-functional Task
 
@@ -870,7 +856,7 @@ Listing 15-33 - Initializing a Database in a Test
 
     [php]
     $databaseManager = new sfDatabaseManager();
-    $databaseManager->initialize();
+    $databaseManager->loadConfiguration();
 
     // Optionally, you can retrieve the current database connection
     $con = Propel::getConnection();
@@ -919,7 +905,6 @@ Listing 15-35 - Testing the Cache with the `isCached()` Method
 
     // Create a new test browser
     $b = new sfTestBrowser();
-    $b->initialize();
 
     $b->get('/mymodule');
     $b->isCached(true);       // Checks that the response comes from the cache
