@@ -189,7 +189,7 @@ The `cache.yml` file is one way to define cache settings, but it has the inconve
 
 Why would you want to change the cache settings dynamically? A good example is a page that is different for authenticated users and for anonymous ones, but the URL remains the same. Imagine an `article/show` page with a rating system for articles. The rating feature is disabled for anonymous users. For those users, rating links trigger the display of a login form. This version of the page can be cached. On the other hand, for authenticated users, clicking a rating link makes a POST request and creates a new rating. This time, the cache must be disabled for the page so that symfony builds it dynamically.
 
-The right place to define dynamic cache settings is in a filter executed before the `sfCacheFilter`. Indeed, the cache is a filter in symfony, just like the web debug toolbar and the security features. In order to enable the cache for the `article/show` page only if the user is not authenticated, create a `conditionalCacheFilter` in the application `lib/` directory, as shown in Listing 12-6.
+The right place to define dynamic cache settings is in a filter executed before the `sfCacheFilter`. Indeed, the cache is a filter in symfony, just like the the security features. In order to enable the cache for the `article/show` page only if the user is not authenticated, create a `conditionalCacheFilter` in the application `lib/` directory, as shown in Listing 12-6.
 
 Listing 12-6 - Configuring the Cache in PHP, in `myapp/lib/conditionalCacheFilter.class.php`
 
@@ -203,7 +203,7 @@ Listing 12-6 - Configuring the Cache in PHP, in `myapp/lib/conditionalCacheFilte
         {
           foreach ($this->getParameter('pages') as $page)
           {
-            $context->getViewCacheManager()->addCache($page['module'], $page['action'],array('lifeTime' => 86400));
+            $context->getViewCacheManager()->addCache($page['module'], $page['action'], array('lifeTime' => 86400));
           }
         }
 
@@ -241,7 +241,7 @@ The `addCache()` method of the `sfViewCacheManager` object expects a module name
 >**SIDEBAR**
 >Alternative Caching storage
 >
->By default, the symfony cache system stores data in files on the web server hard disk. You may want to store cache in memory (for instance, via memcache) or in a database (notably if you want to share your cache among several servers or speed up cache removal). You can easily alter symfony's default cache storage system because the cache class used by the symfony view cache manager is defined in `factories.yml`.
+>By default, the symfony cache system stores data in files on the web server hard disk. You may want to store cache in memory (for instance, via [memcached](http://www.danga.com/memcached/)) or in a database (notably if you want to share your cache among several servers or speed up cache removal). You can easily alter symfony's default cache storage system because the cache class used by the symfony view cache manager is defined in `factories.yml`.
 >
 >The default view cache storage factory is the `sfFileCache` class:
 >
@@ -251,7 +251,7 @@ The `addCache()` method of the `sfViewCacheManager` object expects a module name
 >           automaticCleaningFactor: 0
 >           cacheDir:                %SF_TEMPLATE_CACHE_DIR%
 >
->You can replace the `class` with your own cache storage class or with one of the symfony alternative classes (`sfSQLiteCache` for instance). The parameters defined under the `param` key are passed to the `initialize()` method of your class as an associative array. Any view cache storage class must imple- ment all methods found in the abstract `sfCache` class. Refer to the API documentation ([http://www. symfony-project.com/api/symfony.html](http://www. symfony-project.com/api/symfony.html)) for more information on this subject.
+>You can replace the `class` with your own cache storage class or with one of the symfony alternative classes (including `sfAPCCache`, `sfEAcceleratorCache`, `sfMemcacheCache`, `sfSQLiteCache`, and `sfXCacheCache`). The parameters defined under the `param` key are passed to the constructor of the cache class as an associative array. Any view cache storage class must implement all methods found in the abstract `sfCache` class. Refer to the API documentation ([http://www. symfony-project.com/api/symfony.html](http://www. symfony-project.com/api/symfony.html)) for more information on this subject.
 
 ### Using the Super Fast Cache
 
@@ -335,7 +335,7 @@ Removing cached partials, components, and component slots is a little trickier. 
     // Is identified in the cache as
     /sf_cache_partial/user/_my_partial/sf_cache_key/bf41dd9c84d59f3574a5da244626dcc8
 
-In theory, you could remove a cached partial with the `remove()` method if you knew the value of the parameters hash used to identify it, but this is very impracticable. Fortunately, if you add a `sf_cache_key` parameter to the `include_partial()` helper call, you can identify the partial in the cache with something that you know. As you can see in Listing 12-10, clearing a single cached partial--for instance, to clean up the cache from the partial based on a modified `User`--becomes easy.
+In theory, you could remove a cached partial with the `remove()` method if you knew the value of the parameters hash used to identify it, but this is very impracticable. Fortunately, if you add a `sf_cache_key` parameter to the `include_partial()` helper call, you can identify the partial in the cache with something that you know. As you can see in Listing 12-10, clearing a single cached partial --for instance, to clean up the cache from the partial based on a modified `User`-- becomes easy.
 
 Listing 12-10 - Clearing Partials from the Cache
 
@@ -392,57 +392,69 @@ Listing 12-11 - Clearing Template Fragments from the Cache
 >
 >And, if you don't want to damage your brain with too difficult an analysis, you can always clear the whole cache each time you update the database . . .
 
-### Cache Directory Structure
+### Cache Structure
 
-The `cache/` directory of your application has the following structure:
+Whatever caching storage strategy you use, symfony will use common naming rules for identifying template cache parts. Put it simply, symfony uses the external URL form of the internal URI as a key to a template cache part. 
+
+Let's illustrate these rules with the default cache factory: `sFileCache`. When using the filesystem to store cache parts, symfony writes all template cache files under a special subdirectory of the `cache/` directory called `sf_template_cache_dir`:
 
     cache/                 # sf_root_cache_dir
       [APP_NAME]/          # sf_base_cache_dir
         [ENV_NAME]/        # sf_cache_dir
-          config/          # sf_config_cache_dir
-          i18n/            # sf_i18n_cache_dir
-          modules/         # sf_module_cache_dir
           template/        # sf_template_cache_dir
-            [HOST_NAME]/
-              all/
 
-Cached templates are stored under the `[HOST_NAME]` directory (where dots are replaced by underscores for compatibility with file systems), in a directory structure corresponding to their URL. For instance, the template cache of a page called with:
+Each template cache file has a unique location under this directory, created from the external URL of the page. For instance, the template cache of a page called with:
 
     http://www.myapp.com/user/show/id/12
 
 is stored in:
 
     cache/myapp/prod/template/www_myapp_com/all/user/show/id/12.cache
+    \----filecache config----/\---unique template cache key---/
 
-You should not write file paths directly in your code. Instead, you can use the file path constants. For instance, to retrieve the absolute path to the `template/` directory of the current application in the current environment, use `sfConfig::get('sf_template_cache_dir')`.
+The first part of the cache key is the host name, where dots are replaced by underscores for compatibility with file systems. The comes the list of VARY headers (usually a single `all/` keyword), and then the page external URL. The filesystem cache adds a `.cache` suffix.
 
-Knowing this directory structure will help you deal with manual cache clearing.
+Other caching storage strategies use the same cache key. This means that whetever storage strategy you use, the cache key for the template cache of the page mentioned above is always:
 
-### Clearing the Cache Manually
+      www_myapp_com/all/user/show/id/12
 
-Clearing the cache across applications can be a problem. For instance, if an administrator modifies a record in the `user` table in a `backend` application, all the actions depending on this user in the `frontend` application need to be cleared from the cache. The `remove()` method expects an internal URI, but applications don't know other application's routing rules (applications are isolated from each other), so you cannot use the `remove()` method to clear the cache of another application.
+### Clearing cache across applications and clearing several cache parts at once (new in symfony 1.1)
 
-The solution is to manually remove the files from the `cache/` directory, based on a file path. For instance, if the `backend` application needs to clear the cache of the `user/show` action in the `frontend` application for the user of `id` `12`, it can use the following:
+Clearing the cache across applications can be a problem. For instance, if an administrator modifies a record in the `user` table in a `backend` application, all the actions depending on this user in the `frontend` application need to be cleared from the cache. The `remove()` method expects an internal URI, but applications don't know other application's routing rules (applications are isolated from each other), so the backend application cannot use the `remove()` method of its view cache manager to clear the cache of the frontend application.
 
-    [php]
-    $sf_root_cache_dir = sfConfig::get('sf_root_cache_dir');
-    $cache_dir = $sf_root_cache_dir.'/frontend/prod/template/www_myapp_com/all';
-    unlink($cache_dir.'/user/show/id/12.cache');
+The solution is to initialize a new cache object with the same settings as the frontend application, and use the `removePattern()` method of this object to delete the page related to an external URL.
 
-But this is not very satisfactory. This command will erase only the cache of the current environment, and it forces you to write the environment name and the current host name in the file path. To bypass these limitations, you can use the `sfToolkit::clearGlob()` method. It takes a file pattern as a parameter and accepts wildcards. For instance, you can clear the same cache files as in the preceding example, regardless of host and environment, with this:
+For instance, if the `backend` application needs to clear the cache of the `user/show` action in the `frontend` application for the user of `id` `12`, it can use the following:
 
     [php]
-    $cache_dir = $sf_root_cache_dir.'/frontend/*/template/*/all';
-    sfToolkit::clearGlob($cache_dir.'/user/show/id/12.cache');
+    $frontend_cache_dir = sfConfig::get('sf_root_cache_dir') . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . SF_ENV . DIRECTORY_SEPARATOR . 'template';
+    $cache = new sfFileCache(array('cache_dir' => $frontend_cache_dir)); // use the same settings as the ones defined in the frontend factories.yml
+    $cache->removePattern('www_myapp_com/all/user/show/id/12');
 
-This method is also of great use when you need to erase a cached action regardless of certain parameters. For instance, if your application handles several languages, you may have chosen to insert the language code in all URLs. So the link to a user profile page should look like this:
+But this is not very satisfactory. This command forces you to write the current host name in the file path. To bypass this limitation, you can use wildcards inside the key passed to the `removePattern()` method:
+
+    [php]
+    $cache->removePattern('*/all/user/show/id/12');
+
+This method is also of great use when you need to erase a cached action regardless of certain parameters. For instance, if you want to delete the `user/show` action for all users, try this:
+
+    [php]
+    $cache->removePattern('*/all/user/show/*/*');
+
+Another good example if with applications handling several languages, where the language code appears in all URLs. The link to a user profile page should look like this:
 
     http://www.myapp.com/en/user/show/id/12
 
 To remove the cached profile of the user having an `id` of `12` in all languages, you can simply do this:
 
     [php]
-    sfToolkit::clearGlob($cache_dir.'/*/user/show/id/12.cache');
+    $cache->removePattern('*/all/*/user/show/id/12');
+
+The `removePattern()` method is available for every cache object. For different caching strategies, you just need to change the cache object initialization, but the cache removal process remains the same:
+
+    [php]
+    $cache = new sfMemcacheCache(array('prefix' => 'frontend'));
+    $cache->removePattern('www_myapp_com/all/user/show/id/12');
 
 Testing and Monitoring Caching
 ------------------------------
