@@ -627,18 +627,28 @@ Listing 6-21 - Changing the Server Session Storage, in `apps/myapp/config/factor
       storage:
         class: sfMySQLSessionStorage
         param:
-          db_table: SESSION_TABLE_NAME      # Name of the table storing the sessions
-          database: DATABASE_CONNECTION     # Name of the database connection to use
+          db_table:    session              # Name of the table storing the sessions
+          database:    propel               # Name of the database connection to use
+          # Optional parameters
+          db_id_col:   sess_id              # Name of the column storing the session id
+          db_data_col: sess_data            # Name of the column storing the session data
+          db_time_col: sess_time            # Name of the column storing the session timestamp
 
-The available session storage classes are `sfMySQLSessionStorage`, `sfPostgreSQLSessionStorage`, and `sfPDOSessionStorage`; the latter is preferred. The optional `database` setting defines the database connection to be used; symfony will then use `databases.yml` (see Chapter 8) to determine the connection settings (host, database name, user, and password) for this connection.
+The `database` setting defines the database connection to be used. Symfony will then use `databases.yml` (see Chapter 8) to determine the connection settings (host, database name, user, and password) for this connection.
 
-Session expiration occurs automatically after sf_timeout seconds. This constant is 30 minutes by default and can be modified for each environment in the `settings.yml` configuration file, as shown in Listing 6-22.
+The available session storage classes are `sfMySQLSessionStorage`, `sfPostgreSQLSessionStorage`, and `sfPDOSessionStorage`; the latter is preferred. To disable session storage completely, you can use the `sfNoStorage` class.
 
-Listing 6-22 - Changing Session Lifetime, in `apps/myapp/config/settings.yml`
+Session expiration occurs automatically after 30 minutes. This default setting and can be modified for each environment in the same `factories.yml` configuration file, but this time in the `user` factory, as shown in Listing 6-22.
 
-    default:
-      .settings:
-        timeout:     1800           # Session lifetime in seconds
+Listing 6-22 - Changing Session Lifetime, in `apps/myapp/config/factories.yml`
+
+    all:
+      user:
+        class:       myUser
+        param:
+          timeout:   1800           # Session lifetime in seconds
+
+To learn more about factories, refer to Chapter 19.
 
 Action Security
 ---------------
