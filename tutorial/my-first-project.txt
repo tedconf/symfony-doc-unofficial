@@ -199,13 +199,13 @@ That was fast, wasn't it? Now it is time to mix the `comment` module into the `p
 First, you need to make the post comments available for the post display template. In symfony, this kind of logic is kept in **actions**. Edit the actions file `sf_sandbox/apps/frontend/modules/post/actions/actions.class.php` and change the `executeShow()` method by adding the 4 last lines:
 
     [php]
-    public function executeShow()
+    public function executeShow($request)
     {
-      $this->post = PostPeer::retrieveByPk($this->getRequestParameter('id'));
+      $this->post = PostPeer::retrieveByPk($request->getParameter('id'));
       $this->forward404Unless($this->post);
 
       $c = new Criteria();
-      $c->add(CommentPeer::POST_ID, $this->getRequestParameter('id'));
+      $c->add(CommentPeer::POST_ID, $request->getParameter('id'));
       $c->addAscendingOrderByColumn(CommentPeer::CREATED_AT);
       $this->comments = CommentPeer::doSelect($c);
     }
