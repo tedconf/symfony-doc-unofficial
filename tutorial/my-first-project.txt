@@ -1,16 +1,28 @@
 My first symfony project
 ========================
 
-So, you want to try it on? Let's build together a fully-functional web app in one hour. You name it. A bookseller application? Ok, another idea. A weblog! That's a good one. Let's go.
+So, you want to try it on? Let's build together a fully-functional web app in
+one hour. You name it. A bookseller application? Ok, another idea. A blog!
+That's a good one. Let's go.
 
-We'll assume that you are working with apache/PHP5 installed and launched on your localhost. You will also need the SQLite extension, which is bundled and compiled by default in PHP5. However, since PHP 5.1.0 you need to manually activate the extension in `php.ini` (see how [here](http://fr3.php.net/manual/en/ref.sqlite.php)).
+We'll assume that you are working with Apache installed and launched on your
+localhost. You will also need PHP 5.1.3 or newer with the SQLite extension
+installed and enabled (you can check this in `php.ini` - see how
+[in the PHP documentation](http://fr3.php.net/manual/en/ref.sqlite.php).
 
 Install symfony and initialize the project
 ------------------------------------------
 
-To go fast, we will use the symfony sandbox (you can also download the [final source code](http://www.symfony-project.com/downloads/my_first_project.tgz)). It is an empty symfony project where all the required libraries are already included, and where the basic configuration is already done. The great advantage of the sandbox over other types of installation is that you can start experimenting with symfony immediately.
+To go fast, we will use the symfony sandbox (you can also download the
+[final source code](http://www.symfony-project.com/downloads/my_first_project.tgz)).
+It is an empty symfony project where all the required libraries are already included,
+and where the basic configuration is already done. The great advantage of the sandbox
+over other types of installation is that you can start experimenting with symfony
+immediately.
 
-Get it here: [sf_sandbox.tgz](http://www.symfony-project.com/get/sf_sandbox.tgz), and unpack it in your root web directory. Refer to the included readme file for more information. The resulting file structure should look like:
+Get it here: [sf_sandbox.tgz](http://www.symfony-project.com/get/sf_sandbox.tgz),
+and unpack it in your root web directory. Refer to the included readme file for more
+information. The resulting file structure should look like:
 
     www/
       sf_sandbox/
@@ -32,7 +44,8 @@ Get it here: [sf_sandbox.tgz](http://www.symfony-project.com/get/sf_sandbox.tgz)
           images/
           js/
 
-This shows a `sf_sandbox` **project** containing a `frontend` **application**. Test the sandbox by requesting the following URL:
+This shows a `sf_sandbox` **project** containing a `frontend` **application**.
+Test the sandbox by requesting the following URL:
 
     http://localhost/sf_sandbox/web/index.php/
 
@@ -40,54 +53,82 @@ You should see a congratulations page.
 
 ![Congratulations](/images/tutorials/first_congrats.gif)
 
-You can also install symfony in a custom folder and setup your web server with a Virtual Host or an Alias. The symfony book contains detailed chapters about [symfony installation](http://www.symfony-project.com/book/trunk/03-Running-Symfony) and the [symfony directory structure](http://www.symfony-project.com/book/trunk/02-Exploring-Symfony-s-Code).
+You can also install symfony in a custom folder and setup your web server with
+a Virtual Host or an Alias. The symfony book contains detailed chapters about
+[symfony installation](http://www.symfony-project.com/book/1.1/03-Running-Symfony)
+and the [symfony directory structure](http://www.symfony-project.com/book/1.1/02-Exploring-Symfony-s-Code).
 
 Initialize the data model
 -------------------------
 
-So, the weblog will handle posts, and you will enable comments on them. Create a `schema.yml` file in `sf_sandbox/config/` and paste the following data model:
+So, the blog will handle posts, and you will enable comments on them. Create a
+`schema.yml` file in `sf_sandbox/config/` and paste the following data model:
 
     propel:
-      weblog_post:
-        _attributes: { phpName: Post }
-        id:
+      post:
+        id:          ~
         title:       varchar(255)
         excerpt:     longvarchar
         body:        longvarchar
-        created_at:
-      weblog_comment:
-        _attributes: { phpName: Comment }
-        id:
-        post_id:
+        created_at:  ~
+      comment:
+        id:          ~
+        post_id:     ~
         author:      varchar(255)
         email:       varchar(255)
         body:        longvarchar
-        created_at:
+        created_at:  ~
 
-This configuration file uses the YAML syntax. It's a very simple language that allows XML-like tree structures described by indentation. Furthermore, it is faster to read and write than XML. The only thing is, the indentation has a meaning and tabulations are forbidden, so remember to use spaces for indentation. You will find more about YAML and the symfony configuration in the [configuration chapter](http://www.symfony-project.com/book/trunk/05-Configuring-Symfony).
-    
-This schema describes the structure of two the tables needed for the weblog. `Post` and `Comment` are the names of the related classes to be generated. Save the file, open a command line, browse to the `sf_sandbox/` directory and type:
+This configuration file uses the YAML syntax. It's a very simple language that
+allows XML-like tree structures described by indentation. Furthermore, it is
+faster to read and write than XML. The only thing is, the indentation has a
+meaning and tabulations are forbidden, so remember to use spaces for indentation.
+You will find more about YAML and the symfony configuration in the
+[configuration chapter](http://www.symfony-project.com/book/1.1/05-Configuring-Symfony).
+
+This schema describes the structure of two the tables needed for the blog.
+`Post` and `Comment` are the names of the related classes to be generated.
+Save the file, open a command line, browse to the `sf_sandbox/` directory and type:
 
     $ php symfony propel:build-model
 
->**Note**: Make sure to be at the root of your project (`sf_sandbox/`) when you call the `symfony` command.
+>**Note**: Make sure to be at the root of your project (`sf_sandbox/`) when you
+call the `symfony` command.
 
-A few classes are created in the `sf_sandbox/lib/model/` directory. These are the classes of the object-relational mapping, who allow us to have access to a relational database from within an object-oriented code without writing a single SQL query. Symfony uses the Propel library for this purpose. We will call theses objects the **model** (find more in the [model chapter](http://www.symfony-project.com/book/trunk/08-Inside-the-Model-Layer)).
+A few classes are created in the `sf_sandbox/lib/model/` directory. These are the
+classes of the object-relational mapping, who allow us to have access to a relational
+database from within an object-oriented code without writing a single SQL query.
+By default, symfony uses the Propel library for this purpose. Theses classes are
+part of the **model** of our application (find more in the [model chapter](http://www.symfony-project.com/book/1.1/08-Inside-the-Model-Layer)).
 
 Now type in the command line:
 
     $ php symfony propel:build-sql
 
-A `lib.model.schema.sql` file is created in `sf_sandbox/data/sql/`. This SQL query can be used to initialize a database with the same table structure. You could create a database in MySQL with the command line or a web interface (as described in the [model chapter](http://www.symfony-project.com/book/trunk/08-Inside-the-Model-Layer)). Luckily, the symfony sandbox is configured to work out of the box with a simple SQLite file, so no database initialization is required. By default, the `sf_sandbox` project will use a database called `sandbox.db` located in `sf_sandbox/data/`. To build the table structure based on the the SQL file, type:
+A `lib.model.schema.sql` file is created in `sf_sandbox/data/sql/`.
+The SQL statements found is this file can be used to initialize a database with
+the same table structure. You could create a database in MySQL with the command
+line or a web interface (as described in the
+[model chapter](http://www.symfony-project.com/book/1.1/08-Inside-the-Model-Layer)).
+Luckily, the symfony sandbox is configured to work out of the box with a simple
+SQLite file, so no database initialization is required. By default, the `sf_sandbox`
+project will use a database called `sandbox.db` located in `sf_sandbox/data/`.
+To build the table structure based on the the SQL file, type:
 
     $ php symfony propel:insert-sql
 
->**Note**: Don't worry if there is a warning at that point, it is normal. The `propel:insert-sql` command removes existing tables before adding the ones of your `lib.model.schema.sql`, and there is no table to remove at that time.
+>**Note**: Don't worry if there is a warning at that point, it is normal.
+The `propel:insert-sql` command removes existing tables before adding the ones
+of your `lib.model.schema.sql`, and there is no table to remove at that time.
 
-Create the application scaffolding
-----------------------------------
+Create the application
+----------------------
 
-The basic features of a weblog are to be able to Create, Retrieve, Update and Delete (CRUD) posts and comments. As you are new to symfony, you will not create symfony code from scratch, but rather let it create a scaffolding that you may use and modify as needed. Symfony can interpret the data model to generate the CRUD interface automatically:
+The basic features of a blog are to be able to Create, Retrieve, Update and
+Delete (CRUD) posts and comments. As you are new to symfony, you will not create
+symfony code from scratch, but rather let it generate the code that you may use
+and modify as needed. Symfony can interpret the data model to generate the CRUD
+interface automatically:
 
     $ php symfony propel:generate-crud frontend post Post
     $ php symfony propel:generate-crud frontend comment Comment
@@ -97,31 +138,49 @@ The basic features of a weblog are to be able to Create, Retrieve, Update and De
     $ chmod 777 data
     $ chmod 777 data/sandbox.db
 
-You now have two modules (`post` and `comment`) that will let you manipulate objects of the `Post` and `Comment` classes. A **module** usually represents a page or a group of pages with a similar purpose. Your new modules are located in the `sf_sandbox/apps/frontend/modules/` directory, and they are accessible by the URLs:
+You now have two modules (`post` and `comment`) that will let you manipulate
+objects of the `Post` and `Comment` classes. A **module** usually represents a
+page or a group of pages with a similar purpose. Your new modules are located
+in the `sf_sandbox/apps/frontend/modules/` directory, and they are accessible
+by the URLs:
 
     http://localhost/sf_sandbox/web/frontend_dev.php/post
     http://localhost/sf_sandbox/web/frontend_dev.php/comment
 
-Feel free to create a new post to make the weblog look less empty.
+Feel free to create a new post to make the blog look less empty.
 
 ![post CRUD](/images/tutorials/first_crud.gif)
 
-Find more about [scaffolding](http://www.symfony-project.com/book/trunk/14-Generators) and the explanation of symfony projects [structure](http://www.symfony-project.com/book/trunk/04-The-Basics-of-Page-Creation) (project, application, module).
+Find more about [generators](http://www.symfony-project.com/book/1.1/14-Generators)
+and the explanation of symfony projects
+[structure](http://www.symfony-project.com/book/1.1/04-The-Basics-of-Page-Creation)
+(project, application, module).
 
->**Note**: In the URLs above, the name of the main script - called *front controller* in symfony - was changed from `index.php` to `frontend_dev.php`. The two scripts access the same application (`frontend`), but in different environments. With `frontend_dev.php`, you access the application in the **development environment**, which provides handy development tools like the debug toolbar on the top right of the screen and the live configuration engine. That's why the processing of each page is slower than when using `index.php`, which is the front controller of the **production environment**, optimized for speed. If you want to keep on using the production environment, replace `frontend_dev.php/` by `index.php/` in the following URLs, but don't forget to clear the cache before watching the changes:
+>**Note**: In the URLs above, the name of the main script - called
+*front controller* in symfony - was changed from `index.php` to `frontend_dev.php`.
+The two scripts access the same application (`frontend`), but in different environments.
+With `frontend_dev.php`, you access the application in the **development environment**,
+which provides handy development tools like the debug toolbar on the top right
+of the screen and the live configuration engine. That's why the processing of
+each page is slower than when using `index.php`, which is the front controller
+of the **production environment**, optimized for speed. If you want to keep on
+using the production environment, replace `frontend_dev.php/` by `index.php/`
+in the following URLs, but don't forget to clear the cache before watching the
+changes:
 >
 >     $ php symfony cache:clear
 >     
 >     http://localhost/sf_sandbox/web/index.php/
 
-Find more about [environments](http://www.symfony-project.com/book/trunk/05-Configuring-Symfony#Environments).
+Find more about [environments](http://www.symfony-project.com/book/1.1/05-Configuring-Symfony#Environments).
 
 Modify the layout
 -----------------
 
-In order to navigate between the two new modules, the weblog needs some global navigation.
+In order to navigate between the two new modules, the blog needs some global navigation.
 
-Edit the global template `sf_sandbox/apps/frontend/templates/layout.php` and change the content of the `<body>` tag to:
+Edit the global template `sf_sandbox/apps/frontend/templates/layout.php` and
+change the content of the `<body>` tag to:
 
     [php]
     <div id="container" style="width:600px;margin:0 auto;border:1px solid grey;padding:10px">
@@ -140,41 +199,51 @@ Edit the global template `sf_sandbox/apps/frontend/templates/layout.php` and cha
       </div>
     </div>
 
-Please be forgiving for the poor design and the use of inner-tag css, but one hour is a short time.
+Please be forgiving for the poor design and the use of inner-tag css, but
+one hour is a short time.
 
 ![post CRUD in layout](/images/tutorials/first_crud_layout.gif)
 
-While you are at it, you can change the title of your pages. Edit the view configuration file of the application (`sf_sandbox/apps/frontend/config/view.yml`), locate the line showing the `title` key and change it to:
+While you are at it, you can change the title of your pages.
+Edit the view configuration file of the application (`sf_sandbox/apps/frontend/config/view.yml`),
+locate the line showing the `title` key and change it to:
 
     default:
       http_metas:
         content-type: text/html
 
     metas:
-      title:        The best weblog ever
+      title:        The best blog ever
       robots:       index, follow
       description:  symfony project
       keywords:     symfony, project
       language:     en
 
-The home page itself needs to be changed. It uses the default template of the `default` module, which is kept in the framework but not in your application directory. To override it, you have to create a custom `main` module:
+The home page itself needs to be changed. It uses the default template of the
+`default` module, which is kept in the framework but not in your application
+directory. To override it, you have to create a custom `main` module:
 
     $ php symfony generate:module frontend main
 
-By default, the `index` action shows a default congratulations screen. To remove it, edit the `sf_sandbox/apps/frontend/modules/main/actions/actions.class.php` and remove the content of the `executeIndex()` method as follows:
+By default, the `index` action shows a default congratulations screen.
+To remove it, edit the `sf_sandbox/apps/frontend/modules/main/actions/actions.class.php`
+and remove the content of the `executeIndex()` method as follows:
 
     [php]
     public function executeIndex()
     {
     }
 
-Edit the `sf_sandbox/apps/frontend/modules/main/templates/indexSuccess.php` file to show a nice welcome message:
+Edit the `sf_sandbox/apps/frontend/modules/main/templates/indexSuccess.php` file
+to show a nice welcome message:
 
     [php]
-    <h1>Welcome to my swell weblog</h1>
+    <h1>Welcome to my swell blog</h1>
     <p>You are the <?php echo rand(1000,5000) ?>th visitor today.</p>
 
-Now, you must tell symfony which action to execute when the homepage is requested. To that extend, edit the `sf_sandbox/apps/frontend/config/routing.yml` and change the `homepage` rule as follows:
+Now, you must tell symfony which action to execute when the homepage is requested.
+To that extend, edit the `sf_sandbox/apps/frontend/config/routing.yml` and change
+the `homepage` rule as follows:
 
     [yml]
     homepage:
@@ -187,16 +256,21 @@ Check the result by requesting the home page again:
 
 ![New home page](/images/tutorials/first_welcome.gif)
 
-Go ahead, start using your new web app: Create a new test post, and a test comment for your this post.
+Go ahead, start using your new web app: Create a new test post, and a test
+comment for your this post.
 
-Find more about [views and templates](http://www.symfony-project.com/book/trunk/07-Inside-the-View-Layer).
+Find more about [views and templates](http://www.symfony-project.com/book/1.1/07-Inside-the-View-Layer).
 
 Pass data from the action to the template
 -----------------------------------------
 
-That was fast, wasn't it? Now it is time to mix the `comment` module into the `post` one to get comments displayed below posts.
+That was fast, wasn't it? Now it is time to mix the `comment` module into the
+`post` one to get comments displayed below posts.
 
-First, you need to make the post comments available for the post display template. In symfony, this kind of logic is kept in **actions**. Edit the actions file `sf_sandbox/apps/frontend/modules/post/actions/actions.class.php` and change the `executeShow()` method by adding the 4 last lines:
+First, you need to make the post comments available for the post display template.
+In symfony, this kind of logic is kept in **actions**. Edit the actions file
+`sf_sandbox/apps/frontend/modules/post/actions/actions.class.php` and change
+the `executeShow()` method by adding the 4 last lines:
 
     [php]
     public function executeShow($request)
@@ -210,7 +284,12 @@ First, you need to make the post comments available for the post display templat
       $this->comments = CommentPeer::doSelect($c);
     }
 
-The `Criteria` and `-Peer` objects are part of Propel's object-relational mapping. Basically, these four lines will handle a SQL query to the `Comment` table to get the comments related to the current `Post` (the one designated by the URL parameter `id`). The `$this->comments` line in the action will give access to a `$comments` variable in the corresponding template. Now, modify the post display template `sf_sandbox/apps/frontend/modules/post/templates/showSuccess.php` by adding at the end:
+The `Criteria` and `-Peer` objects are part of Propel's object-relational mapping.
+Basically, these four lines will handle a SQL query to the `Comment` table to get
+the comments related to the current `Post` (the one designated by the URL parameter `id`).
+The `$this->comments` line in the action will give access to a `$comments` variable
+in the corresponding template. Now, modify the post display template
+`sf_sandbox/apps/frontend/modules/post/templates/showSuccess.php` by adding at the end:
 
     [php]
     ...
@@ -227,7 +306,11 @@ The `Criteria` and `-Peer` objects are part of Propel's object-relational mappin
       <?php endforeach; ?>
     <?php endif; ?>
 
-This page uses new PHP functions (`format_date()` and `simple_format_text()`) provided by symfony, and called 'helpers' because they do some tasks for you that would normally require more time and code. Create a new comment for your first post, then check again the first post, either by clicking on its number in the list, or by typing directly:
+This page uses new PHP functions (`format_date()` and `simple_format_text()`)
+provided by symfony, and called 'helpers' because they do some tasks for you
+that would normally require more time and code. Create a new comment for your
+first post, then check again the first post, either by clicking on its number
+in the list, or by typing directly:
 
     http://localhost/sf_sandbox/web/frontend_dev.php/post/show?id=1
 
@@ -235,19 +318,26 @@ This page uses new PHP functions (`format_date()` and `simple_format_text()`) pr
 
 This is getting good.
 
-Find more about the [naming conventions](http://www.symfony-project.com/book/trunk/07-Inside-the-View-Layer) linking an action to a template.
+Find more about the [naming conventions](http://www.symfony-project.com/book/1.1/07-Inside-the-View-Layer)
+linking an action to a template.
 
 Add a record relative to another table
 --------------------------------------
 
-When adding a comment, you can choose the `id` of the related post. That's not very user-friendly. Let's change this, and make sure that the user comes back to the post he was looking at after adding a comment.
+When adding a comment, you can choose the `id` of the related post.
+That's not very user-friendly. Let's change this, and make sure that the user
+comes back to the post he was looking at after adding a comment.
 
-First, in the still fresh `modules/post/templates/showSuccess.php` template, add a line at the bottom:
+First, in the still fresh `modules/post/templates/showSuccess.php` template,
+add a line at the bottom:
 
     [php]
     <?php echo link_to('Add a comment', 'comment/create?post_id='.$post->getId()) ?>
     
-The `link_to()` helper creates a hyperlink pointing to the `create` action of the `comment` module, so you can add a comment directly from the post details page. Next, open the `modules/comment/templates/editSuccess.php` and replace the following lines:
+The `link_to()` helper creates a hyperlink pointing to the `create` action of
+the `comment` module, so you can add a comment directly from the post details page.
+Next, open the `modules/comment/templates/editSuccess.php` and replace the
+following lines:
 
     [php]
     <tr>
@@ -269,7 +359,15 @@ By:
       </tr>
     <?php endif; ?>
     
-The form in the `comment/create` page points to a `comment/update` action, which redirects to `comment/show` when submitted (this is the default behaviour in generated CRUDs). For the weblog, that means that after adding a comment to a post, the detail of the comment is displayed. It is better to display the post with the comments at that point. So open the `modules/comment/actions/actions.class.php` and look for the `executeUpdate()` method. Note that the `created_at` field is not defined by the action: symfony knows that a field named `created_at` has to be set to the system time when a record is created. The final redirect of the action has to be modified to point to the correct action. Change it to:
+The form in the `comment/create` page points to a `comment/update` action, which
+redirects to `comment/show` when submitted (this is the default behaviour in generated CRUDs).
+For the blog, that means that after adding a comment to a post, the detail of the
+comment is displayed. It is better to display the post with the comments at that point.
+So open the `modules/comment/actions/actions.class.php` and look for the `executeUpdate()`
+method. Note that the `created_at` field is not defined by the action: symfony knows
+that a field named `created_at` has to be set to the system time when a record is created.
+The final redirect of the action has to be modified to point to the correct action.
+Change it to:
 
     [php]
     public function executeUpdate($request)
@@ -295,14 +393,18 @@ The form in the `comment/create` page points to a `comment/update` action, which
       return $this->redirect('post/show?id='.$comment->getPostId());
     }
 
-Users can now add comments to a post and come back to the post afterwards. You wanted a weblog? You have a weblog.
+Users can now add comments to a post and come back to the post afterwards.
+You wanted a blog? You have a blog.
 
-Find more about [actions](http://www.symfony-project.com/book/trunk/06-Inside-the-Controller-Layer).
+Find more about [actions](http://www.symfony-project.com/book/1.1/06-Inside-the-Controller-Layer).
 
 Form Validation
 ---------------
 
-Visitors can enter comments, but what if they submit the form without any data in it? You will have a dirty database. To avoid that, create a file called `update.yml` in the `sf_sandbox/apps/frontend/modules/comment/validate/` directory (you also have to create the directory) and write in:
+Visitors can enter comments, but what if they submit the form without any data
+in it? You will have a dirty database. To avoid that, create a file called
+`update.yml` in the `sf_sandbox/apps/frontend/modules/comment/validate/`
+directory (you also have to create the directory) and write in:
 
     methods:
       post:           [author, email, body]
@@ -329,11 +431,18 @@ Visitors can enter comments, but what if they submit the form without any data i
       param:
         email_error:  The email address is not valid.
 
->**Note**: Beware that you don't copy 4 extra spaces at the beginning of each line, since the YAML parser would fail in that case. The first letter of this file must be the 'm' of 'methods'.
+>**Note**: Beware that you don't copy 4 extra spaces at the beginning of each
+line, since the YAML parser would fail in that case. The first letter of this
+file must be the 'm' of 'methods'.
 
-The `fillin` activation enables the repopulation of the form with the value previously entered by the user in case of failed validation. The `names` declarations set the validation rules for each input of the form.
+The `fillin` activation enables the repopulation of the form with the value
+previously entered by the user in case of failed validation. The `names` declarations
+set the validation rules for each input of the form.
 
-By itself, the controller will redirect the user to a `updateError.php` template if an error is detected. It would be better to display the form again with an error message. To do that, add a `handleErrorUpdate` method to the action class of the `modules/comment/actions/actions.class.php` file:
+By itself, the controller will redirect the user to a `updateError.php` template
+if an error is detected. It would be better to display the form again with an
+error message. To do that, add a `handleErrorUpdate` method to the action class
+of the `modules/comment/actions/actions.class.php` file:
 
     [php]
     public function handleErrorUpdate()
@@ -341,7 +450,8 @@ By itself, the controller will redirect the user to a `updateError.php` template
       $this->forward('comment', 'create');
     }
 
-Now to finish, open again the `modules/comment/templates/editSuccess.php` template and insert at the top:
+Now to finish, open again the `modules/comment/templates/editSuccess.php` template
+and insert at the top:
 
     [php]
     <?php if ($sf_request->hasErrors()): ?>  
@@ -359,14 +469,19 @@ You now have a robust form.
 
 ![Form validation](/images/tutorials/first_form_validation.gif)
 
-Find more about [form validation](http://www.symfony-project.com/book/trunk/10-Forms).
+Find more about [form validation](http://www.symfony-project.com/book/1.1/10-Forms).
 
 Change the URL aspect
 ---------------------
 
-Did you notice the way the URLs are rendered? You can make them more user and search engine-friendly. Let's use the post title as an URL for posts. 
+Did you notice the way the URLs are rendered? You can make them more user and
+search engine-friendly. Let's use the post title as an URL for posts.
 
-The problem is that post titles can contain special characters like spaces. If you just escape them, the URL will show some ugly `%20` kind of things, so you'd better extend the model to add a new method to the `Post` object to get a clean, stripped title. To do that, edit the file `Post.php` located in the `sf_sandbox/lib/model/` directory, and add the following method:
+The problem is that post titles can contain special characters like spaces.
+If you just escape them, the URL will show some ugly `%20` kind of things,
+so you'd better extend the model to add a new method to the `Post` object
+to get a clean, stripped title. To do that, edit the file `Post.php` located
+in the `sf_sandbox/lib/model/` directory, and add the following method:
 
     [php]
     public function getStrippedTitle()
@@ -386,7 +501,8 @@ The problem is that post titles can contain special characters like spaces. If y
       return $result;
     }
 
-Now you can create a `permalink` action for the `post` module. Add the following method to the `modules/post/actions/actions.class.php`:
+Now you can create a `permalink` action for the `post` module. Add the following
+method to the `modules/post/actions/actions.class.php`:
 
     [php]
     public function executePermalink($request)
@@ -406,7 +522,9 @@ Now you can create a `permalink` action for the `post` module. Add the following
       $this->forward404();
     }
 
-The post list can call this `permalink` action instead of the `show` one for each post. In `modules/post/templates/listSuccess.php`, delete the `id` table header and cell, and change the `Title` cell from:
+The post list can call this `permalink` action instead of the `show` one for
+each post. In `modules/post/templates/listSuccess.php`, delete the `id` table
+header and cell, and change the `Title` cell from:
 
     [php]
     <td><?php echo $post->getTitle() ?></td>
@@ -416,28 +534,32 @@ To:
     [php]
     <td><?php echo link_to($post->getTitle(), 'post/permalink?title='.$post->getStrippedTitle()) ?></td>
 
-Just one more step: Edit the `routing.yml` located in the `sf_sandbox/apps/frontend/config/` directory and add these rules at the top:
+Just one more step: Edit the `routing.yml` located in the
+`sf_sandbox/apps/frontend/config/` directory and add these rules at the top:
 
     list_of_posts:
       url:   /latest_posts
       param: { module: post, action: list }
 
     post:
-      url:   /weblog/:title
+      url:   /blog/:title
       param: { module: post, action: permalink }
 
 Now navigate again in your application and watch the URLs.
 
 ![Routed URLs](/images/tutorials/first_routing.gif)
 
-Find more about [smart URLs](http://www.symfony-project.com/book/trunk/09-Links-and-the-Routing-System).
+Find more about [smart URLs](http://www.symfony-project.com/book/1.1/09-Links-and-the-Routing-System).
 
 Cleanup in the frontend
 -----------------------
 
-Well, if this is a weblog, then everybody has the right to post. This isn't exactly what you thought about, right? Ok, let's clean up our templates a bit.
+Well, if this is a blog, then everybody has the right to post.
+This isn't exactly what you thought about, right? Ok, let's clean up our
+templates a bit.
 
-In the template `modules/post/templates/showSuccess.php`, get rid of the 'edit' link by removing the line:
+In the template `modules/post/templates/showSuccess.php`, get rid of the
+'edit' link by removing the line:
 
     [php]
     <?php echo link_to('edit', 'post/edit?id='.$post->getId()) ?>
@@ -459,15 +581,18 @@ All right, readers cannot post anymore.
 Generation of the backend
 -------------------------
 
-For you to write posts, let's create a backend application by typing in the command line (still from the `sf_sandbox` project directory):
+For you to write posts, let's create a backend application by typing in the
+command line (still from the `sf_sandbox` project directory):
 
     $ php symfony generate:app backend
     $ php symfony propel:init-admin backend post Post
     $ php symfony propel:init-admin backend comment Comment
 
-This time, we use the [admin generator](http://www.symfony-project.com/book/trunk/14-Generators). It offers much more features and customization than the very basic CRUD generator.
+This time, we use the [admin generator](http://www.symfony-project.com/book/1.1/14-Generators).
+It offers much more features and customization than the basic CRUD generator.
 
-Just like you did for the `frontend` application, edit the layout (`apps/backend/templates/layout.php`) to add global navigation:
+Just like you did for the `frontend` application, edit the layout (`apps/backend/templates/layout.php`)
+to add global navigation:
 
     <div id="navigation">
       <ul style="list-style:none;">
@@ -485,7 +610,8 @@ You can access your new back-office application in the development environment b
     
 ![basic generated admin](/images/tutorials/first_basic_admin.gif)
 
-The great advantage of the generated admin is that you can easily customize it by editing a configuration file.
+The great advantage of the generated admin is that you can easily customize it by
+editing a configuration file.
 
 Change the `backend/modules/post/config/generator.yml` to:
 
@@ -517,7 +643,9 @@ Change the `backend/modules/post/config/generator.yml` to:
             body:         { type: textarea_tag, params: size=50x10 }
             created_at:   { type: input_date_tag, params: rich=on }
 
-Note that among the existing columns of the `Post` table, the admin will look for a `nb_comments`. There is no associated getter yet, but it is simple to add to the `sf_sandbox/lib/model/Post.php`:
+Note that among the existing columns of the `Post` table, the admin will look
+for a `nb_comments`. There is no associated getter yet, but it is simple to
+add to the `sf_sandbox/lib/model/Post.php`:
 
     [php]
     public function getNbComments()
@@ -539,13 +667,17 @@ In `apps/backend/modules/post/config/`, add a `security.yml` with the following 
     all:
       is_secure: on
 
-Repeat the operation for the `comment` module. Now you can't access these modules anymore unless you are logged.
+Repeat the operation for the `comment` module. Now you can't access these modules
+anymore unless you are logged.
 
-But the logging action doesn't exist! Ok, so you can easily add it. First, create the `security` module skeleton:
+But the logging action doesn't exist! Ok, so you can easily add it.
+First, create the `security` module skeleton:
 
     $ php symfony generate:module backend security
 
-This new module will be used to handle the login form and the request. Edit the `apps/backend/modules/security/templates/indexSuccess.php` to create the login form:
+This new module will be used to handle the login form and the request.
+Edit the `apps/backend/modules/security/templates/indexSuccess.php` to
+create the login form:
 
     [php]
     <h2>Authentication</h2>
@@ -564,7 +696,8 @@ This new module will be used to handle the login form and the request. Edit the 
       <?php echo submit_tag('submit', 'class=default') ?>
     </form>
 
-Add the `login` action that is called by the form to the `security` module (in the `apps/backend/modules/security/actions/actions.class.php` file):
+Add the `login` action that is called by the form to the `security` module
+(in the `apps/backend/modules/security/actions/actions.class.php` file):
 
     [php]
     public function executeLogin($request)
@@ -590,31 +723,39 @@ Like for the `main` module, remove the default code in the `index` action:
     {
     }
 
-The last thing to do is to set the `security` module as the default module to handle login actions. To do that, open the `apps/backend/config/settings.yml` configuration file and add:
+The last thing to do is to set the `security` module as the default module to
+handle login actions. To do that, open the `apps/backend/config/settings.yml`
+configuration file and add:
 
     all:
       .actions:
         login_module:           security
-        login_action:           index    
+        login_action:           index
 
-At that point, if you try to access the Posts management, you will have to enter a login and a password:
+At that point, if you try to access the Posts management, you will have to enter
+a login and a password:
 
 ![login form](/images/tutorials/first_login.gif)
 
-Find more about [security](http://www.symfony-project.com/book/trunk/06-Inside-the-Controller-Layer#Action%20Security).
+Find more about [security](http://www.symfony-project.com/book/1.1/06-Inside-the-Controller-Layer#Action%20Security).
 
 Conclusion
 ----------
 
-Ok, the hour is out. You made it. Now you can use both applications in the production environment and play with them:
+Ok, the hour is out. You made it. Now you can use both applications in the production
+environment and play with them:
 
     frontend:   http://localhost/sf_sandbox/web/index.php/
     backend:    http://localhost/sf_sandbox/web/backend.php/
 
-At this point, if you meet an error, it might be because you changed the model after some actions were put in cache (cache isn't activated in the development environment). To clear the cache, simply type:
+At this point, if you meet an error, it might be because you changed the model after
+some actions were put in cache (cache isn't activated in the development environment).
+To clear the cache, simply type:
 
     $ php symfony cc
 
-See, the application is fast and runs smoothly. Pretty darn cool, isn't it? Feel free to explore the code, add new modules, and change the design of pages. 
+See, the application is fast and runs smoothly. Pretty darn cool, isn't it?
+Feel free to explore the code, add new modules, and change the design of pages. 
 
-And don't forget to mention your working symfony applications in the symfony Wiki!
+And don't forget to mention your working symfony applications in the
+[symfony Wiki](http://trac.symfony-project.com/wiki/ApplicationsDevelopedWithSymfony)!
