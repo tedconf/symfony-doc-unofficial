@@ -628,7 +628,7 @@ To enable behaviors in your model classes, you must modify one setting in the `c
 
     propel.builder.AddBehaviors = true     // Default value is false
 
-There is no behavior bundled by default in symfony, but they can be installed via plug-ins. Once a behavior plug-in is installed, you can assign the behavior to a class with a single line. For instance, if you install the sfPropelParanoidBehaviorPlugin in your application, you can extend an Article class with this behavior by adding the following at the end of the `Article.class.php`:
+There is no behavior bundled by default in symfony, but they can be installed via plug-ins. Once a behavior plug-in is installed, you can assign the behavior to a class with a single line. For instance, if you install the sfPropelParanoidBehaviorPlugin in your application, you can extend an `Article` class with this behavior by adding the following at the end of the `Article.class.php`:
 
     [php]
     sfPropelBehavior::add('Article', array(
@@ -636,6 +636,8 @@ There is no behavior bundled by default in symfony, but they can be installed vi
     ));
 
 After rebuilding the model, deleted `Article` objects will remain in the database, invisible to the queries using the ORM, unless you temporarily disable the behavior with `sfPropelParanoidBehavior::disable()`.
+
+**New in symfony 1.1**: Alternatively, you can also declare behaviors directly in the `schema.yml`, by listing them under the `_behaviors` key (see Listing 8-34 below).
 
 Check the list of symfony plug-ins in the wiki to find behaviors ([http://trac.symfony-project.com/wiki/SymfonyPlugins#Propelbehaviorplugins](http://trac.symfony-project.com/wiki/SymfonyPlugins#Propelbehaviorplugins)). Each has its own documentation and installation guide.
 
@@ -847,13 +849,28 @@ Listing 8-33 - Explicit i18n Mechanism
         culture:  { isCulture: true, type: varchar(7), required: true,primaryKey: true }
         name:     varchar(50)
 
+### Behaviors (new in symfony 1.1)
+
+Behaviors are model modifiers provided by plug-ins that add new capabilities to your Propel classes. Chapter 17 explains more about behaviors. You can define behaviors right in the schema, by listing them for each table, together with their parameters, under the `_behaviors` key. Listing 8-34 gives an example by extending the `BlogArticle` class with the `paranoid` behavior.
+
+Listing 8-34 - Behaviors Declaration
+
+{{{
+propel:
+  blog_article:
+    title:          varchar(50)
+    _behaviors:
+      paranoid:     { column: deleted_at }
+}}}
+
+
 ### Beyond the schema.yml: The schema.xml
 
 As a matter of fact, the schema.yml format is internal to symfony. When you call a propel- command, symfony actually translates this file into a `generated-schema.xml` file, which is the type of file expected by Propel to actually perform tasks on the model.
 
-The `schema.xml` file contains the same information as its YAML equivalent. For example, Listing 8-3 is converted to the XML file shown in Listing 8-34.
+The `schema.xml` file contains the same information as its YAML equivalent. For example, Listing 8-3 is converted to the XML file shown in Listing 8-35.
 
-Listing 8-34 - Sample `schema.xml`, Corresponding to Listing 8-3
+Listing 8-35 - Sample `schema.xml`, Corresponding to Listing 8-3
 
     [xml]
     <?xml version="1.0" encoding="UTF-8"?>

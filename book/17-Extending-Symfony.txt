@@ -752,6 +752,47 @@ Listing 17-27 - Customizing a Plug-In Action
       }
     }
 
+>**SIDEBAR**
+>**New in symfony 1.1**: Customizing the plug-in schema
+>
+>When building the model, symfony will look for custom YAML files for each existing schema, including plug-in ones, following this rule:
+>
+>Original schema name                   | Custom schema name
+>-------------------------------------- | ------------------------------
+>config/schema.yml                      | schema.custom.yml
+>config/foobar_schema.yml               | foobar_schema.custom.yml
+>plugins/myPlugin/config/schema.yml     | myPlugin_schema.custom.yml
+>plugins/myPlugin/config/foo_schema.yml | myPlugin_foo_schema.custom.yml
+>
+>Custom schemas will be looked for in the application's and plugins' `config/` directories, so a plugin can override another plugin's schema, and there can be more than one customization per schema.
+>
+>Symfony will then merge the two schemas based on each table's `phpName`. The merging process allows for addition or modification of tables, columns, and column attibutes. For instance, the next listing shows how a custom schema can add columns to a table defined in a plug-in schema.
+>
+>    # Original schema, in plugins/myPlugin/config/schema.yml
+>    propel:
+>      article:
+>        _attributes:    { phpName: Article }
+>        title:          varchar(50)
+>        user_id:        { type: integer }
+>        created_at:
+>    
+>    # Custom schema, in myPlugin_schema.custom.yml
+>    propel:
+>      article:
+>        _attributes:    { phpName: Article, package: foo.bar.lib.model }
+>        stripped_title: varchar(50)
+>    
+>    # Resulting schema, merged internally and used for model and sql generation
+>    propel:
+>      article:
+>        _attributes:    { phpName: Article, package: foo.bar.lib.model }
+>        title:          varchar(50)
+>        user_id:        { type: integer }
+>        created_at:
+>        stripped_title: varchar(50)
+>
+>As the merging process uses the table's `phpName` as a key, you can even change the name of a plugin table in the database, provided that you keep the same `phpName` in the schema.
+
 ### How to Write a Plug-In
 
 Only plug-ins packaged as PEAR packages can be installed with the `plugin:install` task. Remember that such plug-ins can be distributed via the symfony wiki, a PEAR channel, or a simple file download. So if you want to author a plug-in, it is better to publish it as a PEAR package than as a simple archive. In addition, PEAR packaged plug-ins are easier to upgrade, can declare dependencies, and automatically deploy assets in the `web/` directory.
