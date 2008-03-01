@@ -18,9 +18,9 @@ Installing the Sandbox
 
 If you just want to see what symfony is capable of, you'll probably go for the fast installation. In that case, you need the sandbox.
 
-The sandbox is a simple archive of files. It contains an empty symfony project including all the required libraries (symfony, pake, lime, Creole, Propel, and Phing), a default application, and basic configuration. It will work out of the box, without specific server configuration or any additional packages.
+The sandbox is a simple archive of files. It contains an empty symfony project including all the required libraries (symfony, lime, Creole, Propel, and Phing), a default application, and basic configuration. It will work out of the box, without specific server configuration or any additional packages.
 
-To install it, download the sandbox archive from [http://www.symfony-project.org/get/sf_sandbox.tgz](http://www.symfony-project.org/get/sf_sandbox.tgz). Unpack it under the root web directory configured for your server (usually `web/` or `www/`). For the purposes of uniformity, this chapter will assume you unpacked it to the directory `sf_sandbox/`.
+To install it, download the sandbox archive from [http://www.symfony-project.org/get/sf_sandbox_1_1.tgz](http://www.symfony-project.org/get/sf_sandbox_1_1.tgz). Unpack it under the root web directory configured for your server (usually `web/` or `www/`). For the purposes of uniformity, this chapter will assume you unpacked it to the directory `sf_sandbox/`.
 
 >**CAUTION**
 >Having all the files under the root web directory is fine for your own tests in a local host, but is a bad practice in a production server. It makes all the internals of your application visible to end users.
@@ -35,7 +35,7 @@ On Windows, issue this command:
 
 You should see the sandbox version number:
 
-    symfony version 1.0.0
+    symfony version 1.1.0 (/path/to/the/symfony/lib/dir/used/by/the/sandbox)
 
 Now make sure that your web server can browse the sandbox by requesting this URL:
 
@@ -51,7 +51,7 @@ The sandbox is intended for you to practice with symfony on a local computer, no
 
 To uninstall a sandbox, just remove the `sf_sandbox/` directory from your `web/` folder.
 
-Installing the Symfony Libraries
+Installing the symfony Libraries
 --------------------------------
 
 When developing an application, you will probably need to install symfony twice: once for your development environment and once for the host server (unless your host already has symfony installed). For each server, you will probably want to avoid duplication by keeping all the symfony files in a single place, whether you develop only one application or several applications.
@@ -65,15 +65,18 @@ When it comes to installing the libraries for a real application development, yo
 
 Symfony integrates a few other packages:
 
-  * pake is a CLI utility.
   * lime is a unit testing utility.
   * Creole is a database abstraction engine. Just like PHP Data Objects (PDO), it provides an interface between your code and the database SQL code, and makes it possible to switch to another engine.
   * Propel is for ORM. It provides object persistence and query service.
   * Phing is a build system used by Propel to generate the model classes.
 
-Pake and lime are developed by the symfony team. Creole, Propel, and Phing come from another team and are released under the GNU Lesser Public General License (LGPL). All these packages are bundled with symfony.
+Lime are developed by the symfony team. Creole, Propel, and Phing come from another team and are released under the GNU Lesser Public General License (LGPL). All these packages are bundled with symfony.
 
-### Installing the Symfony PEAR Package
+>**TIP**
+>The symfony framework is licensed under a MIT license.
+>All the copyrights for the bundled third party libraries can be found in the `COPYRIGHT` file and the associated licenses are stored in the `licenses/` directory.
+
+### Installing the symfony PEAR Package
 
 The symfony PEAR package contains the symfony libraries and all its dependencies. It also contains a script that will extend your CLI to include the `symfony` command.
 
@@ -89,26 +92,23 @@ Now you are ready to install the latest stable version of symfony. Issue this co
 
     > pear install symfony/symfony
 
-    downloading symfony-1.0.0.tgz ...
-    Starting to download symfony-1.0.0.tgz (1,283,270 bytes)
+    downloading symfony-1.1.0.tgz ...
+    Starting to download symfony-1.1.0.tgz (1,283,270 bytes)
     .................................................................
     .................................................................
     .............done: 1,283,270 bytes
-    install ok: channel://pear.symfony-project.com/symfony-1.0.0
+    install ok: channel://pear.symfony-project.com/symfony-1.1.0
 
 That's it. The symfony files and CLI are installed. Check that the installation succeeded by calling the new `symfony` command line, asking for the version number:
 
     > symfony -V
 
-    symfony version 1.0.0
-
->**TIP**
->If you prefer to install the most recent beta, which has the latest bug fixes and enhancements, type `pear install symfony/symfony-beta` instead. Beta releases are not completely stable and are generally not recommended for production environments.
+    symfony version 1.1.0 (/path/to/the/pear/symfony/lib/dir)
 
 The symfony libraries are now installed in directories as follows:
 
   * `$php_dir/symfony/` contains the main libraries.
-  * `$data_dir/symfony/` contains the skeleton of symfony applications; default modules; and configuration, i18n data, and so on.
+  * `$data_dir/symfony/` contains the web assets used by symfony default modules; and command line scripts.
   * `$doc_dir/symfony/` contains the documentation.
   * `$test_dir/symfony/` contains unit tests.
 
@@ -116,32 +116,35 @@ The _dir variables are part of your PEAR configuration. To see their values, typ
 
     > pear config-show
 
-### Checking Out Symfony from the SVN Repository
+### Checking Out symfony from the SVN Repository
 
 For production servers, or when PEAR is not an option, you can download the latest version of the symfony libraries directly from the symfony Subversion repository by requesting a checkout:
 
     > mkdir /path/to/symfony
     > cd /path/to/symfony
-    > svn checkout http://svn.symfony-project.com/tags/RELEASE_1_0_0/ .
+    > svn checkout http://svn.symfony-project.com/tags/RELEASE_1_1_0/ .
 
 The `symfony` command, available only for PEAR installations, is a call to the `/path/to/symfony/data/bin/symfony` script. So the following would be the equivalent to the `symfony -V` command for an SVN installation:
 
     > php /path/to/symfony/data/bin/symfony -V
 
-    symfony version 1.0.0
+    symfony version 1.1.0 (/path/to/the/svn/symfony/lib/dir)
 
-If you chose an SVN installation, you probably already have an existing symfony project. For this project to make use of the symfony files, you need to change the two variables defined in your project's `config/config.php` file, as follows:
+If you chose an SVN installation, you probably already have an existing symfony project. For this project to make use of the symfony files, you need to change the a path defined in your project's `lib/ProjectConfiguration.class.php` file, as follows:
 
     [php]
     <?php
 
-    $sf_symfony_lib_dir  = '/path/to/symfony/lib/';
-    $sf_symfony_data_dir = '/path/to/symfony/data/';
+    require_once '/path/to/symfony/lib/autoload/sfCoreAutoload.class.php';
+    sfCoreAutoload::register();
+
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
 
 Chapter 19 proposes other ways to link a project with a symfony installation (including symbolic links and relative paths).
 
 >**TIP**
->Alternatively, you can also download the PEAR package ([http://pear.symfony-project.com/get/symfony-1.0.0.tgz](http://pear.symfony-project.com/get/symfony-1.0.0.tgz)) and unpack it somewhere. You will have the same result as with a checkout.
+>Alternatively, you can also download the PEAR package ([http://pear.symfony-project.com/get/symfony-1.1.0.tgz](http://pear.symfony-project.com/get/symfony-1.1.0.tgz)) and unpack it somewhere. You will have the same result as with a checkout.
 
 Setting Up an Application
 -------------------------
@@ -156,13 +159,13 @@ For a PEAR installation, issue these commands:
 
     > mkdir ~/myproject
     > cd ~/myproject
-    > symfony init-project myproject
+    > symfony generate:project myproject
 
 For an SVN installation, create a project with these commands:
 
     > mkdir ~/myproject
     > cd ~/myproject
-    > php /path/to/symfony/data/bin/symfony init-project myproject
+    > php /path/to/symfony/data/bin/symfony generate:project myproject
 
 The `symfony` command must always be called from the project's root directory (`myproject/` in the preceding examples), because all the tasks performed by this command are project-specific.
 
@@ -181,18 +184,18 @@ Symfony will create a directory structure that looks like this:
     web/
 
 >**TIP**
->The `init-project` task adds a `symfony` script in the project root directory. This PHP script does the same as the `symfony` command installed by PEAR, so you can call `php symfony` instead of `symfony` if you don't have native command-line support (for SVN installations).
+>The `generate:project` task adds a `symfony` script in the project root directory. This PHP script does the same as the `symfony` command installed by PEAR, so you can call `php symfony` instead of `symfony` if you don't have native command-line support (for SVN installations).
 
 ### Creating the Application
 
-The project is not yet ready to be viewed, because it requires at least one application. To initialize it, use the `symfony init-app` command and pass the name of the application as an argument:
+The project is not yet ready to be viewed, because it requires at least one application. To initialize it, use the `symfony generate:app` command and pass the name of the application as an argument:
 
-    > symfony init-app myapp
+    > symfony generate:app frontend
 
-This will create a `myapp/` directory in the `apps/` folder of the project root, with a default application configuration and a set of directories ready to host the file of your website:
+This will create a `frontend/` directory in the `apps/` folder of the project root, with a default application configuration and a set of directories ready to host the file of your website:
 
     apps/
-      myapp/
+      frontend/
         config/
         i18n/
         lib/
@@ -203,9 +206,9 @@ Some PHP files corresponding to the front controllers of each default environmen
 
     web/
       index.php
-      myapp_dev.php
+      frontend_dev.php
 
-`index.php` is the production front controller of the new application. Because you created the first application of the project, symfony created a file called `index.php` instead of `myapp.php` (if you now add a new application called `mynewapp`, the new production front controller will be named `mynewapp.php`). To run your application in the development environment, call the front controller `myapp_dev.php`. You'll learn more about these environments in Chapter 5.
+`index.php` is the production front controller of the new application. Because you created the first application of the project, symfony created a file called `index.php` instead of `frontend.php` (if you now add a new application called `backend`, the new production front controller will be named `backend.php`). To run your application in the development environment, call the front controller `frontend_dev.php`. You'll learn more about these environments in Chapter 5.
 
 Configuring the Web Server
 --------------------------
@@ -242,7 +245,7 @@ In the configuration in Listing 3-1, the `$sf_symfony_data_dir` placeholder must
 
 Restart Apache, and that's it. Your newly created application can now be called and viewed through a standard web browser at the following URL:
 
-    http://localhost/myapp_dev.php/
+    http://localhost/frontend_dev.php/
 
 You should see a congratulations page similar to the one shown earlier in Figure 3-1.
 
@@ -258,7 +261,7 @@ You should see a congratulations page similar to the one shown earlier in Figure
 >    LoadModule rewrite_module modules/mod_rewrite.so
 >
 >
->For Internet Information Services (IIS), you will need `isapi/rewrite` installed and running. Check the symfony online documentation for a detailed IIS installation guide.
+>For Internet Information Services (IIS), you will need `isapi/rewrite` installed and running. Check the symfony online cookbook for a detailed IIS installation guide.
 
 ### Configuring a Shared-Host Server
 
@@ -269,17 +272,18 @@ Setting up an application in a shared host is a little trickier, since the host 
 
 Let's imagine that your shared host requires that the web folder is named `www/` instead of `web/`, and that it doesn't give you access to the `httpd.conf` file, but only to an `.htaccess` file in the web folder.
 
-In a symfony project, every path to a directory is configurable. Chapter 19 will tell you more about it, but in the meantime, you can still rename the `web` directory to `www` and have the application take it into account by changing the configuration, as shown in Listing 3-2. These lines are to be added to the end of the application `config.php` file.
+In a symfony project, every path to a directory is configurable. Chapter 19 will tell you more about it, but in the meantime, you can still rename the `web` directory to `www` and have the application take it into account by changing the configuration, as shown in Listing 3-2. These lines are to be added to the end of the `lib/ProjectConfiguration.class.php` file.
 
-Listing 3-2 - Changing the Default Directory Structure Settings, in `apps/myapp/config/config.php`
+Listing 3-2 - Changing the Default Directory Structure Settings, in `lib/ProjectConfiguration.class.php`
 
     [php]
-    $sf_root_dir = sfConfig::get('sf_root_dir');
-    sfConfig::add(array(
-      'sf_web_dir_name' => $sf_web_dir_name = 'www',
-      'sf_web_dir'      => $sf_root_dir.DIRECTORY_SEPARATOR.$sf_web_dir_name,
-      'sf_upload_dir'   => $sf_root_dir.DIRECTORY_SEPARATOR.$sf_web_dir_name.DIRECTORY_SEPARATOR.sfConfig::get('sf_upload_dir_name'),
-    ));
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+       public function setup()
+       {
+         $this->setWebDir($this->getRootDir().'/www');
+       }
+    }
 
 The project web root contains an .htaccess file by default. It is shown in Listing 3-3. Modify it as necessary to match your shared host requirements.
 
@@ -290,10 +294,14 @@ Listing 3-3 - Default `.htaccess` Configuration, Now in `myproject/www/.htaccess
     <IfModule mod_rewrite.c>
       RewriteEngine On
 
+      # uncomment the following line, if you are having trouble
+      # getting no_script_name to work
+      #RewriteBase /
+
       # we skip all files with .something
-      RewriteCond %{REQUEST_URI} \..+$
-      RewriteCond %{REQUEST_URI} !\.html$
-      RewriteRule .* - [L]
+      #RewriteCond %{REQUEST_URI} \..+$
+      #RewriteCond %{REQUEST_URI} !\.html$
+      #RewriteRule .* - [L]
 
       # we check if the .html version is here (caching)
       RewriteRule ^$ index.html [QSA]
@@ -304,12 +312,9 @@ Listing 3-3 - Default `.htaccess` Configuration, Now in `myproject/www/.htaccess
       RewriteRule ^(.*)$ index.php [QSA,L]
     </IfModule>
 
-    # big crash from our front web controller
-    ErrorDocument 500 "<h2>Application error</h2>symfony applicationfailed to start properly"
-
 You should now be ready to browse your application. Check the congratulation page by requesting this URL:
 
-    http://www.example.com/myapp_dev.php/
+    http://www.example.com/frontend_dev.php/
 
 >**SIDEBAR**
 >Other Server Configurations
