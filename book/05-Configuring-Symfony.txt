@@ -154,7 +154,7 @@ Listing 5-10 - Category Headers Are Only There for Readability and Are Actually 
 >**SIDEBAR**
 >And if you don't like YAML
 >
->YAML is just an interface to define settings to be used by PHP code, so the configuration defined in YAML files ends up being transformed into PHP. After browsing an application, check its cached configuration (in `cache/myapp/dev/config/`, for instance). You will see the PHP files corresponding to your YAML configuration. You will learn more about the configuration cache later in this chapter.
+>YAML is just an interface to define settings to be used by PHP code, so the configuration defined in YAML files ends up being transformed into PHP. After browsing an application, check its cached configuration (in `cache/frontend/dev/config/`, for instance). You will see the PHP files corresponding to your YAML configuration. You will learn more about the configuration cache later in this chapter.
 >
 >The good news is that if you don't want to use YAML files, you can still do what the configuration files do by hand, in PHP or via another format (XML, INI, and so on). Throughout this book, you will meet alternative ways to define configuration without YAML, and you will even learn to replace the symfony configuration handlers (in Chapter 19). If you use them wisely, these tricks will enable you to bypass configuration files or define your own configuration format.
 
@@ -225,7 +225,7 @@ Listing 5-11 - The Default Production Front Controller
     <?php
 
     define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
-    define('SF_APP',         'myapp');
+    define('SF_APP',         'frontend');
     define('SF_ENVIRONMENT', 'prod');
     define('SF_DEBUG',       false);
 
@@ -233,7 +233,7 @@ Listing 5-11 - The Default Production Front Controller
 
     sfContext::getInstance()->getController()->dispatch();
 
-After defining the name of the application (`myapp`) and the environment (`prod`), the general configuration file is called before the dispatching. So a few useful constants are defined here:
+After defining the name of the application (`frontend`) and the environment (`prod`), the general configuration file is called before the dispatching. So a few useful constants are defined here:
 
   * `SF_ROOT_DIR`: Project root directory (normally, should remain at its default value, unless you change the file structure).
   * `SF_APP`: Application name in the project. Necessary to compute file paths.
@@ -270,7 +270,7 @@ Chapter 19 will give you more information about how to tweak symfony to make it 
 
 #### Main Application Configuration
 
-The main application configuration is stored in files located in the `myproject/apps/myapp/config/` directory:
+The main application configuration is stored in files located in the `myproject/apps/frontend/config/` directory:
 
   * `app.yml`: This file should contain the application-specific configuration; that is, global variables defining business or applicative logic specific to an application, which don't need to be stored in a database. Tax rates, shipping fares, and e-mail addresses are often stored in this file. It is empty by default.
   * `config.php`: This file bootstraps the application, which means that it does all the very basic initializations to allow the application to start. This is where you can customize your directory structure or add application-specific constants (Chapter 19 provides more details). It starts by including the project's `config.php`.
@@ -291,7 +291,7 @@ Note that the activation of the i18n features is set in the `settings.yml` file.
 
 #### Additional Application Configuration
 
-A second set of configuration files is in the symfony installation directory (in `$sf_symfony_ data_dir/config/`) and doesn't appear in the configuration directory of your applications. The settings defined there are defaults that seldom need to be modified, or that are global to all projects. However, if you need to modify them, just create an empty file with the same name in your `myproject/apps/myapp/config/` directory, and override the settings you want to change. The settings defined in an application always have precedence over the ones defined in the framework. The following are the configuration files in the symfony installation config/ directory:
+A second set of configuration files is in the symfony installation directory (in `$sf_symfony_ data_dir/config/`) and doesn't appear in the configuration directory of your applications. The settings defined there are defaults that seldom need to be modified, or that are global to all projects. However, if you need to modify them, just create an empty file with the same name in your `myproject/apps/frontend/config/` directory, and override the settings you want to change. The settings defined in an application always have precedence over the ones defined in the framework. The following are the configuration files in the symfony installation config/ directory:
 
   * `autoload.yml`: This file contains the settings of the autoloading feature. This feature exempts you from requiring custom classes in your code if they are located in specific directories. It is described in detail in Chapter 19.
   * `constants.php`: This file contains the default application file structure. To override the settings of this file, use the application `config.php`, as explained in Chapter 19.
@@ -303,7 +303,7 @@ A second set of configuration files is in the symfony installation directory (in
 
 By default, a module has no specific configuration. But, if required, you can override some application-level settings for a given module. For instance, you might do this to change the HTML description of all the actions of a module, or to include a specific JavaScript file. You can also choose to add new parameters restricted to a specific module to preserve encapsulation.
 
-As you may have guessed, module configuration files must be located in a `myproject/apps/myapp/modules/mymodule/config/` directory. These files are as follows:
+As you may have guessed, module configuration files must be located in a `myproject/apps/frontend/modules/mymodule/config/` directory. These files are as follows:
 
   * `generator.yml`: For modules generated according to a database table (scaffoldings and administrations), this file defines how the interface displays rows and fields, and which interactions are proposed to the user (filters, sorting, buttons, and so on). Chapter 14 will tell you more about it.
   * `module.yml`: This file contains custom parameters specific to a module (equivalent to the `app.`yml, but at the module level) and action configuration. Chapter 6 provides more details.
@@ -339,7 +339,7 @@ The test environment differs from the dev and prod environment in other ways. Yo
 
 To change the environment in which you're browsing your application, just change the front controller. Until now, you have seen only the development environment, since the URLs used in the example called the development front controller:
 
-    http://localhost/myapp_dev.php/mymodule/index
+    http://localhost/frontend_dev.php/mymodule/index
 
 However, if you want to see how the application reacts in production, call the production front controller instead:
 
@@ -355,9 +355,9 @@ If your web server has mod_rewrite enabled, you can even use the custom symfony 
 >Don't mix up the notions of environment and server. In symfony, different environments are different configurations, and correspond to a front controller (the script that executes the request). Different servers correspond to different domain names in the URL.
 >
 >
->     http://localhost/myapp_dev.php/mymodule/index
->            _________ _____________
->             server    environment
+>     http://localhost/frontend_dev.php/mymodule/index
+>            _________ _______________
+>             server     environment
 >
 >
 >Usually, developers work on applications in a development server, disconnected from the Internet and where all the server and PHP configuration can be changed at will. When the time comes for releasing the application to production, the application files are transferred to the production server and made accessible to the end users.
@@ -368,15 +368,15 @@ If your web server has mod_rewrite enabled, you can even use the custom symfony 
 
 ### Configuration Cascade
 
-The same setting can be defined more than once, in different places. For instance, you may want to set the mime-type of your pages to `text/html` for all of the application, except for the pages of an `rss` module, which will need a `text/xml` mime-type. Symfony gives you the ability to write the first setting in `myapp/config/view.yml` and the second in `myapp/modules/rss/config/view.yml`. The configuration system knows that a setting defined at the module level must override a setting defined at the application level.
+The same setting can be defined more than once, in different places. For instance, you may want to set the mime-type of your pages to `text/html` for all of the application, except for the pages of an `rss` module, which will need a `text/xml` mime-type. Symfony gives you the ability to write the first setting in `frontend/config/view.yml` and the second in `frontend/modules/rss/config/view.yml`. The configuration system knows that a setting defined at the module level must override a setting defined at the application level.
 
 In fact, there are several configuration levels in symfony:
 
   * Granularity levels:
     * The default configuration located in the framework
     * The global configuration for the whole project (in `myproject/config/`)
-    * The local configuration for an application of the project (in `myproject/apps/myapp/config/`)
-    * The local configuration restricted to a module (in `myproject/apps/myapp/modules/mymodule/config/`)
+    * The local configuration for an application of the project (in `myproject/apps/frontend/config/`)
+    * The local configuration restricted to a module (in `myproject/apps/frontend/modules/mymodule/config/`)
   * Environment levels:
     * Specific to one environment
     * For all environments
@@ -417,7 +417,7 @@ Listing 5-13 - The Default Configuration, in `$sf_symfony_data_dir/config/settin
 
 These default definitions are repeated in the project, application, and module configuration files as comments, as shown in Listing 5-14, so that you know that some parameters are defined by default and that they can be modified.
 
-Listing 5-14 - The Default Configuration, Repeated for Information, in `myapp/config/settings.yml`
+Listing 5-14 - The Default Configuration, Repeated for Information, in `frontend/config/settings.yml`
 
     #all:
      #  default_module:         default
@@ -549,7 +549,7 @@ Refer to Chapter 19 for the meanings of the settings found in the `settings.yml`
 
 ### Custom Application Settings and app.yml
 
-Most of the settings related to the features of an application should be stored in the `app.yml` file, located in the `myproject/apps/myapp/config/` directory. This file is environment-dependent and empty by default. Put in every setting that you want to be easily changed, and use the `sfConfig` class to access these settings from your code. Listing 5-19 shows an example.
+Most of the settings related to the features of an application should be stored in the `app.yml` file, located in the `myproject/apps/frontend/config/` directory. This file is environment-dependent and empty by default. Put in every setting that you want to be easily changed, and use the `sfConfig` class to access these settings from your code. Listing 5-19 shows an example.
 
 Listing 5-19 - Sample `app.yml` to Define Credit Card Operators Accepted for a Given Site
 

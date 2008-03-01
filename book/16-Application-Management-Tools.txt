@@ -16,7 +16,7 @@ The only way to understand what went wrong during the execution of a request is 
 
 PHP has an `error_reporting` parameter, defined in `php.ini`, that specifies which PHP events are logged. Symfony allows you to override this value, per application and environment, in the `settings.yml` file, as shown in Listing 16-1.
 
-Listing 16-1 - Setting the Error Reporting Level, in `myapp/config/settings.yml`
+Listing 16-1 - Setting the Error Reporting Level, in `frontend/config/settings.yml`
 
     prod:
      .settings:
@@ -32,11 +32,11 @@ The location of the PHP log files depends on your `php.ini` configuration. If yo
 
 ### Symfony Logs
 
-In addition to the standard PHP logs, symfony can log a lot of custom events. You can find all the symfony logs under the `myproject/log/` directory. There is one file per application and per environment. For instance, the development environment log file of the `myapp` application is named `myapp_dev.log`, the production one is named `myapp_prod.log`, and so on.
+In addition to the standard PHP logs, symfony can log a lot of custom events. You can find all the symfony logs under the `myproject/log/` directory. There is one file per application and per environment. For instance, the development environment log file of the `frontend` application is named `frontend_dev.log`, the production one is named `frontend_prod.log`, and so on.
 
 If you have a symfony application running, take a look at its log files. The syntax is very simple. For every event, one line is added to the log file of the application. Each line includes the exact time of the event, the nature of the event, the object being processed, and any additional relevant details. Listing 16-2 shows an example of symfony log file content.
 
-Listing 16-2 - Sample Symfony Log File Content, in `log/myapp_dev.php`
+Listing 16-2 - Sample Symfony Log File Content, in `log/frontend_dev.php`
 
     Nov 15 16:30:25 symfony [info ] {sfAction} call "barActions->executemessages()"
     Nov 15 16:30:25 symfony [debug] SELECT bd_message.ID, bd_message.SENDER_ID, bd_...
@@ -53,7 +53,7 @@ You can find many details in these files, including the actual SQL queries sent 
 
 There are eight levels of symfony log messages: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, and `debug`, which are the same as the `PEAR::Log` package ([http://pear.php.net/package/Log/](http://pear.php.net/package/Log/)) levels. You can configure the maximum level to be logged in each environment in the `factories.yml` configuration file of each application, as demonstrated in Listing 16-3.
 
-Listing 16-3 - Default Logging Configuration, in `myapp/config/factories.yml`
+Listing 16-3 - Default Logging Configuration, in `frontend/config/factories.yml`
 
     prod:
       logger:
@@ -132,7 +132,7 @@ For both better performance and security, you probably want to store symfony log
 
 Listing 16-6 - Launching Log Rotation
 
-    > symfony --period=7 --history=10 log-rotate myapp prod
+    > symfony --period=7 --history=10 log-rotate frontend prod
 
 The backup log files are stored in the `logs/history/` directory and suffixed with the date they were saved.
 
@@ -158,13 +158,13 @@ On the other hand, when the debug mode is off, processing is handled as follows:
 
 The debug mode is activated per application in the front controller. It is controlled by the value of the `SF_DEBUG` constant, as shown in Listing 16-7.
 
-Listing 16-7 - Sample Front Controller with Debug Mode On, in `web/myapp_dev.php`
+Listing 16-7 - Sample Front Controller with Debug Mode On, in `web/frontend_dev.php`
 
     [php]
     <?php
 
     define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
-    define('SF_APP',         'myapp');
+    define('SF_APP',         'frontend');
     define('SF_ENVIRONMENT', 'dev');
     define('SF_DEBUG',       true);
 
@@ -234,7 +234,7 @@ The color of the debug toolbar background depends on the highest level of log me
 
 To activate the web debug toolbar for an application, open the `settings.yml` file and look for the `web_debug` key. In the `prod` and `test` environments, the default value for `web_debug` is `off`, so you need to activate it manually if you want it. In the `dev` environment, the default configuration has it set to `on`, as shown in Listing 16-9.
 
-Listing 16-9 - Web Debug Toolbar Activation, in `myapp/config/settings.yml`
+Listing 16-9 - Web Debug Toolbar Activation, in `frontend/config/settings.yml`
 
     dev:
       .settings:
@@ -510,7 +510,7 @@ Listing 16-15 - Sample rsync Exclusion Settings, in `myproject/config/rsync_excl
     /log/*
     /stats/*
     /web/uploads/*
-    /web/myapp_dev.php
+    /web/frontend_dev.php
 
 >**NOTE**
 >The `cache/` and `log/` directories must not be synchronized with the development server, but they must at least exist in the production server. Create them by hand if the `myproject/` project tree structure doesn't contain them.

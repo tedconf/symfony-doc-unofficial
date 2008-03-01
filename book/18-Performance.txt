@@ -400,14 +400,14 @@ That means it's a good idea to clear only the cache files that really need to be
 
 Listing 18-14 - Clearing Only Selective Parts of the Cache
 
-    // Clear only the cache of the myapp application
-    > symfony clear-cache myapp
+    // Clear only the cache of the frontend application
+    > symfony clear-cache frontend
 
-    // Clear only the HTML cache of the myapp application
-    > symfony clear-cache myapp template
+    // Clear only the HTML cache of the frontend application
+    > symfony clear-cache frontend template
 
-    // Clear only the configuration cache of the myapp application
-    > symfony clear-cache myapp config
+    // Clear only the configuration cache of the frontend application
+    > symfony clear-cache frontend config
 
 You can also remove files by hand in the `cache/` directory, or clear template cache files selectively from the action with the `$cacheManager->remove()` method, as described in Chapter 12.
 
@@ -432,7 +432,7 @@ Listing 18-15 - Generating the Template Cache, in `batch/generate_cache.php`
     <?php
 
     define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
-    define('SF_APP',         'myapp');
+    define('SF_APP',         'frontend');
     define('SF_ENVIRONMENT', 'staging');
     define('SF_DEBUG',       false);
 
@@ -516,9 +516,9 @@ The methods of the `sfProcessCache` class work even if no accelerator is install
 Listing 18-18 - Using the Process Cache Safely
 
     [php]
-    if (sfProcessCache::has('myapp_parameters'))
+    if (sfProcessCache::has('frontend_parameters'))
     {
-      $params = sfProcessCache::get('myapp_parameters');
+      $params = sfProcessCache::get('frontend_parameters');
     }
     else
     {
@@ -535,7 +535,7 @@ The default symfony configuration activates the most common features of a web ap
 
 For instance, if your application doesn't use the session mechanism, or if you want to start the session handling by hand, you should turn the `auto_start` setting to `false` in the `storage` key of the `factories.yml` file, as in Listing 18-19.
 
-Listing 18-19 - Turning Sessions Off, in `myapp/config/factories.yml`
+Listing 18-19 - Turning Sessions Off, in `frontend/config/factories.yml`
 
     all:
       storage:
@@ -545,7 +545,7 @@ Listing 18-19 - Turning Sessions Off, in `myapp/config/factories.yml`
 
 The same applies for the database (as explained in the "Tweaking the Model" section earlier in this chapter) and output escaping feature (see Chapter 7). If your application makes no use of them, deactivate them for a small performance gain, this time in the `settings.yml` file (see Listing 18-20).
 
-Listing 18-20 - Turning Features Off, in `myapp/config/settings.yml`
+Listing 18-20 - Turning Features Off, in `frontend/config/settings.yml`
 
     all:
       .settings:
@@ -554,7 +554,7 @@ Listing 18-20 - Turning Features Off, in `myapp/config/settings.yml`
 
 As for the security features (see Chapter 6), you can deactivate them in the `filters.yml` file, as shown in Listing 18-21.
 
-Listing 18-21 - Turning Features Off, in `myapp/config/filters.yml`
+Listing 18-21 - Turning Features Off, in `frontend/config/filters.yml`
 
     rendering: ~
     web_debug: ~
@@ -587,10 +587,10 @@ So merging a large number of files and stripping out the comments they contain i
 
 If your application has classes that must always be loaded, and especially if they are big classes with lots of comments, it may be beneficial to add them to the core compile file. To do so, just add a `core_compile.yml` file in your application `config/` directory, and list in it the classes that you want to add, as in Listing 18-22.
 
-Listing 18-22 - Adding Your Classes to the Core Compile File, in `myapp/config/core_compile.yml`
+Listing 18-22 - Adding Your Classes to the Core Compile File, in `frontend/config/core_compile.yml`
 
     - %SF_ROOT_DIR%/lib/myClass.class.php
-    - %SF_ROOT_DIR%/apps/myapp/lib/myToolkit.class.php
+    - %SF_ROOT_DIR%/apps/frontend/lib/myToolkit.class.php
     - %SF_ROOT_DIR%/plugins/myPlugin/lib/myPluginCore.class.php
     ...
 
@@ -618,7 +618,7 @@ And that's not all, because an evident test like the preceding one also gets opt
 
 To apply the optimizations, you must first install the plug-in from [http://trac.symfony-project.com/wiki/sfOptimizerPlugin](http://trac.symfony-project.com/wiki/sfOptimizerPlugin) and then call the `optimize` task, specifying an application and an environment:
 
-    > symfony optimize myapp prod
+    > symfony optimize frontend prod
 
 If you want to apply other optimization strategies to your code, the `sfOptimizer` plug-in might be a good starting place.
 

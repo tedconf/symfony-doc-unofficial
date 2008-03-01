@@ -6,7 +6,7 @@ Now that you know symfony very well, you are already able to dig into its code t
 Symfony Settings
 ----------------
 
-The `myapp/config/settings.yml` file contains the main symfony configuration for the `myapp` application. You have already seen the function of many settings from this file in the previous chapters, but let's revisit them.
+The `frontend/config/settings.yml` file contains the main symfony configuration for the `frontend` application. You have already seen the function of many settings from this file in the previous chapters, but let's revisit them.
 
 As explained in Chapter 5, this file is environment-dependent, which means that each setting can take a different value for each environment. Remember that each parameter defined in this file is accessible from inside the PHP code via the `sfConfig` class. The parameter name is the setting name prefixed with sf_. For instance, if you want to get the value of the cache parameter, you just need to call `sfConfig::get('sf_cache')`.
 
@@ -127,7 +127,7 @@ The character set of the responses is a general setting of the application, beca
 
 The `settings.yml` file contains a few more parameters, used internally by symfony for core behaviors. Listing 19-1 lists them as they appear in the configuration file.
 
-Listing 19-1 - Miscellaneous Configuration Settings, in `myapp/config/settings.yml`
+Listing 19-1 - Miscellaneous Configuration Settings, in `frontend/config/settings.yml`
 
     # Remove comments in core framework classes as defined in the core_compile.yml
     strip_comments:         on
@@ -141,7 +141,7 @@ Listing 19-1 - Miscellaneous Configuration Settings, in `myapp/config/settings.y
 >**SIDEBAR**
 >Adding Your application settings
 >
->The `settings.yml` file defines symfony settings for an application. As discussed in Chapter 5, when you want to add new parameters, the best place to do so is in the `myapp/config/app.yml` file. This file is also environment-dependent, and the settings it defines are available through the sfConfig class with the `app_` prefix.
+>The `settings.yml` file defines symfony settings for an application. As discussed in Chapter 5, when you want to add new parameters, the best place to do so is in the `frontend/config/app.yml` file. This file is also environment-dependent, and the settings it defines are available through the sfConfig class with the `app_` prefix.
 >
 >
 >     all:
@@ -166,8 +166,8 @@ By default, classes stored in the following directories in your projects benefit
 
   * `myproject/lib/`
   * `myproject/lib/model`
-  * `myproject/apps/myapp/lib/`
-  * `myproject/apps/myapp/modules/mymodule/lib`
+  * `myproject/apps/frontend/lib/`
+  * `myproject/apps/frontend/modules/mymodule/lib`
 
 There is no `autoload.yml` file in the default application configuration directory. If you want to modify the framework settings--for instance, to autoload classes stored somewhere else in your file structure--create an empty autoload.yml file and override the settings of `$sf_symfony_data_dir/config/autoload.yml` or add your own.
 
@@ -273,7 +273,7 @@ Listing 19-3 - Default File Structure Variables, from `$sf_symfony_data_dir/conf
 
     sf_root_dir           # myproject/
                           #   apps/
-    sf_app_dir            #     myapp/
+    sf_app_dir            #     frontend/
     sf_app_config_dir     #       config/
     sf_app_i18n_dir       #       i18n/
     sf_app_lib_dir        #       lib/
@@ -281,7 +281,7 @@ Listing 19-3 - Default File Structure Variables, from `$sf_symfony_data_dir/conf
     sf_app_template_dir   #       templates/
     sf_bin_dir            #   batch/
                           #   cache/
-    sf_base_cache_dir     #     myapp/
+    sf_base_cache_dir     #     frontend/
     sf_cache_dir          #       prod/
     sf_template_cache_dir #         templates/
     sf_i18n_cache_dir     #         i18n/
@@ -327,7 +327,7 @@ You will probably need to modify the default project file structure if you devel
 >**CAUTION**
 >Use the application `config.php` and not the project one to override the `sf_XXX_dir` and `sf_XXX_dir_name` variables with `sfConfig`. The project `config/config.php` file is loaded very early in the life of a request, at a time when the `sfConfig` class doesn't exist yet, and when the `constants.php` file is not yet loaded.
 
-For instance, if you want all applications to share a common directory for the template layouts, add this line to the `myapp/config/config.php` file to override the `sf_app_template_dir` settings:
+For instance, if you want all applications to share a common directory for the template layouts, add this line to the `frontend/config/config.php` file to override the `sf_app_template_dir` settings:
 
     [php]
     sfConfig::set('sf_app_template_dir', sfConfig::get('sf_root_dir').DIRECTORY_SEPARATOR.'templates');
@@ -478,7 +478,7 @@ You may want to store these two parameters in a custom configuration file called
 
 In order to transform these settings into code equivalent to Listing 19-8, you must build a configuration handler. Each configuration handler must extend `sfConfigHandler` and provide an `execute()` method, which expects an array of file paths to configuration files as a parameter, and must return data to be written in a cache file. Handlers for YAML files should extend the `sfYamlConfigHandler` class, which provides additional facilities for YAML parsing. For the `map.yml` file, a typical configuration handler could be written as shown in Listing 19-9.
 
-Listing 19-9 - A Custom Configuration Handler, in `myapp/lib/myMapConfigHandler.class.php`
+Listing 19-9 - A Custom Configuration Handler, in `frontend/lib/myMapConfigHandler.class.php`
 
     [php]
     <?php

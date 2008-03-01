@@ -24,7 +24,7 @@ The first two types are handled with YAML configuration files. Template fragment
 
 For each application of a project, the HTML cache mechanism can be enabled or disabled (the default), per environment, in the `cache` setting of the `settings.yml` file. Listing 12-1 demonstrates enabling the cache.
 
-Listing 12-1 - Activating the Cache, in `myapp/config/settings.yml`
+Listing 12-1 - Activating the Cache, in `frontend/config/settings.yml`
 
     dev:
       .settings:
@@ -42,7 +42,7 @@ For instance, consider a `user/list` action that returns the list of all users o
 
 Cache activation and settings, action by action, are defined in a cache.yml file located in the module `config/` directory. See Listing 12-2 for an example.
 
-Listing 12-2 - Activating the Cache for an Action, in `myapp/modules/user/config/cache.yml`
+Listing 12-2 - Activating the Cache for an Action, in `frontend/modules/user/config/cache.yml`
 
     list:
       enabled:     on
@@ -53,7 +53,7 @@ This configuration stipulates that the cache is on for the list action, and that
 
 To test the cache settings, call the action in the development environment from your browser.
 
-    http://myapp.example.com/myapp_dev.php/user/list
+    http://myapp.example.com/frontend_dev.php/user/list
 
 You will notice a border around the action area in the page. The first time, the area has a blue header, showing that it did not come from the cache. Refresh the page, and the action area will have a yellow header, showing that it did come from the cache (with a notable boost in response time). You will learn more about the ways to test and monitor caching later in this chapter.
 
@@ -64,7 +64,7 @@ The caching system also works for pages with arguments. The `user` module may ha
 
 In order to organize your `cache.yml`, you can regroup the settings for all the actions of a module under the `all:` key, also shown in Listing 12-3.
 
-Listing 12-3 - A Full `cache.yml` Example, in `myapp/modules/user/config/cache.yml`
+Listing 12-3 - A Full `cache.yml` Example, in `frontend/modules/user/config/cache.yml`
 
     list:
       enabled:    on
@@ -100,7 +100,7 @@ Figure 12-2 - Caching a partial, component, or component slot
 
 For instance, Listing 12-4 shows how to edit the `cache.yml` file to enable the cache on a `_my_partial.php` partial located in the `user` module. Note that the `with_layout` setting doesn't make sense in this case.
 
-Listing 12-4 - Caching a Partial, in `myapp/modules/user/config/cache.yml`
+Listing 12-4 - Caching a Partial, in `frontend/modules/user/config/cache.yml`
 
     _my_partial:
       enabled:    on
@@ -145,7 +145,7 @@ Figure 12-3 - Caching a template fragment
 
 For instance, you may have a list of users that shows a link of the last-accessed user, and this information is dynamic. The `cache()` helper defines the parts of a template that are to be put in the cache. See Listing 12-5 for details on the syntax.
 
-Listing 12-5 - Using the `cache()` Helper, in `myapp/modules/user/templates/listSuccess.php`
+Listing 12-5 - Using the `cache()` Helper, in `frontend/modules/user/templates/listSuccess.php`
 
     [php]
     <!-- Code executed each time -->
@@ -191,7 +191,7 @@ Why would you want to change the cache settings dynamically? A good example is a
 
 The right place to define dynamic cache settings is in a filter executed before the `sfCacheFilter`. Indeed, the cache is a filter in symfony, just like the the security features. In order to enable the cache for the `article/show` page only if the user is not authenticated, create a `conditionalCacheFilter` in the application `lib/` directory, as shown in Listing 12-6.
 
-Listing 12-6 - Configuring the Cache in PHP, in `myapp/lib/conditionalCacheFilter.class.php`
+Listing 12-6 - Configuring the Cache in PHP, in `frontend/lib/conditionalCacheFilter.class.php`
 
     [php]
     class conditionalCacheFilter extends sfFilter
@@ -214,7 +214,7 @@ Listing 12-6 - Configuring the Cache in PHP, in `myapp/lib/conditionalCacheFilte
 
 You must register this filter in the `filters.yml` file before the `sfCacheFilter`, as shown in Listing 12-7.
 
-Listing 12-7 - Registering Your Custom Filter, in `myapp/config/filters.yml`
+Listing 12-7 - Registering Your Custom Filter, in `frontend/config/filters.yml`
 
     ...
     security: ~
@@ -291,14 +291,14 @@ Listing 12-8 - Clearing the Cache
     // Short syntax
     > symfony cc
 
-    // Erase only the cache of the myapp application
-    > symfony clear-cache myapp
+    // Erase only the cache of the frontend application
+    > symfony clear-cache frontend
 
-    // Erase only the HTML cache of the myapp application
-    > symfony clear-cache myapp template
+    // Erase only the HTML cache of the frontend application
+    > symfony clear-cache frontend template
 
-    // Erase only the configuration cache of the myapp application
-    > symfony clear-cache myapp config
+    // Erase only the configuration cache of the frontend application
+    > symfony clear-cache frontend config
 
 ### Clearing Selective Parts of the Cache
 
@@ -413,7 +413,7 @@ What the cache engine does with htis key depends no the caching strategy defined
 
 For instance, the template cache of the `user/show/id/12` page is stored in:
 
-    cache/myapp/prod/template/www_myapp_com/all/user/show/id/12.cache
+    cache/frontend/prod/template/www_myapp_com/all/user/show/id/12.cache
     \----filecache config----/\---unique template cache key---/
 
 ### Clearing template cache from a cache key (new in symfony 1.1)
@@ -476,14 +476,14 @@ The caching system is prone to new errors in the production environment that can
 
 To set it up, edit the `settings.yml` file of your application and add the lines shown in Listing 12-12 at the top.
 
-Listing 12-12 - Settings for a `staging` Environment, in `myapp/config/settings.yml`
+Listing 12-12 - Settings for a `staging` Environment, in `frontend/config/settings.yml`
 
     staging:
       .settings:
         web_debug:  on
         cache:      on
 
-In addition, create a new front controller by copying the production one (probably `myproject/web/index.php`) to a new `myapp_staging.php`. Edit it to change the `SF_ENVIRONMENT` and `SF_DEBUG` values, as follows:
+In addition, create a new front controller by copying the production one (probably `myproject/web/index.php`) to a new `frontend_staging.php`. Edit it to change the `SF_ENVIRONMENT` and `SF_DEBUG` values, as follows:
 
     [php]
     define('SF_ENVIRONMENT', 'staging');
@@ -491,10 +491,10 @@ In addition, create a new front controller by copying the production one (probab
 
 That's it--you have a new environment. Use it by adding the front controller name after the domain name:
 
-    http://myapp.example.com/myapp_staging.php/user/list
+    http://myapp.example.com/frontend_staging.php/user/list
 
 >**TIP**
->Instead of copying an existing one, you can create a new front controller with the `symfony` command line. For instance, to create a `staging` environment for the `myapp` application, called `myapp_staging.php` and where `SF_DEBUG` is `true`, just call `symfony init-controller myapp staging myapp_staging true`.
+>Instead of copying an existing one, you can create a new front controller with the `symfony` command line. For instance, to create a `staging` environment for the `frontend` application, called `frontend_staging.php` and where `SF_DEBUG` is `true`, just call `symfony init-controller frontend staging frontend_staging true`.
 
 ### Monitoring Performance
 
