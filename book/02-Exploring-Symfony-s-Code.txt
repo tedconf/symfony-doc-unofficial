@@ -542,7 +542,6 @@ This is the typical tree structure of a module:
               lib/
               templates/
                 indexSuccess.php
-              validate/
 
 Table 2-3 describes the module subdirectories.
 
@@ -554,10 +553,9 @@ Directory    | Description
 `config/`    | Can contain custom configuration files with local parameters for the module.
 `lib/`       | Stores classes and libraries specific to the module.
 `templates/` | Contains the templates corresponding to the actions of the module. A default template, called `indexSuccess.php`, is created during module setup.
-`validate/`  | Dedicated to configuration files used for form validation (discussed in Chapter 10).
 
 >**NOTE**
->The `config/`, `lib/`, and `validate/` directories are empty for a new module.
+>The `config/`, and `lib/` directories are empty for a new module.
 
 #### Web Tree Structure
 
@@ -590,22 +588,22 @@ A few techniques are used repeatedly in symfony, and you will meet them quite of
 
 ### Parameter Holders
 
-Many of the symfony classes contain a parameter holder. It is a convenient way to encapsulate attributes with clean getter and setter methods. For instance, the sfResponse class holds a parameter holder that you can retrieve by calling the `getParameterHolder()` method. Each parameter holder stores data the same way, as illustrated in Listing 2-15.
+Many of the symfony classes contain a parameter holder. It is a convenient way to encapsulate attributes with clean getter and setter methods. For instance, the sfRequest class holds a parameter holder that you can retrieve by calling the `getParameterHolder()` method. Each parameter holder stores data the same way, as illustrated in Listing 2-15.
 
-Listing 2-15 - Using the `sfResponse` Parameter Holder
+Listing 2-15 - Using the `sfRequest` Parameter Holder
 
     [php]
-    $response->getParameterHolder()->set('foo', 'bar');
-    echo $response->getParameterHolder()->get('foo');
+    $request->getParameterHolder()->set('foo', 'bar');
+    echo $request->getParameterHolder()->get('foo');
      => 'bar'
 
-Most of the classes using a parameter holder provide proxy methods to shorten the code needed for get/set operations. This is the case for the `sfResponse` object, so you can do the same as in Listing 2-15 with the code of Listing 2-16.
+Most of the classes using a parameter holder provide proxy methods to shorten the code needed for get/set operations. This is the case for the `sfRequest` object, so you can do the same as in Listing 2-15 with the code of Listing 2-16.
 
-Listing 2-16 - Using the `sfResponse` Parameter Holder Proxy Methods
+Listing 2-16 - Using the `sfRequest` Parameter Holder Proxy Methods
 
     [php]
-    $response->setParameter('foo', 'bar');
-    echo $response->getParameter('foo');
+    $request->setParameter('foo', 'bar');
+    echo $request->getParameter('foo');
      => 'bar'
 
 The parameter holder getter accepts a default value as a second argument. This provides a useful fallback mechanism that is much more concise than possible with a conditional statement. See Listing 2-17 for an example.
@@ -614,13 +612,13 @@ Listing 2-17 - Using the Attribute Holder Getter's Default Value
 
     [php]
     // The 'foobar' parameter is not defined, so the getter returns an empty value
-    echo $response->getParameter('foobar');
+    echo $request->getParameter('foobar');
      => null
 
     // A default value can be used by putting the getter in a condition
-    if ($response->hasParameter('foobar'))
+    if ($request->hasParameter('foobar'))
     {
-      echo $response->getParameter('foobar');
+      echo $request->getParameter('foobar');
     }
     else
     {
@@ -629,19 +627,19 @@ Listing 2-17 - Using the Attribute Holder Getter's Default Value
      => default
 
     // But it is much faster to use the second getter argument for that
-    echo $response->getParameter('foobar', 'default');
+    echo $request->getParameter('foobar', 'default');
      => default
 
-The parameter holders even support namespaces. If you specify a third argument to a setter or a getter, it is used as a namespace, and the parameter will be defined only within that namespace. Listing 2-18 shows an example.
+Some symfony core classes also use a parameter holder that support namespaces (thanks to the `sfNamespacedParameterHolder` class). If you specify a third argument to a setter or a getter, it is used as a namespace, and the parameter will be defined only within that namespace. Listing 2-18 shows an example.
 
-Listing 2-18 - Using the `sfResponse` Parameter Holder Namespace
+Listing 2-18 - Using the `sfUser` Parameter Holder Namespace
 
     [php]
-    $response->setParameter('foo', 'bar1');
-    $response->setParameter('foo', 'bar2', 'my/name/space');
-    echo $response->getParameter('foo');
+    $user->setAttribute('foo', 'bar1');
+    $user->setAttribute('foo', 'bar2', 'my/name/space');
+    echo $user->getAttribute('foo');
      => 'bar1'
-    echo $response->getParameter('foo', null, 'my/name/space');
+    echo $user->getAttribute('foo', null, 'my/name/space');
      => 'bar2'
 
 Of course, you can add a parameter holder to your own classes to take advantage of its syntax facilities. Listing 2-19 shows how to define a class with a parameter holder.
@@ -651,17 +649,17 @@ Listing 2-19 - Adding a Parameter Holder to a Class
     [php]
     class MyClass
     {
-      protected $parameter_holder = null;
+      protected $parameterHolder = null;
 
-      public function initialize ($parameters = array())
+      public function initialize($parameters = array())
       {
-        $this->parameter_holder = new sfParameterHolder();
-        $this->parameter_holder->add($parameters);
+        $this->parameterHolder = new sfParameterHolder();
+        $this->parameterHolder->add($parameters);
       }
 
       public function getParameterHolder()
       {
-        return $this->parameter_holder;
+        return $this->parameterHolder;
       }
     }
 
@@ -675,7 +673,8 @@ Listing 2-20 - Using the `sfConfig` Class Methods Instead of Constants
     // Instead of PHP constants,
     define('SF_FOO', 'bar');
     echo SF_FOO;
-    // Symfony uses the sfConfig object
+
+    // symfony uses the sfConfig object
     sfConfig::set('sf_foo', 'bar');
     echo sfConfig::get('sf_foo');
 
@@ -699,7 +698,7 @@ Symfony will then look for a `MyClass` definition in all files ending with `php`
 So if you store all your classes in lib/ directories, you don't need to include classes anymore. That's why the symfony projects usually do not contain any `include` or `require` statements.
 
 >**NOTE**
->For better performance, the symfony autoloading scans a list of directories (defined in an internal configuration file) during the first request. It then registers all the classes these directories contain and stores the class/file correspondence in a PHP file as an associative array. That way, future requests don't need to do the directory scan anymore. This is why you need to clear the cache every time you add or move a class file in your project by calling the `symfony clear-cache` command (except in the development environment). You will learn more about the cache in Chapter 12, and about the autoloading configuration in Chapter 19.
+>For better performance, the symfony autoloading scans a list of directories (defined in an internal configuration file) during the first request. It then registers all the classes these directories contain and stores the class/file correspondence in a PHP file as an associative array. That way, future requests don't need to do the directory scan anymore. This is why you need to clear the cache every time you add or move a class file in your project by calling the `symfony cache:clear` command (except in the development environment). You will learn more about the cache in Chapter 12, and about the autoloading configuration in Chapter 19.
 
 Summary
 -------
