@@ -405,7 +405,7 @@ Another good example is with applications handling several languages, where the 
 To remove the cached profile of the user having an `id` of `12` in all languages, you can simply call:
 
     [php]
-    $cache->removePattern('user/show?sf_culture=*&id=12');
+    $cache->remove('user/show?sf_culture=*&id=12');
 
 This also works for partials:
 
@@ -427,9 +427,9 @@ Clearing the cache across applications can be a problem. For instance, if an adm
 
     [php]
     $cacheManager = sfContext::getInstance()->getViewCacheManager(); // Retrieves the view cache manager of the backend
-    $cacheManager->removePattern('user/show?id=12');                 // The pattern is not found, since the template is cached in the frontend
+    $cacheManager->remove('user/show?id=12');                        // The pattern is not found, since the template is cached in the frontend
 
-The solution is to initialize a `sfCache` object by hand, with the same settings as the frontend cache manager. Fortunately, all cache classes in symfony provide the save `removePattern` method as the view cache manager.
+The solution is to initialize a `sfCache` object by hand, with the same settings as the frontend cache manager. Fortunately, all cache classes in symfony provide a `removePattern` method providing the same service as the view cache manager's `remove`.
 
 For instance, if the `backend` application needs to clear the cache of the `user/show` action in the `frontend` application for the user of `id` `12`, it can use the following:
 
@@ -538,7 +538,7 @@ When the server sends the response to the browser, it can add a special header t
 
 Browsers can understand this header and, when requesting the page again, add an `If-Modified` header accordingly:
 
-    If-Modified-Since: Sat, 23 Nov 2006 13:27:31 GMT
+    If-Modified-Since: Sat, 23 Nov 2006   13:27:31 GMT
 
 The server can then compare the value kept by the client and the one returned by its application. If they match, the server returns a `304: Not modified` header, saving bandwidth and CPU time, just as with ETags.
 
