@@ -326,14 +326,14 @@ Listing 12-9 - Clearing the Cache for a Given Action, in `modules/user/actions/a
       ...
     }
 
-Removing cached partials, components, and component slots is a little trickier. As you can pass them any type of parameter (including objects), it is almost impossible to identify their cached version after the fact. Let's focus on partials, as the explanation is the same for the other template components. Symfony identifies a cached partial with a special prefix (`sf_cache_partial`), the name of the module, and the name of the partial, plus a hash of all the parameters used to call it, as follows:
+Removing cached partials, components, and component slots is a little trickier. As you can pass them any type of parameter (including objects), it is almost impossible to identify their cached version afterwards. Let's focus on partials, as the explanation is the same for the other template components. Symfony identifies a cached partial with a special prefix (`sf_cache_partial`), the name of the module, and the name of the partial, plus a hash of all the parameters used to call it, as follows:
 
     [php]
     // A partial called by
     <?php include_partial('user/my_partial', array('user' => $user) ?>
 
     // Is identified in the cache as
-    /sf_cache_partial/user/_my_partial/sf_cache_key/bf41dd9c84d59f3574a5da244626dcc8
+    @sf_cache_partial?module=user&action=_my_partial&sf_cache_key=bf41dd9c84d59f3574a5da244626dcc8
 
 In theory, you could remove a cached partial with the `remove()` method if you knew the value of the parameters hash used to identify it, but this is very impracticable. Fortunately, if you add a `sf_cache_key` parameter to the `include_partial()` helper call, you can identify the partial in the cache with something that you know. As you can see in Listing 12-10, clearing a single cached partial --for instance, to clean up the cache from the partial based on a modified `User`-- becomes easy.
 
@@ -346,11 +346,10 @@ Listing 12-10 - Clearing Partials from the Cache
     ) ?>
 
     // Is identified in the cache as
-    /sf_cache_partial/user/_my_partial/sf_cache_key/12
+    @sf_cache_partial?module=user&action=_my_partial&sf_cache_key=12
 
-    // Clear _my_partial for a specific user in the cache with $cacheManager->remove('@sf_cache_partial?module=user&action=_my_partial&sf_cache_key='.$user->getId());
-
-You cannot use this method to clear all occurrences of a partial in the cache. You will learn how to clear these in the "Clearing the Cache Manually" section later in this chapter.
+    // Clear _my_partial for a specific user in the cache with
+    $cacheManager->remove('@sf_cache_partial?module=user&action=_my_partial&sf_cache_key='.$user->getId());
 
 To clear template fragments, use the same `remove()` method. The key identifying the fragment in the cache is composed of the same `sf_cache_partial` prefix, the module name, the action name, and the `sf_cache_key` (the unique name of the cache fragment included by the `cache()` helper). Listing 12-11 shows an example.
 
@@ -364,7 +363,7 @@ Listing 12-11 - Clearing Template Fragments from the Cache
     <?php endif; ?>
 
     // Is identified in the cache as
-    /sf_cache_partial/user/list/sf_cache_key/users
+    @sf_cache_partial?module=user&action=list&sf_cache_key=users
 
     // Clear it with
     $cacheManager->remove('@sf_cache_partial?module=user&action=list&sf_cache_key=users');
@@ -392,55 +391,35 @@ Listing 12-11 - Clearing Template Fragments from the Cache
 >
 >And, if you don't want to damage your brain with too difficult an analysis, you can always clear the whole cache each time you update the database . . .
 
-### Template Cache Key
+### Clearing several cache parts at once (new in symfony 1.1)
 
-Whatever caching storage strategy you use, symfony will use common naming rules for identifying template cache parts. Put it simply, symfony uses the external URL form of the internal URI as a key to a template cache part. For instance, the template cache key of a page called with:
-
-    http://www.myapp.com/user/show/id/12
-
-is:
-
-    www_myapp_com/all/user/show/id/12
-
-The first part of the cache key is the host name, where dots are replaced by underscores for compatibility with file systems. Then comes the list of VARY headers (usually a single `all/` keyword), and then the page external URL.
-
-What the cache engine does with htis key depends no the caching strategy defined in the `factories.yml`. Let's see what happens with the default cache factory: `sFileCache`. When using the filesystem to store cache parts, symfony writes all template cache files under a special subdirectory of the `cache/` directory called `sf_template_cache_dir`:
-
-    cache/                 # sf_root_cache_dir
-      [APP_NAME]/          # sf_base_cache_dir
-        [ENV_NAME]/        # sf_cache_dir
-          template/        # sf_template_cache_dir
-
-For instance, the template cache of the `user/show/id/12` page is stored in:
-
-    cache/frontend/prod/template/www_myapp_com/all/user/show/id/12.cache
-    \----filecache config----/\---unique template cache key---/
-
-### Clearing template cache from a cache key (new in symfony 1.1)
-
-If you know the cache key of a template cache part, symfony offers an alternative to using the `remove` method of the view cache manager, called `removePattern`:
+The `remove()` method accepts keys with wildcards. It allows you to remove several cache parts with a single call. You can do for instance:
 
     [php]
-    $cacheManager->remove('user/show?id=12');                           // Uses internal URI
-    // Is equivalent to
-    $cacheManager->removePattern('www_myapp_com/all/user/show/id/12');  // Uses cache key
+    $cacheManager->remove('user/show?id=*');    // Remove for all user records
 
-The great advantage of `removePattern` is that it accepts keys with wildcards. You can do for instance:
-
-    [php]
-    $cacheManager->removePattern('*/all/user/show/id/12');  // Remove for all hosts
-    $cacheManager->removePattern('*/all/user/show/*/*');    // Remove for all user records
-
-Another good example if with applications handling several languages, where the language code appears in all URLs. The link to a user profile page should look like this:
+Another good example is with applications handling several languages, where the language code appears in all URLs. The URL to a user profile page should look like this:
 
     http://www.myapp.com/en/user/show/id/12
 
 To remove the cached profile of the user having an `id` of `12` in all languages, you can simply call:
 
     [php]
-    $cache->removePattern('*/all/*/user/show/id/12');
+    $cache->removePattern('user/show?sf_culture=*&id=12');
 
-The `removePattern()` method is available for all the caching strategies that you can define in the `factories.yml` (not only `sfFileCache`, but also `sfAPCCache`, `sfEAcceleratorCache`, `sfMemcacheCache`, `sfSQLiteCache`, and `sfXCacheCache`).
+This also works for partials:
+
+    [php]
+    $cacheManager->remove('@sf_cache_partial?module=user&action=_my_partial&sf_cache_key=*');    // Remove for all keys
+
+The `remove()` method accepts two additional parameters, allowing you to define which hosts and vary headers you want to clear the cache for. This is because symfony keeps one cache version for each host and vary headers, so that two applications sharing the same code base but not the same hostname use different caches. This can be of great use, for instance, when an application interprets the subdomain as a request parameter (like `http://php.askeet.com` and `http://life.askeet.com`). If you don't set the last two parameters, symfony will remove the cache for the current host and for the `all` vary header. Alternatively, if you want to remove the cache for another host, call `remove()` as follows:
+
+    [php]
+    $cacheManager->remove('user/show?id=*');                     // Remove for all user records for the current host
+    $cacheManager->remove('user/show?id=*', 'life.askeet.com');  // Remove for all user records for the host life.askeet.com
+    $cacheManager->remove('user/show?id=*', '*');                // Remove for all user records for every hosts
+
+The `remove()` method works in all the caching strategies that you can define in the `factories.yml` (not only `sfFileCache`, but also `sfAPCCache`, `sfEAcceleratorCache`, `sfMemcacheCache`, `sfSQLiteCache`, and `sfXCacheCache`).
 
 ### Clearing cache across applications (new in symfony 1.1)
 
@@ -448,7 +427,7 @@ Clearing the cache across applications can be a problem. For instance, if an adm
 
     [php]
     $cacheManager = sfContext::getInstance()->getViewCacheManager(); // Retrieves the view cache manager of the backend
-    $cacheManager->removePattern('*/all/user/show/id/12');   // The pattern is not found, since the template is cached in the frontend
+    $cacheManager->removePattern('user/show?id=12');                 // The pattern is not found, since the template is cached in the frontend
 
 The solution is to initialize a `sfCache` object by hand, with the same settings as the frontend cache manager. Fortunately, all cache classes in symfony provide the save `removePattern` method as the view cache manager.
 
@@ -457,13 +436,13 @@ For instance, if the `backend` application needs to clear the cache of the `user
     [php]
     $frontend_cache_dir = sfConfig::get('sf_root_cache_dir') . DIRECTORY_SEPARATOR . 'frontend' . DIRECTORY_SEPARATOR . SF_ENV . DIRECTORY_SEPARATOR . 'template';
     $cache = new sfFileCache(array('cache_dir' => $frontend_cache_dir)); // Use the same settings as the ones defined in the frontend factories.yml
-    $cache->removePattern('*/all/user/show/id/12');
+    $cache->removePattern('user/show?id=12');
 
 For different caching strategies, you just need to change the cache object initialization, but the cache removal process remains the same:
 
     [php]
     $cache = new sfMemcacheCache(array('prefix' => 'frontend'));
-    $cache->removePattern('*/all/user/show/id/12');
+    $cache->removePattern('user/show?id=12');
 
 Testing and Monitoring Caching
 ------------------------------
