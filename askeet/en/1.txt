@@ -28,8 +28,6 @@ It should be easy for those who already followed the previous tutorials, and not
 
 We'll assume that you use a Unix-like system with Apache, MySQL and PHP 5 installed. If you run a Windows system, don't panic: it will also work fine, you'll just have to type a few commands in the `cmd` prompt.
 
->**Note**: Unix shell commands can come in handy in a Windows environment.  If you would like to use tools like `tar`, `gzip`, or `grep` on Windows you can install [Cygwin](http://cygwin.com/).  The official docs are a little sparse, so a good installation guide can be found [here](http://www.soe.ucsc.edu/~you/notes/cygwin-install.html).  The adventurous may also like to try Microsoft's [Windows Services for Unix](http://technet.microsoft.com/en-gb/interopmigration/bb380242.aspx).
-
 Symfony installation
 --------------------
 
@@ -46,12 +44,8 @@ Now you can add the 'symfony' channel:
 You are ready to install the latest stable version of symfony together with all its dependencies:
 
     $ pear install symfony/symfony
-    
-If a specific version is desired, say 1.0.11, it can be specified as follows:
 
-    $ pear upgrade symfony/symfony-1.0.11
-
-Check that symfony is installed by using the command line to check the version (note capital -V):
+Check that symfony is installed by using the command line to check the version:
 
     $ symfony -V
 
@@ -72,7 +66,7 @@ Now it is time to create the frontend application with the `symfony init-app` co
 
 Wow, that was fast.
 
->**Note**: Windows users are advised to run symfony and to setup their new project in a path which contains no spaces.  Avoid using the `Documents and Settings` directory, including anywhere under `My Documents` (or `Documents` on Vista).
+>**Note**: Windows users are advised to run symfony and to setup their new project in a path which contains no spaces - this includes the `Documents and Settings` directory.
 
 Web service setup
 -----------------
@@ -81,9 +75,7 @@ Web service setup
 
 Now it is time to change your Apache configuration to make the new application accessible. In a professional context, it is better to setup a new application as a virtual host, and that's what will be described here. However, if you prefer to add it as an alias, find how in the [web server configuration](http://www.symfony-project.com/cookbook/1_0/web_server) cookbook chapter.
 
-Open the `httpd.conf` file of your `Apache/conf/` directory and add at the end (note this is a _very_ insecure configuration; don't use it in a production environment!):
-
-    NameVirtualHost 127.0.0.1:80
+Open the `httpd.conf` file of your `Apache/conf/` directory and add at the end:
 
     <VirtualHost *:80>
       ServerName askeet
@@ -96,30 +88,11 @@ Open the `httpd.conf` file of your `Apache/conf/` directory and add at the end (
       </Directory>
     </VirtualHost>
 
->**Note**: The `/sf` alias has to point to the symfony folder in your PEAR data directory. To determine it, just type `pear config-show`. Symfony applications need to have access to this folder to get some image and javascript files, to properly run the web debug toolbar and the AJAX helpers.
+>**Note**: the `/sf` alias has to point to the symfony folder in your PEAR data directory. To determine it, just type `pear config-show`. Symfony applications need to have access to this folder to get some image and javascript files, to properly run the web debug toolbar and the AJAX helpers.
 
-In Windows, you need to replace the `Alias` line with something like:
+In Windows, you need to replace the `Alias` line by something like:
 
       Alias /sf "C:\php\pear\data\symfony\web\sf"
-
-If the above doesn't work, it may be necessary to specify permissions for the aliased `/sf` directory.  The following is from a working Windows [WAMP](http://www.wampserver.com/en/) installation:
-
-    NameVirtualHost 127.0.0.1:80
-
-    <VirtualHost askeet:80>
-      ServerName askeet
-      DocumentRoot "C:/sfprojects/askeet/web"
-      DirectoryIndex index.php
-      Alias /sf "C:/wamp/php/PEAR/data/symfony/web/sf"
-      <Directory "C:/sfprojects/askeet/web">
-       AllowOverride All
-       Allow from All
-      </Directory>
-      <Directory "C:/wamp/php/PEAR/data/symfony/web/sf">
-        AllowOverride All
-        Allow from All
-      </Directory>
-    </VirtualHost>
        
 ### Declare the domain name
 
@@ -143,7 +116,7 @@ Restart Apache, and check that you now have access to the new application:
 
 ![Congratulations](/images/askeet/congratulations.gif)
 
->**Note**: Symfony can use the `mod_rewrite` module to remove the /index.php/ part of the URLs.
+>**Note**: symfony can use the `mod_rewrite` module to remove the /index.php/ part of the URLs.
 >If you don't want to use it or if your web server does not provide an equivalent facility, you can remove the `.htaccess` file located in the `web/` directory.
 >If your version of Apache is not compiled with `mod_rewrite`, check that you have the mod_rewrite DSO installed and the following lines in your `httpd.conf`:
 >
@@ -160,31 +133,17 @@ The web debug toolbar should show on the top right corner, including small icons
 
 ![web debug toolbar](/images/askeet/web_debug1.gif)
 
->**Note**: If the application works in the development environment (`http://askeet/frontend_dev.php/`), but not the production environment (`http://askeet/`) then check that `mod_rewrite` is configured in `http.conf` as described above, and restart Apache.  It may also be necessary to run `symfony cc` at the command line to clear the symfony cache.
-
-IIS
----
-
-The setup is a little different if you want to run Symfony on an IIS server in a Windows environment. Find how to configure it in the [related tutorial](http://www.symfony-project.com/cookbook/1_0/web_server_iis).
+Once again, the setup is a little different if you want to run a IIS server in a Windows environment. Find how to configure it in the [related tutorial](http://www.symfony-project.com/cookbook/1_0/web_server_iis).
 
 Subversion
 ----------
 
-One of the good principles of lazy folks is not to worry about breaking existing code. Source version control allows us to:
+One of the good principles of lazy folks is not to worry about breaking existing code. As we want to work fast, we want to revert to a previous version if a modification is inefficient, we want to allow more than one person to work on the project, and we also want you to have access to all the daily versions of the application, we are going to adopt source version control. We will use [Subversion][3] for this purpose. Assuming you have already installed a subversion server or have access to a subversion server.
 
-* work fast
-* revert to a previous version if a modification is inefficient
-* allow more than one person to work on the project
-* have access to all the daily versions of the application
-
-We will use [Subversion][3] for this purpose. We assume you have already installed a subversion server or have access to a subversion server.
-
-First, create a new repository for the `askeet` project:
+Fist, create a new repository for the `askeet` project:
 
     $ svnadmin create $SVNREP_DIR/askeet
     $ svn mkdir -m "layout creation" file:///$SVNREP_DIR/askeet/trunk file:///$SVNREP_DIR/askeet/tags file:///$SVNREP_DIR/askeet/branches
-
->**Note**: For those new to subversion.  These two lines create your subversion repository.  The second line creates the directory structure of the repository.  All the main development code will be versioned in the `trunk` directory.  `tags` holds copies of major code releases such as version 1, version 2, etc.  `branches` is for development code that differs substantially from the main development code.  The usual intention is that `branches` will eventually be merged back into the `trunk`.  For example the main `trunk` development can continue while an unproven new feature is exhaustively tested and fixed in a `branch`.  Once completed the `branch` code is merged back into the `trunk` along with any new changes made since the code branched.  SVN provides powerful tools to assist this process.
 
 Next, you have to do the first import, omitting the `cache/` and `log/` temporary files:
 
@@ -192,21 +151,15 @@ Next, you have to do the first import, omitting the `cache/` and `log/` temporar
     $ rm -rf cache/*
     $ rm -rf log/*
     $ svn import -m "initial import" . file:///$SVNREP_DIR/askeet/trunk
-    
->**Note**: For those new to subversion.  The fourth line here imports the askeet files and directories into the SVN `trunk` repository.  The code is now under version control.
 
-Our code is under version control but the code must be checked out to allow SVN to track changes.  Backup the original application directory and use a checkout of the SVN version for our working copy:
+Now get rid of the original application directory and use a checkout of the SVN version:
 
     $ cd /home/sfprojects
     $ mv askeet askeet.origin
     $ svn co file:///$SVNREP_DIR/askeet/trunk/ askeet/
     $ ls askeet
 
-Once all is OK, delete the original directory we used for import, as its no longer required:
-
     $ rm -rf askeet.origin
-
->**Note**: For those new to subversion.  The `trunk` code is now in our working directory `askeet/`.  This is the code that we will modify and develop.  From an SVN perspective it is called our "working copy".  SVN tracks changes to this code when it is committed to the repository.
 
 There is one remaining thing to setup. If you commit your working directory to the repository, you may copy some unwanted files, like the ones located in the `cache` and `log` directories of your project. So you need to specify an ignore list to SVN for this project.
 
@@ -232,7 +185,7 @@ Now, make sure to set the write permissions on the cache and logs directories ba
     $ chmod 777 cache
     $ chmod 777 log
 
->**Note**: Windows users can use the great [TortoiseSVN][4] client to manage their subversion repository.  Just remember to never delete directories using the normal Windows Explorer commands.  Instead use Alt-Click Tortoise-Delete (or Rename) so that SVN knows what you intended.  Otherwise you will be unable to commit and will need to instead revert to the last versioned copy of your code using Tortoise-Update.
+>**Note**: Windows users can use the great [TortoiseSVN][4] client to manage their subversion repository.
 
 If you want to know more about source version control, check the [project creation chapter](http://www.symfony-project.com/book/1_0/03-Running-Symfony) in the symfony book.
 
@@ -258,10 +211,6 @@ Well, it's already one hour! We talked a lot, and did nothing new for the symfon
 In between, if you want to keep in touch with the latest askeet news, you can [subscribe to the askeet mailing-list](mailto:askeet-subscribe@symfony-project.com) or go to the [dedicated forum](http://www.symfony-project.com/forum/index.php/f/8/).
 
 Make sure you come back tomorrow!
-
-----
-
-This document last updated:  $LastChangedDate$
 
 [1]: http://pear.php.net                  "Pear"
 [3]: http://subversion.tigris.org/        "Subversion"
