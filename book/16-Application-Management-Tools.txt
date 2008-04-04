@@ -372,21 +372,21 @@ The `created_at` columns don't need to be set either, because symfony knows that
 
 The `propel-load-data` task imports data from YAML files to a database. The connection settings come from the `databases.yml` file, and therefore need an application name to run. Optionally, you can specify an environment name by adding a `--env` option (`dev` by default).
 
-    > symfony propel-load-data --env=prod frontend
+    > symfony propel:data-load --env=prod frontend
 
 This command reads all the YAML fixture files from the `data/fixtures/` directory and inserts the records into the database. By default, it replaces the existing database content, but if you add an `--append` option, the command will not erase the current data.
 
-    > symfony propel-load-data --append frontend
+    > symfony propel:data-load --append frontend
 
 You can specify another fixture directory in the call. In this case, add a path relative to the project directory.
 
-    > symfony propel-load-data frontend --dir[]=data/myfixtures
+    > symfony propel:data-load frontend --dir[]=data/myfixtures
 
 ### Using Linked Tables
 
 You now know how to add records to a single table, but how do you add records with foreign keys to another table? Since the primary key is not included in the fixtures data, you need an alternative way to relate records to one another.
 
-Let's return to the example in Chapter 8, where a blog_article table is linked to a `blog_comment` table, as shown in Figure 16-8.
+Let's return to the example in Chapter 8, where a `blog_article` table is linked to a `blog_comment` table, as shown in Figure 16-8.
 
 Figure 16-8 - A sample database relational model
 
@@ -402,13 +402,22 @@ Listing 16-13 - Adding a Record to a Related Table, in `data/fixtures/import_dat
         author:       Anonymous
         content:      Your prose is too verbose. Write shorter sentences.
 
-The `propel-load-data` task will recognize the label that you gave to an article previously in `import_data.yml`, and grab the primary key of the corresponding `Article` record to set the `article_id` field. You don't even see the IDs of the records; you just link them by their labels--it couldn't be simpler.
+The `propel:data-load` task will recognize the label that you gave to an article previously in `import_data.yml`, and grab the primary key of the corresponding `Article` record to set the `article_id` field. You don't even see the IDs of the records; you just link them by their labels--it couldn't be simpler.
 
 The only constraint for linked records is that the objects called in a foreign key must be defined earlier in the file; that is, as you would do if you defined them one by one. The data files are parsed from the top to the bottom, and the order in which the records are written is important.
 
+**New in symfony 1.1**: This also works for many-to-many relationships, where two classes are related through a third class. For instance, an `Article` can have many `Authors`, and an `Author` can have many `Articles`. You usually use an `ArticleAuthor` class for that, corresponding to an `article_author` table with an `article_id` and an `author_id` columns. Listing 16-14 shows how to write a fixture file to define many-to-many relationships with this model. Notice the plural table name used here--this is what triggers the search for a middle class.
+
+Listing 16-14 - Adding a Record to a Table Related by a Many-to-Many relationship, in `data/fixtures/import_data.yml`
+
+    Author:
+      first_author:
+        name: John Doe
+        article_authors: [first_post, second_post]
+        
 One data file can contain declarations of several classes. But if you need to insert a lot of data for many different tables, your fixture file might get too long to be easily manipulated.
 
-The `propel-load-data` task parses all the files it finds in the `fixtures/` directory, so nothing prevents you from splitting a YAML fixture file into smaller pieces. The important thing to keep in mind is that foreign keys impose a processing order for the tables. To make sure that they are parsed in the correct order, prefix the files with an ordinal number.
+The `propel:data-load` task parses all the files it finds in the `fixtures/` directory, so nothing prevents you from splitting a YAML fixture file into smaller pieces. The important thing to keep in mind is that foreign keys impose a processing order for the tables. To make sure that they are parsed in the correct order, prefix the files with an ordinal number.
 
     100_article_import_data.yml
     200_comment_import_data.yml
@@ -446,9 +455,9 @@ The solution that is supported by symfony is rsync synchronization through an SS
 
 Symfony adds SSH on top of rsync to secure the data transfer. More and more commercial hosts support an SSH tunnel to secure file uploads on their servers, and that's a good practice to avoid security breaches.
 
-The SSH client called by symfony uses connection settings from the `config/properties.ini` file. Listing 16-14 gives an example of connection settings for a production server. Write the settings of your own production server in this file before any synchronization. You can also define a single parameters setting to provide your own rsync command line parameters.
+The SSH client called by symfony uses connection settings from the `config/properties.ini` file. Listing 16-15 gives an example of connection settings for a production server. Write the settings of your own production server in this file before any synchronization. You can also define a single parameters setting to provide your own rsync command line parameters.
 
-Listing 16-14 - Sample Connection Settings for a Server Synchronization, in `myproject/config/properties.ini`
+Listing 16-15 - Sample Connection Settings for a Server Synchronization, in `myproject/config/properties.ini`
 
     [symfony]
       name=myproject
@@ -501,9 +510,9 @@ If you synchronize your symfony project with a production host, a few files and 
   * The `cache/` and `log/` directories of a project must not be erased in the host server each time you do a synchronization. These directories must be ignored as well. If you have a `stats/` directory, it should probably be treated the same way.
   * The files uploaded by users should not be transferred. One of the good practices of symfony projects is to store the uploaded files in the `web/uploads/` directory. This allows you to exclude all these files from the synchronization by pointing to only one directory.
 
-To exclude files from rsync synchronizations, open and edit the `rsync_exclude.txt` file under the `myproject/config/` directory. Each line can contain a file, a directory, or a pattern. The symfony file structure is organized logically, and designed to minimize the number of files or directories to exclude manually from the synchronization. See Listing 16-15 for an example.
+To exclude files from rsync synchronizations, open and edit the `rsync_exclude.txt` file under the `myproject/config/` directory. Each line can contain a file, a directory, or a pattern. The symfony file structure is organized logically, and designed to minimize the number of files or directories to exclude manually from the synchronization. See Listing 16-16 for an example.
 
-Listing 16-15 - Sample rsync Exclusion Settings, in `myproject/config/rsync_exclude.txt`
+Listing 16-16 - Sample rsync Exclusion Settings, in `myproject/config/rsync_exclude.txt`
 
     .svn
     /cache/*
