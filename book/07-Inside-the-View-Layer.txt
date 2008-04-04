@@ -291,18 +291,23 @@ Listing 7-10 - The Partial Can Now Use the Variable, in `mymodule/templates/_myp
 >All the helpers so far were called by `<?php echo functionName() ?>`. The partial helper, however, is simply called by `<?php include_partial() ?>`, without `echo`, to make it behave similar to the regular PHP `include()` statement. If you ever need a function that returns the content of a partial without actually displaying it, use `get_partial()` instead. All the `include_` helpers described in this chapter have a `get_` counterpart that can be called together with an `echo` statement.
 
 >**TIP**
->**New in symfony 1.1**: Instead of resulting in a template, an action can return a partial. The `renderPartial()` method of the action class promotes reusability of code and takes advantage of the caching abilities of the partials (see Chapter 12). The variables defined in the action will be passed to the partial automatically.
+>**New in symfony 1.1**: Instead of resulting in a template, an action can return a partial or a component. The `renderPartial()` and `renderComponent()` methods of the action class promote reusability of code. Besides, they take advantage of the caching abilities of the partials (see Chapter 12). The variables defined in the action will be automatically passed to the partial/component, unless you define an associative array of variables as a second parameter of the method.
 >
 >     [php]
->     public function executeIndex()
+>     public function executeFoo()
 >     {
 >       // do things
->       $this->mytotal = 1234;
+>       $this->foo = 1234;
+>       $this->bar = 4567;
 >
 >       return $this->renderPartial('mymodule/mypartial');
 >     }
 >
-
+>In this example, the partial will have access to `$foo` and `$bar`. If the action ends with the following line:
+>
+>       return $this->renderPartial('mymodule/mypartial', array('foo' => $this->foo));
+>
+>Then the partial will only have access to `$foo`.
 
 ### Components
 
