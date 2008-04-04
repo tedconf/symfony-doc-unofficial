@@ -12,11 +12,6 @@ As explained in Chapter 5, this file is environment-dependent, which means that 
 
 ### Default Modules and Actions
 
-When a routing rule doesn't define the `module` or the `action` parameter, values from the `settings.yml` file are used instead:
-
-  * `default_module`: Default `module` request parameter. Defaults to the `default` module.
-  * `default_action`: Default `action` request parameter. Defaults to the `index` action.
-
 Symfony provides default pages for special situations. In the case of a routing error, symfony executes an action of the `default` module, which is stored in the `$sf_symfony_data_dir/modules/default/` directory. The `settings.yml` file defines which action is executed depending on the error:
 
   * `error_404_module` and `error_404_action`: Action called when the URL entered by the user doesn't match any route or when an `sfError404Exception` occurs. The default value is `default/error404`.
@@ -55,7 +50,6 @@ Parameter               | Description | Default Value
 ----------------------- | ----------- | -------------
 `use_database`          | Enables the database manager. Set it to `off` if you don't use a database. | `on`
 `use_security`          | Enables security features (secure actions and credentials; see Chapter 6). The default security filter (`sfBasicSecurityFilter`) is enabled only if it is `on`. | `on`
-`use_flash`             | Enables the flash parameter feature (see Chapter 6). Set it to `off` if you never use the `setFlash()` method of sfUser. | `on`
 `i18n`                  | Enables interface translation (see Chapter 13). Set it to `on` for multilingual applications. | `off`
 `logging_enabled`       | Enables logging of symfony events. Set it to off when you want to ignore the logging.yml settings and turn symfony logging off completely. | `on`
 `escaping_strategy`     | Enables the output escaping feature (see Chapter 7). Set it to `on` if you want data passed to your templates to be escaped. | `off`
@@ -79,10 +73,40 @@ Output escaping settings control the way the variables are accessible in the tem
 
 #### Routing Settings
 
-Two routing settings (see Chapter 9) are stored in `settings.yml`:
+The routing settings (see Chapter 9) are defined in `factories.yml`, under the `routing` key. Listing 19-1 show the default routing configuration.
+
+Listing 19-1 - Routing Configuration Settings, in `frontend/config/factories.yml`
+
+    routing:
+      class: sfPatternRouting
+      param:
+        load_configuration: true
+        suffix:             .
+        default_module:     default
+        default_action:     index
+        variable_prefixes:  [':']
+        segment_separators: ['/', '.']
+        variable_regex:     '[\w\d_]+'
+        debug:              %SF_DEBUG%
+        logging:            %SF_LOGGING_ENABLED%
+        cache:
+          class: sfFileCache
+          param:
+            automatic_cleaning_factor: 0
+            cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
+            lifetime:                  31556926
+            prefix:                    %SF_APP_DIR%
 
   * The `suffix` parameter sets the default suffix for generated URLs. The default value is a period (`.`), and it corresponds to no suffix. Set it to `.html`, for instance, to have all generated URLs look like static pages.
-  * The `no_script_name` parameter enables the front controller name in generated URLs. The `no_script_name` setting can be on only for a single application in a project, unless you store the front controllers in various directories and alter the default URL rewriting rules. It is usually on for the production environment of your main application and off for the others.
+  * When a routing rule doesn't define the `module` or the `action` parameter, values from the `factories.yml` are used instead:
+    * `default_module`: Default `module` request parameter. Defaults to the `default` module.
+    * `default_action`: Default `action` request parameter. Defaults to the `index` action.
+  * By default, route patterns identify named wildcards by a colon (`:`) prefix. But if you want to write your rules in a more PHP-friendly syntax, you can add the dollar (`$`) sign in the `variable_prefixes` array. That way, you can write a pattern like '/article/$year/$month/$day/$title' instead of '/article/:year/:month/:day/:title'.
+  * The pattern routing will identify named wildcards between separators. The default separators are the slash and the dot, but you can add more if you want in the `segment_separators` parameter. For instance, if you add the dash (`-`), you can write a pattern like '/article/:year-:month-:day/:title'.
+  * The pattern routing uses its own cache, in production mode, to speed up conversions between external URLs and internal URIs. By default, this cache uses the filesystem, but you can use any cache class, provided that you declare the class and its settings in the `cache` parameter. See Chapter 15 for the list of available cache storage classes. To deactivate the routing cache in production, set the `debug` parameter to `on`.
+
+There is one additional parameter related to routing, but this one is stored in `settings.yml`:
+  * `no_script_name` enables the front controller name in generated URLs. The `no_script_name` setting can be on only for a single application in a project, unless you store the front controllers in various directories and alter the default URL rewriting rules. It is usually on for the production environment of your main application and off for the others.
 
 #### Form Validation Settings
 
@@ -125,9 +149,9 @@ The character set of the responses is a general setting of the application, beca
 
 #### Miscellaneous Configuration
 
-The `settings.yml` file contains a few more parameters, used internally by symfony for core behaviors. Listing 19-1 lists them as they appear in the configuration file.
+The `settings.yml` file contains a few more parameters, used internally by symfony for core behaviors. Listing 19-2 lists them as they appear in the configuration file.
 
-Listing 19-1 - Miscellaneous Configuration Settings, in `frontend/config/settings.yml`
+Listing 19-2 - Miscellaneous Configuration Settings, in `frontend/config/settings.yml`
 
     # Remove comments in core framework classes as defined in the core_compile.yml
     strip_comments:         on
@@ -171,9 +195,9 @@ By default, classes stored in the following directories in your projects benefit
 
 There is no `autoload.yml` file in the default application configuration directory. If you want to modify the framework settings--for instance, to autoload classes stored somewhere else in your file structure--create an empty autoload.yml file and override the settings of `$sf_symfony_data_dir/config/autoload.yml` or add your own.
 
-The autoload.yml file must start with an autoload: key and list the locations where symfony should look for classes. Each location requires a label; this gives you the ability to override symfony's entries. For each location, provide a `name` (it will appear as a comment in `config_autoload.yml.php`) and an absolute `path`. Then define if the search must be `recursive`, which directs symfony to look in all the subdirectories for `.php` files, and `exclude` the subdirectories you want. Listing 19-2 shows the locations used by default and the file syntax.
+The autoload.yml file must start with an autoload: key and list the locations where symfony should look for classes. Each location requires a label; this gives you the ability to override symfony's entries. For each location, provide a `name` (it will appear as a comment in `config_autoload.yml.php`) and an absolute `path`. Then define if the search must be `recursive`, which directs symfony to look in all the subdirectories for `.php` files, and `exclude` the subdirectories you want. Listing 19-3 shows the locations used by default and the file syntax.
 
-Listing 19-2 - Default Autoloading Configuration, in `$sf_symfony_data_dir/config/autoload.yml`
+Listing 19-3 - Default Autoloading Configuration, in `$sf_symfony_data_dir/config/autoload.yml`
 
     autoload:
 
@@ -267,9 +291,9 @@ Each time the framework uses a path to look for something (from core classes to 
 
 ### The Basic File Structure
 
-The path variables are defined in the `$sf_symfony_data_dir/config/constants.php` file, included when the application bootstraps. These variables are stored in the `sfConfig` object, and so they are easy to override. Listing 19-3 shows a listing of the path variables and the directory they reference.
+The path variables are defined in the `$sf_symfony_data_dir/config/constants.php` file, included when the application bootstraps. These variables are stored in the `sfConfig` object, and so they are easy to override. Listing 19-4 shows a listing of the path variables and the directory they reference.
 
-Listing 19-3 - Default File Structure Variables, from `$sf_symfony_data_dir/config/constants.php`
+Listing 19-4 - Default File Structure Variables, from `$sf_symfony_data_dir/config/constants.php`
 
     sf_root_dir           # myproject/
                           #   apps/
@@ -301,9 +325,9 @@ Listing 19-3 - Default File Structure Variables, from `$sf_symfony_data_dir/conf
 
 Every path to a key directory is determined by a parameter ending with `_dir`. Always use the path variables instead of real (relative or absolute) file paths, so that you will be able to change them later, if necessary. For instance, when you want to move a file to the `uploads/` directory in an application, you should use `sfConfig::get('sf_upload_dir')` for the path instead of `SF_ROOT_DIR.'/web/uploads/'`.
 
-The module directory structure is defined at runtime, when the routing system determines the module name (`$module_name`). It is automatically built according to the path names defined in the `constants.php` file, as shown in Listing 19-4.
+The module directory structure is defined at runtime, when the routing system determines the module name (`$module_name`). It is automatically built according to the path names defined in the `constants.php` file, as shown in Listing 19-5.
 
-Listing 19-4 - Default Module File Structure Variables
+Listing 19-5 - Default Module File Structure Variables
 
     sf_app_module_dir                 # modules/
     module_name                       #  mymodule/
@@ -336,9 +360,9 @@ Note that the application config.php file is not empty, so if you need to includ
 
 ### Modifying the Project Web Root
 
-All the paths built in `constants.php` rely on the project root directory, which is a constant defined in the front controller (`SF_ROOT_DIR`). Usually, the root directory is one level above the `web/` directory, but you can use a different structure. Suppose that your main directory structure is made of two directories, one public and one private, as shown in Listing 19-5. This typically happens when hosting a project on a shared host.
+All the paths built in `constants.php` rely on the project root directory, which is a constant defined in the front controller (`SF_ROOT_DIR`). Usually, the root directory is one level above the `web/` directory, but you can use a different structure. Suppose that your main directory structure is made of two directories, one public and one private, as shown in Listing 19-6. This typically happens when hosting a project on a shared host.
 
-Listing 19-5 - Example of Custom Directory Structure for a Shared Host
+Listing 19-6 - Example of Custom Directory Structure for a Shared Host
 
     symfony/    # Private area
       apps/
@@ -366,9 +390,9 @@ In addition, since the public area is `www/` instead of the usual `web/`, you mu
 
 ### Linking to Symfony Libraries
 
-The paths to the framework files are defined in the project `config.php` file, as you can see in Listing 19-6.
+The paths to the framework files are defined in the project `config.php` file, as you can see in Listing 19-7.
 
-Listing 19-6 - The Paths to the Framework Files, in `myproject/config/config.php`
+Listing 19-7 - The Paths to the Framework Files, in `myproject/config/config.php`
 
     [php]
     <?php
@@ -418,9 +442,9 @@ Each configuration file has a handler. The job of configuration handlers is to m
 
 ### Default Configuration Handlers
 
-The default handler configuration is stored in `$sf_symfony_data_dir/config/config_handlers.yml`. This file links the handlers to the configuration files according to a file path. Listing 19-7 shows an extract of this file.
+The default handler configuration is stored in `$sf_symfony_data_dir/config/config_handlers.yml`. This file links the handlers to the configuration files according to a file path. Listing 19-8 shows an extract of this file.
 
-Listing 19-7 - Extract of `$sf_symfony_data_dir/config/config_handlers.yml`
+Listing 19-8 - Extract of `$sf_symfony_data_dir/config/config_handlers.yml`
 
     config/settings.yml:
       class:    sfDefineEnvironmentConfigHandler
@@ -461,9 +485,9 @@ Using a handler to deal with a configuration file provides two important benefit
 
 If you feel like writing your own configuration handler, follow the example of the structure used by the framework in the `$sf_symfony_lib_dir/config/` directory.
 
-Let's suppose that your application contains a `myMapAPI` class, which provides an interface to a third-party web service delivering maps. This class needs to be initialized with a URL and a user name, as shown in Listing 19-8.
+Let's suppose that your application contains a `myMapAPI` class, which provides an interface to a third-party web service delivering maps. This class needs to be initialized with a URL and a user name, as shown in Listing 19-9.
 
-Listing 19-8 - Example of Initialization of the `myMapAPI` Class
+Listing 19-9 - Example of Initialization of the `myMapAPI` Class
 
     [php]
     $mapApi = new myMapAPI();
@@ -476,9 +500,9 @@ You may want to store these two parameters in a custom configuration file called
       url:  map.api.example.com
       user: foobar
 
-In order to transform these settings into code equivalent to Listing 19-8, you must build a configuration handler. Each configuration handler must extend `sfConfigHandler` and provide an `execute()` method, which expects an array of file paths to configuration files as a parameter, and must return data to be written in a cache file. Handlers for YAML files should extend the `sfYamlConfigHandler` class, which provides additional facilities for YAML parsing. For the `map.yml` file, a typical configuration handler could be written as shown in Listing 19-9.
+In order to transform these settings into code equivalent to Listing 19-8, you must build a configuration handler. Each configuration handler must extend `sfConfigHandler` and provide an `execute()` method, which expects an array of file paths to configuration files as a parameter, and must return data to be written in a cache file. Handlers for YAML files should extend the `sfYamlConfigHandler` class, which provides additional facilities for YAML parsing. For the `map.yml` file, a typical configuration handler could be written as shown in Listing 19-10.
 
-Listing 19-9 - A Custom Configuration Handler, in `frontend/lib/myMapConfigHandler.class.php`
+Listing 19-10 - A Custom Configuration Handler, in `frontend/lib/myMapConfigHandler.class.php`
 
     [php]
     <?php
@@ -550,9 +574,9 @@ When calling the `checkConfig()` method, symfony looks for existing `map.yml` fi
 Controlling PHP Settings
 ------------------------
 
-In order to have a PHP environment compatible with the rules and best practices of agile development, symfony checks and overrides a few settings of the `php.ini` configuration. This is the purpose of the `php.yml` file. Listing 19-10 shows the default `php.yml` file.
+In order to have a PHP environment compatible with the rules and best practices of agile development, symfony checks and overrides a few settings of the `php.ini` configuration. This is the purpose of the `php.yml` file. Listing 19-11 shows the default `php.yml` file.
 
-Listing 19-10 - Default PHP Settings for Symfony, in `$sf_symfony_data_dir/config/php.yml`
+Listing 19-11 - Default PHP Settings for Symfony, in `$sf_symfony_data_dir/config/php.yml`
 
     set:
       magic_quotes_runtime:        off
