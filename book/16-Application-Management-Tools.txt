@@ -336,6 +336,120 @@ Listing 16-11 - Inserting a Message in the Debug Toolbar
     <?php use_helper('Debug') ?>
     <?php debug_message($message) ?>
 
+Using symfony outside of a web context
+--------------------------------------
+
+You may want to execute a script from the command line (or via a cron table) with access to all the symfony classes and features, for instance to launch batch e-mail jobs or to periodically update your model through a process-intensive calculation. The old way of doing this is to create a PHP script that reproduces the first steps of a front controller, so that symfony is properly initialized. But there is a better way: just create a new symfony command task. Both ways are explained in this section.
+
+### Batch Files
+
+Initializing symfony just takes a couple lines of PHP code. You can take advantage of all symfony features by creating a PHP file, for instance under the `lib/` directory of your project, starting with the lines shown in Listing 16-12.
+
+Listing 16-12 - Sample Batch Script, in `lib/myScript.php`
+
+    [php]
+    <?php
+    require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
+    $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'dev', true);
+    sfContext::createInstance($configuration);
+    // Remove the following lines if you don't use the database layer
+    $databaseManager = new sfDatabaseManager($configuration);
+    $databaseManager->loadConfiguration();
+
+    // add code here
+
+This strongly looks like the first lines of a front controller (see Chapter 6), because these lines do the same: initialize symfony, parse a project and an application configuration. Note that the `ProjectConfiguration::getApplicationConfiguration` method expects three parameters:
+
+ * an application name
+ * an environment name
+ * a boolean, defining if the debug features should be enabled or not
+
+To execute your code, just call the script from the command line:
+
+    > php lib/myScript.php
+
+>**NOTE**
+>As of symfony 1.0, such scripts would be located under the `batch/` diretory. This directory does not exist anymore in 1.1 projects, and it is advised to write batch scripts as symfony commands to take advantage of the options parsing--see below.
+
+### Custom tasks (new in symfony 1.1)
+
+An alternative way of creating custom command line scripts using symfony is to write a **symfony task**. Just like the `cache:clear` and the `propel:build-model` tasks, you can launch your own custom tasks from the command line with `php symfony`. Custom tasks benefit from the ability to parse command line arguments and options, can embed their own help text, and can extend existing tasks.
+
+A custom task is just a class extending `sfBaseTask` and located under a `lib/task/` directory, either under the project root, or in a plugin directory. Its file name must end with 'Task.class.php'. Listing 16-13 shows a sample custom task.
+
+Listing 16-13 - Sample Task, in `lib/task/myTask.class.php`
+
+    [php]
+
+    class myTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->name = 'myTask';
+        $this->briefDescription = 'Does some neat things';
+      }
+
+      protected function execute()
+      {
+        // add code here
+      }
+    }
+
+The code written in the `execute` method will have access to all the symfony libraries, just like in the previous batch script. The difference is how you call the custom task:
+
+    > php symfony myTask
+
+The task names comes from the protected `name` property (not from the class name, nor from the files name). And since your task is integrated into the symfony command line, it appears in the task list when you just type:
+
+    > php symfony
+
+As for regular classes, you can add a help text: just define the `detailedDescription` property. The help text will be displayed when a user calls `php symfony help myTask`. You can also put your task in a given namespace, to avoid name conflicts. Just define the `namespace` property for that. Last but not least, you can add arguments (compulsory parameters, in a predefined order) and options (optional and unordered parameters) to your command. Listing 16-14 shows a more complete task, taking advantage of all these features.
+
+Listing 16-14 - More Complete Sample Task, in `lib/task/mySecondTask.class.php`
+
+    [php]
+    class mySecondTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->namespace        = 'foo';
+        $this->name             = 'mySecondTask';
+        $this->briefDescription = 'Does some neat things, with style';
+        $this->detailedDescription = <<<EOF
+    The [foo:mySecondTask|INFO] task manages the process of achieving things for you.
+    Call it with:
+
+      [php symfony foo:mySecondTask frontend|INFO]
+
+    You can enable verbose output by using the [verbose|COMMENT] option:
+
+      [php symfony foo:mySecondTask frontend --verbose=on|INFO]
+    EOF;
+        $this->addArguments(array(
+          new sfCommandArgument('application', sfCommandArgument::REQUIRED, 'The application name'),
+        ));
+        $this->addOptions(array(
+          new sfCommandOption('verbose', null, sfCommandOption::PARAMETER_REQUIRED, 'Enables verbose output', false),
+        ));
+      }
+
+      protected function execute($arguments = array(), $options = array())
+      {
+        // add code here
+      }
+    }
+
+>**NOTE**
+>If your task needs access to the database layer, it should extend `sfPropelBaseTask` instead of `sfBaseTask`. The task initialization will then take care loading the additional Propel classes. The task can require an `application` and an `environment` argument so that you can start a database connection in the `execute()` method by calling:
+>
+>    $configuration = ProjectConfiguration::getApplicationConfiguration($arguments['application'], $options['env'], true);
+>    $databaseManager = new sfDatabaseManager($configuration);
+>
+
+For more examples on how to create a custom task, check the source of existing symfony tasks.
+
+If you declare a task with the same name as an existing task, your class overrides the existing task. That means that a plugin can override a symfony task, and that a project can override a plugin task and a symfony task. Add to that the ability to extend an existing task class, and you have a very extensible command line system!
+
 Populating a Database
 ---------------------
 
@@ -345,7 +459,7 @@ In the process of application development, developers are often faced with the p
 
 Symfony can read data files that follow a very simple YAML syntax, provided that they are located under the `data/fixtures/` directory. Fixture files are organized by class, each class section being introduced by the class name as a header. For each class, records labeled with a unique string are defined by a set of `fieldname: value` pairs. Listing 16-12 shows an example of a data file for database population.
 
-Listing 16-12 - Sample Fixture File, in `data/fixtures/import_data.yml`
+Listing 16-15 - Sample Fixture File, in `data/fixtures/import_data.yml`
 
     Article:                             ## Insert records in the blog_article table
       first_post:                        ## First record label
@@ -392,9 +506,9 @@ Figure 16-8 - A sample database relational model
 
 ![A sample database relational model](/images/book/F1608.png "A sample database relational model")
 
-This is where the labels given to the records become really useful. To add a `Comment` field to the `first_post` article, you simply need to append the lines shown in Listing 16-13 to the `import_data.yml` data file.
+This is where the labels given to the records become really useful. To add a `Comment` field to the `first_post` article, you simply need to append the lines shown in Listing 16-16 to the `import_data.yml` data file.
 
-Listing 16-13 - Adding a Record to a Related Table, in `data/fixtures/import_data.yml`
+Listing 16-16 - Adding a Record to a Related Table, in `data/fixtures/import_data.yml`
 
     Comment:
       first_comment:
@@ -406,9 +520,9 @@ The `propel:data-load` task will recognize the label that you gave to an article
 
 The only constraint for linked records is that the objects called in a foreign key must be defined earlier in the file; that is, as you would do if you defined them one by one. The data files are parsed from the top to the bottom, and the order in which the records are written is important.
 
-**New in symfony 1.1**: This also works for many-to-many relationships, where two classes are related through a third class. For instance, an `Article` can have many `Authors`, and an `Author` can have many `Articles`. You usually use an `ArticleAuthor` class for that, corresponding to an `article_author` table with an `article_id` and an `author_id` columns. Listing 16-14 shows how to write a fixture file to define many-to-many relationships with this model. Notice the plural table name used here--this is what triggers the search for a middle class.
+**New in symfony 1.1**: This also works for many-to-many relationships, where two classes are related through a third class. For instance, an `Article` can have many `Authors`, and an `Author` can have many `Articles`. You usually use an `ArticleAuthor` class for that, corresponding to an `article_author` table with an `article_id` and an `author_id` columns. Listing 16-17 shows how to write a fixture file to define many-to-many relationships with this model. Notice the plural table name used here--this is what triggers the search for a middle class.
 
-Listing 16-14 - Adding a Record to a Table Related by a Many-to-Many relationship, in `data/fixtures/import_data.yml`
+Listing 16-17 - Adding a Record to a Table Related by a Many-to-Many relationship, in `data/fixtures/import_data.yml`
 
     Author:
       first_author:
@@ -455,9 +569,9 @@ The solution that is supported by symfony is rsync synchronization through an SS
 
 Symfony adds SSH on top of rsync to secure the data transfer. More and more commercial hosts support an SSH tunnel to secure file uploads on their servers, and that's a good practice to avoid security breaches.
 
-The SSH client called by symfony uses connection settings from the `config/properties.ini` file. Listing 16-15 gives an example of connection settings for a production server. Write the settings of your own production server in this file before any synchronization. You can also define a single parameters setting to provide your own rsync command line parameters.
+The SSH client called by symfony uses connection settings from the `config/properties.ini` file. Listing 16-18 gives an example of connection settings for a production server. Write the settings of your own production server in this file before any synchronization. You can also define a single parameters setting to provide your own rsync command line parameters.
 
-Listing 16-15 - Sample Connection Settings for a Server Synchronization, in `myproject/config/properties.ini`
+Listing 16-18 - Sample Connection Settings for a Server Synchronization, in `myproject/config/properties.ini`
 
     [symfony]
       name=myproject
@@ -510,9 +624,9 @@ If you synchronize your symfony project with a production host, a few files and 
   * The `cache/` and `log/` directories of a project must not be erased in the host server each time you do a synchronization. These directories must be ignored as well. If you have a `stats/` directory, it should probably be treated the same way.
   * The files uploaded by users should not be transferred. One of the good practices of symfony projects is to store the uploaded files in the `web/uploads/` directory. This allows you to exclude all these files from the synchronization by pointing to only one directory.
 
-To exclude files from rsync synchronizations, open and edit the `rsync_exclude.txt` file under the `myproject/config/` directory. Each line can contain a file, a directory, or a pattern. The symfony file structure is organized logically, and designed to minimize the number of files or directories to exclude manually from the synchronization. See Listing 16-16 for an example.
+To exclude files from rsync synchronizations, open and edit the `rsync_exclude.txt` file under the `myproject/config/` directory. Each line can contain a file, a directory, or a pattern. The symfony file structure is organized logically, and designed to minimize the number of files or directories to exclude manually from the synchronization. See Listing 16-19 for an example.
 
-Listing 16-16 - Sample rsync Exclusion Settings, in `myproject/config/rsync_exclude.txt`
+Listing 16-19 - Sample rsync Exclusion Settings, in `myproject/config/rsync_exclude.txt`
 
     .svn
     /cache/*
