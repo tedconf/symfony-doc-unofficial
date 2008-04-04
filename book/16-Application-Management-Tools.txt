@@ -126,13 +126,13 @@ Listing 16-5 - Adding a Custom Log Message from Anywhere
 
 Don't forget to periodically purge the `log/` directory of your applications, because these files have the strange habit of growing by several megabytes in a few days, depending, of course, on your traffic. Symfony provides a special `log-purge` task for this purpose, which you can launch regularly by hand or put in a cron table. For example, the following command erases the symfony log files:
 
-    > symfony log-purge
+    > php symfony log:clear
 
 For both better performance and security, you probably want to store symfony logs in several small files instead of one single large file. The ideal storage strategy for log files is to back up and empty the main log file regularly, but to keep only a limited number of backups. You can enable such a log rotation with a `period` of `7` days and a `history` (number of backups) of `10`, as shown in Listing 16-6. You would work with one active log file plus ten backup files containing seven days' worth of history each. Whenever the next period of seven days ends, the current active log file goes into backup, and the oldest backup is erased.
 
 Listing 16-6 - Launching Log Rotation
 
-    > symfony --period=7 --history=10 log-rotate frontend prod
+    > php symfony log:rotate frontend prod --period=7 --history=10
 
 The backup log files are stored in the `logs/history/` directory and suffixed with the date they were saved.
 
@@ -370,17 +370,17 @@ The `created_at` columns don't need to be set either, because symfony knows that
 
 ### Launching the Import
 
-The `propel-load-data` task imports data from YAML files to a database. The connection settings come from the `databases.yml` file, and therefore need an application name to run. Optionally, you can specify an environment name by adding a `--env` option (`dev` by default).
+The `propel:data-load` task imports data from YAML files to a database. The connection settings come from the `databases.yml` file, and therefore need an application name to run. Optionally, you can specify an environment name by adding a `--env` option (`dev` by default).
 
-    > symfony propel:data-load --env=prod frontend
+    > php symfony propel:data-load --env=prod frontend
 
 This command reads all the YAML fixture files from the `data/fixtures/` directory and inserts the records into the database. By default, it replaces the existing database content, but if you add an `--append` option, the command will not erase the current data.
 
-    > symfony propel:data-load --append frontend
+    > php symfony propel:data-load --append frontend
 
 You can specify another fixture directory in the call. In this case, add a path relative to the project directory.
 
-    > symfony propel:data-load frontend --dir[]=data/myfixtures
+    > php symfony propel:data-load frontend --dir[]=data/myfixtures
 
 ### Using Linked Tables
 
@@ -434,16 +434,16 @@ The most common way to deploy a project to production is to transfer all its fil
 
 That's why symfony provides a utility to "freeze" a project--to copy all the necessary symfony libraries into the project `data/`, `lib/`, and `web/` directories. The project then becomes a kind of sandbox, an independent, stand-alone application.
 
-    > symfony freeze
+    > php symfony project:freeze
 
 Once a project is frozen, you can transfer the project directory into production, and it will work without any need for PEAR, symbolic links, or whatever else.
 
 >**TIP**
 >Various frozen projects can work on the same server with different versions of symfony without any problems.
 
-To revert a project to its initial state, use the `unfreeze` task. It erases the `data/symfony/`, `lib/symfony/`, and `web/sf/` directories.
+To revert a project to its initial state, use the `project:unfreeze` task. It erases the `data/symfony/`, `lib/symfony/`, and `web/sf/` directories.
 
-    > symfony unfreeze
+    > php symfony project:unfreeze
 
 Note that if you had symbolic links to a symfony installation prior to the freeze, symfony will remember them and re-create the symbolic links in the original location.
 
@@ -473,11 +473,11 @@ Listing 16-15 - Sample Connection Settings for a Server Synchronization, in `myp
 
 Doing an rsync over SSH requires several commands, and synchronization can occur a lot of times in the life of an application. Fortunately, symfony automates this process with just one command:
 
-    > symfony sync production
+    > php symfony project:deploy production
 
 This command launches the rsync command in dry mode; that is, it shows which files must be synchronized but doesn't actually synchronize them. If you want the synchronization to be done, you need to request it explicitly by adding `go`.
 
-    > symfony sync production go
+    > php symfony project:deploy production go
 
 Don't forget to clear the cache in the production server after synchronization.
 
@@ -526,47 +526,35 @@ Listing 16-16 - Sample rsync Exclusion Settings, in `myproject/config/rsync_excl
 
 ### Managing a Production Application
 
-The command that is used most often in production servers is `clear-cache`. You must run it every time you upgrade symfony or your project (for instance, after calling the `sync` task), and every time you change the configuration in production.
+The command that is used most often in production servers is `cache:clear`. You must run it every time you upgrade symfony or your project (for instance, after calling the `project:deploy` task), and every time you change the configuration in production.
 
-    > symfony clear-cache
+    > php symfony cache:clear
 
 >**TIP**
 >If the command-line interface is not available in your production server, you can still clear the cache manually by erasing the contents of the `cache/` folder.
 
 You can temporarily disable your application--for instance, when you need to upgrade a library or a large amount of data.
 
-    > symfony disable APPLICATION_NAME ENVIRONMENT_NAME
+    > php symfony project:disable APPLICATION_NAME ENVIRONMENT_NAME
 
 By default, a disabled application displays the `$sf_symfony_data_dir/web/errors/unavailable.php` page, but if you create your own `unavailable.php` file in your project's `web/errors/` directory, symfony will use it instead.
 
-The `enable` task reenables the application and clears the cache.
+The `project:enable` task reenables the application and clears the cache.
 
-    > symfony enable APPLICATION_NAME ENVIRONMENT_NAME
+    > php symfony project:enable APPLICATION_NAME ENVIRONMENT_NAME
 
 >**SIDEBAR**
 >Displaying an unavailable page when clearing the cache
 >
 >If you set the `check_lock` parameter to `on` in the `settings.yml` file, symfony will lock the application when the cache is being cleared, and all the requests arriving before the cache is finally cleared are then redirected to a page saying that the application is temporarily unavailable. If the cache is large, the delay to clear it may be longer than a few milliseconds, and if your site's traffic is high, this is a recommended setting. This unavailable page is the same as the one displayed when you call the symfony `disable` task. The `check_lock` parameter is deactivated by default because it has a very slight negative impact on performance.
 >
->The `clear-controllers` task clears the `web/` directory of all controllers other than the ones running in a production environment. If you do not include the development front controllers in the `rsync_exclude.txt` file, this command guarantees that a backdoor will not reveal the internals of your application.
+>The `project:clear-controllers` task clears the `web/` directory of all controllers other than the ones running in a production environment. If you do not include the development front controllers in the `rsync_exclude.txt` file, this command guarantees that a backdoor will not reveal the internals of your application.
 >
->     > symfony clear-controllers
+>     > php symfony project:clear-controllers
 >
->The permissions of the project files and directories can be broken if you use a checkout from an SVN repository. The `fix-perms` task fixes directory permissions, to change the `log/` and `cache/` permissions to 0777, for example (these directories need to be writable for the framework to work correctly).
+>The permissions of the project files and directories can be broken if you use a checkout from an SVN repository. The `project:permissions` task fixes directory permissions, to change the `log/` and `cache/` permissions to 0777, for example (these directories need to be writable for the framework to work correctly).
 >
->     > symfony fix-perms
-
->**SIDEBAR**
->Access to the symfony commands in production
->
->If your production server has a PEAR installation of symfony, then the symfony command line is available from every directory and will work just as it does in development. For frozen projects, however, you need to add `php` before the `symfony` command to be able to launch tasks:
->
->
->     // With symfony installed via PEAR
->     > symfony [options] <TASK> [parameters]
->
->     // With symfony frozen in the project or symlinked
->     > php symfony [options] <TASK> [parameters]
+>     > php symfony project:permissions
 
 Summary
 -------

@@ -107,7 +107,7 @@ Launch the test set from the command line with the `test-unit` task. The command
 
 Listing 15-2 - Launching a Single Unit Test from the Command Line
 
-    > symfony test-unit strtolower
+    > php symfony test:unit strtolower
 
     1..7
     # strtolower()
@@ -224,7 +224,7 @@ The initialization of the `lime_test` object takes as its first parameter the nu
 
 Listing 15-4 - The Count of Test Run Helps You to Plan Tests
 
-    > symfony test-unit example
+    > php symfony test:unit example
 
     1..16
     # hello world
@@ -268,10 +268,10 @@ Listing 15-5 - Launching Unit Tests
         foo/
           barTest.php
 
-    > symfony test-unit myFunction                   ## Run myFunctionTest.php
-    > symfony test-unit myFunction mySecondFunction  ## Run both tests
-    > symfony test-unit 'foo/*'                      ## Run barTest.php
-    > symfony test-unit '*'                          ## Run all tests (recursive)
+    > php symfony test:unit myFunction                   ## Run myFunctionTest.php
+    > php symfony test:unit myFunction mySecondFunction  ## Run both tests
+    > php symfony test:unit 'foo/*'                      ## Run barTest.php
+    > php symfony test:unit '*'                          ## Run all tests (recursive)
 
 ### Stubs, Fixtures, and Autoloading
 
@@ -403,7 +403,7 @@ You could run your functional tests with a text browser and a lot of regular exp
 
 A functional test traditionally starts with an initialization of a test browser object. This object makes a request to an action and verifies that some elements are present in the response.
 
-For example, every time you generate a module skeleton with the `init-module` or the `propel-init-crud` tasks, symfony creates a simple functional test for this module. The test makes a request to the default action of the module and checks the response status code, the module and action calculated by the routing system, and the presence of a certain sentence in the response content. For a `foobar` module, the generated `foobarActionsTest.php` file looks like Listing 15-9.
+For example, every time you generate a module skeleton with the `generate:module` or the `propel:generate-crud` tasks, symfony creates a simple functional test for this module. The test makes a request to the default action of the module and checks the response status code, the module and action calculated by the routing system, and the presence of a certain sentence in the response content. For a `foobar` module, the generated `foobarActionsTest.php` file looks like Listing 15-9.
 
 Listing 15-9 - Default Functional Test for a New Module, in `tests/functional/frontend/foobarActionsTest.php`
 
@@ -428,11 +428,11 @@ Listing 15-9 - Default Functional Test for a New Module, in `tests/functional/fr
 
 A functional test can contain several requests and more complex assertions; you will soon discover all the possibilities in the upcoming sections.
 
-To launch a functional test, use the `test-functional` task with the symfony command line, as shown in Listing 15-10. This task expects an application name and a test name (omit the `Test.php` suffix).
+To launch a functional test, use the `test:functional` task with the symfony command line, as shown in Listing 15-10. This task expects an application name and a test name (omit the `Test.php` suffix).
 
 Listing 15-10 - Launching a Single Functional Test from the Command Line
 
-    > symfony test-functional frontend foobarActions
+    > php symfony test:functional frontend foobarActions
 
     # get /comment/index
     ok 1 - status code is 200
@@ -737,9 +737,9 @@ Listing 15-26 - Setting Up the Test Browser with Hostname and IP
     [php]
     $b = new sfTestBrowser('myapp.example.com', '123.456.789.123');
 
-### The test-functional Task
+### The test:functional Task
 
-The `test-functional` task can run one or more functional tests, depending on the number of arguments received. The rules look much like the ones of the `test-unit` task, except that the functional test task always expects an application as first argument, as shown in Listing 15-27.
+The `test:functional` task can run one or more functional tests, depending on the number of arguments received. The rules look much like the ones of the `test-unit` task, except that the functional test task always expects an application as first argument, as shown in Listing 15-27.
 
 Listing 15-27 - Functional Test Task Syntax
 
@@ -753,13 +753,13 @@ Listing 15-27 - Functional Test Task Syntax
           myOtherScenarioTest.php
 
     ## Run all functional tests for one application, recursively
-    > symfony test-functional frontend
+    > php symfony test:functional frontend
 
     ## Run one given functional test
-    > symfony test-functional frontend myScenario
+    > php symfony test:functional frontend myScenario
 
     ## Run several tests based on a pattern
-    > symfony test-functional frontend my*
+    > php symfony test:functional frontend my*
 
 Test Naming Practices
 ---------------------
@@ -825,11 +825,11 @@ The unit and functional test tools provided by symfony should suffice in most ca
 
 ### Executing Tests in a Test Harness
 
-The `test-unit` and `test-functional` tasks can launch a single test or a set of tests. But if you call these tasks without any parameter, they launch all the unit and functional tests written in the `test/` directory. A particular mechanism is involved to isolate each test file in an independent sandbox, to avoid contamination risks between tests. Furthermore, as it wouldn't make sense to keep the same output as with single test files in that case (the output would be thousands of lines long), the tests results are compacted into a synthetic view. That's why the execution of a large number of test files uses a test harness, that is, an automated test framework with special abilities. A test harness relies on a component of the lime framework called `lime_harness`. It shows a test status file by file, and an overview at the end of the number of tests passed over the total, as you see in Listing 15-31.
+The `test:unit` and `test:functional` tasks can launch a single test or a set of tests. But if you call these tasks without any parameter, they launch all the unit and functional tests written in the `test/` directory. A particular mechanism is involved to isolate each test file in an independent sandbox, to avoid contamination risks between tests. Furthermore, as it wouldn't make sense to keep the same output as with single test files in that case (the output would be thousands of lines long), the tests results are compacted into a synthetic view. That's why the execution of a large number of test files uses a test harness, that is, an automated test framework with special abilities. A test harness relies on a component of the lime framework called `lime_harness`. It shows a test status file by file, and an overview at the end of the number of tests passed over the total, as you see in Listing 15-31.
 
 Listing 15-31 - Launching All Tests in a Test Harness
 
-    > symfony test-unit
+    > php symfony test:unit
 
     unit/myFunctionTest.php................ok
     unit/mySecondFunctionTest.php..........ok
@@ -842,11 +842,11 @@ Listing 15-31 - Launching All Tests in a Test Harness
 
 The tests are executed the same way as when you call them one by one, only the output is made shorter to be really useful. In particular, the final chart focuses on the failed tests and helps you locate them.
 
-You can launch all the tests with one call using the `test-all` task, which also uses a test harness, as shown in Listing 15-32. This is something that you should do before every transfer to production, to ensure that no regression has appeared since the latest release.
+You can launch all the tests with one call using the `test:all` task, which also uses a test harness, as shown in Listing 15-32. This is something that you should do before every transfer to production, to ensure that no regression has appeared since the latest release.
 
 Listing 15-32 - Launching All the Tests of a Project
 
-    > symfony test-all
+    > php symfony test:all
 
 ### Accessing a Database
 
@@ -861,7 +861,7 @@ Listing 15-33 - Initializing a Database in a Test
     // Optionally, you can retrieve the current database connection
     $con = Propel::getConnection();
 
-You should populate the database with fixtures before starting the tests. This can be done via the `sfPropelData` object. This object can load data from a file, just like the `propel-load-data` task, or from an array, as shown in Listing 15-34.
+You should populate the database with fixtures before starting the tests. This can be done via the `sfPropelData` object. This object can load data from a file, just like the `propel:data-load` task, or from an array, as shown in Listing 15-34.
 
 Listing 15-34 - Populating a Database from a Test File
 
@@ -977,6 +977,6 @@ You can save the test to an HTML file to build a test suite for your application
 Summary
 -------
 
-Automated tests include unit tests to validate methods or functions and functional tests to validate features. Symfony relies on the lime testing framework for unit tests and provides an `sfTestBrowser` class especially for functional tests. They both provide many assertion methods, from basic to the most advanced, like CSS selectors. Use the symfony command line to launch tests, either one by one (with the `test-unit` and `test-functional` tasks) or in a test harness (with the `test-all` task). When dealing with data, automated tests use fixtures and stubs, and this is easily achieved within symfony unit tests.
+Automated tests include unit tests to validate methods or functions and functional tests to validate features. Symfony relies on the lime testing framework for unit tests and provides an `sfTestBrowser` class especially for functional tests. They both provide many assertion methods, from basic to the most advanced, like CSS selectors. Use the symfony command line to launch tests, either one by one (with the `test:unit` and `test:functional` tasks) or in a test harness (with the `test:all` task). When dealing with data, automated tests use fixtures and stubs, and this is easily achieved within symfony unit tests.
 
 If you make sure to write enough unit tests to cover a large part of your applications (maybe using the TDD methodology), you will feel safer when refactoring internals or adding new features, and you may even gain some time on the documentation task.

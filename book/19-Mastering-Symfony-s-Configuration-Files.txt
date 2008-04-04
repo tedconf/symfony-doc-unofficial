@@ -33,7 +33,7 @@ You can override the default pages in two ways:
 Two other pages bear a symfony look and feel, and they also need to be customized before deployment to production. These pages are not in the `default` module, because they are called when symfony cannot run properly. Instead, you will find these default pages in the `$sf_symfony_data_dir/web/errors/` directory:
 
   * `error500.php`: Page called when an internal server error occurs in the production environment. In other environments (where `SF_DEBUG` is set to `true`), when an error occurs, symfony displays the full execution stack and an explicit error message (see Chapter 16 for details).
-  * `unavailable.php`: Page called when a user requests a page while the application is disabled (with the `disable` task). It is also called while the cache is being cleared (that is, between a call to the `symfony clear-cache` task and the end of this task execution). On systems with a very large cache, the cache-clearing process can take several seconds. Symfony cannot execute a request with a partially cleared cache, so requests received before the end of the process are redirected to this page.
+  * `unavailable.php`: Page called when a user requests a page while the application is disabled (with the `disable` task). It is also called while the cache is being cleared (that is, between a call to the `php symfony cache:clear` task and the end of this task execution). On systems with a very large cache, the cache-clearing process can take several seconds. Symfony cannot execute a request with a partially cleared cache, so requests received before the end of the process are redirected to this page.
 
 To customize these pages, simply create `error500.php` and `unavailable.php` pages in your application's `web/errors/` directory. Symfony will use these instead of its own.
 
@@ -56,7 +56,7 @@ Parameter               | Description | Default Value
 `cache`                 | Enables template caching (see Chapter 12). Set it to `on` if one of your modules includes `cache.yml` file. The cache filter (`sfCacheFilter`) is enabled only if it is on. | `off` in development, `on` in production
 `web_debug`             | Enables the web debug toolbar for easy debugging (see Chapter 16). Set it to `on` to display the toolbar on every page. The web debug filter (`sfWebDebugFilter`) is enabled ony if it is on. | `on` in development, `off` in production
 `check_symfony_version` | Enables the check of the symfony version for every request. Set it to on for automatic cache clearing after a framework upgrade. Leave it set to off if you always clear the cache after an upgrade. | `off`
-`check_lock`            | Enables the application lock system, triggered by the `clear-cache` and `disable` tasks (see the previous section). Set it to `on` to have all requests to disabled applications redirected to the `$sf_symfony_data_dir/web/errors/unavailable.php` page. | `off`
+`check_lock`            | Enables the application lock system, triggered by the `cache:clear` and `project:disable` tasks (see the previous section). Set it to `on` to have all requests to disabled applications redirected to the `$sf_symfony_data_dir/web/errors/unavailable.php` page. | `off`
 `compressed`            | Enables PHP response compression. Set it to `on` to compress the outgoing HTML via the PHP compression handler. | `off`
 `use_process_cache`     | Enables symfony optimizations based on PHP accelerators. When such an accelerator (for instance, APC, XCache, or eAccelerator) is installed, symfony takes advantage of its features to keep objects and configuration in memory between requests. Set the parameter to `off` in development or when you don't want PHP accelerator optimizations. Note that even if you don't have any accelerator installed, leaving it set to `on` will not harm performance. | `on`
 
@@ -401,7 +401,7 @@ Listing 19-7 - The Paths to the Framework Files, in `myproject/config/config.php
     $sf_symfony_lib_dir  = '/path/to/symfony/lib';
     $sf_symfony_data_dir = '/path/to/symfony/data';
 
-These paths are initialized when you call a `symfony init-project` from the command line, and refer to the symfony installation used to build the project. They are used both by the command line and by the MVC architecture.
+These paths are initialized when you call a `php symfony generate:project` from the command line, and refer to the symfony installation used to build the project. They are used both by the command line and by the MVC architecture.
 
 This means that you can switch to another installation of symfony by changing the paths to the framework files.
 

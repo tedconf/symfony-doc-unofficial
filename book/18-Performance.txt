@@ -392,22 +392,22 @@ During application development, you have to clear the cache in various situation
   * When you create a new class: Adding a class to an autoloading directory (one of the project's `lib/` folders) is not enough to have symfony find it automatically. You must clear the autoloading configuration cache so that symfony browses again all the directories of the `autoload.yml` file and references the location of autoloadable classes--including the new ones.
   * When you change the configuration in production: The configuration is parsed only during the first request in production. Further requests use the cached version instead. So a change in the configuration in the production environment (or any environment where `SF_DEBUG` is turned off) doesn't take effect until you clear the cached version of the file.
   * When you modify a template in an environment where the template cache is enabled: The valid cached templates are always used instead of existing templates in production, so a template change is ignored until the template cache is cleared or outdated.
-  * When you update an application with the `sync` command: This case usually covers the three previous modifications.
+  * When you update an application with the `project:deploy` command: This case usually covers the three previous modifications.
 
 The problem with clearing the whole cache is that the next request will take quite long to process, because the configuration cache needs to be regenerated. Besides, the templates that were not modified will be cleared from the cache as well, losing the benefit of previous requests.
 
-That means it's a good idea to clear only the cache files that really need to be regenerated. Use the options of the `clear-cache` task to define a subset of cache files to clear, as demonstrated in Listing 18-14.
+That means it's a good idea to clear only the cache files that really need to be regenerated. Use the options of the `cache:clear` task to define a subset of cache files to clear, as demonstrated in Listing 18-14.
 
 Listing 18-14 - Clearing Only Selective Parts of the Cache
 
     // Clear only the cache of the frontend application
-    > symfony clear-cache frontend
+    > php symfony cache:clear frontend
 
     // Clear only the HTML cache of the frontend application
-    > symfony clear-cache frontend template
+    > php symfony cache:clear frontend template
 
     // Clear only the configuration cache of the frontend application
-    > symfony clear-cache frontend config
+    > php symfony cache:clear frontend config
 
 You can also remove files by hand in the `cache/` directory, or clear template cache files selectively from the action with the `$cacheManager->remove()` method, as described in Chapter 12.
 
@@ -488,7 +488,7 @@ Listing 18-16 - Caching the Result of a Function
 The `sfFunctionCache` constructor expects a cache object. The first argument of the `call()` method must be a callable, so it can be a function name, an array of a class name and static method name, or an array of an object name and public method name. As for the other argument of the `call()` method, it's an array of arguments that will be passed to the callable.
 
 >**CAUTION**
->If you use a file based cache object as in the example, it's better to give a cache directory under the `cache/` directory, as it will be cleanup automatically by the `clear-cache` task. If you store the function cache somewhere else, it will not be cleared automatically when you clear the cache through the command line.
+>If you use a file based cache object as in the example, it's better to give a cache directory under the `cache/` directory, as it will be cleanup automatically by the `cache:clear` task. If you store the function cache somewhere else, it will not be cleared automatically when you clear the cache through the command line.
 
 ### Caching Data in the Server
 
@@ -617,7 +617,7 @@ And that's not all, because an evident test like the preceding one also gets opt
 
 To apply the optimizations, you must first install the plug-in from [http://trac.symfony-project.com/wiki/sfOptimizerPlugin](http://trac.symfony-project.com/wiki/sfOptimizerPlugin) and then call the `optimize` task, specifying an application and an environment:
 
-    > symfony optimize frontend prod
+    > php symfony optimize frontend prod
 
 If you want to apply other optimization strategies to your code, the `sfOptimizer` plug-in might be a good starting place.
 
