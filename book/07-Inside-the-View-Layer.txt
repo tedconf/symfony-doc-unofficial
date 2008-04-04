@@ -915,22 +915,22 @@ If you echo this value without caution, the JavaScript will execute on every bro
     [php]
     &lt;script&gt;alert(document.cookie)&lt;/script&gt;
 
-You could escape your output manually by enclosing every unsure value in a call to `htmlentities()`, but that approach would be very repetitive and error-prone. Instead, symfony provides a special system, called output escaping, which automatically escapes every variable output in a template. It is activated by a simple parameter in the application `settings.yml`.
+You could escape your output manually by enclosing every unsure value in a call to `htmlspeciachars()`, but that approach would be very repetitive and error-prone. Instead, symfony provides a special system, called output escaping, which automatically escapes every variable output in a template. It is activated by a simple parameter in the application `settings.yml`.
 
 ### Activating Output Escaping
 
 Output escaping is configured globally for an application in the `settings.yml` file. Two parameters control the way that output escaping works: the strategy determines how the variables are made available to the view, and the method is the default escaping function applied to the data.
 
-The next sections describe these settings in detail but, basically, all you need to do to activate output escaping is to set the `escaping_strategy` parameter to `both` instead of its default value `bc`, as shown in Listing 7-42.
+Basically, all you need to do to activate output escaping is to set the `escaping_strategy` parameter to `on` instead of its default value `off`, as shown in Listing 7-42.
 
 Listing 7-42 - Activating Output Escaping, in `frontend/config/settings.yml`
 
     all:
       .settings:
-        escaping_strategy: both
-        escaping_method:   ESC_ENTITIES
+        escaping_strategy: on
+        escaping_method:   ESC_SPECIALCHARS
 
-This will add `htmlentities()` to all variable output by default. For instance, suppose that you define a `test` variable in an action as follows:
+This will add `htmlspecialchars()` to all variable output by default. For instance, suppose that you define a `test` variable in an action as follows:
 
     [php]
     $this->test = '<script>alert(document.cookie)</script>';
@@ -939,18 +939,18 @@ With output escaping turned on, echoing this variable in the template will outpu
 
     [php]
     echo $test;
-     => &gt;&lt;script&gt;alert(document.cookie)&lt;/script&gt;
+     => &lt;script&gt;alert(document.cookie)&lt;/script&gt;
 
-Activating output escaping also gives access to an `$sf_data` variable in every template. It is a container object referencing all the escaped variables. So you can also output the test variable with the following:
+In addition, every template has access to an `$sf_data` variable, which is a container object referencing all the escaped variables. So you can also output the test variable with the following:
 
     [php]
     echo $sf_data->get('test');
-    => &gt;&lt;script&gt;alert(document.cookie)&lt;/script&gt;
+    => &lt;script&gt;alert(document.cookie)&lt;/script&gt;
 
 >**TIP**
 >The $sf_data object implements the Array interface, so instead of using the `$sf_data->get('myvariable')`, you can retrieve escaped values by calling `$sf_data['myvariable']`. But it is not a real array, so functions like `print_r()` will not work as expected.
 
-This object also gives you access to the unescaped, or raw, data. This is useful when a variable stores HTML code meant to be interpreted by the browser, provided that you trust this variable. Call the `getRaw()` method when you need to output the raw data.
+`$sf_data` also gives you access to the unescaped, or raw, data. This is useful when a variable stores HTML code meant to be interpreted by the browser, provided that you trust this variable. Call the `getRaw()` method when you need to output the raw data.
 
     [php]
     echo $sf_data->getRaw('test');
@@ -958,27 +958,24 @@ This object also gives you access to the unescaped, or raw, data. This is useful
 
 You will have to access raw data each time you need variables containing HTML to be really interpreted as HTML. You can now understand why the default layout uses `$sf_data->getRaw('sf_content')` to include the template, rather than a simpler `$sf_content`, which breaks when output escaping is activated.
 
-### Escaping Strategy
+When `escaping_strategy` is `off`, `$sf_data` is still available, but it always returns raw data.
 
-The `escaping_strategy` setting determines the way variables are output by default. The following are the possible values:
-
-  * `bc` (backward compatible mode): Variables are not escaped, but an escaped version of each variable is available through the `$sf_data` container. So the data is raw by default, unless you choose to use the escaped value via the `$sf_data` object. This is the default value, and you should be aware that with this strategy, your application is subject to XSS attack risks.
-  * `both`: All variables are escaped by default. Values are also made available in the `$sf_data` container. This is the recommended strategy, since you will be at risk only if you voluntarily output raw data. In some cases, you will have to use unescaped data--for instance, if you output a variable that contains HTML with the intention that this HTML be rendered as such in the browser. So be aware that if you switch to this strategy with a partially developed application, some features may break. The best choice is to use this setting right from the beginning.
-  * `on`: Values are available only in the `$sf_data` container. This is the most secure and fastest way to deal with escaping, because each time you output a variable, you must choose if you want to use the escaped version with `get()` or the raw version with `getRaw()`. So you are always aware of the possibility that data may be corrupted.
-  * `off`: Turns off output escaping. The `$sf_data` container is not available in templates. You can choose to use this strategy rather than `bc` to speed up your application if you are sure that you will never need to access escaped data.
+>**TIP**
+>Symfony 1.0 had two other possible values for `escaping_strategy`. `bc` now fallbacks to `off`, and `both` now fallbacks to `on`. Using any of these values still work, but will log an error.
 
 ### Escaping Helpers
 
 Escaping helpers are functions returning an escaped version of their input. They can be provided as a default `escaping_method` in the `settings.yml` file or to specify an escaping method for a specific value in the view. The following escaping helpers are available:
 
   * `ESC_RAW`: Doesn't escape the value.
+  * `ESC_SPECIALCHARS`: Applies the PHP function `htmlspecialchars()` to the input.
   * `ESC_ENTITIES`: Applies the PHP function `htmlentities()` to the input with `ENT_QUOTES` as the quote style.
   * `ESC_JS`: Escapes a value to be put into a JavaScript string that is going to be used as HTML. This is useful for escaping things where HTML is going to be dynamically changed using JavaScript.
   * `ESC_JS_NO_ENTITIES`: Escapes a value to be put into a JavaScript string but does not add entities. This is useful if the value is going to be displayed using a dialog box (for example, for a `myString` variable used in `javascript:alert(myString);`).
 
 ### Escaping Arrays and Objects
 
-Output escaping not only works for strings, but also for arrays and objects. Any values that are objects or arrays will pass on their escaped state to their children. Assuming your strategy is set to `both`, Listing 7-43 demonstrates the escaping cascade.
+Output escaping not only works for strings, but also for arrays and objects. Any values that are objects or arrays will pass on their escaped state to their children. Assuming your strategy is set to `on`, Listing 7-43 demonstrates the escaping cascade.
 
 Listing 7-43 - Escaping Also Works for Arrays and Objects
 
@@ -1015,7 +1012,7 @@ As a matter of fact, the variables in the template are not of the type you might
     <?php echo get_class($test_object) ?>
      => sfOutputEscaperObjectDecorator
 
-This explains why some usual PHP functions (like `array_shift()`, `print_r()`, and so on) don't work on escaped arrays anymore. But they can be still be accessed using `[]`, be traversed using foreach, and they give back the right result with `count()` (`count()` works only with PHP 5.2 or later). And in templates, the data should be read-only anyway, so most access will be through the methods that do work.
+This explains why some usual PHP functions (like `array_shift()`, `print_r()`, and so on) don't work on escaped arrays anymore. But they can be still be accessed using `[]`, be traversed using `foreach`, and they give back the right result with `count()` (`count()` works only with PHP 5.2 or later). And in templates, the data should be read-only anyway, so most access will be through the methods that do work.
 
 You still have a way to retrieve the raw data through the `$sf_data` object. In addition, methods of escaped objects are altered to accept an additional parameter: an escaping method. So you can choose an alternative escaping method each time you display a variable in a template, or opt for the `ESC_RAW` helper to deactivate escaping. See Listing 7-44 for an example.
 
