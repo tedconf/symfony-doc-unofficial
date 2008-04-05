@@ -844,6 +844,8 @@ Listing 14-31 - Defining Interactions for Each View, in `backend/modules/article
           object_actions:
             _edit:         ~
             _delete:       ~
+          batch_actions:
+            _delete:       ~
           actions:
             _create:       ~
 
@@ -855,13 +857,13 @@ Listing 14-31 - Defining Interactions for Each View, in `backend/modules/article
             _save_and_add: ~
             _delete:       ~
 
-In a `list` view, there are two action settings: the list of actions available for every object, and the list of actions available for the whole page. The list interactions defined in Listing 14-31 render like in Figure 14-22. Each line shows one button to edit the record and one to delete it. At the bottom of the list, a button allows the creation of a new record.
+In a `list` view, there are three action settings: the actions available for every object (`object_actions`), the actions available for a selection of objects (`batch_actions`), and actions available for the whole page (`actions`). The list interactions defined in Listing 14-31 render like in Figure 14-22. Each line shows one button to edit the record and one to delete it, plus one checkbox on each line to delete a selection of records. At the bottom of the list, a button allows the creation of a new record.
 
 Figure 14-22 - Interactions in the `list` view
 
 ![Interactions in the list view](/images/book/F1422.png "Interactions in the list view")
 
-In an `edit` view, as there is only one record edited at a time, there is only one set of actions to define. The `edit` interactions defined in Listing 14-31 render like in Figure 14-23. Both the `save` and the `save_and_add` actions save the current edits in the records, the difference being that the `save` action displays the `edit` view on the current record after saving, while the `save_and_add` action displays an empty `edit` view to add another record. The `save_and_add` action is a shortcut that you will find very useful when adding many records in rapid succession. As for the position of the `delete` action, it is separated from the other buttons so that users don't click it by mistake.
+In an `edit` view, as there is only one record edited at a time, there is only one set of actions to define (under `actions`). The `edit` interactions defined in Listing 14-31 render like in Figure 14-23. Both the `save` and the `save_and_add` actions save the current edits in the records, the difference being that the `save` action displays the `edit` view on the current record after saving, while the `save_and_add` action displays an empty `edit` view to add another record. The `save_and_add` action is a shortcut that you will find very useful when adding many records in rapid succession. As for the position of the `delete` action, it is separated from the other buttons so that users don't click it by mistake.
 
 The interaction names starting with an underscore (`_`) tell symfony to use the default icon and action corresponding to these interactions. The administration generator understands `_edit`, `_delete`, `_create`, `_list`, `_save`, `_save_and_add`, and `_create`.
 
@@ -869,7 +871,7 @@ Figure 14-23 - Interactions in the `edit` view
 
 ![Interactions in the edit view](/images/book/F1423.png "Interactions in the edit view")
 
-But you can also add a custom interaction, in which case you must specify a name starting with no underscore, as in Listing 14-32.
+But you can also add a custom interaction, in which case you must specify a name starting with no underscore, and a target action in the current module, as in Listing 14-32.
 
 Listing 14-32 - Defining a Custom Interaction
 
@@ -899,6 +901,8 @@ Listing 14-33 - Implementing the Custom Interaction Action, in `actions/actions.
 
       $this->redirect('comment/edit?id='.$comment->getId());
     }
+
+Batch actions receive an array of the primary keys of the selected records in the `sf_admin_batch_selection` request parameter.
 
 One last word about actions: If you want to suppress completely the actions for one category, use an empty list, as in Listing 14-34.
 
