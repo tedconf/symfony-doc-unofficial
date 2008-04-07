@@ -365,12 +365,29 @@ Listing 17-13 - Default Factories File, in `frontend/config/factories.yml`
     #
     #  request:
     #    class: sfWebRequest
+    #    param:
+    #      formats:
+    #        txt:  text/plain
+    #        js:   [application/javascript, application/x-javascript, text/javascript]
+    #        css:  text/css
+    #        json: [application/json, application/x-json]
+    #        xml:  [text/xml, application/xml, application/x-xml]
+    #        rdf:  application/rdf+xml
+    #        atom: application/atom+xml
     #
     #  response:
     #    class: sfWebResponse
+    #    param:
+    #      logging: %SF_LOGGING_ENABLED%
+    #      charset: %SF_CHARSET%
     #
     #  user:
     #    class: myUser
+    #    param:
+    #      timeout:         1800
+    #      logging:         %SF_LOGGING_ENABLED%
+    #      use_flash:       true
+    #      default_culture: %SF_DEFAULT_CULTURE%
     #
     #  storage:
     #    class: sfSessionStorage
@@ -388,6 +405,10 @@ Listing 17-13 - Default Factories File, in `frontend/config/factories.yml`
     #  i18n:
     #    class: sfI18N
     #    param:
+    #      source:               XLIFF
+    #      debug:                off
+    #      untranslated_prefix:  "[T]"
+    #      untranslated_suffix:  "[/T]"
     #      cache:
     #        class: sfFileCache
     #        param:
@@ -398,6 +419,39 @@ Listing 17-13 - Default Factories File, in `frontend/config/factories.yml`
     #
     #  routing:
     #    class: sfPatternRouting
+    #    param:
+    #      load_configuration: true
+    #      suffix:             .
+    #      default_module:     default
+    #      default_action:     index
+    #      variable_prefixes:  [':']
+    #      segment_separators: ['/', '.']
+    #      variable_regex:     '[\w\d_]+'
+    #      debug:              %SF_DEBUG%
+    #      logging:            %SF_LOGGING_ENABLED%
+    #      cache:
+    #        class: sfFileCache
+    #        param:
+    #          automatic_cleaning_factor: 0
+    #          cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
+    #          lifetime:                  31556926
+    #          prefix:                    %SF_APP_DIR%
+    #
+    #  logger:
+    #    class: sfAggregateLogger
+    #    param:
+    #      level: debug
+    #      loggers:
+    #        sf_web_debug:
+    #          class: sfWebDebugLogger
+    #          param:
+    #            condition:      %SF_WEB_DEBUG%
+    #            xdebug_logging: true
+    #        sf_file_debug:
+    #          class: sfFileLogger
+    #          param:
+    #            file: %SF_LOG_DIR%/%SF_APP%_%SF_ENVIRONMENT%.log
+
 
 The best way to change a factory is to create a new class inheriting from the default factory and to add new methods to it. For instance, the user session factory is set to the `myUser` class (located in `frontend/lib/`) and inherits from `sfUser`. Use the same mechanism to take advantage of the existing factories. Listing 17-14 shows an example of a new factory for the request object.
 
@@ -775,13 +829,13 @@ Listing 17-27 - Customizing a Plug-In Action
 >        title:          varchar(50)
 >        user_id:        { type: integer }
 >        created_at:
->    
+>
 >    # Custom schema, in myPlugin_schema.custom.yml
 >    propel:
 >      article:
 >        _attributes:    { phpName: Article, package: foo.bar.lib.model }
 >        stripped_title: varchar(50)
->    
+>
 >    # Resulting schema, merged internally and used for model and sql generation
 >    propel:
 >      article:
