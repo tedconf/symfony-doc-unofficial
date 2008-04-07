@@ -224,21 +224,17 @@ Listing 5-11 - The Default Production Front Controller
     [php]
     <?php
 
-    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
-    define('SF_APP',         'frontend');
-    define('SF_ENVIRONMENT', 'prod');
-    define('SF_DEBUG',       false);
+    require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
 
-    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
+    $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'prod', false);
+    sfContext::createInstance($configuration)->dispatch();
 
-    sfContext::getInstance()->getController()->dispatch();
+After defining the name of the application (`frontend`) and the environment (`prod`), the application configuration is called before creating a context and dispatching. So a few useful methods are available in the application configuration class:
 
-After defining the name of the application (`frontend`) and the environment (`prod`), the general configuration file is called before the dispatching. So a few useful constants are defined here:
-
-  * `SF_ROOT_DIR`: Project root directory (normally, should remain at its default value, unless you change the file structure).
-  * `SF_APP`: Application name in the project. Necessary to compute file paths.
-  * `SF_ENVIRONMENT`: Environment name (`prod`, `dev`, or any other project-specific environment that you define). Will determine which configuration settings are to be used. Environments are explained later in this chapter.
-  * `SF_DEBUG`: Activation of the debug mode (see Chapter 16 for details).
+  * `$configuration->getRootDir()`: Project root directory (normally, should remain at its default value, unless you change the file structure).
+  * `$configuration->getApplication()`: Application name in the project. Necessary to compute file paths.
+  * `$configuration->getEnvironment()`: Environment name (`prod`, `dev`, or any other project-specific environment that you define). Will determine which configuration settings are to be used. Environments are explained later in this chapter.
+  * `$configuration->isDebug()`: Activation of the debug mode (see Chapter 16 for details).
 
 If you want to change one of these values, you probably need an additional front controller. The next chapter will tell you more about front controllers and how to create a new one.
 

@@ -163,14 +163,10 @@ Listing 16-7 - Sample Front Controller with Debug Mode On, in `web/frontend_dev.
     [php]
     <?php
 
-    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
-    define('SF_APP',         'frontend');
-    define('SF_ENVIRONMENT', 'dev');
-    define('SF_DEBUG',       true);
+    require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
 
-    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
-
-    sfContext::getInstance()->getController()->dispatch();
+    $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'dev', true);
+    sfContext::createInstance($configuration)->dispatch();
 
 >**CAUTION**
 >In your production server, you should not activate the debug mode nor leave any front controller with debug mode on available. Not only will the debug mode slow down the page delivery, but it may also reveal the internals of your application. Even though the debug tools never reveal database connection information, the stack trace of exceptions is full of dangerous information for any ill-intentioned visitor.
@@ -528,7 +524,7 @@ Listing 16-17 - Adding a Record to a Table Related by a Many-to-Many relationshi
       first_author:
         name: John Doe
         article_authors: [first_post, second_post]
-        
+
 One data file can contain declarations of several classes. But if you need to insert a lot of data for many different tables, your fixture file might get too long to be easily manipulated.
 
 The `propel:data-load` task parses all the files it finds in the `fixtures/` directory, so nothing prevents you from splitting a YAML fixture file into smaller pieces. The important thing to keep in mind is that foreign keys impose a processing order for the tables. To make sure that they are parsed in the correct order, prefix the files with an ordinal number.
