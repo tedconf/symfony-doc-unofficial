@@ -472,10 +472,10 @@ Listing 17-14 - Overriding Factories
       request:
         class: myRequest
 
-Bridges to Other Framework's Components
----------------------------------------
+Integrating with Other Framework's Components
+---------------------------------------------
 
-If you need capabilities provided by a third-party class, and if you don't want to copy this class in one of the symfony `lib/` dirs, you will probably install it outside of the usual places where symfony looks for files. In that case, using this class will imply a manual `require` in your code, unless you use the symfony bridge to take advantage of the autoloading.
+If you need capabilities provided by a third-party class, and if you don't want to copy this class in one of the symfony `lib/` dirs, you will probably install it outside of the usual places where symfony looks for files. In that case, using this class will imply a manual `require` in your code, unless you use the symfony spl autoload integration to take advantage of the autoloading.
 
 Symfony doesn't (yet) provide tools for everything. If you need a PDF generator, an API to Google Maps, or a PHP implementation of the Lucene search engine, you will probably need a few libraries from the Zend Framework. If you want to manipulate images directly in PHP, connect to a POP3 account to read e-mails, or design a console interface, you might choose the libraries from eZcomponents. Fortunately, if you define the right settings, the components from both these libraries will work out of the box in symfony.
 
@@ -484,20 +484,54 @@ The first thing that you need to declare (unless you installed the third-party l
     .settings:
       zend_lib_dir:   /usr/local/zend/library/
       ez_lib_dir:     /usr/local/ezcomponents/
+      swift_lib_dir:  /usr/local/swiftmailer/
 
-Then, extend the PHP autoload system by specifying which library to consider when the autoloading fails with symfony. You can do this by registering symfony bridge classes in the application `config.php` file (see Chapter 19 for more information):
+Then, extend the PHP autoload system by specifying which library to consider when the autoloading fails with symfony. You can do this by registering the autoload classes in the application configuration class (see Chapter 19 for more information):
 
     [php]
-    spl_autoload_register(array('sfZendFrameworkBridge', 'autoload'));
-    spl_autoload_register(array('sfEzComponentsBridge', 'autoload'));
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      public function initialize()
+      {
+        parent::initialize(); // load symfony autoloading first
+
+        // Integrate Zend Framework
+        if($sf_zend_lib_dir = sfConfig::get('sf_zend_lib_dir'))
+        {
+          set_include_path($sf_zend_lib_dir.PATH_SEPARATOR.get_include_path());
+
+          require_once($sf_zend_lib_dir.'/Zend/Loader.php');
+          spl_autoload_register(array('Zend_Loader', 'Zend_Loader'));
+        }
+
+        // Integrate eZ Components
+        if($sf_ez_lib_dir = sfConfig::get('sf_ez_lib_dir'))
+        {
+          set_include_path($sf_ez_lib_dir.PATH_SEPARATOR.get_include_path());
+
+          require_once($sf_ez_lib_dir.'/Base/base.php');
+          spl_autoload_register(array('ezcBase', 'autoload'));
+        }
+
+        // Integrate Swift Mailer
+        if($sf_swift_lib_dir = sfConfig::get('sf_swift_lib_dir'))
+        {
+          set_include_path($sf_swift_lib_dir.PATH_SEPARATOR.get_include_path());
+
+          require_once($sf_swift_lib_dir.'/Swift/ClassLoader.php');
+          spl_autoload_register(array('Swift_ClassLoader', 'load'));
+        }
+      }
+    }
 
 The following describes what will happen when you create a new object of an unloaded class:
 
   1. The symfony autoloading function (`sfAutoload::autoload()`) first looks for a class in the paths declared in the `autoload.yml` file.
-  2. If none is found, the callback methods registered by `spl_autoload_register()` calls will be called one after the other, until one of them returns `true`:
-  3. `sfZendFrameworkBridge::autoload()`
-  4. `sfEzComponentsBridge::autoload()`
-  5. If these also return `false`, PHP will generate an error.
+  2. If no class path is found, the callback methods registered by `spl_autoload_register()` calls will be called one after the other, until one of them returns `true`:
+  3. `Zend_Loader::Zend_Loader()`
+  4. `ezcBase::autoload()`
+  5. `Swift_ClassLoader::load()`
+  6. If these also return `false`, PHP will generate an error.
 
 This means that the other framework components benefit from the autoload mechanism, and you can use them even more easily than within their own environment. For instance, if you want to use the `Zend_Search` component in the Zend Framework to implement an equivalent of the Lucene search engine in PHP, you have to write this:
 
@@ -507,14 +541,12 @@ This means that the other framework components benefit from the autoload mechani
     $doc->addField(Zend_Search_Lucene_Field::Text('url', $docUrl));
     ...
 
-With symfony and the Zend Framework bridge, it is simpler. Just write this:
+With symfony and spl autoloading, it is simpler. Just write this with out any need for require:
 
     [php]
     $doc = new Zend_Search_Lucene_Document(); // The class is autoloaded
     $doc->addField(Zend_Search_Lucene_Field::Text('url', $docUrl));
     ...
-
-The available bridges are stored in the `$sf_symfony_lib_dir/addon/bridge/` directory.
 
 Plug-Ins
 --------
@@ -535,7 +567,7 @@ Each plug-in listed there has its own page, with detailed installation instructi
 
 Some of these plug-ins are contributions from the community, and some come from the core symfony developers. Among the latter, you will find the following:
 
-  * `sfFeedPlugin`: Automates the manipulation of RSS and Atom feeds
+  * `sfFeed2Plugin`: Automates the manipulation of RSS and Atom feeds
   * `sfThumbnailPlugin`: Creates thumbnails--for instance, for uploaded images
   * `sfMediaLibraryPlugin`: Allows media upload and management, including an extension for rich text editors to allow authoring of images inside rich text
   * `sfShoppingCartPlugin`: Allows shopping cart management

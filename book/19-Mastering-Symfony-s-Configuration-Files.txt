@@ -267,23 +267,20 @@ Listing 19-4 - Default Autoloading Configuration, in `$sf_symfony_lib_dir/config
 
 A rule path can contain wildcards and use the file path parameters from the `constants.php` file (see the next section). If you use these parameters in the configuration file, they must appear in uppercase and begin and end with `%`.
 
-Editing your own `autoload.yml` will add new locations to symfony's autoloading, but you may want to extend this mechanism and add your own autoloading handler to symfony's handler. As symfony uses the standard `spl_autoload_register()` function to manage class autoloading, you can register more callbacks in the application `config.php` file:
+Editing your own `autoload.yml` will add new locations to symfony's autoloading, but you may want to extend this mechanism and add your own autoloading handler to symfony's handler. As symfony uses the standard `spl_autoload_register()` function to manage class autoloading, you can register more callbacks in the application configuration class:
 
     [php]
-    // include project configuration
-    include(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
-
-    // symfony bootstraping
-    require_once($sf_symfony_lib_dir.'/util/sfCore.class.php');
-    sfCore::bootstrap($sf_symfony_lib_dir, $sf_symfony_data_dir);
-
-    // insert your own autoloading callables here
-    spl_autoload_register(array('myToolkit', 'autoload'));
-
-    if (sfConfig::get('sf_debug'))
+    class frontendConfiguration extends sfApplicationConfiguration
     {
-      spl_autoload_register(array('sfAutoload', 'autoloadAgain'));
+      public function initialize()
+      {
+        parent::initialize(); // load symfony autoloading first
+
+        // insert your own autoloading callables here
+        spl_autoload_register(array('myToolkit', 'autoload'));
+      }
     }
+
 
 When the PHP autoloading system encounters a new class, it will first try the symfony autoloading method (and use the locations defined in `autoload.yml`). If it doesn't find a class definition, all the other callables registered with `spl_autoload_register()` will be called, until the class is found. So you can add as many autoloading mechanisms as you want--for instance, to provide a bridge to other framework components (see Chapter 17).
 
