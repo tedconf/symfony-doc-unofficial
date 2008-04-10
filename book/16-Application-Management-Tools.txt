@@ -335,7 +335,7 @@ Listing 16-11 - Inserting a Message in the Debug Toolbar
 Using symfony outside of a web context
 --------------------------------------
 
-You may want to execute a script from the command line (or via a cron table) with access to all the symfony classes and features, for instance to launch batch e-mail jobs or to periodically update your model through a process-intensive calculation. The old way of doing this is to create a PHP script that reproduces the first steps of a front controller, so that symfony is properly initialized. But there is a better way: just create a new symfony command task. Both ways are explained in this section.
+You may want to execute a script from the command line (or via a cron table) with access to all the symfony classes and features, for instance to launch batch e-mail jobs or to periodically update your model through a process-intensive calculation. The simple way of doing this is to create a PHP script that reproduces the first steps of a front controller, so that symfony is properly initialized. You can also use the symfony command line system, to take advantage of arguments parsing and automated database initialization.
 
 ### Batch Files
 
@@ -364,42 +364,45 @@ To execute your code, just call the script from the command line:
 
     > php lib/myScript.php
 
->**NOTE**
->As of symfony 1.0, such scripts would be located under the `batch/` diretory. This directory does not exist anymore in 1.1 projects, and it is advised to write batch scripts as symfony commands to take advantage of the options parsing--see below.
-
 ### Custom tasks (new in symfony 1.1)
 
 An alternative way of creating custom command line scripts using symfony is to write a **symfony task**. Just like the `cache:clear` and the `propel:build-model` tasks, you can launch your own custom tasks from the command line with `php symfony`. Custom tasks benefit from the ability to parse command line arguments and options, can embed their own help text, and can extend existing tasks.
 
 A custom task is just a class extending `sfBaseTask` and located under a `lib/task/` directory, either under the project root, or in a plugin directory. Its file name must end with 'Task.class.php'. Listing 16-13 shows a sample custom task.
 
-Listing 16-13 - Sample Task, in `lib/task/myTask.class.php`
+Listing 16-13 - Sample Task, in `lib/task/testHelloTask.class.php`
 
     [php]
 
-    class myTask extends sfBaseTask
+    class testHelloTask extends sfBaseTask
     {
       protected function configure()
       {
-        $this->name = 'myTask';
-        $this->briefDescription = 'Does some neat things';
+        $this->namespace = 'test';
+        $this->name = 'hello';
+        $this->briefDescription = 'Says hello';
       }
 
       protected function execute()
       {
-        // add code here
+        // your code here
+        $this->log('Hello, world!');
       }
     }
 
-The code written in the `execute` method will have access to all the symfony libraries, just like in the previous batch script. The difference is how you call the custom task:
+The code written in the `execute` method has access to all the symfony libraries, just like in the previous batch script. The difference is how you call the custom task:
 
-    > php symfony myTask
+    > php symfony test:hello
 
-The task names comes from the protected `name` property (not from the class name, nor from the files name). And since your task is integrated into the symfony command line, it appears in the task list when you just type:
+The task name comes from the protected `namespace` and `name` properties (not from the class name, nor from the files name). And since your task is integrated into the symfony command line, it appears in the task list when you just type:
 
     > php symfony
 
-As for regular classes, you can add a help text: just define the `detailedDescription` property. The help text will be displayed when a user calls `php symfony help myTask`. You can also put your task in a given namespace, to avoid name conflicts. Just define the `namespace` property for that. Last but not least, you can add arguments (compulsory parameters, in a predefined order) and options (optional and unordered parameters) to your command. Listing 16-14 shows a more complete task, taking advantage of all these features.
+Rather than writing a task skeleton by yourself, you can use the symfony `task:init` task. It creates an empty task, and has plenty of customization options. Make sure you check them by calling:
+
+    > php symfony help task:init
+
+Tasks can accept arguments (compulsory parameters, in a predefined order) and options (optional and unordered parameters). Listing 16-14 shows a more complete task, taking advantage of all these features.
 
 Listing 16-14 - More Complete Sample Task, in `lib/task/mySecondTask.class.php`
 
@@ -421,28 +424,26 @@ Listing 16-14 - More Complete Sample Task, in `lib/task/mySecondTask.class.php`
 
       [php symfony foo:mySecondTask frontend --verbose=on|INFO]
     EOF;
-        $this->addArguments(array(
-          new sfCommandArgument('application', sfCommandArgument::REQUIRED, 'The application name'),
-        ));
-        $this->addOptions(array(
-          new sfCommandOption('verbose', null, sfCommandOption::PARAMETER_REQUIRED, 'Enables verbose output', false),
-        ));
+        $this->addArgument('application', sfCommandArgument::REQUIRED, 'The application name');
+        $this->addOption('verbose', null, sfCommandOption::PARAMETER_REQUIRED, 'Enables verbose output', false);
       }
 
       protected function execute($arguments = array(), $options = array())
       {
         // add code here
+        
       }
     }
 
 >**NOTE**
->If your task needs access to the database layer, it should extend `sfPropelBaseTask` instead of `sfBaseTask`. The task initialization will then take care loading the additional Propel classes. The task can require an `application` and an `environment` argument so that you can start a database connection in the `execute()` method by calling:
+>If your task needs access to the database layer, it should extend `sfPropelBaseTask` instead of `sfBaseTask`. The task initialization will then take care of loading the additional Propel classes. The task can require an `application` and an `env` argument so that you can start a database connection in the `execute()` method by calling:
 >
 >    $configuration = ProjectConfiguration::getApplicationConfiguration($arguments['application'], $options['env'], true);
 >    $databaseManager = new sfDatabaseManager($configuration);
 >
+>By default, skeletons generated by a call to `task:init` include this initialization.
 
-For more examples on how to create a custom task, check the source of existing symfony tasks.
+For more examples on the abilities of the task system, check the source of existing symfony tasks.
 
 If you declare a task with the same name as an existing task, your class overrides the existing task. That means that a plugin can override a symfony task, and that a project can override a plugin task and a symfony task. Add to that the ability to extend an existing task class, and you have a very extensible command line system!
 
