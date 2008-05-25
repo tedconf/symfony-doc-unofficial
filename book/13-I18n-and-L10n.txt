@@ -24,15 +24,16 @@ All the built-in i18n features in symfony are based on a parameter of the user s
 
 ### Setting the Default Culture
 
-By default, the culture of new users is the `default_culture`. You can change this setting in the `i18n.yml` configuration file, as shown in Listing 13-1.
+By default, the culture of new users is the `default_culture`. You can change this setting in the `settings.yml` configuration file, as shown in Listing 13-1.
 
-Listing 13-1 - Setting the Default Culture, in `frontend/config/i18n.yml`
+Listing 13-1 - Setting the Default Culture, in `frontend/config/settings.yml`
 
     all:
-      default_culture:     fr_FR
+      .settings:
+        default_culture: fr_FR
 
 >**NOTE**
->During development, you might be surprised that a culture change in the `i18n.yml` file doesn't change the current culture in the browser. That's because the session already has a culture from previous pages. If you want to see the application with the new default culture, you need to clear the domain cookies or restart your browser.
+>During development, you might be surprised that a culture change in the `settings.yml` file doesn't change the current culture in the browser. That's because the session already has a culture from previous pages. If you want to see the application with the new default culture, you need to clear the domain cookies or restart your browser.
 
 Keeping both the language and the country in the culture is necessary because you may have a different French translation for users from France, Belgium, or Canada, and a different Spanish content for users from Spain or Mexico. The language is coded in two lowercase characters, according to the ISO 639-1 standard (for instance, `en` for English). The country is coded in two uppercase characters, according to the ISO 3166-1 standard (for instance, `GB` for Great Britain).
 
@@ -73,14 +74,19 @@ Listing 13-2 - Setting and Retrieving the Culture in an Action
 
 ### Determining the Culture Automatically
 
-In many applications, the user culture is defined during the first request, based on the browser preferences. Users can define a list of accepted languages in their browser, and this data is sent to the server with each request, in the `Accept-Language` HTTP header. You can retrieve it in symfony through the `sfRequest` object. For instance, to get the list of preferred languages of a user in an action, type this:
+In many applications, the user culture is defined during the first request, based on the browser preferences. Users can define a list of accepted languages in their browser, and this data is sent to the server with each request, in the `Accept-Language` HTTP header. You can retrieve it in symfony through the `sfWebRequest` object. For instance, to get the list of preferred languages of a user in an action, type this:
 
     [php]
-    $languages = $this->getRequest()->getLanguages();
+    $languages = $request->getLanguages();
 
 The HTTP header is a string, but symfony automatically parses it and converts it into an array. So the preferred language of the user is accessible with `$languages[0]` in the preceding example.
 
-It can be useful to automatically set the user culture to the preferred browser languages in a site home page or in a filter for all pages.
+It can be useful to automatically set the user culture to its preferred browser language in a site home page or in a filter for all pages. But as your website will probably only support a limited set of languages, it's better to use the `getPreferredCulture()` method. It returns the best language by comparing the user preferred languages and the supported languages:
+
+    [php]
+    $language = $request->getPreferredCulture(array('en', 'fr')); // the website is available in English and French
+
+If there is no match, the method returns the first supported language (`en` in the preceding example).
 
 >**CAUTION**
 >The `Accept-Language` HTTP header is not very reliable information, since users rarely know how to modify it in their browser. Most of the time, the preferred browser language is the language of the interface, and browsers are not available in all languages. If you decide to set the culture automatically according to the browser preferred language, make sure you provide a way for the user to choose an alternate language.
@@ -221,31 +227,17 @@ Listing 13-8 - Dealing with i18n Objects
 
     [php]
     $product = ProductPeer::retrieveByPk(1);
-    $product->setCulture('fr');
-    $product->setName('Nom du produit');
+    $product->setName('Nom du produit'); // By default, the culture is the current user culture
     $product->save();
 
-    $product->setCulture('en');
-    $product->setName('Product name');
-    $product->save();
-
-    echo $product->getName();
-     => 'Product name'
-
-    $product->setCulture('fr');
     echo $product->getName();
      => 'Nom du produit'
 
-If you'd rather not have to remember to change the culture each time you use an i18n object, you can also change the `hydrate()` method in the object class. See an example in Listing 13-9.
+    $product->setName('Product name', 'en'); // change the value for the 'en' culture
+    $product->save();
 
-Listing 13-9 - Overriding the `hydrate()` Method to Set the Culture, in `myproject/lib/model/Product.php`
-
-    [php]
-    public function hydrate(ResultSet $rs, $startcol = 1)
-    {
-      parent::hydrate($rs, $startcol);
-      $this->setCulture(sfContext::getInstance()->getUser()->getCulture());
-    }
+    echo $product->getName('en');
+     => 'Product name'
 
 As for queries with the peer objects, you can restrict the results to objects having a translation for the current culture by using the `doSelectWithI18n` method, instead of the usual `doSelect`, as shown in Listing 13-10. In addition, it will create the related i18n objects at the same time as the regular ones, resulting in a reduced number of queries to get the full content (refer to Chapter 18 for more information about this method's positive impacts on performance).
 
@@ -375,7 +367,7 @@ You can also delete old strings automatically by passing the `--auto-delete` opt
     > php symfony i18n-extract --auto-save --auto-delete frontend en
 
 >**NOTE**
->The current task has some known limitations. It can only works with the default `messages` dictionary and for file based backends (XLIFF and gettext), it only saves and deletes strings in the `apps/frontend/i18n/messages.XX.xml` file.
+>The current task has some known limitations. It can only works with the default `messages` dictionary, and for file based backends (XLIFF or gettext), it only saves and deletes strings in the main `apps/frontend/i18n/messages.XX.xml` file.
 
 ### Handling Other Elements Requiring Translation
 
