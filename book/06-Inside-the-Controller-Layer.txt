@@ -55,7 +55,7 @@ The front controller includes the application configuration, which takes care of
 
 ### Calling Another Front Controller to Switch the Environment
 
-One front controller exists per environment. As a matter of fact, it is the very existence of a front controller that defines an environment. The environment is defined in the `SF_ENVIRONMENT` constant.
+One front controller exists per environment. As a matter of fact, it is the very existence of a front controller that defines an environment. The environment is defined by the second argument you pass to the `ProjectConfiguration::getApplicationConfiguration()` method call.
 
 To change the environment in which you're browsing your application, just choose another front controller. The default front controllers available when you create a new application with the `generate:app` task are `index.php` for the production environment and `frontend_dev.php` for the development environment (provided that your application is called `frontend`). The default `mod_rewrite` configuration will use `index.php` when the URL doesn't contain a front controller script name. So both of these URLs display the same page (`mymodule/index`) in the production environment:
 
@@ -66,7 +66,7 @@ and this URL displays that same page in the development environment:
 
     http://localhost/frontend_dev.php/mymodule/index
 
-Creating a new environment is as easy as creating a new front controller. For instance, you may need a staging environment to allow your customers to test the application before going to production. To create this staging environment, just copy `web/frontend_dev.php` into `web/frontend_staging.php`, and change the value of the `SF_ENVIRONMENT` constant to `staging`. Now, in all the configuration files, you can add a new `staging:` section to set specific values for this environment, as shown in Listing 6-2.
+Creating a new environment is as easy as creating a new front controller. For instance, you may need a staging environment to allow your customers to test the application before going to production. To create this staging environment, just copy `web/frontend_dev.php` into `web/frontend_staging.php`, and change the value of the second argument of the `ProjectConfiguration::getApplicationConfiguration()` call to `staging`. Now, in all the configuration files, you can add a new `staging:` section to set specific values for this environment, as shown in Listing 6-2.
 
 Listing 6-2 - Sample `app.yml` with Specific Settings for the Staging Environment
 
@@ -101,7 +101,7 @@ Listing 6-3 - Sample Action Class, in `apps/frontend/modules/mymodule/actions/ac
     {
       public function executeIndex()
       {
-
+        // ...
       }
     }
 
@@ -121,12 +121,12 @@ Listing 6-4 - Action Class with Two Actions, in `frontend/modules/mymodule/actio
     {
       public function executeIndex()
       {
-        ...
+        // ...
       }
 
       public function executeList()
       {
-        ...
+        // ...
       }
     }
 
@@ -156,7 +156,7 @@ Listing 6-5 - Single Action File, in `frontend/modules/mymodule/actions/indexAct
     {
       public function execute($request)
       {
-        ...
+        // ...
       }
     }
 
@@ -167,7 +167,7 @@ Listing 6-6 - Single Action File, in `frontend/modules/mymodule/actions/listActi
     {
       public function execute($request)
       {
-        ...
+        // ...
       }
     }
 
@@ -180,17 +180,16 @@ Listing 6-7 - `sfActions` Common Methods
     [php]
     class mymoduleActions extends sfActions
     {
-      public function executeIndex()
+      public function executeIndex($request)
       {
         // Retrieving request parameters
-        $password    = $this->getRequestParameter('password');
+        $password    = $request->getParameter('password');
 
         // Retrieving controller information
         $moduleName  = $this->getModuleName();
         $actionName  = $this->getActionName();
 
         // Retrieving framework core objects
-        $request     = $this->getRequest();
         $userSession = $this->getUser();
         $response    = $this->getResponse();
         $controller  = $this->getController();
@@ -199,7 +198,6 @@ Listing 6-7 - `sfActions` Common Methods
         // Setting action variables to pass information to the template
         $this->setVar('foo', 'bar');
         $this->foo = 'bar';            // Shorter version
-
       }
     }
 
@@ -331,9 +329,9 @@ There is a special kind of forward that is used very commonly. The `forward404()
 Listing 6-11 - Use of the `forward404()` Method
 
     [php]
-    public function executeShow()
+    public function executeShow($request)
     {
-      $article = ArticlePeer::retrieveByPK($this->getRequestParameter('id'));
+      $article = ArticlePeer::retrieveByPK($request->getParameter('id'));
       if (!$article)
       {
         $this->forward404();
@@ -341,39 +339,39 @@ Listing 6-11 - Use of the `forward404()` Method
     }
 
 >**TIP**
->If you are looking for the error 404 action and template, you will find them in the `$sf_symfony_ data_dir/modules/default/` directory. You can customize this page by adding a new `default` module to your application, overriding the one located in the framework, and by defining an `error404` action and an error404Success template inside. Alternatively, you can set the error_404_module and error_404_ action constants in the `settings.yml` file to use an existing action.
+>If you are looking for the error 404 action and template, you will find them in the `$sf_symfony_ lib_dir/controller/default/` directory. You can customize this page by adding a new `default` module to your application, overriding the one located in the framework, and by defining an `error404` action and an error404Success template inside. Alternatively, you can set the `error_404_module` and `error_404_action` constants in the `settings.yml` file to use an existing action.
 
-Experience shows that, most of the time, an action makes a redirect or a forward after testing something, such as in Listing 6-12. That's why the sfActions class has a few more methods, named `forwardIf()`, `forwardUnless()`, `forward404If()`, `forward404Unless()`, `redirectIf()`, and `redirectUnless()`. These methods simply take an additional parameter representing a condition that triggers the execution if tested true (for the `xxxIf()` methods) or false (for the `xxxUnless()` methods), as illustrated in Listing 6-12.
+Experience shows that, most of the time, an action makes a redirect or a forward after testing something, such as in Listing 6-12. That's why the `sfActions` class has a few more methods, named `forwardIf()`, `forwardUnless()`, `forward404If()`, `forward404Unless()`, `redirectIf()`, and `redirectUnless()`. These methods simply take an additional parameter representing a condition that triggers the execution if tested true (for the `xxxIf()` methods) or false (for the `xxxUnless()` methods), as illustrated in Listing 6-12.
 
 Listing 6-12 - Use of the `forward404If()` Method
 
     [php]
     // This action is equivalent to the one shown in Listing 6-12
-    public function executeShow()
+    public function executeShow($request)
     {
-      $article = ArticlePeer::retrieveByPK($this->getRequestParameter('id'));
+      $article = ArticlePeer::retrieveByPK($request->getParameter('id'));
       $this->forward404If(!$article);
     }
 
     // So is this one
     public function executeShow()
     {
-      $article = ArticlePeer::retrieveByPK($this->getRequestParameter('id'));
+      $article = ArticlePeer::retrieveByPK($request->getParameter('id'));
       $this->forward404Unless($article);
     }
 
 Using these methods will not only keep your code short, but it will also make it more readable.
 
 >**TIP**
->When the action calls forward404() or its fellow methods, symfony throws an sfError404Exception that manages the 404 response. This means that if you need to display a 404 message from somewhere where you don't want to access the controller, you can just throw a similar exception.
+>When the action calls `forward404()` or its fellow methods, symfony throws an `sfError404Exception` that manages the 404 response. This means that if you need to display a 404 message from somewhere where you don't want to access the controller, you can just throw a similar exception.
 
 ### Repeating Code for Several Actions of a Module
 
-The convention to name actions `executeActionName()` (in the case of an `sfActions` class) or execute() (in the case of an sfAction class) guarantees that symfony will find the action method. It gives you the ability to add other methods of your own that will not be considered as actions, as long as they don't start with `execute`.
+The convention to name actions `executeActionName()` (in the case of an `sfActions` class) or `execute()` (in the case of an `sfAction` class) guarantees that symfony will find the action method. It gives you the ability to add other methods of your own that will not be considered as actions, as long as they don't start with `execute`.
 
 There is another useful convention for when you need to repeat several statements in each action before the actual action execution. You can then extract them into the `preExecute()` method of your action class. You can probably guess how to repeat statements after every action is executed: wrap them in a `postExecute()` method. The syntax of these methods is shown in Listing 6-13.
 
-Listing 6-13 - Using `preExecute`, `postExecute`, and Custom Methods in an Action Class
+Listing 6-13 - Using `preExecute()`, `postExecute()`, and Custom Methods in an Action Class
 
     [php]
     class mymoduleActions extends sfActions
@@ -412,7 +410,7 @@ Listing 6-13 - Using `preExecute`, `postExecute`, and Custom Methods in an Actio
 Accessing the Request
 ---------------------
 
-You're familiar with the `getRequestParameter('myparam')` method, used to retrieve the value of a request parameter by its name. As a matter of fact, this method is a proxy for a chain of calls to the request's parameter holder `getRequest()->getParameter('myparam')`. The action class has access to the request object, called `sfWebRequest` in symfony, and to all its methods, via the `getRequest()` method. Table 6-1 lists the most useful `sfWebRequest` methods.
+The first argument of any action method is the request object, called `sfWebRequest` in symfony. You're already familiar with the `getParameter('myparam')` method, used to retrieve the value of a request parameter by its name. Table 6-1 lists the most useful `sfWebRequest` methods.
 
 Table 6-1 - Methods of the `sfWebRequest` Object
 
@@ -441,29 +439,13 @@ Name                             | Function                               |  Sam
 `getCharsets()`                  | Array of accepted charsets             | `Array( ` ` [0] => ISO-8859-1 ` ` [1] => UTF-8 ` ` [2] => * )`
 getAcceptableContentTypes()      | Array of accepted content types        | `Array( [0] => text/xml [1] => text/html`
 
-* *Works only with prototype*
+* *Works with prototype, Prototype, Mootools, and jQuery*
 
 ** *Sometimes blocked by proxies*
 
-The `sfActions` class offers a few proxies to access the request methods more quickly, as shown in Listing 6-14.
+For multipart requests to which users attach files, the `sfWebRequest` object provides a means to access and move these files, as shown in Listing 6-14. These methods are deprecated in symfony 1.1 (see the form framework and the `sfValidatorFile` class for more information).
 
-Listing 6-14 - Accessing the `sfRequest` Object Methods from an Action
-
-    [php]
-    class mymoduleActions extends sfActions
-    {
-      public function executeIndex()
-      {
-        $hasFoo = $this->getRequest()->hasParameter('foo');
-        $hasFoo = $this->hasRequestParameter('foo');  // Shorter version
-        $foo    = $this->getRequest()->getParameter('foo');
-        $foo    = $this->getRequestParameter('foo');  // Shorter version
-      }
-    }
-
-For multipart requests to which users attach files, the `sfWebRequest` object provides a means to access and move these files, as shown in Listing 6-15.
-
-Listing 6-15 - The `sfWebRequest` Object Knows How to Handle Attached Files
+Listing 6-14 - The `sfWebRequest` Object Knows How to Handle Attached Files
 
     [php]
     class mymoduleActions extends sfActions
@@ -493,16 +475,16 @@ Symfony automatically manages user sessions and is able to keep persistent data 
 
 ### Accessing the User Session
 
-The session object for the current user is accessed in the action with the `getUser()` method and is an instance of the `sfUser` class. This class contains a parameter holder that allows you to store any user attribute in it. This data will be available to other requests until the end of the user session, as shown in Listing 6-16. User attributes can store any type of data (strings, arrays, and associative arrays). They can be set for every individual user, even if that user is not identified.
+The session object for the current user is accessed in the action with the `getUser()` method and is an instance of the `sfUser` class. This class contains a parameter holder that allows you to store any user attribute in it. This data will be available to other requests until the end of the user session, as shown in Listing 6-15. User attributes can store any type of data (strings, arrays, and associative arrays). They can be set for every individual user, even if that user is not identified.
 
-Listing 6-16 - The `sfUser` Object Can Hold Custom User Attributes Existing Across Requests
+Listing 6-15 - The `sfUser` Object Can Hold Custom User Attributes Existing Across Requests
 
     [php]
     class mymoduleActions extends sfActions
     {
-      public function executeFirstPage()
+      public function executeFirstPage($request)
       {
-        $nickname = $this->getRequestParameter('nickname');
+        $nickname = $request->getParameter('nickname');
 
         // Store data in the user session
         $this->getUser()->setAttribute('nickname', $nickname);
@@ -516,11 +498,11 @@ Listing 6-16 - The `sfUser` Object Can Hold Custom User Attributes Existing Acro
     }
 
 >**CAUTION**
->You can store objects in the user session, but it is strongly discouraged. This is because the session object is serialized between requests and stored in a file. When the session is deserialized, the class of the stored objects must already be loaded, and that's not always the case. In addition, there can be "stalled" objects if you store Propel objects.
+>You can store objects in the user session, but it is strongly discouraged. This is because the session object is serialized between requests. When the session is deserialized, the class of the stored objects must already be loaded, and that's not always the case. In addition, there can be "stalled" objects if you store Propel objects.
 
-Like many getters in symfony, the `getAttribute()` method accepts a second argument, specifying the default value to be used when the attribute is not defined. To check whether an attribute has been defined for a user, use the `hasAttribute()` method. The attributes are stored in a parameter holder that can be accessed by the `getAttributeHolder()` method. It allows for easy cleanup of the user attributes with the usual parameter holder methods, as shown in Listing 6-17.
+Like many getters in symfony, the `getAttribute()` method accepts a second argument, specifying the default value to be used when the attribute is not defined. To check whether an attribute has been defined for a user, use the `hasAttribute()` method. The attributes are stored in a parameter holder that can be accessed by the `getAttributeHolder()` method. It allows for easy cleanup of the user attributes with the usual parameter holder methods, as shown in Listing 6-16.
 
-Listing 6-17 - Removing Data from the User Session
+Listing 6-16 - Removing Data from the User Session
 
     [php]
     class mymoduleActions extends sfActions
@@ -536,9 +518,9 @@ Listing 6-17 - Removing Data from the User Session
       }
     }
 
-The user session attributes are also available in the templates by default via the `$sf_user` variable, which stores the current `sfUser` object, as shown in Listing 6-18.
+The user session attributes are also available in the templates by default via the `$sf_user` variable, which stores the current `sfUser` object, as shown in Listing 6-17.
 
-Listing 6-18 - Templates Also Have Access to the User Session Attributes
+Listing 6-17 - Templates Also Have Access to the User Session Attributes
 
     [php]
     <p>
@@ -582,9 +564,9 @@ Flash attributes are a clean way of passing information to the very next request
 
 Symfony's session-handling feature completely masks the client and server storage of the session IDs to the developer. However, if you want to modify the default behaviors of the session-management mechanisms, it is still possible. This is mostly for advanced users.
 
-On the client side, sessions are handled by cookies. The symfony session cookie is called `symfony`, but you can change its name by editing the `factories.yml` configuration file, as shown in Listing 6-19.
+On the client side, sessions are handled by cookies. The symfony session cookie is called `symfony`, but you can change its name by editing the `factories.yml` configuration file, as shown in Listing 6-18.
 
-Listing 6-19 - Changing the Session Cookie Name, in `apps/frontend/config/factories.yml`
+Listing 6-18 - Changing the Session Cookie Name, in `apps/frontend/config/factories.yml`
 
     all:
       storage:
@@ -595,13 +577,13 @@ Listing 6-19 - Changing the Session Cookie Name, in `apps/frontend/config/factor
 >**TIP**
 >The session is started (with the PHP function `session_start()`) only if the `auto_start` parameter is set to true in factories.yml (which is the case by default). If you want to start the user session manually, disable this setting of the storage factory.
 
-Symfony's session handling is based on PHP sessions. This means that if you want the client-side management of sessions to be handled by URL parameters instead of cookies, you just need to change the use_trans_sid setting in your php.ini. Be aware that this is not recommended.
+Symfony's session handling is based on PHP sessions. This means that if you want the client-side management of sessions to be handled by URL parameters instead of cookies, you just need to change the `use_trans_sid` setting in your php.ini. Be aware that this is not recommended.
 
     session.use_trans_sid = 1
 
-On the server side, symfony stores user sessions in files by default. You can store them in your database by changing the value of the `class` parameter in `factories.yml`, as shown in Listing 6-20.
+On the server side, symfony stores user sessions in files by default. You can store them in your database by changing the value of the `class` parameter in `factories.yml`, as shown in Listing 6-19.
 
-Listing 6-20 - Changing the Server Session Storage, in `apps/frontend/config/factories.yml`
+Listing 6-19 - Changing the Server Session Storage, in `apps/frontend/config/factories.yml`
 
     all:
       storage:
@@ -618,9 +600,9 @@ The `database` setting defines the database connection to be used. Symfony will 
 
 The available session storage classes are `sfMySQLSessionStorage`, `sfMySQLiSessionStorage`, `sfPostgreSQLSessionStorage`, and `sfPDOSessionStorage`; the latter is preferred. To disable session storage completely, you can use the `sfNoStorage` class.
 
-Session expiration occurs automatically after 30 minutes. This default setting and can be modified for each environment in the same `factories.yml` configuration file, but this time in the `user` factory, as shown in Listing 6-21.
+Session expiration occurs automatically after 30 minutes. This default setting can be modified for each environment in the same `factories.yml` configuration file, but this time in the `user` factory, as shown in Listing 6-20.
 
-Listing 6-21 - Changing Session Lifetime, in `apps/frontend/config/factories.yml`
+Listing 6-20 - Changing Session Lifetime, in `apps/frontend/config/factories.yml`
 
     all:
       user:
@@ -642,9 +624,9 @@ Before being executed, every action passes by a special filter that checks if th
   * Secure actions require users to be authenticated.
   * Credentials are named security privileges that allow organizing security by group.
 
-Restricting access to an action is simply made by creating and editing a YAML configuration file called `security.yml` in the module `config/` directory. In this file, you can specify the security requirements that users must fulfill for each action or for `all` actions. Listing 6-22 shows a sample `security.yml`.
+Restricting access to an action is simply made by creating and editing a YAML configuration file called `security.yml` in the module `config/` directory. In this file, you can specify the security requirements that users must fulfill for each action or for `all` actions. Listing 6-21 shows a sample `security.yml`.
 
-Listing 6-22 - Setting Access Restrictions, in `apps/frontend/modules/mymodule/config/security.yml`
+Listing 6-21 - Setting Access Restrictions, in `apps/frontend/modules/mymodule/config/security.yml`
 
     read:
       is_secure:   off       # All users can request the read action
@@ -665,34 +647,34 @@ Actions are not secure by default, so when there is no `security.yml` or no ment
   * If the user is not identified, he will be redirected to the default login action.
   * If the user is identified but doesn't have the proper credentials, he will be redirected to the default secure action, shown in Figure 6-1.
 
-The default login and secure pages are pretty simple, and you will probably want to customize them. You can configure which actions are to be called in case of insufficient privileges in the application `settings.yml` by changing the value of the properties shown in Listing 6-23.
+The default login and secure pages are pretty simple, and you will probably want to customize them. You can configure which actions are to be called in case of insufficient privileges in the application `settings.yml` by changing the value of the properties shown in Listing 6-22.
 
 Figure 6-1 - The default secure action page
 
 ![The default secure action page](/images/book/F0601.jpg "The default secure action page")
 
-Listing 6-23 - Default Security Actions Are Defined in `apps/frontend/config/settings.yml`
+Listing 6-22 - Default Security Actions Are Defined in `apps/frontend/config/settings.yml`
 
     all:
       .actions:
-        login_module:           default
-        login_action:           login
+        login_module:  default
+        login_action:  login
 
-        secure_module:          default
-        secure_action:          secure
+        secure_module: default
+        secure_action: secure
 
 ### Granting Access
 
-To get access to restricted actions, users need to be authenticated and/or to have certain credentials. You can extend a user's privileges by calling methods of the `sfUser` object. The authenticated status of the user is set by the `setAuthenticated()` method and can be checked with `isAuthenticated()`. Listing 6-24 shows a simple example of user authentication.
+To get access to restricted actions, users need to be authenticated and/or to have certain credentials. You can extend a user's privileges by calling methods of the `sfUser` object. The authenticated status of the user is set by the `setAuthenticated()` method and can be checked with `isAuthenticated()`. Listing 6-23 shows a simple example of user authentication.
 
-Listing 6-24 - Setting the Authenticated Status of a User
+Listing 6-23 - Setting the Authenticated Status of a User
 
     [php]
     class myAccountActions extends sfActions
     {
-      public function executeLogin()
+      public function executeLogin($request)
       {
-        if ($this->getRequestParameter('login') == 'foobar')
+        if ($request->getParameter('login') == 'foobar')
         {
           $this->getUser()->setAuthenticated(true);
         }
@@ -700,16 +682,13 @@ Listing 6-24 - Setting the Authenticated Status of a User
 
       public function executeLogout()
       {
-        if ($this->getUser()->isAuthenticated())
-        {
-          $this->getUser()->setAuthenticated(false);
-        }
+        $this->getUser()->setAuthenticated(false);
       }
     }
 
-Credentials are a bit more complex to deal with, since you can check, add, remove, and clear credentials. Listing 6-25 describes the credential methods of the `sfUser` class.
+Credentials are a bit more complex to deal with, since you can check, add, remove, and clear credentials. Listing 6-24 describes the credential methods of the `sfUser` class.
 
-Listing 6-25 - Dealing with User Credentials in an Action
+Listing 6-24 - Dealing with User Credentials in an Action
 
     [php]
     class myAccountActions extends sfActions
@@ -741,9 +720,9 @@ Listing 6-25 - Dealing with User Credentials in an Action
       }
     }
 
-If a user has the `'foo'` credential, that user will be able to access the actions for which the `security.yml` requires that credential. Credentials can also be used to display only authorized content in a template, as shown in Listing 6-26.
+If a user has the `foo` credential, that user will be able to access the actions for which the `security.yml` requires that credential. Credentials can also be used to display only authorized content in a template, as shown in Listing 6-25.
 
-Listing 6-26 - Dealing with User Credentials in a Template
+Listing 6-25 - Dealing with User Credentials in a Template
 
     [php]
     <ul>
@@ -761,9 +740,9 @@ As for the authenticated status, credentials are often given to users during the
 
 ### Complex Credentials
 
-The YAML syntax used in the security.yml file allows you to restrict access to users having a combination of credentials, using either AND-type or OR-type associations. With such a combination, you can build a complex workflow and user privilege management system--for instance, a content management system (CMS) back-office accessible only to users with the admin credential, where articles can be edited only by users with the `editor` credential and published only by the ones with the `publisher` credential. Listing 6-27 shows this example.
+The YAML syntax used in the security.yml file allows you to restrict access to users having a combination of credentials, using either AND-type or OR-type associations. With such a combination, you can build a complex workflow and user privilege management system--for instance, a content management system (CMS) back-office accessible only to users with the admin credential, where articles can be edited only by users with the `editor` credential and published only by the ones with the `publisher` credential. Listing 6-26 shows this example.
 
-Listing 6-27 - Credentials Combination Syntax
+Listing 6-26 - Credentials Combination Syntax
 
     editArticle:
       credentials: [ admin, editor ]              # admin AND editor
@@ -799,16 +778,16 @@ So the key to validation is to respect the naming conventions for the action met
   * `handleErrorActionName` is the method called when the validation method fails. If it doesn't exist, the `Error` template is displayed.
   * `executeActionName` is the action method. It must exist for all actions.
 
-Listing 6-28 shows an example of an action class with validation methods. Whether the validation passes or fails in this example, the `myActionSuccess.php` template will be executed, but not with the same parameters.
+Listing 6-27 shows an example of an action class with validation methods. Whether the validation passes or fails in this example, the `myActionSuccess.php` template will be executed, but not with the same parameters.
 
-Listing 6-28 - Sample Validation Methods
+Listing 6-27 - Sample Validation Methods
 
     [php]
     class mymoduleActions extends sfActions
     {
-      public function validateMyAction()
+      public function validateMyAction($request)
       {
-        return ($this->getRequestParameter('id') > 0);
+        return $request->getParameter('id') > 0;
       }
 
       public function handleErrorMyAction()
@@ -841,12 +820,12 @@ Figure 6-3 - Sample filter chain
 
 ![Sample filter chain](/images/book/F0603.png "Sample filter chain")
 
-This process justifies the structure of the filter classes. They all extend the `sfFilter` class, and contain one `execute()` method, expecting a `$filterChain` object as parameter. Somewhere in this method, the filter passes to the next filter in the chain by calling `$filterChain->execute()`. See Listing 6-29 for an example. So basically, filters are divided into two parts:
+This process justifies the structure of the filter classes. They all extend the `sfFilter` class, and contain one `execute()` method, expecting a `$filterChain` object as parameter. Somewhere in this method, the filter passes to the next filter in the chain by calling `$filterChain->execute()`. See Listing 6-28 for an example. So basically, filters are divided into two parts:
 
   * The code before the call to `$filterChain->execute()` executes before the action execution.
   * The code after the call to `$filterChain->execute()` executes after the action execution and before the rendering.
 
-Listing 6-29 - Filter Class Struture
+Listing 6-28 - Filter Class Struture
 
     [php]
     class myFilter extends sfFilter
@@ -864,9 +843,9 @@ Listing 6-29 - Filter Class Struture
       }
     }
 
-The default filter chain is defined in an application configuration file called `filters.yml`, and is shown in Listing 6-30. This file lists the filters that are to be executed for every request.
+The default filter chain is defined in an application configuration file called `filters.yml`, and is shown in Listing 6-29. This file lists the filters that are to be executed for every request.
 
-Listing 6-30 - Default Filter Chain, in `frontend/config/filters.yml`
+Listing 6-29 - Default Filter Chain, in `frontend/config/filters.yml`
 
     rendering: ~
     security:  ~
@@ -877,9 +856,9 @@ Listing 6-30 - Default Filter Chain, in `frontend/config/filters.yml`
     common:    ~
     execution: ~
 
-These declarations have no parameter (the tilde character, `~`, means "null" in YAML), because they inherit the parameters defined in the symfony core. In the core, symfony defines `class` and `param` settings for each of these filters. For instance, Listing 6-31 shows the default parameters for the `rendering` filter.
+These declarations have no parameter (the tilde character, `~`, means "null" in YAML), because they inherit the parameters defined in the symfony core. In the core, symfony defines `class` and `param` settings for each of these filters. For instance, Listing 6-30 shows the default parameters for the `rendering` filter.
 
-Listing 6-31 - Default Parameters of the rendering Filter, in `$sf_symfony_lib_dir/config/config/filters.yml`
+Listing 6-30 - Default Parameters of the rendering Filter, in `$sf_symfony_lib_dir/config/config/filters.yml`
 
     rendering:
       class: sfRenderingFilter   # Filter class
@@ -890,7 +869,7 @@ By leaving the empty value (`~`) in the application `filters.yml`, you tell symf
 
 You can customize the filter chain in various ways:
 
-  * Disable some filters from the chain by adding an `enabled: off` parameter. For instance, to disable the common filter, which inserts CSS and JavaScript into the head, write:
+  * Disable some filters from the chain by adding an `enabled: off` parameter. For instance, to disable the `common` filter, which inserts CSS and JavaScript into the head, write:
 
         common:
           enabled: off
@@ -899,19 +878,15 @@ You can customize the filter chain in various ways:
   * Add your own declarations somewhere in the chain (usually after the `security` filter) to add a custom filter (as discussed in the next section). Be aware that the `rendering` filter must be the first entry, and the `execution` filter must be the last entry of the filter chain.
   * Override the default class and parameters of the default filters (notably to modify the security system and use your own security filter).
 
->**TIP**
->The `enabled: off` parameter works well to disable your own filters, but you can deactivate the default filters via the `settings.yml` file, by modifying the values of the `use_security`, and `cache` settings. This is because each of the default filters has a `condition` parameter that tests the value of these settings.
-
-
 ### Building Your Own Filter
 
-It is pretty simple to build a filter. Create a class definition similar to the one shown in Listing 6-29, and place it in one of the project's lib/ folders to take advantage of the autoloading feature.
+It is pretty simple to build a filter. Create a class definition similar to the one shown in Listing 6-28, and place it in one of the project's lib/ folders to take advantage of the autoloading feature.
 
 As an action can forward or redirect to another action and consequently relaunch the full chain of filters, you might want to restrict the execution of your own filters to the first action call of the request. The `isFirstCall()` method of the `sfFilter` class returns a Boolean for this purpose. This call only makes sense before the action execution.
 
-These concepts are clearer with an example. Listing 6-32 shows a filter used to auto-log users with a specific `MyWebSite` cookie, which is supposedly created by the login action. It is a rudimentary but working way to implement the "remember me" feature offered in login forms.
+These concepts are clearer with an example. Listing 6-31 shows a filter used to auto-log users with a specific `MyWebSite` cookie, which is supposedly created by the login action. It is a rudimentary but working way to implement the "remember me" feature offered in login forms.
 
-Listing 6-32 - Sample Filter Class File, Saved in `apps/frontend/lib/rememberFilter.class.php`
+Listing 6-31 - Sample Filter Class File, Saved in `apps/frontend/lib/rememberFilter.class.php`
 
     [php]
     class rememberFilter extends sfFilter
@@ -948,9 +923,9 @@ In some cases, instead of continuing the filter chain execution, you will need t
 
 ### Filter Activation and Parameters
 
-Creating a filter file is not enough to activate it. You need to add your filter to the filter chain, and for that, you must declare the filter class in the `filters.yml`, located in the application or in the module `config/` directory, as shown in Listing 6-33.
+Creating a filter file is not enough to activate it. You need to add your filter to the filter chain, and for that, you must declare the filter class in the `filters.yml`, located in the application or in the module `config/` directory, as shown in Listing 6-32.
 
-Listing 6-33 - Sample Filter Activation File, Saved in `apps/frontend/config/filters.yml`
+Listing 6-32 - Sample Filter Activation File, Saved in `apps/frontend/config/filters.yml`
 
     rendering: ~
     security:  ~
@@ -965,31 +940,36 @@ Listing 6-33 - Sample Filter Activation File, Saved in `apps/frontend/config/fil
     common:    ~
     execution: ~
 
-When activated, the filter is executed for each request. The filter configuration file can contain one or more parameter definitions under the `param` key. The filter class has the ability to get the value of these parameters with the getParameter() method. Listing 6-34 demonstrates how to get a filter parameter value.
+When activated, the filter is executed for each request. The filter configuration file can contain one or more parameter definitions under the `param` key. The filter class has the ability to get the value of these parameters with the getParameter() method. Listing 6-33 demonstrates how to get a filter parameter value.
 
-Listing 6-34 - Getting the Parameter Value, in `apps/frontend/lib/rememberFilter.class.php`
+Listing 6-33 - Getting the Parameter Value, in `apps/frontend/lib/rememberFilter.class.php`
 
     [php]
     class rememberFilter extends sfFilter
     {
       public function execute ($filterChain)
       {
-          ...
-          if ($request->getCookie($this->getParameter('cookie_name')))
-          ...
+        // ...
+
+        if ($request->getCookie($this->getParameter('cookie_name')))
+        {
+          // ...
+        }
+
+        // ...
       }
     }
 
-The `condition` parameter is tested by the filter chain to see if the filter must be executed. So your filter declarations can rely on an application configuration, just like the one in Listing 6-33. The remember filter will be executed only if your application `app.yml` shows this:
+The `condition` parameter is tested by the filter chain to see if the filter must be executed. So your filter declarations can rely on an application configuration, just like the one in Listing 6-32. The remember filter will be executed only if your application `app.yml` shows this:
 
     all:
       enable_remember_me: on
 
 ### Sample Filters
 
-The filter feature is useful to repeat code for every action. For instance, if you use a distant analytics system, you probably need to put a code snippet calling a distant tracker script in every page. You could put this code in the global layout, but then it would be active for all of the application. Alternatively, you could place it in a filter, such as the one shown in Listing 6-35, and activate it on a per-module basis.
+The filter feature is useful to repeat code for every action. For instance, if you use a distant analytics system, you probably need to put a code snippet calling a distant tracker script in every page. You could put this code in the global layout, but then it would be active for all of the application. Alternatively, you could place it in a filter, such as the one shown in Listing 6-34, and activate it on a per-module basis.
 
-Listing 6-35 - Google Analytics Filter
+Listing 6-34 - Google Analytics Filter
 
     [php]
     class sfGoogleAnalyticsFilter extends sfFilter
@@ -1013,9 +993,9 @@ Listing 6-35 - Google Analytics Filter
 
 Be aware that this filter is not perfect, as it should not add the tracker on responses that are not HTML.
 
-Another example would be a filter that switches the request to SSL if it is not already, to secure the communication, as shown in Listing 6-36.
+Another example would be a filter that switches the request to SSL if it is not already, to secure the communication, as shown in Listing 6-35.
 
-Listing 6-36 - Secure Communication Filter
+Listing 6-35 - Secure Communication Filter
 
     [php]
     class sfSecureFilter extends sfFilter
@@ -1045,9 +1025,9 @@ Filters are used extensively in plug-ins, as they allow you to extend the featur
 Module Configuration
 --------------------
 
-A few module behaviors rely on configuration. To modify them, you must create a `module.yml` file in the module's `config/` directory and define settings on a per-environment basis (or under the `all:` header for all environments). Listing 6-37 shows an example of a `module.yml` file for the `mymodule` module.
+A few module behaviors rely on configuration. To modify them, you must create a `module.yml` file in the module's `config/` directory and define settings on a per-environment basis (or under the `all:` header for all environments). Listing 6-36 shows an example of a `module.yml` file for the `mymodule` module.
 
-Listing 6-37 - Module Configuration, in `apps/frontend/modules/mymodule/config/module.yml`
+Listing 6-36 - Module Configuration, in `apps/frontend/modules/mymodule/config/module.yml`
 
     all:                 # For all environments
       enabled:     true
@@ -1056,9 +1036,9 @@ Listing 6-37 - Module Configuration, in `apps/frontend/modules/mymodule/config/m
 
 The enabled parameter allows you to disable all actions of a module. All actions are redirected to the `module_disabled_module`/`module_disabled_action` action (as defined in `settings.yml`).
 
-The is_internal parameter allows you to restrict the execution of all actions of a module to internal calls. For example, this is useful for mail actions that you must be able to call from another action, to send an e-mail message, but not from the outside.
+The `is_internal` parameter allows you to restrict the execution of all actions of a module to internal calls. For example, this is useful for mail actions that you must be able to call from another action, to send an e-mail message, but not from the outside.
 
-The view_class parameter defines the view class. It must inherit from `sfView`. Overriding this value allows you to use other view systems, with other templating engines, such as Smarty.
+The `view_class` parameter defines the view class. It must inherit from `sfView`. Overriding this value allows you to use other view systems, with other templating engines, such as Smarty.
 
 Summary
 -------

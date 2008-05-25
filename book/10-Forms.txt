@@ -160,13 +160,13 @@ The `submit_image_tag()` helper uses the same syntax and has the same advantages
 >**SIDEBAR**
 >Handling form submission
 >
->How do you retrieve the data submitted by users through forms? It is available in the request parameters, so the action only needs to call `$this->getRequestParameter($elementName)` to get the value.
+>How do you retrieve the data submitted by users through forms? It is available in the request parameters, so the action only needs to call `$request->getParameter($elementName)` to get the value.
 >
 >A good practice is to use the same action to display and handle the form. According to the request method (GET or POST), either the form template is called or the form is handled and the request is redirected to another action.
 >
 >     [php]
 >     // In mymodule/actions/actions.class.php
->     public function executeEditAuthor()
+>     public function executeEditAuthor($request)
 >     {
 >       if (!$this->getRequest()->isMethod('post'))
 >       {
@@ -176,7 +176,7 @@ The `submit_image_tag()` helper uses the same syntax and has the same advantages
 >       else
 >       {
 >         // Handle the form submission
->         $name = $this->getRequestParameter('name');
+>         $name = $request->getParameter('name');
 >         ...
 >         $this->redirect('mymodule/anotheraction');
 >       }
@@ -469,9 +469,9 @@ The `update` action of the `author` module, called when the form is submitted, c
 Listing 10-16 - Handling a Form Submission Based on Object Form Helpers
 
     [php]
-    public function executeUpdate ()
+    public function executeUpdate($request)
     {
-      $author = AuthorPeer::retrieveByPk($this->getRequestParameter('id'));
+      $author = AuthorPeer::retrieveByPk($request->getParameter('id'));
       $this->forward404Unless($author);
 
       $author->fromArray($this->getRequest()->getParameterHolder()->getAll(),BasePeer::TYPE_FIELDNAME);
@@ -522,9 +522,9 @@ Symfony ships with several validators (described in the "Standard Symfony Valida
 Listing 10-18 - Validating Request Parameters with Reusable Validators, in `modules/contact/action/actions.class.php`
 
     [php]
-    public function validateSend()
+    public function validateSend($request)
     {
-      $name = $this->getRequestParameter('name');
+      $name = $request->getParameter('name');
 
       // The name field is required
       if (!$name)
@@ -1006,7 +1006,7 @@ Listing 10-31 - Creating a Custom Validator, in `lib/sfSpamValidator.class.php`
     [php]
     class sfSpamValidator extends sfValidator
     {
-      public function execute (&$value, &$error)
+      public function execute(&$value, &$error)
       {
         // For max_url=2, the regexp is /http.*http/is
         $re = '/'.implode('.*', array_fill(0, $this->getParameter('max_url') + 1, 'http')).'/is';
