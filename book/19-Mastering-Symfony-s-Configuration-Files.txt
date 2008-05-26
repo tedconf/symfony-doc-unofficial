@@ -8,11 +8,11 @@ Symfony Settings
 
 The `frontend/config/settings.yml` file contains the main symfony configuration for the `frontend` application. You have already seen the function of many settings from this file in the previous chapters, but let's revisit them.
 
-As explained in Chapter 5, this file is environment-dependent, which means that each setting can take a different value for each environment. Remember that each parameter defined in this file is accessible from inside the PHP code via the `sfConfig` class. The parameter name is the setting name prefixed with sf_. For instance, if you want to get the value of the cache parameter, you just need to call `sfConfig::get('sf_cache')`.
+As explained in Chapter 5, this file is environment-dependent, which means that each setting can take a different value for each environment. Remember that each parameter defined in this file is accessible from inside the PHP code via the `sfConfig` class. The parameter name is the setting name prefixed with `sf_`. For instance, if you want to get the value of the `cache` parameter, you just need to call `sfConfig::get('sf_cache')`.
 
 ### Default Modules and Actions
 
-Symfony provides default pages for special situations. In the case of a routing error, symfony executes an action of the `default` module, which is stored in the `$sf_symfony_data_dir/modules/default/` directory. The `settings.yml` file defines which action is executed depending on the error:
+Symfony provides default pages for special situations. In the case of a routing error, symfony executes an action of the `default` module, which is stored in the `$sf_symfony_lib_dir/controller/default/` directory. The `settings.yml` file defines which action is executed depending on the error:
 
   * `error_404_module` and `error_404_action`: Action called when the URL entered by the user doesn't match any route or when an `sfError404Exception` occurs. The default value is `default/error404`.
   * `login_module` and `login_action`: Action called when a nonauthenticated user tries to access a page defined as `secure` in `security.yml` (see Chapter 6 for details). The default value is `default/login`.
@@ -30,12 +30,12 @@ You can override the default pages in two ways:
   * You can create your own default module in the application's `modules/` directory, override all the actions defined in the `settings.yml` file (`index`, `error404`, `login`, `secure`, `disabled`) and all the related templates (`indexSuccess.php`, `error404Success.php`, `loginSuccess.php`, `secureSuccess.php`, `disabledSuccess.php`).
   * You can change the default module and action settings of the `settings.yml` file to use pages of your application.
 
-Two other pages bear a symfony look and feel, and they also need to be customized before deployment to production. These pages are not in the `default` module, because they are called when symfony cannot run properly. Instead, you will find these default pages in the `$sf_symfony_data_dir/web/errors/` directory:
+Two other pages bear a symfony look and feel, and they also need to be customized before deployment to production. These pages are not in the `default` module, because they are called when symfony cannot run properly. Instead, you will find these default pages in the `$sf_symfony_lib_dir/exception/data/` directory:
 
   * `error500.php`: Page called when an internal server error occurs in the production environment. In other environments (where `SF_DEBUG` is set to `true`), when an error occurs, symfony displays the full execution stack and an explicit error message (see Chapter 16 for details).
   * `unavailable.php`: Page called when a user requests a page while the application is disabled (with the `disable` task). It is also called while the cache is being cleared (that is, between a call to the `php symfony cache:clear` task and the end of this task execution). On systems with a very large cache, the cache-clearing process can take several seconds. Symfony cannot execute a request with a partially cleared cache, so requests received before the end of the process are redirected to this page.
 
-To customize these pages, simply create `error500.php` and `unavailable.php` pages in your application's `web/errors/` directory. Symfony will use these instead of its own.
+To customize these pages, simply create `error500.php` and `unavailable.php` pages in your project or application's `config/` directory. Symfony will use these instead of its own.
 
 >**NOTE**
 >To have requests redirected to the `unavailable.php` page when needed, you need to set the `check_lock` setting to `on` in the application `settings.yml`. The check is deactivated by default, because it adds a very slight overhead for every request.
@@ -49,16 +49,14 @@ Table 19-1 - Optional Features Set Through `settings.yml`
 Parameter               | Description | Default Value
 ----------------------- | ----------- | -------------
 `use_database`          | Enables the database manager. Set it to `off` if you don't use a database. | `on`
-`use_security`          | Enables security features (secure actions and credentials; see Chapter 6). The default security filter (`sfBasicSecurityFilter`) is enabled only if it is `on`. | `on`
 `i18n`                  | Enables interface translation (see Chapter 13). Set it to `on` for multilingual applications. | `off`
-`logging_enabled`       | Enables logging of symfony events. Set it to off when you want to ignore the logging.yml settings and turn symfony logging off completely. | `on`
+`logging_enabled`       | Enables logging of symfony events. Set it to off when you want to turn symfony logging off completely. | `on`
 `escaping_strategy`     | Enables the output escaping feature (see Chapter 7). Set it to `on` if you want data passed to your templates to be escaped. | `off`
 `cache`                 | Enables template caching (see Chapter 12). Set it to `on` if one of your modules includes `cache.yml` file. The cache filter (`sfCacheFilter`) is enabled only if it is on. | `off` in development, `on` in production
-`web_debug`             | Enables the web debug toolbar for easy debugging (see Chapter 16). Set it to `on` to display the toolbar on every page. The web debug filter (`sfWebDebugFilter`) is enabled ony if it is on. | `on` in development, `off` in production
+`web_debug`             | Enables the web debug toolbar for easy debugging (see Chapter 16). Set it to `on` to display the toolbar on every page. | `on` in development, `off` in production
 `check_symfony_version` | Enables the check of the symfony version for every request. Set it to on for automatic cache clearing after a framework upgrade. Leave it set to off if you always clear the cache after an upgrade. | `off`
-`check_lock`            | Enables the application lock system, triggered by the `cache:clear` and `project:disable` tasks (see the previous section). Set it to `on` to have all requests to disabled applications redirected to the `$sf_symfony_data_dir/web/errors/unavailable.php` page. | `off`
+`check_lock`            | Enables the application lock system, triggered by the `cache:clear` and `project:disable` tasks (see the previous section). Set it to `on` to have all requests to disabled applications redirected to the `$sf_symfony_lib_dir/exception/data/unavailable.php` page. | `off`
 `compressed`            | Enables PHP response compression. Set it to `on` to compress the outgoing HTML via the PHP compression handler. | `off`
-`use_process_cache`     | Enables symfony optimizations based on PHP accelerators. When such an accelerator (for instance, APC, XCache, or eAccelerator) is installed, symfony takes advantage of its features to keep objects and configuration in memory between requests. Set the parameter to `off` in development or when you don't want PHP accelerator optimizations. Note that even if you don't have any accelerator installed, leaving it set to `on` will not harm performance. | `on`
 
 ### Feature Configuration
 
@@ -68,8 +66,8 @@ Symfony uses some parameters of `settings.yml` to alter the behavior of built-in
 
 Output escaping settings control the way the variables are accessible in the template (see Chapter 7). The `settings.yml` file includes two settings for this feature:
 
-  * The `escaping_strategy` setting can take the value`on`, or `off`.
-  * The escaping_method setting can be set to `ESC_RAW`, `ESC_SPECIALCHARS`, `ESC_ENTITIES`, `ESC_JS`, or `ESC_JS_NO_ENTITIES`.
+  * The `escaping_strategy` setting can take the value `on`, or `off`.
+  * The `escaping_method` setting can be set to `ESC_RAW`, `ESC_SPECIALCHARS`, `ESC_ENTITIES`, `ESC_JS`, or `ESC_JS_NO_ENTITIES`.
 
 #### Routing Settings
 
@@ -108,9 +106,13 @@ Listing 19-1 - Routing Configuration Settings, in `frontend/config/factories.yml
 These are only the settings for the `sfPatternRouting` class. You can use another class for your application routing, either your own or one of symfony's routing factories (`sfNoRouting` and `sfPathInfoRouting`). With either of these two factories, all external URLs look like 'module/action?key1=param1'. No customization possible--but it's fast. The difference is that the first uses PHP's `GET`, and the second uses `PATH_INFO`. Use them mainly for backend interfaces.
 
 There is one additional parameter related to routing, but this one is stored in `settings.yml`:
+
   * `no_script_name` enables the front controller name in generated URLs. The `no_script_name` setting can be on only for a single application in a project, unless you store the front controllers in various directories and alter the default URL rewriting rules. It is usually on for the production environment of your main application and off for the others.
 
 #### Form Validation Settings
+
+>**NOTE**
+>The features described in this section are deprecated in symfony 1.1 and only work if you enable the `sfCompat10` plugin.
 
 Form validation settings control the way error messages output by the `Validation` helpers look (see Chapter 10). These errors are included in `<div>` tags, and they use the `validation_error_ class` setting as a `class` attribute and the `validation_error_id_prefix` setting to build up the `id` attribute. The default values are `form_error` and `error_for_`, so the attributes output by a call to the `form_error()` helper for an input named `foobar` will be `class="form_error" id="error_for_foobar"`.
 
@@ -264,7 +266,6 @@ Listing 19-4 - Default Autoloading Configuration, in `$sf_symfony_lib_dir/config
         prefix:         1
         recursive:      on
 
-
 A rule path can contain wildcards and use the file path parameters from the `constants.php` file (see the next section). If you use these parameters in the configuration file, they must appear in uppercase and begin and end with `%`.
 
 Editing your own `autoload.yml` will add new locations to symfony's autoloading, but you may want to extend this mechanism and add your own autoloading handler to symfony's handler. As symfony uses the standard `spl_autoload_register()` function to manage class autoloading, you can register more callbacks in the application configuration class:
@@ -280,7 +281,6 @@ Editing your own `autoload.yml` will add new locations to symfony's autoloading,
         spl_autoload_register(array('myToolkit', 'autoload'));
       }
     }
-
 
 When the PHP autoloading system encounters a new class, it will first try the symfony autoloading method (and use the locations defined in `autoload.yml`). If it doesn't find a class definition, all the other callables registered with `spl_autoload_register()` will be called, until the class is found. So you can add as many autoloading mechanisms as you want--for instance, to provide a bridge to other framework components (see Chapter 17).
 
