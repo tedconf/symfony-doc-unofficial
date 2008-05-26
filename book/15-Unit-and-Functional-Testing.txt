@@ -12,7 +12,7 @@ That's why automated tests are a suggested, if not required, part of a successfu
 
 Automated tests can sometimes replace developer documentation since they can clearly illustrate what an application is supposed to do. A good test suite shows what output should be expected for a set of test inputs, and that is a good way to explain the purpose of a method.
 
-The symfony framework applies this principle to itself. The internals of the framework are validated by automated tests. These unit and functional tests are not bundled with the standard symfony distribution, but you can check them out from the SVN repository or browse them online at [http://trac.symfony-project.com/browser/trunk/test](http://trac.symfony-project.com/browser/trunk/test).
+The symfony framework applies this principle to itself. The internals of the framework are validated by automated tests. These unit and functional tests are not bundled with the PEAR package, but you can check them out from the SVN repository or browse them online at [http://trac.symfony-project.com/browser/trunk/test](http://trac.symfony-project.com/browser/trunk/test).
 
 ### Unit and Functional Tests
 
@@ -103,7 +103,7 @@ Listing 15-1 - Example Unit Test File, in `test/unit/strtolowerTest.php`
     $t->is(strtolower(''), 'foo',
         'strtolower() transforms empty strings into foo');
 
-Launch the test set from the command line with the `test-unit` task. The command-line output is very explicit, and it helps you localize which tests failed and which passed. See the output of the example test in Listing 15-2.
+Launch the test set from the command line with the `test:unit` task. The command-line output is very explicit, and it helps you localize which tests failed and which passed. See the output of the example test in Listing 15-2.
 
 Listing 15-2 - Launching a Single Unit Test from the Command Line
 
@@ -254,9 +254,9 @@ A well-planned test strategy must contain an expected number of tests. You will 
 
 The second parameter of the constructor is an output object extending the `lime_output` class. Most of the time, as tests are meant to be run through a CLI, the output is a lime_output_color object, taking advantage of bash coloring when available.
 
-### The test-unit Task
+### The test:unit Task
 
-The `test-unit` task, which launches unit tests from the command line, expects either a list of test names or a file pattern. See Listing 15-5 for details.
+The `test:unit` task, which launches unit tests from the command line, expects either a list of test names or a file pattern. See Listing 15-5 for details.
 
 Listing 15-5 - Launching Unit Tests
 
@@ -283,7 +283,6 @@ Listing 15-6 - Including Classes in Unit Tests
     <?php
 
     include(dirname(__FILE__).'/../bootstrap/unit.php');
-    include(dirname(__FILE__).'/../../config/config.php');
     require_once($sf_symfony_lib_dir.'/util/sfToolkit.class.php');
 
     $t = new lime_test(7, new lime_output_color());
@@ -307,14 +306,16 @@ Listing 15-6 - Including Classes in Unit Tests
 
 In unit tests, you need to instantiate not only the object you're testing, but also the object it depends upon. Since unit tests must remain unitary, depending on other classes may make more than one test fail if one class is broken. In addition, setting up real objects can be expensive, both in terms of lines of code and execution time. Keep in mind that speed is crucial in unit testing because developers quickly tire of a slow process.
 
-Whenever you start including many scripts for a unit test, you may need a simple autoloading system. For this purpose, the `sfCore` class (which must be manually included) provides an `initSimpleAutoload()` method, which expects an absolute path as parameter. All the classes located under this path will be autoloaded. For instance, if you want to have all the classes located under `$sf_symfony_lib_dir/util/` autoloaded, start your unit test script as follows:
+Whenever you start including many scripts for a unit test, you may need a simple autoloading system. For this purpose, the `sfSimpleAutoload` class (which must be manually included) provides an `initSimpleAutoload()` method, which expects an absolute path as parameter. All the classes located under this path will be autoloaded. For instance, if you want to have all the classes located under `$sf_symfony_lib_dir/util/` autoloaded, start your unit test script as follows:
 
     [php]
-    require_once($sf_symfony_lib_dir.'/util/sfCore.class.php');
-    sfAutoload::initSimpleAutoload($sf_symfony_lib_dir.'/util');
+    require_once($sf_symfony_lib_dir.'/autoload/sfSimpleAutoload.class.php');
+    $autoload = new sfSimpleAutoload();
+    $autoload->addDirectory($sf_symfony_lib_dir.'/util');
+    $autoload->register();
 
 >**TIP**
->The generated Propel objects rely on a long cascade of classes, so as soon as you want to test a Propel object, autoloading is necessary. Note that for Propel to work, you also need to include the files under the `vendor/propel/` directory (so the call to `sfAutoload` becomes `sfAutoload::initSimpleAutoload(array(SF_ROOT_DIR.'/lib/model', $sf_symfony_lib_dir.'/vendor/propel'));`) and to add the Propel core to the include path (by calling `set_include_path($sf_symfony_lib_dir.'/vendor'.PATH_SEPARATOR.SF_ROOT_DIR.PATH_SEPARATOR.get_include_path()`.
+>The generated Propel objects rely on a long cascade of classes, so as soon as you want to test a Propel object, autoloading is necessary. Note that for Propel to work, you also need to include the files under the `plugins/sfPropelPlugin/lib/vendor/propel/` directory and to add the Propel core to the include path (by calling `set_include_path($sf_symfony_lib_dir.'/plugins/sfPropelPlugin/lib/vendor'.PATH_SEPARATOR.SF_ROOT_DIR.PATH_SEPARATOR.get_include_path()`.
 
 Another good workaround for the autoloading issues is the use of stubs. A stub is an alternative implementation of a class where the real methods are replaced with simple canned data. It mimics the behavior of the real class, but without its cost. A good example of stubs is a database connection or a web service interface. In Listing 15-7, the unit tests for a mapping API rely on a `WebService` class. Instead of calling the real `fetch()` method of the actual web service class, the test uses a stub that returns test data.
 
@@ -377,9 +378,8 @@ Listing 15-8 - Using Fixture Files in Unit Tests
     <?php
 
     include(dirname(__FILE__).'/../bootstrap/unit.php');
-    include(dirname(__FILE__).'/../../config/config.php');
     require_once($sf_symfony_lib_dir.'/util/sfToolkit.class.php');
-    require_once($sf_symfony_lib_dir.'/util/sfYaml.class.php');
+    require_once($sf_symfony_lib_dir.'/yaml/sfYaml.class.php');
 
     $testCases = sfYaml::load(dirname(__FILE__).'/fixtures.yml');
 
@@ -490,7 +490,7 @@ The test browser handles a stack of calls, so the `back()` and `forward()` metho
 
 Among the interactions that most need to be tested, those associated with forms probably rank first. To simulate form input and submission, you have three choices. You can either make a POST request with the parameters you wish to send, call `click()` with the form parameters as an array, or fill in the fields one by one and click the submit button. They all result in the same POST request anyhow. Listing 15-13 shows an example.
 
-Listing 15-13 - Simulating Form Input with the `sfTe stBrowser` Object
+Listing 15-13 - Simulating Form Input with the `sfTestBrowser` Object
 
     [php]
     // Example template in modules/foobar/templates/editSuccess.php
@@ -739,7 +739,7 @@ Listing 15-26 - Setting Up the Test Browser with Hostname and IP
 
 ### The test:functional Task
 
-The `test:functional` task can run one or more functional tests, depending on the number of arguments received. The rules look much like the ones of the `test-unit` task, except that the functional test task always expects an application as first argument, as shown in Listing 15-27.
+The `test:functional` task can run one or more functional tests, depending on the number of arguments received. The rules look much like the ones of the `test:unit` task, except that the functional test task always expects an application as first argument, as shown in Listing 15-27.
 
 Listing 15-27 - Functional Test Task Syntax
 
@@ -829,7 +829,7 @@ The `test:unit` and `test:functional` tasks can launch a single test or a set of
 
 Listing 15-31 - Launching All Tests in a Test Harness
 
-    > php symfony test:unit
+    > php symfony test:all
 
     unit/myFunctionTest.php................ok
     unit/mySecondFunctionTest.php..........ok
@@ -888,7 +888,7 @@ Listing 15-34 - Populating a Database from a Test File
     );
     $data->loadDataFromArray($fixtures);
 
-Then, use the Propel objects as you would in a normal application, according to your testing needs. Remember to include their files in unit tests (you can use the sfAutoload:: sfSimpleAutoloading() method to automate it, as explained in a tip in the "Stubs, Fixtures, and Autoloading" section previously in this chapter). Propel objects are autoloaded in functional tests.
+Then, use the Propel objects as you would in a normal application, according to your testing needs. Remember to include their files in unit tests (you can use sfSimpleAutoload class to automate it, as explained in a tip in the "Stubs, Fixtures, and Autoloading" section previously in this chapter). Propel objects are autoloaded in functional tests.
 
 ### Testing the Cache
 
