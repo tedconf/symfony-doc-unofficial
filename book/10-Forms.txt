@@ -289,7 +289,7 @@ Listing 10-7 - Rich Text Area
     <?php echo textarea_tag('name', 'default content', 'rich=true size=10x20 tinymce_options=language:"fr",theme_advanced_buttons2:"separator"') ?>
     => a rich text edit zone powered by TinyMCE with custom parameters
 
-### Country and Language Selection
+### Country, Language and Currency Selection
 
 You may need to display a country selection field. But since country names are not the same in all languages, the options of a country drop-down list should vary according to the user culture (see Chapter 13 for more information about cultures). As shown in Listing 10-8, the `select_country_tag()` helper does it all for you: It internationalizes country names and uses the standard ISO country codes for values.
 
@@ -320,6 +320,27 @@ Listing 10-9 - Select Language Tag Helper
           <option value="eo">Esperanto</option>
           ...
 
+The third helper is the `select_currency_tag()` helper, that displays a list of currencies, as shown in Listing 10-10.
+
+Listing 10-10 - Select Currency Tag Helper
+
+    [php]
+    <?php echo select_currency_tag('currency', 'EUR') ?>
+     => <select name="currency" id="currency">
+          ...
+          <option value="ETB">Ethiopian Birr</option>
+          <option value="ETD">Ethiopian Dollar</option>
+          <option value="EUR" selected="selected">Euro</option>
+          <option value="XBA">European Composite Unit</option>
+          <option value="XEU">European Currency Unit</option>
+          ...
+
+>**NOTE**
+>All three helpers accept a third parameter which is an options array. It can restrict the displayed options to a certain set: `array('countries' => array ('FR', 'DE'))`. For `select_language_tag()` the option is named `languages` and for `select_currency_tag()` it is named `currencies`.
+>In most cases it makes sense to restrict the set to a list of known and supported values, especially as the lists could contain outdated items.
+>
+>`select_currency_tag()` offers an additional option named `display` that influences what is displayed in the option. This can be set to one of `symbol`,`code` or `name`
+
 Form Helpers for Objects
 ------------------------
 
@@ -335,9 +356,9 @@ To avoid repeating the attribute name, symfony provides an alternative object fo
     <?php echo object_input_tag($customer, 'getTelephone') ?>
     => <input type="text" name="telephone" id="telephone" value="0123456789" />
 
-The economy might not look crucial for the `object_input_tag()`. However, every standard form helper has a corresponding object form helper, and they all share the same syntax. It makes generation of forms quite straightforward. That's why the object form helpers are used extensively in the scaffolding and generated administrations (see Chapter 14). Listing 10-10 lists the object form helpers.
+The economy might not look crucial for the `object_input_tag()`. However, every standard form helper has a corresponding object form helper, and they all share the same syntax. It makes generation of forms quite straightforward. That's why the object form helpers are used extensively in the scaffolding and generated administrations (see Chapter 14). Listing 10-11 lists the object form helpers.
 
-Listing 10-10 - Object Form Helpers Syntax
+Listing 10-11 - Object Form Helpers Syntax
 
     [php]
     <?php echo object_input_tag($object, $method, $options) ?>
@@ -358,9 +379,9 @@ The most interesting of all object form helpers are `objects_for_select()` and `
 
 ### Populating Drop-Down Lists with Objects
 
-The `options_for_select()` helper, described previously with the other standard helpers, transforms a PHP associative array into an options list, as shown in Listing 10-11.
+The `options_for_select()` helper, described previously with the other standard helpers, transforms a PHP associative array into an options list, as shown in Listing 10-12.
 
-Listing 10-11 - Creating a List of Options Based on an Array with `options_for_select()`
+Listing 10-12 - Creating a List of Options Based on an Array with `options_for_select()`
 
     [php]
     <?php echo options_for_select(array(
@@ -376,9 +397,9 @@ Listing 10-11 - Creating a List of Options Based on an Array with `options_for_s
         <option value="4" selected="selected">Ian</option>
         <option value="5">Buck</option>
 
-Suppose that you already have an array of objects of class `Author`, resulting from a Propel query. If you want to build a list of options based on this array, you will need to loop on it to retrieve the `id` and the `name` of each object, as shown in Listing 10-12.
+Suppose that you already have an array of objects of class `Author`, resulting from a Propel query. If you want to build a list of options based on this array, you will need to loop on it to retrieve the `id` and the `name` of each object, as shown in Listing 10-13.
 
-Listing 10-12 - Creating a List of Options Based on an Array of Objects with `options_for_select()`
+Listing 10-13 - Creating a List of Options Based on an Array of Objects with `options_for_select()`
 
     [php]
     // In the action
@@ -392,7 +413,7 @@ Listing 10-12 - Creating a List of Options Based on an Array of Objects with `op
     // In the template
     <?php echo options_for_select($options, 4) ?>
 
-This kind of processing happens so often that symfony has a helper to automate it: `objects_for_select()`, which creates an option list based directly on an array of objects. The helper needs two additional parameters: the method names used to retrieve the `value` and the text contents of the `<option>` tags to be generated. So Listing 10-12 is equivalent to this simpler form:
+This kind of processing happens so often that symfony has a helper to automate it: `objects_for_select()`, which creates an option list based directly on an array of objects. The helper needs two additional parameters: the method names used to retrieve the `value` and the text contents of the `<option>` tags to be generated. So Listing 10-13 is equivalent to this simpler form:
 
     [php]
     <?php echo objects_for_select($authors, 'getId', 'getName', 4) ?>
@@ -401,9 +422,9 @@ That's smart and fast, but symfony goes even further, when you deal with foreign
 
 ### Creating a Drop-Down List Based on a Foreign Key Column
 
-The values a foreign key column can take are the primary key values of the foreign table records. If, for instance, the `article` table has an `author_id` column that is a foreign key to an `author` table, the possible values for this column are the `id` of all the records of the `author` table. Basically, a drop-down list to edit the author of an article would look like Listing 10-13.
+The values a foreign key column can take are the primary key values of the foreign table records. If, for instance, the `article` table has an `author_id` column that is a foreign key to an `author` table, the possible values for this column are the `id` of all the records of the `author` table. Basically, a drop-down list to edit the author of an article would look like Listing 10-14.
 
-Listing 10-13 - Creating a List of Options Based on a Foreign Key with `objects_for_select()`
+Listing 10-14 - Creating a List of Options Based on a Foreign Key with `objects_for_select()`
 
     [php]
     <?php echo select_tag('author_id', objects_for_select(
@@ -425,9 +446,9 @@ The `object_select_tag()` does all that by itself. It displays a drop-down list 
     [php]
     <?php echo object_select_tag($article, 'getAuthorId') ?>
 
-The `object_select_tag()` helper guesses the related peer class name (`AuthorPeer` in the example) based on the method name passed as a parameter. However, you can specify your own class by setting the `related_class` option in the third argument. The text content of the `<option>` tags is the record name, which is the result of the `__toString()` method of the object class (if `$author->__toString()` method is undefined, the primary key is used instead). In addition, the list of options is built from a doSelect() method with an empty criteria value; it returns all the records ordered by creation date. If you prefer to display only a subset of records with a specific ordering, create a method in the peer class returning this selection as an array of objects, and set it in the `peer_method` option. Lastly, you can add a blank option or a custom option at the top of the drop-down list by setting the include_blank and include_custom options. Listing 10-14 demonstrates these different options for the `object_select_tag()` helper.
+The `object_select_tag()` helper guesses the related peer class name (`AuthorPeer` in the example) based on the method name passed as a parameter. However, you can specify your own class by setting the `related_class` option in the third argument. The text content of the `<option>` tags is the record name, which is the result of the `__toString()` method of the object class (if `$author->__toString()` method is undefined, the primary key is used instead). In addition, the list of options is built from a doSelect() method with an empty criteria value; it returns all the records ordered by creation date. If you prefer to display only a subset of records with a specific ordering, create a method in the peer class returning this selection as an array of objects, and set it in the `peer_method` option. Lastly, you can add a blank option or a custom option at the top of the drop-down list by setting the include_blank and include_custom options. Listing 10-15 demonstrates these different options for the `object_select_tag()` helper.
 
-Listing 10-14 - Options of the `object_select_tag()` Helper
+Listing 10-15 - Options of the `object_select_tag()` Helper
 
     [php]
     // Base syntax
@@ -451,9 +472,9 @@ Listing 10-14 - Options of the `object_select_tag()` Helper
 
 ### Updating Objects
 
-A form completely dedicated to editing object properties by using object helpers is easier to handle in an action. For instance, if you have an object of class `Author` with `name`, `age`, and `address` attributes, the form can be coded as shown in Listing 10-15.
+A form completely dedicated to editing object properties by using object helpers is easier to handle in an action. For instance, if you have an object of class `Author` with `name`, `age`, and `address` attributes, the form can be coded as shown in Listing 10-16.
 
-Listing 10-15 - A Form with Only Object Helpers
+Listing 10-16 - A Form with Only Object Helpers
 
     [php]
     <?php echo form_tag('author/update') ?>
@@ -464,9 +485,9 @@ Listing 10-15 - A Form with Only Object Helpers
              <?php echo object_textarea_tag($author, 'getAddress') ?>
     </form>
 
-The `update` action of the `author` module, called when the form is submitted, can simply update the object with the `fromArray()` modifier generated by Propel, as shown in Listing 10-16.
+The `update` action of the `author` module, called when the form is submitted, can simply update the object with the `fromArray()` modifier generated by Propel, as shown in Listing 10-17.
 
-Listing 10-16 - Handling a Form Submission Based on Object Form Helpers
+Listing 10-17 - Handling a Form Submission Based on Object Form Helpers
 
     [php]
     public function executeUpdate($request)
@@ -488,9 +509,9 @@ Form Validation
 
 Chapter 6 explained how to use the `validateXXX()` methods in the action class to validate the request parameters. However, if you use this technique to validate a form submission, you will end up rewriting the same portion of code over and over. Symfony provides an alternative form-validation technique, relying on only a YAML file, instead of PHP code in the action class.
 
-To demonstrate the form-validation features, let's first consider the sample form shown in Listing 10-17. It is a classic contact form, with `name`, `email`, `age`, and `message` fields.
+To demonstrate the form-validation features, let's first consider the sample form shown in Listing 10-18. It is a classic contact form, with `name`, `email`, `age`, and `message` fields.
 
-Listing 10-17 - Sample Contact Form, in `modules/contact/templates/indexSuccess.php`
+Listing 10-18 - Sample Contact Form, in `modules/contact/templates/indexSuccess.php`
 
     [php]
     <?php echo form_tag('contact/send') ?>
@@ -517,9 +538,9 @@ You could define more complex validation rules for the contact form, but these a
 
 You can see that the `name` and `email` fields in the example share common validation rules. Some validation rules appear so often in web forms that symfony packages the PHP code that implements them into validators. A validator is simple class that provides an `execute()` method. This method expects the value of a field as parameter, and returns `true` if the value is valid and `false` otherwise.
 
-Symfony ships with several validators (described in the "Standard Symfony Validators" section later in this chapter), but let's focus on the `sfStringValidator` for now. This validator checks that an input is a string, and that its size is between two specified character amounts (defined when calling the `initialize()` method). That's exactly what is required to validate the `name` field. Listing 10-18 shows how to use this validator in a validation method.
+Symfony ships with several validators (described in the "Standard Symfony Validators" section later in this chapter), but let's focus on the `sfStringValidator` for now. This validator checks that an input is a string, and that its size is between two specified character amounts (defined when calling the `initialize()` method). That's exactly what is required to validate the `name` field. Listing 10-19 shows how to use this validator in a validation method.
 
-Listing 10-18 - Validating Request Parameters with Reusable Validators, in `modules/contact/action/actions.class.php`
+Listing 10-19 - Validating Request Parameters with Reusable Validators, in `modules/contact/action/actions.class.php`
 
     [php]
     public function validateSend($request)
@@ -549,7 +570,7 @@ Listing 10-18 - Validating Request Parameters with Reusable Validators, in `modu
       return true;
     }
 
-If a user submits the form in Listing 10-17 with the value `a` in the `name` field, the `execute()` method of the `sfStringValidator` will return `false` (because the string length is less than the minimum of two characters). The `validateSend()` method will then fail, and the `handleErrorSend()` method will be called instead of the `executeSend()` method.
+If a user submits the form in Listing 10-18 with the value `a` in the `name` field, the `execute()` method of the `sfStringValidator` will return `false` (because the string length is less than the minimum of two characters). The `validateSend()` method will then fail, and the `handleErrorSend()` method will be called instead of the `executeSend()` method.
 
 >**TIP**
 >The `setError()` method of the `sfRequest` method gives information to the template so that it can display an error message (as explained in the "Displaying the Error Messages in the Form" section later in this chapter). The validators set the errors internally, so you can define different errors for the different cases of nonvalidation. That's the purpose of the `min_error` and `max_error` initialization parameters of the `sfStringValidator`.
@@ -564,9 +585,9 @@ The fact that a field is required is not handled by a validator.
 
 ### Validation File
 
-You could easily implement the validation of the contact form with validators in the `validateSend()` method PHP, but that would imply repeating a lot of code. Symfony offers an alternative way to define validation rules for a form, and it involves YAML. For instance, Listing 10-19 shows the translation of the name field validation rules, and its results are equivalent to those of Listing 10-18.
+You could easily implement the validation of the contact form with validators in the `validateSend()` method PHP, but that would imply repeating a lot of code. Symfony offers an alternative way to define validation rules for a form, and it involves YAML. For instance, Listing 10-20 shows the translation of the name field validation rules, and its results are equivalent to those of Listing 10-19.
 
-Listing 10-19 - Validation File, in `modules/contact/validate/send.yml`
+Listing 10-20 - Validation File, in `modules/contact/validate/send.yml`
 
     fields:
       name:
@@ -589,9 +610,9 @@ Validation files are located in the module `validate/` directory, and named by t
 
 By default, symfony looks for a `handleErrorSend()` method in the action class whenever the validation process fails, or displays the `sendError.php` template if the method doesn't exist.
 
-The usual way to inform the user of a failed validation is to display the form again with an error message. To that purpose, you need to override the `handleErrorSend()` method and end it with a redirection to the action that displays the form (in the example, `module/index`), as shown in Listing 10-20.
+The usual way to inform the user of a failed validation is to display the form again with an error message. To that purpose, you need to override the `handleErrorSend()` method and end it with a redirection to the action that displays the form (in the example, `module/index`), as shown in Listing 10-21.
 
-Listing 10-20 - Displaying the Form Again, in `modules/contact/actions/actions.class.php`
+Listing 10-21 - Displaying the Form Again, in `modules/contact/actions/actions.class.php`
 
     [php]
     class ContactActions extends sfActions
@@ -612,9 +633,9 @@ Listing 10-20 - Displaying the Form Again, in `modules/contact/actions/actions.c
       }
     }
 
-If you choose to use the same action to display the form and handle the form submission, then the `handleErrorSend()` method can simply return `sfView::SUCCESS` to redisplay the form from `sendSuccess.php`, as shown in Listing 10-21.
+If you choose to use the same action to display the form and handle the form submission, then the `handleErrorSend()` method can simply return `sfView::SUCCESS` to redisplay the form from `sendSuccess.php`, as shown in Listing 10-22.
 
-Listing 10-21 - A Single Action to Display and Handle the Form, in `modules/contact/actions/actions.class.php`
+Listing 10-22 - A Single Action to Display and Handle the Form, in `modules/contact/actions/actions.class.php`
 
     [php]
     class ContactActions extends sfActions
@@ -650,9 +671,9 @@ With this new configuration, when the user types an invalid name, the form is di
 
 ### Displaying the Error Messages in the Form
 
-The error messages defined as validator parameters are added to the request when a field fails validation (just as you can add an error manually with the `setError()` method, as in Listing 10-18). The `sfRequest` object provides two useful methods to retrieve the error message: `hasError()` and `getError()`, which each expect a field name as parameter. In addition, you can display an alert at the top of the form to draw attention to the fact that one or many of the fields contain invalid data with the `hasErrors()` method. Listings 10-22 and 10-23 demonstrate how to use these methods.
+The error messages defined as validator parameters are added to the request when a field fails validation (just as you can add an error manually with the `setError()` method, as in Listing 10-19). The `sfRequest` object provides two useful methods to retrieve the error message: `hasError()` and `getError()`, which each expect a field name as parameter. In addition, you can display an alert at the top of the form to draw attention to the fact that one or many of the fields contain invalid data with the `hasErrors()` method. Listings 10-23 and 10-24 demonstrate how to use these methods.
 
-Listing 10-22 - Displaying Error Messages at the Top of the Form, in `templates/indexSuccess.php`
+Listing 10-23 - Displaying Error Messages at the Top of the Form, in `templates/indexSuccess.php`
 
     [php]
     <?php if ($sf_request->hasErrors()): ?>
@@ -665,7 +686,7 @@ Listing 10-22 - Displaying Error Messages at the Top of the Form, in `templates/
       </ul>
     <?php endif; ?>
 
-Listing 10-23 - Displaying Error Messages Inside the Form, in `templates/indexSuccess.php`
+Listing 10-24 - Displaying Error Messages Inside the Form, in `templates/indexSuccess.php`
 
     [php]
     <?php echo form_tag('contact/send') ?>
@@ -677,9 +698,9 @@ Listing 10-23 - Displaying Error Messages Inside the Form, in `templates/indexSu
       <?php echo submit_tag() ?>
     </form>
 
-The conditional use of the `getError()` method in Listing 10-23 is a bit long to write. That's why symfony offers a `form_error()` helper to replace it, provided that you declare the use of its helper group, `Validation`. Listing 10-24 replaces Listing 10-23 by using this helper.
+The conditional use of the `getError()` method in Listing 10-23 is a bit long to write. That's why symfony offers a `form_error()` helper to replace it, provided that you declare the use of its helper group, `Validation`. Listing 10-25 replaces Listing 10-24 by using this helper.
 
-Listing 10-24 - Displaying Error Messages Inside the Form, the Short Way
+Listing 10-25 - Displaying Error Messages Inside the Form, the Short Way
 
     [php]
     <?php use_helper('Validation') ?>
@@ -702,9 +723,9 @@ In case of failed validation, the form now displays errors correctly, but the da
 
 ### Repopulating the Form
 
-As the error handling is done through the `forward()` method (shown in Listing 10-20), the original request is still accessible, and the data entered by the user is in the request parameters. So you could repopulate the form by adding default values to each field, as shown in Listing 10-25.
+As the error handling is done through the `forward()` method (shown in Listing 10-21), the original request is still accessible, and the data entered by the user is in the request parameters. So you could repopulate the form by adding default values to each field, as shown in Listing 10-26.
 
-Listing 10-25 - Setting Default Values to Repopulate the Form When Validation Fails, in `templates/indexSuccess.php`
+Listing 10-26 - Setting Default Values to Repopulate the Form When Validation Fails, in `templates/indexSuccess.php`
 
     [php]
     <?php use_helper('Validation') ?>
@@ -720,9 +741,9 @@ Listing 10-25 - Setting Default Values to Repopulate the Form When Validation Fa
       <?php echo submit_tag() ?>
     </form>
 
-But once again, this is quite tedious to write. Symfony provides an alternative way of triggering repopulation for all the fields of a form, directly in the YAML validation file, without changing the default values of the elements. Just enable the `fillin:` feature for the form, with the syntax described in Listing 10-26.
+But once again, this is quite tedious to write. Symfony provides an alternative way of triggering repopulation for all the fields of a form, directly in the YAML validation file, without changing the default values of the elements. Just enable the `fillin:` feature for the form, with the syntax described in Listing 10-27.
 
-Listing 10-26 - Activating `fillin` to Repopulate the Form When Validation Fails, in `validate/send.yml`
+Listing 10-27 - Activating `fillin` to Repopulate the Form When Validation Fails, in `validate/send.yml`
 
     fillin:
       enabled: true  # Enable the form repopulation
@@ -741,9 +762,9 @@ By default, the automatic repopulation works for text inputs, check boxes, radio
 >If you want to have `fillin` to output XHTML you have to set `param: content_type: xml`. If the response is not a strictly valid XHTML document `fillin` will not work.
 >The third available `content_type` is `xhtml` which is the same as `xml` but it removes the xml prolog from the response which causes quirks mode in IE6.
 
-You might want to transform the values entered by the user before writing them back in a form input. Escaping, URL rewriting, transformation of special characters into entities, and all the other transformations that can be called through a function can be applied to the fields of your form if you define the transformation under the `converters:` key, as shown in Listing 10-27.
+You might want to transform the values entered by the user before writing them back in a form input. Escaping, URL rewriting, transformation of special characters into entities, and all the other transformations that can be called through a function can be applied to the fields of your form if you define the transformation under the `converters:` key, as shown in Listing 10-28.
 
-Listing 10-27 - Converting Input Before `fillin`, in `validate/send.yml`
+Listing 10-28 - Converting Input Before `fillin`, in `validate/send.yml`
 
     fillin:
       enabled: true
@@ -898,9 +919,9 @@ The callback method or function receives the value to be validated as a first pa
 
 ### Named Validators
 
-If you see that you need to repeat a validator class and its settings, you can package it under a named validator. In the example of the contact form, the email field needs the same sfStringValidator parameters as the `name` field. So you can create a `myStringValidator` named validator to avoid repeating the same settings twice. To do so, add a `myStringValidator` label under the `validators:` header, and set the `class` and `param` keys with the details of the named validator you want to package. You can then use the named validator just like a regular one in the `fields` section, as shown in Listing 10-28.
+If you see that you need to repeat a validator class and its settings, you can package it under a named validator. In the example of the contact form, the email field needs the same sfStringValidator parameters as the `name` field. So you can create a `myStringValidator` named validator to avoid repeating the same settings twice. To do so, add a `myStringValidator` label under the `validators:` header, and set the `class` and `param` keys with the details of the named validator you want to package. You can then use the named validator just like a regular one in the `fields` section, as shown in Listing 10-29.
 
-Listing 10-28 - Reusing Named Validators in a Validation File, in `validate/send.yml`
+Listing 10-29 - Reusing Named Validators in a Validation File, in `validate/send.yml`
 
     validators:
       myStringValidator:
@@ -925,9 +946,9 @@ Listing 10-28 - Reusing Named Validators in a Validation File, in `validate/send
 
 ### Restricting the Validation to a Method
 
-By default, the validators set in a validation file are run when the action is called with the POST method. You can override this setting globally or field by field by specifying another value in the `methods` key, to allow a different validation for different methods, as shown in Listing 10-29.
+By default, the validators set in a validation file are run when the action is called with the POST method. You can override this setting globally or field by field by specifying another value in the `methods` key, to allow a different validation for different methods, as shown in Listing 10-30.
 
-Listing 10-29 - Defining When to Test a Field, in `validate/send.yml`
+Listing 10-30 - Defining When to Test a Field, in `validate/send.yml`
 
     methods:         [post]     # This is the default setting
 
@@ -946,9 +967,9 @@ Listing 10-29 - Defining When to Test a Field, in `validate/send.yml`
 
 ### What Does a Validation File Look Like?
 
-So far, you have seen only bits and pieces of a validation file. When you put everything together, the validation rules find a clear translation in YAML. Listing 10-30 shows the complete validation file for the sample contact form, corresponding to all the rules defined earlier in the chapter.
+So far, you have seen only bits and pieces of a validation file. When you put everything together, the validation rules find a clear translation in YAML. Listing 10-31 shows the complete validation file for the sample contact form, corresponding to all the rules defined earlier in the chapter.
 
-Listing 10-30 - Sample Complete Validation File
+Listing 10-31 - Sample Complete Validation File
 
     fillin:
       enabled:      true
@@ -999,9 +1020,9 @@ The `initialize()` method receives the context singleton and the array of parame
 
 Every validator has a parameter holder accessible by `$this->getParameterHolder()`.
 
-For instance, if you want to build an `sfSpamValidator` to check if a string is not spam, add the code shown in Listing 10-31 to an `sfSpamValidator.class.php` file. It checks if the `$value` contains more than `max_url` times the string `'http'`.
+For instance, if you want to build an `sfSpamValidator` to check if a string is not spam, add the code shown in Listing 10-32 to an `sfSpamValidator.class.php` file. It checks if the `$value` contains more than `max_url` times the string `'http'`.
 
-Listing 10-31 - Creating a Custom Validator, in `lib/sfSpamValidator.class.php`
+Listing 10-32 - Creating a Custom Validator, in `lib/sfSpamValidator.class.php`
 
     [php]
     class sfSpamValidator extends sfValidator
@@ -1037,9 +1058,9 @@ Listing 10-31 - Creating a Custom Validator, in `lib/sfSpamValidator.class.php`
       }
     }
 
-As soon as the validator is added to an autoloadable directory (and the cache cleared), you can use it in your validation files, as shown in Listing 10-32.
+As soon as the validator is added to an autoloadable directory (and the cache cleared), you can use it in your validation files, as shown in Listing 10-33.
 
-Listing 10-32 - Using a Custom Validator, in `validate/send.yml`
+Listing 10-33 - Using a Custom Validator, in `validate/send.yml`
 
     fields:
       message:
@@ -1051,18 +1072,18 @@ Listing 10-32 - Using a Custom Validator, in `validate/send.yml`
 
 ### Using Array Syntax for Form Fields
 
-PHP allows you to use an array syntax for the form fields. When writing your own forms, or when using the ones generated by the Propel administration (see Chapter 14), you may end up with HTML code that looks like Listing 10-33.
+PHP allows you to use an array syntax for the form fields. When writing your own forms, or when using the ones generated by the Propel administration (see Chapter 14), you may end up with HTML code that looks like Listing 10-34.
 
-Listing 10-33 - Form with Array Syntax
+Listing 10-34 - Form with Array Syntax
 
     [php]
     <label for="story_title">Title:</label>
     <input type="text" name="story[title]" id="story_title" value="default value"
            size="45" />
 
-Using the input name as is (with brackets) in a validation file will throw a parsed-induced error. The solution here is to replace square brackets `[]` with curly brackets `{}` in the `fields` section, as shown in Listing 10-34, and symfony will take care of the conversion of the names sent to the validators afterwards.
+Using the input name as is (with brackets) in a validation file will throw a parsed-induced error. The solution here is to replace square brackets `[]` with curly brackets `{}` in the `fields` section, as shown in Listing 10-35, and symfony will take care of the conversion of the names sent to the validators afterwards.
 
-Listing 10-34 - Validation File for a Form with Array Syntax
+Listing 10-35 - Validation File for a Form with Array Syntax
 
     fields:
       story{title}:
@@ -1070,9 +1091,9 @@ Listing 10-34 - Validation File for a Form with Array Syntax
 
 ### Executing a Validator on an Empty Field
 
-You may need to execute a validator on a field that is not required, on an empty value. For instance, this happens with a form where the user can (but may not) want to change his password, and in this case, a confirmation password must be entered. See the example in Listing 10-35.
+You may need to execute a validator on a field that is not required, on an empty value. For instance, this happens with a form where the user can (but may not) want to change his password, and in this case, a confirmation password must be entered. See the example in Listing 10-36.
 
-Listing 10-35 - Sample Validation File for a Form with Two Password Fields
+Listing 10-36 - Sample Validation File for a Form with Two Password Fields
 
     fields:
       password1:
@@ -1097,9 +1118,9 @@ The validation process executes as follows:
 
 You may want to execute your `password2` validator if `password1` is `not null`. Fortunately, the symfony validators handle this case, thanks to the `group` parameter. When a field is in a group, its validator will execute if it is not empty and if one of the fields of the same group is not empty.
 
-So, if you change the configuration to that shown in Listing 10-36, the validation process behaves correctly.
+So, if you change the configuration to that shown in Listing 10-37, the validation process behaves correctly.
 
-Listing 10-36 - Sample Validation File for a Form with Two Password Fields and a Group
+Listing 10-37 - Sample Validation File for a Form with Two Password Fields and a Group
 
     fields:
       password1:
