@@ -1,0 +1,69 @@
+How to use Propel 1.3
+=====================
+
+*by Carl Vondrick*
+
+Starting with symfony 1.1, it is now possible to easily use [Propel 1.3](http://propel.phpdb.org/trac/wiki/Users/Documentation/1.3) in your project to take advantage of its speed improvements, nested set implementation, object instance pooling, among others. Most importantly, Propel 1.3 uses PDO instead of Creole as the DBAL, offering a significant performance boost.
+
+Installing Propel 1.3 only takes a few minutes.  All you must do is install a plugin and modify two configuration files.  Read on to learn how.
+
+  * Install the Propel 1.3 plugin from the symfony repository:
+
+        $ cd /path/to/project/root/
+        $ svn co http://svn.symfony-project.com/plugins/sfPropelPlugin/branches/1.3/ plugins/sfPropelPlugin
+
+  * Propel 1.3 uses a new connection format and so you must update `databases.yml` accordingly.  Change `config/databases.yml` to match the following, making your own necessary changes:
+
+        [yml]
+        dev:
+          propel:
+            param: 
+              classname: DebugPDO
+
+        all:
+          propel:
+            class: sfPropelDatabase
+            param:
+              dsn: mysql:dbname=mydb;host=localhost 
+              username: username
+              password: password
+              encoding: utf8
+              persistent: true
+              pooling: false
+              classname: PropelPDO
+
+    To upgrade your DSN, see the [PDO manual](http://us.php.net/manual/en/pdo.drivers.php).
+
+  * We must update `propel.ini` to match the same configuration. Look for the 3 lines at the beginning of `config/propel.ini` and delete them:
+
+        [ini]
+        propel.database            = mysql
+        propel.database.createUrl  = mysql://root@localhost/
+        propel.database.url        = mysql://root@localhost/myproject
+
+    In their place, insert the following:
+
+        [ini]
+        propel.database            = mysql
+        propel.database.driver     = mysql
+        propel.database.createUrl  = mysql://localhost/
+        propel.database.url        = mysql:dbname=mydb;host=localhost
+        propel.database.user       = username
+        propel.database.password   = password
+        propel.database.encoding   = utf8
+
+    Be sure that `propel.databse.url` matches the DSN in step 2.
+
+  * Clear symfony's internal cache:
+
+        $ symfony cache:clear
+
+  * Propel 1.3 has an improved object model, so we must rebuild the models:
+
+        $ symfony propel:build-model
+
+If this is a new project, congratulations you have just setup Propel 1.3! The `schema.yml` syntax is exactly the same as Propel 1.2.  The new API is not radically different; in fact, for the most part, the API is exactly the same.
+
+If you are upgrading a project, you might still have a little bit of work ahead of you, but you should find that most of your project will work.  If you use transactions or Creole directly in your code, you will have to manually upgrade to PDO.  The Propel project has a [helpful upgrade guide](http://propel.phpdb.org/trac/wiki/Users/Documentation/1.3/Upgrading) that guides you through the upgrade process. Even if this is a new project, you might find it helpful to glance over it to learn about all the new features.
+
+symfony 1.1 decouples its core systems, so it couldn't be easier to use any ORM layer you want.  If Propel doesn't cut it for you, try [sfDoctrinePlugin](http://trac.symfony-project.com/wiki/sfDoctrinePlugin), which is a alternative to Propel and matches the performance of Propel 1.3.  Thanks to symfony 1.1, developers can enjoy Propel 1.3 for improved performance or Propel 1.2 if they require rock solid stability.
