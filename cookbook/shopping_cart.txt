@@ -86,14 +86,14 @@ Here is a possible module implementation of the shopping cart management where o
         // ...
       }
 
-      public function executeAdd($request)
+      public function executeAdd()
       {
         // ...
 
-        if ($request->hasParameter('id'))
+        if ($this->hasRequestParameter('id'))
         {
-          $product = ProductPeer::retrieveByPk($request->getParameter('id'));
-          $item = new sfShoppingCartItem('Product', $request->getParameter('id'));
+          $product = ProductPeer::retrieveByPk($this->getRequestParameter('id'));
+          $item = new sfShoppingCartItem('Product', $this->getRequestParameter('id'));
           $item->setQuantity(1);
           $item->setPrice($product->getPrice());
           $shopping_cart = $this->getUser()->getShoppingCart();
@@ -103,23 +103,23 @@ Here is a possible module implementation of the shopping cart management where o
         // ...
       }
 
-      public function executeUpdate($request)
+      public function executeUpdate()
       {
         $shopping_cart = $this->getUser()->getShoppingCart();
         foreach ($shopping_cart->getItems() as $item)
         {
-          if ($request->hasParameter('quantity_'.$item->getId()))
+          if ($this->hasRequestParameter('quantity_'.$item->getId()))
           {
-            $item->setQuantity($request->getParameter('quantity_'.$item->getId()));
+            $item->setQuantity($this->getRequestParameter('quantity_'.$item->getId()));
           }
         }
 
         // ...
       }
 
-      public function executeDelete($request)
+      public function executeDelete()
       {
-        if ($request->hasParameter('id'))
+        if ($this->hasRequestParameter('id'))
         {
           $shopping_cart = $this->getUser()->getShoppingCart();
           $shopping_cart->deleteItem('Product', $requets->getParameter('id'));
@@ -169,7 +169,7 @@ To change the quantity of an item, use the method `setQuantity()` of the `sfShop
 If a user adds the same item (same class and same id) several times, the shopping cart will increase the quantity of the item and not add a new one:
 
     [php]
-    $item = new sfShoppingCartItem('Product', $request->getParameter('id'));
+    $item = new sfShoppingCartItem('Product', $this->getRequestParameter('id'));
     $item->setQuantity(1);
     $item->setPrice($product->getPrice());
     $shopping_cart = $this->getUser()->getShoppingCart();
@@ -178,7 +178,7 @@ If a user adds the same item (same class and same id) several times, the shoppin
 
     // same as
 
-    $item = new sfShoppingCartItem('Product', $request->getParameter('id'));
+    $item = new sfShoppingCartItem('Product', $this->getRequestParameter('id'));
     $item->setQuantity(2);
     $item->setPrice($product->getPrice());
     $shopping_cart = $this->getUser()->getShoppingCart();
