@@ -16,13 +16,13 @@ In symfony, the setter and getter for cookies are methods of different objects, 
     [php]
     // cookie getter
     $string = $this->getRequest()->getCookie('mycookie');
-    
+
     // cookie setter
     $this->getResponse()->setCookie('mycookie', $value);
-    
+
     // cookie setter with options
     $this->getResponse()->setCookie('mycookie', $value, $expire, $path, $domain, $secure);
-    
+
 The syntax of the `setCookie()` method is the same as the one of the basic PHP `setcookie()` function (refer to the [PHP manual](http://www.php.net/setcookie) for more information). The main advantage of using the `sfWebResponse` method is that symfony logs cookies, and that you can keep on reading and modifying them until the response is actually sent.
 
 >**Note**: If you want to manipulate cookies outside of an action, you will need to access the `Request` and `Answer` objects without shortcut:
@@ -51,7 +51,7 @@ The model has a `User` class with at the very least a `login` and a `password` f
     public function executeIndex()
     {
     }
-    
+
     public function executeLogin()
     {
       // check if the user exists
@@ -77,7 +77,7 @@ The model has a `User` class with at the very least a `login` and a `password` f
       {
         $this->getRequest()->setError('email', 'this user does not exist');
       }
-    
+
       // an error was found
       return $this->forward('security', 'index');
     }
@@ -93,7 +93,7 @@ Now, let's have a look at this `signIn()` method in the `myUser` class:
       {
         $this->setAuthenticated(true);
       }
-    
+
       public function signOut()
       {
         $this->setAuthenticated(false);
@@ -133,7 +133,7 @@ The `signIn()` method of the `myUser` class has to be modified to set the rememb
           $user->setRememberKey($rememberKey);
           $user->save();
         }
-                
+
         // save the key to the cookie
         $value = base64_encode(serialize(array($user->getRememberKey(), $user->getLogin())));
         sfContext::getInstance()->getResponse()->setCookie('MyWebSite', $value, time()+60*60*24*15, '/');
@@ -187,7 +187,7 @@ This new process reads the cookie and you are done.
 >               $this->getContext()->getUser()->signIn($user);
 >             }
 >           }
->         } 
+>         }
 >         // execute next filter
 >         $filterChain->execute();
 >       }
@@ -208,7 +208,7 @@ One last thing: If the user logs out, don't forget to remove the cookie!
       sfContext::getInstance()->getResponse()->setCookie('MyWebSite', '', time() - 3600, '/');
     }
 
->**Note**: This solution works only for non-secure pages, since the security check for secure pages occurs _before_ the custom `remember` filter. Consequently, if a user with a proper cookie tries to access a secure page without having logged to the site in a non-secure page before, he/she will be redirected to the login page as anybody else. If you want the remember me feature to work for secure pages as well, the implementation has to be slightly different. You must create a `myBasicSecurityFilter` class, specializing the `sfBasicSecurityFilter` class, and put the cookie control in it. Then, in the `factories.yml`, change the name of the `security_filter` class to this `myBasicSecurityFilter`. The details of the implementation are left to your sagacity.
+>**Note**: This solution works only for non-secure pages, since the security check for secure pages occurs _before_ the custom `remember` filter. Consequently, if a user with a proper cookie tries to access a secure page without having logged to the site in a non-secure page before, he/she will be redirected to the login page as anybody else. If you want the remember me feature to work for secure pages as well, the implementation has to be slightly different. You must create a `myBasicSecurityFilter` class, specializing the `sfBasicSecurityFilter` class, and put the cookie control in it. Then, in the `filters.yml`, change the name of the `security_filter` class to this `myBasicSecurityFilter`. The details of the implementation are left to your sagacity.
 
 Persistent sessions: don't reinvent the wheel
 ---------------------------------------------
