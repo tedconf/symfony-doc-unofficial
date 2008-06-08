@@ -294,22 +294,21 @@ Each time the framework uses a path to look for something (from core classes to 
 
 ### The Basic File Structure
 
-The path variables are defined in the `$sf_symfony_data_dir/config/constants.php` file, included when the application bootstraps. These variables are stored in the `sfConfig` object, and so they are easy to override. Listing 19-5 shows a listing of the path variables and the directory they reference.
+The path variables are defined in the `sfProjectConfiguration` and `sfApplicationConfiguration` classes and stored in the `sfConfig` object. Listing 19-5 shows a listing of the path variables and the directory they reference.
 
-Listing 19-5 - Default File Structure Variables, from `$sf_symfony_data_dir/config/constants.php`
+Listing 19-5 - Default File Structure Variables, defined in `sfProjectConfiguration` and `sfApplicationConfiguration`
 
     sf_root_dir           # myproject/
-                          #   apps/
+    sf_apps_dir           #   apps/
     sf_app_dir            #     frontend/
     sf_app_config_dir     #       config/
     sf_app_i18n_dir       #       i18n/
     sf_app_lib_dir        #       lib/
     sf_app_module_dir     #       modules/
     sf_app_template_dir   #       templates/
-    sf_bin_dir            #   batch/
-                          #   cache/
-    sf_base_cache_dir     #     frontend/
-    sf_cache_dir          #       prod/
+    sf_cache_dir          #   cache/
+    sf_app_base_cache_dir #     frontend/
+    sf_app_cache_dir      #       prod/
     sf_template_cache_dir #         templates/
     sf_i18n_cache_dir     #         i18n/
     sf_config_cache_dir   #         config/
@@ -319,47 +318,25 @@ Listing 19-5 - Default File Structure Variables, from `$sf_symfony_data_dir/conf
     sf_data_dir           #   data/
     sf_doc_dir            #   doc/
     sf_lib_dir            #   lib/
-    sf_model_lib_dir      #     model/
     sf_log_dir            #   log/
     sf_test_dir           #   test/
     sf_plugins_dir        #   plugins/
     sf_web_dir            #   web/
     sf_upload_dir         #     uploads/
 
-Every path to a key directory is determined by a parameter ending with `_dir`. Always use the path variables instead of real (relative or absolute) file paths, so that you will be able to change them later, if necessary. For instance, when you want to move a file to the `uploads/` directory in an application, you should use `sfConfig::get('sf_upload_dir')` for the path instead of `SF_ROOT_DIR.'/web/uploads/'`.
-
-The module directory structure is defined at runtime, when the routing system determines the module name (`$module_name`). It is automatically built according to the path names defined in the `constants.php` file, as shown in Listing 19-6.
-
-Listing 19-6 - Default Module File Structure Variables
-
-    sf_app_module_dir                 # modules/
-    module_name                       #  mymodule/
-    sf_app_module_action_dir_name     #    actions/
-    sf_app_module_template_dir_name   #    templates/
-    sf_app_module_lib_dir_name        #    lib/
-    sf_app_module_view_dir_name       #    views/
-    sf_app_module_validate_dir_name   #    validate/
-    sf_app_module_config_dir_name     #    config/
-    sf_app_module_i18n_dir_name       #    i18n/
-
-So, for instance, the path to the `validate/` directory of the current module is built dynamically at runtime:
-
-    [php]
-    sfConfig::get('sf_app_module_dir').'/'.$module_name.'/'.sfConfig::get('sf_app_module_validate_dir_name')
+Every path to a key directory is determined by a parameter ending with `_dir`. Always use the path variables instead of real (relative or absolute) file paths, so that you will be able to change them later, if necessary. For instance, when you want to move a file to the `uploads/` directory in an application, you should use `sfConfig::get('sf_upload_dir')` for the path instead of `sfConfig::get('sf_root_dir').'/web/uploads/'`.
 
 ### Customizing the File Structure
 
-You will probably need to modify the default project file structure if you develop an application for a client who already has a defined directory structure and who is not willing to change it to comply with the symfony logic. By overriding the `sf_XXX_dir` and `sf_XXX_dir_name` variables with `sfConfig`, you can make symfony work for a totally different directory structure than the default structure. The best place to do this is in the application `config.php` file.
+You will probably need to modify the default project file structure if you develop an application for a client who already has a defined directory structure and who is not willing to change it to comply with the symfony logic. By overriding the `sf_XXX_dir` variables with `sfConfig`, you can make symfony work for a totally different directory structure than the default structure. The best place to do this is in the application `ProjectConfiguration` class for project directories, or `XXXConfiguration` class for applications directories.
 
->**CAUTION**
->Use the application `config.php` and not the project one to override the `sf_XXX_dir` and `sf_XXX_dir_name` variables with `sfConfig`. The project `config/config.php` file is loaded very early in the life of a request, at a time when the `sfConfig` class doesn't exist yet, and when the `constants.php` file is not yet loaded.
-
-For instance, if you want all applications to share a common directory for the template layouts, add this line to the `frontend/config/config.php` file to override the `sf_app_template_dir` settings:
+For instance, if you want all applications to share a common directory for the template layouts, add this line to the `configure()` method of the `ProjectConfiguration` class to override the `sf_app_template_dir` settings:
 
     [php]
     sfConfig::set('sf_app_template_dir', sfConfig::get('sf_root_dir').DIRECTORY_SEPARATOR.'templates');
 
-Note that the application config.php file is not empty, so if you need to include file structure definitions there, do it at the end of the file.
+>**Note**
+>Even if you can change your project directory structure by calling `sfConfig::set()`, it's better to use the dedicated methods defined by the project and application configuration classes if possible as they take care of changing all the related paths. For example, the `setCacheDir()` method changes the following constants: `sf_cache_dir`, `sf_app_base_cache_dir`, `sf_app_cache_dir`, `sf_template_cache_dir`, `sf_i18n_cache_dir`, `sf_config_cache_dir`, `sf_test_cache_dir`, and `sf_module_cache_dir`.
 
 ### Modifying the Project Web Root
 
@@ -383,44 +360,63 @@ In this case, the root directory is the `symfony/` directory. So the `index.php`
     [php]
     define('SF_ROOT_DIR', dirname(__FILE__).'/../symfony');
 
-In addition, since the public area is `www/` instead of the usual `web/`, you must override two file paths in the application `config.php` file, as follows:
+In addition, use the `setWebDir()` method to change the public area from the usual `web/` to `www/`, as follows:
 
     [php]
-    sfConfig::add(array(
-      'sf_web_dir'      => SF_ROOT_DIR.'/../www',
-      'sf_upload_dir'   => SF_ROOT_DIR.'/../www/'.sfConfig::get('sf_upload_dir_name'),
-    ));
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setWebDir(sfConfig::get('sf_root_dir').'/../www');
+      }
+    }
 
 ### Linking to Symfony Libraries
 
-The paths to the framework files are defined in the project `config.php` file, as you can see in Listing 19-8.
+The path to the framework files is defined in the `ProjectConfiguration` class, located in the `config/` directory, as you can see in Listing 19-8.
 
-Listing 19-8 - The Paths to the Framework Files, in `myproject/config/config.php`
+Listing 19-8 - The Path to the Framework Files, in `myproject/config/ProjectConfiguration.class.php`
 
     [php]
     <?php
 
-    // symfony directories
-    $sf_symfony_lib_dir  = '/path/to/symfony/lib';
-    $sf_symfony_data_dir = '/path/to/symfony/data';
+    require_once '/path/to/symfony/lib/autoload/sfCoreAutoload.class.php';
+    sfCoreAutoload::register();
 
-These paths are initialized when you call a `php symfony generate:project` from the command line, and refer to the symfony installation used to build the project. They are used both by the command line and by the MVC architecture.
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+      }
+    }
 
-This means that you can switch to another installation of symfony by changing the paths to the framework files.
+The path is initialized when you call a `php symfony generate:project` from the command line, and refer to the symfony installation used to build the project. It is used both by the command line and by the MVC architecture.
 
-These paths should be absolute, but by using `dirname(__FILE__)`, you can refer to files inside the project structure and preserve independence of the chosen directory for the project installation. For instance, many projects choose to have the symfony `lib/` directory appear as a symbolic link in the project `lib/symfony/` directory, and do the same for the symfony `data/` directory, as follows:
+This means that you can switch to another installation of symfony by changing the path to the framework files.
+
+The path should be absolute, but by using `dirname(__FILE__)`, you can refer to files inside the project structure and preserve independence of the chosen directory for the project installation. For instance, many projects choose to have the symfony `lib/` directory appear as a symbolic link in the project `lib/vendor/symfony/` directory, as follows:
 
     myproject/
       lib/
-        symfony/ => /path/to/symfony/lib
-      data/
-        symfony/ => /path/to/symfony/data
+        vendor/
+          symfony/ => /path/to/symfony/
 
-In this case, the project config.php file just needs to define the symfony directories as follows:
+In this case, the `ProjectConfiguration` class just needs to define the symfony lib directory as follows:
 
     [php]
-    $sf_symfony_lib_dir  = dirname(__FILE__).'/../lib/symfony';
-    $sf_symfony_data_dir = dirname(__FILE__).'/../data/symfony';
+    <?php
+
+    require_once dirname(__FILE__).'/../lib/vendor/symfony/lib/autoload/sfCoreAutoload.class.php';
+    sfCoreAutoload::register();
+
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+      }
+    }
 
 The same principle also applies if you choose to include the symfony files as a `svn:externals` in the project `lib/vendor/` directory:
 
@@ -429,14 +425,8 @@ The same principle also applies if you choose to include the symfony files as a 
         vendor/
           svn:externals symfony http://svn.symfony-project.com/trunk/
 
-In this case, the `config.php` file should look like this:
-
-    [php]
-    $sf_symfony_lib_dir  = dirname(__FILE__).'/../lib/vendor/symfony/lib';
-    $sf_symfony_data_dir = dirname(__FILE__).'/../lib/vendor/symfony/data';
-
 >**TIP**
->Sometimes, the different servers running an application don't have the same path to the symfony libraries. One way to enable that is to exclude the project `config.php` file from the synchronization (by adding it to `rsync_exclude.txt`). Another method is to keep the same paths in the development and production versions of `config.php`, but to have these paths point to symbolic links that can vary according to the server.
+>Sometimes, the different servers running an application don't have the same path to the symfony libraries. One way to enable that is to exclude the `ProjectConfiguration.class.php` file from the synchronization (by adding it to `rsync_exclude.txt`). Another method is to keep the same paths in the development and production versions of `ProjectConfiguration.class.php`, but to have these paths point to symbolic links that can vary according to the server.
 
 Understanding Configuration Handlers
 ------------------------------------
@@ -514,8 +504,6 @@ Listing 19-11 - A Custom Configuration Handler, in `frontend/lib/myMapConfigHand
     {
       public function execute($configFiles)
       {
-        $this->initialize();
-
         // Parse the yaml
         $config = $this->parseYamls($configFiles);
 
@@ -548,12 +536,12 @@ In order to associate this new handler with the `map.yml` file, you must create 
 
 As with many other symfony configuration files, you can also register a configuration handler directly in your PHP code:
 
-    sfConfigCache::getInstance()->registerConfigHandler('config/map.yml', myMapConfigHandler, array());
+    sfContext::getInstance()->getConfigCache()->registerConfigHandler('config/map.yml', myMapConfigHandler, array());
 
 When you need the code based on the `map.yml` file and generated by the `myMapConfigHandler` handler in your application, call the following line:
 
     [php]
-    include(sfConfigCache::getInstance()->checkConfig(sfConfig::get('sf_app_config_dir_name').'/map.yml'));
+    include(sfContext::getInstance()->getConfigCache()->checkConfig(sfConfig::get('config/map.yml'));
 
 When calling the `checkConfig()` method, symfony looks for existing `map.yml` files in the configuration directories and processes them with the handler specified in the `config_handlers.yml` file, if a `map.yml.php` does not already exist in the cache or if the `map.yml` file is more recent than the cache.
 
@@ -572,40 +560,7 @@ When calling the `checkConfig()` method, symfony looks for existing `map.yml` fi
 >       param:
 >         prefix: map_
 >
->Be careful not to choose a prefix already used by another handler. Existing prefixes are sf_, app_, and mod_.
-
-Controlling PHP Settings
-------------------------
-
-In order to have a PHP environment compatible with the rules and best practices of agile development, symfony checks and overrides a few settings of the `php.ini` configuration. This is the purpose of the `php.yml` file. Listing 19-12 shows the default `php.yml` file.
-
-Listing 19-12 - Default PHP Settings for Symfony, in `$sf_symfony_data_dir/config/php.yml`
-
-    set:
-      magic_quotes_runtime:        off
-      log_errors:                  on
-      arg_separator.output:        |
-        &amp;
-
-    check:
-      zend.ze1_compatibility_mode: off
-
-    warn:
-      magic_quotes_gpc:            off
-      register_globals:            off
-      session.auto_start:          off
-
-The main purpose of this file is to check that the PHP configuration is compatible with your application. It is also very useful to check that your development server configuration is as similar as possible to the production server. That's why you should inspect the production server configuration at the beginning of a project, and report its PHP settings in a `php.yml` file in your project. You can then develop and test with confidence that you will not encounter any compatibility errors once you deploy your project to the production platform.
-
-The variables defined under the `set` header are modified (despite how they were defined in the server `php.ini` file). The variables defined under the `warn` category cannot be modified on the fly, but symfony can run even if they are not properly set. It is just considered bad practice to have these settings set to on, and symfony will log a warning in this case. The variables defined under the `check` category cannot be modified on the fly either, but they must have a certain value for symfony to run. So, in this case, an exception is raised if the `php.ini` file is not correct.
-
-The default php.yml file sets log_errors to on so that you can trace errors in symfony projects. It also recommends that the `register_globals` be set to `off` to prevent security breaches.
-
-If you don't want symfony to apply these settings, or if you want to run a project with `magic_quotes_gpc` and `register_globals` set to `on` without warning, then create a `php.yml` file in your application `config/` directory, and override the settings you want to change.
-
-Additionally, if your project requires an extension, you can specify it under the `extensions` category. It expects an array of extension names, as follows:
-
-    extensions: [gd, mysql, mbstring]
+>Be careful not to choose a prefix already used by another handler. Existing prefixes are `sf_`, `app_`, and `mod_`.
 
 Summary
 -------
