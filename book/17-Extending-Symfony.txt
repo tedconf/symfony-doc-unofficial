@@ -6,33 +6,32 @@ Eventually, you will need to alter symfony's behavior. Whether you need to modif
 Events
 ------
 
-Among the current limitations of PHP, one of the most annoying is you can't have a class extend more than one class. Another limitation is you can't add new methods to an existing class or override existing methods. To palliate these two limitations and to make the framework truly extendable, symfony introduces an *event system*, inspired by the Cocoa Framework event manager.
+Among the current limitations of PHP, one of the most annoying is you can't have a class extend more than one class. Another limitation is you can't add new methods to an existing class or override existing methods. To palliate these two limitations and to make the framework truly extendable, symfony introduces an *event system*, inspired by the Cocoa notification center, and based on the Observer design pattern ([http://en.wikipedia.org/wiki/Observer_pattern](http://en.wikipedia.org/wiki/Observer_pattern)).
 
 ### Understanding Events
 
-Some of the symfony classes "notify an event" at various moments of their life. For instance, when dispatching a request, the controller notifies a `page_not_found` event if it cannot find a match between the requested URLs and the available actions. This event is like a shout in the project's space, saying: "I'm doing that. Do whatever you want about it."
+Some of the symfony classes "notify an event" at various moments of their life. For instance, when the user changes its culture, the user object notifies a `change_culture` event. This event is like a shout in the project's space, saying: "I'm doing that. Do whatever you want about it."
 
-You can decide to do something special when an event is fired. For instance, you could save the requested URL to a database each time the `page_not_found` event is notified, to allow for easy listing of the 404 errors in your application. In order to do so, you need to *register an event handler*, which is a complicated sentence to say that you must declare a function to be called when the event occurs. Listing 17-1 shows how to register a handler on the controller's `page_not_found` event.
+You can decide to do something special when an event is fired. For instance, you could save the user culture to a database table each time the `change_culture` event is notified, to remember the user prefered culture. In order to do so, you need to *register an event listener*, which is a complicated sentence to say that you must declare a function to be called when the event occurs. Listing 17-1 shows how to register a listener on the user's `change_culture` event.
 
-Listing 17-1 - Registering an Event Handler
+Listing 17-1 - Registering an Event Listener
 
     [php]
-    $dispatcher = sfContext::getInstance()->getEventDispatcher();
-    $dispatcher->connect('controller.page_not_found', 'save404Errors');
+    $dispatcher->connect('user.change_culture', 'changeUserCulture');
     
-    function save404Errors(sfEvent $event)
+    function changeUserCulture(sfEvent $event)
     {
-      $controller = $event->getSubject();
-      $parameters = $event->getParameters();
-      $context = sfContext::getInstance();
-      
-      $requestedURI = $context->getRequest()->getUri();
-      // do something with it
+      $user = $event->getSubject();
+      $culture = $event['culture'];
+
+      // do something with the user culture
     }
 
-All events and handler registrations are managed by a special object called the *event dispatcher*. This object is available from everywhere in symfony by way of the `sfContext` singleton, and most symfony objects offer a `getDispatcher()` method to get direct access to it. Using the dispatcher's `connect()` method, you can register any function (or a callable) to be called when an event occurs. The first argument of `connect()` is the event identifier, which is a string composed of a namespace and a name. The second argument is either a function name or a callable array.
+All events and listener registrations are managed by a special object called the *event dispatcher*. This object is available from everywhere in symfony by way of the `sfContext` singleton, and most symfony objects offer a `getDispatcher()` method to get direct access to it. Using the dispatcher's `connect()` method, you can register any PHP callable (either a class method or a function) to be called when an event occurs. The first argument of `connect()` is the event identifier, which is a string composed of a namespace and a name. The second argument is a PHP callable.
 
-Once the function registered in the event dispatcher, it sits and waits until the event is fired. The event dispatcher keeps a record of all event handlers, and knows which ones to call when an event is notified. When calling these methods of functions, the dispatcher passes them an `sfEvent` object as parameter. An event object has the ability to return the event notifier object thanks to its `getSubject()` method, and whatever parameters were passed to it during initialization, thanks to its `getParameters()` method.
+Once the function registered in the event dispatcher, it sits and waits until the event is fired. The event dispatcher keeps a record of all event listeners, and knows which ones to call when an event is notified. When calling these methods or functions, the dispatcher passes them an `sfEvent` object as parameter.
+
+The event object stores information about the notified event. The event notifier can be retrieved thanks to the `getSubject()` method, and the event parameters are accessible by using the event object as an array (for example, `$event['culture']` can be used to retrieve the `culture` parameter passed by `sfUser` when notifying `user.change_culture`).
 
 To wrap it up, the event system allows you to add abilities to an existing class or modify its methods at runtime, without using inheritance. 
 
@@ -47,18 +46,20 @@ Listing 17-2 - Notifying an Event
     [php]
     class sfRestRequest
     {
-      public function __construct($dispatcher = null)
+      protected $dispatcher = null;
+
+      public function __construct(sfEventDispatcher $dispatcher)
       {
-        $this->dispatcher = $dispatcher ? $dispatcher : sfContext::getInstance()->getEventDispatcher();
+        $this->dispatcher = $dispatcher;
       }
       
       /**
-       * Make a query to an external web service
+       * Makes a query to an external web service
        */
       public function fetch($uri, $parameters = array())
       {
         // Notify the beginning of the fetch process
-        $this->dispatcher->notify(new sfEvent($this, 'rest.fetch_prepare', array(
+        $this->dispatcher->notify(new sfEvent($this, 'rest_request.fetch_prepare', array(
           'uri'        => $uri,
           'parameters' => $parameters
         )));
@@ -67,7 +68,7 @@ Listing 17-2 - Notifying an Event
         // ...
         
         // Notify the end of the fetch process
-        $this->dispatcher->notify(new sfEvent($this, 'rest.fetch_success', array(
+        $this->dispatcher->notify(new sfEvent($this, 'rest_request.fetch_success', array(
           'uri'        => $uri,
           'parameters' => $parameters,
           'result'     => $result
@@ -77,16 +78,16 @@ Listing 17-2 - Notifying an Event
       }
     }
 
-The `notify()` method of the event dispatcher expects an `sfEvent` object as parameter; this is the very same object that is passed to the event handlers. This object always carries a reference to the notifier (that's why the event instance is initialized with `this`) and an event identifier. Optionally, it accepts an associative array of parameters, giving handlers a way to interact with the notifier's logic.
+The `notify()` method of the event dispatcher expects an `sfEvent` object as argument; this is the very same object that is passed to the event listeners. This object always carries a reference to the notifier (that's why the event instance is initialized with `this`) and an event identifier. Optionally, it accepts an associative array of parameters, giving listeners a way to interact with the notifier's logic.
 
 >**TIP**
 >Only the classes that notify events can be extended by way of the event system. So even if you don't know whether you will need to extend a class in the future or not, it is always a good idea to add notifications in the key methods.
 
-### Notifying an Event Until a Handler handles it
+### Notifying an Event Until a Listener handles it
 
-By using the `notify()` method, you make sure that all the handlers registered on the notified event are executed. But in some cases, you need to allow a handler to stop the event and prevent further handlers from being notified about it. In this case, you should use `notifyUntil()` instead of `notify()`. The dispatcher will then execute all handlers until one returns `true`, and then stop the event notification. In other terms, `notifyUntil()` is like a shout in the project space saying: "I'm doing that. If somebody cares, then I won't tell anybody else." Listing 17-3 shows how to use this technique in combination with a magic `__call()` method to add methods to an existing class at runtime.
+By using the `notify()` method, you make sure that all the listeners registered on the notified event are executed. But in some cases, you need to allow a listener to stop the event and prevent further listeners from being notified about it. In this case, you should use `notifyUntil()` instead of `notify()`. The dispatcher will then execute all listeners until one returns `true`, and then stop the event notification. In other terms, `notifyUntil()` is like a shout in the project space saying: "I'm doing that. If somebody cares, then I won't tell anybody else." Listing 17-3 shows how to use this technique in combination with a magic `__call()` method to add methods to an existing class at runtime.
 
-Listing 17-3 - Notifying an Event Until a Handler Returns True
+Listing 17-3 - Notifying an Event Until a Listener Returns True
 
     [php]
     class sfRestRequest
@@ -95,7 +96,7 @@ Listing 17-3 - Notifying an Event Until a Handler Returns True
       
       public function __call($method, $arguments)
       {
-        $event = $this->dispatcher->notifyUntil(new sfEvent($this, 'rest.method_not_found', array(
+        $event = $this->dispatcher->notifyUntil(new sfEvent($this, 'rest_request.method_not_found', array(
           'method'    => $method, 
           'arguments' => $arguments
         )));
@@ -108,33 +109,42 @@ Listing 17-3 - Notifying an Event Until a Handler Returns True
       }
     }
 
-An event handler registered on the `rest.method_not_found` event can test the requested `$method` and decide to handle it, or pass to the next event handler callable. In Listing 17-4, you can see how a third party class can add `put()` and `delete()` methods to the `sfRestQuery` class at runtime with this trick.
+An event listener registered on the `rest_request.method_not_found` event can test the requested `$method` and decide to handle it, or pass to the next event listener callable. In Listing 17-4, you can see how a third party class can add `put()` and `delete()` methods to the `sfRestRequest` class at runtime with this trick.
 
 Listing 17-4 - Handling a "Notify Until"-Type Event
 
     [php]
-    $dispatcher = sfContext::getInstance()->getEventDispatcher();
-    $dispatcher->connect('rest.method_not_found', array('sfRestRequestExtension', 'listenToMethodNotFound'));
-    
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      public function configure()
+      {
+        // ...
+
+        // Register our listener
+        $this->dispatcher->connect('rest_request.method_not_found', array('sfRestRequestExtension', 'listenToMethodNotFound'));
+      }
+    }
+
     class sfRestRequestExtension
     {
-      public static function listenToMethodNotFound(sfEvent $event)
+      static public function listenToMethodNotFound(sfEvent $event)
       {
-        $parameters = $event->getParameters();
-        switch($method = $parameters['method'])
+        switch ($event['method'])
         {
           case 'put':
-            $this->put($event, $parameters['arguments'])
+            self::put($event->getSubject(), $event['arguments'])
+
             return true;
           case 'delete':
-            $this->delete($event, $parameters['arguments'])
+            self::delete($event->getSubject(), $event['arguments'])
+
             return true;
           default:
             return false;
         }
       }
-      
-      protected static function put($event, $arguments = array())
+
+      static protected function put($restRequest, $arguments)
       {
         // Make a put request and store the result in a $result variable
         // ...
@@ -142,7 +152,7 @@ Listing 17-4 - Handling a "Notify Until"-Type Event
         $event->setReturnValue($result);
       }
       
-      protected static function delete($event, $arguments = array())
+      static protected function delete($restRequest, $arguments)
       {
         // Make a delete request and store the result in a $result variable
         // ...
@@ -154,11 +164,11 @@ Listing 17-4 - Handling a "Notify Until"-Type Event
 In practice, `notifyUntil()` offers multiple inheritance capabilities, or rather mixins (the addition of methods from third-party classes to an existing class), to PHP. You can now "inject" new methods to objects that you can't extend by way of inheritance. And this happens at runtime. You are not limited by the Object Oriented capabilities of PHP anymore when you use symfony.
 
 >**TIP**
->As the first handler to catch a `notifyUntil` event prevents further notification, you may worry about the order of which handlers are executed. This order corresponds to the order in which handlers were registered--first registered, first executed. But in practice, cases when this could be disturbing seldom happen. If you realize that two handlers conflict on a particular event, perhaps your class should notify several events, for instance one at the beginning and one at the end of the method execution. And if you use events to add new methods to an existing class, name your methods wisely so that other attempts at adding methods don't conflict. Prefixing method names with the name of the handler class is a good practice.
+>As the first listener to catch a `notifyUntil()` event prevents further notification, you may worry about the order of which listeners are executed. This order corresponds to the order in which listeners were registered--first registered, first executed. But in practice, cases when this could be disturbing seldom happen. If you realize that two listeners conflict on a particular event, perhaps your class should notify several events, for instance one at the beginning and one at the end of the method execution. And if you use events to add new methods to an existing class, name your methods wisely so that other attempts at adding methods don't conflict. Prefixing method names with the name of the listener class is a good practice.
 
 ### Changing the Return Value of a Method
 
-You can probably imagine how a handler can not only use the information given by an event, but also modify it, to alter the original logic of the notifier. If you want to allow this, you should use the `filter()` method of the event dispatcher rather than `notify()`. All event handlers are then called with two parameters: the event object, and the value to filter. Event handlers must return the value, whether they altered it or not. Listings 17-5 show show `filter()` can be used to filter a response from a web service and escape special characters in that response.
+You can probably imagine how a listener can not only use the information given by an event, but also modify it, to alter the original logic of the notifier. If you want to allow this, you should use the `filter()` method of the event dispatcher rather than `notify()`. All event listeners are then called with two parameters: the event object, and the value to filter. Event listeners must return the value, whether they altered it or not. Listings 17-5 show show `filter()` can be used to filter a response from a web service and escape special characters in that response.
 
 Listing 17-5 - Notifying and Handling a Filter Event
 
@@ -176,18 +186,20 @@ Listing 17-5 - Notifying and Handling a Filter Event
         // ...
         
         // Notify the end of the fetch process
-        $this->dispatcher->filter(new sfEvent($this, 'rest.fetch_success', array(
+        return $this->dispatcher->filter(new sfEvent($this, 'rest_request.filter_result', array(
           'uri'        => $uri,
           'parameters' => $parameters,
         ), $result));
-        
-        return $result;
       }
     }
 
     // Add escaping to the web service response
-    $dispatcher = sfContext::getInstance()->getEventDispatcher();
-    $dispatcher->connect('rest.fetch_success', 'htmlspecialchars');
+    $dispatcher->connect('rest_request.filter_result', 'rest_htmlspecialchars');
+
+    function rest_htmlspecialchars(sfEvent $event, $result)
+    {
+      return htmlspecialchars($result, ENT_QUOTES, 'UTF-8');
+    }
 
 ### Built-In Events
 
@@ -226,7 +238,7 @@ Table 17-1 - Symfony's Events
 |                     | method_not_found   | notifyUntil | sfView                 | method, arguments           |
 | **view.cache**      | filter_content     | filter      | sfViewCacheManager     | response, uri, new          |
 
-You are free to register event handlers on any of these events. Just make sure that handler callables return a boolean when registered on a `notifyUntil`-type event, and that they return the filtered value when registered on a `filter`-type event.
+You are free to register event listeners on any of these events. Just make sure that listener callables return a boolean when registered on a `notifyUntil`-type event, and that they return the filtered value when registered on a `filter`-type event.
 
 Note that the event namespaces don't necessarily match the class role. For instance, all symfony classes notify an `application.log` event when they need something to appear in the log files (and in the web debug toolbar):
 
@@ -235,22 +247,22 @@ Note that the event namespaces don't necessarily match the class role. For insta
 
 Your own classes can do the same and also notify symfony events when it makes sense.
 
-### Where To Register Handlers?
+### Where To Register Listeners?
 
-Event handlers need to be registered early in the life of a symfony request. In practice, the right place to register event handlers is in the application configuration class. This class has a reference to the event dispatcher that you can use in the `configure()` method. Listing 17-6 shows how to register a handler on one of the `rest` events of the above examples.
+Event listeners need to be registered early in the life of a symfony request. In practice, the right place to register event listeners is in the application configuration class. This class has a reference to the event dispatcher that you can use in the `configure()` method. Listing 17-6 shows how to register a listener on one of the `rest_request` events of the above examples.
 
-Listing 17-6 - Registering a Handler in the Application Configuration Class, in apps/frontend/config/ApplicationConfiguration.class.php
+Listing 17-6 - Registering a Listener in the Application Configuration Class, in `apps/frontend/config/ApplicationConfiguration.class.php`
 
     [php]
     class frontendConfiguration extends sfApplicationConfiguration
     {
       public function configure()
       {
-        $this->getEventDispatcher()->connect('rest.method_not_found', array('sfRestRequestExtension', 'listenToMethodNotFound'));
+        $this->dispatcher->connect('rest_request.method_not_found', array('sfRestRequestExtension', 'listenToMethodNotFound'));
       }
     }
 
-Plug-ins (see below) can register their own event handlers. They should do it in the plug-in's `config/config.php` script, which is executed during application initialization and offers access to the event dispatcher through `$this->dispatcher`.
+Plug-ins (see below) can register their own event listeners. They should do it in the plug-in's `config/config.php` script, which is executed during application initialization and offers access to the event dispatcher through `$this->dispatcher`.
 
 >**SIDEBAR**
 >Propel Behaviors
@@ -483,7 +495,7 @@ Plug-Ins
 
 You will probably need to reuse a piece of code that you developed for one of your symfony applications. If you can package this piece of code into a single class, no problem: Drop the class in one of the `lib/` folders of another application and the autoloader will take care of the rest. But if the code is spread across more than one file, such as a complete new theme for the administration generator or a combination of JavaScript files and helpers to automate your favorite visual effect, just copying the files is not the best solution.
 
-Plug-ins offer a way to package code disseminated in several files and to reuse this code across several projects. Into a plug-in, you can package classes, filters, event handlers, helpers, configuration, tasks, modules, schemas and model extensions, fixtures, web assets, etc. Plug-ins are easy to install, upgrade, and uninstall. They can be distributed as a .tgz archive, a PEAR package, or a simple checkout of a code repository. The PEAR packaged plug-ins have the advantage of managing dependencies, being easier to upgrade and automatically discovered. The symfony loading mechanisms take plug-ins into account, and the features offered by a plug-in are available in the project as if the plug-in code was part of the framework.
+Plug-ins offer a way to package code disseminated in several files and to reuse this code across several projects. Into a plug-in, you can package classes, filters, event listeners, helpers, configuration, tasks, modules, schemas and model extensions, fixtures, web assets, etc. Plug-ins are easy to install, upgrade, and uninstall. They can be distributed as a .tgz archive, a PEAR package, or a simple checkout of a code repository. The PEAR packaged plug-ins have the advantage of managing dependencies, being easier to upgrade and automatically discovered. The symfony loading mechanisms take plug-ins into account, and the features offered by a plug-in are available in the project as if the plug-in code was part of the framework.
 
 So, basically, a plug-in is a packaged extension for a symfony project. With plug-ins, not only can you reuse your own code across applications, but you can also reuse developments made by other contributors and add third-party extensions to the symfony core.
 
@@ -695,7 +707,7 @@ Listing 17-20 - Example Schema Declaration in a Plug-In, in `myPlugin/config/sch
           name:           { type: varchar, size: 255, index: unique }
           ...
 
-  * The plug-in configuration is to be included in the plug-in bootstrap script (`config.php`). This file is executed after the application and project configuration, so symfony is already bootstrapped at that time. You can use this file, for instance, to extend existing classes with event handlers and behaviors.
+  * The plug-in configuration is to be included in the plug-in bootstrap script (`config.php`). This file is executed after the application and project configuration, so symfony is already bootstrapped at that time. You can use this file, for instance, to extend existing classes with event listeners and behaviors.
   * Fixtures files located in the plug-in `data/fixtures/` directory are processed by the `propel:data-load` task.
   * Custom classes are autoloaded just like the ones you put in your project `lib/` folders.
   * Helpers are automatically found when you call `use_helper()` in templates. They must be in a` helper/` subdirectory of one of the plug-in's `lib/` directory.
@@ -705,7 +717,7 @@ Listing 17-20 - Example Schema Declaration in a Plug-In, in `myPlugin/config/sch
   * Web assets (images, scripts, style sheets, etc.) are made available to the server. When you install a plug-in via the command line, symfony creates a symlink to the project `web/` directory if the system allows it, or copies the content of the module `web/` directory into the project one. If the plug-in is installed from an archive or a version control repository, you have to copy the plug-in `web/` directory by hand (as the `README` bundled with the plug-in should mention).
 
 >**TIP**: Registering routing rules in a Plug-in
->A plug-in can add new rules to the routing system, but it cannot use a custom `routing.yml` configuration file for that. This is because the order in which rules are defined is very important, and the simple cascade configuration system of YAML files in symfony would mess this order up. Instead, plug-ins need to register an event handler on the `routing.load_configuration` event and manually prepend rules in the handler:
+>A plug-in can add new rules to the routing system, but it cannot use a custom `routing.yml` configuration file for that. This is because the order in which rules are defined is very important, and the simple cascade configuration system of YAML files in symfony would mess this order up. Instead, plug-ins need to register an event listener on the `routing.load_configuration` event and manually prepend rules in the listener:
 >
 >    [php]
 >    // in plugins/myPlugin/config/config.php
@@ -718,7 +730,7 @@ Listing 17-20 - Example Schema Declaration in a Plug-In, in `myPlugin/config/sch
 >      {
 >        $routing = $event->getSubject();
 >        // add plug-in routing rules on top of the existing ones
->        $routinh->prependRoute('my_route', '/my_plugin/:action', array('module' => 'myPluginAdministrationInterface'));
+>        $routing->prependRoute('my_route', '/my_plugin/:action', array('module' => 'myPluginAdministrationInterface'));
 >      }
 >    }
 >
