@@ -8,9 +8,9 @@ The MVC Pattern
 
 Symfony is based on the classic web design pattern known as the MVC architecture, which consists of three levels:
 
-  * The model represents the information on which the application operates--its business logic.
-  * The view renders the model into a web page suitable for interaction with the user.
-  * The controller responds to user actions and invokes changes on the model or view as appropriate.
+  * The Model represents the information on which the application operates--its business logic.
+  * The View renders the model into a web page suitable for interaction with the user.
+  * The Controller responds to user actions and invokes changes on the model or view as appropriate.
 
 Figure 2-1 illustrates the MVC pattern.
 
@@ -106,8 +106,6 @@ Listing 2-2 - The Controller Part, in `index.php`
      // Requiring the view
      require('view.php');
 
-     ?>
-
 The HTML code, containing template-like PHP syntax, is stored in a view script, as shown in Listing 2-3.
 
 Listing 2-3 - The View Part, in `view.php`
@@ -131,7 +129,7 @@ Listing 2-3 - The View Part, in `view.php`
       </body>
     </html>
 
-A good rule of thumb to determine whether the view is clean enough is that it should contain only a minimum amount of PHP code, in order to be understood by an HTML designer without PHP knowledge. The most common statements in views are echo, if/endif, foreach/endforeach, and that's about all. Also, there should not be PHP code echoing HTML tags.
+A good rule of thumb to determine whether the view is clean enough is that it should contain only a minimum amount of PHP code, in order to be understood by an HTML designer without PHP knowledge. The most common statements in views are `echo`, `if/endif`, `foreach/endforeach`, and that's about all. Also, there should not be PHP code echoing HTML tags.
 
 All the logic is moved to the controller script, and contains only pure PHP code, with no HTML inside. As a matter of fact, you should imagine that the same controller could be reused for a totally different presentation, perhaps in a PDF file or an XML structure.
 
@@ -166,8 +164,6 @@ Listing 2-4 - The Model Part, in `model.php`
       return $posts;
     }
 
-    ?>
-
 The revised controller is presented in Listing 2-5.
 
 Listing 2-5 - The Controller Part, Revised, in `index.php`
@@ -183,8 +179,6 @@ Listing 2-5 - The Controller Part, Revised, in `index.php`
 
     // Requiring the view
     require('view.php');
-
-    ?>
 
 The controller becomes easier to read. Its sole task is to get the data from the model and pass it to the view. In more complex applications, the controller also deals with the request, the user session, the authentication, and so on. The use of explicit names for the functions of the model even makes code comments unnecessary in the controller.
 
@@ -253,8 +247,6 @@ Listing 2-7 - The Data Access Part of the Model
       return $posts;
     }
 
-    ?>
-
 You can check that no database-engine dependent functions can be found in the data access layer, making it database-independent. Additionally, the functions created in the database abstraction layer can be reused for many other model functions that need access to the database.
 
 >**NOTE**
@@ -285,8 +277,6 @@ Listing 2-9 - The View Logic Part of the View
 
     $title = 'List of Posts';
     $content = include('mytemplate.php');
-
-    ?>
 
 Listing 2-10 - The Layout Part of the View
 
@@ -350,6 +340,7 @@ Listing 2-11 - `list` Action, in `myproject/apps/myapp/modules/weblog/actions/ac
 
     [php]
     <?php
+
     class weblogActions extends sfActions
     {
       public function executeList()
@@ -358,11 +349,11 @@ Listing 2-11 - `list` Action, in `myproject/apps/myapp/modules/weblog/actions/ac
       }
     }
 
-    ?>
-
 Listing 2-12 - `list` Template, in `myproject/apps/myapp/modules/weblog/templates/listSuccess.php`
 
     [php]
+    <?php slot('title', 'List of Posts') ?>
+
     <h1>List of Posts</h1>
     <table>
     <tr><th>Date</th><th>Title</th></tr>
@@ -374,22 +365,17 @@ Listing 2-12 - `list` Template, in `myproject/apps/myapp/modules/weblog/template
     <?php endforeach; ?>
     </table>
 
-Listing 2-13 - `list` View, in `myproject/apps/myapp/modules/weblog/config/view.yml`
+In addition, you will still need to define a layout, as shown in Listing 2-13, but it will be reused many times.
 
-    listSuccess:
-      metas: { title: List of Posts }
-
-In addition, you will still need to define a layout, as shown in Listing 2-14, but it will be reused many times.
-
-Listing 2-14 - Layout, in `myproject/apps/myapp/templates/layout.php`
+Listing 2-13 - Layout, in `myproject/apps/myapp/templates/layout.php`
 
     [php]
     <html>
       <head>
-        <?php echo include_title() ?>
+        <title><?php include_slot('title') ?></title>
       </head>
       <body>
-        <?php echo $sf_data->getRaw('sf_content') ?>
+        <?php echo $sf_content ?>
       </body>
     </html>
 
@@ -402,7 +388,7 @@ The MVC implementation in symfony uses several classes that you will meet quite 
   * `sfController` is the controller class. It decodes the request and hands it to the action.
   * `sfRequest` stores all the request elements (parameters, cookies, headers, and so on).
   * `sfResponse` contains the response headers and contents. This is the object that will eventually be converted to an HTML response and be sent to the user.
-  * The context singleton (retrieved by `sfContext::getInstance()`) stores a reference to all the core objects and the current configuration; it is accessible from everywhere.
+  * The context (retrieved by `sfContext::getInstance()`) stores a reference to all the core objects and the current configuration; it is accessible from everywhere.
 
 You will learn more about these objects in Chapter 6.
 
@@ -429,7 +415,7 @@ Modules hold actions, which represent the various actions that can be done in a 
 >**TIP**
 >If this represents too many levels for a beginning project, it is very easy to group all actions into one single module, so that the file structure can be kept simple. When the application gets more complex, it will be time to organize actions into separate modules. As mentioned in Chapter 1, rewriting code to improve its structure or readability (but preserving its behavior) is called refactoring, and you will do this a lot when applying RAD principles.
 
-Figure 2-3 shows a sample code organization for a weblog project, in a project/ application/module/action structure. But be aware that the actual file tree structure of the project will differ from the setup shown in the figure.
+Figure 2-3 shows a sample code organization for a weblog project, in a project/application/module/action structure. But be aware that the actual file tree structure of the project will differ from the setup shown in the figure.
 
 Figure 2-3 - Example of code organization
 
@@ -457,7 +443,6 @@ These are the directories found at the root of a symfony project:
     apps/
       frontend/
       backend/
-    batch/
     cache/
     config/
     data/
@@ -468,6 +453,7 @@ These are the directories found at the root of a symfony project:
     log/
     plugins/
     test/
+      bootstrap/
       unit/
       functional/
     web/
@@ -483,7 +469,6 @@ Table 2-1 - Root Directories
 Directory  |  Description
 ---------- | ------------
 `apps/`    | Contains one directory for each application of the project (typically, `frontend` and `backend` for the front and back office).
-`batch/`   | Contains PHP scripts called from a command line or a scheduler, to run batch processes.
 `cache/`   | Contains the cached version of the configuration, and (if you activate it) the cache version of the actions and templates of the project. The cache mechanism (detailed in Chapter 12) uses these files to speed up the answer to web requests. Each application will have a subdirectory here, containing preprocessed PHP and HTML files.
 `config/`  | Holds the general configuration of the project.
 `data/`    | Here, you can store the data files of the project, like a database schema, a SQL file that creates tables, or even a SQLite database file.
@@ -506,8 +491,6 @@ The tree structure of all application directories is the same:
         modules/
         templates/
           layout.php
-          error.php
-          error.txt
 
 Table 2-2 describes the application subdirectories.
 
@@ -576,7 +559,7 @@ Directory  | Description
 `css/`     | Contains style sheets with a `.css` extension.
 `images/`  | Contains images with a `.jpg`, `.png`, or `.gif` format.
 `js/`      | Holds JavaScript files with a `.js` extension.
-`uploads/` | Must contain the files uploaded by the users. Even though the directory usually contains images, it is distinct from the images directory so that the synchronization of the development and production servers does not affect the uploaded images.
+`uploads/` | Can contain the files uploaded by the users. Even though the directory usually contains images, it is distinct from the images directory so that the synchronization of the development and production servers does not affect the uploaded images.
 
 >**NOTE**
 >Even though it is highly recommended that you maintain the default tree structure, it is possible to modify it for specific needs, such as to allow a project to run in a server with different tree structure rules and coding conventions. Refer to Chapter 19 for more information about modifying the file tree structure.
@@ -588,27 +571,27 @@ A few techniques are used repeatedly in symfony, and you will meet them quite of
 
 ### Parameter Holders
 
-Many of the symfony classes contain a parameter holder. It is a convenient way to encapsulate attributes with clean getter and setter methods. For instance, the sfRequest class holds a parameter holder that you can retrieve by calling the `getParameterHolder()` method. Each parameter holder stores data the same way, as illustrated in Listing 2-15.
+Many of the symfony classes contain a parameter holder. It is a convenient way to encapsulate attributes with clean getter and setter methods. For instance, the `sfRequest` class holds a parameter holder that you can retrieve by calling the `getParameterHolder()` method. Each parameter holder stores data the same way, as illustrated in Listing 2-14.
 
-Listing 2-15 - Using the `sfRequest` Parameter Holder
+Listing 2-14 - Using the `sfRequest` Parameter Holder
 
     [php]
     $request->getParameterHolder()->set('foo', 'bar');
     echo $request->getParameterHolder()->get('foo');
      => 'bar'
 
-Most of the classes using a parameter holder provide proxy methods to shorten the code needed for get/set operations. This is the case for the `sfRequest` object, so you can do the same as in Listing 2-15 with the code of Listing 2-16.
+Most of the classes using a parameter holder provide proxy methods to shorten the code needed for get/set operations. This is the case for the `sfRequest` object, so you can do the same as in Listing 2-14 with the code of Listing 2-15.
 
-Listing 2-16 - Using the `sfRequest` Parameter Holder Proxy Methods
+Listing 2-15 - Using the `sfRequest` Parameter Holder Proxy Methods
 
     [php]
     $request->setParameter('foo', 'bar');
     echo $request->getParameter('foo');
      => 'bar'
 
-The parameter holder getter accepts a default value as a second argument. This provides a useful fallback mechanism that is much more concise than possible with a conditional statement. See Listing 2-17 for an example.
+The parameter holder getter accepts a default value as a second argument. This provides a useful fallback mechanism that is much more concise than possible with a conditional statement. See Listing 2-16 for an example.
 
-Listing 2-17 - Using the Attribute Holder Getter's Default Value
+Listing 2-16 - Using the Attribute Holder Getter's Default Value
 
     [php]
     // The 'foobar' parameter is not defined, so the getter returns an empty value
@@ -630,9 +613,9 @@ Listing 2-17 - Using the Attribute Holder Getter's Default Value
     echo $request->getParameter('foobar', 'default');
      => default
 
-Some symfony core classes also use a parameter holder that support namespaces (thanks to the `sfNamespacedParameterHolder` class). If you specify a third argument to a setter or a getter, it is used as a namespace, and the parameter will be defined only within that namespace. Listing 2-18 shows an example.
+Some symfony core classes also use a parameter holder that support namespaces (thanks to the `sfNamespacedParameterHolder` class). If you specify a third argument to a setter or a getter, it is used as a namespace, and the parameter will be defined only within that namespace. Listing 2-17 shows an example.
 
-Listing 2-18 - Using the `sfUser` Parameter Holder Namespace
+Listing 2-17 - Using the `sfUser` Parameter Holder Namespace
 
     [php]
     $user->setAttribute('foo', 'bar1');
@@ -642,9 +625,9 @@ Listing 2-18 - Using the `sfUser` Parameter Holder Namespace
     echo $user->getAttribute('foo', null, 'my/name/space');
      => 'bar2'
 
-Of course, you can add a parameter holder to your own classes to take advantage of its syntax facilities. Listing 2-19 shows how to define a class with a parameter holder.
+Of course, you can add a parameter holder to your own classes to take advantage of its syntax facilities. Listing 2-18 shows how to define a class with a parameter holder.
 
-Listing 2-19 - Adding a Parameter Holder to a Class
+Listing 2-18 - Adding a Parameter Holder to a Class
 
     [php]
     class MyClass
@@ -665,9 +648,9 @@ Listing 2-19 - Adding a Parameter Holder to a Class
 
 ### Constants
 
-Surprisingly, you will find very few constants in symfony. This is because constants have a major drawback in PHP: you can't change their value once they are defined. So symfony uses its own configuration object, called sfConfig, which replaces constants. It provides static methods to access parameters from everywhere. Listing 2-20 demonstrates the use of sfConfig class methods.
+Surprisingly, you will not find any constant in symfony. This is because constants have a major drawback in PHP: you can't change their value once they are defined. So symfony uses its own configuration object, called `sfConfig`, which replaces constants. It provides static methods to access parameters from everywhere. Listing 2-19 demonstrates the use of `sfConfig` class methods.
 
-Listing 2-20 - Using the `sfConfig` Class Methods Instead of Constants
+Listing 2-19 - Using the `sfConfig` Class Methods Instead of Constants
 
     [php]
     // Instead of PHP constants,
@@ -695,7 +678,7 @@ But on large projects with many classes and a deep directory structure, keeping 
 
 Symfony will then look for a `MyClass` definition in all files ending with `php` in one of the project's `lib/` directories. If the class definition is found, it will be included automatically.
 
-So if you store all your classes in lib/ directories, you don't need to include classes anymore. That's why the symfony projects usually do not contain any `include` or `require` statements.
+So if you store all your classes in `lib/` directories, you don't need to include classes anymore. That's why the symfony projects usually do not contain any `include` or `require` statements.
 
 >**NOTE**
 >For better performance, the symfony autoloading scans a list of directories (defined in an internal configuration file) during the first request. It then registers all the classes these directories contain and stores the class/file correspondence in a PHP file as an associative array. That way, future requests don't need to do the directory scan anymore. This is why you need to clear the cache every time you add or move a class file in your project by calling the `symfony cache:clear` command (except in the development environment, where symfony clears the cache once when it cannot find a class). You will learn more about the cache in Chapter 12, and about the autoloading configuration in Chapter 19.
