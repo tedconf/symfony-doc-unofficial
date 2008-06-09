@@ -1,0 +1,105 @@
+How to create an optimized version of your website for the iPhone
+=================================================================
+
+symfony 1.1 introduces native support for different formats and mime-types. This means that the same model and controller can have different templates based on the requested format. The default format is still HTML but symfony supports several other formats out of the box as defined in the `factories.yml` file:
+
+    [yml]
+    request:
+      class: sfWebRequest
+        param:
+          formats:
+            txt:  text/plain
+            js:   [application/javascript, application/x-javascript, text/javascript]
+            css:  text/css
+            json: [application/json, application/x-json]
+            xml:  [text/xml, application/xml, application/x-xml]
+            rdf:  application/rdf+xml
+            atom: application/atom+xml
+
+Each format is associated with one or more mime-types. These mime-types are used to automatically determine the requested format by parsing the `Accept` HTTP header. This comes in very handy if you want to make your data available via a browser and expose them as a Web Service. To change the format of the response, a Web Service client can just change the `Accept` header as shown below:
+
+    $ curl -H "Accept: application/xml"  http://ws.example.com/api/article # to get a XML representation of the data
+    $ curl -H "Accept: application/json" http://ws.example.com/api/article # to get a JSON representation of the data
+
+Supporting different formats is as easy as creating different templates. So, let's say the web service is managed by an `api/article` action. Here is the list of templates you have to create in `apps/frontend/modules/api/templates` to support HTML, XML, and JSON formats:
+
+  * articleSuccess.php
+  * articleSuccess.xml.php
+  * articleSuccess.json.php
+
+By default, symfony will change the response `Content-Type` according to the format, and for all non-HTML formats, the layout will be disabled. Even partials and layouts can be different based on the requested format. For example, if you include a `list` partial in a template, the loaded partial name will depend on the current format:
+
+  * _list.php
+  * _list.xml.php
+  * _list.json.php
+
+Let's take another example. You want to create some stylesheets or JavaScript files on the fly. As you can't always rely on the browser `Accept` HTTP header for those cases, you can force a format by using the special `sf_format` variable in your routing rules. Here is how to create a route for a dynamic stylesheet:
+
+    [yml]
+    css1:
+      url:   /css/dynamic1.css
+      param: { module: css, action: dynamic, sf_format: css }
+
+You can also use the `sf_format` variable in the URL pattern to allow several formats for one action:
+
+    [yml]
+    api_article:
+      url:   /api/article:.sf_format
+      param: { module: api, action: article }
+      requirements:
+        sf_format: (?:html|xml|json)
+
+Most of the time, you don't have to change a single line in your actions to support new formats; but if you really need to do something special for a format, you can call the `$request->getRequestFormat()` to get the current format and act accordingly.
+
+Ok, now for the fun part! Let's say you want to create an optimized version of your website for the iPhone. The `iphone` format does not exist by default but it's pretty easy to configure one. First, we need a way to determine that a request comes from an iPhone. If the `User-Agent` header contains the words `Mobile` and `Safari`, we can safely guess that the browser is an iPhone. We can put this logic in the `ProjectConfiguration` class by registering a listener for the `request.filter_parameters` event:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        // ...
+
+        $dispatcher->connect('request.filter_parameters', array($this, 'filterRequestParameters'));
+      }
+
+      public function filterParameters(sfEvent $event, $parameters)
+      {
+        $request = $event->getSubject();
+
+        if (preg_match('#Mobile/.+Safari#i', $request->getHttpHeader('User-Agent')))
+        {
+          $request->setRequestFormat('iphone');
+        }
+
+        return $parameters;
+      }
+    }
+
+Now, everytime a request comes in, the `filterParameters()` method is called and if the browser is an iPhone, the request format is changed to `iphone`.
+
+That's all! Now, every request from an iPhone will use `*Success.iphone.php` templates instead of `*Success.php` templates.
+
+If you use some special stylesheets of JavaScript files to support the iPhone (for example if you use the [iui library](http://code.google.com/p/iui/)), you can also configure the view by listening to the `view.configure_format`:
+
+    [php]
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        // ...
+
+        $dispatcher->connect('view.configure_format', array($this, 'configureIPhoneFormat'));
+      }
+
+      public function configureIPhoneFormat(sfEvent $event)
+      {
+        if ('iphone' == $event['format'])
+        {
+          // add some CSS, stylesheet, or whatever you want
+        }
+      }
+    }
+
+Thanks to the new format support in symfony 1.1, developing websites that supports Web Services, API or the iPhone has never been easier. Supporting a new format is as easy as creating a new set of templates.
