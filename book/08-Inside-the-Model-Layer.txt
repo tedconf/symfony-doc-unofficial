@@ -483,9 +483,33 @@ Additionally, the getters for date columns accept a date format as an argument:
 Database Connections
 --------------------
 
-The data model is independent from the database used, but you will definitely use a database. The minimum information required by symfony to send requests to the project database is the name, the access codes, and the type of database. These connection settings should be entered in the `databases.yml` file located in the `config/` directory. Listing 8-17 shows an example of such a file.
+The data model is independent from the database used, but you will definitely use a database. The minimum information required by symfony to send requests to the project database is the name, the credentials, and the type of database.  These connection settings can be configured by passing a data source name (DSN) to the `configure:database` task:
 
-Listing 8-17 - Sample Database Connection Settings, in `myproject/config/databases.yml`
+    > php symfony configure:database "mysql://login:passwd@localhost/blog"
+
+The connection settings are environment-dependent. You can define distinct settings for the `prod`, `dev`, and `test` environments, or any other environment in your application by using the `env` option:
+
+    > php symfony --env=prod configure:database "mysql://login:passwd@localhost/blog"
+
+This configuration can also be overridden per application. For instance, you can use this approach to have different security policies for a front-end and a back-end application, and define several database users with different privileges in your database to handle this:
+
+    > php symfony --app=frontend configure:database "mysql://login:passwd@localhost/blog"
+
+For each environment, you can define many connections. Each connection refers to a schema being labeled with the same name. The default connection name used is `propel` and it refers to the `propel` schema in Listing 8-3. The `name` option allows you to create another connection:
+
+    > php symfony --name=main configure:database "mysql://login:passwd@localhost/blog"
+
+You can also enter these connection settings manually in the `databases.yml` file located in the `config/` directory. Listing 8-17 shows an example of such a file and Listing 8-18 shows the same example with the extended notation.
+
+Listing 8-17 - Shorthand Database Connection Settings
+
+    all:
+      propel:
+        class:          sfPropelDatabase
+        param:
+          dsn:          mysql://login:passwd@localhost/blog
+
+Listing 8-18 - Sample Database Connection Settings, in `myproject/config/databases.yml`
 
     prod:
       propel:
@@ -507,10 +531,6 @@ Listing 8-17 - Sample Database Connection Settings, in `myproject/config/databas
           encoding:           utf8      # Default charset for table creation
           persistent:         true      # Use persistent connections
 
-The connection settings are environment-dependent. You can define distinct settings for the `prod`, `dev`, and `test` environments, or any other environment in your application. This configuration can also be overridden per application, by setting different values in an application-specific file, such as in `apps/frontend/config/databases.yml`. For instance, you can use this approach to have different security policies for a front-end and a back-end application, and define several database users with different privileges in your database to handle this.
-
-For each environment, you can define many connections. Each connection refers to a schema being labeled with the same name. In the example in Listing 8-17, the propel connection refers to the `propel` schema in Listing 8-3.
-
 The permitted values of the `phptype` parameter are the ones of the database systems supported by Creole:
 
   * `mysql`
@@ -519,26 +539,20 @@ The permitted values of the `phptype` parameter are the ones of the database sys
   * `sqlite`
   * `oracle`
 
-`hostspec`, `database`, `username`, and `password` are the usual database connection settings. They can also be written in a shorter way as a data source name (DSN). Listing 8-18 is equivalent to the `all:` section of Listing 8-17.
+`hostspec`, `database`, `username`, and `password` are the usual database connection settings.
 
-Listing 8-18 - Shorthand Database Connection Settings
-
-    all:
-      propel:
-        class:          sfPropelDatabase
-        param:
-          dsn:          mysql://login:passwd@localhost/blog
+To overridden the configuration per application, you need to edit an application-specific file, such as `apps/frontend/config/databases.yml`.
 
 If you use a SQLite database, the `hostspec` parameter must be set to the path of the database file. For instance, if you keep your blog database in `data/blog.db`, the `databases.yml` file will look like Listing 8-19.
 
 Listing 8-19 - Database Connection Settings for SQLite Use a File Path As Host
 
-        all:
-          propel:
-            class:          sfPropelDatabase
-            param:
-              phptype:  sqlite
-              database: %SF_DATA_DIR%/blog.db
+    all:
+      propel:
+        class:          sfPropelDatabase
+        param:
+          phptype:  sqlite
+          database: %SF_DATA_DIR%/blog.db
 
 Extending the Model
 -------------------
@@ -932,7 +946,7 @@ The generated SQL is also helpful to rebuild the database in another environment
 
 Symfony can use the Creole database access layer to generate a `schema.yml` file from an existing database, thanks to introspection (the capability of databases to determine the structure of the tables on which they are operating). This can be particularly useful when you do reverse-engineering, or if you prefer working on the database before working on the object model.
 
-In order to do this, you need to make sure that the project `propel.ini` file points to the correct database and contains all connection settings, and then call the `propel-build-schema` command:
+In order to do this, you need to make sure that the project `propel.ini` file points to the correct database and contains all connection settings, and then call the `propel:build-schema` command:
 
     > php symfony propel:build-schema
 
@@ -945,9 +959,9 @@ The schema-generation command is quite powerful and can add a lot of database-de
 Instead of generating a `schema.yml` file, this will create a `schema.xml` file fully compatible with Propel, containing all the vendor information. But be aware that generated XML schemas tend to be quite verbose and difficult to read.
 
 >**SIDEBAR**
->The propel.ini configuration
+>The `propel.ini` Configuration
 >
->The `propel-build-sql` and `propel-build-schema` tasks don't use the connection settings defined in the `databases.yml` file. Rather, these tasks use the connection settings in another file, called `propel.ini` and stored in the project `config/` directory:
+>The `propel:build-sql` and `propel:build-schema` tasks don't use the connection settings defined in the `databases.yml` file. Rather, these tasks use the connection settings in another file, called `propel.ini` and stored in the project `config/` directory:
 >
 >
 >      propel.database.createUrl = mysql://login:passwd@localhost
