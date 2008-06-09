@@ -90,7 +90,7 @@ Notice that the name of the database itself (`blog`) doesn't appear in the `sche
 
 In a `schema.yml` file, the first key represents a connection name. It can contain several tables, each having a set of columns. According to the YAML syntax, the keys end with a colon, and the structure is shown through indentation (one or more spaces, but no tabulations).
 
-A table can have special attributes, including the `phpName` (the name of the class that will be generated). If you don't mention a phpName for a table, symfony creates it based on the camelCase version of the table name.
+A table can have special attributes, including the `phpName` (the name of the class that will be generated). If you don't mention a `phpName` for a table, symfony creates it based on the camelCase version of the table name.
 
 >**TIP**
 >The camelCase convention removes underscores from words, and capitalizes the first letter of inner words. The default camelCase versions of `blog_article` and `blog_comment` are `BlogArticle` and `BlogComment`. The name of this convention comes from the appearance of capitals inside a long word, suggestive of the humps of a camel.
@@ -108,7 +108,7 @@ Tables can also contain explicit foreign keys and indexes, as well as a few data
 Model Classes
 -------------
 
-The schema is used to build the model classes of the ORM layer. To save execution time, these classes are generated with a command-line task called `propel-build-model`.
+The schema is used to build the model classes of the ORM layer. To save execution time, these classes are generated with a command-line task called `propel:build-model`.
 
     > php symfony propel:build-model
 
@@ -139,9 +139,9 @@ You will probably need to add custom methods and properties to the model objects
 
 The `Base` classes kept in the `lib/model/om/` directory are the ones directly generated from the schema. You should never modify them, since every new build of the model will completely erase these files.
 
-On the other hand, the custom object classes, kept in the `lib/model/` directory, actually inherit from the `Base` ones. When the `propel-build-model` task is called on an existing model, these classes are not modified. So this is where you can add custom methods.
+On the other hand, the custom object classes, kept in the `lib/model/` directory, actually inherit from the `Base` ones. When the `propel:build-model` task is called on an existing model, these classes are not modified. So this is where you can add custom methods.
 
-Listing 8-4 presents an example of a custom model class as created by the first call to the `propel-build-model` task.
+Listing 8-4 presents an example of a custom model class as created by the first call to the `propel:build-model` task.
 
 Listing 8-4 - Sample Model Class File, in `lib/model/Article.php`
 
@@ -162,7 +162,7 @@ Listing 8-5 - Getters for Record Columns Are Available in the Object Class
 
     [php]
     $article = new Article();
-    ...
+    // ...
     $title = $article->getTitle();
 
 `ArticlePeer` and `CommentPeer` are peer classes; that is, classes that contain static methods to operate on the tables. They provide a way to retrieve records from the tables. Their methods usually return an object or a collection of objects of the related object class, as shown in Listing 8-6.
@@ -170,8 +170,8 @@ Listing 8-5 - Getters for Record Columns Are Available in the Object Class
 Listing 8-6 - Static Methods to Retrieve Records Are Available in the Peer Class
 
     [php]
-    $articles = ArticlePeer::retrieveByPks(array(123, 124, 125));
     // $articles is an array of objects of class Article
+    $articles = ArticlePeer::retrieveByPks(array(123, 124, 125));
 
 >**NOTE**
 >From a data model point of view, there cannot be any peer object. That's why the methods of the peer classes are called with a `::` (for static method call), instead of the usual `->` (for instance method call).
@@ -406,7 +406,7 @@ The peer classes also provide `doDelete()`, `doInsert()`, and `doUpdate()` metho
 Finally, if you just want the first object returned, replace `doSelect()` with a `doSelectOne()` call. This may be the case when you know that a `Criteria` will return only one result, and the advantage is that this method returns an object rather than an array of objects.
 
 >**TIP**
->When a `doSelect()` query returns a large number of results, you might want to display only a subset of it in your response. Symfony provides a pager class called sfPropelPager, which automates the pagination of results. Check the pager documentation at [http://www.symfony-project.org/cookbook/trunk/pager](http://www.symfony-project.org/cookbook/trunk/pager) for more information and usage examples.
+>When a `doSelect()` query returns a large number of results, you might want to display only a subset of it in your response. Symfony provides a pager class called sfPropelPager, which automates the pagination of results. Check the pager documentation at [http://www.symfony-project.org/cookbook/1_1/pager](http://www.symfony-project.org/cookbook/1_1/pager) for more information and usage examples.
 
 ### Using Raw SQL Queries
 
