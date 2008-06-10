@@ -16,18 +16,18 @@ symfony 1.1 adiciona suporte nativo a diferentes formatos e mime-types. Isso sig
             rdf:  application/rdf+xml
             atom: application/atom+xml
 
-Cada formato é associado com um ou mais mime-types. Esses mime-types são usados para determinar automaticamente o formato requisitado lendo o cabeçalho HTTP `Accept`. Isso ajuda se você quer disponibilizar seus dados via navegador e via Web Service. Para mudar o formato da resposta, um cliente Web Service pode simplesmente mudar o cabeçalho `Accept`, como mostrado abaixo:
+Cada formato é associado com um ou mais mime-types. Esses mime-types são usados para determinar automaticamente o formato requisitado lendo o cabeçalho HTTP `Accept`. Isso ajuda se você quer disponibilizar seus dados via navegador e também via Web Service. Para mudar o formato da resposta, um cliente Web Service pode simplesmente mudar o cabeçalho `Accept`, como mostrado abaixo:
 
     $ curl -H "Accept: application/xml"  http://ws.example.com/api/article # to get a XML representation of the data
     $ curl -H "Accept: application/json" http://ws.example.com/api/article # to get a JSON representation of the data
 
-Ter diferentes formatos é tão fácil quanto criar templates diferentes. Então, vamos dizer que um web service é gerenciado pela ação api/article. Aqui esta a lista de templates que você vai criar em `apps/frontend/modules/api/templates` para suportar os formatos HTML,XML e JSON:
+Ter diferentes formatos é tão fácil quanto criar templates diferentes. Então, vamos dizer que um web service é gerenciado pela ação `api/article`. Aqui esta a lista de templates que você vai criar em `apps/frontend/modules/api/templates` para suportar os formatos HTML,XML e JSON:
 
   * articleSuccess.php
   * articleSuccess.xml.php
   * articleSuccess.json.php
 
-Por padrão o symfony vai mudar a resposta `Content-Type` de acordo com o formato, e para todos os formatos não-HTML, o layout sera desabilitado. Até mesmo partials e layouts podem ser diferentes baseados no formato requisitado. Por exemplo, se você inclui um partial `list` em um template, o nome do partial carregado vai depender do formato atual:
+Por padrão o symfony vai mudar o cabeçalho de resposta `Content-Type` de acordo com o formato, e para todos os formatos não-HTML, o layout sera desabilitado. Até mesmo partials e layouts podem ser diferentes baseados no formato requisitado. Por exemplo, se você inclui um partial `list` em um template, o nome do partial carregado vai depender do formato atual:
 
   * _list.php
   * _list.xml.php
@@ -51,7 +51,7 @@ Você também pode usar a variável `sf_format` na URL pattern para habilitar v�
 
 Na maior parte do tempo você não precisa mudar uma linha sequer nas suas ações para suportar novos formatos, mas se você realmente precisa algo especial para um determinado formato, você pode chamar `$request->getRequestFormat()` para pegar o formato atual e agir de acordo.
 
-Ok, agora vem a parte divertida.  Vamos supor que você quer criar uma versão otimizada do seu site para o iPhone. O formato `iphone` não existe por padrão, mas é bem fácil de adiciona-lo. Primeiro, nós precisamos um jeito para saber que uma requisição veio de um iPhone. Se o cabeçalho `User-Agent` contém as palavras `Mobile` e `Safari`, nós podemos seguramente dizer que o navegador é um iPhone. Colocamos essa lógica na classe `ProjectConfiguration` registrando um ouvinte para o evento `request.filter_parameters`:
+Ok, agora vem a parte divertida.  Vamos supor que você quer criar uma versão otimizada do seu site para o iPhone. O formato `iphone` não existe por padrão, mas é bem fácil de adiciona-lo. Primeiro, nós precisamos de uma maneira para saber que uma requisição veio de um iPhone. Se o cabeçalho `User-Agent` contém as palavras `Mobile` e `Safari`, nós podemos seguramente dizer que o navegador é um iPhone. Colocamos essa lógica na classe `ProjectConfiguration` registrando um listener para o evento `request.filter_parameters`:
 
     [php]
     // config/ProjectConfiguration.class.php
@@ -102,4 +102,4 @@ Se você usa algum CSS ou JavaScript para iPhone(se você usa por exemplo a [bib
       }
     }
 
-Agradecimentos ao novo suporte a formatos no symfony 1.1, desenvolver websites que permitam acesso Web Service, via API ou iPhone nunca foi tão fácil. Suportar novos formatos é tão fácil quanto criar novos templates.
+Graças ao novo suporte a formatos no symfony 1.1, desenvolver websites que permitam acesso Web Service, via API ou iPhone nunca foi tão fácil. Suportar novos formatos é tão fácil quanto criar novos templates.
