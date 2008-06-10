@@ -4,204 +4,162 @@ How to send an email
 Overview
 --------
 
-Sending mails from a web application is a very common tasks. Symfony uses its architecture to automate it in a familiar way (MVC separation) and provides a specific class to deal with the particularities of the emails (multiple mime types, enclosed media, attachments).
+Sending mails is a web developer's everyday task, and symfony 1.1 let you do this easier than ever using [Swift Mailer](http://www.swiftmailer.org/).
 
-Introduction
-------------
+Swift Mailer is a well thought, fully featured PHP5 object library that will cover 120% of your mailing needs.
 
-Symfony offers two ways to send emails from your web application: 
+It is available in a tagged SVN repository, so your project won't break just because the library is updated. It will be up to you to switch to a newer version.
 
-- Via the `sfMail` class, which is a proxy class that offers an interface with [PHPMailer](http://phpmailer.sourceforge.net/). This solution is simple and fast, but doesn't provide MVC separation and is hardly compatible with i18n. Complex emails are also harder to compose with the `sfMail` class alone.
+Symfony's way to send emails from a project is very simple. You create a partial or a component that will render the e-mail content, and use Swift to send it in a flexible way.
 
-- Via a specific action and template. This solution is very versatile and deals with emails just as regular pages, with the addition of the specificities of this media. It is a little longer to put in place, but much more powerful than the first one.
+Installing
+----------
 
-The implementation of both solution will be illustrated through the same example: the sending of a forgotten password requested by a user.
+If your project is already using svn, you can install it using the `svn:externals` property:
 
-Direct use of `sfMail`
-----------------------
+    $ cd /path/to/symfony/project
+    $ mkdir -p lib/vendor
+    $ svn propedit svn:externals .
 
-The `sfMail` class will look familiar to those who know the `PHPMailer` class. It is simply a proxy class to `PHPMailer`, taking advantage of the symfony syntax. The `PHPMailer` class is included in the symfony package, so no additional installation (nor require) is required.
+Then add the following line:
 
-To send an email containing a password to a customer, an action has to do like the following:
+    swift http://swiftmailer.svn.sourceforge.net/svnroot/swiftmailer/tags/php5/3.3.3/lib/
+
+If your project is not using SVN, you can still get this part as a subversion working copy by checking out the
+tag.
+
+    $ cd /path/to/symfony/project
+    $ mkdir -p lib/vendor
+    $ svn checkout http://swiftmailer.svn.sourceforge.net/svnroot/swiftmailer/tags/php5/3.3.3/lib/ swift
+
+Just clear your cache to force class autoloading resolution to be flushed, and you're done with the installation.
+
+Configuration
+-------------
+
+There is no mailer-specific configuration.
+
+To keep your project flexible, you should use app.yml configuration file to keep hard-written e-mail adresses. This way, you can have different senders/receivers addresses depending on the environment you're on, and when one will need to change it, he won't have to dig all the project code. The place to change it will be just too obvious.
+
+Render an e-mail
+----------------
+
+As of symfony 1.1 RC2, you can easily get rendered partials and components from an action:
 
     [php]
-    public function executePasswordRequest()
+    $mailBody = $this->getPartial('mailBody', array('name' => 'John Doe'));
+
+or
+
+    [php]
+    $mailBody = $this->getComponent('mail', 'mailBody', array('name' => 'John Doe'));
+
+Send an HTML e-mail
+-------------------
+
+Then we send the mail rendered above using Swift:
+
+    [php]
+    try
     {
-      // determine customer from the request 'id' parameter
-      $customer = CustomerPeer::retrieveByPk($this->getRequestParameter('id'));
-      
-      // class initialization
-      $mail = new sfMail();
-      $mail->initialize();
-      $mail->setMailer('sendmail');
-      $mail->setCharset('utf-8');
-      
-      // definition of the required parameters
-      $mail->setSender('webmaster@my-company.com', 'My Company webmaster');
-      $mail->setFrom('info@my-company.com', 'My Company');
-      $mail->addReplyTo('webmaster_copy@my-company.com');
-  
-      $mail->addAddress($customer->getEmail());
-  
-      $mail->setSubject('Your password request');
-      $mail->setBody('
-      Dear customer,
-      
-      You are so absentminded. Next time, try to remember your password:
-      '.$customer->getPassword().'
-      
-      Regards,
-      The My Company webmaster');
-      
-      // send the email
-      $mail->send();
+      /*
+       * Create the mailer and message objects
+       */
+      $mailer = new Swift(new Swift_Connection_NativeMail());
+      $message = new Swift_Message('Mail\'s subject', $mailBody, 'text/html');
+
+      /*
+       * Send
+       */
+      $mailer->send($message, $mailTo, $mailFrom);
+      $mailer->disconnect();
     }
-  
-Use of an alternate action
---------------------------
-
-In many cases, as the email sending process is just a detour in the logic of an action that does something else, it is often delegated to another action. Here is how it goes:
-
-    [php]
-    public function executePasswordRequest()
+    catch (Exception $e)
     {
-      // send the email
-      $raw_email = $this->sendEmail('mail', 'sendPassword');  
-      
-      // log the email
-      $this->logMessage($raw_email, 'debug');
+      $mailer->disconnect();
+
+      // handle errors there
     }
 
-The email sending is delegated to a `sendPassword` action of a `mail` module. The `sendEmail()` method of the `sfAction` class is a special kind of `forward()` that executes another action but comes back afterward (it doesn't stop the execution of the current action). In addition, it returns a raw email that can be written into a log file (you will find more information about the way to log information in [Chapter 16](http://www.symfony-project.com/book/1_1/16-Application-Management-Tools#Debugging)).
+Send a multipart e-mail
+-----------------------
 
-The `mail/sendPassword` deals with the `sfMail` object, but it doesn't need to define the mailer (it is taken from a configuration file) nor to initialize it:
+Some e-mail clients don't like HTML at all, so it's usually a good idea to provide your mail in both html and plain text.
 
     [php]
-    public function executeSendPassword()
+    try
     {
-      // determine customer from the request 'id' parameter
-      $customer = CustomerPeer::retrieveByPk($this->getRequestParameter('id'));
-      
-      // class initialization
-      $mail = new sfMail();
-      $mail->setCharset('utf-8');      
-      
-      // definition of the required parameters
-      $mail->setSender('webmaster@my-company.com', 'My Company webmaster');
-      $mail->setFrom('webmaster@my-company.com', 'My Company webmaster');
-      $mail->addReplyTo('webmaster_copy@my-company.com');
-  
-      $mail->addAddress($customer->getEmail());
-  
-      $mail->setSubject('Your password request');
-      
-      $this->password = $customer->getPassword();
-      $this->mail = $mail;    
+      /*
+       * Create the mailer and message objects
+       */
+      $mailer = new Swift(new Swift_Connection_NativeMail());
+      $message = new Swift_Message('Test mail subject');
+
+      /*
+       * Render message parts
+       */
+      $mailContext = array('name' => 'John Doe');
+      $message->attach(new Swift_Message_Part($this->getPartial('mail/mailHtmlBody', $mailContext), 'text/html'));
+      $message->attach(new Swift_Message_Part($this->getPartial('mail/mailTextBody', $mailContext), 'text/plain'));
+
+      /*
+       * Send
+       */
+      $mailer->send($message, $mailTo, $mailFrom);
+      $mailer->disconnect();
     }
-    
-Notice that the action doesn't need to call the `send()` method for the `sfMail` object; being called by a `sendEmail()`, it knows that it needs to finish by sending its `$this->mail` `sfMail` object. And where is the mail? will you ask. That's the beauty of the MVC separation: the body of the mail itself is to be written in the template `sendPasswordSuccess.php`:
+    catch (Exception $e)
+    {
+      $mailer->disconnect();
 
-    [php]
-    Dear customer,
-    
-    You are so absentminded. Next time, try to remember your password:
-    <?php echo $password ?>
-    
-    Regards,
-    The My Company webmaster
-
->**Note**: If the `sendPassword` action ever determines that the email doesn't have to be sent, it can still abort the emailing process by returning `sfView::NONE`, just like a regular action.
-
-Mailer configuration
---------------------
-
-If you use the alternate action method, you can (you don't have to) set the mailer and activate it environment by environment through a configuration file.
-
-Create a `mailer.yml` configuration file in the `modules/mail/config/` directory  with:
-
-    dev:
-      deliver:    off
-    
-    all:
-      mailer:     sendmail
-
-This stipulates the mailer program to be used to send mails, and deactivates the sending of mails in the development environment.
-
-Send HTML email
----------------
-
-Most of the time, emails are to be sent in HTML format, or even in a multipart format (enclosing both HTML and text format). To handle it directly with the `sfMail` object, use the `setContentType()` method and specify an alternate body:
-
-    [php]
-    $mail->setContentType('text/html');
-    $mail->setAltBody('
-    <p>Dear customer</p>,
-    <p>
-      You are so <i>absentminded</i>. Next time, try to remember your password:<br>
-      <b>'.$customer->getPassword().'</b>
-    </p>
-    <p>
-      Regards,<br>
-      The My Company webmaster
-    </p>');    
-    $mail->setAltBody('
-    Dear customer,
-    
-    You are so absentminded. Next time, try to remember your password:
-    '.$customer->getPassword().'
-    
-    Regards,
-    The My Company webmaster');    
-
-If you use an alternate action, you will just need to use an alternate template ending with `.altbody.php`. Symfony will automatically add it as alternate body:
-
-    [php]
-    // in sendPasswordSuccess.php
-    <p>Dear customer</p>,
-    <p>
-      You are so <i>absentminded</i>. Next time, try to remember your password:<br>
-      <b><?php echo $password ?></b>
-    </p>
-    <p>
-      Regards,<br>
-      The My Company webmaster
-    </p>
-        
-    // in sendPasswordSuccess.altbody.php
-    Dear customer,
-    
-    You are so absentminded. Next time, try to remember your password:
-    <?php echo $password ?>
-    
-    Regards,
-    The My Company webmaster
-
->**Note**: If you just use an HTML version without altbody template, you will need to set the content type to `text/html` in the `sendPassword` action.
+      // handle errors there
+    }
 
 Embed images
 ------------
 
-HTML emails can contain images directly embedded in the body. To add an embedded image, use the `addEmbeddedImage()` method of the `sfMail` object:
+To embed images in your mail, you need to get mail-dependant URLs from the embedded objects before rendering its content. Here's an
+example how you can do it.
 
     [php]
-    $mail->addEmbeddedImage(sfConfig::get('sf_web_dir').'/images/my_company_logo.gif', 'CID1', 'My Company Logo', 'base64', 'image/gif');
+    /*
+     * Create the mailer and message objects
+     */
+    $mailer = new Swift(new Swift_Connection_NativeMail());
+    $message = new Swift_Message('Test mail subject');
 
-The first argument is the path to the image, the second is a reference of the image that you can use in the template to embed it:
+    /*
+     * Inline images
+     */
+    $images = array();
+    $images['symfony'] = new Swift_Message_Image(new Swift_File(sfConfig::get('sf_web_dir').'/images/symfony.gif'));
+    $images['swift']   = new Swift_Message_Image(new Swift_File(sfConfig::get('sf_web_dir').'/images/swift.jpg'));
 
-    [php]
-    // in sendPasswordSuccess.php
-    <p>Dear customer</p>,
-    <p>
-      You are so <i>absentminded</i>. Next time, try to remember your password:<br>
-      <b><?php echo $password ?></b>
-    </p>
-    <p>
-      Regards,<br>
-      The My Company webmaster
-      <img src="cid:CID1" />
-    </p>
-    
->**Tip**: You can also embed imaged directly from the template, without any code in the action. Refer to the `embedded_image()` helper description in the [code snippets section](http://www.symfony-project.com/snippets/snippet/27).
+    $imageReferences = array();
+    foreach ($images as $name => $image)
+    {
+      $imageReferences[$name] = $message->attach($image);
+    }
+
+    /*
+     * Render message parts
+     */
+    $mailContext = array('name' => 'John Doe', 'images' => $imageReferences);
+    $message->attach(new Swift_Message_Part($this->getPartial('mail/mailHtmlBody', $mailContext), 'text/html'));
+    $message->attach(new Swift_Message_Part($this->getPartial('mail/mailTextBody', $mailContext), 'text/plain'));
+
+    /*
+     * Send
+     */
+    $mailer->send($message, $mailTo, $mailFrom);
+    $mailer->disconnect();
+
+Now in your component/partial template you can easily display those attached pictures like this:
+
+    <img src="<?php echo $images['symfony']; ?>" alt="Symfony Project" />
+    <img src="<?php echo $images['swift']; ?>" alt="Swift Mailer" />
+
+Wasn't that easy?
 
 Attachments
 -----------
@@ -209,95 +167,32 @@ Attachments
 Attaching a document to a mail is as simple as you would expect it to be:
 
     [php]
-    // document attachment
-    $mail->addAttachment(sfConfig::get('sf_data_dir').'/MyDocument.doc');
-    // string attachment
-    $mail->addStringAttachment('this is some cool text to embed', 'file.txt');
+    $message->attach(new Swift_Message_Attachment(new Swift_File($file), $filename, $mime_type));
 
-Email addresses advanced syntax
--------------------------------
+Recipient lists
+---------------
 
-In addition to recipients, emails often need to be sent as carbon copy ('cc:') or blind carbon copy ('bcc:'). Here is how to do this with `sfMail`:
+You'll often want to have more than one recipient or carbon copies for a mail. This is done using the Swift_RecipientList class.
 
     [php]
-    $mail->addAddress($customer->getEmail());
-    $mail->addCc('carbon_copy@my-companyt.com ');    
-    $mail->addBcc('blind_carbon_copy@my-company.com');
+    $recipients = new Swift_RecipientList();
+    $recipients->addTo($to);
+    $recipients->addCc($cc);
+    $recipients->addBcc($bcc);
 
-The `sfMail` methods used to set emails (`setSender()`, `setFrom()`, `addReplyTo()`, `addAddress()`, `addCc()`, `addBcc()`) can use two syntaxes:
+If you're sending e-mails in a loop, don't forget to ->flush() your $recipients list, or you'll have a bad time explaining why someone recieved 500 copies of the same mailing list.
 
-    [php]
-    $mail->setFrom('me@symfony-project.com', 'Symfony');
-    // is equivalent to
-    $mail->setFrom('me@symfony-project.com <Symfony>');
+Sending emails from a task
+--------------------------
 
-In addition, to minimize the code in case of multiple recipients, `sfMail` has an `addAddresses()` method:
+The process is exactly the same as doing it from an action, with one little difference: You cannot use sfAction methods anymore.
 
-    [php]
-    $mail->addAddress('client1@client.com <Jules>');
-    $mail->addAddress('client2@client.com <Jim>');
-    // is equivalent to
-    $mail->addAddresses(array('client1@client.com <Jules>', 'client2@client.com <Jim>'));
-    
-`sfMail` methods
-----------------
+You'll need to use get_partial() and get_component() functions in PartialHelper instead of sfAction::getPartial() and sfAction::getComponent() methods.
 
-Once you've built your `sfMail` object, you might want to check its content. Fortunately, all the setter methods described above have an equivalent getter method, and you can clear the properties previously set:
+Getting documented
+------------------
 
-    [php]
-    setCharset($charset)
-    getCharset()
-    setContentType($content_type)
-    getContentType()
-    setPriority($priority)
-    getPriority()
-    setEncoding($encoding)
-    getEncoding()
-    setSubject($subject)
-    getSubject()
-    setBody($body)
-    getBody()
-    setAltBody($text)
-    getAltBody()
-    setMailer($type = 'mail')
-    getMailer()
-    setSender($address, $name = null)
-    getSender()
-    setFrom($address, $name = null)
-    getFrom()
-    addAddresses($addresses)
-    addAddress($address, $name = null)
-    addCc($address, $name = null)
-    addBcc($address, $name = null)
-    addReplyTo($address, $name = null)
-    clearAddresses()
-    clearCcs()
-    clearBccs()
-    clearReplyTos()
-    clearAllRecipients()
-    addAttachment($path, $name = '', $encoding = 'base64', $type = 'application/octet-stream')
-    addStringAttachment($string, $filename, $encoding = 'base64', $type = 'application/octet-stream')
-    addEmbeddedImage($path, $cid, $name = '', $encoding = 'base64', $type = 'application/octet-stream')
-    setAttachments($attachments)
-    clearAttachments()
-    addCustomHeader($name, $value)
-    clearCustomHeaders()
-    setWordWrap($wordWrap)
-    getWordWrap()
-    
-Sending emails from outside an action
--------------------------------------
+The SwiftMailer website if a gold mine of [documentation](http://swiftmailer.org/wikidocs/#the_connections "SwiftMailer Documentation")
+and [tutorials](http://swiftmailer.org/wikidocs/#tutorials "SwiftMailer Tutorials").
 
-If you want to send emails outside of an action (for instance in a batch process), you don't have any actions object to call the `sendEmail()` method on. Fortunately, this method is also available on the `sfController` object. So here is how you would call an emailing action in a batch script:
-
-    [php]
-    <?php
-
-    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
-    define('SF_APP',         'myapp');
-    define('SF_ENVIRONMENT', 'test');
-    define('SF_DEBUG',       false);
-
-    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
-
-    $raw_email = sfContext::getInstance()->getController()->sendEmail('mail', 'sendPassword');
+And of course, [the full API reference](http://www.swiftmailer.org/api/php5/index.html) is available if you need it.
