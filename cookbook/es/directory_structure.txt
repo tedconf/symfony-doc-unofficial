@@ -1,0 +1,38 @@
+Cómo personalizar la Estructura de Directorio por defecto
+=========================================================
+
+Una de las grandes ventajas de utilizar un *framework* (o marco de trabajo) es la estructura consistente que brinda entre los proyectos. Todos los proyectos comparten los mismo estándares de código, y también la misma estructura de directorio. Esta estructura permite a muchos desarrolladores trabajar en el mismo proyecto a la vez. Pero también mejora la mantenibilidad de la aplicación desarrollada. Cuando alguien te pide que le des mantenimiento a un proyecto hecho con Symfony que no desarrollaste inicialmente, ya sabes donde están guardados los ficheros y puedes empezar a modificarlo de inmediato.
+
+Pero a veces, necesitas contar con la posibilidad de personalizar la estructura de directorio proveída por Symfony. Tomemos dos ejemplos muy diferentes.
+
+Primero, digamos que tu proyecto Symfony se hospeda en un entorno anfitrión compartido (del inglés *shared host*), donde el directorio web raíz se llama `public_html`. Editanto la clase `ProjectConfiguration`, es muy facil cambiar el directorio web raíz por defecto de ser `web` a `public_html` como se muestra a continuación:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setWebDir($this->getRootDir().'/../public_html');
+      }
+    }
+
+Tomemos otro ejemplo. Tu proyecto Symfony es ahora hospedado por una compañía muy grande con estrictas reglas de seguridad. Ellos no permiten que tus aplicaciones escriban en disco excepto en algunos directorios específicos (`/tmp` por ejemplo). Como Symfony solamente escribe en dos directorios (`cache`, and `log`), resulta muy sencillo actualizar la clase `ProjectConfiguration` nuevamente para mover estos directorios hacia el directorio `/tmp`:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setCacheDir('/tmp/miproyecto/cache');
+        $this->setLogDir('/tmp/miproyecto/log');
+      }
+    }
+
+El método `setCacheDir()` no solamente cambia la constante `sf_cache_dir` sino también las restantes constantes relacionadas con caché: `sf_app_base_cache_dir`, `sf_app_cache_dir`, `sf_template_cache_dir`, `sf_i18n_cache_dir`, `sf_config_cache_dir`, `sf_test_cache_dir`, y `sf_module_cache_dir`.
+
+
+Y por último, pero no por ello menos importante, como las clases de configuración también son utilizadas por la *CLI* (Interfaz de Línea de Comandos, del inglés *Command Line Interface*) de Symfony, todas estas personalizaciones también están activas para todas las tareas que vienen con Symfony y tus tareas (del inglés *tasks*) específicas.
+
+Gracias a las nuevas clases de configuración de Symfony 1.1, la configurabilidad del *framework* nunca ha sido más facil.

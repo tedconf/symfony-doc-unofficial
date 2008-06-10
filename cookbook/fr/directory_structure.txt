@@ -1,0 +1,39 @@
+Comment personnaliser la Structure des Répertoires par défaut
+=============================================================
+
+*Traduit par Nicolas Garnault*
+
+Un des grands bénéfices tirés de l'utilisation d'un framework est le modèle d'arborescence commun utilisé dans tous vos projets. Tous les projets partagent les mêmes conventions de code, et également la même structure d'arborescence. Cette structure autorise plusieurs développeurs à travailler sur le même projet en même temps, et améliore également la maintenabilité des applications développées. Quand quelqu'un vous demande de maintenir un projet symfony que vous n'avez pas développé initialement, vous savez où sont stockés les fichiers et pouvez donc immédiatement commencer à coder.
+
+Cependant quelquefois, vous avez besoin de pouvoir personnaliser la structure d'arborescence fournie par symfony. Prenons deux exemples très différents.
+
+Premièrement, disons que vous vous hébergez votre projet symfony dans un environnement d'hébergement mutualisé, où le dossier servant comme racine web s'appelle `public_html`. En édiant la classe `ProjectConfiguration`, il est très simple de changer le nom de la racine web par défaut de `web` à `public_html`, comme montré ci-dessous :
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setWebDir($this->getRootDir().'/../public_html');
+      }
+    }
+
+Prenons un autre exemple. Votre projet symfony est maintenant hébergé dans une très grande compagnie, imposant des règles de sécurité strictes. Ces derniers n'autorisent vos applications à écrire sur le disque que dans des dossiers spéficiques  (`/tmp` par exemple). symfony n'écrivant que dans deux dossiers (`cache` et `log`), il est très simple de mettre à nouveau à jour la classe `ProjectConfiguration` et de déplacer ces répertoires vers `/tmp` :
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setCacheDir('/tmp/myproject/cache');
+        $this->setLogDir('/tmp/myproject/log');
+      }
+    }
+
+La méthode `setCacheDir()` ne change pas uniquement la constante `sf_cache_dir`, mais également toutes les constantes associées au cache : `sf_app_base_cache_dir`, `sf_app_cache_dir`, `sf_template_cache_dir`, `sf_i18n_cache_dir`, `sf_config_cache_dir`, `sf_test_cache_dir`, et `sf_module_cache_dir`.
+
+Enfin, les classes de configuration étant également utilisées par le CLI (interpréteur de ligne de commande) de symfony, toutes les modifications effectuées seront également effectives pour toutes les tâches symfony, ainsi que pour vos tâches personnalisées.
+
+Grâce aux nouvelles classes de configuration de symfony 1.1, la configurabilité du framework n'a jamais été aussi simple.

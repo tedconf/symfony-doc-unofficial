@@ -1,0 +1,69 @@
+Cómo utilizar Propel 1.3
+========================
+
+*por Carl Vondrick*
+
+Empezando con Symfony 1.1, ahora es posible utilizar fácilmente [Propel 1.3](http://propel.phpdb.org/trac/wiki/Users/Documentation/1.3) en tu proyecto para aprovechar la ventaja de sus mejoras en cuanto a velocidad, implementación de conjuntos anidados (o estructuras arbóreas, del inglés *nested set*), piscina de instancias de objetos (pooling), entre otros. Lo más importante es que Propel 1.3 utiliza *PDO* (del inglés *PHP Data Objects*) en lugar de Creole como *DBAL* (Capa de Abstracción de Base de Datos), ofreciendo una significante mejora de rendimiento.
+
+Instalar Propel 1.3 solo toma unos pocos minutos. Todo lo que debes hacer es instalar un plugin y modificar dos ficheros de configuración. Continúa leyendo para saber cómo.
+
+  * Instalar el plugin Propel 1.3 del repositorio de Symfony:
+
+        $ cd /path/to/project/root/
+        $ svn co http://svn.symfony-project.com/plugins/sfPropelPlugin/branches/1.3/ plugins/sfPropelPlugin
+
+  * Propel 1.3 utiliza un nuevo formato de conexión y por tanto debes actualizar `databases.yml`. Cambia `config/databases.yml` de la siguiente forma, haciendo los cambios que se ajusten a tu necesidad:
+
+        [yml]
+        dev:
+          propel:
+            param: 
+              classname: DebugPDO
+
+        all:
+          propel:
+            class: sfPropelDatabase
+            param:
+              dsn: mysql:dbname=mibasededatos;host=localhost 
+              username: usuario
+              password: contraseña
+              encoding: utf8
+              persistent: true
+              pooling: false
+              classname: PropelPDO
+
+    Para actualizar tu *DSN* (del inglés *datasource name*), véase el [manual PDO](http://us.php.net/manual/en/pdo.drivers.php).
+
+  * Se debe actualizar `propel.ini` para que coincida con la misma configuración. Busca las 3 primeras líneas de `config/propel.ini` y bórralas:
+
+        [ini]
+        propel.database            = mysql
+        propel.database.createUrl  = mysql://root@localhost/
+        propel.database.url        = mysql://root@localhost/miproyecto
+
+    En su lugar, inserta las siguientes líneas:
+
+        [ini]
+        propel.database            = mysql
+        propel.database.driver     = mysql
+        propel.database.createUrl  = mysql://localhost/
+        propel.database.url        = mysql:dbname=mibasededatos;host=localhost
+        propel.database.user       = usuario
+        propel.database.password   = contraseña
+        propel.database.encoding   = utf8
+
+    Verifica que `propel.databse.url` coincida con el DSN del paso 2.
+
+  * Limpia la caché interna de Symfony:
+
+        $ symfony cache:clear
+
+  * Propel 1.3 tiene un modelo de objeto mejorado, por tanto es necesario reconstruir los modelos:
+
+        $ symfony propel:build-model
+
+Si se trata de un nuevo proyecto, ¡felicidades porque acabas de configurar Propel 1.3! La sintaxis de `schema.yml` es exactamente la misma que en Propel 1.2. El nuevo *API* (del inglés *Application Programming Interface*) no es radicalmente diferente; de hecho, en su mayoría el *API* es exactamente el mismo.
+
+Si estás actualizando un proyecto, es posible que te quede un poco de trabajo por delante, pero debes encontrar que la mayor parte de tu proyecto funcionará. Si utilizas transacciones o Creole directamente en tu código, tendrás que atualizarlo a *PDO* manualmente. El proyecto Propel tiene una [útil guía de actualización](http://propel.phpdb.org/trac/wiki/Users/Documentation/1.3/Upgrading) que te guía a traves del proceso de actualización. Aún si se trata de un nuevo proyecto, puede que encuentres útil echarle un vistazo para aprender todas las nuevas características (o funcionalidades, del inglés *features*).
+
+Symfony 1.1 desacopla su sistema núcleo, así que no podría ser más fácil utilizar cualquier capa *ORM* (mapeo objeto-relacional, del inglés, *Object Relational Mapping*) que desees. Si Propel no satisface tus necesidades, prueba [sfDoctrinePlugin](http://trac.symfony-project.com/wiki/sfDoctrinePlugin), que es una alternativa a Propel e iguala el rendimiento de Propel 1.3 (ya que igualmente utiliza *PDO*). Gracias a Symfony 1.1, los desarrolladores pueden disfrutar Propel 1.3 para mejoramiento del rendimiento o Propel 1.2 si requieren una estabilidad sólida como roca.

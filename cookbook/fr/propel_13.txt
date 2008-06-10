@@ -1,0 +1,73 @@
+Comment utiliser Propel 1.3
+===========================
+
+*par Carl Vondrick*
+*Traduit by Nicolas Garnault*
+
+Il est maintenant facile, avec symfony 1.1, d'utiliser [Propel 1.3](http://propel.phpdb.org/trac/wiki/Users/Documentation/1.3) pour votre projet, et de tirer partie des nombreuses améliorations concernant la vitesse, les ensembles imbriqués (nested set), pooling d'instances d'objets (object instance pooling) entre autres. Le plus important est le fait que Propel 1.3 utilise maintenant PDO à la place de Creole comme couche d'abstraction avec la base de données, délivrant ainsi une amélioration significative des performances.
+
+Installer Propel 1.3 prend seulement quelques minutes, tout ce que vous avez à faire est installer un plugin et modifier deux fichiers de configuration.
+Nous allons vous expliquer comment procéder.
+
+  * Installation du plugin Propel 1.3 se trouvant dans le dépôt symfony :
+
+        $ cd /path/to/project/root/
+        $ svn co http://svn.symfony-project.com/plugins/sfPropelPlugin/branches/1.3/ plugins/sfPropelPlugin
+
+  * Propel 1.3 utilise un nouveau format de connexion, vous devez donc mettre à jour le fichier `databases.yml`. Modifiez le fichier `config/databases.yml` de le faire correspondre au modèle suivant :
+
+        [yml]
+        dev:
+          propel:
+            param: 
+              classname: DebugPDO
+
+        all:
+          propel:
+            class: sfPropelDatabase
+            param:
+              dsn: mysql:dbname=mydb;host=localhost 
+              username: username
+              password: password
+              encoding: utf8
+              persistent: true
+              pooling: false
+              classname: PropelPDO
+
+    Pour mettre à jour votre DSN, veuillez vous reporter au [manuel PDO](http://us.php.net/manual/en/pdo.drivers.php).
+    To upgrade your DSN, see the [PDO manual](http://fr.php.net/manual/fr/pdo.drivers.php).
+
+  * Vous devez mettre à jour `propel.ini` de la même manière. Recherchez les 3 lignes au début de `config/propel.ini` et supprimez-les :
+
+        [ini]
+        propel.database            = mysql
+        propel.database.createUrl  = mysql://root@localhost/
+        propel.database.url        = mysql://root@localhost/myproject
+
+    À leur place, insérez les lignes suivantes :
+
+        [ini]
+        propel.database            = mysql
+        propel.database.driver     = mysql
+        propel.database.createUrl  = mysql://localhost/
+        propel.database.url        = mysql:dbname=mydb;host=localhost
+        propel.database.user       = username
+        propel.database.password   = password
+        propel.database.encoding   = utf8
+
+    Assurez-vous que `propel.databse.url` corresponde au DSN de l'étape 2.
+
+  * Effacez le cache interne de symfony :
+
+        $ symfony cache:clear
+
+  * Propel 1.3 utilise un modèle objet optimisé, nous devons donc reconstruire le modèle :
+
+        $ symfony propel:build-model
+
+S'il s'agit d'un nouveau projet, félicitations, vous venez de mettre en place Propel 1.3 ! La syntaxe de `schema.yml` est exactement la même que celle utilisée avec Propel 1.2. La nouvelle API n'est pas complètement différente, en fait, pour la plus grande part, c'est exactement la même.
+
+Si vous mettez à jour un projet, un peu de travail vous attend peut-être encore, mais la plus grande partie de votre projet devrait fonctionner sans problème. Si vous utilisez des transactions ou bien Creole de manière directe, vous allez devoir mettre à jour vers PDO les parties de code concernées manuellement. Le projet Propel met à disposition un [guide de mise à jour](http://propel.phpdb.org/trac/wiki/Users/Documentation/1.3/Upgrading) très utile, qui vous accompagnera lors de la phase de mise à jour. Même s'il s'agit d'un nouveau projet, vous devriez trouver ce dernier d'une grande aide afin de vous tenir informé de toutes les nouvelles fonctionnalités.
+
+symfony 1.1 possède un coeur modulaire, il ne peut donc pas être rendu plus simple la possibilité d'utiliser n'importe quel ORM de votre choix. Si Propel ne vous convient pas, vous pouvez essayer [sfDoctrinePlugin](http://trac.symfony-project.com/wiki/sfDoctrinePlugin), une alternative à Propel, offrant les mêmes performances que Propel 1.3. Grâce à symfony 1.1, les développeurs peuvent apprécier l'utilisation de Propel 1.3 pour ses performances accrues, ou bien celle de Propel 1.2 s'ils préfèrent privilégier d'une stabilité à toute épreuve.
+
