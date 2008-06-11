@@ -115,6 +115,55 @@ Some e-mail clients don't like HTML at all, so it's usually a good idea to provi
       // handle errors there
     }
 
+Use different connection settings
+---------------------------------
+
+When you create the Swift object, you can use a different Swift_Connection object.
+
+  * **Swift_Connection_NativeMail** is the connection driver using the native PHP `mail()` function.
+
+  * **Swift_Connection_SMTP** sends mail via a SMTP server. The constructor takes three parameters, all of which are optional:
+
+        [php]
+        public function __construct($server="localhost", $port=null, $encryption=null)
+
+    We'll see in a few how to use this to send a mail via a secure mail server, using gMail secure SMTP in occurence.
+
+  * **Swift_Connection_Sendmail** uses a sendmail binary to send the mail. You can specify its path to the constructor.
+
+  * **Swift_Connection_Multi** is the first special driver, that can be used to combine more than one connection driver. It provides
+    redundancy in the event that a SMTP server is unavailable at the time of the request. The constructor takes an array of `Swift_Connection`
+    object instances, and can even embed other `Swift_Connection_Multi` instances (even if the advantage of doing so might be a bit obscure)
+
+  * **Swift_Connection_Rotator** is the last one, doing a bit more than `Swift_Connection_Multi` by keeping track of down servers, and
+    managing rotation of "alive" servers. How to use it is beyond the scope of this cookbook recipe, and you should refer to the
+    [Swift Mailer documentation](http://swiftmailer.org/wikidocs/#the_connections "SwiftMailer Documentation").
+
+Using Google Mail SMTP servers
+------------------------------
+
+Why would you like to use a gmail account to send your emails?
+
+  * You don't have to setup and maintain a SMTP server
+  * You won't be marked as spam for hotmail users (or similar)
+  * You get a carbon copy in your gmail account's `Sent Mails`, allowing easy debug
+
+What are the limitations?
+
+  * You need a gmail account
+  * SMTP over SSL negociation is longer than plain SMTP negociation
+  * You cannot send an e-mail from an arbitrary email address (but you can add a new send-mail-as address in gmail settings/account)
+
+Here is how to configure the Swift object:
+
+    [php]
+    $connection = new Swift_Connection_SMTP('smtp.gmail.com', 465, Swift_Connection_SMTP::ENC_SSL);
+    $connection->setUsername('romain@gmail.com');
+    $connection->setPassword('SuperSecurePassword');
+     
+    $mailer = new Swift($connection);
+
+
 Embed images
 ------------
 
