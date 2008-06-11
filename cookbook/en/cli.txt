@@ -9,18 +9,22 @@ Many of the tasks that a developer executes during the building and maintenance 
 CLI core
 --------
 
-The `symfony` script is a PHP script that lies at the root of a project. The symfony command expects tasks, and some tasks require additional parameters. To call it, use the following syntax:
+The `symfony` script is a PHP script that lies at the root of a project. The symfony command expects a task, and some tasks require additional arguments. To call it, use the following syntax:
 
     $ cd myproject
-    $ php symfony <TASK> [parameters]
-    
+    $ php symfony <TASK_NAME> [arguments]
+
+A task can also have options:
+
+    $ php symfony <TASK_NAME> [arguments] --option1=value --option2
+
 >**Note**: The symfony CLI works only from the root of a symfony project
 
 The [symfony sandbox](http://www.symfony-project.com/book/1_1/03-Running-Symfony#Installing%20the%20Sandbox) contains executables for Windows and *nix platforms that should allow an even faster call:
 
     $ ./symfony <TASK> [parameters]      #  *nix
     $ symfony <TASK> [parameters]        #  Windows
- 
+
 The examples of this chapter will use the `php` executable, but you can omit it if your project has the proper executables. 
 
 To list all the possible tasks, call:
@@ -34,114 +38,124 @@ To display the installed version of the symfony package, type:
 A few tasks have a shortcut, faster to write, that has the same effect.
 
     $ php symfony cc
+
     // does the same thing as
-    $ php symfony clear-cache
+    $ php symfony cache:clear
     
 When an exception occurs, you might want to get the stack trace and detailed explanation. Add the `-t` option before the task name to get the trace.
-
 
 CLI tasks
 ---------
 
+Each built-in task has a full description of the goal of the task, all the arguments and all the options it accepts. To display this information, you can use the `help` task:
+
+    $ php symfony help cache:clear
+
 ### Structure generation
 
     $ php symfony generate:project <PROJECT_NAME>
-    
-Initializes a new symfony project (shortcut: `new`).
-          
+
+Initializes a new symfony project.
+
     $ php symfony generate:app <APPLICATION_NAME>
-    
-Initializes a new symfony application (shortcut: `app`).    
+
+Initializes a new symfony application.
 
     $ php symfony generate:module <APPLICATION_NAME> <MODULE_NAME>
-    
+
+Initializes a new symfony module.
+
 Find more about these commands in [Chapter 16](http://www.symfony-project.com/book/1_1/16-Application-Management-Tools).
 
 ### Model generation
+
+    $ php symfony configure:database mysql://localhost/db_name
+
+Configures the database information for both `config/databases.yml` and `config/propel.ini`.
 
     $ php symfony propel:build-model
 
 Generates the Propel classes for the current model, based on the schema files (YAML or XML) of your `config/` directory.
 
 The connection settings used by the following commands are taken from the `config/propel.ini` configuration.  
-    
+
     $ php symfony propel:build-sql
-    
+
 Generates the SQL code to create the tables described in the `schema.yml`, in a `data/schema.sql` file.
 
     $ php symfony propel:build-db
-    
+
 Creates an empty database based on the connection settings.
 
     $ php symfony propel:insert-sql
-    
-Inserts the SQL code from `data/schema.sql` into the database.    
-    
+
+Inserts the SQL code from `data/schema.sql` into the database.
+
+    $ php symfony propel:build-forms
+
+Generates the forms associated with the model.
+
     $ php symfony propel:build-all
 
-Executes `propel:build-model`, `propel:build-sql` and then `propel:insert-sql` all in one command.
+Executes `propel:build-model`, `propel:build-sql`, `propel:build-forms`, and `propel:insert-sql` all in one command.
 
 Find more about these commands in [Chapter 8](http://www.symfony-project.com/book/1_1/08-Inside-the-Model-Layer).
 
 ### Schema management
 
-    $ php symfony propel:build-schema [xml]
-    
-Creates a `schema.yml` from an existing database. If the `xml` parameter is added, the tasks creates a `schema.xml` instead of the YAML version.
+    $ php symfony propel:build-schema [--xml]
+
+Creates a `schema.yml` from an existing database. If the `--xml` parameter is added, the tasks creates a `schema.xml` instead of the YAML version.
 
     $ php symfony propel:schema-to-yml
-    
+
 Creates YAML versions of the XML schemas found.
-  
+
     $ php symfony propel:schema-to-xml
-    
+
 Creates XML versions of the YAML schemas found.
 
 ### Data management
 
-    $ php symfony propel:data-load  <APPLICATION_NAME> [<ENVIRONMENT_NAME>] [<FIXTURES_DIR_OR_FILE>]
-    
-Loads all data from default `data/fixtures/` directory unless otherwise specified. Environment is default to `dev`. The fixtures directory must be specified relative to the project's data dir, for example `fixtures` (default) or `testdata` or specify a single file `fixtures/file.yml`.    
+    $ php symfony propel:data-load  <APPLICATION_NAME> [--env=<ENVIRONMENT_NAME>] [--dir=<FIXTURES_DIR_OR_FILE>]
 
-    $ php symfony propel:build-all-load  <APPLICATION_NAME> [<ENVIRONMENT_NAME>] [<FIXTURES_DIR_OR_FILE>]
+Loads all data from default `data/fixtures/` directory unless otherwise specified. Environment defaults to `dev`. The fixtures directory must be specified relative to the project's data dir, for example `fixtures` (default) or `testdata` or specify a single file `fixtures/file.yml`.
+
+    $ php symfony propel:build-all-load  <APPLICATION_NAME>
 
 Executes `propel:build-all` then `propel:data-load`. Accepts same arguments as `propel:data-load`.
 
-    $ php symfony propel:data-dump  <APPLICATION_NAME> <FIXTURES_DIR_OR_FILE> [<ENVIRONMENT_NAME>]
-    
+    $ php symfony propel:data-dump <APPLICATION_NAME> [<TARGET>] [--env=<ENVIRONMENT_NAME>]
+
 Dumps database data to a file in the fixtures directory in YAML format.
 
 ### Development tools
 
-    $ php symfony cache:cmear [<APPLICATION_NAME>] [template|config]
+    $ php symfony cache:clear [--app=<APPLICATION_NAME>] [--type=template|config|i18n|routing] [--env=<ENVIRONMENT_NAME>]
 
 Clears the cached information (shortcut: `cc`) (find more in [Chapter 12](http://www.symfony-project.com/book/1_1/12-Caching)).
-
-    $ php symfony project:clear-controllers
-    
-Clears the web directory of all controllers other than ones running in a production environment. Very useful before deployment to the production server.
 
     $ php symfony project:permissions
     
 Fixes directories permissions, to change to `777` the directories that need to be writable. The permission can be broken if you use a checkout from a SVN repository.
 
-    $ php symfony project:freeze
+    $ php symfony project:freeze <SF_DATA_DIR>
     $ php symfony project:unfreeze
 
 Copies all the necessary symfony libraries into the `data/`, `lib/` and `web/sf/` directories of your project. Your project then becomes a kind of sandbox, i.e. a standalone application with no dependence and ready to be transferred to production via FTP. Works fine with PEAR installations as well as symbolic links. Unfreeze your project with the `project:unfreeze` task.
 
-    $ php symfony project:deploy <ENVIRONMENT_NAME> [go]
-    
+    $ php symfony project:deploy <SERVER_CONFIGURATION_NAME> [--go]
+
 Synchronises the current project with another machine (find more in [Chapter 16](http://www.symfony-project.com/book/1_1/16-Application-Management-Tools#Deploying%20Applications)).   
 
 ### Tests
 
     $ php symfony test:unit <UNIT_TEST>
-    
+
 Launches a unit test located in the `test/unit/` directory. The parameter can be the name of a single unit test file (omitting the `Test.php` suffix), a group of unit test files, or a file path with wildcards. If no test name is given, all unit tests are run.
 
     $ php symfony test:unit
-    
+
 Launches all unit tests in harness mode.
 
     $ php symfony test:functional <APPLICATION_NAME> <TEST>
@@ -149,11 +163,11 @@ Launches all unit tests in harness mode.
 Launches a functional test for a given application. The `TEST` parameter can be the name of a single functional test file (omitting the `Test.php` suffix), a group of unit test files, or a file path with wildcards. 
 
     $ php symfony test:functional <APPLICATION_NAME>
-    
+
 Launches all functional tests of an application in harness mode.
 
-    $ php symfony test:all 
-    
+    $ php symfony test:all
+
 Launches all unit and functional tests in harness mode.
 
 Find more about testing in [Chapter 15](http://www.symfony-project.com/book/1_1/15-Unit-and-Functional-Testing).
@@ -173,33 +187,28 @@ Enables the application and clears the cache.
 Clears the logs files in the log directory in applications and environments where the `logging.yml` specifies `purge: on` (which is the default value).
 
     $ php symfony log:rotate <APPLICATION_NAME> <ENVIRONMENT_NAME>
-    
-Forces a rotation of a log file if `rotate` is enabled for the log file in `logging.yml`. The rotation parameters are the `period` (the number of days a single log file lasts) and the `history` (the number of backup log files kept). Here is an example of `logging.yml` withrotation configutation:
 
-    prod:
-      rotate:  on
-      period:  7       ## Log files are rotated every 7 days by default
-      history: 10      ## A maximum history of 10 log files is kepts   
+Forces a rotation of a log file. The rotation options are the `--period` (the number of days a single log file lasts) and the `--history` (the number of backup log files kept).
 
 ### Scaffolding and admin generation
 
     $ php symfony propel:generate-crud <APPLICATION_NAME> <MODULE_NAME> <CLASS_NAME>
-    
+
 Generates a new Propel CRUD module based on a class from the model. The normal version copies the code from the framework to a new module; if you add the `--generate-in-cache` option, the task creates an empty module that inherits from the one in the framework. In this case, the generated code is visible only in the `cache/` folder (the generated actions and templates inherit from the framework).
 
     $ php symfony propel:init-admin <APPLICATION_NAME> <MODULE_NAME> <CLASS_NAME>
-    
-Initializes a new Propel admin module based on a class from the model
+
+Initializes a new Propel admin module based on a class from the model.
 
 Find more about these commands in [Chapter 14](http://www.symfony-project.com/book/1_1/14-Generators).
 
 ### Plugin management
 
-    $ php symfony plugin:install <CHANNEL_NAME>/<PLUGIN_NAME>
-    
-Installs a new plugin. To install a new plugin from the symfony wiki, use `http://plugins.symfony-project.com` as a channel name.
-    
-    $ php symfony plugin:upgrade <CHANNEL_NAME>/<PLUGIN_NAME>
+    $ php symfony plugin:install [<CHANNEL_NAME>/]<PLUGIN_NAME>
+
+Installs a new plugin. To install a new plugin from the symfony wiki, the implicit channel name is `symfony`.
+
+    $ php symfony plugin:upgrade [<CHANNEL_NAME>/]<PLUGIN_NAME>
 
 Upgrades a plugin.
 
@@ -207,9 +216,9 @@ Upgrades a plugin.
 
 Upgrades all the plugins previously installed in local
 
-    $ php symfony plugin:uninstall <CHANNEL_NAME>/<PLUGIN_NAME>
-    
-Uninstalls a plugin.    
+    $ php symfony plugin:uninstall [<CHANNEL_NAME>/]<PLUGIN_NAME>
+
+Uninstalls a plugin.
 
 Find more about plugins in [Chapter 17](http://www.symfony-project.com/book/1_1/17-Extending-Symfony).
 
