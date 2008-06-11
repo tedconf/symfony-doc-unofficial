@@ -39,7 +39,7 @@ Configuration
 
 There is no mailer-specific configuration.
 
-To keep your project flexible, you should use app.yml configuration file to keep hard-written e-mail adresses. This way, you can have different senders/receivers addresses depending on the environment you're on, and when one will need to change it, he won't have to dig all the project code. The place to change it will be just too obvious.
+To keep your project flexible, you should use `app.yml` configuration file to keep hard-written e-mail addresses. This way, you can have different senders/receivers addresses depending on the environment you're on, and when one will need to change it, he won't have to dig all the project code. The place to change it will be just too obvious.
 
 Render an e-mail
 ----------------
@@ -62,15 +62,11 @@ Then we send the mail rendered above using Swift:
     [php]
     try
     {
-      /*
-       * Create the mailer and message objects
-       */
+      // Create the mailer and message objects
       $mailer = new Swift(new Swift_Connection_NativeMail());
       $message = new Swift_Message('Mail\'s subject', $mailBody, 'text/html');
 
-      /*
-       * Send
-       */
+      // Send
       $mailer->send($message, $mailTo, $mailFrom);
       $mailer->disconnect();
     }
@@ -78,7 +74,7 @@ Then we send the mail rendered above using Swift:
     {
       $mailer->disconnect();
 
-      // handle errors there
+      // handle errors here
     }
 
 Send a multipart e-mail
@@ -89,22 +85,16 @@ Some e-mail clients don't like HTML at all, so it's usually a good idea to provi
     [php]
     try
     {
-      /*
-       * Create the mailer and message objects
-       */
+      // Create the mailer and message objects
       $mailer = new Swift(new Swift_Connection_NativeMail());
       $message = new Swift_Message('Test mail subject');
 
-      /*
-       * Render message parts
-       */
+      // Render message parts
       $mailContext = array('name' => 'John Doe');
       $message->attach(new Swift_Message_Part($this->getPartial('mail/mailHtmlBody', $mailContext), 'text/html'));
       $message->attach(new Swift_Message_Part($this->getPartial('mail/mailTextBody', $mailContext), 'text/plain'));
 
-      /*
-       * Send
-       */
+      // Send
       $mailer->send($message, $mailTo, $mailFrom);
       $mailer->disconnect();
     }
@@ -132,12 +122,9 @@ When you create the Swift object, you can use a different Swift_Connection objec
   * **Swift_Connection_Sendmail** uses a sendmail binary to send the mail. You can specify its path to the constructor.
 
   * **Swift_Connection_Multi** is the first special driver, that can be used to combine more than one connection driver. It provides
-    redundancy in the event that a SMTP server is unavailable at the time of the request. The constructor takes an array of `Swift_Connection`
-    object instances, and can even embed other `Swift_Connection_Multi` instances (even if the advantage of doing so might be a bit obscure)
+    redundancy in the event that a SMTP server is unavailable at the time of the request. The constructor takes an array of `Swift_Connection` object instances, and can even embed other `Swift_Connection_Multi` instances (even if the advantage of doing so might be a bit obscure)
 
-  * **Swift_Connection_Rotator** is the last one, doing a bit more than `Swift_Connection_Multi` by keeping track of down servers, and
-    managing rotation of "alive" servers. How to use it is beyond the scope of this cookbook recipe, and you should refer to the
-    [Swift Mailer documentation](http://swiftmailer.org/wikidocs/#the_connections "SwiftMailer Documentation").
+  * **Swift_Connection_Rotator** is the last one, doing a bit more than `Swift_Connection_Multi` by keeping track of down servers, and managing rotation of "alive" servers. How to use it is beyond the scope of this cookbook recipe, and you should refer to the [Swift Mailer documentation](http://swiftmailer.org/wikidocs/#the_connections "SwiftMailer Documentation").
 
 Using Google Mail SMTP servers
 ------------------------------
@@ -163,23 +150,17 @@ Here is how to configure the Swift object:
      
     $mailer = new Swift($connection);
 
-
 Embed images
 ------------
 
-To embed images in your mail, you need to get mail-dependant URLs from the embedded objects before rendering its content. Here's an
-example how you can do it.
+To embed images in your mail, you need to get mail-dependant URLs from the embedded objects before rendering its content. Here's an example how you can do it.
 
     [php]
-    /*
-     * Create the mailer and message objects
-     */
+    // Create the mailer and message objects
     $mailer = new Swift(new Swift_Connection_NativeMail());
     $message = new Swift_Message('Test mail subject');
 
-    /*
-     * Inline images
-     */
+    // Inline images
     $images = array();
     $images['symfony'] = new Swift_Message_Image(new Swift_File(sfConfig::get('sf_web_dir').'/images/symfony.gif'));
     $images['swift']   = new Swift_Message_Image(new Swift_File(sfConfig::get('sf_web_dir').'/images/swift.jpg'));
@@ -190,16 +171,12 @@ example how you can do it.
       $imageReferences[$name] = $message->attach($image);
     }
 
-    /*
-     * Render message parts
-     */
+    // Render message parts
     $mailContext = array('name' => 'John Doe', 'images' => $imageReferences);
     $message->attach(new Swift_Message_Part($this->getPartial('mail/mailHtmlBody', $mailContext), 'text/html'));
     $message->attach(new Swift_Message_Part($this->getPartial('mail/mailTextBody', $mailContext), 'text/plain'));
 
-    /*
-     * Send
-     */
+    // Send
     $mailer->send($message, $mailTo, $mailFrom);
     $mailer->disconnect();
 
@@ -221,7 +198,7 @@ Attaching a document to a mail is as simple as you would expect it to be:
 Recipient lists
 ---------------
 
-You'll often want to have more than one recipient or carbon copies for a mail. This is done using the Swift_RecipientList class.
+You'll often want to have more than one recipient or carbon copies for a mail. This is done using the `Swift_RecipientList` class.
 
     [php]
     $recipients = new Swift_RecipientList();
@@ -229,19 +206,18 @@ You'll often want to have more than one recipient or carbon copies for a mail. T
     $recipients->addCc($cc);
     $recipients->addBcc($bcc);
 
-If you're sending e-mails in a loop, don't forget to ->flush() your $recipients list, or you'll have a bad time explaining why someone recieved 500 copies of the same mailing list.
+If you're sending e-mails in a loop, don't forget to `->flush()` your $recipients list, or you'll have a bad time explaining why someone received 500 copies of the same mailing list.
 
 Sending emails from a task
 --------------------------
 
-The process is exactly the same as doing it from an action, with one little difference: You cannot use sfAction methods anymore.
+The process is exactly the same as doing it from an action, with one little difference: You cannot use `sfAction` methods anymore.
 
-You'll need to use get_partial() and get_component() functions in PartialHelper instead of sfAction::getPartial() and sfAction::getComponent() methods.
+You'll need to use `get_partial()` and `get_component()` functions in `PartialHelper` instead of `sfAction::getPartial()` and `sfAction::getComponent()` methods.
 
 Getting documented
 ------------------
 
-The SwiftMailer website if a gold mine of [documentation](http://swiftmailer.org/wikidocs/#the_connections "SwiftMailer Documentation")
-and [tutorials](http://swiftmailer.org/wikidocs/#tutorials "SwiftMailer Tutorials").
+The SwiftMailer website if a gold mine of [documentation](http://swiftmailer.org/wikidocs/#the_connections "SwiftMailer Documentation") and [tutorials](http://swiftmailer.org/wikidocs/#tutorials "SwiftMailer Tutorials").
 
 And of course, [the full API reference](http://www.swiftmailer.org/api/php5/index.html) is available if you need it.
