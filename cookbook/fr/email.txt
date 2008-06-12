@@ -1,0 +1,242 @@
+Comment envoyer un email
+========================
+
+Aperçu général
+--------------
+
+Envoyer des emails est une tâche presque quotidienne pour tout développeur web, et symfony 1.1 vous permet de le faire plus facilement que jamais grâce à [Swift Mailer](http://www.swiftmailer.org/).
+
+Swift Mailer est une bibliothèque bien pensée, totalement orientée objet, qui vous satisfera 120% de vos besoins en matière d'envoi d'emails.
+
+Swift Mailer est disponible dans un dépôt SVN "taggé", votre projet ne court pas de cette manière le risque de cesser de fonctionner à cause d'une simple mise à jour de la bibliothèque. Le choix de passer à une nouvelle version est entièrement laissé à votre libre arbitre.
+
+La manière dont vous envoyez des mails avec symfony est très simple. Vous créez un partial ou un component qui génèrera le rendu du contenu de votre email, et vous utilisez ensuite Swift pour envoyer votre email de la manière la plus simple et souple possible.
+
+Installation
+------------
+
+Si votre projet utilise déjà SVN, vous pouvez installer Swift en utilisant la propriété `svn:externals` :
+
+    $ cd /chemin/vers/votre/projet
+    $ mkdir -p lib/vendor
+    $ svn propedit svn:externals .
+
+Ajoutez ensuite la ligne suivante :
+
+    swift http://swiftmailer.svn.sourceforge.net/svnroot/swiftmailer/tags/php5/3.3.3/lib/
+
+Si votre projet n'utilise pas SVN, vous pouvez toujours obtenir Swift en tant que copie de travail, en effectuant un checkout du tag :
+
+    $ cd /chemin/vers/votre/projet
+    $ mkdir -p lib/vendor
+    $ svn checkout http://swiftmailer.svn.sourceforge.net/svnroot/swiftmailer/tags/php5/3.3.3/lib/ swift
+
+Videz maintenant votre cache pour forcer la classe d'autoloading à régénérer une nouvelle configuration, vous en avez maintenant fini avec l'installation.
+
+Configuration
+-------------
+
+Il n'y a pas de configuration spécifique au mailer.
+
+Dans le but de garder votre projet "souple", il est conseillé d'utiliser le fichier de configuration app.yml pour y spécifier "en dur" les adresses email que vous souhaitez utiliser. De cette manière, vous pouvez avoir différentes adresses d'expéditeurs/destinataires en fonction de l'environnement que vous utilisez ; lorsque vous aurez besoin de changer une de ces adresses, vous n'aurez pas à rechercher quelle partie de votre code est concernée, il sera évident pour vous de vous référer au fichier `app.yml`.
+
+
+Génération du rendu d'un email
+----------------------------
+
+symfony 1.1 vous permet de générer facilement le rendu des "partials" et des "components" à l'intérieur d'une action :
+
+    [php]
+    $mailBody = $this->getPartial('mailBody', array('name' => 'John Doe'));
+
+ou encore
+
+    [php]
+    $mailBody = $this->getComponent('mail', 'mailBody', array('name' => 'John Doe'));
+
+
+Envoyer un email en HTML
+------------------------
+
+Une fois le rendu du mail généré, il ne reste qu'à envoyer ce dernier à l'aide de Swift :
+
+    [php]
+    try
+    {
+      /*
+       * Instanciation du mailer et du message
+       */
+      $mailer = new Swift(new Swift_Connection_NativeMail());
+      $message = new Swift_Message('Mail\'s subject', $mailBody, 'text/html');
+
+      /*
+       * Envoi
+       */
+      $mailer->send($message, $mailTo, $mailFrom);
+      $mailer->disconnect();
+    }
+    catch (Exception $e)
+    {
+      $mailer->disconnect();
+
+      // Gestion des erreurs ici
+    }
+
+Envoi d'emails "multipart"
+--------------------------
+
+Certains clients de messagerie électronique n'aiment pas du tout le HTML, il est donc conseillé d'attacher à tout email envoyé en HTML l'équivalent du contenu en texte brut.
+
+    [php]
+    try
+    {
+      /*
+       * Instanciation du mailer et du message
+       */
+      $mailer = new Swift(new Swift_Connection_NativeMail());
+      $message = new Swift_Message('Test mail subject');
+
+      /*
+       * Génération du rendu des messages
+       */
+      $mailContext = array('name' => 'John Doe');
+      $message->attach(new Swift_Message_Part($this->getPartial('mail/mailHtmlBody', $mailContext), 'text/html'));
+      $message->attach(new Swift_Message_Part($this->getPartial('mail/mailTextBody', $mailContext), 'text/plain'));
+
+      /*
+       * Envoi
+       */
+      $mailer->send($message, $mailTo, $mailFrom);
+      $mailer->disconnect();
+    }
+    catch (Exception $e)
+    {
+      $mailer->disconnect();
+
+      // Gestions des erreurs ici
+    }
+
+Utilisation de différents paramètres de connexion
+-------------------------------------------------
+
+Lorsque vous créez un objet Swift, vous pouvez utiliser différentes versions de l'objet Swift_Connection.
+
+  * **Swift_Connection_NativeMail** est un driver de connexion utilisant la fonction native `mail()` de PHP.
+
+  * **Swift_Connection_SMTP** envoie les mails via un serveur SMTP. Le constructeur de cet classe prend trois paramètres, tous optionnels :
+
+        [php]
+        public function __construct($server="localhost", $port=null, $encryption=null)
+
+    Nous allons observer dans la prochaine section comment envoyer un email via un serveur mail sécurisé (le SMTP sécurisé de Gmail dans le cas présent).
+
+  * **Swift_Connection_Sendmail** utilise une application sendmail pour traiter les emails que vous souhaitez envoyer, vous pouvez spécifier le chemin vers le binaire à utiliser dans le constructeur de cette classe.
+
+  * **Swift_Connection_Multi** est le premier driver "spécial", il peut être utilisé pour combiner plusieurs drivers de connexion. Il permet de passer d'un driver SMTP à un autre driver de connexion dans le cas où le serveur SMTP auquel on souhaite se connecter n'est pas disponible au moment de la requête. Le constructeur prend en paramètre un tableau d'instances de `Swift_Connection`, qui peut même contenir une autre instance de `Swift_Connection_Multi` (même si le but de ce type de manipulation peut paraître quelque peu obscur).
+
+  * **Swift_Connection_Rotator** est le dernier driver disponible, il s'agit d'un driver ayant le même fonctionnement que `Swift_Connection_Multi`, à la différence près qu'il garde en mémoire la liste des serveurs non disponibles, et gère la "rotation" des serveurs mails disponibles à utiliser. La façon d'utiliser ce driver ne rentre pas vraiment dans le cadre de cet article, pour en savoir plus, référez-vous à la [documentation de Swift Mailer](http://swiftmailer.org/wikidocs/#the_connections "Documentation SwiftMailer").
+
+Utiliser les serveurs SMTP de Google Mail
+-----------------------------------------
+
+Quelles bonnes raisons auriez-vous de vouloir utiliser un compte Gmail pour envoyer vos emails ?
+
+  * Vous n'avez pas besoin de mettre en place ni de maintenir vous-même un serveur SMTP
+  * Vos courriers ne seront pas signalés comme "spam" chez Yahoo! et Hotmail
+  * Vous pouvez garder une copie carbone de tout mail envoyé, ce qui peut grandement faciliter un éventuel debug
+
+Quelles sont les limitations ?
+
+  * Vous avez besoin d'un compte Gmail
+  * Les transactions SMTP utilisant SSL sont plus longues que celles effectuées en SMTP "brut"
+  * Vous ne pouvez pas envoyer vos emails en utilisant une adresse d'expéditeur arbitraire (vous pouvez cependant en utiliser plusieurs, à condition d'avoir effectué les paramétrages nécessaires dans votre compte Gmail au préalable)
+
+Voici comment configurer votre objet Swift :
+
+    [php]
+    $connection = new Swift_Connection_SMTP('smtp.gmail.com', 465, Swift_Connection_SMTP::ENC_SSL);
+    $connection->setUsername('romain@gmail.com');
+    $connection->setPassword('SuperSecurePassword');
+
+    $mailer = new Swift($connection);
+
+
+Intégration d'images
+--------------------
+
+Pour intégrer des images à votre courrier, vous avez d'abord besoin d'obtenir les URLs internes au mail de ces dernières, afin d'en générer le rendu ensuite. Voici un exemple vous montrant la façon dont il faut opérer :
+
+    [php]
+    /*
+     * Instanciation du mailer et du message
+     */
+    $mailer = new Swift(new Swift_Connection_NativeMail());
+    $message = new Swift_Message('Test mail subject');
+
+    /*
+     * Images à intégrer
+     */
+    $images = array();
+    $images['symfony'] = new Swift_Message_Image(new Swift_File(sfConfig::get('sf_web_dir').'/images/symfony.gif'));
+    $images['swift']   = new Swift_Message_Image(new Swift_File(sfConfig::get('sf_web_dir').'/images/swift.jpg'));
+
+    $imageReferences = array();
+    foreach ($images as $name => $image)
+    {
+      $imageReferences[$name] = $message->attach($image);
+    }
+
+    /*
+     * Génération du rendu des différentes parties du message
+     */
+    $mailContext = array('name' => 'John Doe', 'images' => $imageReferences);
+    $message->attach(new Swift_Message_Part($this->getPartial('mail/mailHtmlBody', $mailContext), 'text/html'));
+    $message->attach(new Swift_Message_Part($this->getPartial('mail/mailTextBody', $mailContext), 'text/plain'));
+
+    /*
+     * Envoi
+     */
+    $mailer->send($message, $mailTo, $mailFrom);
+    $mailer->disconnect();
+
+Vous pouvez maintenant facilement, dans le template de votre partial/component, afficher les images que vous avez intégrées à votre mail de la manière suivante :
+
+    <img src="<?php echo $images['symfony']; ?>" alt="Symfony Project" />
+    <img src="<?php echo $images['swift']; ?>" alt="Swift Mailer" />
+
+Simple, n'est-ce pas ?
+
+Pièces jointes
+--------------
+
+Attacher des pièces jointes à un mail ne pourrait pas être plus simple :
+
+    [php]
+    $message->attach(new Swift_Message_Attachment(new Swift_File($file), $filename, $mime_type));
+
+Liste des destinataires
+-----------------------
+
+Vous allez sûrement avoir souvent envie d'envoyer des emails à plus d'un destinataire, ou bien de spécifier des destinataires en "copie carbone". Swift rend ceci tout à fait possible, grâce à la classe `Swift_RecipientList` :
+
+    [php]
+    $recipients = new Swift_RecipientList();
+    $recipients->addTo($to);
+    $recipients->addCc($cc);
+    $recipients->addBcc($bcc);
+
+Si vous envoyez vos emails dans une boucle, n'oubliez pas d'utiliser la méthode `->flush()` sur votre liste `$recipients`, ou vous allez devoir faire preuve de beaucoup de tact pour expliquer à la personne qui aura reçu plusieurs centaines d'emails que le problème ne se reproduira plus ...
+
+Envoyer des emails depuis une tâche
+-----------------------------------
+
+La façon de procéder est exactement la même que lorsque vous envoyez des emails depuis une action, à une petite différence près : vous ne pouvez plus dans ce cas utiliser les méthodes de la classe sfAction.
+
+Vous devrez donc utiliser les méthodes `get_partial()` et `get_component()` disponibles via `PartialHelper` à la place des méthodes `sfAction::getPartial()` et `sfAction::getComponent()`.
+
+Se documenter davatage
+----------------------
+
+Le site internet du projet SwiftMailer est une véritable mine d'informations, y trouverez de la [documentation](http://swiftmailer.org/wikidocs/#the_connections "Documentation SwiftMailer") ainsi que de nombreux [tutoriaux](http://swiftmailer.org/wikidocs/#tutorials "Tutoriaux SwiftMailer").
+
+Bien entendu, la [documentation complète de l'API](http://www.swiftmailer.org/api/php5/index.html) est disponible si vous souhaitez la consulter.
