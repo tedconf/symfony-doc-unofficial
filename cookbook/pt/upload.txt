@@ -1,0 +1,139 @@
+Como fazer um upload de arquivo
+====================
+
+Visão Geral
+--------
+
+Muitas vezes backends e aplicações colaborativas exigem que os usuários façam upload de arquivos. Com algumas linhas de código, o symfony toma conta de tudo: renomeia o arquivo, move para o diretório de upload etc. E o usuário do admin generator também tem acesso ao novo helper que reduz a implementação para uma configuração simples.
+
+Upload de arquivo regular
+-------------------
+
+O upload de um arquivo requer um form em um template, e uma action para lidar com ele. No template, use o helper 'input_file_tag()' no form declarando-o como 'multipart=true':
+
+    [php]
+    <?php echo form_tag('media/upload', 'multipart=true') ?>
+      <?php echo input_file_tag('file') ?>
+      <?php echo submit_tag('Send') ?>
+    </form>
+    
+Irá gerar o código HTML:
+
+    [php]
+    <form method="post" enctype="multipart/form-data" action="media/upload">
+      <input type="file" name="file" id="file" value="" />
+      <input type="submit" name="commit" value="Send" />
+    </form>
+    
+A action ('media/upload' no exemplo) move o arquivo para o diretório de upload:
+
+    [php]
+    public function executeUpload()
+    {
+      $fileName = $this->getRequest()->getFileName('file');
+      
+      $this->getRequest()->moveFile('file', sfConfig::get('sf_upload_dir').'/'.$fileName);
+  
+      $this->redirect('media/show?filename='.$fileName);    
+    }
+O parâmetro 'sf_upload_dir' detém o caminho absoluto no seu servidor, para onde o arquivo vai ser enviado. Para o projeto chamado 'myproject', normalmente é em '/home/production/myproject/web/upload/'. Você pode modificá-lo em 'config/config.php':
+
+    [php]
+    sfConfig::add(array(
+      'sf_upload_dir_name'  => $sf_upload_dir_name = 'uploads',
+      'sf_upload_dir'       => sfConfig::get('sf_root_dir').DIRECTORY_SEPARATOR.sfConfig::get('sf_web_dir_name').DIRECTORY_SEPARATOR.$sf_upload_dir_name,      
+    ));    
+
+>**Nota**: Antes de mover um arquivo para o diretório de upload, você deve 'limpar' o nome do arquivo substituindo caracteres especiais para evitar problemas de arquivo do sistema. Além disso, você deve escapar o '$fileName' antes de passá-lo como um pedido de parâmetro.
+
+Para mostrar o arquivo enviado, use o parâmetro 'sf_upload_dir_name'. Por exemplo, se o arquivo for uma imagem, o template 'media/show' ficará assim:
+
+    [php]
+    ...
+    <?php echo image_tag('/'.sfConfig::get('sf_upload_dir_name').'/'.$sf_params->get('filename')) ?>
+
+Validação
+----------
+
+Como inputs de texto normais, o file upload pode ser validado pelo [symfony validator](http://www.symfony-project.com/book/1_1/10-Forms#Validators) com o 'sfFileValidator'. Mas lembre-se de colocar o parâmetro 'file: true' na declaração do validator abaixo de 'names'. Por exemplo, o 'validate/upload.yml' do form anterior deve ser escrito assim:
+
+    methods:
+      post:               [file]
+      
+    names:
+      file:
+        required:         Yes
+        required_msg:     Please upload a file
+        validators:       myFileValidator
+        file:             true
+        
+    myFileValidator:
+      class:              sfFileValidator
+      param:
+        mime_types:       
+          - 'image/jpeg'
+          - 'image/png'
+          - 'image/x-png'
+          - 'image/pjpeg'        
+        mime_types_error: Only PNG and JPEG images are allowed
+        max_size:         512000
+        max_size_error:   Max size is 512Kb
+
+>**Nota**: Devido a inconsistências entre o Internet Explorer e outros navegadores, você terá que usar mime-types específicos para o IE.
+
+O 'sfFileValidator' pode validar o tipo de arquivo enviado (você pode especificar um array de mime-types) e seu tamanho (você pode especificar o tamanho mínimo e o máximo).
+
+Thumbnails
+----------
+Se você fizer uploades de imagem, talvez você precise criar thumbnails para cada arquivo enviado. Nesse caso, o ['sfThumbnail' plugin](http://www.symfony-project.com/trac/wiki/sfThumbnailPlugin) pode lhe ser útil.
+
+Primeiro, instale o plugin usando a linha de comando do symfony:
+
+    $ symfony plugin-install http://plugins.symfony-project.com/sfThumbnailPlugin
+    $ symfony cc
+    
+>**Nota**: Se a biblioteca GD não está ativada, você terá que descomentar a linha relacionada em seu 'php.ini' e reiniciar seu servidor web para ativar as funções PHP.
+
+Com o plugin instalado, você pode usá-lo através do objeto 'sfThumbnail'. Por exemplo, para salvar um thumbnail com no máximo 150x150px ao mesmo tempo em que envia a imagem no exemplo acima, substitua a action 'media/upload' por:
+
+
+    [php]
+    public function executeUpload()
+    {
+      $fileName = $this->getRequest()->getFileName('file');
+      
+      $thumbnail = new sfThumbnail(150, 150);
+      $thumbnail->loadFile($this->getRequest()->getFilePath('file'));
+      $thumbnail->save(sfConfig::get('sf_upload_dir').'/thumbnail/'.$fileName, 'image/png');
+      
+      $this->getRequest()->moveFile('file', sfConfig::get('sf_upload_dir').'/'.$fileName);
+  
+      $this->redirect('media/show?filename='.$fileName);    
+    }
+
+Não esqueça de criar o diretório 'uploads/thumbnail' antes de executar a action.
+
+
+Upload de arquivo no admin generator
+------------------------------------
+
+Se o seu modelo de dados contém um campo para arquivos, e se sua administração é feita com o [admin generator](http://www.symfony-project.com/book/1_1/14-Generators#Administration), você pode usar o helper 'object_admin_input_file_tag()'. Ele faz tudo pra você com uma simples configuração.
+
+Por exemplo, você tem a tabela 'User' com a coluna 'photo', o 'generator.yml' para o view do 'edit', pode ser configurado assim:
+
+    edit:
+      title:          User profile
+      fields:
+        photo:
+          name:       User photo
+          help:       max width 200px
+          type:       admin_input_file_tag
+          upload_dir: pictures/users
+          params:     include_link=pictures/users include_remove=true
+      display:        [name, email, photo]
+
+O 'upload_dir' define o diretório de uploads (sob o diretório 'uploads/').
+
+Se você incluir um parâmetro 'include_link', um link será adicionado ao arquivo enviado (isto é, se um arquivo de media for enviado). O texto do link é '[show file]' por padrão, a não ser que você especifique com o parâmetro 'include_text'.
+
+Se você incluir um 'include_remove', o helper mostrará um link para remover o arquivo quando clicado.
