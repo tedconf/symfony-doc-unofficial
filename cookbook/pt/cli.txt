@@ -1,0 +1,231 @@
+Command Line Interface (CLI)
+======================
+
+Visão geral
+-----------
+
+Muitas das tarefas(tasks) que os desenvolvedores executam ao desenvolver/manter aplicações podem ser tratadas com a CLI (Command Line Interface) do symfony. [Capítulo 16](http://www.symfony-project.com/book/1_1/16-Application-Management-Tools) mostra algumas dessas tarefas com detalhes, enquanto este cookbook descreve todas elas com uma breve descrição.
+
+CLI core
+--------
+
+O `symfony` é um script PHP que ficam no diretório root de um projeto. O comando symfony é seguido de uma tarefa, e algumas dessas tarefas precisam de parâmetros adicionais. Para chamar o script, utilize a seguinte sintaxe:
+
+    $ cd myproject
+    $ php symfony <NOME_DA_TAREFA> [argumentos]
+
+Uma tarefa pode ter também algumas opções:
+
+    $ php symfony <NOME_DA_TAREFA> [argumentos] --option1=value --option2
+
+>**Nota**: O comando symfony(CLI) só funciona quando rodado dentro do diretório root do projeto
+
+O [symfony sandbox](http://www.symfony-project.com/book/1_1/03-Running-Symfony#Installing%20the%20Sandbox) contém executáveis para Windows e *nix que permitem uma maneira mais fácil de ser chamada:
+
+    $ ./symfony <TAREFA> [parametros]      #  *nix
+    $ symfony <TAREFA> [parametros]        #  Windows
+
+Os exemplos desse capítulo irão utilizar o executável `php`, mas você pode omitir isso no seu projeto caso ele tenha os respectivos executáveis
+
+Para listar todas as possíveis tarefas, digite:
+
+    $ php symfony
+
+Para listar a versão do symfony instalada, digite:
+
+    $ php symfony -V
+
+Algumas tarefas possuem atalhos, maneira mais rápida para chamar tarefas e que dão o mesmo efeito:
+
+    $ php symfony cc
+
+    // é o mesmo que
+    $ php symfony cache:clear
+    
+Quando ocorre um erro, você pode pegar o stack trace e informações detalhadas. Para isso, adicione a opção `-t` antes do nome da tarefa para obter o trace.
+
+CLI tasks
+---------
+
+Cada tarefa possui uma descrição dizendo para que serve, todos os argumentos que ela recebe e todas as opções que ela aceita. Para obter essas informações você pode utilizar a tarefa `help`:
+
+    $ php symfony help cache:clear
+
+### Estrutura da tarefa generate
+
+    $ php symfony generate:project <NOME_DO_PROJETO>
+
+Inicia um novo projeto
+
+    $ php symfony generate:app <NOME_DA_APLICACAO>
+
+Inicia uma nova aplicação
+
+    $ php symfony generate:module <NOME_DA_APLICACAO> <NOME_DO_MODULO>
+
+Inicia um novo módulo
+
+Saiba mais sobre esses comandos em [Capítulo 16](http://www.symfony-project.com/book/1_1/16-Application-Management-Tools).
+
+### Gerando os Models
+
+    $ php symfony configure:database mysql://localhost/db_name
+
+Configura os dados do banco de dados tanto para `config/databases.yml` quanto para `config/propel.ini`.
+
+    $ php symfony propel:build-model
+
+Gera as classes do Propel para o model baseado no(s) arquivo(s) schema (YAML ou XML) do diretório `config/`
+
+As configurações de conexão utilizadas por esses comandos são tiradas do arquivo `config/propel.ini`
+
+    $ php symfony propel:build-sql
+
+Gera o SQL para criar as tabelas descritas no `schema.yml` no arquivo `data/schema.sql`
+
+    $ php symfony propel:build-db
+
+Cria um novo banco de dados vazio baseado nas configurações de conexão
+
+    $ php symfony propel:insert-sql
+
+Insere o SQL do arquivo `data/schema.sql` dentro do banco de dados
+
+    $ php symfony propel:build-forms
+
+Gera os formulários baseado no model
+
+    $ php symfony propel:build-all
+
+Executa `propel:build-model`, `propel:build-sql`, `propel:build-forms`, e `propel:insert-sql` em um único comando
+
+Saiba mais sobre esses comandos em [Capítulo 8](http://www.symfony-project.com/book/1_1/08-Inside-the-Model-Layer). 
+
+### Manipulando o Schema
+
+    $ php symfony propel:build-schema [--xml]
+
+Cria o `schema.yml` de um banco de dados existente. Se o parâmetro `--xml` for adicionado, as tarefas serão criadas como XML no arquivo `schema.xml`
+
+    $ php symfony propel:schema-to-yml
+
+Cria uma versão em YAML do schema em XML
+
+    $ php symfony propel:schema-to-xml
+
+Cria uma versão em XML do schema em YAML
+
+### Manipulando dados
+
+    $ php symfony propel:data-load  <NOME_DA_APLICACAO> [--env=<ENVIRONMENT_NAME>] [--dir=<FIXTURES_DIR_OR_FILE>]
+
+Carrega todos os dados do diretório padrão `data/fixtures/` caso nenhum seja especificado. O environment por padrão é `dev`. O diretório precisa ser especificado com um caminho relativo ao diretório de dados, por exemplo, `fixtures` (padrão) ou `testdata` ou especificando um arquivo `fixtures/arquivo.yml`
+
+    $ php symfony propel:build-all-load  <NOME_DA_APLICACAO>
+
+Executa `propel:build-all` depois `propel:data-load`. Aceita os mesmos argumentos do `propel:data-load`
+
+    $ php symfony propel:data-dump <NOME_DA_APLICACAO> [<TARGET>] [--env=<ENVIRONMENT_NAME>]
+
+Faz um backup do banco de dados em um arquivo no no formato YAML dentro do diretório de fixtures 
+
+### Ferramentas de desenvolvimento
+
+    $ php symfony cache:clear [--app=<NOME_DA_APLICACAO>] [--type=template|config|i18n|routing] [--env=<ENVIRONMENT_NAME>]
+
+Limpa as informações que estão no cache (atalho: `cc`) (saiba mais em [Capítulo 12](http://www.symfony-project.com/book/1_1/12-Caching)).
+
+    $ php symfony project:permissions
+    
+Corrige as permissões dos diretórios, colocando `777` nos que precisam ser escritos. A permissão pode ser quebrada se você estiver usando uma versão do repositório SVN
+
+    $ php symfony project:freeze <SF_DATA_DIR>
+    $ php symfony project:unfreeze
+
+Copia todas as bibliotecas necessárias para as pastas `data/`, `lib/` e `web/sf` do seu projeto. Seu projeto então passa a ser um tipo de sandbox, por exemplo: uma aplicação, sem dependências e pronta para ser transferida para produção via FTP. Isso funciona tanto para instalações com PEAR quanto para links simbólicos. Remova todas essas bibliotecas (unfreeze) com a tarefa `project:unfreeze`
+
+    $ php symfony project:deploy <SERVER_CONFIGURATION_NAME> [--go]
+
+Sincroniza seu projeto atual com outra máquina (geralmente seu servidor) (saiba mais em [Capítulo 16](http://www.symfony-project.com/book/1_1/16-Application-Management-Tools#Deploying%20Applications)).   
+
+### Testes
+
+    $ php symfony test:unit <UNIT_TEST>
+
+Executa uma "unit test" que fica localizada no diretório `test/unit`. O parâmetro pode ser o mesmo de um arquivo de uma simples unidade de teste (omitinho o sufixo `Test.php`), um grupo de arquivos de unidade de teste, ou um path. Se nenhum nome for dado ao teste, todas a unidades de teste serão executadas.
+
+    $ php symfony test:unit
+
+Executa todos os testes de unidade no modo "harness"
+
+    $ php symfony test:functional <NOME_DA_APLICACAO> <TEST>
+
+Executa um teste funcional para uma aplicação específica. O parâmetro `TEST` pode ser o nome de um único arquivo de teste funcional (omitindo o sufixo `Test.php`), um grupo de arquivos de unidade de teste, ou um simples path.
+
+    $ php symfony test:functional <NOME_DA_APLICACAO>
+
+Executa todos os testes funcionais de uma aplicação no modo "harness"
+
+    $ php symfony test:all
+
+Executa todos os testes funcionais e de unidade no modo "harness"
+
+Saiba mais sobre testes em [Capítulo 15](http://www.symfony-project.com/book/1_1/15-Unit-and-Functional-Testing).
+
+### Administração de projetos
+
+    $ php symfony project:disable <NOME_DA_APLICACAO> <ENVIRONMENT_NAME>
+
+Encaminha o usuário para o módulo e ação indisponível no seu `settings.yml` e faz como se você tivesse ligado a configuração de `unavailable`  no `settings.yml`. A vantagem dessa configuração é que você pode desabilitar uma simples aplicação para um único environment e não só o projeto inteiro.
+
+    $ php symfony project:enable <NOME_DA_APLICACAO> <ENVIRONMENT_NAME>
+
+Habilita a aplicação e limpa o cache
+
+    $ php symfony log:clear
+
+Limpa os arquivos de log que estão no diretório de log das aplicações e environments onde o `logging.yml` especifica `purge: on` (valor padrão)
+
+    $ php symfony log:rotate <NOME_DA_APLICACAO> <ENVIRONMENT_NAME>
+
+Força a rotação de arquivos de log. As opções de rotação são `--period` (o número de dias para trocar de arquivo_ e `--history` (o número de arquivos de backups que serão mantidos)
+
+### Geração de Esqueleto e Admin
+
+    $ php symfony propel:generate-crud <NOME_DA_APLICACAO> <NOME_DO_MODULO> <CLASS_NAME>
+
+Gera um novo módulo Propel CRUD baseado na classe do modelo. A versão normal copia o código do framework para um novo módulo; se você adicionar a opção `--generate-in-cache`, a tarefa cria um módulo vazio que herda do módulo da framework. Nesse caso, o código gerado é visível somente no diretório `cache/` (as ações e templates gerados herdam da framework)
+
+    $ php symfony propel:init-admin <NOME_DA_APLICACAO> <NOME_DO_MODULO> <CLASS_NAME>
+
+Inicializa um novo módulo Propel admin baseado na classe do modelo
+
+Saiba mais sobre esses comandos em [Capítulo 14](http://www.symfony-project.com/book/1_1/14-Generators).
+
+### Manipulando plugins
+
+    $ php symfony plugin:install [<CHANNEL_NAME>/]<PLUGIN_NAME>
+
+Instala um novo plugin. Para instalar um novo plugin vindo do wiki do symfony, o nome implicito do canal é `symfony`
+
+    $ php symfony plugin:upgrade [<CHANNEL_NAME>/]<PLUGIN_NAME>
+
+Atualiza um plugin
+
+    $ php symfony plugin:upgrade-all
+
+Atualiza todos os plugins previamente instalados
+
+    $ php symfony plugin:uninstall [<CHANNEL_NAME>/]<PLUGIN_NAME>
+
+Desinstala um plugin
+
+Saiba mais sobre plugins em [Capítulo 17](http://www.symfony-project.com/book/1_1/17-Extending-Symfony).
+
+Preenchimento automático
+------------------------
+
+A wiki do symfony contém diversas contribuições dos usuários que mostram como executar os comandos do symfony com preenchimento automático. Veja qual se encaixa no seu CLI:
+
+* [Bash completion](http://www.symfony-project.com/trac/wiki/BashCompletion)
+* [Zsh completion](http://www.symfony-project.com/trac/wiki/ZshCompletion)
