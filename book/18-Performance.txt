@@ -485,41 +485,29 @@ The `sfFunctionCache` constructor expects a cache object. The first argument of 
 
 ### Caching Data in the Server
 
-PHP accelerators provide special functions to store data in memory so that you can reuse it across requests. The problem is that they all have a different syntax, and each has its own specific way of performing this task. Symfony provides a class called `sfProcessCache`, which abstracts all these differences and works with whatever accelerator you are using. See its syntax in Listing 18-17.
+PHP accelerators provide special functions to store data in memory so that you can reuse it across requests. The problem is that they all have a different syntax, and each has its own specific way of performing this task. The symfony cache classes abstract all these differences and works with whatever accelerator you are using. See its syntax in Listing 18-17.
 
-Listing 18-17 - Syntax of the `sfProcessCache` Methods
+Listing 18-17 - Using a PHP accelerator to cache data
 
     [php]
-    // Storing data in the process cache
-    sfProcessCache::set($name, $value, $lifetime);
+    $cache = new sfAPCCache();
+
+    // Storing data in the cache
+    $cache->set($name, $value, $lifetime);
 
     // Retrieving data
-    $value = sfProcessCache::get($name);
+    $value = $cache->get($name);
 
-    // Checking if a piece of data exists in the process cache
-    $value_exists = sfProcessCache::has($name);
+    // Checking if a piece of data exists in the cache
+    $value_exists = $cache->has($name);
 
-    // Clear the process cache
-    sfProcessCache::clear();
+    // Clear the cache
+    $cache->clear();
 
 The `set()` method returns `false` if the caching didn't work. The cached value can be anything (a string, an array, an object); the `sfProcessCache` class will deal with the serialization. The `get()` method returns `null` if the required variable doesn't exist in the cache.
 
-The methods of the `sfProcessCache` class work even if no accelerator is installed. Therefore, there is no risk in trying to retrieve data from the process cache, as long as you provide a fallback value. For instance, Listing 18-18 shows how to retrieve a configuration setting in the process cache.
-
-Listing 18-18 - Using the Process Cache Safely
-
-    [php]
-    if (sfProcessCache::has('frontend_parameters'))
-    {
-      $params = sfProcessCache::get('frontend_parameters');
-    }
-    else
-    {
-      $params = retrieve_parameters();
-    }
-
 >**TIP**
->If you want to go further into memory caching, make sure you take a look at the memcache extension for PHP. It can help decrease the database load on load-balanced applications, and PHP 5 provides an OO interface to it ([http://www.php.net/memcache/](http://www.php.net/memcache/)).
+>If you want to go further into memory caching, make sure you take a look at the `sfMemcacheCache` class. It provides the same interface as the other cache classes and it can help decrease the database load on load-balanced applications.
 
 Deactivating the Unused Features
 --------------------------------

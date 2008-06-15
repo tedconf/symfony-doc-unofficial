@@ -527,7 +527,8 @@ Listing 15-14 - The Test Browser Doesn't Automatically Follow Redirects
     // Example action in modules/foobar/actions/actions.class.php
     public function executeUpdate($request)
     {
-      ...
+      // ...
+
       $this->redirect('foobar/show?id='.$request->getParameter('id'));
     }
 
@@ -559,7 +560,7 @@ Once it has made a first request, the `sfTestBrowser` object can give access to 
 >         setField('name', 'dummy')->
 >         click('go');
 >     $content = $b->getResponse()->getContent();
->     ...
+>     // ...
 >
 >The `sfBrowser` object is a very useful tool for batch scripts, for instance, if you want to browse a list of pages to generate a cached version for each (refer to Chapter 18 for a detailed example).
 
@@ -703,7 +704,7 @@ Listing 15-23 - Using the Count Option to Count the Number of Matches
     $b->get('/foobar/edit?id=1')->
         checkResponseElement('form input', true, array('count' => 3));
 
-The selector tool is very powerful. It accepts most of the CSS 2.1 selectors, and you can use it for complex queries such as those of Listing 15-24.
+The selector tool is very powerful. It accepts most of the CSS 3 selectors, and you can use it for complex queries such as those of Listing 15-24.
 
 Listing 15-24 - Example of Complex CSS Selectors Accepted by `checkResponseElement()`
 
@@ -713,12 +714,32 @@ Listing 15-24 - Example of Complex CSS Selectors Accepted by `checkResponseEleme
     $b->checkResponseElement('ul + li', 'click me');
     $b->checkResponseElement('h1, h2', 'click me');
     $b->checkResponseElement('a[class$="foo"][href*="bar.html"]', 'my link');
+    $b->checkResponseElement('p:last ul:nth-child(2) li:contains("Some text")');
+
+### Testing for errors
+
+Sometimes, your actions or your model throw exceptions on purpose (for example to display a 404 page). Even if you can use a CSS selector to check for a specific error message in the generated HTML code, it's better to use the `throwsException` method to check that an exception has been thrown as show in Listing 15-25.
+
+Listing 15-25 - Testing for Exceptions
+
+    [php]
+    $b = new sfTestBrowser();
+    $b->
+        get('/foobar/edit/id/1')->
+        click('go', array('name' => 'dummy'))->
+        isStatusCode(200)->
+        isRequestParameter('module', 'foobar')->
+        isRequestParameter('action', 'update')->
+
+        throwsException()->                   // Checks that the last request thrown an exception
+        throwsException('RuntimeException')-> // Checks the class of the exception
+        throwsException(null, '/error/');     // Checks that the content of the exception message matches the regular expression
 
 ### Working in the Test Environment
 
-The `sfTestBrowser` object uses a special front controller, set to the `test` environment. The default configuration for this environment appears in Listing 15-25.
+The `sfTestBrowser` object uses a special front controller, set to the `test` environment. The default configuration for this environment appears in Listing 15-26.
 
-Listing 15-25 - Default Test Environment Configuration, in `frontend/config/settings.yml`
+Listing 15-26 - Default Test Environment Configuration, in `frontend/config/settings.yml`
 
     test:
       .settings:
@@ -730,18 +751,18 @@ Listing 15-25 - Default Test Environment Configuration, in `frontend/config/sett
 
 The cache and the web debug toolbar are set to `off` in this environment. However, the code execution still leaves traces in a log file, distinct from the `dev` and `prod` log files, so that you can check it independently (`myproject/log/frontend_test.log`). In this environment, the exceptions don't stop the execution of the scripts--so that you can run an entire set of tests even if one fails. You can have specific database connection settings, for instance, to use another database with test data in it.
 
-Before using the `sfTestBrowser` object, you have to initialize it. If you need to, you can specify a hostname for the application and an IP address for the client--that is, if your application makes controls over these two parameters. Listing 15-26 demonstrates how to do this.
+Before using the `sfTestBrowser` object, you have to initialize it. If you need to, you can specify a hostname for the application and an IP address for the client--that is, if your application makes controls over these two parameters. Listing 15-27 demonstrates how to do this.
 
-Listing 15-26 - Setting Up the Test Browser with Hostname and IP
+Listing 15-27 - Setting Up the Test Browser with Hostname and IP
 
     [php]
     $b = new sfTestBrowser('myapp.example.com', '123.456.789.123');
 
 ### The test:functional Task
 
-The `test:functional` task can run one or more functional tests, depending on the number of arguments received. The rules look much like the ones of the `test:unit` task, except that the functional test task always expects an application as first argument, as shown in Listing 15-27.
+The `test:functional` task can run one or more functional tests, depending on the number of arguments received. The rules look much like the ones of the `test:unit` task, except that the functional test task always expects an application as first argument, as shown in Listing 15-28.
 
-Listing 15-27 - Functional Test Task Syntax
+Listing 15-28 - Functional Test Task Syntax
 
     // Test directory structure
     test/
@@ -766,9 +787,9 @@ Test Naming Practices
 
 This section lists a few good practices to keep your tests organized and easy to maintain. The tips concern file organization, unit tests, and functional tests.
 
-As for the file structure, you should name the unit test files using the class they are supposed to test, and name the functional test files using the module or the scenario they are supposed to test. See Listing 15-28 for an example. Your `test/` directory will soon contain a lot of files, and finding a test might prove difficult in the long run if you don't follow these guidelines.
+As for the file structure, you should name the unit test files using the class they are supposed to test, and name the functional test files using the module or the scenario they are supposed to test. See Listing 15-29 for an example. Your `test/` directory will soon contain a lot of files, and finding a test might prove difficult in the long run if you don't follow these guidelines.
 
-Listing 15-28 - Example File Naming Practice
+Listing 15-29 - Example File Naming Practice
 
     test/
       unit/
@@ -783,9 +804,9 @@ Listing 15-28 - Example File Naming Practice
         backend/
           myOtherScenarioTest.php
 
-For unit tests, a good practice is to group the tests by function or method, and start each test group with a `diag()` call. The messages of each unit test should contain the name of the function or method tested, followed by a verb and a property, so that the test output looks like a sentence describing a property of the object. Listing 15-29 shows an example.
+For unit tests, a good practice is to group the tests by function or method, and start each test group with a `diag()` call. The messages of each unit test should contain the name of the function or method tested, followed by a verb and a property, so that the test output looks like a sentence describing a property of the object. Listing 15-30 shows an example.
 
-Listing 15-29 - Example Unit Test Naming Practice
+Listing 15-30 - Example Unit Test Naming Practice
 
     [php]
     // srttolower()
@@ -797,9 +818,9 @@ Listing 15-29 - Example Unit Test Naming Practice
     ok 1 - strtolower() returns a string
     ok 2 - strtolower() transforms the input to lowercase
 
-Functional tests should be grouped by page and start by a request. Listing 15-30 illustrates this practice.
+Functional tests should be grouped by page and start by a request. Listing 15-31 illustrates this practice.
 
-Listing 15-30 - Example Functional Test Naming Practice
+Listing 15-31 - Example Functional Test Naming Practice
 
     [php]
     $browser->
@@ -825,9 +846,9 @@ The unit and functional test tools provided by symfony should suffice in most ca
 
 ### Executing Tests in a Test Harness
 
-The `test:unit` and `test:functional` tasks can launch a single test or a set of tests. But if you call these tasks without any parameter, they launch all the unit and functional tests written in the `test/` directory. A particular mechanism is involved to isolate each test file in an independent sandbox, to avoid contamination risks between tests. Furthermore, as it wouldn't make sense to keep the same output as with single test files in that case (the output would be thousands of lines long), the tests results are compacted into a synthetic view. That's why the execution of a large number of test files uses a test harness, that is, an automated test framework with special abilities. A test harness relies on a component of the lime framework called `lime_harness`. It shows a test status file by file, and an overview at the end of the number of tests passed over the total, as you see in Listing 15-31.
+The `test:unit` and `test:functional` tasks can launch a single test or a set of tests. But if you call these tasks without any parameter, they launch all the unit and functional tests written in the `test/` directory. A particular mechanism is involved to isolate each test file in an independent sandbox, to avoid contamination risks between tests. Furthermore, as it wouldn't make sense to keep the same output as with single test files in that case (the output would be thousands of lines long), the tests results are compacted into a synthetic view. That's why the execution of a large number of test files uses a test harness, that is, an automated test framework with special abilities. A test harness relies on a component of the lime framework called `lime_harness`. It shows a test status file by file, and an overview at the end of the number of tests passed over the total, as you see in Listing 15-32.
 
-Listing 15-31 - Launching All Tests in a Test Harness
+Listing 15-32 - Launching All Tests in a Test Harness
 
     > php symfony test:all
 
@@ -842,17 +863,17 @@ Listing 15-31 - Launching All Tests in a Test Harness
 
 The tests are executed the same way as when you call them one by one, only the output is made shorter to be really useful. In particular, the final chart focuses on the failed tests and helps you locate them.
 
-You can launch all the tests with one call using the `test:all` task, which also uses a test harness, as shown in Listing 15-32. This is something that you should do before every transfer to production, to ensure that no regression has appeared since the latest release.
+You can launch all the tests with one call using the `test:all` task, which also uses a test harness, as shown in Listing 15-33. This is something that you should do before every transfer to production, to ensure that no regression has appeared since the latest release.
 
-Listing 15-32 - Launching All the Tests of a Project
+Listing 15-33 - Launching All the Tests of a Project
 
     > php symfony test:all
 
 ### Accessing a Database
 
-Unit tests often need to access a database. A database connection is automatically initialized when you call `sfTestBrowser::get()` for the first time. However, if you want to access the database even before using `sfTestBrowser`, you have to initialize a `sfDabataseManager` object manually, as in Listing 15-33.
+Unit tests often need to access a database. A database connection is automatically initialized when you call `sfTestBrowser::get()` for the first time. However, if you want to access the database even before using `sfTestBrowser`, you have to initialize a `sfDabataseManager` object manually, as in Listing 15-34.
 
-Listing 15-33 - Initializing a Database in a Test
+Listing 15-34 - Initializing a Database in a Test
 
     [php]
     $databaseManager = new sfDatabaseManager();
@@ -861,9 +882,9 @@ Listing 15-33 - Initializing a Database in a Test
     // Optionally, you can retrieve the current database connection
     $con = Propel::getConnection();
 
-You should populate the database with fixtures before starting the tests. This can be done via the `sfPropelData` object. This object can load data from a file, just like the `propel:data-load` task, or from an array, as shown in Listing 15-34.
+You should populate the database with fixtures before starting the tests. This can be done via the `sfPropelData` object. This object can load data from a file, just like the `propel:data-load` task, or from an array, as shown in Listing 15-35.
 
-Listing 15-34 - Populating a Database from a Test File
+Listing 15-35 - Populating a Database from a Test File
 
     [php]
     $data = new sfPropelData();
@@ -894,9 +915,9 @@ Then, use the Propel objects as you would in a normal application, according to 
 
 When you enable caching for an application, the functional tests should verify that the cached actions do work as expected.
 
-The first thing to do is enable cache for the test environment (in the `settings.yml` file). Then, if you want to test whether a page comes from the cache or whether it is generated, you should use the `isCached()` test method provided by the `sfTestBrowser` object. Listing 15-35 demonstrates this method.
+The first thing to do is enable cache for the test environment (in the `settings.yml` file). Then, if you want to test whether a page comes from the cache or whether it is generated, you should use the `isCached()` test method provided by the `sfTestBrowser` object. Listing 15-36 demonstrates this method.
 
-Listing 15-35 - Testing the Cache with the `isCached()` Method
+Listing 15-36 - Testing the Cache with the `isCached()` Method
 
     [php]
     <?php
@@ -925,9 +946,9 @@ Selenium is not bundled with symfony by default. To install it, you need to crea
 >**CAUTION**
 >Be careful not to transfer the `selenium/` directory to your production server, since it would be accessible by anyone having access to your web document root via the browser.
 
-Selenium tests are written in HTML and stored in the `web/selenium/tests/` directory. For instance, Listing 15-36 shows a functional test where the home page is loaded, the link click me is clicked, and the text "Hello, World" is looked for in the response. Remember that in order to access the application in the `test` environment, you have to specify the `frontend_test.php` front controller.
+Selenium tests are written in HTML and stored in the `web/selenium/tests/` directory. For instance, Listing 15-37 shows a functional test where the home page is loaded, the link click me is clicked, and the text "Hello, World" is looked for in the response. Remember that in order to access the application in the `test` environment, you have to specify the `frontend_test.php` front controller.
 
-Listing 15-36 - A Sample Selenium Test, in `web/selenium/test/testIndex.html`
+Listing 15-37 - A Sample Selenium Test, in `web/selenium/test/testIndex.html`
 
     [php]
     <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -950,9 +971,9 @@ Listing 15-36 - A Sample Selenium Test, in `web/selenium/test/testIndex.html`
 
 A test case is represented by an HTML document containing a table with three columns: command, target, and value. Not all commands take a value, however. In this case, either leave the column blank or use `&nbsp;` to make the table look better. Refer to the Selenium website for a complete list of commands.
 
-You also need to add this test to the global test suite by inserting a new line in the table of the `TestSuite.html` file, located in the same directory. Listing 15-37 shows how.
+You also need to add this test to the global test suite by inserting a new line in the table of the `TestSuite.html` file, located in the same directory. Listing 15-38 shows how.
 
-Listing 15-37 - Adding a Test File to the Test Suite, in `web/selenium/test/TestSuite.html`
+Listing 15-38 - Adding a Test File to the Test Suite, in `web/selenium/test/TestSuite.html`
 
     ...
     <tr><td><a href='./testIndex.html'>My First Test</a></td></tr>

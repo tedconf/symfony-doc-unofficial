@@ -49,11 +49,21 @@ Listing 16-2 - Sample Symfony Log File Content, in `log/frontend_dev.php`
 
 You can find many details in these files, including the actual SQL queries sent to the database, the templates called, the chain of calls between objects, and so on.
 
+**New in symfony 1.1**: The format of the file logs is configurable by overriding the `format` and/or the `time_format` settings in `factories.yml` as shown in Listing 16-3.
+
+Listing 16-3 - Changing the Log Format
+
+    all:
+      logger:
+        param:
+          format:      %time% %type% [%priority%] %message%%EOL%
+          time_format: %b %d %H:%M:%S
+
 #### Symfony Log Level Configuration
 
-There are eight levels of symfony log messages: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, and `debug`, which are the same as the `PEAR::Log` package ([http://pear.php.net/package/Log/](http://pear.php.net/package/Log/)) levels. You can configure the maximum level to be logged in each environment in the `factories.yml` configuration file of each application, as demonstrated in Listing 16-3.
+There are eight levels of symfony log messages: `emerg`, `alert`, `crit`, `err`, `warning`, `notice`, `info`, and `debug`, which are the same as the `PEAR::Log` package ([http://pear.php.net/package/Log/](http://pear.php.net/package/Log/)) levels. You can configure the maximum level to be logged in each environment in the `factories.yml` configuration file of each application, as demonstrated in Listing 16-4.
 
-Listing 16-3 - Default Logging Configuration, in `frontend/config/factories.yml`
+Listing 16-4 - Default Logging Configuration, in `frontend/config/factories.yml`
 
     prod:
       logger:
@@ -69,9 +79,9 @@ You can change the logging level in the `factories.yml` file for each environmen
 
 #### Adding a Log Message
 
-You can manually add a message in the symfony log file from your code by using one of the techniques described in Listing 16-4.
+You can manually add a message in the symfony log file from your code by using one of the techniques described in Listing 16-5.
 
-Listing 16-4 - Adding a Custom Log Message
+Listing 16-5 - Adding a Custom Log Message
 
     [php]
     // From an action
@@ -83,9 +93,9 @@ Listing 16-4 - Adding a Custom Log Message
 
 `$level` can have the same values as in the log messages.
 
-Alternatively, to write a message in the log from anywhere in your application, use the `sfLogger` methods directly, as shown in Listing 16-5. The available methods bear the same names as the log levels.
+Alternatively, to write a message in the log from anywhere in your application, use the `sfLogger` methods directly, as shown in Listing 16-6. The available methods bear the same names as the log levels.
 
-Listing 16-5 - Adding a Custom Log Message from Anywhere
+Listing 16-6 - Adding a Custom Log Message from Anywhere
 
     [php]
     if (sfConfig::get('sf_logging_enabled'))
@@ -124,13 +134,13 @@ Listing 16-5 - Adding a Custom Log Message from Anywhere
 
 #### Purging and Rotating Log Files
 
-Don't forget to periodically purge the `log/` directory of your applications, because these files have the strange habit of growing by several megabytes in a few days, depending, of course, on your traffic. Symfony provides a special `log-purge` task for this purpose, which you can launch regularly by hand or put in a cron table. For example, the following command erases the symfony log files:
+Don't forget to periodically purge the `log/` directory of your applications, because these files have the strange habit of growing by several megabytes in a few days, depending, of course, on your traffic. Symfony provides a special `log:clear` task for this purpose, which you can launch regularly by hand or put in a cron table. For example, the following command erases the symfony log files:
 
     > php symfony log:clear
 
-For both better performance and security, you probably want to store symfony logs in several small files instead of one single large file. The ideal storage strategy for log files is to back up and empty the main log file regularly, but to keep only a limited number of backups. You can enable such a log rotation with a `period` of `7` days and a `history` (number of backups) of `10`, as shown in Listing 16-6. You would work with one active log file plus ten backup files containing seven days' worth of history each. Whenever the next period of seven days ends, the current active log file goes into backup, and the oldest backup is erased.
+For both better performance and security, you probably want to store symfony logs in several small files instead of one single large file. The ideal storage strategy for log files is to back up and empty the main log file regularly, but to keep only a limited number of backups. You can enable such a log rotation with a `period` of `7` days and a `history` (number of backups) of `10`, as shown in Listing 16-7. You would work with one active log file plus ten backup files containing seven days' worth of history each. Whenever the next period of seven days ends, the current active log file goes into backup, and the oldest backup is erased.
 
-Listing 16-6 - Launching Log Rotation
+Listing 16-7 - Launching Log Rotation
 
     > php symfony log:rotate frontend prod --period=7 --history=10
 
@@ -156,9 +166,9 @@ On the other hand, when the debug mode is off, processing is handled as follows:
   * To allow a reprocessing of the configuration, you must manually clear the configuration cache.
   * An error during the processing of the request returns a response with code 500 (Internal Server Error), without any explanation of the internal cause of the problem.
 
-The debug mode is activated per application in the front controller. It is controlled by the value of the third argument passed to the `getApplicationConfiguration()` method call, as shown in Listing 16-7.
+The debug mode is activated per application in the front controller. It is controlled by the value of the third argument passed to the `getApplicationConfiguration()` method call, as shown in Listing 16-8.
 
-Listing 16-7 - Sample Front Controller with Debug Mode On, in `web/frontend_dev.php`
+Listing 16-8 - Sample Front Controller with Debug Mode On, in `web/frontend_dev.php`
 
     [php]
     <?php
@@ -196,9 +206,9 @@ For Windows platforms, the Xdebug activation is triggered by this line:
 
     extension=php_xdebug.dll
 
-Listing 16-8 gives an example of Xdebug configuration, which must also be added to the `php.ini` file.
+Listing 16-9 gives an example of Xdebug configuration, which must also be added to the `php.ini` file.
 
-Listing 16-8 - Sample Xdebug Configuration
+Listing 16-9 - Sample Xdebug Configuration
 
     ;xdebug.profiler_enable=1
     ;xdebug.profiler_output_dir="/tmp/xdebug"
@@ -228,9 +238,9 @@ The color of the debug toolbar background depends on the highest level of log me
 >**NOTE**
 >Don't confuse the debug mode with the web debug toolbar. The debug toolbar can be displayed even when the debug mode if off, although, in that case, it displays much less information.
 
-To activate the web debug toolbar for an application, open the `settings.yml` file and look for the `web_debug` key. In the `prod` and `test` environments, the default value for `web_debug` is `off`, so you need to activate it manually if you want it. In the `dev` environment, the default configuration has it set to `on`, as shown in Listing 16-9.
+To activate the web debug toolbar for an application, open the `settings.yml` file and look for the `web_debug` key. In the `prod` and `test` environments, the default value for `web_debug` is `off`, so you need to activate it manually if you want it. In the `dev` environment, the default configuration has it set to `on`, as shown in Listing 16-10.
 
-Listing 16-9 - Web Debug Toolbar Activation, in `frontend/config/settings.yml`
+Listing 16-10 - Web Debug Toolbar Activation, in `frontend/config/settings.yml`
 
     dev:
       .settings:
@@ -302,9 +312,9 @@ Figure 16-6 - The clock icon shows execution time by category
 
 Getting access to the framework debug messages is nice, but being able to log your own messages is better. Symfony provides shortcuts, accessible from both actions and templates, to help you trace events and/or values during request execution.
 
-Your custom log messages appear in the symfony log file as well as in the web debug toolbar, just like regular events. (Listing 16-4 gave an example of the custom log message syntax.) A custom message is a good way to check the value of a variable from a template, for instance. Listing 16-10 shows how to use the web debug toolbar for developer's feedback from a template (you can also use `$this->logMessage()` from an action).
+Your custom log messages appear in the symfony log file as well as in the web debug toolbar, just like regular events. (Listing 16-5 gave an example of the custom log message syntax.) A custom message is a good way to check the value of a variable from a template, for instance. Listing 16-11 shows how to use the web debug toolbar for developer's feedback from a template (you can also use `$this->logMessage()` from an action).
 
-Listing 16-10 - Inserting a Message in the Log for Debugging Purposes
+Listing 16-11 - Inserting a Message in the Log for Debugging Purposes
 
     [php]
     <?php use_helper('Debug') ?>
@@ -320,9 +330,9 @@ Figure 16-7 - A custom log message appears in the logs & msgs section of the web
 
 ![A custom log message appears in the logs & msgs section of the web debug toolbar](/images/book/F1607.png "A custom log message appears in the logs & msgs section of the web debug toolbar")
 
-If you don't want to add a line to the log, but just trace a short message or a value, you should use `debug_message` instead of `log_message`. This action method (a helper with the same name also exists) displays a message in the web debug toolbar, on top of the logs & msgs section. Check Listing 16-11 for an example of using the debug message writer.
+If you don't want to add a line to the log, but just trace a short message or a value, you should use `debug_message` instead of `log_message`. This action method (a helper with the same name also exists) displays a message in the web debug toolbar, on top of the logs & msgs section. Check Listing 16-12 for an example of using the debug message writer.
 
-Listing 16-11 - Inserting a Message in the Debug Toolbar
+Listing 16-12 - Inserting a Message in the Debug Toolbar
 
     [php]
     // From an action
@@ -339,15 +349,17 @@ You may want to execute a script from the command line (or via a cron table) wit
 
 ### Batch Files
 
-Initializing symfony just takes a couple lines of PHP code. You can take advantage of all symfony features by creating a PHP file, for instance under the `lib/` directory of your project, starting with the lines shown in Listing 16-12.
+Initializing symfony just takes a couple lines of PHP code. You can take advantage of all symfony features by creating a PHP file, for instance under the `lib/` directory of your project, starting with the lines shown in Listing 16-13.
 
-Listing 16-12 - Sample Batch Script, in `lib/myScript.php`
+Listing 16-13 - Sample Batch Script, in `lib/myScript.php`
 
     [php]
     <?php
+
     require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
     $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'dev', true);
     sfContext::createInstance($configuration);
+
     // Remove the following lines if you don't use the database layer
     $databaseManager = new sfDatabaseManager($configuration);
     $databaseManager->loadConfiguration();
@@ -368,9 +380,9 @@ To execute your code, just call the script from the command line:
 
 An alternative way of creating custom command line scripts using symfony is to write a **symfony task**. Just like the `cache:clear` and the `propel:build-model` tasks, you can launch your own custom tasks from the command line with `php symfony`. Custom tasks benefit from the ability to parse command line arguments and options, can embed their own help text, and can extend existing tasks.
 
-A custom task is just a class extending `sfBaseTask` and located under a `lib/task/` directory, either under the project root, or in a plugin directory. Its file name must end with 'Task.class.php'. Listing 16-13 shows a sample custom task.
+A custom task is just a class extending `sfBaseTask` and located under a `lib/task/` directory, either under the project root, or in a plugin directory. Its file name must end with 'Task.class.php'. Listing 16-14 shows a sample custom task.
 
-Listing 16-13 - Sample Task, in `lib/task/testHelloTask.class.php`
+Listing 16-14 - Sample Task, in `lib/task/testHelloTask.class.php`
 
     [php]
 
@@ -402,9 +414,9 @@ Rather than writing a task skeleton by yourself, you can use the symfony `genera
 
     > php symfony help generate:task
 
-Tasks can accept arguments (compulsory parameters, in a predefined order) and options (optional and unordered parameters). Listing 16-14 shows a more complete task, taking advantage of all these features.
+Tasks can accept arguments (compulsory parameters, in a predefined order) and options (optional and unordered parameters). Listing 16-15 shows a more complete task, taking advantage of all these features.
 
-Listing 16-14 - More Complete Sample Task, in `lib/task/mySecondTask.class.php`
+Listing 16-15 - More Complete Sample Task, in `lib/task/mySecondTask.class.php`
 
     [php]
     class mySecondTask extends sfBaseTask
@@ -453,9 +465,9 @@ In the process of application development, developers are often faced with the p
 
 ### Fixture File Syntax
 
-Symfony can read data files that follow a very simple YAML syntax, provided that they are located under the `data/fixtures/` directory. Fixture files are organized by class, each class section being introduced by the class name as a header. For each class, records labeled with a unique string are defined by a set of `fieldname: value` pairs. Listing 16-12 shows an example of a data file for database population.
+Symfony can read data files that follow a very simple YAML syntax, provided that they are located under the `data/fixtures/` directory. Fixture files are organized by class, each class section being introduced by the class name as a header. For each class, records labeled with a unique string are defined by a set of `fieldname: value` pairs. Listing 16-16 shows an example of a data file for database population.
 
-Listing 16-15 - Sample Fixture File, in `data/fixtures/import_data.yml`
+Listing 16-16 - Sample Fixture File, in `data/fixtures/import_data.yml`
 
     Article:                             ## Insert records in the blog_article table
       first_post:                        ## First record label
@@ -502,9 +514,9 @@ Figure 16-8 - A sample database relational model
 
 ![A sample database relational model](/images/book/F1608.png "A sample database relational model")
 
-This is where the labels given to the records become really useful. To add a `Comment` field to the `first_post` article, you simply need to append the lines shown in Listing 16-16 to the `import_data.yml` data file.
+This is where the labels given to the records become really useful. To add a `Comment` field to the `first_post` article, you simply need to append the lines shown in Listing 16-17 to the `import_data.yml` data file.
 
-Listing 16-16 - Adding a Record to a Related Table, in `data/fixtures/import_data.yml`
+Listing 16-17 - Adding a Record to a Related Table, in `data/fixtures/import_data.yml`
 
     Comment:
       first_comment:
@@ -516,9 +528,9 @@ The `propel:data-load` task will recognize the label that you gave to an article
 
 The only constraint for linked records is that the objects called in a foreign key must be defined earlier in the file; that is, as you would do if you defined them one by one. The data files are parsed from the top to the bottom, and the order in which the records are written is important.
 
-**New in symfony 1.1**: This also works for many-to-many relationships, where two classes are related through a third class. For instance, an `Article` can have many `Authors`, and an `Author` can have many `Articles`. You usually use an `ArticleAuthor` class for that, corresponding to an `article_author` table with an `article_id` and an `author_id` columns. Listing 16-17 shows how to write a fixture file to define many-to-many relationships with this model. Notice the plural table name used here--this is what triggers the search for a middle class.
+**New in symfony 1.1**: This also works for many-to-many relationships, where two classes are related through a third class. For instance, an `Article` can have many `Authors`, and an `Author` can have many `Articles`. You usually use an `ArticleAuthor` class for that, corresponding to an `article_author` table with an `article_id` and an `author_id` columns. Listing 16-18 shows how to write a fixture file to define many-to-many relationships with this model. Notice the plural table name used here--this is what triggers the search for a middle class.
 
-Listing 16-17 - Adding a Record to a Table Related by a Many-to-Many relationship, in `data/fixtures/import_data.yml`
+Listing 16-18 - Adding a Record to a Table Related by a Many-to-Many relationship, in `data/fixtures/import_data.yml`
 
     Author:
       first_author:
@@ -567,9 +579,9 @@ The solution that is supported by symfony is rsync synchronization through an SS
 
 Symfony adds SSH on top of rsync to secure the data transfer. More and more commercial hosts support an SSH tunnel to secure file uploads on their servers, and that's a good practice to avoid security breaches.
 
-The SSH client called by symfony uses connection settings from the `config/properties.ini` file. Listing 16-18 gives an example of connection settings for a production server. Write the settings of your own production server in this file before any synchronization. You can also define a single parameters setting to provide your own rsync command line parameters.
+The SSH client called by symfony uses connection settings from the `config/properties.ini` file. Listing 16-19 gives an example of connection settings for a production server. Write the settings of your own production server in this file before any synchronization. You can also define a single parameters setting to provide your own rsync command line parameters.
 
-Listing 16-18 - Sample Connection Settings for a Server Synchronization, in `myproject/config/properties.ini`
+Listing 16-19 - Sample Connection Settings for a Server Synchronization, in `myproject/config/properties.ini`
 
     [symfony]
       name=myproject
@@ -622,9 +634,9 @@ If you synchronize your symfony project with a production host, a few files and 
   * The `cache/` and `log/` directories of a project must not be erased in the host server each time you do a synchronization. These directories must be ignored as well. If you have a `stats/` directory, it should probably be treated the same way.
   * The files uploaded by users should not be transferred. One of the good practices of symfony projects is to store the uploaded files in the `web/uploads/` directory. This allows you to exclude all these files from the synchronization by pointing to only one directory.
 
-To exclude files from rsync synchronizations, open and edit the `rsync_exclude.txt` file under the `myproject/config/` directory. Each line can contain a file, a directory, or a pattern. The symfony file structure is organized logically, and designed to minimize the number of files or directories to exclude manually from the synchronization. See Listing 16-19 for an example.
+To exclude files from rsync synchronizations, open and edit the `rsync_exclude.txt` file under the `myproject/config/` directory. Each line can contain a file, a directory, or a pattern. The symfony file structure is organized logically, and designed to minimize the number of files or directories to exclude manually from the synchronization. See Listing 16-20 for an example.
 
-Listing 16-19 - Sample rsync Exclusion Settings, in `myproject/config/rsync_exclude.txt`
+Listing 16-20 - Sample rsync Exclusion Settings, in `myproject/config/rsync_exclude.txt`
 
     .svn
     /cache/*

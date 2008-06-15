@@ -444,7 +444,7 @@ Listing 17-9 - Extending the Autoloading System To Enable Third Party Components
         parent::initialize(); // load symfony autoloading first
 
         // Integrate Zend Framework
-        if($sf_zend_lib_dir = sfConfig::get('app_zend_lib_dir'))
+        if ($sf_zend_lib_dir = sfConfig::get('app_zend_lib_dir'))
         {
           set_include_path($sf_zend_lib_dir.PATH_SEPARATOR.get_include_path());
           require_once($sf_zend_lib_dir.'/Zend/Loader.php');
@@ -452,7 +452,7 @@ Listing 17-9 - Extending the Autoloading System To Enable Third Party Components
         }
 
         // Integrate eZ Components
-        if($sf_ez_lib_dir = sfConfig::get('app_ez_lib_dir'))
+        if ($sf_ez_lib_dir = sfConfig::get('app_ez_lib_dir'))
         {
           set_include_path($sf_ez_lib_dir.PATH_SEPARATOR.get_include_path());
           require_once($sf_ez_lib_dir.'/Base/base.php');
@@ -460,7 +460,7 @@ Listing 17-9 - Extending the Autoloading System To Enable Third Party Components
         }
 
         // Integrate Swift Mailer
-        if($sf_swift_lib_dir = sfConfig::get('app_swift_lib_dir'))
+        if ($sf_swift_lib_dir = sfConfig::get('app_swift_lib_dir'))
         {
           set_include_path($sf_swift_lib_dir.PATH_SEPARATOR.get_include_path());
           require_once($sf_swift_lib_dir.'/Swift/ClassLoader.php');
@@ -481,14 +481,14 @@ This means that the other framework components benefit from the autoload mechani
     require_once 'Zend/Search/Lucene.php';
     $doc = new Zend_Search_Lucene_Document();
     $doc->addField(Zend_Search_Lucene_Field::Text('url', $docUrl));
-    ...
+    // ...
 
 With symfony and spl autoloading, it is simpler. You can omit the `require` statement and stop worrying about include paths and class locations:
 
     [php]
     $doc = new Zend_Search_Lucene_Document(); // The class is autoloaded
     $doc->addField(Zend_Search_Lucene_Field::Text('url', $docUrl));
-    ...
+    // ...
 
 Plug-Ins
 --------
@@ -1001,9 +1001,13 @@ The `<contents>` tag is the place where you must describe the plug-in file struc
 
 Plug-ins are designed to work with a given set of versions of PHP, PEAR, symfony, PEAR packages, or other plug-ins. Declaring these dependencies in the `<dependencies>` tag tells PEAR to check that the required packages are already installed, and to raise an exception if not.
 
-You should always declare dependencies on PHP, PEAR, and symfony, at least the ones corresponding to your own installation, as a minimum requirement. If you don't know what to put, add a requirement for PHP 5.1, PEAR 1.4, and symfony 1.0.
+You should always declare dependencies on PHP, PEAR, and symfony, at least the ones corresponding to your own installation, as a minimum requirement. If you don't know what to put, add a requirement for PHP 5.1, PEAR 1.4, and symfony 1.1.
 
 It is also recommended to add a maximum version number of symfony for each plug-in. This will cause an error message when trying to use a plug-in with a more advanced version of the framework, and this will oblige the plug-in author to make sure that the plug-in works correctly with this version before releasing it again. It is better to have an alert and to download an upgrade rather than have a plug-in fail silently.
+
+If you specify plugins as dependencies, users will be able to install your plugin and all its dependencies with a single command:
+
+    > php symfony plugin:install --install-deps sfSamplePlugin
 
 #### Building the Plug-In
 
