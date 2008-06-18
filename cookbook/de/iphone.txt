@@ -1,0 +1,106 @@
+Anleitung zum Erstellen von iPhone optimierten Webseitenversionen
+=================================================================
+
+symfony 1.1 bietet bereits von sich aus Unterstützung für unterschiedliche Formate und mime-Typen. Das bedeutet, dass das gleiche Modell und der gleiche Controller unterschiedliche Templates je nach angefordertem Format benutzt. Der Standard ist weiterhin HTML, aber symfony unterstützt eine Reihe von weiteren Formaten, welche in der `factories.yml` Datei vordefiniert sind:
+
+    [yml]
+    request:
+      class: sfWebRequest
+        param:
+          formats:
+            txt:  text/plain
+            js:   [application/javascript, application/x-javascript, text/javascript]
+            css:  text/css
+            json: [application/json, application/x-json]
+            xml:  [text/xml, application/xml, application/x-xml]
+            rdf:  application/rdf+xml
+            atom: application/atom+xml
+
+Jedes Format ist mit einem oder mehreren mime-Typen assoziiert. Diese mime-Typen werden benutzt um das angeforderte Format automatisch aus dem  `Accept` HTTP Header des Requests auszulesen. Dies ist zum Beispiel nützlich um die gleichen Daten im Browser darzustellen und gleichzeitig sie auch als Web Service anzubieten. Um das Format der Antwort zu ändern kann ein Web Service Nutzer einfach den `Accept` Header wie folgt ändern:
+
+    $ curl -H "Accept: application/xml"  http://ws.example.com/api/article # Um eine XML Repräsentation der Daten zu erhalten
+    $ curl -H "Accept: application/json" http://ws.example.com/api/article # Um eine JSON Repräsentation der Daten zu erhalten
+
+Diese verschiedenen Formate zu unterstützen ist so einfach wie weitere Templates zu erstellen. Angenommen ein Web Service wird von der `api/article` Action erzeugt, dann müssen folgende Templates in `apps/frontend/modules/api/templates` erstellt werden um die Formate HTML, XML, and JSON ausliefern zu können:
+
+  * articleSuccess.php
+  * articleSuccess.xml.php
+  * articleSuccess.json.php
+
+Standardmäßig ändert symfony den `Content-Type` der Response entsprechend des Formates, und für alle nicht HTML Formate wird weiterhin das Layout abgeschaltet. Sogar Partials und Layouts können je nach angefordertem Format unterschiedlich sein. So kann zum Beispiel das eingebundene `list` Partial in einem Template je nach dem aktuellen Format folgende Namen haben:
+
+  * _list.php
+  * _list.xml.php
+  * _list.json.php
+
+Ein weiteres Beispiel ist die Erstellung von dynamischen Stylesheets und JavaScriptdateien. Da man sich leider nicht immer auf einen korrekten `Accept` HTTP Header des Browsers in diesen Fällen verlassen kann, können Formate über die spezielle `sf_format` Variable in den Routingregeln bestimmt werden. Hier ein Beispiel für ein dynamisch erzeugtes Stylesheet:
+
+    [yml]
+    css1:
+      url:   /css/dynamic1.css
+      param: { module: css, action: dynamic, sf_format: css }
+
+Die `sf_format` Variable kann in den URL Mustern auch dazu genutzt werden verschiedene Formate einer Action zu deklarieren:
+
+    [yml]
+    api_article:
+      url:   /api/article.:sf_format
+      param: { module: api, action: article }
+      requirements:
+        sf_format: (?:html|xml|json)
+
+Normalerweise verhält sich der Action Code für alle Formate gleich und es sollte nur sehr selten notwendig sein eine Änderung einzuführen um spezielle Formate zu unterstützen; aber wenn dies doch der Fall sein sollte, so kann die Methode `$request->getRequestFormat()` aufgerufen werden um das aktuell angeforderte Format zu ermitteln und entsprechende Sonderfälle zu behandeln.
+
+Soweit zu den allgemeinen Erläuterungen zu dem Format Feature von symfony 1.1. Im folgenden praxisnahen Teil wird über nur wenige Änderungen und Erweiterungen aus jeder normalen Webanwendung eine iPhone optimierte Version. Dafür wird das `iphone` Format verwendet, welches zwar nicht im Standardangebot von symfony 1.1 enthalten ist aber sehr einfach selbst erstellt werden kann. 
+Zuerst muss festgestellt werden, dass eine Anfrage von einem iPhone kommt. In diesem Beispiel wird der `User-Agent` Header auf das Vorkommen der Worte `Mobile` und `Safari` untersucht; sind diese vorhanden kann man annehmen, dass es sich um den Browser eines iPhones handelt. Diese Logik kommt idealerweise in die Klasse `ProjectConfiguration`, wo ein Listener auf das `request.filter_parameters` Event registriert wird:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        // ...
+
+        $this->dispatcher->connect('request.filter_parameters', array($this, 'filterRequestParameters'));
+      }
+
+      public function filterRequestParameters(sfEvent $event, $parameters)
+      {
+        $request = $event->getSubject();
+
+        if (preg_match('#Mobile/.+Safari#i', $request->getHttpHeader('User-Agent')))
+        {
+          $request->setRequestFormat('iphone');
+        }
+
+        return $parameters;
+      }
+    }
+
+Wenn nun ein Request behandelt wird, wird durch das  `request.filter_parameters` Event die Methode `filterParameters()` aufgerufen und falls der Browser ein iPhone sein sollte das Format auf `iphone` geändert.
+
+Das ist auch bereits schon alles! Jeder Request eines iPhones wird `*Success.iphone.php` Templates anstelle der `*Success.php` Templates verwenden.
+
+Falls spezielle Stylesheets oder JavaScript Dateien zur iPhone Unterstützung benötigt werden (zum Beispiel die [iui Bibliothek](http://code.google.com/p/iui/)), so kann der View entsprechend vorbereitet werden indem auf das `view.configure_format` Event reagiert wird:
+
+    [php]
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        // ...
+
+        $this->dispatcher->connect('view.configure_format', array($this, 'configureIPhoneFormat'));
+      }
+
+      public function configureIPhoneFormat(sfEvent $event)
+      {
+        if ('iphone' == $event['format'])
+        {
+          // füge CSS, javascript, or wasauchimmer hinzu
+        }
+      }
+    }
+
+Dank des neuen Format Systems in symfony 1.1 ist es besonders einfach Webseiten zu entwickeln, welche Web Services, andere APIs oder das iPhone unterstützen. Neue Formate zu Unterstützen ist so einfach wie das erstellen der entsprechenden Templates.
