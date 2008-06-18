@@ -1,0 +1,105 @@
+Hoe maak je een versie van je website geoptimaliseerd voor de iPhone?
+=====================================================================
+
+symfony 1.1 introduceert ingebouwde ondersteuning voor verschillende formaten en mime-types. Dit betekent dat dezelfde model en controller verschillende templates kunnen hebben gebaseerd op het opgevraagde formaat. Het standaard formaat is nog steeds HTML maar symfony ondersteunt ook andere formaten "out of the box" zoals gedefinieerd in `factories.yml`:
+
+    [yml]
+    request:
+      class: sfWebRequest
+      param:
+        formats:
+          txt:  text/plain
+          js:    [application/javascript, application/x-javascript, text/javascript]
+          css:  text/css
+          json: [application/json, application/x-json]
+          xml:  [text/xml, application/xml, application/x-xml]
+          rdf:  application/rdf+xml
+          atom: application/atom+xml
+
+Elk formaat wordt geassocieerd met een of meerdere mime-types. Deze mime-types worden gebruikt om automatisch te bepalen welk formaat wordt opgevraagd door de `Accept` HTTP header te onderzoeken. Dit is erg handig als je je data via een browser beschikbaar wil maken maar ook als een Web Service. Om het formaat van een response te veranderen, kan een Web Service client simpelweg de `Accept` header aanpassen zoals hieronder wordt getoond:
+
+    $ curl -H "Accept: application/xml"  http://ws.example.com/api/article # Om een XML representatie van de data te krijgen
+    $ curl -H "Accept: application/json" http://ws.example.com/api/article # Om een JSON representatie van de data te krijgen
+
+Het ondersteunen van verschillende formaten is zo simpel als het aanmaken van verschillende templates. Laten we er vanuit gaan dat de web service wordt geleverd door een `api/article` action. Hier is een lijst van de templates die je moet aanmaken in `apps/frontend/modules/api/templates` om HTML, XML en JSON formaten te ondersteunen:
+
+  * articleSuccess.php
+  * articleSuccess.xml.php
+  * articleSuccess.json.php
+
+Standaard zal symfony de `Content-Type` aanpassen aan het formaat, en voor alle niet-HTML formaten zal de layout worden uitgezet. Zelfs partials en layouts kunnen verschillend zijn gebaseerd op het opgevraagde formaat. Bijvoorbeeld, als je een `list` partial hebt in een template, kan de geladen partial aangepast worden op basis van het huidige formaat:
+
+  * _list.php
+  * _list.xml.php
+  * _list.json.php
+
+Laten we nog een voorbeeld nemen: Je wil een aantal stylesheets en javascript bestanden "on the fly" maken. Omdat je niet altijd kan vertrouwen op de `Accept` HTTP header voor deze situaties, kan je het formaat forceren door gebruik te maken van de speciale `sf_format` variabele in je routing regels. Je maakt een route voor een dynamische stylesheet zo:
+
+    [yml]
+    css1:
+      url:   /css/dynamic1.css
+      param: { module: css, action: dynamic, sf_format: css }
+
+Je kan ook de `sf_format` variabele in het URL patroon gebruiken om verschillende formaten voor een actie toe te staan:
+
+    [yml]
+    api_article:
+      url:   /api/article.:sf_format
+      param: { module: api, action: article }
+      requirements:
+        sf_format: (?:html|xml|json)
+
+In de meeste gevallen hoef je geen enkele regel code aan te passen in je actions om het nieuwe formaat te ondersteunen; maar als je echt iets speciaals wil doen voor een formaat, kan je de `$request->getRequestFormat()` methode aanroepen om het huidge formaat te verkrijgen en daarnaar te handelen.
+
+OK, nu voor het leuke deel! Laten we zeggen dat we een versie van een website willen maken die geoptimaliseerd is voor de iPhone. Het `iphone` formaat bestaat niet standaard maar het is erg makkelijk deze te configureren. Allereerst moeten we kunnen achterhalen of een request van een iPhone komt. Als de `User-Agent` header de woorden `Mobile` en `Safari` bevat, kunnen we er veilig vanuit gaan dat het hier om een iPhone gaat. We kunnen deze logica in de `ProjectConfiguration` class plaatsen door het registreren van een listener voor het `request.filter_parameters` event:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        // ...
+
+        $this->dispatcher->connect('request.filter_parameters', array($this, 'filterRequestParameters'));
+      }
+
+      public function filterRequestParameters(sfEvent $event, $parameters)
+      {
+        $request = $event->getSubject();
+
+        if (preg_match('#Mobile/.+Safari#i', $request->getHttpHeader('User-Agent')))
+        {
+          $request->setRequestFormat('iphone');
+        }
+
+        return $parameters;
+      }
+    }
+
+Iedere keer als er nu een request binnenkomt zal het formaat worden aangepast naar `iphone` wanneer de `filterParameters()` methode wordt aangeroepen en de browser een iPhone is.
+
+Dat is alles! Iedere request van een iPhone zal nu de `*Success.iphone.php` templates gebruiken in plaats van de `*Success.php` templates.
+
+Als je speciale stylesheets gebruikt of Javascript bestanden voor de iPhone (bijvoorbeeld als je de [iui library](http://code.google.com/p/iui/) gebruikt), kan je deze ook configureren door te luisteren naar `view.configure_format`:
+
+    [php]
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        // ...
+
+        $this->dispatcher->connect('view.configure_format', array($this, 'configureIPhoneFormat'));
+      }
+
+      public function configureIPhoneFormat(sfEvent $event)
+      {
+        if ('iphone' == $event['format'])
+        {
+          // add some CSS, stylesheet, or whatever you want
+        }
+      }
+    }
+
+Met dank aan de nieuwe formaten-ondersteuning in symfony 1.1, wordt het ontwikkelen van websites die Web Services, een API of bijvoorbeeld de iPhone ondersteunen makkelijker dan ooit. Het ondersteunen van een nieuw formaat is zo simpel als het aanmaken van een nieuwe set templates.
