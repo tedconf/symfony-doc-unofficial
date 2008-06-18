@@ -20,49 +20,49 @@ The major advantages we get are:
 Let's write our first task
 --------------------------
 
-First create a %SF_ROOT_DIR%/lib/task/doNothingTask.class.php file, and open it in your favorite editor.
+First create a `%SF_ROOT_DIR%/lib/task/doNothingTask.class.php` file, and open it in your favorite editor.
 
-   [php]
-   class doNothingTask extends sfBaseTask
-   {
-     protected function configure()
-     {
-       $this->namespace        = 'project';
-       $this->name             = 'do-nothing';
-       $this->briefDescription = 'Does strictly nothing';
-
-       $this->detailedDescription = <<<EOF
-   This task is completely useless, and should be run as often as possible.
-   EOF;
-     }
-
-     protected function execute($arguments = array(), $options = array())
-     {
-       $this->logSection('do-nothing', 'I did nothing successfully!');
-     }
-   }
+    [php]
+    class doNothingTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->namespace        = 'project';
+        $this->name             = 'do-nothing';
+        $this->briefDescription = 'Does strictly nothing';
+   
+        $this->detailedDescription = <<<EOF
+    This task is completely useless, and should be run as often as possible.
+    EOF;
+      }
+   
+      protected function execute($arguments = array(), $options = array())
+      {
+        $this->logSection('do-nothing', 'I did nothing successfully!');
+      }
+    }
 
 This task for sure does not much, but demonstrates the first basic concepts.:
 
- * The `configure()` method describes the task. Invocation name, scope, syntax, help, options and arguments.
- * The `execute()` method is the one who does all the job actually, and will be called when the task is run.
- * The `logSection()` method can be used to print messages on the console output.
+  * The `configure()` method describes the task. Invocation name, scope, syntax, help, options and arguments.
+  * The `execute()` method is the one who does all the job actually, and will be called when the task is run.
+  * The `logSection()` method can be used to print messages on the console output.
 
 You can play around a bit with it:
 
-   $ php symfony help project:do-nothing
-   $ php symfony project:do-nothing
+    $ php symfony help project:do-nothing
+    $ php symfony project:do-nothing
 
 Some command line interaction
 -----------------------------
 
 Arguments and options are the way to give parameters to a task.
 
-   $ php symfony project:hello-world --name="Romain"
+    $ php symfony project:hello-world --name="Romain"
 
 Here we're running the `project:hello-world` task with the `name` option set to `Romain`
 
-   $ php symfony project:hello-world Hi
+    $ php symfony project:hello-world Hi
 
 Now, we run the same task with the first argument set to `Hi`.
 
@@ -70,45 +70,45 @@ Options and arguments can have default values, be optional or required and embed
 
 Let's write our `project:hello-world` task:
 
-   [php]
-   class doHelloWorldTask extends sfBaseTask
-   {
-     protected function configure()
-     {
-       $this->addArgument('verb', sfCommandArgument::OPTIONAL, 'Customize the verb used to say hello', 'hello');
-       $this->addOption('name', null, sfCommandOption::PARAMETER_OPTIONAL, 'Customize the person to say hello to', 'world');
-
-       $this->namespace        = 'project';
-       $this->name             = 'hello-world';
-       $this->briefDescription = 'Spread the (hello) world';
-
-       $this->detailedDescription = <<<EOF
-   Runs an evolved hello world display, with customisable name and word.
-   EOF;
-     }
-
-     protected function execute($arguments = array(), $options = array())
-     {
-       $this->logSection('do', ucfirst($arguments['verb']).' '.ucfirst($options['name']));
-     }
-   }
+    [php]
+    class doHelloWorldTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->addArgument('verb', sfCommandArgument::OPTIONAL, 'Customize the verb used to say hello', 'hello');
+        $this->addOption('name', null, sfCommandOption::PARAMETER_OPTIONAL, 'Customize the person to say hello to', 'world');
+    
+        $this->namespace        = 'project';
+        $this->name             = 'hello-world';
+        $this->briefDescription = 'Spread the (hello) world';
+    
+        $this->detailedDescription = <<<EOF
+    Runs an evolved hello world display, with customisable name and word.
+    EOF;
+      }
+    
+      protected function execute($arguments = array(), $options = array())
+      {
+        $this->logSection('do', ucfirst($arguments['verb']).' '.ucfirst($options['name']));
+      }
+    }
 
 Now check out how symfony helps the lost user about how to use our new task:
 
-   $ php symfony project:hello-world invalid arguments given
-   $ php symfony help project:hello-world
+    $ php symfony project:hello-world invalid arguments given
+    $ php symfony help project:hello-world
 
 And play a bit with the task:
 
-   $ php symfony project:hello-world
-   $ php symfony project:hello-world --name="romain"
-   $ php symfony project:hello-world --name=romain hi
-   $ php symfony project:hello-world hi --name=romain
+    $ php symfony project:hello-world
+    $ php symfony project:hello-world --name="romain"
+    $ php symfony project:hello-world --name=romain hi
+    $ php symfony project:hello-world hi --name=romain
 
 Some other handy features
 -------------------------
 
- * **Do you need the database layer?**
+  * **Do you need the database layer?**
 
        [php]
        protected function execute($arguments = array(), $options = array())
@@ -118,18 +118,17 @@ Some other handy features
          // ...
        }
 
- * **Run another task within a task?**
+  * **Run another task within a task?**
 
        [php]
        $myOtherTask = new myOtherTask($this->dispatcher, $this->formatter);
        $myOtherTask->run($arguments = array('foo' => 'bar'), $options = array('far' => 'boo'));
 
- * **Need to let the user choose the environment, while providing a default one?**
+  * **Need to let the user choose the environment, while providing a default one?**
 
    Just add the `env` option in the `::configure()` method and symfony will use its value as the environemnt.
 
        [php]
        $this->addOption('env', null, sfCommandOption::PARAMETER_OPTIONAL, 'Changes the environment this task is run in', 'prod');
-
 
 What do you think? Won't this new powerful batch subsystem greatly improve your project maintenance times?
