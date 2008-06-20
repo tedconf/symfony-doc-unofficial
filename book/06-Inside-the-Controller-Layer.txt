@@ -450,23 +450,28 @@ Listing 6-14 - The `sfWebRequest` Object Knows How to Handle Attached Files
     [php]
     class mymoduleActions extends sfActions
     {
-      public function executeUpload()
+      public function executeUpload($request)
       {
-        if ($this->getRequest()->hasFiles())
+        if ($request->hasFiles())
         {
-          foreach ($this->getRequest()->getFileNames() as $fileName)
+          foreach ($request->getFileNames() as $uploadedFile)
           {
-            $fileSize  = $this->getRequest()->getFileSize($fileName);
-            $fileType  = $this->getRequest()->getFileType($fileName);
-            $fileError = $this->getRequest()->hasFileError($fileName);
+            $fileName  = $request->getFileName($uploadedFile);
+            $fileSize  = $request->getFileSize($uploadedFile);
+            $fileType  = $request->getFileType($uploadedFile);
+            $fileError = $request->hasFileError($uploadedFile);
             $uploadDir = sfConfig::get('sf_upload_dir');
-            $this->getRequest()->moveFile('file', $uploadDir.'/'.$fileName);
+            $request->moveFile($uploadedFile, $uploadDir.'/'.$fileName);
           }
         }
       }
     }
 
 You don't have to worry about whether your server supports the `$_SERVER` or the `$_ENV` variables, or about default values or server-compatibility issues--the `sfWebRequest` methods do it all for you. Besides, their names are so evident that you will no longer need to browse the PHP documentation to find out how to get information from the request.
+
+>**NOTE**
+>The code above uses the `$fileName` as it was when the file was uploaded. As there is a small chance that this gets exploited by sending files with malicious file names, you always should normalize the target filename or generate it.
+
 
 User Session
 ------------
