@@ -1,0 +1,175 @@
+Comment localiser un fichier
+====================
+
+Présentation
+--------
+
+Certains scripts dans vos applications ont besoin d'accéder aux fichiers sans nécessairement savoir où ils se trouvent. Si vous utilisez une commande bash, vous pouvez utiliser `find` pour les trouver. Dans symfony, vous pouvez le faire tout aussi bien avec la classe `sfFinder`. Faire une recherche complexe, c'est juste ajouter de nouveaux critères de recherche, et le résultat est un simple tableau contenant le chemin des fichiers.
+
+La classe `sfFinder`
+--------------------
+
+La classe `sfFinder` est une classe de recherche de fichier basée sur le module Perl [`File::Find::Rule`](http://search.cpan.org/~rclamp/File-Find-Rule/). Elle peut trouver soit des fichiers soit des répertoires (ou les deux), et filtrer la recherche par des _règles_ définies par l'utilisateur. L'usage basique est le suivant:
+
+1. Créer un objet `sfFinder` pour votre recherche en appelant la méthode `type()` de la classe. Vous devez préciser quel type de résultat vous attendez : soit des fichiers (`file`), soit des répertoires (`dir`) ou tous (`any`)
+
+        [php]
+        $finder = sfFinder::type('file');
+        
+2. Ajouter les règles pour affiner votre recherche et réduire le nombre de résultats
+
+        [php]
+        $finder = $finder->name('*.php');
+        
+3. Lancer la recherche en appelant la méthode `in()` et en précisant le répertoire racine de la recherche comme argument
+
+        [php]
+        $files = $finder->in('/home/production/myproject');
+        
+Tous ces appels de méthodes peuvent être enchaînés en une seule ligne, qui est souvent plus facile à lire:
+
+    [php]
+    $files = sfFinder::type('file')->name('*.php')->in('/home/production/myproject');
+    // Ce qui veut dire
+    // Recherche les fichiers avec le nom correspondant à '*.php' dans le répertoire '/home/production/myproject'
+
+La méthode `in()` retourne un tableau de fichier, qui peut être utilisé pour une manipulation des fichiers:
+
+    [php]
+    foreach ($files as $file)
+    {
+      $handle = fopen($file, "r");
+      ...
+    }
+
+>**Note**: La classe `sfFinder` est automatiquement chargée, vous n'avez pas besoin de la déclarer dans vos scripts.
+
+Règles de principes
+---------------
+
+Les règles utilisées pour affiner la recherche sont écrites comme des méthodes appelées par un objet `sfFinder`. Toutes les méthodes retournent l'objet courant `sfFinder` afin de faciliter l'enchaînement.
+
+    [php]
+    $finder1 = sfFinder::type('file')->name('*.php');                   // est un objet sfFinder
+    $finder2 = sfFinder::type('file')->name('*.php')->size('> 10K');    // est aussi un objet sfFinder
+    $files = $finder1->in('/home/production/myproject');                // est un tableau de chemin de fichier
+
+Toutes les règles peuvent être utilisées plusieurs fois, à l'exception de la méthode `in()`.
+
+Certaines règles sont cumulatives (`name()` par exemple), tandis que d'autres sont destructives (comme `maxdepth()`). Pour les règles destructives, seul l'appel de la méthode la plus récente compte:
+
+    [php]
+    // Ce sera un filtre pour les noms de fichiers répondant aux deux conditions
+    $finder = sfFinder::type('file')->name('*.php')->name('*Success.*');
+    // identique à
+    $finder = sfFinder::type('file')->name('*Success.php');
+    
+    // Ici, seul le dernier appel compte
+    $finder = sfFinder::type('file')->maxdepth(5)->maxdepth(3);
+    // identique à
+    $finder = sfFinder::type('file')->maxdepth(3);
+
+Règles de filtrage
+------------
+        
+### Filtrer par le nom
+
+Pour filtrer le résultat par le nom des fichiers, ajoutez l'appel de la méthode `name()` avec le filtre dans le format d'un [glob][1] ou d'une [expression régulière][2]:
+
+    [php]
+    $finder = sfFinder::type('file')->name('*.php');
+    $finder = sfFinder::type('file')->name('/.*\.php/');
+
+Vous pouvez même exclure certains noms de fichiers dans le résultat obtenu, en faisant un filtrage négatif avec la méthode `not_name()`:
+
+    [php]
+    $finder = sfFinder::type('file')->not_name('Base*');
+    $finder = sfFinder::type('file')->name('/^Base.*$/');
+
+### Filtrer par la taille
+
+Vous pouvez filtrer votre recherche sur la taille du fichier en appelant la méthode `size()`, qui attend une chaîne en argument contenant une comparaison. La méthode comprend également des ordres de grandeur:
+
+    [php]
+    // Recherche seulement les fichiers supérieurs à 10 kilobytes
+    $finder = sfFinder::type('file')->size('> 10K');
+    // Recherche seulement les fichiers inférieurs ou égales à 1 kilobyte
+    $finder = sfFinder::type('file')->size('<= 1Ki');
+    // Recherche seulement les fichiers de 123 bytes
+    $finder = sfFinder::type('file')->size(123);
+   
+Les symboles utilisés pour les ordres de grandeur sont des [préfixes binaires][3] définie par le Système International des Unités (ISO).
+
+### Limiter la recherche en profondeur
+
+Par défaut, la recherche, faite par l'objet `sfFinder`, est récursive et scanne tous les sous-répertoires. Vous pouvez contourner ce comportement par défaut en utilisant la méthode `maxdepth()`, afin de définir la profondeur maximale de recherche dans l'arborescence des fichiers:
+
+    [php]
+    // Recherche dans le répertoire et les sous-répertoires
+    $finder = sfFinder::type('file');
+    // Recherche seulement dans le répertoire passé à la méthode in(),
+    // et dans aucun autre sous-répertoire
+    $finder = sfFinder::type('file')->maxdepth(1);
+    
+Bien sur, vous pouvez spécifier une profondeur minimum en appelant la méthode `mindepth()`.
+
+Par défaut, la profondeur minimum est 0 et la profondeur maximum est l'infini (ou à proximité).
+
+### Exclure des répertoires
+
+Si vous voulez exclure des répertoires de la recherche, vous pouvez utilisez deux méthodes:
+
+- La méthode `prune()` arrête la recherche dans la partie de l'arborescence où le filtre donné en argument est trouvé. Il faut voir cela comme une interdiction d'aller voir ce qu'il y a dans un répertoire:
+
+        [php]
+        // ignore le contenu des dossiers '.svn'
+        $finder = sfFinder::type('any')->prune('.svn');
+
+    Le chercheur ne pas aller plus loin dans l'un des dossiers `.svn`, mais les dossiers `.svn` font toujours partie du résultat.
+    
+- La méthode `discard()` enlève les fichiers ou les dossiers qui correspondent à l'argument passé, mais cela n'arrête pas l'exploration dans l'arborescence.
+
+        [php]
+        // enlève les dossiers '.svn' du résultat
+        $finder = sfFinder::type('any')->discard('.svn');
+
+Ces deux méthodes sont souvent utilisées en même temps, quand un répertoire _et_ son contenu doivent être exclus de la recherche:
+
+    [php]
+    // Enlève du résultat les dossiers '.svn' et leurs contenus
+    $finder = sfFinder::type('any')->prune('.svn')->discard('.svn');
+    
+>**Tip**: Pour exclure les fichiers et les répertoires ajoutés par des programmes de contrôle de version, `sfFinder` fournit une méthode de raccourci: `ignore_version_control()`. Elle enlèvera tous les fichiers et répertoires qui ressemble à `.svn`, `CVS`, `_darcs`, `.arch-params`, `.monotone`, et `.bzr`.
+
+### Recherche avec un point de départ
+
+La méthode `in()` est utilisée pour spécifié où `sfFinder` doit regarder les fichiers ou les répertoires. Elle peut prendre en argument soit un chemin, soit un tableau de chemin:
+
+    [php]
+    // Rechercher à un seul endroit
+    $files = $finder->in('/home/production/myproject');
+    // Rechercher à plusieurs endroits
+    $files = $finder->in(array('/home/production/myproject', '/home/production/myotherproject'));
+    
+La méthode accepte des chemins relatifs et absolus:
+
+    [php]
+    // Chemin absolu
+    $files = $finder->in('/home/production/myproject');
+    // Chemin relatif
+    $files = $finder->in('../projects/myproject');
+    
+### Retourner un chemin relatif
+
+Par défaut, les chemins retournés par la méthode `in()` sont des chemins absolus. Vous pouvez choisir de recevoir, à la place, un tableau de chemin relatif, en chaînant l'appel à la méthode `relative()` avant d'appeler `in()`:
+
+    [php]
+    // Les chemins résultants sont relatifs au répertoire racine
+    $files = $finder->in('/home/production/myproject');
+    // Les chemins résultants sont relatifs au répertoire courant,
+    // Par exemple le réprtoire courant du script
+    $files = $finder->relative()->in('/home/production/myproject');
+
+[1]: http://en.wikipedia.org/wiki/Glob                "définition de glob dans Wikipedia"
+[2]: http://en.wikipedia.org/wiki/Regular_expression  "définition d'une expression régulière dans Wikipedia"
+[3]: http://en.wikipedia.org/wiki/Binary_prefix       "Définition d'un préfixe binaire dans Wikipedia"
