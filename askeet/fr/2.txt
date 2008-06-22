@@ -57,12 +57,15 @@ Notez que nous avons déclaré un champ `created_at` pour chaque table. Symfony 
 
 ### `schema.xml`
 
-Le modèle relationnel doit être transcrit en un fichier de configuration pour que Symfony le comprenne. C’est l’objectif du fichier `schema.xml`, situé dans le répertoire `askeet/config/`.
-Il y a deux moyens d’écrire ce fichier : à la main, et c’est la façon que nous préférons, ou à partir d’une base existante. Regardons la première solution. Tout d’abord nous avons besoin de renommer le fichier installé par défaut :
+Le modèle relationnel doit être transcrit en un fichier de configuration pour que Symfony le comprenne. C’est l’objectif du fichier `schema.xml` ou du fichier `schema.yml`, situé dans le répertoire `askeet/config/`. Symfony supporte le schéma au format XML et YAML.
+Il y a deux moyens d’écrire ce fichier : à la main, et c’est la façon que nous préférons, ou à partir d’une base existante. Regardons la première solution.
 
-    $ svn rename config/schema.xml.sample config/schema.xml
+Tout d’abord nous avons besoin de supprimer le fichier YAML installé par défaut : 
 
-La syntaxe du fichier `schema.xml`, expliquée en détails sur le site [Propel website][3], est relativement simple : c’est un fichier XML, dont chaque balise `<table>` contient une balise `<column>`, `<foreign-key>` et `<index>`. Une fois que vous savez en écrire une, vous savez toutes les écrire. Ceci est le fichier `schema.xml` correspondant au modèle relationnel décrit précédemment.  
+    $ svn delete config/schema.yml
+
+La syntaxe du fichier `schema.xml`, expliquée en détails sur le site [Propel website][3], est relativement simple : c’est un fichier XML, dont chaque balise `<table>` contient une balise `<column>`, `<foreign-key>` et `<index>`. Une fois que vous savez en écrire une, vous savez toutes les écrire. Ceci est le fichier `schema.xml` correspondant au modèle relationnel décrit précédemment:
+
     [xml]
     <?xml version="1.0" encoding="UTF-8"?>
      <database name="propel" defaultIdMethod="native" noxsd="true">
@@ -139,6 +142,50 @@ propel.database.url = mysql://username:password@localhost/databasename
 
 >**Note**: certains outils vous permettent de construire votre base de données graphiquement (par exemple [Fabforce's Dbdesigner](http://www.fabforce.net/dbdesigner4/)) et de générer le fichier `schema.xml` directement (avec [DB Designer 4 TO Propel Schema Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php)).
 
+Plutôt que de créer un fichier `schema.xml`, vous pouvez aussi créer un fichier `schema.yml` utilisant le format YAML: 
+
+    [yml]
+    propel:
+      _attributes:   { noXsd: false, defaultIdMethod: none, package: lib.model }
+
+      ask_question:
+        _attributes: { phpName: Question, idMethod: native }
+        id:          { type: integer, required: true, primaryKey: true, autoIncrement: true }
+        user_id:     { type: integer, foreignTable: ask_user, foreignReference: id }
+        title:       { type: longvarchar }
+        body:        { type: longvarchar }
+        created_at:  ~
+        updated_at:  ~
+
+      ask_answer:
+        _attributes: { phpName: Answer, idMethod: native }
+        id:          { type: integer, required: true, primaryKey: true, autoIncrement: true }
+        question_id: { type: integer, foreignTable: ask_question, foreignReference: id }
+        user_id:     { type: integer, foreignTable: ask_user, foreignReference: id }
+        body:        { type: longvarchar }
+        created_at:  ~
+
+      ask_user:
+        _attributes: { phpName: User, idMethod: native }
+        id:          { type: integer, required: true, primaryKey: true, autoIncrement: true }
+        nickname:    { type: varchar(50), required: true, index: true }
+        first_name:  varchar(100)
+        last_name:   varchar(100)
+        created_at:  ~
+
+      ask_interest:
+        _attributes: { phpName: Interest, idMethod: native }
+        question_id: { type: integer, foreignTable: ask_question, foreignReference: id, primaryKey: true }
+        user_id:     { type: integer, foreignTable: ask_user, foreignReference: id, primaryKey: true }
+        created_at:  ~
+
+      ask_relevancy:
+        _attributes: { phpName: Relevancy, idMethod: native }
+        answer_id:   { type: integer, foreignTable: ask_answer, foreignReference: id, primaryKey: true }
+        user_id:     { type: integer, foreignTable: ask_user, foreignReference: id, primaryKey: true }
+        score:       { type: integer }
+        created_at:  ~
+
 ### Construction du modèle objet
 
 Pour utiliser le moteur InnoDB, une ligne doit être ajoutée au fichier `propel.ini` situé dans le répertoire `askeet/config/` :
@@ -183,10 +230,13 @@ Pour les fans du clavier, voici une surprise : vous n’avez pas besoin de cré
 
 	$ symfony propel-build-sql
 
-Cette commande crée un `lib.model.schema.sql` dans le répertoire `askeet/data/sql/`.
-Utilisez le comme commande SQL dans MySQL:
+Cette commande crée un `lib.model.schema.sql` dans le répertoire `askeet/data/sql/`. Utilisez le comme commande SQL dans MySQL:
 
 	$ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
+
+De manière alternative, vous pouvez aussi utiliser l'instruction `propel-insert-sql`:
+
+	$ symfony propel-insert-sql
 
 Test de l’accès aux données via CRUD
 ------------------------------------
@@ -200,14 +250,14 @@ Dans le répertoire `askeet/`, tapez:
 Cela génère une ébauche pour un module `question` dans l'application `frontend`, basé sur le modèle objet Propel `Question`, avec les actions basiques Create Retrieve Update Delete  (Ce qui explique l'acronyme CRUD). Ne vous y trompez pas: Une ébauche n'est pas une application finie, mais la structure basique sur laquelle vous pouvez développer de nouveaux éléments, ajouter des règles de gestion et customiser l’apparence.
 La liste de toutes les actions créées par un générateur CRUD est:
 
-| Action name  | Description
+| Nom Action   | Description
 |--------------|------------
-| list         | shows all the records of a table
-| index        | forwards to list
-| show         | shows all the fields of a given record
-| edit         | displays a form to create a new record or edit an existing one
-| update       | modifies a record according to the parameters given in the request, then forwards to show
-| delete       | deletes a given record from the table
+| list         | Affiche tous les enregistrements d'une table
+| index        | Retourne à la liste
+| show         | Affiche tous les enregistrements d'un enregistrement donné
+| edit         | Affiche un formulaire pour créer un nouvel nregistrement ou pour éditer un enregistrement existant
+| update       | Modifie un enregistrement selon les paramètres indiqués dans la requête, puis retourne à l'affichage
+| delete       | Supprime un enregistrement donné de la table
 
 Vous trouverez plus d’informations sur les actions générées dans le [chapitre sur les ébauches](http://www.symfony-project.com/book/1_0/14-Generators) du libre Symfony. Dans le répertoire `askeet/apps/frontend/modules/`, notez le nouveau module `question` et consultez sa source.
 Quelque soit le moment ou vous ajoutez une classe qui doit être chargée automatiquement, n'oubliez pas de vider le cache (pour recharger le cache auto-chargé):
