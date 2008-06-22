@@ -1,0 +1,357 @@
+Calendrier de l’avent troisième jour : plongez dans l’architecture MVC
+=================================================================
+
+Précédemment dans Symfony
+---------------------
+
+Au cours du [deuxième jour] (2.txt) vous avez appris à construire  un modèle objet basé sur un modèle de données relationnel, et générer une ébauche pour un de ces objets. A ce propos, l’application générée durant les jours précédents est disponible dans l’espace de stockage SVN d’askeet: 
+
+	http://svn.askeet.com/
+
+Les objectifs du troisième jour sont de définir une mise en page plus esthétique, définir la liste des questions comme page d’accueil par défaut, afficher le nombre d’utilisateurs intéressés par une question, et de remplir la base de données en utilisant des extraits de fichiers textes afin de disposer de données de test. Ce n’est pas grand chose à faire, mais un peu plus à lire et à comprendre. 
+
+Pour lire ce tutoriel, vous devriez être familiarisé avec les concepts de projet, d’application, module et d’action dans Symfony comme expliqué dans le [chapitre sur le contrôleur](http://www.symfony-project.com/book/1_0/06-Inside-the-Controller-Layer) du livre Symfony.
+
+Le modèle MVC
+-------------
+
+Aujourd’hui sera le premier plongeon dans le monde de [l’architecture MVC] [1]. Qu’est ce que c’est ? Simplement que le code utilisé pour générer une page est situé dans différents fichiers en fonction de leur nature.
+
+Si le code concerne la manipulation des données indépendante d’une page, il devrait être situé dans le **Modèle** (la plupart du temps dans `askeet/lib/model/`). S’il concerne la présentation finale, il devrait être situé dans la **Vue** ; dans Symfony, la couche Vue se base sur les templates (par exemple dans `askeet/apps/frontend/modules/question/templates/`) et les fichiers de configuration. Finalement, le code qui sert à lier tout cela et à traduire la logique du site en bon vieux PHP est situé dans le Contrôleur,  et dans Symfony le contrôleur pour une page spécifique est appelé une action (recherchez les actions dans `askeet/apps/frontend/modules/question/actions/`). Vous pouvez en lire plus à propos de ce modèle dans le chapitre sur [l’implémentation de MVC dans Symfony](http://www.symfony-project.com/1_0/02-Exploring-Symfony-s-Code) du livre Symfony.
+ 
+Alors que la vue de notre application changera peu aujourd’hui, nous allons manipuler beaucoup de fichiers différents. Cependant ne paniquez pas, puisque l’organisation des fichiers et la séparation du code en différentes couches va bientôt devenir évidente et très utile.
+
+Changer la mise en page
+-------------------------
+
+Dans l’application du [décorateur][2], le contenu du template appelé par une action est intégré dans un template global, également nommé gabarit principal. En d’autres termes, le gabarit principal contient toutes les parties invariantes de l’interface, il « décore » le résultat de l’action. Ouvrez le gabarit principal (situé dans  `askeet/apps/frontend/templates/layout.php`) et changez-le comme suit : 
+
+    [php]
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+    
+    <?php echo include_http_metas() ?>
+    <?php echo include_metas() ?>
+    
+    <?php echo include_title() ?>
+    
+    <link rel="shortcut icon" href="/favicon.ico" />
+    
+    </head>
+    <body>
+    
+      <div id="header">
+        <ul>
+          <li><?php echo link_to('about', '@homepage') ?></li>
+        </ul>
+        <h1><?php echo link_to(image_tag('askeet_logo.gif', 'alt=askeet'), '@homepage') ?></h1>
+      </div>
+    
+      <div id="content">
+        <div id="content_main">
+          <?php echo $sf_data->getRaw('sf_content') ?>
+          <div class="verticalalign"></div>
+        </div>
+    
+        <div id="content_bar">
+          <!-- Nothing for the moment -->
+          <div class="verticalalign"></div>
+        </div>
+      </div>
+    
+    </body>
+    </html>
+
+>**Note**: nous avons essayé de garder les balises aussi sémantique que possible, et de déplacer tout le style dans les feuilles de styles CSS. Ces feuilles de styles ne seront pas décrites ici, puisque la syntaxe CSS n’est pas le but de ce tutoriel. Cependant elles sont disponibles en téléchargement, dans [l’espace de stockage SVN](http://svn.askeet.com/tags/release_day_3/web/css/).
+>
+>Nous avons créé deux feuilles de styles (`main.css` et `layout.css`). Copiez les dans le répertoire `askeet/web/css/` et éditez votre `frontend/config/view.yml` pour changer l’auto chargement des feuilles de styles :
+>
+>     stylesheets:    [main, layout]
+>
+
+Cette mise en page, un peu légère pour le moment, sera refaite plus tard (dans une semaine environ). Les choses importantes dans ce template sont la partie `<head>`, qui est la plupart du temps générée, et la variable `sf_content`, qui contient le résultat des actions.
+
+Vérifiez que les modifications s’affichent correctement en demandant la page d’accueil – cette fois dans l’environnement de développement :
+
+    http://askeet/frontend_dev.php/
+    
+![updated layout](/images/askeet/congratulations_new.gif)
+    
+Quelques mots sur les environnements
+------------------------------
+
+Si vous vous demandez quelle est la différence entre `http://askeet/frontend_dev.php/` et `http://askeet/`, vous devriez jeter un œil sur [le chapitre sur la configuration](http://www.symfony-project.com/book/1_0/05-Configuring-Symfony) du livre Symfony. Pour le moment, vous devez juste savoir qu’elles pointent sur la même application, mais dans des environnements différents. Un environnement est une configuration unique, où quelques fonctionnalités du framework peuvent êtres activées ou désactivées selon le besoin. 
+
+Dans ce cas, l’url `/frontend_dev.php/` pointe sur **l’environnement de développement**, où toute la configuration est analysée à chaque requête, le cache HTML est désactivé, et les outils de débogage sont tous disponibles (y compris une barre d’outils semi-transparente située dans le coin supérieur de la fenêtre). L’URL `/` - équivalent à `/index.php/` - pointe sur **l’environnement de production**, où la configuration est « compilée » et les outils de débogage sont désactivés pour accélérer la vitesse d’accès aux pages.
+
+Ces deux scripts PHP - `frontend_dev.php` et `index.php` – sont appelés **controleurs frontals**, et toutes les requêtes de l’application sont manipulées par eux. Vous pouvez les trouver dans le répertoire `askeet/web/`. En fait, le fichier `index.php` devrait s’appeler `frontend_prod.php`, mais comme le `frontend` est la première application que vous créez, Symfony déduit que vous voudriez probablement que ce soit votre application par défaut et le renomme en `index.php`, c’est donc pour cela que vous pouvez voir votre application en environnement de production juste en demandant `/`. Si vous voulez en apprendre plus à propos du front controller et de la couche contrôleur du modèle MVC en général, référez vous au [chapitre sur le contrôleur] (http://www.symfony-project.com/1_0/06-Inside-the-Controller-Layer) dans le livre Symfony.
+
+Un bon principe de base est de naviguer dans l’environnement de développement jusqu'à ce que vous soyez satisfait des fonctionnalités sur lesquelles vous travaillez et de passer à l’environnement de production pour vérifier la vitesse et la beauté des urls.
+
+>**Note**: Ne pas oublier de toujours effacer le cache quand vous ajoutez des classes ou quand vous changez des fichiers de configurations pour voir le résultat en environnement de production.
+
+Redéfinir la page d’accueil
+-----------------------------
+
+Pour le moment, si vous demandez la page d’accueil du nouveau site, il affiche une page de ‘félicitations’. Une meilleur idée serait d’afficher la liste des questions (référencée dans ces documents comme `question/list` et traduit comme : l’action `list` du module `question`). Pour faire cela, ouvrez le fichier de configuration de routage de l’application frontend, situé dans `askeet/apps/frontend/config/routing.yml` et trouvez la section `homepage:`. Changez-la-en :
+
+    homepage:
+      url:   /
+      param: { module: question, action: list }
+
+Rafraichissez la page d’accueil de l’environnement de développement (`http://askeet/frontend_dev.php/`); elle affiche maintenant la liste des questions.
+
+>**Note**: si vous êtes une personne curieuse, vous avez peut être cherché la page contenant le message de ‘félicitations’. Et vous avez surement été surpris de ne pas la trouver dans votre répertoire `askeet`. En fait, le template pour l’action `defaut/index` est situé dans le répertoire data de Symfony et est indépendant du projet. Si vous ne voulez pas en tenir compte, vous pouvez toujours créer un module `défault` dans votre propre projet.
+
+Les possibilités offertes par le système de routage seront détaillées prochainement, mais si cela vous intéresse, vous pouvez lire le [chapitre sur le routage](http://www.symfony-project.com/book/1_0/09-Links-and-the-Routing-System) du livre Symfony.
+
+Définir des données de test
+----------------
+
+La liste affichée par la page d’accueil restera vide, à moins que vous ajoutiez vos propres questions. Quand vous développez une application, c’est une bonne idée d’avoir quelques données de test à votre disposition. Entrer des données de test à la main (ou via l’interface CRUD) peut être rébarbatif, c’est pourquoi Symfony peut utiliser les fichiers textes pour remplir les bases de données.
+
+Nous allons créer un fichier de données de test dans le répertoire `askeet/data/fixtures/` (ce répertoire doit être créé). Créez un fichier nommé `test_data.yml` avec le contenu suivant :
+
+    User:
+      anonymous:
+        nickname:   anonymous
+        first_name: Anonymous
+        last_name:  Coward
+
+      fabien:
+        nickname:   fabpot
+        first_name: Fabien
+        last_name:  Potencier
+    
+      francois:
+        nickname:   francoisz
+        first_name: François
+        last_name:  Zaninotto
+    
+    Question:
+      q1:
+        title: What shall I do tonight with my girlfriend?
+        user_id: fabien
+        body:  |
+          We shall meet in front of the Dunkin'Donuts before dinner, 
+          and I haven't the slightest idea of what I can do with her. 
+          She's not interested in programming, space opera movies nor insects.
+          She's kinda cute, so I really need to find something 
+          that will keep her to my side for another evening.
+    
+      q2:
+        title: What can I offer to my step mother?
+        user_id: anonymous
+        body:  |
+          My stepmother has everything a stepmother is usually offered
+          (watch, vacuum cleaner, earrings, del.icio.us account). 
+          Her birthday comes next week, I am broke, and I know that 
+          if I don't offer her something sweet, my girlfriend 
+          won't look at me in the eyes for another month.
+    
+      q3:
+        title: How can I generate traffic to my blog?
+        user_id: francois
+        body:  |
+          I have a very swell blog that talks 
+          about my class and mates and pets and favorite movies.
+          
+    Interest:
+      i1: { user_id: fabien, question_id: q1 }
+      i2: { user_id: francois, question_id: q1 }
+      i3: { user_id: francois, question_id: q2 }
+      i4: { user_id: fabien, question_id: q2 }
+
+Avant tout, vous pouvez reconnaitre ici [YAML] [3]. Si vous n’êtes pas familiarisé avec Symfony, vous pourriez ne pas savoir que le format YAML est le format favori des fichiers de configurations de ce framework. Il n’est pas exclusif – si vous êtes attachés aux fichiers XML ou .ini, il est très facile d’ajouter un gestionnaire de configuration pour permettre à Symfony de les lire. Si vous avez le temps et la patience, vous pouvez en lire plus à propos de YAML et des fichiers de configuration dans le [chapitre de la configuration en pratique](http://www.symfony-project.com/book/1_0/19-Mastering-Symfony-s-Configuration-Files) du livre Symfony. A partir de maintenant, si vous n’êtes pas familiarisé avec la syntaxe YAML, vous devriez [commencer tout de suite] [3], puisque ce tutoriel l’emploiera intensivement.
+
+Ok, revenons au fichier de données de test. Il définit des instances d’objets, intitulés avec un nom interne. L’intitulé est d’une bonne utilité pour relier les objets relatifs sans avoir à définir les `id` (qui sont souvent auto incrémentés et qui ne peuvent pas être initialisés). Par exemple, le premier objet créé d’une classe `User`, est intitulé `fabien`. La première `Question` est intitulée `q1`. Ceci rend facile de créer un objet de la classe `Interest` en mentionnant les intitulés des objets relatifs : 
+
+    Interest:
+      i1:
+        user_id: fabien
+        question_id: q1
+
+Le fichier de données donné précédemment utilise la syntaxe courte de YAML pour dire la même chose. Vous pouvez en savoir plus à propos des fichiers de population de données dans le [chapitre sur les fichiers de données](http://www.symfony-project.com/book/1_0/08-Inside-the-Model-Layer) dans le livre Symfony.
+
+>**Note**: il n’est pas nécessaire de définir les valeurs pour les colonnes `created_at` et `updated_at` puisque symfony sait comment les remplir par défaut.
+
+Créer un batch pour peupler la base de données
+---------------------------------------
+
+La prochaine étape est de peupler réellement la base de données, et nous désirons le faire avec un script PHP qui peut être appelé en ligne de commande – un batch. 
+
+### Squelette du batch
+
+Créez un fichier appelé `load_data.php` dans le répertoire `askeet/batch/` avec le contenu suivant :
+
+    [php]
+    <?php
+    
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
+    define('SF_APP',         'frontend');
+    define('SF_ENVIRONMENT', 'dev');
+    define('SF_DEBUG',       true);
+    
+    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
+    
+    // initialize database manager
+    $databaseManager = new sfDatabaseManager();
+    $databaseManager->initialize();
+    
+    ?>
+
+Le script ne fait rien, ou presque : il définit un chemin, une application et un environnement pour aboutir à une configuration, la charge, et initialise le gestionnaire de base de données. Mais c’est déjà beaucoup : cela signifie que tout le code écrit ci-dessous profitera de l’auto-chargement des classes, la connexion automatique aux objets Propel, et des classes racines de symfony.
+
+>**Note**: si vous avez regardé les controlleurs frontaux de symfony (comme `askeet/web/index.php`), vous pourriez trouver ce code extrêmement familier. C’est parce que chaque requête web nécessite l’accès aux mêmes objets et configuration, que le batch.
+
+### Importation des données
+
+Maintenant que la structure du batch est prête, il est temps d’en faire quelque chose. Le batch doit:
+
+1. lire le fichier YAML
+2. Créer des instances d’objets Propel
+2. Créer les enregistrements relatifs dans les tables de la base de données concernée
+
+Ceci pourrait sembler compliqué, mais avec symfony, vous pouvez le faire avec deux lignes de code, grâce à l’objet `sfPropelData`. Ajoutez juste le code suivant avant le dernier `?>` dans le script `askeet/batch/load_data.php`:
+
+    [php]
+    $data = new sfPropelData();
+    $data->loadData(sfConfig::get('sf_data_dir').DIRECTORY_SEPARATOR.'fixtures');
+
+C’est tout. Un objet `sfPropelData` est créé, et dit de charger toutes les données d’un dossier spécifique - notre répertoire `fixtures` – dans la base de données définie dans le fichier de configuration `database.yml`. 
+
+>**Note**: La constante `DIRECTORY_SEPARATOR` est ici utilisée pour être compatible avec les plateformes Windows et *nix.
+
+### Exécuter le batch
+
+Enfin, vous pouvez vérifier si ces quelques lignes de code en valaient la peine. Tapez dans la console:
+
+    $ cd /home/sfprojects/askeet/batch
+    $ php load_data.php
+    
+Vérifiez les modifications en rechargeant la page d'accueil de développement :
+
+    http://askeet/frontend_dev.php
+    
+![loaded data](/images/askeet/fixtures.gif)
+
+Hourra, les données sont là.
+
+>**Note**: Par défaut, l’objet `sfPropelData` supprime toutes les données avant de charger les nouvelles. Vous pouvez les ajouter aux données actuelles :
+>
+>     [php]
+>     $data = new sfPropelData();
+>     $data->setDeleteCurrentData(false);
+>     $data->loadData(sfConfig::get('sf_data_dir').DIRECTORY_SEPARATOR.'fixtures');
+
+Accès aux données dans le modèle
+-------------------------------
+
+La page affichée en demandant l’action `list` du module `question` est le résultat de la fonction `executeList()` (située dans le fichier action `askeet/apps/frontend/modules/question/actions/action.class.php`) passée au template `askeet/apps/frontend/modules/question/templates/listSuccess.php`. Ceci est basé sur la convention de nommage qui est expliquée dans le [chapitre sur le controller](http://www.symfony-project.com/book/1_0/06-Inside-the-Controller-Layer) dans le livre Symfony. Jetons un œil au code qui est exécuté:
+    
+actions.class.php:
+
+    [php]
+    public function executeList ()
+    {
+      $this->questions = QuestionPeer::doSelect(new Criteria());
+    }
+
+listSuccess.php:
+
+    [php]
+    ...
+    <?php foreach ($questions as $question): ?>
+    <tr>
+        <td><?php echo link_to($question->getId(), 'question/show?id='.$question->getId()) ?></td>
+        <td><?php echo $question->getTitle() ?></td>
+        <td><?php echo $question->getBody() ?></td>
+        <td><?php echo $question->getCreatedAt() ?></td>
+        <td><?php echo $question->getUpdatedAt() ?></td>
+      </tr>
+    <?php endforeach; ?>
+
+Etape par étape, voici ce qui est fait :
+
+1. L’action demande les enregistrements  de la table `Question` qui satisfont un critère vide - par exemple toutes les questions
+2. Cette liste d’enregistrements est mise dans un tableau (`$questions`) qui est transmis au template
+3. Le template passe en revue toutes les questions transmis par l’action
+4. Le template affiche la valeur des colonnes de chaque enregistrement
+
+Les fonctions `->getId()`, `->getTitle()`, `->getBody()`, etc. ont été créés lors de l’appel à la commande `symfony propel-build-model` (vous vous rappelez [d’hier](2.txt) ?) pour rechercher la valeur des champs `id`, `title`, `body`, etc. Ce sont les accesseurs standards, formé en ajoutant le préfix `get` et le nom du champ en camelCase – et Propel fournit aussi des mutateurs standards, préfixés de set. La [documentation de Propel][4] décrit les accesseurs créés pour chaque classe. 
+
+Quant à l’appel mystérieux `QuestionPeer::doSelect(new Criteria())`, c’est aussi une requête standard Propel. La documentation Propel l’expliquera complètement.
+
+Ne vous inquiétez pas si vous ne comprenez pas tout le code écrit ci-dessus, il deviendra clair dans quelques jours.
+
+Modifier le template question/list
+---------------------------------
+
+Maintenant que la base de données contient les intérêts pour des questions, il sera facile de récupérer le nombre d’utilisateurs intéressés par une question. Si vous jetez un œil à la classe `BaseQuestion.php` générée par Propel dans le répertoire `askeet/lib/model/om/`, vous noterez la fonction `->getInterests()`. Propel a vu la clé étrangère `question_id` dans la définition de la table `Interest`, et déduit qu'une question a plusieurs intéressés. De ce fait, il est très facile d’afficher ce que nous voulons en modifiant le template `listSuccess.php`, situé dans `askeet/apps/frontend/modules/question/templates/`. Par la suite, nous remplacerons les horribles tables par des jolis divs:
+
+    [php]
+    <?php use_helper('Text') ?>
+    
+    <h1>popular questions</h1> 
+    
+    <?php foreach($questions as $question): ?>
+      <div class="question">
+        <div class="interested_block">
+          <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
+            <?php echo count($question->getInterests()) ?>
+          </div>
+        </div>
+      
+        <h2><?php echo link_to($question->getTitle(), 'question/show?id='.$question->getId()) ?></h2>
+      
+        <div class="question_body">
+          <?php echo truncate_text($question->getBody(), 200) ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
+
+Ici vous reconnaissez la même boucle `foreach` que dans le fichier original `listSuccess.php`. Les fonctions `link_to()` et `truncate_text()` sont des **assistants aux templates** fournis par symfony. La première créée un lien hypertexte d’une autre action du même module, et la seconde tronque le corps de la question à 200 caractères. L’assistant `link_to()` est chargé automatiquement, mais vous devez déclarer l’utilisation du groupe d'assistants `Text` pour utiliser `truncate_text()`. 
+
+Allez, essayez notre nouveau template en rafraichissant la page d’accueil de développement.
+
+    http://askeet/frontend_dev.php/
+    
+![liste des meilleures questions](/images/askeet/question_list_day3.gif)
+
+Le nombre d’utilisateurs intéressés apparait correctement à coté de chaque question. Pour obtenir la présentation de la capture ci dessus, téléchargez la feuille de styles [`main.css`](http://svn.askeet.com/tags/release_day_3/web/css/main.css) et mettez la dans votre répertoire `askeet/web/css/`.
+
+Nettoyage
+---------
+
+La commande `propel-generate-crud` a créé quelques actions et templates qui ne seront pas nécessaires. Il est temps de les supprimer.
+
+Les actions à supprimer dans `askeet/apps/frontend/modules/question/actions/actions.class.php`:
+
+* `executeIndex`
+* `executeEdit`
+* `executeUpdate`
+* `executeCreate`
+* `executeDelete`
+
+Les templates à supprimer dans `askeet/apps/frontend/modules/question/templates/`:
+
+* `editSuccess.php`
+
+A demain
+--------
+
+Aujourd’hui était une première grande étape dans le monde du paradigme Modèle-Vue-Contrôleur : en manipulant des gabarits, des templates, des actions et des objets du modèle objet Propel, vous avez accédé à toutes les couches d’une application structurée par MVC. Ne vous inquiétez pas si vous n’avez pas compris tous les liens entre ces couches : cela deviendra plus clair petit à petit.
+
+Beaucoup de fichiers ont été ouverts aujourd’hui, et si vous voulez savoir comment les fichiers sont organisés dans un projet, référez vous au [chapitre sur la structure de fichier](http://www.symfony-project.com/book/1_0/04-The-Basics-of-Page-Creation) du livre symfony.
+
+Demain sera un autre grand jour : nous modifierons les vues, installerons une politique de routage plus complexe, modifierons le modèle, et plongerons en profondeur dans la manipulation des données et les liens entre les tables.
+
+Jusque-là, dormez bien, et sentez vous libre de consulter la source du tutorial d’aujourd’hui (tag `release_day_3`) à:
+
+    http://svn.askeet.com/tags/release_day_3
+
+[1]: http://en.wikipedia.org/wiki/Model-view-controller "Model-View-Controller definition at Wikipedia"
+[2]: http://en.wikipedia.org/wiki/Decorator_pattern     "Decorator pattern definition at Wikipedia"
+[3]: http://www.yaml.org/                               "YAML"
+[4]: http://propel.phpdb.org/docs/user_guide/           "Propel documentation"
