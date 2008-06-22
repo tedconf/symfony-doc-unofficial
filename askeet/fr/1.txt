@@ -35,13 +35,13 @@ Le moyen le plus simple d'installer symfony est d'utiliser le package [PEAR][1].
 
     $ pear upgrade PEAR
 
->**Note**: si vous rencontrez des problèmes dans l'installation de PEAR, reportez-vous au chapitre concernant [l'installation](http://www.symfony-project.com/book/1_0/02-Exploring-Symfony-s-Code) dans le livre symfony.
+>**Note**: si vous rencontrez des problèmes dans l'installation de PEAR, reportez-vous au chapitre concernant [l'installation](http://www.symfony-project.com/book/1_0/03-Running-Symfony) dans le livre symfony.
 
 Vous pouvez à présent ajouter le channel 'symfony':
 
     $ pear channel-discover pear.symfony-project.com
 
-Installez la dernière version bêta de symfony, avec toutes ses dépendances:
+Vous êtes prêt à installez la dernière version stable de symfony, avec toutes ses dépendances:
 
     $ pear install symfony/symfony
 
@@ -49,7 +49,7 @@ Vérifiez que symfony est bien installé en utilisant la ligne de commande pour 
 
     $ symfony -V
 
-Si vous êtes curieux à propos de ce que cette nouvelle commande peut faire pour vous, tapez `symfony -T` pour lister toutes les options disponibles. Vous pouvez également lire le chapitre sur l'[installation](http://www.symfony-project.com/book/1_0/02-Exploring-Symfony-s-Code) pour apprendre comment installer symfony à partir d'une archive `.tgz` ou du référentiel Subversion. Une [contribution](http://www.symfony-project.com/trac/wiki/InstallingSymfonyWithoutPear) sur le wiki de symfony détaille également la marche à suivre pour installer symfony sans PEAR.
+Si vous êtes curieux à propos de ce que cette nouvelle commande peut faire pour vous, tapez `symfony -T` pour lister toutes les options disponibles. Vous pouvez également lire le chapitre sur l'[installation](http://www.symfony-project.com/book/1_0/03-Running-Symfony) pour apprendre comment installer symfony à partir d'une archive `.tgz` ou du référentiel Subversion. Une [contribution](http://www.symfony-project.com/trac/wiki/InstallingSymfonyWithoutPear) sur le wiki de symfony détaille également la marche à suivre pour installer symfony sans PEAR.
 
 Création d'un projet
 --------------------
@@ -60,7 +60,7 @@ Dans symfony, des **applications** qui partagent le même modèle objet sont reg
     $ cd /home/sfprojects/askeet
     $ symfony init-project askeet
 
-Vous pouvez maintenant créer l'application 'frontend' (partie publique d'askeet) : 
+Vous pouvez maintenant créer l'application 'frontend' avec la commande `symfony init-app`: 
 
     $ symfony init-app frontend
 
@@ -73,7 +73,7 @@ Configuration web
 
 ### Configuration du serveur
 
-A présent, il est temps de s'attaquer à la configuration Apache pour rendre l'application accessible par un navigateur. Dans un contexte de développement professionnel, il est préférable de configurer une nouvelle application en _Virtual Host_, et c'est la solution qui sera décrite ici. Cependant, si vous préférez créer un _alias_, vous trouverez tous les détails nécessaires dans le chapitre sur la [configuration web](http://www.symfony-project.com/cookbook/1_0/web_server) du livre symfony.
+A présent, il est temps de s'attaquer à la configuration Apache pour rendre l'application accessible par un navigateur. Dans un contexte de développement professionnel, il est préférable de configurer une nouvelle application en _Virtual Host_, et c'est la solution qui sera décrite ici. Cependant, si vous préférez créer un _alias_, vous trouverez tous les détails nécessaires dans le chapitre sur la [configuration web](http://www.symfony-project.com/cookbook/1_0/web_server) du livre cookbook.
 
 Ouvrez le fichier `httpd.conf` de votre répertoire `Apache/conf/` et ajoutez à la fin :
 
@@ -116,14 +116,14 @@ Redémarrez Apache, et vérifiez que vous avez à présent accès à la nouvelle
 
 ![Congratulations](/images/askeet/congratulations.gif)
 
->**Note**: symfony peut utiliser le module `mod_rewrite` d'Apache pour enlever la mention `/index.php` des url.
+>**Note**: symfony peut utiliser le module `mod_rewrite` d'Apache pour enlever la mention /index.php/ des url.
 >Si vous ne souhaitez pas l'utiliser ou si votre serveur web ne supporte pas cette fonction, vous pouvez retirer le fichier `.htaccess` du répertoire `web/`.
 >Si votre version d'Apache n'est pas compilée avec le `mod_rewrite`, vérifiez que vous avez la DSO mod_rewrite installée et les lignes suivantes dans votre `httpd.conf`:
 >
 >     AddModule mod_rewrite.c
 >     LoadModule rewrite_module modules/mod_rewrite.so
 >
->Pour en savoir plus à propos des URLs sympathiques, consultez le [chapitre sur le routing](http://www.symfony-project.com/book/1_0/09-Links-and-the-Routing-System).
+>Pour en savoir plus à propos des URLs sympathiques, consultez le [chapitre sur les liens et le système de routage](http://www.symfony-project.com/book/1_0/09-Links-and-the-Routing-System).
 
 Vous pouvez également essayer d'accéder à l'application dans l'environnement de développement. Saisissez l'url suivante :
 
@@ -161,20 +161,22 @@ A présent, vous pouvez supprimer le répertoire original de l'application et ut
 
     $ rm -rf askeet.origin
 
-Il reste une petite chose à paramétrer. Si vous faites un commit de votre répertoire de travail dans le référentiel, vous risquez de copier des fichiers inutiles, comme ceux des répertoires `cache/` et `log/`. Il faut donc communiquer à SVN une liste de répertoires et de fichiers à ignorer pour ce projet.
+Il reste une petite chose à paramétrer. Si vous faites un commit de votre répertoire de travail dans le référentiel, vous risquez de copier des fichiers inutiles, comme ceux des répertoires `cache` et `log`. Il faut donc communiquer à SVN une liste de répertoires et de fichiers à ignorer pour ce projet.
 
     $ cd /home/sfprojects/askeet
     $ svn propedit svn:ignore cache
 
-L'éditeur de texte par défaut configuré dans SVN devrait alors être lancé. Ajoutez les sous répertoires de `askeet/cache/` que SVN devrait ignorer lors des commit, c'est-à-dire le joker * pour 'tout' :
+L'éditeur de texte par défaut configuré dans SVN devrait alors être lancé. Ajoutez les sous répertoires de `cache/` que SVN devrait ignorer lors des commit:
 
     *
 
-Sauvez et quittez l'éditeur, puis répétez la procédure pour le répertoire `askeet/log/` : 
+Sauvez et quittez.
+
+Répétez la procédure pour le répertoire `log/` : 
 
     $ svn propedit svn:ignore log
 
-L'éditeur se lance à nouveau. Enregistrez le contenu suivant :
+Et enregistrez le contenu suivant :
 
     *
 
@@ -191,7 +193,9 @@ Si vous souhaitez en savoir plus sur le suivi de version, référez-vous au [cha
 >
 >       http://svn.askeet.com/
 >
->N'hésitez pas à aller y faire un tour. Le code d'aujourd'hui y a été committé, et vous pouvez en faire un checkout en pointant le tag `release_day_1` :
+>N'hésitez pas à aller y faire un tour.
+>
+>Le code d'aujourd'hui y a été committé, et vous pouvez en faire un checkout en pointant le tag `release_day_1` :
 >
 >       $ svn co http://svn.askeet.com/tags/release_day_1/ askeet/
 
@@ -204,7 +208,7 @@ Il s'est déjà écoulé une heure ! Nous avons beaucoup parlé, et rien n'a ét
 * conception du modèle de données et génération du mapping objet-relationnel
 * génération automatique des bases d'un module
 
-Entre-temps, si vous voulez vous tenir au courant des dernières nouvelles sur askeet, visitez le [forum dédié](http://www.symfony-project.com/forum/index.php/f/8/).
+Entre-temps, si vous voulez vous tenir au courant des dernières nouvelles sur askeet, vous pouvez [souscrire à la mail-liste de l'askeet](mailto:askeet-subscribe@symfony-project.com) ou visitez le [forum dédié](http://www.symfony-project.com/forum/index.php/f/8/).
 
 N'oubliez pas de revenir demain !
 
