@@ -1,18 +1,19 @@
-﻿calendrier de l’avent deuxième jour: configurer un modèle de données
-====================================================================
+﻿Symfony - Calendrier de l’avent deuxième jour: configurer un modèle de données
+========================================================
 
 Précédemment dans Symfony
--------------------------
+---------------------
 
-Au cours du [premier jour](1.txt), de ce long mais néanmoins intéressant tutorial, nous avons vu comment installer le framework Symfony, configurer une nouvelle application et l’environnement de développement,  ainsi qu’apporter de la sécurité au code grâce au contrôleur de version. D'ailleurs, le code de l’application généré durant le premier jour est disponible à l’adresse suivante : 
+Au cours du [premier jour](1.txt), de ce long mais néanmoins intéressant tutorial, nous avons vu comment installer le framework Symfony, configurer une nouvelle application et l’environnement de développement,  ainsi qu’apporter de la sécurité au code grâce au contrôleur de version. D'ailleurs, le code de l’application généré durant le premier jour est disponible à l’adresse suivante :
 
-	http://svn.askeet.com/
+    http://svn.askeet.com/
 
 L’objectif du deuxième jour est de définir le résultat final en termes de fonctionnalités, esquisser le modèle de données, et de commencer à coder. Cela implique de générer un modèle d’objet relationnel et de l’utiliser pour créer, rechercher et mettre à jour une base de données grâce à une structure de base de l’application.
+
 C’est beaucoup. Allons-y !
 
 Le projet dévoilé
------------------
+--------------------
 
 Que voulez-vous savoir ? C’est une question intéressante. Il y a beaucoup de questions intéressantes comme :
 
@@ -28,11 +29,10 @@ Découvrez [askeet](http://www.askeet.com/). Un site web dont le but est d’aid
 
 Maintenant vous pourriez poser la question suivante : n’ais-je pas déjà vu un pareil site sur le web ? Bon, si c’est le cas nous sommes grillés mais si vous faites référence à [faqts](http://www.faqts.com/), [eHow](http://www.ehow.com/), [Ask Jeeves](http://www.ask.com/) ou quelque chose de similaire, sans réponses collectives,  sans AJAX, sans fil RSS et sans tags ce n’est pas le même site. Ici nous parlons d’une application web 2.0.
 
-Le challenge d’askeet c’est que ce n’est pas qu’un site web, mais également une application téléchargeable que l’on peut installer chez soi ou sur un intranet professionnel et d’y ajouter des fonctionnalités.  Le code source va être publié en licence open-source.
-Vous voulez garder une trace de toutes les astuces que vous avez apprises lorsque vous avez démonté votre voiture ? Vous ne voulez pas développer de FAQ pour votre site web ? Ne cherchez plus, car askeet existe. Enfin, il va exister c’est notre cadeau de noël. 
+Le challenge d’askeet c’est que ce n’est pas qu’un site web, mais également une application téléchargeable que l’on peut installer chez soi ou sur un intranet professionnel et d’y ajouter des fonctionnalités.  Le code source va être publié en licence open-source. Vous voulez garder une trace de toutes les astuces que vous avez apprises lorsque vous avez démonté votre voiture ? Vous ne voulez pas développer de FAQ pour votre site web ? Ne cherchez plus, car askeet existe. Enfin, il va exister c’est notre cadeau de noël. 
 
 Par où commencer ?
-------------------
+---------------
 
 Alors, par où êtes-vous censé commencer une application askeet ? Ca dépend de vous. Vous pouvez écrire des histoires, faire un jeu de planification et trouver un partenaire pour programmer à deux si vous êtes un adepte d’[XP][1], ou rédiger une spécification détaillée de votre site web, accompagnée d’un croquis de tous les objets, états, interactions et plus encore si vous étiez un fan d’[UML][2].
 
@@ -40,24 +40,23 @@ Mais ce tutorial ne traite pas du développement en général, donc nous allons 
 
 Pour ce projet, nous allons utiliser une base MySQL avec le type de table InnoDB pour profiter des contraintes d’intégrités et le support des transactions. Nous aurions pu utiliser une base SQLite pour les premières étapes, pour éviter de mettre en place une vraie base de données. Cela aurai demandé que quelques changements dans le fichier `database.yml`, nous vous laisserons vous y intéresser en tant qu’exercice.
 
-
-
 Modèle de données
------------------
+----------
 
 ### Modèle relationnel 
 
-De toute évidence, il y aura les tables ‘question’ et ‘réponse’. Nous avons besoin d’une table ‘user’, et nous stockerons les intérêts des utilisateurs pour une question dans une table ‘interest’, et l’évaluation, par un utilisateur, d’une réponse dans une table ‘relevancy’.
+De toute évidence, il y aura les tables 'question' et 'answer'. Nous avons besoin d’une table ‘user’, et nous stockerons les intérêts des utilisateurs pour une question dans une table ‘interest’, et l’évaluation, par un utilisateur, d’une réponse dans une table ‘relevancy’.
 
 Les utilisateurs devront s’identifier pour ajouter une question, pour évaluer la pertinence d’une réponse, ou pour se déclarer intéressé par une question. Pour répondre ils ne seront pas obligés de s’identifier, mais une réponse devra toujours être reliée à un utilisateur pour que ceux avec des réponses populaires puissent être distingués. Les réponses données sans identification seront visibles en tant que contribution à un utilisateur générique, appelé ‘Anonymous Coward’. Il est plus facile de comprendre cela avec un diagramme de relation entre les entités. 
 
 ![ERD](/images/askeet/mcd1.gif)
 
-Notez que nous avons déclaré un champ `created_at` pour chaque table. Symfony reconnaît de tels champs et initialise la valeur à l’heure actuelle du système quand un enregistrement est créé. C’est la même chose pour le champ `updated_at` : leurs valeurs est initialisée à l’heure système quand l’enregistrement est mit à jour.
+Notez que nous avons déclaré un champ `created_at` pour chaque table. Symfony reconnaît de tels champs et initialise la valeur à l’heure actuelle du système quand un enregistrement est créé. C’est la même chose pour le champ `updated_at` : leurs valeurs est initialisée à l’heure système quand l’enregistrement est mis à jour.
 
 ### `schema.xml`
 
 Le modèle relationnel doit être transcrit en un fichier de configuration pour que Symfony le comprenne. C’est l’objectif du fichier `schema.xml` ou du fichier `schema.yml`, situé dans le répertoire `askeet/config/`. Symfony supporte le schéma au format XML et YAML.
+
 Il y a deux moyens d’écrire ce fichier : à la main, et c’est la façon que nous préférons, ou à partir d’une base existante. Regardons la première solution.
 
 Tout d’abord nous avons besoin de supprimer le fichier YAML installé par défaut : 
@@ -134,11 +133,11 @@ Notez que le nom de la base de données est `propel` dans ce fichier, quelque so
 
 Il y a un autre moyen de créer un fichier `schema.xml` si vous avez une base de données existante. Ainsi, si vous êtes familiarisé avec un outil de création de base de données graphique, vous préférerez construire votre schéma depuis votre base MySQL générée. Avant cela, vous devez juste éditer le fichier `propel.ini` situé dans le répertoire `askeet/config/` et saisir les paramètres de connexion à votre base de données :
 
-propel.database.url = mysql://username:password@localhost/databasename
+    propel.database.url = mysql://username:password@localhost/databasename
 
-… ou `username`, `password`, `localhost` et `databasename` sont vos paramètres de connexion actuels. Vous pouvez maintenant exécuter la commande `propel-build-schema` (depuis le répertoire `askeet/`) pour générer le `schema.xml` de votre base de données :
+… où `username`, `password`, `localhost` et `databasename` sont vos paramètres de connexion actuels. Vous pouvez maintenant exécuter la commande `propel-build-schema` (depuis le répertoire `askeet/`) pour générer le `schema.xml` de votre base de données :
 
-	$ symfony propel-build-schema
+    $ symfony propel-build-schema
 
 >**Note**: certains outils vous permettent de construire votre base de données graphiquement (par exemple [Fabforce's Dbdesigner](http://www.fabforce.net/dbdesigner4/)) et de générer le fichier `schema.xml` directement (avec [DB Designer 4 TO Propel Schema Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php)).
 
@@ -187,7 +186,6 @@ Plutôt que de créer un fichier `schema.xml`, vous pouvez aussi créer un fichi
         created_at:  ~
 
 ### Construction du modèle objet
-
 Pour utiliser le moteur InnoDB, une ligne doit être ajoutée au fichier `propel.ini` situé dans le répertoire `askeet/config/` :
 
 	propel.mysql.tableType = InnoDB
@@ -205,7 +203,7 @@ La base de données
 
 Maintenant que Symfony possède un modèle objet de la base de données, il est temps de connecter votre projet à la base de données. Premièrement, vous devez créer une base dans MySQL :
 
-	$ mysqladmin -u youruser -p create askeet
+    $ mysqladmin -u youruser -p create askeet
 
 Maintenant ouvrez le fichier de configuration `askeet/config/databases.yml`. Si c’est votre première fois avec Symfony, vous allez découvrir que les fichiers de configuration de Symfony sont écris en [YAML][4]. La syntaxe est très simple, mais il y a une contrainte majeure dans les fichiers YAML : n’utiliser jamais de tabulation, toujours des espaces. Maintenant que vous savez cela, vous êtres prêt à éditer le fichier et entrer vos paramètres de connexion actuels à votre base de données sous le `all` : 
 
@@ -221,22 +219,21 @@ Maintenant ouvrez le fichier de configuration `askeet/config/databases.yml`. Si 
 
 Si vous voulez en savoir plus sur la configuration de Symfony et les fichiers YAML, lisez le chapitre sur la [configuration en pratique](http://www.symfony-project.com/book/1_0/19-Mastering-Symfony-s-Configuration-Files) du livre Symfony.
 
-
-
 ### Construction
 
 Si vous n’avez pas écris le fichier `schema.xml` à la main vous avez surement les tables correspondante dans votre base de données. Vous pouvez donc ignorer ce qui suit.
-Pour les fans du clavier, voici une surprise : vous n’avez pas besoin de créer les tables et les colonnes dans MySQL. Vous l’avez déjà fait dans le `schema.xml`, donc Symfony va construire pour vous les commandes SQL :
 
-	$ symfony propel-build-sql
+Pour les fans du clavier, voici une surprise : vous n’avez pas besoin de créer les tables et les colonnes dans MySQL. Vous l’avez déjà fait dans le `schema.xml`, donc symfony va construire pour vous les commandes SQL :
+
+    $ symfony propel-build-sql
 
 Cette commande crée un `lib.model.schema.sql` dans le répertoire `askeet/data/sql/`. Utilisez le comme commande SQL dans MySQL:
 
-	$ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
+    $ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
 
 De manière alternative, vous pouvez aussi utiliser l'instruction `propel-insert-sql`:
 
-	$ symfony propel-insert-sql
+    $ symfony propel-insert-sql
 
 Test de l’accès aux données via CRUD
 ------------------------------------
@@ -245,9 +242,10 @@ Il est toujours agréable de voir que le travail effectué est utile. Jusqu'à m
 
 Dans le répertoire `askeet/`, tapez:
 
-	$ symfony propel-generate-crud frontend question Question
-
+    $ symfony propel-generate-crud frontend question Question
+    
 Cela génère une ébauche pour un module `question` dans l'application `frontend`, basé sur le modèle objet Propel `Question`, avec les actions basiques Create Retrieve Update Delete  (Ce qui explique l'acronyme CRUD). Ne vous y trompez pas: Une ébauche n'est pas une application finie, mais la structure basique sur laquelle vous pouvez développer de nouveaux éléments, ajouter des règles de gestion et customiser l’apparence.
+
 La liste de toutes les actions créées par un générateur CRUD est:
 
 | Nom Action   | Description
@@ -259,14 +257,17 @@ La liste de toutes les actions créées par un générateur CRUD est:
 | update       | Modifie un enregistrement selon les paramètres indiqués dans la requête, puis retourne à l'affichage
 | delete       | Supprime un enregistrement donné de la table
 
-Vous trouverez plus d’informations sur les actions générées dans le [chapitre sur les ébauches](http://www.symfony-project.com/book/1_0/14-Generators) du libre Symfony. Dans le répertoire `askeet/apps/frontend/modules/`, notez le nouveau module `question` et consultez sa source.
+Vous trouverez plus d’informations sur les actions générées dans le [chapitre sur les ébauches](http://www.symfony-project.com/book/1_0/14-Generators) du libre Symfony. 
+
+Dans le répertoire `askeet/apps/frontend/modules/`, notez le nouveau module `question` et consultez sa source.
+
 Quelque soit le moment ou vous ajoutez une classe qui doit être chargée automatiquement, n'oubliez pas de vider le cache (pour recharger le cache auto-chargé):
 
-	$ symfony cc frontend config
+    $ symfony cc frontend config
 
 Vous pouvez maintenant le tester en ligne en consultant la page: 
 	
-	http://askeet/question
+    http://askeet/question
 
 ![Create a new record](/images/askeet/CRUD1.gif)
 ![List all records](/images/askeet/CRUD2.gif)
@@ -276,13 +277,15 @@ Allez-y, jouez avec. Ajoutez quelques questions, éditez les, listez les, suppri
 A demain
 --------
 
-Vous n'avez pas écrit une seule ligne de PHP, et pourtant  vous avez une application basique utilisable. Ce n'est pas si mal pour le deuxième jour. Demain, nous commencerons  à écrire du code pour obtenir une page d'accueil avenante qui affiche la liste des questions. Nous ajouterons aussi des données de test à notre base de données en utilisant un processus batch, et apprendrons à étendre le modèle.
+Vous n'avez pas écrit une seule ligne de PHP, et pourtant  vous avez une application basique utilisable. Ce n'est pas si mal pour le deuxième jour. Demain, nous commencerons  à écrire du code pour obtenir une page d'accueil avenante qui affiche la liste des questions. Nous ajouterons aussi des données de test à notre base de données en utilisant un processus batch, et apprendrons à étendre le modèle.  
+
 Maintenant que vous savez ce que l'application fera, vous devriez pouvoir imaginer une fonction additionnelle. N'hésitez pas à suggérer quoique ce soit en utilisant la [mailing-list d’askeet](mailto:askeet-subscribe@symfony-project.com), l'idée remportant le plus franc succès sera l'ajout du 21ème jour de ce calendrier de l'avent Symfony.
+
 N'hésitez pas à consulter la source du tutorial d'aujourd'hui (tag release_day_2) à l'adresse:
 
-	http://svn.askeet.com/tags/release_day_2
+    http://svn.askeet.com/tags/release_day_2
 
-[1]: http://www.xprogramming.com/xpmag/whatisxp.htm    "(XP) Extreme Programming Explained"
-[2]: http://www.uml.org/                               "Unified Modeling Language"
-[3]: http://propel.phpdb.org/trac/                     "Propel"
-[4]: http://www.yaml.org/                              "YAML"
+[1]:  http://www.xprogramming.com/xpmag/whatisxp.htm    "(XP) Extreme Programming Explained"
+[2]:  http://www.uml.org/                               "Unified Modeling Language"
+[3]:  http://propel.phpdb.org/trac/                     "Propel"
+[4]:  http://www.yaml.org/                              "YAML"
