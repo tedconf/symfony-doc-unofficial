@@ -1,7 +1,10 @@
-Chapter 14 - Generators
-=======================
+Chapter 14 - Admin Generator
+============================
 
-Many applications are based on data stored in a database and offer an interface to access it. Symfony automates the repetitive task of creating a module providing data manipulation capabilities based on a Propel object. If your object model is properly defined, symfony can even generate an entire site administration automatically. This chapter will tell you of the two generators bundled in symfony: scaffolding and administration generator. The latter relies on a special configuration file with a complete syntax, so most of this chapter describes the various possibilities of the administration generator.
+>**Warning**
+>This chapter describes the admin generator system which still uses the 1.0 form system. The information about the CRUD generator have been moved to the "[symfony Forms in Action](http://www.symfony-project.org/book/forms/1_1/en/04-Propel-Integration)" book as it uses the new form framework.
+
+Many applications are based on data stored in a database and offer an interface to access it. Symfony automates the repetitive task of creating a module providing data manipulation capabilities based on a Propel object. If your object model is properly defined, symfony can even generate an entire site administration automatically. This chapter describes the use of the administration generator, which is bundled with the Propel plugin. It relies on a special configuration file with a complete syntax, so most of this chapter describes the various possibilities of the administration generator.
 
 Code Generation Based on the Model
 ----------------------------------
@@ -15,43 +18,11 @@ In a web application, data access operations can be categorized as one of the fo
 
 These operations are so common that they have a dedicated acronym: CRUD. Many pages can be reduced to one of them. For instance, in a forum application, the list of latest posts is a retrieve operation, and the reply to a post corresponds to a create operation.
 
-The basic actions and templates that implement the CRUD operations for a given table are repeatedly created in web applications. In symfony, the model layer contains enough information to allow generating the CRUD operations code, so as to speed up the early part of the development or the back-end interfaces.
-
-All the code generation tasks based on the model create an entire module, and result from a single call to the symfony command line in the shape of the following:
-
-    > php symfony <TASK_NAME> <APP_NAME> <MODULE_NAME> <CLASS_NAME>
-
-The code generation tasks are `propel-init-crud`, `propel:generate-crud`, and `propel:init-admin`.
-
-### Scaffolding and Administration
-
-During application development, code generation can be used for two distinct purposes:
-
-  * A scaffolding is the basic structure (actions and templates) required to operate CRUD on a given table. The code is minimal, since it is meant to serve as a guideline for further development. It is a starting base that must be adapted to match your logic and presentation requirements. Scaffoldings are mostly used during the development phase, to provide a web access to a database, to build a prototype, or to bootstrap a module primarily based on a table.
-  * An administration is a sophisticated interface for data manipulation, dedicated to back-end administration. Administrations differ from scaffoldings because their code is not meant to be modified manually. They can be customized, extended, or assembled through configuration or inheritance. Their presentation is important, and they take advantage of additional features such as sorting, pagination, and filtering. An administration can be created and handed over to the client as a finished part of the software product.
-
-The symfony command line uses the word crud to designate a scaffolding, and admin for an administration.
-
-### Initiating or Generating Code
-
-Symfony offers two ways to generate code: either by inheritance (`init`) or by code generation (`generate`).
-
-You can initiate a module, that is, create empty classes that inherit from the framework. This masks the PHP code of the actions and the templates to avoid them from being modified. This is useful if your data structure is not final, or if you just need a quick interface to a database to manipulate records. The code executed at runtime is not located in your application, but in the cache. The command-line tasks for this kind of generation start with `propel:init-`.
-
-Initiated action code is empty. For instance, an initiated `article` module has actions looking like this:
-
-    [php]
-    class articleActions extends autoarticleActions
-    {
-    }
-
-On the other hand, you can also generate the code of the actions and the templates so that it can be modified. The resulting module is therefore independent from the classes of the framework, and cannot be altered using configuration files. The command-line tasks for this kind of generation start with `propel:generate-`.
-
-As the scaffoldings are built to serve as a base for further developments, it is often best to generate a scaffolding. On the other hand, an administration should be easy to update through a change in the configuration, and it should remain usable even if the data model changes. That's why administrations are initiated only.
+The basic actions and templates that implement the CRUD operations for a given table are repeatedly created in web applications. In symfony, the model layer contains enough information to allow generating the CRUD operations code, so as to speed up the early part of the back-end interfaces.
 
 ### Example Data Model
 
-Throughout this chapter, the listings will demonstrate the capabilities of the symfony generators based on a simple example, which will remind you of Chapter 8. This is the well-known example of the weblog application, containing two `Article` and `Comment` classes. Listing 14-1 shows its schema, illustrated in Figure 14-1.
+Throughout this chapter, the listings will demonstrate the capabilities of the symfony admin generator based on a simple example, which will remind you of Chapter 8. This is the well-known example of the weblog application, containing two `Article` and `Comment` classes. Listing 14-1 shows its schema, illustrated in Figure 14-1.
 
 Listing 14-1 - `schema.yml` of the Example Weblog Application
 
@@ -74,120 +45,26 @@ Figure 14-1 - Example data model
 
 ![Example data model](/images/book/F1401.png "Example data model")
 
-There is no particular rule to follow during the schema creation to allow code generation. Symfony will use the schema as is and interpret its attributes to generate a scaffolding or an administration.
+There is no particular rule to follow during the schema creation to allow code generation. Symfony will use the schema as is and interpret its attributes to generate an administration.
 
 >**TIP**
 >To get the most out of this chapter, you need to actually do the examples. You will get a better understanding of what symfony generates and what can be done with the generated code if you have a view of every step described in the listings. So you are invited to create a data structure such as the one described previously, to create a database with a `blog_article` and a `blog_comment` table, and to populate this database with sample data.
 
-Scaffolding
------------
-
-Scaffolding is of great use in the early days of application development. With a single command, symfony creates an entire module based on the description of a given table.
-
-### Generating a Scaffolding
-
-To generate the scaffolding for an `article` module based on the `Article` model class, type the following:
-
-    > php symfony propel:generate-crud frontend article Article
-
-Symfony reads the definition of the `Article` class in the `schema.yml` and creates a set of templates and actions based on it, in the `frontend/modules/article/` directory.
-
-The generated module contains three views. The `list` view, which is the default view, displays the rows of the `blog_article` table when browsing to `http://localhost/frontend_dev.php/article` as reproduced in Figure 14-2.
-
-Figure 14-2 - `list` view of the `article` module
-
-![list view of the article module](/images/book/F1402.png "list view of the article module")
-
-Clicking an article identifier displays the `show` view. The details of one row appear in a single page, as in Figure 14-3.
-
-Figure 14-3 - `show` view of the `article` module
-
-![show view of the article module](/images/book/F1403.png "show view of the article module")
-
-Editing an article by clicking the edit link, or creating a new article by clicking the create link in the `list` view, displays the `edit` view, reproduced in Figure 14-4.
-
-Using this module, you can create new articles, and modify or delete existing ones. The generated code is a good base for further developments. Listing 14-2 lists the generated actions and templates of the new module.
-
-Figure 14-4 - `edit` view of the `article` module
-
-![edit view of the article module](/images/book/F1404.png "edit view of the article module")
-
-Listing 14-2 - Generated CRUD Elements, in `frontend/modules/article/`
-
-    // In actions/actions.class.php
-    index           // Forwards to the list action below
-    list            // Displays the list of all the records of the table
-    show            // Displays the lists of all columns of a record
-    edit            // Displays a form to modify the columns of a record
-    update 	         // Action called by the edit action form
-    delete 	         // Deletes a record
-    create 	         // Creates a new record
-
-    // In templates/
-    editSuccess.php  // Record edition form (edit view)
-    listSuccess.php  // List of all records (list view)
-    showSuccess.php  // Detail of one record (show view)
-
-The logic of these actions and templates is quite simple and explicit, and so rather than reproduce and explain it all, Listing 14-3 gives just a sneak peek on the generated action class.
-
-Listing 14-3 - Generated Action Class, in `frontend/modules/article/actions/actions.class.php`
-
-    [php]
-    class articleActions extends sfActions
-    {
-      public function executeIndex()
-      {
-        return $this->forward('article', 'list');
-      }
-
-      public function executeList()
-      {
-        $this->articles = ArticlePeer::doSelect(new Criteria());
-      }
-
-      public function executeShow($request)
-      {
-        $this->article = ArticlePeer::retrieveByPk($request->getParameter('id'));
-        $this->forward404Unless($this->article);
-      }
-      ...
-
-Modify the generated code to fit your requirements, repeat the CRUD generation for all the tables that you want to interact with, and you have a basic working application. Generating a scaffolding really bootstraps development; let symfony do the dirty job for you and focus on the interface and specifics.
-
-### Initiating a Scaffolding
-
-Initiating a scaffolding is mostly useful when you need to check that you can access the data in the database. It is fast to build and also fast to delete once you're sure that everything works fine.
-
-To initiate a Propel scaffolding that will create an `article` module to deal with the records of the `Article` model class name, type the following:
-
-    > php symfony propel-init-crud frontend article Article
-
-You can then access the `list` view using the default action:
-
-    http://localhost/frontend_dev.php/article
-
-The resulting pages are exactly the same as for a generated scaffolding. You can use them as a simple web interface to the database.
-
-If you check the newly created `actions.class.php` in the `article` module, you will see that it is empty: Everything is inherited from an auto-generated class. The same goes for the templates: There is no template file in the `templates/` directory. The code behind the initiated actions and templates is the same as for a generated scaffolding, but lies only in the application cache (`myproject/cache/frontend/prod/module/autoArticle/`).
-
-During application development, developers initiate scaffoldings to interact with the data, regardless of interface. The code is not meant to be customized; an initiated scaffolding can be seen as a simple alternative to PHPmyadmin to manage data.
-
 Administration
 --------------
 
-Symfony can generate more advanced modules, still based on model class definitions from the `schema.yml` file, for the back-end of your applications. You can create an entire site administration with only generated administration modules. The examples of this section will describe administration modules added to a `backend` application. If your project doesn't have a `backend` application, create its skeleton now by calling the `generate:app` task:
+Symfony can generate modules, based on model class definitions from the `schema.yml` file, for the back-end of your applications. You can create an entire site administration with only generated administration modules. The examples of this section will describe administration modules added to a `backend` application. If your project doesn't have a `backend` application, create its skeleton now by calling the `generate:app` task:
 
     > php symfony generate:app backend
 
 Administration modules interpret the model by way of a special configuration file called `generator.yml`, which can be altered to extend all the generated components and the module look and feel. Such modules benefit from the usual module mechanisms described in previous chapters (layout, validation, routing, custom configuration, autoloading, and so on). You can also override the generated action or templates, in order to integrate your own features into the generated administration, but `generator.yml` should take care of the most common requirements and restrict the use of PHP code only to the very specific.
 
-
 >**NOTE**
->The features described in this section use symfony 1.0's validation system and only work if you enable the `sfCompat10` plugin.
+>As the admin generator uses symfony 1.0 validation system, the `sfCompat10` plugin is automatically enabled for you.
 
 ### Initiating an Administration Module
 
-With symfony, you build an administration on a per-module basis. A module is generated based on a Propel object using the `propel:init-admin` task, which uses syntax similar to that used to initiate a scaffolding:
+With symfony, you build an administration on a per-module basis. A module is generated based on a Propel object using the `propel:init-admin` task:
 
     > php symfony propel:init-admin backend article Article
 
@@ -205,11 +82,6 @@ Figure 14-6 - `edit` view of the `article` module in the `backend` application
 
 ![edit view of the article module in the backend application](/images/book/F1406.png "edit view of the article module in the backend application")
 
-The difference between the interface of the scaffolding and the one of the administration may not look significant now, but the configurability of the administration will allow you to enhance the basic layout with many additional features without a line of PHP.
-
->**NOTE**
->Administration modules can only be initiated (not generated).
-
 ### A Look at the Generated Code
 
 The code of the Article administration module, in the `apps/backend/modules/article/` directory, is empty because it is only initiated. The best way to review the generated code of this module is to interact with it using the browser, and then check the contents of the `cache/` folder. Listing 14-4 lists the generated actions and the templates found in the cache.
@@ -218,7 +90,7 @@ Listing 14-4 - Generated Administration Elements, in `cache/backend/ENV/modules/
 
     // In actions/actions.class.php
     create           // Forwards to edit
-    delete 	          // Deletes a record
+    delete           // Deletes a record
     edit             // Displays a form to modify the fields of a record
                      // And handles the form submission
     index            // Forwards to list
@@ -249,7 +121,7 @@ This shows that a generated administration module is composed mainly of two view
 
 ### Introducing the generator.yml Configuration File
 
-The main difference between scaffoldings and administrations (apart from the fact that administration-generated modules don't have a `show` action) is that an administration relies on parameters found in the `generator.yml` YAML configuration file. To see the default configuration of a newly created administration module, open the `generator.yml` file, located in the `backend/modules/article/config/generator.yml` directory and reproduced in Listing 14-5.
+The generated administration modules rely on parameters found in the `generator.yml` YAML configuration file. To see the default configuration of a newly created administration module, open the `generator.yml` file, located in the `backend/modules/article/config/generator.yml` directory and reproduced in Listing 14-5.
 
 Listing 14-5 - Default Generator Configuration, in `backend/modules/article/config/generator.yml`
 
@@ -1089,7 +961,7 @@ Dealing with templates of templates is tricky, so the best advice if you want to
 >**SIDEBAR**
 >Building Your Own Generator
 >
->The scaffolding and administration generators both use a set of symfony internal components that automate the creation of generated actions and templates in the cache, the use of themes, and the parsing of templates of templates.
+>The administration generator use a set of symfony internal components that automate the creation of generated actions and templates in the cache, the use of themes, and the parsing of templates of templates.
 >
 >This means that symfony provides all the tools to build your own generator, which can look like the existing ones or be completely different. The generation of a module is managed by the `generate()` method of the `sfGeneratorManager` class. For instance, to generate an administration, symfony calls the following internally:
 >
@@ -1102,7 +974,7 @@ Dealing with templates of templates is tricky, so the best advice if you want to
 Summary
 -------
 
-To bootstrap your modules or automatically generate your back-end applications, the basis is a well-defined schema and object model. You can modify the PHP code of scaffoldings, but administration-generated modules are to be modified mostly through configuration.
+To automatically generate your back-end applications, the basis is a well-defined schema and object model. The customization of the administration-generated modules are to be done mostly through configuration.
 
 The `generator.yml` file is the heart of the programming of generated back-ends. It allows for the complete customization of content, features, and the look and feel of the `list` and `edit` views. You can manage field labels, tooltips, filters, sort order, page size, input type, foreign relationships, custom interactions, and credentials directly in YAML, without a single line of PHP code.
 
