@@ -593,7 +593,7 @@ Listing 11-27 - Sample Template for Multiple Ajax Updates
     <p>Your e-mail was received and will be answered shortly.</p>
     <p>Sincerely,</p>
 
-To update both, imagine that the Ajax response can be a JSON header containing the following array:
+To update both, imagine that the Ajax response can be a JSON data containing the following array:
 
      [["title", "My basic letter"], ["name", "Mr Brown"]]
 
@@ -604,46 +604,48 @@ Listing 11-28 - Updating More Than One Element from a Remote Response
     [php]
     <?php echo link_to_remote('Refresh the letter', array(
       'url'      => 'publishing/refresh',
-      'complete' => 'updateJSON(request, json)'
+      'complete' => 'updateJSON(ajax)'
     )) ?>
 
     <?php echo javascript_tag("
-    function updateJSON(request, json)
+    function updateJSON(ajax)
     {
-      var nbElementsInResponse = json.length;
-      for (var i = 0; i < nbElementsInResponse; i++)
+      json = ajax.responseJSON;
+      for (var i = 0; i < json.length; i++)
       {
          Element.update(json[i][0], json[i][1]);
       }
     }
     ") ?>
 
-The `complete` callback has access to the `json` header of the response and can pass it to a third-party function. This custom `updateJSON()` function iterates over the JSON header and for each member of the array, updates the element named by the first parameter with the content of the second parameter.
+The `complete` callback has access the ajax respomse and can pass it to a third-party function. This custom `updateJSON()` function iterates over the JSON obtained from the response via `responseJSON` and for each member of the array, updates the element named by the first parameter with the content of the second parameter.
 
 Listing 11-29 shows how the `publishing/refresh` action can return a JSON response.
 
-Listing 11-29 - Sample Action Returning a JSON Header
+Listing 11-29 - Sample Action Returning JSON data
 
     [php]
     class publishingActions extends sfActions
     {
       public function executeRefresh()
       {
+        $this->getResponse()->setHttpHeader('Content-Type','application/json; charset=utf-8');
         $output = '[["title", "My basic letter"], ["name", "Mr Brown"]]';
-        $this->getResponse()->setHttpHeader("X-JSON", '('.$output.')');
-
-        return sfView::HEADER_ONLY;
+        return $this->renderText('('.$output.')');
       }
 
-The HTTP protocol allows JSON to be stored in a response header. As the response doesn't have any content, the action sends it immediately as a header only. This bypasses the view layer entirely and is as fast as a `->renderText()`, but with an even smaller response.
-
->**CAUTION**
->There is a severe limitation to the approach shown in Listing 11-29: the maximum size of HTTP headers. There is no official limitation, but large headers may not be well transferred or interpreted by a browser. This means that if your JSON array is large, the remote action should return a normal response, with the JSON as a JavaScript array.
+Using the `application/json` content type allows Prototype to automatically evaluate the JSON passed as body of the response, which is preferred as of returning it via the header, because the HTTP header is limited in size and some browsers struggle with responses that do not have a body.
+By using `->renderText()` the template file is not used, resulting in better performance.
 
 JSON has become a standard among web applications. Web services often propose responses in JSON rather than XML to allow service integration in the client (mashup), rather than on the server. So if you wonder which format to use for communication between your server and a JavaScript function, JSON is probably your best bet.
 
 >**TIP**
 >Since version 5.2, PHP offers two functions, `json_encode()` and `json_decode()`, that allow you to convert an array between the PHP syntax and the JSON syntax, and vice versa ([http://www.php.net/manual/en/ref.json.php](http://www.php.net/manual/en/ref.json.php)). These facilitate the integration of JSON arrays and Ajax in general.
+>This would enable to use of a more PHP like code:
+>
+>     [php]
+>     $output = array("title" => "My basic letter", "name" => "Mr Brown");
+>     return $this->renderText(json_encode($output));
 
 Performing Complex Interactions with Ajax
 -----------------------------------------
