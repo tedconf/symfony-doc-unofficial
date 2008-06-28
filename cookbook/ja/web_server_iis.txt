@@ -1,0 +1,167 @@
+IIS上でsymfonyをインストールする
+================================
+
+もちろん、ウェブサーバーに関してApache以外の選択肢があります。それがIIS上にsymfonyをインストールする方法のチュートリアルを見る理由です。
+
+何が必要でしょうか？
+-------------------
+
+- Windowsサーバー(絶対)
+- IISサーバー(明らか)
+- PHP5がIISにインストールされisapiモジュールとして設定されている(PHP5のインストール方法の手引きを参照)
+- isapi/rewrite/ [www.isapirewrite.com](http://www.isapirewrite.com/)、Apacheのmod_rewriteを置き換えるために使うURL操作エンジン。なぜこの製品なのでしょうか？これは主にIIS上で利用されフリーなLiteバージョンはsymfonyに対して機能するからです。何か他の製品に慣れていたら、読み続ければ、このチュートリアルの最後の見出しのみに1つの違いがあるだけです。
+
+symfonyをインストールする
+-------------------------
+
+最初に、PEARパッケージを行進して下さい。チャネルを取り扱うためにバージョン1.4.0以降が必要だからです:
+
+    $ pear upgrade PEAR
+
+それからsymfonyのチャネルを追加して下さい:
+
+    $ pear channel-discover pear.symfony-project.com
+
+ベータバージョン0.5.73以降のsymfonyをインストールして下さい:
+
+    $ pear install symfony/symfony-beta
+
+>**Note**: `phing`パッケージがない場合、同じようにインストールする必要があります:
+>
+>     $ pear install http://phing.info/pear/phing-current.tgz
+>
+
+詳細な内容は[symfonyのインストール方法の章](http://www.symfony-project.com/book/1_1/03-Running-Symfony)を調べて下さい。
+
+プロジェクトを初期化する
+-------------------------
+
+プロジェクトのディレクトリ(`c:\myproject`を使う場合)と`myapp`と呼ばれるアプリケーションのための基本的なツリー構造を作るために、コマンドコンソールを開き次の内容を入力して下さい:
+
+    $ cd c:\myproject
+    $ symfony init-project myproject
+    $ symfony init-app myapp
+
+
+IISを設定する
+-------------
+
+これから2つの設定オプションを考えます:
+
+- 最初の場合、ウェブサーバーはsymfonyのプロジェクトのみに使われ、URLは`http://myproject/`のようなものだけです。`myapp`ディレクトリを作成したディレクトリが`c:\myproject\`であることを前提として、(IISの管理コンソール内で)ウェブサーバーのrootディレクトリを`c:\myproject\web`に設定します。
+
+- 他のオプションはサーバーの1つの(おそらくはバーチャルの)ディレクトリのsymfonyプロジェクトをインストールすることで、URLは`http://myserver/myproject/`のようなものになります。IISの管理コンソール内で、`c:\myproject\web`ディレクトリに対してウェブサイトのroot上に新しいバーチャルディレクトリを作ります。
+
+バーチャルディレクトリをサーバーのメインディレクトリに追加します。これを`sf`と名付けpearディレクトリの`data\symfony\web\sf`に設定します。デフォルトの設定でPHP5を`c:\php5`にインストールした場合、フルパスは`c:\php5\PEAR\pear\data\symfony\web\sf`です。
+
+URLの書き換えを設定する
+-----------------------
+
+isapi/rewriteがサーバーにインストールされ機能していることを前提とします。まだISAPIを購入していないので、設定するのは1つのhttpd.iniファイルのみです。設定は以前定義したオプションに依存します:
+
+- 我々が必要な`http://myproject/`のようなURLに対して:
+
+        [ISAPI_Rewrite]
+        
+        # ワーム攻撃からコンピュータを守る
+        RewriteRule .*(?:global.asa|default\.ida|root\.exe|\.\.).* . [F,I,O]
+        
+        # .html以外の.something拡張子を持つファイルをすべてスキップする
+        RewriteCond URL .*\..+$
+        RewriteCond URL (?!.*\.html$).*
+        RewriteRule (.*) $1 [L]
+        
+        # .phpファイルはそのままにする
+        RewriteRule (.*\.php)(.*) $1$2 [L]
+        
+        # 最後にフロントウェブコントローラにリダイレクトする
+        RewriteRule (.*) /index.php [L]
+
+- 我々が必要な`http://myserver/myproject/`のようなURLに対して:
+
+        [ISAPI_Rewrite]
+        
+        # ワーム攻撃からコンピュータを守る
+        RewriteRule .*(?:global.asa|default\.ida|root\.exe|\.\.).* . [F,I,O]
+        
+        # .html以外の.something拡張子を持つファイルをすべてスキップする
+        RewriteCond URL /myproject/.*\..+$
+        RewriteCond URL (?!/myproject/.*\.html$).*
+        RewriteRule /myproject/(.*) /myproject/$1 [L]
+        
+        # .phpファイルはそのままにする
+        RewriteRule /myproject/(.*\.php)(.*) /myproject/$1$2 [L]
+        
+        # 最後にフロントウェブコントローラにリダイレクトする
+        RewriteRule /myproject/(.*) /myproject/index.php [L]
+
+IISを再起動します
+
+symfonyを設定する
+-----------------
+
+最後のステップはsymfonyプロジェクトの`config`ディレクトリ内に設置された`settings.yml`ファイルを編集することです(我々の例では`c:\myproject\apps\myapp\config\`です)。2つのオプションが少々異なっていることを発見しても驚かないでしょう:
+
+- `http://mproject/`のようなURLに対しては、下記の行が必要です:
+
+        all:
+         .settings:
+           path_info_key:          HTTP_X_REWRITE_URL
+
+- `http://myserver/myproject`のようなURLに対しては、下記の行が必要です:
+
+        all:
+         .settings:
+           path_info_key:          HTTP_X_REWRITE_URL
+
+>**Important note**: isapi/rewrite/を使わない場合、`HTTP_X_REWRITE_URL`は間違っている可能性があります。symfonyの設定方法を知るために詳細なテストを作らなければなりません。プロジェクトのwebディレクトリ内の`myapp_dev.php`ファイル(もしくは`whatever you named your application_dev.php`)を開き、次の2行を追加します:
+>
+>     print phpinfo();
+>     die();
+>
+>では次のURL: `http://myproject/myapp_dev.php/test/rewrite`(もしくは設定に依存する`http://myserver/myproject/myapp_dev.php/test/rewrite`)を開き、PHP変数を見ます。`_SERVER["PATH_INFO"]`が/test/rewriteと等しい場合、`settings.yml`ファイルから`path_info_key`行を削除するか、この値(`isapi/rewrite`に対する`HTTP_X_REWRITE_URL`)を含む変数の名前を探さなければなりません。以前の2行を除去すれば、symfonyの準備が整います。
+
+独自のディレクトリ内でsymfonyアプリケーションを設定する
+--------------------------------------------------------
+
+symfonyプロジェクトはいくつかのアプリケーションを含みます。デフォルトの設定において、すべてのアプリケーションは同じCSSとアップロードディレクトリを共有します。これを変更し、myappアプリケーションに対して個別のディレクトリを作ります。以前のオプションを考慮して、次のURL: `http://myproject/myapp` と `http://myserver/myapp`を実現することにします。今回、これらのオプション間の設定に違いはありません。
+
+symfonyプロジェクトのwebサブディレクトリ内に`myapp`サブディレクトリを作ります(我々の場合`c:\myproject\web\myapp`です)。
+
+`index.php`と`myapp_dev.php`ファイルをこのディレクトリにコピーし、`css`と`uploads`という名前の2つのディレクトリを作ります。
+
+IISの管理コンソール内で、`myapp`という名前のサーバーのroot上に新しいバーチャルディレクトリを作ります。このバーチャルディレクトリを`c:\myproject\myapp`に設定します。
+
+`httpd.ini`ファイルの最後で次の行を追加して下さい：
+
+      #[myappに直接アクセスするための設定]
+      # .html以外の.something拡張子を持つファイルをすべてスキップする
+      RewriteCond URL /myapp/.*\..+$
+      RewriteCond URL (?!/myapp/.*\.html$).*
+      RewriteRule /myapp/(.*) /myapp/$1 [L]
+  
+      # .phpファイルはそのままにする
+      RewriteRule /myapp/(.*\.php)(.*) /myapp/$1$2 [L]
+  
+      # 最後にフロントウェブコントローラにリダイレクトする
+      RewriteRule /myapp/(.*) /myapp/index.php [L]
+
+`myapp`アプリケーションの`settings.yml`ファイル(`c:\myproject\apps\myapp\config\settings.yml`)を編集し次の行を追加します:
+
+      all:
+       .settings:
+         path_info_key:          HTTP_X_REWRITE_URL
+
+(`HTTP_X_REWRITE_URL`に関する前回のノートを参照)
+
+最後に、フロントコントローラ(`c:\myproject\web\myapp`内の`index.php`と`myapp_dev.php`)の両方を編集し変更します:
+
+    [php]
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
+
+上記のコードを以下のようにします:
+
+    [php]
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/../..'));
+
+これでお終いです。うまくゆきました。
