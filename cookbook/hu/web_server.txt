@@ -1,0 +1,203 @@
+Hogyan állítsuk be a web szervert (Apache)
+==========================================
+
+Áttekintés
+----------
+
+Több módja is van a web szerver beállításának ha symfony alkalmazásokat szeretnénk futtatni. Ebben a fejezetben bemutatjuk a különböző konfigurációs lehetőségeket és néhány trükköt, optimalizációs lehetőséget.
+
+Bevezető
+--------
+
+Az alábbi példákban a `myproject` projekt egy `myapp` alkalmazást tartalmaz. Az alkalmazához tartozó front controller az `index.php`, ami a `/home/steve/myproject/web/` könyvtárban foglal helyet. A symfony data könyvtárát a `$data_dir` jelöli.
+
+Virtual host
+------------
+
+A virtual hostolás lehetővé teszi a web szerver beállítását úgy, hogy a symfony alkalmazás a tartomány gyökerén (vagy egy altartományon keresztül) legyen elérhető.
+
+
+    http://myapp.example.com/
+
+Tegyük fel, hogy Apache-ot futtatunk. A `myapp` alkalmazáshoz szükséges virtual host beállításhoz vegyük fel az alábbi sorokat a `httpd.conf` fileba:
+
+    <Directory "/$data_dir/symfony/web/sf">
+     AllowOverride All
+     Allow from All
+    </Directory>
+    <VirtualHost *:80>
+      ServerName myapp.example.com
+      DocumentRoot "/home/steve/myproject/web"
+      DirectoryIndex index.php
+      Alias /sf /$data_dir/symfony/web/sf
+
+      <Directory "/home/steve/myproject/web">
+       AllowOverride All
+       Allow from All
+      </Directory>
+    </VirtualHost>
+
+Az `Alias` parancs ahhoz szükséges, hogy a debug eszköztár helyesen jelenjen meg. A `$data_dir` jelöli a PEAR data könyvtárának helyét. Például, *nix rendszereken, a következőt kell megadni:
+
+    Alias /sf /usr/local/lib/php/data/symfony/web/sf
+
+A PEAR könyvtárakról további információ a [telepítés fejezet](http://www.symfony-project.org/book/1_1/03-Running-Symfony)ben található. 
+
+Az Apache újraindítása után az alkalmázás az alábbi URL-en érhető el:
+
+
+    http://myapp.example.com/
+
+vagy debug módban:
+
+    http://myapp.example.com/myapp_dev.php/
+
+URL rewriting
+-------------
+
+Alapesetben a web szerver úgy van konfigurálva, hogy az éles rendszerhez (production) tartozó front controller (`index.php`) ne jelenjen meg az URL-ben. Ez azt jelenti, hogy az alábbi forma helyett
+
+    http://myapp.example.com/index.php/
+
+használható a következőt is:
+
+    http://myapp.example.com/
+
+Ehhez az Apache a `mod_rewrite` modult használja, és a következő soroknak kell jelen lenni a `myproject/web/.htaccess`-ben (ami alapbeállítás):
+
+    # all files with .something are skipped
+    RewriteCond %{REQUEST_URI} \..+$
+    RewriteCond %{REQUEST_URI} !\.html$
+    RewriteRule .* - [L]
+    # the others are redirected to the front web controller
+    RewriteRule ^(.*)$ index.php [QSA,L]
+
+Még egy kicsit felturbózhatók az URL-ek: egy `.html` kiterjesztéssel. A `main` modul `index` action hívásakor, a routing rendszer alapbeállításaival, a következő URL jelenik meg:
+
+
+    http://myapp.example.com/main/index
+
+Az alapértelmezett `settings.yml` tartalmaz egy kikommentezett `suffix` paramétert:
+
+    all:
+    #  .settings:
+    #    suffix:        .
+
+Ahhoz, hogy a fenti URL az alábbi formát vegye fel:
+
+    http://myapp.example.com/main/index.html
+    
+vegyük ki a kommentet az alábbi sorok elől:
+
+    all:
+      .settings:
+        suffix:        .html
+
+Alias
+-----
+
+Ha már rendelkezünk domain névvel, és szeretnénk, ha a symfony alkalmazásunk ezen tartományon belül legyen elérhető, akkor a virtual host nem a megfelelő választás. Például tegyük fel, hogy az alkalmazást a következő címen akarjuk elérni:
+
+    http://www.example.com/myapp/
+
+Hogy ezt megtehessük a `httpd.conf`-hoz hozzá kell adni a következő sorokat:
+
+    Alias /myapp/ /home/steve/myproject/web/
+    <Directory "/home/steve/myproject/web">
+       AllowOverride All
+       Allow from All
+    </Directory>
+
+Emellett a `myproject/web/` könyvtárban található `.htaccess` fileban is módosítani kell az utolsó rewrite szabályt erről: 
+
+    RewriteRule ^(.*)$ index.php [QSA,L]
+
+erre:
+
+    RewriteRule ^(.*)$ /myapp/index.php [QSA,L]
+
+Az Apache újraindítása után az alkalmazásunk immár így is elérhető:
+
+    http://www.example.com/myapp/
+
+Több alkalmazás egy projekten belül
+-----------------------------------
+
+Fejlesztés közben előbb-utóbb találkozunk a következő problémával: hogyan érhetünk el több alkalmazás is a projektünkön belül. Például a `myproject` projektünk rendelkezik egy `myapp` alkalmazással a nagyközönségnek és egy `admin` alkalmazással a tartalmak kezeléséhez (ezt back-office-nak is szokták nevezni). Hogyan engedélyezhetjük a hozzáférést a különböző alkalmazásokhoz?
+
+### Virtaul hostok
+
+Felvehetünk új virtual hostokat a `httpd.conf` fileba. Ez könnyen érthető:
+
+    <Directory "/$data_dir/symfony/web/sf">
+     AllowOverride All
+     Allow from All
+    </Directory>
+
+    <VirtualHost *:80>
+      ServerName myapp.example.com
+      DocumentRoot "/home/steve/myproject/web"
+      DirectoryIndex index.php
+      Alias /sf /$data_dir/symfony/web/sf
+
+      <Directory "/home/steve/myproject/web">
+       AllowOverride All
+       Allow from All
+      </Directory>
+    </VirtualHost>
+        
+    <VirtualHost *:80>
+      ServerName admin.example.com
+      DocumentRoot "/home/steve/myproject/web"
+      DirectoryIndex admin.php
+      Alias /sf /$data_dir/symfony/web/sf
+
+      <Directory "/home/steve/myproject/web">
+        AllowOverride All
+        Allow from All
+      </Directory>
+    </VirtualHost>
+
+### Aliasok
+
+Másik lehetőség új alias használata. Így különválaszhatók az egyes alkalmazásokhoz tartozó webes tartalmak (.css, .js, images, stb). Ezzel a módszerrel elkerülhetjük a `httpd.conf` szerkesztését.
+
+Először hozzunk létre egy új könyvtárat a `web` alatt:
+
+    $ mkdir /home/steve/myproject/web/admin
+
+Ezután tegyük át az `admin` alkalmazáshoz tartozó front controllereket az új könyvtárban, valamint másoljuk át a `.htaccess` filet is:
+
+    $ cd /home/steve/myproject/web
+    $ mv admin.php admin/index.php
+    $ mv admin_dev.php admin/
+    $ cp .htaccess admin/
+    
+Majd a fent ismertetett két utolsó lépéssel hozzunk létre egy aliast. Módosítsuk a `myproject/web/admin/` könyvtárban található `.htaccess`-t:
+
+    RewriteRule ^(.*)$ index.php [QSA,L]
+
+erre:
+
+    RewriteRule ^(.*)$ /admin/index.php [QSA,L]
+
+Végül mindkét front controllert (`myproject/web/admin/index.php` and `myproject/web/admin/admin_dev.php`) módosítani kell:
+
+    [php]
+    define('SF_ROOT_DIR', realpath(dirname(__FILE__).'/..'));
+
+erre:
+
+    [php]
+    define('SF_ROOT_DIR', realpath(dirname(__FILE__).'/../..'));
+    
+Készen is vagyunk, az `admin` alkalmazás most már elérhető:
+
+    http://whateveryourmainurlis/admin/
+
+>**Megjegyzés**: a `web/admin` könyvtárban létre kell hozni a `web` alatti könyvtárstruktúrát (`css`, `js`, `images`, `uploads` könyvtárakat), mivel mostmár minden root hivatkozás az `admin/` könyvtárra mutat.
+
+IIS
+---
+
+A symfony kompatibilis az IIS-sel. Minden további információ a telepítésről és konfigurálásról megtalálható a [kapcsolódó leírás](http://www.symfony-project.org/cookbook/1_1/en/web_server_iis)ban.

@@ -1,0 +1,37 @@
+Hogyan szabjuk testre az alapértelmezett könyvtárstruktúrát
+===========================================================
+
+Egy keretrendszer használatának egyik nagy előnye, hogy konzisztens struktúrát biztosít a projektjeinkben. Minden projekt azonos kódolási alapokon és könyvtárstruktúrán osztozik. Ez a struktúra lehetőséget biztosít több fejlesztőnek, hogy egyszerre közösen dolgozzanak ugyanazon a projekten. Emellett növeli az alkalmazás karbantarthatóságát is. Ha valaki megkért, hogy a továbbiakban foglalkozzunk a symfony-s projektjével, amit más kezdett fejleszteni, azonnal tudjuk mi hol található és elkezdhetjük az alkalmazás továbbfejlesztését.
+
+Persze időnként szükség van a könyvtárstruktúra testreszabására is. Nézzünk két példát erre.
+
+Először nézzünk meg egy shared hostos környezetet, ahol a web root könyvtár a `public_html`. A `ProjectConfiguration` osztály szerkesztésével egyszerűen megváltoztatható az alapértelmezett web root könyvtár `web`-ről `public_html`-re:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setWebDir($this->getRootDir().'/../public_html');
+      }
+    }
+
+Vegyünk egy másik példát. Symfony projektünket egy nagy cég, szigorú biztonsági szabályok mellett hostolja. Az alkalmazások csak egy előre kijelölt helyre írhatnak a lemezen (ez legyen a `/tmp`). Miután a symfony csak két könyvtárba ír (`cache` és `log`), ezért egyszerű elvégezni a szükséges módosításokat a `ProjectConfiguration` osztályon, hogy a megfelelő könyvtárak a `/tmp` alá kerüljenek:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setCacheDir('/tmp/myproject/cache');
+        $this->setLogDir('/tmp/myproject/log');
+      }
+    }
+
+A `setCacheDir()` metódus nem csak az `sf_cache_dir` konstans értékét változtatja meg, hanem az összes hozzá kapcsolódót is, úgymint: `sf_app_base_cache_dir`, `sf_app_cache_dir`, `sf_template_cache_dir`, `sf_i18n_cache_dir`, `sf_config_cache_dir`, `sf_test_cache_dir`, és `sf_module_cache_dir`
+
+Végül, de nem utolsó sorban, a konfigurációs osztályok a symfony CLI alatt is használatban vannak, minden elvégzett módosítás érvényre jut az összes taskban is, akár a symfony-val érkezett, akár saját magunk írtuk azt.
+
+A symfony 1.1 új konfigurációs osztályainak hála a keretrendszer beállítás még sosem volt ennyire egyszerű.
