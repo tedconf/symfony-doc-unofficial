@@ -1,0 +1,540 @@
+1. fejezet - Űrlap készítés (r9798)
+===========================
+
+Egy űrlap meghatározott mezők (rejtett, beviteli, szövegdoboz, lenyíló list, ...) összessége. Ebben a fejezetben az űrlap készítését és a hozzá tartozó mezők kezelését mutatjuk be az symfony űrlap keretrendszerének segítségével.
+
+Az itt következő leírás a symfony 1.1 verzióján alapul. Szükség lesz egy projektre és azon belül egy `frontend` alkalmazásra. Symfony projekt készítéséről további információ a könyv ide vonatkozó fejezetében található.
+
+Előkészítés
+-----------
+
+Egy kapcsolat űrlap létrehozásával kezdjük.
+
+1-1 ábra mutatja az űrlapot, amin keresztül a felhasználó üzenetet küldhet nekünk.
+
+1-1 ábra - Kapcsolat űrlap
+
+![Kapcsolat űrlap](/images/forms_book/en/01_01.png "Kapcsolat űrlap")
+
+Három mezőt jelenítünk meg az űrlapon: a felhasználó nevét, az email címét és az üzenetet, amit elküld nekünk. Második lépésben egyszerűen megjelenítjük az elküldött adatokat, ahogy az 1-2 ábrán látható.
+
+1-2 ábra - Üzenet oldal
+
+![Üzenet oldal](/images/forms_book/en/01_02.png "Üzenet oldal")
+
+1-3 ábra - a felhasználó és az alkalmazás közötti kölcsönhatást mutatja
+
+Figure 1-3 - Kölcsönhatás a felhasználóval
+
+![Kölcsönhatás a felhasználóval séma](/images/forms_book/en/01_03.png "Kölcsönhatás a felhasználóval séma")
+
+Widgetek
+--------
+
+### `sfForm` és `sfWidget` osztályok
+
+Az űrlapot mezők alkotják, melyeket a felhasználó tölt ki adatokkal. A symfonyban az űrlap egy objektum, mely az `sfForm` osztályból származik. Példánkban létrehoztunk egy `ContactForm` osztályt, melynek őse az `sfForm`. Az `sfForm` minden űrlap ősosztálya. Az `sfForm` teszi lehetővé űrlapjaink egyszerű kezelését és konfigurálását.
+
+>**Megjegyzés**
+>Az `sfForm` osztály minden űrlap ősosztálya, mely lehetővé teszi azok egyszerű kezelését és konfigurálást.
+
+Az űrlaphoz a `configure()` metóduson keresztül adhatunk **widget**eket.
+
+Egy **widget** egy űrlap mezőt ábrázol. Példánknál maradva három widgetre lesz szükségünk a három mező ábrázolásához: `name`, `email` és `message`. Az 1-1 melléklet mutatja be a `ContactForm` első megvalósítását.
+
+1-1 melléklet - `ContactForm` osztály három mezővel
+
+    [php]
+    // lib/form/ContactForm.class.php
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+      }
+    }
+
+A widgetek a `configure()` metóduson belül vannak definiálva. Ez a metódus automatikusan meghívásra kerül az `sfForm` osztály konstruktorában.
+
+A `setWidgets()` metódussal lehet az űrlapon használt widgeteket definiálni. A `setWidgets()` metódus egy asszociatív tömböt vár, ahol a kulcsok jelölik az egyes mezők nevét, az értékek pedig a widget objektumokat. Minden widget egy objektum, melynek az `sfWidget` osztály az őse. Példánkban két típusú widgetet használunk:
+
+  * `sfWidgetFormInput`  : ez a widget egy `input` mezőt ábrázol
+  * `sfWidgetFormTextarea`: ez a widget egy szövegdobozt (`textarea`) ábrázol
+
+>**Megjegyzés**
+>Megegyezés szerint a form osztályok a `lib/form/` könyvtárban találhatók. Igazság szerint az űrlapok bárhol tárolhatók, ahol a symfony autoloading mechanizmusa megtalálja azokat, de később látni fogjuk, hogy a rendszer a `lib/form/` könyvtárba hozza létre a model objektumokból generált űrlapokat.
+### Displaying the Form
+### Űrlapok megjelenítése
+
+Űrlapunk használatra készen áll. Már csak létre kell hozni egy modult, hogy megjelenítsük azt.
+
+    $ cd ~/PATH/TO/THE/PROJECT
+    $ php symfony generate:module frontend contact
+
+A `contact` modul `index` action-ét módosítsuk, hogy a form példányt átadjuk a templatenek, ahogy az 1-2 mellékleten látható.
+
+1-2 melléklet - Action osztály a `contact` modulban
+
+    [php]
+    // apps/frontend/modules/contact/actions/actions.class.php
+    class contactActions extends sfActions
+    {
+      public function executeIndex()
+      {
+        $this->form = new ContactForm();
+      }
+    }
+
+Mikor létrehozzuk az űrlapot, a korábban definiált `configure()` metódus automatikusan lefut.
+
+Már csak egy templatere van szükségünk, hogy megjelenjen űrlapunk.
+
+1-3 melléklet - Űrlap megjelenítése templateben
+
+    [php]
+    // apps/frontend/modules/contact/templates/indexSuccess.php
+    <form action="<?php echo url_for('contact/submit') ?>" method="POST">
+      <table>
+        <?php echo $form ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+Az űrlap csak a felhasználó számára fontos információt kezeli. Az `indexSuccess` templateben a `<?php echo $form ?>` sor csak három mezőt jelenít meg. A többi elemet, mint a `form` tag és a `submit` gomb magunknak kell hozzáadni. Első pillantásra ez nem túl nyilvánvaló, viszont később látni fogjuk milyen hasznos, ha az űrlapjaink között átfedések vannak.
+
+A `<?php echo $form ?>` használata rendkívül hasznos űrlap prototípusok készítésénél. Lehetővé teszi, hogy a fejlesztő az üzleti logikára koncentráljon anélkül, hogy a megjelenés miatt keljen aggódnia. A 3. fejezet mutatja be az űrlapok megjelenésének testreszabását.
+
+>**Megjegyzés**
+Mikor a `<?php echo $form ?>` formát használjuk megjelenítésre, a PHP a `$form` objektum szöveges alakját jeleníti meg. Az objektum szöveggé konvertálásakor a PHP a `__toString()` magic metódust próbálja meg futtatni. Minden widget megvalósítja ezt, hogy az objektum HTML alakját vissza tudja adni. A `<?php echo $form ?>` meghívása egyenértékű a `<?php echo $form->__toString() ?>` hívással.
+
+Most már meg tudjuk jeleníteni az űrlapot a böngészőben (1-4 ábra) és ellenőrizhetük az eredményt a `contact/index` action begépelésével (`/frontend_dev.php/contact`).
+
+1-4 ábra - Generált kapcsolat űrlap
+
+![Generált kapcsolat űrlap](/images/forms_book/en/01_04.png "Generált kapcsolat űrlap")
+
+1-4 melléklet A template által generált kód
+
+    [html]
+    <form action="/frontend_dev.php/contact/submit" method="POST">
+      <table>
+        
+        <!-- A <?php echo $form ?> által generált űrlap kezdete -->
+        <tr>
+          <th><label for="name">Name</label></th>
+          <td><input type="text" name="name" id="name" /></td>
+        </tr>
+        <tr>
+          <th><label for="email">Email</label></th>
+          <td><input type="text" name="email" id="email" /></td>
+        </tr>
+        <tr>
+          <th><label for="message">Message</label></th>
+          <td><textarea rows="4" cols="30" name="message" id="message"></textarea></td>
+        </tr>
+        <!-- A <?php echo $form ?> által generált űrlap vége -->
+
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+Azt láthatjuk, hogy az űrlap egy HTML táblázat három `<tr>` sorában jelenik meg. Ezért tettük az egészet egy `<table>` tagba. Minden sor tartalmaz egy `<label>` taget és egy űrlap taget (`<input>` vagy `<textarea>`).
+
+### Cimkék
+
+Minden mezőhöz automatikusan létrejön egy cimke. Alapbeállításként a cimke nevet a mező nevéből képzi a rendszer a következő szabályok alapján: az első betű nagy betű, az aláhúzások cseréje szóközökkel.
+Példa:
+
+
+    [php]
+    $this->setWidgets(array(
+      'first_name' => new sfWidgetFormInput(), // generált cimke: "First name"
+      'last_name'  => new sfWidgetFormInput(), // generált cimke: "Last name"
+    ));
+ 
+Habár az automatikus cimke generálás nagyon hasznos, a keretrendszer megengedi a cimkék testreszabását is a `setLabels()` metóduson keresztül:
+
+    [php]
+    $this->widgetSchema->setLabels(array(
+      'name'    => 'Your name',
+      'email'   => 'Your email address',
+      'message' => 'Your message',
+    ));
+
+A `setLabel()` metóduson keresztül az egyes mezők cimkéje is módosítható:
+
+    [php]
+    $this->widgetSchema->setLabel('email', 'Your email address');
+
+Végül, a 3. fejezetben látni fogjuk, hogyan terjeszthetjük ki a cimkéket a templatekben, tovább finomítva az űrlapon.
+
+>**Széljegyzet**
+>Widget Séma
+>
+>Mikor a `setWidgets()` metódust használjuk, a symfony létrehoz egy `sfWidgetFormSchema` objektumot. Ez az objetum is egy widget, amely widgetek egy halmazát ábrázolja. A `ContactForm` űrlapunkban használtunk a `setWidgets()` metódust. Ez egyenértékű a következő kóddal:
+>
+>     [php]
+>     $this->setWidgetSchema(new sfWidgetFormSchema(array(
+>       'name'    => new sfWidgetFormInput(),
+>       'email'   => new sfWidgetFormInput(),
+>       'message' => new sfWidgetFormTextarea(),
+>     )));
+>
+>     // majdnem egyenértékű a :
+>
+>     $this->widgetSchema = new sfWidgetFormSchema(array(
+>       'name'    => new sfWidgetFormInput(),
+>       'email'   => new sfWidgetFormInput(),
+>       'message' => new sfWidgetFormTextarea(),
+>     ));
+>
+>The `setLabels()` method is applied to a collection of widgets included in the `widgetSchema` object .
+>A `setLabels()` metódus használatakor azt widgetek egy csoportján alkalmazzuk, melyeket a `widgetSchema` objektum tartalmmazza.
+>
+>Az 5. fejezetben látjuk majd, hogy a "schema widget" használata mennyire leegyszerűsíti az egymást átfedő űrlapok használatát.
+
+### A generált táblázatokon túl
+
+Habár az űrlap alapvetően HTML táblázatként jelenik meg, a layout megváltoztatható. A különböző layout formák osztályokban definiálhatók, melyek az `sfWidgetFormSchemaFormatter` osztály leszármazottai. Az űrlapok a táblázat formát (`table`) használják alapértemlezettként, ami az `sfWidgetFormSchemaFormatterTable` osztályban van meghatározva. Használhatunk akár lista formát (`list`) is:
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+
+        $this->widgetSchema->setFormFormatterName('list');
+      }
+    }
+
+Ezzel a két formával érkezik alapértelmezetten a rendszerrel. Az 5. fejezetben majd láthatjuk, hogyan lehet létrehozni saját forma osztályt. Most már tudjuk, hogyan jelenítsünk meg egy űrlapot, nézzük meg hogyan kezeljük az elküldött űrlap adatokat. 
+
+### Az űrlap elküldése
+
+Mikor létrehoztuk az űrlap megjelenését szolgáló templatet, akkor a `contact/submit` belső URL-t használtuk a `form` tagban az elküldéshez. Most fel kell vennünk a `submit` action a `contact` modulba. Az 1-5 melléklet bemutatja, hogyan szerezzük be a felhasználó által elküldött adatot és hogyan irányítjuk át a `köszönet` oldalra, ahol csak megjelenítjük neki azt.
+
+1-5 melléklet - `submit` action használata a `contact` modulban
+
+    [php]
+    public function executeSubmit($request)
+    {
+      $this->forward404Unless($request->isMethod('post'));
+
+      $params = array(
+        'name'    => $request->getParameter('name'),
+        'email'   => $request->getParameter('email'),
+        'message' => $request->getParameter('message'),
+      );
+
+      $this->redirect('contact/thankyou?'.http_build_query($params));
+    }
+
+    public function executeThankyou()
+    {
+    }
+
+    // apps/frontend/modules/contact/templates/thankyouSuccess.php
+    <ul>
+      <li>Name:    <?php echo $sf_params->get('name') ?></li>
+      <li>Email:   <?php echo $sf_params->get('email') ?></li>
+      <li>Message: <?php echo $sf_params->get('message') ?></li>
+    </ul>
+
+>**Megjegyzés**
+>A `http_build_query` a PHP beépített függvénye, amely URL-kódolt query stringet generál az átadott tömb paraméter alapján.
+
+Az `executeSubmit()` metódus három dolgot tesz:
+
+  * Biztonsági okokból ellenőrizzük, hogy az adatokat a HTTP `POST` metódusával küldték-e el. Ha nem, akkor a felhasználót átirányítjuk a hiba (404) oldalra. Az `indexSuccess` templateben a küldési metódust `POST`ként deklaráltuk (`<form ... method="POST">`):
+
+        [php]
+        $this->forward404Unless($request->isMethod('post'));
+
+  * Következő lépésben összegyűjtjük a felhasználó által küldött adatokat egy `params` tömbbe:
+
+        [php]
+        $params = array(
+          'name'    => $request->getParameter('name'),
+          'email'   => $request->getParameter('email'),
+          'message' => $request->getParameter('message'),
+        );
+
+  * Végül átirányítjuk a felhasználót a Köszönet oldalra (`contact/thankyou`), hogy megjeleníthessük az elküldött információt:
+
+        [php]
+        $this->redirect('contact/thankyou?'.http_build_query($params));
+
+Ahelyett, hogy újra átirányítjuk a felhasználót, létrehozhatnánk egy `submitSuccess.php` templatet. Ez mind igaz, de szerencsésebb, ha a felhasználót `POST` kérés után mindig továbbirányítjuk:
+
+  * Ezzel megakadályozzuk az űrlap újra küldését, ha a felhasználó frissítené a Köszönet oldalt.
+
+  * A felhasználó tudja használni a Vissza gombot anélkül, hogy egy felugró ablakot kapna, hogy küldje el az űrlapot újra.
+
+>**Tip**
+>Az élelmesebbek megfigyelhették, hogy az `executeSubmit()` különbözik az `executeIndex()`től. Mikor meghívjuk ezeket a metódusokat, a symfony az aktuális `sfRequest` objektumot átadja, mint első paramétert az `executeXXX()` metódusnak. PHP-ban nem szükséges megadnunk egy függvény vagy metódus összes paraméterét, ezért nem definiáltuk a `request` változót az `executeIndex()`ben. 
+
+1-5 ábra mutatja be a kérések folyamatát a felhasználóval való interakció közben
+
+1-5 ábra - Kérések folyamata
+
+![Kérések folyamata](/images/forms_book/en/01_05.png "Kérések folyamata")
+
+>**Megjegyzés**
+Mikor megjelenítjük a felhasználó által megadott adatot, számolnunk kell az XSS (Cross-Site Scripting) támadás lehetőségével. A támadás ellen védekezhetünk valamilyen (output) escapelési startégia bevezetésével, amelyről további információ a "The Definitive Guide to symfony" könyv [Inside the View Layer](http://www.symfony-project.org/book/1_1/07-Inside-the-View-Layer#Output%20Escaping) fejezetében található.
+
+Az űrlap elküldése után az 1-6 ábrának megfelelő képet kell látnunk.
+
+1-6 ábra - Űrlap elküldés után oldal képe
+
+![Űrlap elküldés után oldal képe](/images/forms_book/en/01_06.png "Űrlap elküldés után oldal képe")
+
+A `params` tömb létrehozása helyett egyszerűbb lenne, ha a felhasználótól érkező információt közvetlenül tömbként kapnánk. Az 1-6 mellékletben látható módon megváltoztatható a widgetek `name` HTML attribútuma, így a mező értékeket a `contact` tömbben kapjuk meg.
+
+1-6 melléklet - A `name` HTML attribútum módosítása widgetekben
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+
+        $this->widgetSchema->setNameFormat('contact[%s]');
+      }
+    }
+
+A `setNameFormat()` meghívásával lehetőségünk van az összes widget `name` attribútumának módosítására. Az űrlap előállításakor a `%s` automatikusan helyettesítve lesz a megfelelő mező nevekkel. Például az `email` mező `name` attribútuma `contact[email]` lesz. A PHP a kéréssel küldött értékekből egy tömböt hoz létre, beleértve a `contact[email]` formát. Így a mezőértékek elérhetők lesznek a `contact` tömbön keresztül.
+
+Most már közvetlenül megkaphatjuk a `contact` tömböt a `request` objektumból, ahogy az az 1-7 mellékletben látható.
+
+1-7 melléklet - Új `name` attribútum forma használat közben
+
+    [php]
+    public function executeSubmit($request)
+    {
+      $this->forward404Unless($request->isMethod('post'));
+
+      $this->redirect('contact/thankyou?'.http_build_query($request->getParameter('contact')));
+    }
+
+Ha megnézzük az űrlap HTML forrását, akkor láthatjuk, hogy nem csak a `name` attribútumot állítja elő a mező neve és formátuma alapján, hanem az `id` attribútumot is. A generált `id` alapja a `name` attribútum, amelyben a tiltott karaktereket aláhúzással vannak kicserélve (`_`):
+
+  | **Név**   | **`name` attribútum** | **`id` attribútum** |
+  | --------- | --------------------- | ------------------- |
+  | name      | contact[name]         | contact_name        |
+  | email     | contact[email]        | contact_email       |
+  | message   | contact[message]      | contact_message     |
+
+### Egy másik megoldás
+
+A példában két actiont használtunk az űrlap kezelésére: az `index`et a megjelenítéshez, a `submit`ot a küldéshez. Miután az űrlap megjelenítéshez `GET` kérést, az elküldéshez `POST` kérést alkalmaztunk, ezért a két action egyesíthetjük az `index` alatt, ahogy az 1-8 mellékletben látható.
+
+1-8 melléklet - Az űrlap kezeléséhez egyesített action
+
+    [php]
+    class contactActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new ContactForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->redirect('contact/thankyou?'.http_build_query($request->getParameter('contact')));
+        }
+      }
+    }
+
+Az űrlap küldési metódust meg kell változtatni az `indexSuccess.php` templateben:
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+
+A továbbiakban ezt a szintakszist részesítjük előnyben, mert rövidebb kódot eredményez, ami koherens és könnyebben megérthető.
+
+A widgetek beállítása
+---------------------
+
+### A widgetek opciói
+
+Ha az oldalunkat több webmester is kezeli, jó lenne felvenni egy lenyíló listát is, amivel kiválasztható kinek is szól az üzenet (1-7 ábra). Az 1-9 mellékletben látható, hogy felveszünk egy `subject` nevű lenyíló listát az `sfWidgetFormSelect` widget segítségével.
+
+Figure 1-7 - Adding a `subject` Field to the Form
+1-7 ábra - `subject` mező az űrlapon
+
+![`subject` mező az űrlapon](/images/forms_book/en/01_07.png "`subject` mező az űrlapon")
+
+1-9 melléklet - `subject` mező felvétele az űrlaphoz
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'subject' => new sfWidgetFormSelect(array('choices' => self::$subjects)),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+
+        $this->widgetSchema->setNameFormat('contact[%s]');
+      }
+    }
+
+>**Széljegyzet**
+>Az `sfWidgetFormSelect` widget `choices` opciója
+>
+>Mivel a PHP nem tesz különbséget a sima tömb és az asszociatív tömb között, ezért a tömb, amit az címzettek listájához használunk megegyezik a következővel:
+>
+>     [php]
+>     $subjects = array(0 => 'Subject A', 1 => 'Subject B', 2 => 'Subject C');
+>
+>A létrejött widget a tömb kulcsát használja az `option` tagek `value` attribútumának meghatározásához, míg a tömb értéke lesz a tag tartalmi eleme:
+>
+>     [php]
+>     <select name="contact[subject]" id="contact_subject">
+>       <option value="0">Subject A</option>
+>       <option value="1">Subject B</option>
+>       <option value="2">Subject C</option>
+>     </select>
+>
+>A `value` attribútum értékeinek megváltoztatásához a tömb kulcsait is meg kell határoznunk az egyes értékekhez:
+>
+>     [php]
+>     $subjects = array('A' => 'Subject A', 'B' => 'Subject B', 'C' => 'Subject C');
+>
+>Amely a következő HTML kódot állítja elő:
+>
+>     [php]
+>     <select name="contact[subject]" id="contact_subject">
+>       <option value="A">Subject A</option>
+>       <option value="B">Subject B</option>
+>       <option value="C">Subject C</option>
+>     </select>
+
+Az `sfWidgetFormSelect`, mint minden widget, első paraméterként az opciók listáját várja. Egy opció lehet kötelező vagy kiegészítő. Az `sfWidgetFormSelect` egy kötelező opcióval rendelkezik, ez a `choices`. Foglaljuk össze az általunk eddig használt widgetekhez tartozó opciókat:
+
+  | **Widget**             | **Kötelező opciók** | **Kiegészítő opciók**                 |
+  | ---------------------- | ------------------- | ------------------------------------- |
+  | `sfWidgetFormInput`    | -                   | `type` (alapértelmezett `text`)       |
+  |                        |                     | `is_hidden` (alapértelmezett `false`) |
+  | `sfWidgetFormSelect`   | `choices`           | `multiple` (alapértelmezett `false`)  |
+  | `sfWidgetFormTextarea` | -                   | -                                     |
+
+>**Tipp**
+>Az egyes widgetekhez tartozó opciók megtalálhatók az API dokumentációban, amely online elérhető a ([http://www.symfony-project.org/api/1_1/](http://www.symfony-project.org/api/1_1/)) címen. Itt minden kötelező opció megtalálható, illetve a kiegészítő opciók és azok alapértelmezett értékei is. Például az `sfWidgetFormSelect` widgethez tartozó összes opció megtekinthető a ([http://www.symfony-project.org/api/1_1/sfWidgetFormSelect](http://www.symfony-project.org/api/1_1/sfWidgetFormSelect)) címen.
+
+### A widgetek HTML attribútumai
+
+Minden widget második, opcionális paraméterként a HTML attribútumok listáját várja. Így a generált űrlap mezőihez egyszerűen rendelhetünk alapértelmezett értékeket. A 1-10 melléklet bemutatja, hogyan lehet az `email` mezőhöz felvenni egy `class` attribútumot.
+
+1-10 melléklet - Attribútum definiálása egy widgethez
+
+    [php]
+    $emailWidget = new sfWidgetFormInput(array(), array('class' => 'email'));
+
+    // Generated HTML
+    <input type="text" name="contact[email]" class="email" id="contact_email" />
+
+A HTML attribútumok lehetővé teszik a generált azonosító (`id`) felülírását is, ahogy az 1-11 mellékletben látható.
+
+1-11 melléklet - Az `id` attribútum felülírása
+
+    [php]
+    $emailWidget = new sfWidgetFormInput(array(), array('class' => 'email', 'id' => 'email'));
+
+    // Generated HTML
+    <input type="text" name="contact[email]" class="email" id="email" />
+
+Lehetőség van alapértelmezett értékek megadására azon mezők esetén, amelyek használják a `value` attribútumot, ahogy az 1-12 mellékletben látható.
+
+1-12 melléklet - Widget alapértelmezett értéke HTML attribútumokon keresztül
+
+    [php]
+    $emailWidget = new sfWidgetFormInput(array(), array('value' => 'Your Email Here'));
+
+    // Generated HTML
+    <input type="text" name="contact[email]" value="Your Email Here" id="contact_email" />
+
+Ez a módszer `input` widgetek esetében működik, de nehéz keresztül vinni `checkbox` vagy `radio` widget esetén, és szinte lehetetlen ha `textarea` widgetről van szó. Az `sfForm` osztály egységes felületet kínál az alapértelmezett értékek megadására, bármilyen widgetről is legyen szó.
+
+
+>**Megjegyzés**
+>Javasoljuk, hogy a HTML attribútumokat a templateben adjuk meg ne az űrlapban (habár ez lehetséges), hogy megőrizzük a rétegek elkülönítését, ahogy azt majd a 3. fejezetben látni fogjuk.
+
+### Mezők alapértelmezett értékeinek megadása
+
+Általában hasznos alapértelmezett értéket rendelni az egyes mezőkhöz. Például megjeleníteni egy súgó üzenetet a mezőben, amely eltűnik, ha a felhasználó rá viszi a fókuszt. A 1-13 melléklet mutatja, hogyan adjuk meg az alapértelmezett értéket a `setDefault()` és a `setDefaults()` metódusok segítségével.
+
+1-13 melléklet - Alapértelmezett érték megadása a `setDefault()` és a `setDefaults()` metódussal
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setDefault('email', 'Your Email Here');
+
+        $this->setDefaults(array('email' => 'Your Email Here', 'name' => 'Your Name Here'));
+      }
+    }
+
+Az ugyanazon űrlap osztály egyes példányaihoz tartozó alapértelmezett értékek megadásában a `setDefault()` és `setDefaults()` metódusok nagyon hasznosak. Ha egy létező objektumok szeretnénk módosítani űrlap segítségével, akkor az alapértelmezett értékek az adott példánytól függnek, tehát dinamikusan megadhatónak kell lenniük. Az `sfForm` konstruktorának első paramétere ezért az alapértelmezett értékek megadására szolgál, ahogy az az 1-14 mellékleten látható.
+
+1-14 melléklet - A widgetek alapértelmezett értékeinek megadása az `sfForm` konstruktorán keresztül
+
+    [php]
+    public function executeIndex($request)
+    {
+      $this->form = new ContactForm(array('email' => 'Your Email Here', 'name' => 'Your Name Here'));
+
+      // ...
+    }
+
+>**Széljegyzet**
+>XSS védelem (Cross-Site Scripting)
+>
+>Mikor a widgetekhez attribútumokat állítunk be vagy alapértelmezett értékeket határozunk meg, az `sfForm` osztály automatikus védelmet biztosít az XSS támadás ellen a HTML kód generálásakor. Ez a védelem nem függ az `escaping_strategy` konfigurációs beállítástól (`settings.yml`). Ha a tartalom már le van védve valamely más eljárással, ez itt nem történik meg újra.
+>
+>Ugyancsak levédi a `'` és `"` karaktereket, amelyek hibás generált HTML kódot eredményezhetnek.
+>
+>Lássunk egy példát erre a védelemre:
+>
+>     [php]
+>     $emailWidget = new sfWidgetFormInput(array(), array(
+>       'value' => 'Hello "World!"',
+>       'class' => '<script>alert("foo")</script>',
+>     ));
+>     
+>     // Generated HTML
+>     <input
+>       value="Hello &quot;World!&quot;"
+>       class="&lt;script&gt;alert(&quot;foo&quot;)&lt;/script&gt;"
+>       type="text" name="contact[email]" id="contact_email"
+>     />
