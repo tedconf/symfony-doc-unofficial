@@ -1,0 +1,82 @@
+﻿Wie man mit Plugins in Symfony 1.1 arbeitet
+===========================================
+
+Für Symfony 1.1, wurde das Plugin System von Grund auf neu geschrieben. Dies wurde gemacht um erhebliche Verbesserungen in der Arbeitsweise der Plugins zu ermöglichen und um es noch einfacher zu machen, mit Plugins im eigenen Symfony Projekt zu arbeiten.
+
+Ein Plugin installieren
+-----------------------
+Das Installieren eines Plugins wurde in Symfony 1.1 wesentlich vereinfacht. Das komplette Plugin System basiert nun auf eine vollständigen Implementierung von PEAR Channels, welche es ermöglichen, all ihrer Vorteile zu nutzen. Diese sind, einfache Verwaltung (und sogar Installation) von Abhängigkeiten oder sogar die Installation von Plugins aus einem anderen als dem Standard Symfony Channel. Man kann sogar einen eigenen Plugin Channel einrichten um auf einfache Weise selbstgeschriebene Plugins zu installieren!
+
+Um Plugins aus dem Standard Channel (dem offiziellen Symfony Channel) zu installieren ist es nicht mehr länger notwendig den die vollständige URL zu den Paketen zu verwenden. Ein einfacher Befehl reicht nun aus:
+
+	$ ./symfony plugin:install sfGuardPlugin
+
+Dies installiert sofort das sfGuardPlugin. Jedoch gibt es noch weitere Optionen um zu steuern was in das Projekt installiert wird:
+
+	$ ./symfony plugin:install --stability=beta sfGuardPlugin
+
+Dies installiert die non-stable Variante des Plugins in das Projekt. Dies ist hilfreich, wenn man entweder eine Beta-Version eines bereits als stabile Version verfügbaren Plugins testen möchte, oder wenn man ein Plugin testen möchte welches noch in keiner stabilen Version vorliegt. 
+
+Man kann auch die genaue Version eines Plugins angeben, welche installiert werden soll:
+
+	$ ./symfony plugin:install --release=1.0.0 sfGuardPlugin
+
+Dies installiert die Version 1.0.0 des sfGuardPlugin ins Projekt.
+
+Viele Plugins haben Abhängigkeiten zu anderen Plugins, welche installiert werden müssen, bevor das eigentliche Plugin funktionieren kann. In Symfony 1.0, bedeutet dies, dass die Installationsanleitungen eine Liste von Plugins beinhalten, welche installiert werden müssen, bevor man das gewünschte Plugin installieren kann. In Symfony 1.1 wurde das Installationsverhalten von Plugins, durch die Abhängigkeitsfunktionalität, verbessert, welche sich durch die Einrichtung eines vollständigen PEAR Channels ergibt. Um ein Plugin samt aller Abhängigkeiten zu installieren benutzt man in Symfony folgenden Befehl:
+
+	$ ./symfony plugin-install --install_deps sfGuardPlugin
+
+Kein Durchsuchen mehr von zahlreichen Wiki-Seiten um alle Installationsanweisungen zu finden und alles zum Laufen zu bekommen. Symfony sorgt nun dafür, dass all diese Plugins installiert werden.
+
+Eine weitere Verbesserung welche man der Nutzung der PEAR Channels verdankt, ist die Nutzung mehrere verschiedener Channels. Standardmässig benutzt Symfony den offiziellen Symfony PEAR Channel (*plugins.symfony-project.org*) namens **symfony-plugins** (es besteht keine Notwendigkeit diesen bei der Standardinstallation anzugeben). Um andere Channels zu nutzen, muss zuerst ein neuer Channel hinzugefügt werden:
+
+	$ ./symfony plugin:add-channel custom-channel.example.com
+
+Nun kann man Plugins aus diesem Channel installieren, indem man den Channel beim Installationsbefehl angibt:
+
+	$ ./symfony plugin:install --channel=custom-channel.example.com sfGuardPlugin
+
+Die obigen zusätzlichen Parameter haben auch eine Kurzform, welche in der in der Hilfe gefunden werden können:
+
+	$ ./symfony help plugin:install
+
+Und zu Guter Letzt ist es auch möglich, das PEAR package des zu installierenden Plugins direkt zu referenzieren, entweder durch eine vollständige URL oder einem lokalen Pfad:
+
+	$ ./symfony plugin:install http://www.example.com/sfGuardPlugin-1.0.0.tgz
+oder
+
+	$ ./symfony plugin:install /home/stefan/plugins/sfGuardPlugin-1.0.0.tgz
+
+Deinstallieren eines Plugins
+----------------------------
+
+Die Aufgabe ein Plugin zu deinstallieren, um es aus einem Projekt zu entfernen ist nach wie vor sehr einfach. Ein einfacher Befehl ermöglicht es:
+	
+	$ ./symfony plugin:uninstall sfGuardPlugin
+
+Eine Sache muss dabei allerdings beachtet werden. Wenn man mehrere Channels benutzt und möchte ein Plugin deinstallieren, welches aus einem andern Channel als dem Standard symfony-plugins Channel kommt, muss dieser Channel angegeben werden:
+
+	$ .symfony plugin:install --channel=custom-channel.example.com sfGuardPlugin
+
+Um herauszufinden aus welchem Channel ein Plugin installiert wurde, kann man die Funktion *./symfony plugin:list* benutzen.
+
+Aktualisieren eines Plugins
+---------------------------
+
+Auch das Aktualisieren eines Plugins ist sehr einfach. Einfach einen einzelnen Befehl ausführen und das Plugin ist auf dem aktuellen Stand:
+
+	$ ./symfony plugin:upgrade sfGuardPlugin
+
+Die Argumente *--stability*, *--release* und *--channel*, einschliesslich ihrer Kurzformen sind ebenfalls für den Befehl verfügbar und funktionieren auf die gleiche Weise.
+
+Anzeigen der installierten Plugins
+----------------------------------
+
+Die einfachste aller Aufgaben ist das Anzeigen der installierten Plugins, welche wieder nur einen einzelnen Befehl benötigt:
+
+	$ ./symfony plugin:list
+
+Dieser Befehl hat keine Argumente.
+
+Wie man sehen kann, ist das neu geschriebene Plugin Verwaltungssystem leistungsfähiger und erlaubt eine einfachere Verwaltung der Plugins. Speziell wenn man eigene Plugins entwickelt, erlaubt es nun diese eigenen Plugins in einem eigenem PEAR Channel zusammenzufassen und einfach in eigene Projekte zu installieren.
