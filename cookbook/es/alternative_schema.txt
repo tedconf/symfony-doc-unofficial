@@ -1,0 +1,264 @@
+Cómo escribir un esquema de Propel con la sintaxis alternativa
+==============================================================
+
+*traducido por arhak*
+
+Introducción
+------------
+
+A partir de symfony 1.1, se puede describir la estructura relacional del modelo en una nueva sintaxis YAML. Symfony reconoce los ficheros `schema.yml` escritos tanto en la sintaxis descrita en el Capítulo 8 del Libro de symfony, como en la sintaxis descrita a continuación. La sintaxis alternativa es más orientada a objetos y hace que el proceso de mezcla de varios esquemas sea más fácil de entender.
+
+Ejemplo base
+------------
+
+Considérese el siguiente esquema, utilizando la actual sintaxis:
+
+    propel:
+      _attributes:      { noXsd: false, defaultIdMethod: none, package: lib.model }
+      ab_group:
+        _attributes:    { phpName: Group, package: foo.bar.lib.model }
+        id:
+        name:           varchar(50)
+
+      cd_user:
+        _attributes:    { phpName: User, isI18N: true, i18nTable: cd_user_i18n }
+        first_name:     { type: varchar, size: 255, default: "Anonymous" }
+        last_name:      varchar(50)
+        age:            { type: integer, required: true, index: true }
+        ab_group_id:
+        created_at:
+
+      cd_user_i18n:
+        description:    longvarchar
+
+      ef_article:
+        title:          { type: longvarchar, required: true, index: unique }
+        stripped_title: { type: longvarchar, required: true, primaryKey: true, sequence: my_custom_sequence_name }
+        user_id:
+        my_group:       { type: integer, foreignTable: ab_group, foreignReference: id, onDelete: setnull }
+        created_at:     timestamp
+        updated_at:
+
+      ij_article:
+        _attributes:    { phpName: Article }
+        title:          varchar(50)
+        user_id:        { type: integer }
+        _foreignKeys:
+          -
+            foreignTable: cd_user
+            onDelete:     cascade
+            references:
+              - { local: user_id, foreign: id }
+        created_at:
+        _indexes:
+          my_index:       [title, user_id]
+        _uniques:
+          my_other_index: [created_at]
+        _behaviors:
+          paranoid:     { column: deleted_at }
+
+      ab_group_i18n:
+        motto:            longvarchar
+
+Sintaxis alternativa
+--------------------
+
+### Ejemplo base, con sintaxis alternativa
+
+Así es como se escribe exactamente la misma estructura que se listada previamente con la sintaxis alternativa:
+
+    connection:           propel
+    noXsd:                false
+    defaultIdMethod:      none
+    package:              lib.model
+
+    classes:
+      Group:
+        tableName:        ab_group
+        package:          foo.bar.lib.model
+        columns:
+          id:
+          name:           varchar(50)
+
+      User:
+        tableName:        cd_user
+        isI18N:           true
+        i18nTable:        cd_user_i18n
+        columns:
+          first_name:     { type: varchar, size: 255, default: "Invitado" }
+          last_name:      varchar(50)
+          age:            { type: integer, required: true, index: true }
+          ab_group_id:
+          created_at:
+
+      CdUserI18n:
+        columns:
+          description:    longvarchar
+
+      EfArticle:
+        columns:
+          title:          { type: longvarchar, required: true, index: unique }
+          stripped_title: { type: longvarchar, required: true, primaryKey: true, sequence: my_custom_sequence_name }
+          user_id:
+          my_group:       { type: integer, foreignClass: Group, foreignReference: id, onDelete: setnull }
+          created_at:     timestamp
+          updated_at:
+
+      Article:
+        tableName:        ij_article
+        columns:
+          title:          varchar(50)
+          user_id:        { type: integer }
+          created_at:
+        foreignKeys:
+          -
+            foreignTable: cd_user
+            onDelete:     cascade
+            references:
+              - { local: user_id, foreign: id }
+        indexes:
+          my_index:       [title, user_id]
+        uniques:
+          my_other_index: [created_at]
+        behaviors:
+          paranoid:     { column: deleted_at }
+
+      AbGroupI18n:
+        columns:
+          motto:          longvarchar
+
+La principal diferencia es que se declaran clases, no tablas, utilizando el nombre php (`phpName`) de cada tabla como entrada (es decir, una tabla puede cambiar de nombre pero no de nombre php).
+
+Esta sintaxis alternativa es además más explícita, ya que se pueden crear entradas para clases y columnas (`classes` y `columns`). Además se deshace del horrendo parche `_attributes` de la actual sintaxis, de modo que un `schema.yml` no tenga que intentar imitar una sintaxis XML.
+
+Por último pero no menos importante,toda la 'magia' de la sintaxis clásica se mantiene (auto definición de llaves primarias, llaves foráneas, tablas de i18n, etc.).
+
+### Configuración de conexión
+
+En lugar de ser definidas como `_attributes` de la conexión, la configuración de conexión, junto con el nombre de la conexión son todas entradas de nivel uno:
+
+    connection:           propel
+    noXsd:                false
+    defaultIdMethod:      none
+    package:              lib.model
+
+Todas estas entradas son opcionales, incluyendo la de `connection`. Si no es especificada, symfony tomará `propel` como valor por defecto.
+
+### Clases
+
+Una definición de clase lista el nombre de la tabla en la base de datos, las columnas, las llaves foráneaas, índices y comportamientos (*behaviors*) en una sintaxis natural de entrada/valor:
+
+    Article:
+      tableName:        ij_article
+      columns:
+        title:          varchar(50)
+        user_id:        { type: integer }
+        created_at:
+      foreignKeys:
+        -
+          foreignTable: cd_user
+          onDelete:     cascade
+          references:
+            - { local: user_id, foreign: id }
+      indexes:
+        my_index:       [title, user_id]
+      uniques:
+        my_other_index: [created_at]
+      behaviors:
+        paranoid:     { column: deleted_at }
+
+Nótese que se pueden definir llaves foráneas con el atributo usual `foreignTable`, que espera un nombre de tabla, o vía el nuevo atributo `foreignClass`, que espera un nombre de clase.
+
+Esquemas mezclados
+------------------
+
+Se puede tener, en un mismo proyecto, esquemas mezclados con sintaxis actual y alternativa.
+
+El sistema de extensión de esquema, descrito en el Capítulo 17 del Libro de symfony, trabaja con cualquier sintaxis en el esquema original y cualquier sintaxis en el esquema personalizado (*custom schema*). Esto quiere decir que se puede personalizar un esquema existente con la sintaxis clásica utilizando un esquema personalizado con la sintaxis alternativa, y viceversa. Symfony hará la conversión internamente de modo que la mezcla es siempre posible.
+
+Nótese qeu la mezcla de esquemas es más fácil de entender cuando se considera la sintaxis alternativa para ambos el esquema original y el esquema personalizado. De hecho, este es el formato interno utilizado por symfony para la mezcla. El siguiente listado muestra cómo son mezclados los esquemas:
+
+    # Esquema original, en plugins/miPlugin/config/schema.yml
+    classes:
+      User:
+        tableName:        cd_user
+        columns:
+          first_name:     { type: varchar, size: 255, default: "Invitado" }
+          last_name:      varchar(50)
+          age:            { type: integer, required: true, index: true }
+          created_at:
+
+      Article:
+        tableName:        ij_article
+        columns:
+          title:          varchar(50)
+          user_id:        { type: integer }
+          created_at:
+        foreignKeys:
+          -
+            foreignTable: cd_user
+            onDelete:     cascade
+            references:
+              - { local: user_id, foreign: id }
+
+    # Esquema personalizado, en miPlugin_schema.custom.yml
+    connection: miConexion
+    classes:
+      Group:
+        tableName:        ab_group
+        package:          foo.bar.lib.model
+        behaviors:        [paranoid]
+        columns:
+          id:
+          name:           varchar(50)
+
+      User:
+        tableName:        ef_user
+        isI18N:           true
+        i18nTable:        cd_user_i18n
+        columns:
+          ab_group_id:
+
+      Article:
+        columns:
+          updated_at:
+
+    # Esquema resultante, mezclado internamente y utilizado para el modelo y la generación sql
+    connection: miConexion
+    classes:
+      Group:
+        tableName:        ab_group
+        package:          foo.bar.lib.model
+        behaviors:        [paranoid]
+        columns:
+          id:
+          name:           varchar(50)
+
+      User:
+        tableName:        cd_user
+        isI18N:           true
+        i18nTable:        cd_user_i18n
+        columns:
+          first_name:     { type: varchar, size: 255, default: "Invitado" }
+          last_name:      varchar(50)
+          age:            { type: integer, required: true, index: true }
+          ab_group_id:
+          created_at:
+
+      Article:
+        tableName:        ij_article
+        columns:
+          title:          varchar(50)
+          user_id:        { type: integer }
+          created_at:
+          updated_at:
+        foreignKeys:
+          -
+            foreignTable: cd_user
+            onDelete:     cascade
+            references:
+              - { local: user_id, foreign: id }
+
+Para mayor claridad, se recomienda utilizar la sintaxis de esquema alternativa tanto como sea posible.
+
+>**Nota del traductor**: *Los ejemplos carecen de traducción en lo referente a nombres de tablas, columnas y clases de objetos, debido a que ciertos nombres de columnas tienen que ser en inglés para que su funcionamiento por defecto funcione tal y como se dice en el ejemplo. Por ejemplo, las columnas `created_at`, `updated_at`, entre otras son manejadas por symfony y/o plugins automáticamente, lo cual no evita que puedan ser nombradas por ejemplo `fecha_de_creacion` y `fecha_de_modificacion`, solo que en tales casos habría que realizar algunos ajustes adicionales con los que no cuentan los ejemplos. Por otra parte, los objetos creados por el ORM contarán con getters y setters por lo cual resultaría bastante conveniente evitar la mezcla de idiomas en el nombre de dichas funciones.*
