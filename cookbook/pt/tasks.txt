@@ -1,0 +1,135 @@
+Como criar uma tarefa
+=====================
+
+Assim como qualquer aplicação, seu projeto possui tarefas de manutenção repetitivas, operações do banco de dados ou outros console scripts rodando em uma base regular.
+
+O symfony 1.1 estende as tarefas pake do symfony 1.0 para criar um utilitário de linha de comando poderoso e uniforme para seus projetos, totalmente integrado com a Interfade de Linha de Comando (CLI) do symfony.
+  
+  * **Acessibilidade**: Qualquer tarefa pode ser executada com o parâmetro de ajuda, para obter a sintaxe, a descrição, opções disponíveis e mais. Qualquer pessoa será capaz de executar as suas tarefas.
+  * **Usabilidade**: Executando a CLI do Symfony você obterá uma lista de tarefas, e até mesmo uma pessoa não desenvolvedora será capaz de aprender facilmente como executar uma.
+  * **Uniformidade**: Descrevendo explicitamente as opções e parâmetros, a CLI do Symfony irá analisá-los, assim, você pode esquecer da problemática repetitiva tarefa de analisar $argv. Ele irá automaticamente alertar o usuário sobre a sintaxe incorreta ou parâmetros não informados.
+  * **Ambiente**: O contexto é totalmente controlado, graças as novas classes ProjectConfiguration e ApplicationConfiguration. Você não precisa mais preocupar-se sobre ambientes hard-coded ou configurações de debug.
+  * **Legibilidade**: Quem abrir o código-fonte irá obter grande descrição da entrada esperada e os objetivos da tarefa. O tempo de manutenção levado para entender e depurar o código será muito reduzido.
+   
+
+Vamos escrever a nossa primeira tarefa
+--------------------------------------
+
+Abra o diretório do seu projeto symfony 1.1 e digite:
+
+    $ php symfony generate:task doNothing
+
+Ele irá iniciar uma tarefa vazia em lib/task/doNothingTask.class.php. Vamos sintonizá-lo um pouco.
+
+    [php]
+    class doNothingTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->namespace        = 'project';
+        $this->name             = 'do-nothing';
+        $this->briefDescription = 'Does strictly nothing';
+   
+        $this->detailedDescription = <<<EOF
+    Esta tarefa é completamente inútil, e deve ser executada com a maior freqüência possível.
+    EOF;
+      }
+   
+      protected function execute($arguments = array(), $options = array())
+      {
+        $this->logSection('do-nothing', 'I did nothing successfully!');
+      }
+    }
+
+Esta tarefa, com toda a certeza não é muito, mas demonstra os primeiros conceitos básicos:
+
+  * O método `configure()` descreve a tarefa. Nome de invocação, escopo, sintaxe, ajuda, opções e argumentos.
+  * O método `execute()` é o que efetivamente faz todo o trabalho, e será chamado quando a tarefa é executada.
+  * O método `logSection()` pode ser usado para exibir mensagens no console de saída.
+  
+Você pode brincar um pouco com ele:
+
+    $ php symfony help project:do-nothing
+    $ php symfony project:do-nothing
+
+Alguma interação com a linha de comando
+---------------------------------------
+
+Argumentos e opções são a forma de fornecer parâmetros para a tarefa.
+
+    $ php symfony project:hello-world --name="Romain"
+
+Aqui nós estamos executando a tarefa `project:hello-world` com a opção `name` definida para `Romain`
+
+    $ php symfony project:hello-world Hi
+
+Agora, nós executaremos a mesma tarefa com o primeiro argumento definido como `Hi`.
+
+Opções e argumentos podem possuir valores default, serem opcionais ou obrigatórios e incorporar seu propósito para ser exibido na sintaxe da tarefa.
+
+Vamos escrever nossa tarefa `project:hello-world`:
+
+    [php]
+    class doHelloWorldTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->addArgument('verb', sfCommandArgument::OPTIONAL, 'Customize the verb used to say hello', 'hello');
+        $this->addOption('name', null, sfCommandOption::PARAMETER_OPTIONAL, 'Customize the person to say hello to', 'world');
+    
+        $this->namespace        = 'project';
+        $this->name             = 'hello-world';
+        $this->briefDescription = 'Spread the (hello) world';
+    
+        $this->detailedDescription = <<<EOF
+    Runs an evolved hello world display, with customisable name and word.
+    EOF;
+      }
+    
+      protected function execute($arguments = array(), $options = array())
+      {
+        $this->logSection('do', ucfirst($arguments['verb']).' '.ucfirst($options['name']));
+      }
+    }
+    
+Agora, verifique como o symfony ajudará o usuário perdido sobre como utilizar a nossa nova tarefa:
+
+    $ php symfony project:hello-world invalid arguments given
+    $ php symfony help project:hello-world
+
+E brincando um pouco com a tarefa:
+
+    $ php symfony project:hello-world
+    $ php symfony project:hello-world --name="romain"
+    $ php symfony project:hello-world --name=romain hi
+    $ php symfony project:hello-world hi --name=romain
+
+
+Outras características úteis  
+----------------------------
+
+  * **Você precisa da camada do banco de dados?**
+
+        [php]
+        protected function execute($arguments = array(), $options = array())
+        {
+          $databaseManager = new sfDatabaseManager($this->configuration);
+       
+          // ...
+        }
+
+  * **Executar outra tarefa dentro de uma tarefa?**
+
+        [php]
+        $myOtherTask = new myOtherTask($this->dispatcher, $this->formatter);
+        $myOtherTask->run($arguments = array('foo' => 'bar'), $options = array('far' => 'boo'));
+
+  * **Necessita permitir ao usuário escolher o ambiente, enquanto fornece um ambiente default?
+
+   Simplesmente adicione a opção `env` no método `::configure()` e o symfony irá utilizar o seu valor como o ambiente.
+
+        [php]
+        $this->addOption('env', null, sfCommandOption::PARAMETER_OPTIONAL, 'Changes the environment this task is run in', 'prod');
+
+
+O que você achou? Não é esta uma cereja sobre o bolo, ou por exemplo, algum coro de Jazz no symfony?
