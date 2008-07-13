@@ -20,7 +20,7 @@ A kapcsolat űrlaphoz megvalósítandó ellenőrző szabályok listája:
   * `message`: kötelező, az üzenet hossza legalább 4 karakter kell legyen
 
 >**Note**
->Miért szükséges ellenőrizni a `subject` mezőt? A `<select>` tag előre definiált értékekhez köti a felhasználót. Egy átlagos felhasználó valóban csak a listában szereplő értékek közül tud választani, ám más értékek is elküdhető olyan eszközökkel, mint például a Firefox Developer Toolbar, vagy tetszőleges kérést lehet szimulálni olyan eszközökkel, mint a `curl` vagy a `wget`.
+>Miért szükséges ellenőrizni a `subject` mezőt? A `<select>` tag előre definiált értékekhez köti a felhasználót. Egy átlagos felhasználó valóban csak a listában szereplő értékek közül tud választani, ám más érték is elküdhető olyan eszközzel, mint például a Firefox Developer Toolbar, vagy tetszőleges kérést lehet szimulálni olyan eszközökkel, mint a `curl` vagy a `wget`.
 
 2-1 melléklet bemutatja az 1. fejezetben használt templatet.
 
@@ -39,7 +39,7 @@ A kapcsolat űrlaphoz megvalósítandó ellenőrző szabályok listája:
       </table>
     </form>
 
-A 2-2 ábrán látható, hogyan törik meg az interakció az alkalmazás és a felhasználó között. Az első lépésben megjelenik az űrlap. Majd a felhasználó elküldi azt. Ezután amennyiben az adatok megfelelőek átkerül a köszönet oldalra, vagy érvénytelen adataok megadásakor újra megjelenik az űrlap a hibaüzenetekkel együtt.
+A 2-2 ábrán látható, hogyan törik meg az interakció az alkalmazás és a felhasználó között. Az első lépésben megjelenik az űrlap. Majd a felhasználó elküldi azt. Ezután amennyiben az adatok megfelelőek átkerül a köszönet oldalra, vagy érvénytelen adatok megadásakor újra megjelenik az űrlap a hibaüzenetekkel együtt.
 
 2-2 ábra - Interakció az alkalmazás és a felhasználó között
 
@@ -48,11 +48,11 @@ A 2-2 ábrán látható, hogyan törik meg az interakció az alkalmazás és a f
 Validatorok
 -----------
 
-Egy symfony űrlap mezők összessége. Minden egyes mezőt egyedi név azonosít, ahogy azt az 1. fejezetben láthattuk. Minden mezőhöz egy widgetet kapcsoltunk a megjelenésük sorrendjében, most pedig lássuk hogyan érvényesíthetjük a mezők tartalmát.
+Egy symfony űrlap mezők összessége. Minden egyes mezőt egyedi név azonosít, ahogy azt az 1. fejezetben láthattuk. Minden mezőhöz egy widgetet kapcsoltunk a megjelenésük sorrendjében. Most pedig lássuk hogyan érvényesíthetjük a mezők tartalmát.
 
 ### Az `sfValidatorBase` osztály
 
-Minden egyes mező érvényesítéséért objektumok felelnek, amelyek az `sfValidatorBase` osztály az őse. Azért, hogy érvényesíthessük a kapcsolat űrlap adatait, minden egyes mezőhöz (`name`, `email`, `subject` és `message`) meg kell adnunk a megfelelő validator objektumokat. Ezt az űrlap osztályban a `setValidators()` metódus segítségével tehetjük meg, ahogy az a 2-2 mellékleten látható.
+Minden egyes mező érvényesítéséért objektumok felelnek, amelyek az `sfValidatorBase` osztály leszármazottai. Azért, hogy érvényesíthessük a kapcsolat űrlap adatait, minden egyes mezőhöz (`name`, `email`, `subject` és `message`) meg kell adnunk a megfelelő validator objektumokat. Ezt az űrlap osztályban a `setValidators()` metódus segítségével tehetjük meg, ahogy az a 2-2 mellékleten látható.
 
 2-2 melléklet - Validatorok felvétele a `ContactForm` osztályban
 
@@ -87,7 +87,7 @@ Három különböző validatort használunk:
   * `sfValidatorEmail` : egy email címet érvényesít
   * `sfValidatorChoice`: egy előre definiált listában szereplő értékek alapján érvényesít
 
-Minden validator az első paraméterben az opciók listáját fogadja. A widgetekhez hasonlóan bizonyos opciók kötelezőek, mások opcionálisak. Például az `sfValidatorChoice` validator egy kötelező opciót vár, ez a `choices`. Minden validatornak megadható még a `required` és a `trim` opció, mely az `sfValidatorBase` osztályban van definiálva:
+Minden validator az első paraméterben az opciók listáját fogadja. A widgetekhez hasonlóan bizonyos opciók kötelezőek, mások opcionálisak. Például az `sfValidatorChoice` validator egy kötelező opciót vár, ez a `choices`. Minden validatornak megadható még a `required` és a `trim` opció, amelyek az `sfValidatorBase` osztályban vannak definiálva:
 
   | **Opció** | **Alapértelmezett érték** | **Leírás**
   | --------- | ------------------------- | ---------------
@@ -103,7 +103,7 @@ Lássuk az általunk használt validatorokhoz elérhető opciókat:
   | sfValidatorEmail  |                     | `pattern`             |
   | sfValidatorChoice | `choices`           |                       |
 
-Ha most megpróbáljuk elküldeni az űrlapot érvénytelen adatokkat nem tapasztalunk semmilyen változást. Előbb bővítenünk kell a `contact` modult az elküldött adatok érvényesítéséhez, ahogy a 2-3 mellékleten látható.
+Ha most megpróbáljuk elküldeni az űrlapot érvénytelen adatokkal, nem tapasztalunk semmilyen változást. Előbb bővítenünk kell a `contact` modult az elküldött adatok érvényesítéséhez, ahogy a 2-3 mellékleten látható.
 
 2-3 melléklet - Érvényesítés megvalósítása a `contact` modulban
 
@@ -136,7 +136,7 @@ A 2-3 melléklettel néhány új fogalmat is bevezetünk:
         [php]
         $this->form = new ContactForm();
 
-  * Mikor a felhasználó elküldi az adatokat egy `POST` kéréssel, a `bind()` metódus köti össze az elküldött adatokat az űrlappal és elindítja az adat érvényesítést. Az űrlap ekkor **kötött állapt**ba kerül (**bound state**).
+  * Mikor a felhasználó elküldi az adatokat egy `POST` kéréssel, a `bind()` metódus köti össze az elküldött adatokat az űrlappal és elindítja az adatok érvényesítését. Az űrlap ekkor **kötött állapt**ba kerül (**bound state**).
 
         [php]
         if ($request->isMethod('post'))
@@ -166,15 +166,15 @@ A 2-3 ábra bemutatja, hogy a kód futtatása során milyen interakciók törté
 
 ### A validatorok célja
 
-Vegyük észre, hogy az átirányításnál a `$request->getParameter('contact')` helyett a `$this->form->getValues()` használtuk. Ennek az az oka, hogy a `$request->getParameter('contact')` a felhasználó által elküldött adatokkal tér vissza, mígy a  `$this->form->getValues()` az érvényesített adatokkal.
+Vegyük észre, hogy az átirányításnál a `$request->getParameter('contact')` helyett a `$this->form->getValues()` használtuk. Ennek az az oka, hogy a `$request->getParameter('contact')` a felhasználó által elküldött adatokkal tér vissza, míg a `$this->form->getValues()` az érvényesített adatokkal.
 
 Ha az űrlap érvényes, akkor miért nem egyforma a két kifejezés eredménye? Minden validator két feladatot lát el: egy **érvényesítő feladatot** (**validation task**) és emellett egy **tisztító feladatot** (**cleaning task**). A `getValues()` metódus az érvényesített és tisztított adatokkal tér vissza.
 
 A tisztító folyamat két fő tevékenységből áll: az bejövő adatok **normalizálása** és **konvertálása**.
 
-Az adat normalizálást a `trim` opció segítségével már megismertük. A normalizálás ennél persze sokkal fontosabb például dátumok esetén. Az `sfValidatorDate` dátumokat érvényesít. A validátor többféle bemenetet fogadhat (egy időbélyeget, egy regexp-en alapuló formátumot, ...). A bemeneti érték egyszerű visszaadása helyett azt a `Y-m-d H:i:s` formátumra alakítja át. Ez garantálja a fejlesztő számára az egységes formátumot, függetlenül az eredeti érték formájától. A rendszer ezáltal a felhasználó számára nagyfokú rugalmasságot tesz lehetővé, míg a fejlesztő számára biztosítja a konzisztens adatokat. 
+Az adat normalizálást a `trim` opció segítségével már megismertük. A normalizálás ennél persze sokkal fontosabb például dátumok esetén. Az `sfValidatorDate` dátumokat érvényesít. A validator többféle bemenetet fogadhat (egy időbélyeget, egy regexp-en alapuló formátumot, ...). A bemeneti érték egyszerű visszaadása helyett azt a `Y-m-d H:i:s` formátumra alakítja át. Ez garantálja a fejlesztő számára az egységes formátumot, függetlenül az eredeti érték formájától. A rendszer ezáltal a felhasználó számára nagyfokú rugalmasságot tesz lehetővé, míg a fejlesztő számára biztosítja a konzisztens adatokat. 
 
-Most nézzük meg a bejövő adat konvertálást egy file feltöltésen keresztül. A file érvényesítését az `sfValidatorFile` végzi. Ha a file feltöltése megtörtént, a neve helyett egy `sfValidatedFile` objektummal tér vissza, ami leegyszerűsíti a file információk kezelését. A fejezet későbbi részén megnézzük ennek a validatornak a működését.
+Most nézzük meg a bejövő adat konvertálást egy file feltöltésen keresztül. A file érvényesítését az `sfValidatorFile` végzi. Ha a file feltöltése megtörtént, a neve helyett egy `sfValidatedFile` objektummal tér vissza, ami leegyszerűsíti a file információk kezelését. A fejezet későbbi részében látjuk majd ennek a validatornak a működését.
 
 >**Tip**
 >A `getValues()` metódus egy tömbbel tér vissza, ami az érvényesített és tisztított adatokat tartalmazza. Ha csak egy mező értékére van szüksége érdemes a `getValue()` metódust használni: `$email = $this->form->getValue('email')`.
@@ -209,7 +209,7 @@ Validatorok testreszabása
 
 Abban a formában, ahogy 2-4 ábrán látható, a hibaüzenetek nem túl hasznosak. Lássuk hogyan tehetjük őket még intuitívabbá.
 
-Minden validator hibákat adhat az űrlaphoz. Egy hiba áll egy hibakódból és egy hibaüzenetből. Minden validator rendelkezik legalább a `required` és az `invalid` hibával, amelyek az `sfValidatorBase`ben vannak definiálva.
+Minden validator hibákat adhat az űrlaphoz. Egy hiba egy hibakódból és egy hibaüzenetből áll. Minden validator rendelkezik legalább a `required` és az `invalid` hibával, amelyek az `sfValidatorBase`ben vannak definiálva.
 
   | **Kód**     | **Üzenet**     | **Leírás**
   | ----------- | -------------- | ---------------
@@ -251,13 +251,13 @@ A hibaüzenetek a validator objektumoknak átadott második argumentumban adhat�
 
 ![Testreszabott hibaüzenetek](/images/forms_book/en/02_05.png "Testreszabott hibaüzenetek")
 
-A 2-6 ábrán látható a túl rövid üzenet szöveg bevitele esetén generált hibaüzenet (az üzenet hosszát legalább 4 karakterben határoztuk meg).
+A 2-6 ábrán látható a túl rövid üzenet bevitele esetén generált hibaüzenet (az üzenet hosszát legalább 4 karakterben határoztuk meg).
 
 2-6 ábra - Túl rövid üzenet hiba
 
 ![Túl rövid üzenet hiba](/images/forms_book/en/02_06.png "Túl rövid üzenet hiba")
 
-Ehhez a hibakódhoz (`min_length`) tartozó hibaüzenet különbözik azoktól, amiket már megismertünk, mivel ez két dinamikus értéket tartalmaz: a felhasználói adatot (`foo`) és a mezőhöz meghatározott minimális karakterszámot (`4`). A 2-5 mellékleten láthatjuk a dinamikus értékek használatát, a 2-7 ábrán pedig a végeredményt.
+Ehhez a hibakódhoz (`min_length`) tartozó hibaüzenet különbözik azoktól, amiket már megismertünk, mivel ez két dinamikus értéket is tartalmaz: a felhasználói adatot (`foo`) és a mezőhöz meghatározott minimális karakterszámot (`4`). A 2-5 mellékleten láthatjuk a dinamikus értékek használatát, a 2-7 ábrán pedig a végeredményt.
 
 2-5 melléklet - Dinamikus értékek használata a hibaüzenetben
 
@@ -284,17 +284,17 @@ Ehhez a hibakódhoz (`min_length`) tartozó hibaüzenet különbözik azoktól, 
 
 ![Dinamikus értékeket tartalmazó hibaüzenet](/images/forms_book/en/02_07.png "Dinamikus értékeket tartalmazó hibaüzenet")
 
-Minden hibaüzenetben használhatók dinamikus értékek, ehhez az érték nevét kell megadni százalékjelek (`%`) közé zárva. Az elérhető értékek általában a felhasználói adat (`value`) és a hibával kapcsolatosan a validatornak megadott opció érték.
+Minden hibaüzenetben használhatók dinamikus értékek, ehhez az érték nevét kell megadni százalékjelek (`%`) közé zárva. Az elérhető értékek általában a felhasználói adat (`value`) és a hibával kapcsolatosan a validatornak megadott opció neve.
 
 >**Tip**
->Minden, validatorokhoz tartozó hibakód, opció és alapértelmezett üzenet megtalálható az online API dokumentációban ([http://www.symfony-project.org/api/1_1/](http://www.symfony-project.org/api/1_1/)). Ott minden hibakód, opció és hibaüzenet részletesen ki van fejtve (például az `sfValidatorString` validator API oldala megtalálható a [http://www.symfony-project.org/api/1_1/sfValidatorString](http://www.symfony-project.org/api/1_1/sfValidatorString) címen). 
+>Minden, validatorokhoz tartozó hibakód, opció és alapértelmezett üzenet megtalálható az online API dokumentációban ([http://www.symfony-project.org/api/1_1/](http://www.symfony-project.org/api/1_1/)), itt minden részletesen ki van fejtve (például az `sfValidatorString` validator API oldala megtalálható a [http://www.symfony-project.org/api/1_1/sfValidatorString](http://www.symfony-project.org/api/1_1/sfValidatorString) címen). 
 
 Validator biztonság
 -------------------
 
 Alapértelmezetten az űrlap csak akkor érvényes, ha minden elküldött mezőhöz van hozzárendelt validator. Ez biztosítja, hogy minden mezőhöz van érvényesítő szabály és nem lehet olyan mezőkhöz értéket megadni, amik nincsenek előre meghatározva az űrlapon.
 
-Ezen biztonsági szabály megértéséhez nézzük meg a 2-6 mellékletben lévő User objektumot.
+Ezen biztonsági szabály megértéséhez nézzük meg a 2-6 mellékleten lévő User objektumot.
 
 2-6 melléklet - `User` osztály
 
@@ -321,7 +321,7 @@ Ezen biztonsági szabály megértéséhez nézzük meg a 2-6 mellékletben lév�
       // ...
     }
 
-Egy `User` objektum két tulajdonságot tárol, a felhasználó nevét (`name`) és egy logikai értéket az adminisztrátori státuszról (`is_admin`). A `setFields()` metódus mindkét mezőt frissíti. A 2-7 mellékleten a `User` osztályhoz kapcsolódó űrlap látható, amely csak a `name` tulajdonság megváltoztatását teszi lehetővé.
+A `User` osztály két tulajdonságot tárol, a felhasználó nevét (`name`) és egy logikai értéket az adminisztrátori státuszról (`is_admin`). A `setFields()` metódus mindkét mezőt frissíti. A 2-7 mellékleten a `User` osztályhoz kapcsolódó űrlap látható, amely csak a `name` tulajdonság megváltoztatását teszi lehetővé.
 
 2-7 melléklet - `User` űrlap
 
@@ -363,7 +363,7 @@ A 2-8 mellékleten látható a `user` modul, amely a korábban készített űrla
       }
     }
 
-Mindenféle védelem nélkül, ha a felhasználó elküld egy űrlapot a `name` és az `is_admin` mezővel, akkor a kódunk sebezhető. Ez egyszerűen megtehető egy olyan eszközzel, mint a Firebug. Valójában az `is_admin` mező mindig érvényes, hiszen egyetlen validator sem kapcsolódik hozzá. Az értékétől függetlenül a `setFields()` metódus nem csak a `name` tulajdonságot fogja frissíteni, de az `is_admin`t is.
+Mindenféle védelem nélkül, ha a felhasználó elküld egy űrlapot a `name` és az `is_admin` mezővel, akkor a kódunk sebezhető volna. Ez egyszerűen megtehető egy olyan eszközzel, mint a Firebug. Valójában az `is_admin` mező mindig érvényes, hiszen egyetlen validator sem kapcsolódik hozzá. Az értékétől függetlenül a `setFields()` metódus nem csak a `name` tulajdonságot fogja frissíteni, de az `is_admin`t is.
 
 Ha a fenti kódnak átadunk egy `name` és egy `is_admin` mezőt is, kapni fogunk egy "Extra field name." globális hibát, ahogy a 2-8 ábrán látszik. Ezt a rendszer akkor generálja a rendszer, ha olyan mezőt küldtek, amelyhez nem kapcsolódik validator; az `is_admin` mező nincs meghatározva a `UserForm` űrlapon.
 
@@ -371,7 +371,7 @@ Ha a fenti kódnak átadunk egy `name` és egy `is_admin` mezőt is, kapni fogun
 
 ![Hiányzó validator hiba](/images/forms_book/en/02_08.png "Hiányzó validator hiba")
 
-Az eddig látott validatorok egy bizonyos mezőhöz generáltak hibát. Akkor mi ez a globális hiba? Amikor létrehozzuk a validatorokat a `setValidators()` metódus segítségével, a symfony készíte egy `sfValidatorSchema` objektumot. Az `sfValidatorSchema` validatorok egy csoportját határozza meg. A `setValidators()` hívás megfelel a következő kódnak: 
+Az eddig látott validatorok egy bizonyos mezőhöz generáltak hibát. Akkor mi ez a globális hiba? Amikor létrehozzuk a validatorokat a `setValidators()` metódus segítségével, a symfony készít egy `sfValidatorSchema` objektumot. Az `sfValidatorSchema` validatorok egy csoportját határozza meg. A `setValidators()` hívás megfelel a következő kódnak: 
 
     [php]
     $this->setValidatorSchema(new sfValidatorSchema(array(
@@ -382,7 +382,7 @@ Az eddig látott validatorok egy bizonyos mezőhöz generáltak hibát. Akkor mi
 
 Az `sfValidatorSchema` alapértelmezetten két érvényesítő szabályt használ, hogy megóvja a validator csoportot. Ezek a szabályok az `allow_extra_fields` és `filter_extra_fields` opciókon keresztül konfigurálhatók.
 
-Az `allow_extra_fields` opció (alapértelmezett érték: `false`) ellenőrzi, hogy minden felhasználótól jövő adathoz tartozik-e validator. Ha nem, akkor egy "Extra field name." globális hibát generál, ahogy az előző példában láttuk. Fejlesztés közben így a fejlesztő figyelmeztetés kap, ha elfelejtett érvényesíteni egyes mezőket.
+Az `allow_extra_fields` opció (alapértelmezett érték: `false`) ellenőrzi, hogy minden felhasználótól jövő adathoz tartozik-e validator. Ha nem, akkor egy "Extra field name." globális hibát generál, ahogy az előző példában láttuk. Fejlesztés közben így a fejlesztő figyelmeztetés kap, ha elfelejtett érvényesíteni bizonyos mezőket.
 
 Térjünk vissza a kapcsolat űrlaphoz. Változtassuk meg az érvényesítő szabályokat úgy, hogy a `name` mező kötelező legyen. Miután a `required` opció alapértelmezett értéke `true`, ezért a `name` validator a következő lesz:
 
@@ -443,9 +443,9 @@ Jobban megnézve azt láthatjuk, hogy bár az űrlap érvényes, a köszönet ol
       }
     }
 
-Most már érvényesíteni tudjuk az űrlapot és megkapju az összes adatot a köszönet oldalon.
+Most már érvényesíteni tudjuk az űrlapot és megkapjuk az összes adatot a köszönet oldalon.
 
-A 4. fejezetben látni fogjuk hogyan használhatók ezek a védelmi mechanizmusok Propel objektumok biztonságos szerializálására az űrlap értékekből.
+A 4. fejezetben látni fogjuk hogyan használhatók ezek a védelmi mechanizmusok Propel objektumok, az űrlap értékekből való biztonságos szerializálására.
 
 Logikai validatorok
 -------------------
@@ -477,7 +477,7 @@ A logikai validator konstruktorának első paraméterén keresztül validatorok 
       }
     }
 
-Űrlap küldésekor a `name` mezőben lévő adat legalább karakter kell legyen **és** illeszkedni kell a regexp mintára (`[\w- ]+`).
+Űrlap küldésekor a `name` mezőben lévő adat legalább 5 karakter kell legyen **és** illeszkedni kell a regexp mintára (`[\w- ]+`).
 
 Mivel a logikai validatorok maguk is validatorok, összeállítható belőlük bonyolultabb logikai kifejezés is, ahogy a 2-12 mellékleten látható.
 
@@ -506,7 +506,7 @@ Mivel a logikai validatorok maguk is validatorok, összeállítható belőlük b
 Globális validatorok
 --------------------
 
-Minden eddig látott validator egy mezőhöz volt rendelve és egyszerre csak egy értéket érvényesített. Bár alapvetően nem veszik figyelembe a felhasználó által elküldött többi adatot, időnként egy mező érvényessége függ a környezettől vagy más mezők értékeitől. Például globális validatorra van szükség, ha két jelszó egyezését vizsgáljuk, vagy ha egy kezdő dátum meg kell, hogy előzzön egy záró dátumot.
+Minden eddig látott validator egy mezőhöz volt rendelve és egyszerre csak egy értéket érvényesített. Bár alapvetően nem veszik figyelembe a felhasználó által elküldött többi adatot, időnként egy mező érvényessége függ a környezettől vagy más mezők értékeitől. Például globális validatorra van szükség, ha két jelszó egyezését vizsgáljuk, vagy ha egy kezdő dátumnak meg kell előznie egy záró dátumot.
 
 Mindkét esetben globális validatort kell használnunk, hogy a felhasználói adatot annak környezetében tudjuk érvényesíteni. Attól függően, hogy az egyes mezők érvényesítése előtt vagy után szeretnénk használni, beszélhetünk pre-validatorról vagy post-validatorról. Általában jobb ötlet a post-validator használata, hiszen ekkor már az adatok érvényesítve és tisztítva, azaz normalizált formában vannak. A 2-13 mellékleten látható, hogyan valósítható meg két jelszó egyezésének ellenőrzése az `sfValidatorSchemaCompare` validator segítségével.
 
@@ -677,4 +677,4 @@ A következő táblázatban felsoroljuk az `sfValidatedFile` objektum minden met
   | getSize()              | a file méretével tér vissza
 
 >**Tip**
->A file feltöltésekor a böngésző által biztosított mime típus nem megbízható. A maximális biztonság biztosítása miatt érvényesítéskor a `finfo_open`, `mime_content_type` és `file` függvényeket használja a rendszer. Végső esetben, ha a függvények egyike sem tudja megállapítani a mime típus, vagy ha a rendszer nem képes szolgáltatni azt, akkor a böngésző által küldött típust veszi figyelembe. A mime típus megállapító függvények felvételéhez vagy megváltoztatásához az `sfValidatorFile` konstruktornak át kell adni a `mime_type_guessers` opciót.
+>A file feltöltésekor a böngésző által biztosított mime típus nem megbízható. A maximális biztonság biztosítása miatt érvényesítéskor a `finfo_open`, `mime_content_type` és `file` függvényeket használja az osztály. Végső esetben, ha a függvények egyike sem tudja megállapítani a mime típust, vagy ha a rendszer nem képes szolgáltatni azt, akkor a böngésző által küldött típust veszi figyelembe. A mime típus megállapító függvények felvételéhez vagy megváltoztatásához az `sfValidatorFile` konstruktornak át kell adni a `mime_type_guessers` opciót.
