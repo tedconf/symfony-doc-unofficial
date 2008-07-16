@@ -1,0 +1,209 @@
+Trabalhando com Doctrine
+========================
+
+Quer experimentar o symfony 1.1? Primeiramente vamos ter que configurar um novo projeto e instalar o sfDoctrine para o symfony 1.1. Execute os comandos abaixo e continue lendo:
+
+    $ mkdir symfony1.1Doctrine
+    $ cd symfony1.1Doctrine
+    $ /path/to/symfony generate:project symfony1.1Doctrine
+    $ svn co http://svn.symfony-project.com/plugins/sfDoctrinePlugin/trunk plugins/sfDoctrinePlugin
+    $ php symfony cc
+
+Agora, digite o comando abaixo para listar tudo que o `sfDoctrinePlugin` oferece. Você vai perceber que o comando vai listar os mesmos comandos do `sfPropelPlugin` e muitos outros.
+
+    $ php symfony list doctrine
+    Available tasks for the "doctrine" namespace:
+      :build-all                   Generates Doctrine model, SQL and initializes the database (doctrine-build-all)
+      :build-all-load              Generates Doctrine model, SQL, initializes database, and load data (doctrine-build-all-load)
+      :build-all-reload            Generates Doctrine model, SQL, initializes database, and load data (doctrine-build-all-reload)
+      :build-all-reload-test-all   Generates Doctrine model, SQL, initializes database, load data and run all test suites (doctrine-build-all-reload-test-all)
+      :build-db                    Creates database for current model (doctrine-build-db)
+      :build-forms                 Creates form classes for the current model (doctrine-build-forms)
+      :build-model                 Creates classes for the current model (doctrine-build-model)
+      :build-schema                Creates a schema.xml from an existing database (doctrine-build-schema)
+      :build-sql                   Creates SQL for the current model (doctrine-build-sql)
+      :data-dump                   Dumps data to the fixtures directory (doctrine-dump-data)
+      :data-load                   Loads data from fixtures directory (doctrine-load-data)
+      :dql                         Execute a DQL query and view the results (doctrine-dql)
+      :drop-db                     Drops database for current model (doctrine-drop-db)
+      :generate-crud               Generates a Doctrine CRUD module (doctrine-generate-crud)
+      :generate-migration          Generate migration class (doctrine-generate-migration)
+      :generate-migrations-db      Generate migration classes from existing database connections (doctrine-generate-migrations-db, doctrine-gen-migrations-from-db)
+      :generate-migrations-models  Generate migration classes from an existing set of models (doctrine-generate-migrations-models, doctrine-gen-migrations-from-models)
+      :init-admin                  Initializes a Doctrine admin module (doctrine-init-admin)
+      :insert-sql                  Inserts SQL for current model (doctrine-insert-sql)
+      :migrate                     Migrates database to current/specified version (doctrine-migrate)
+      :rebuild-db                  Creates database for current model (doctrine-rebuild-db)
+
+
+O `sfDoctrinePlugin` atualmente necessita de pelo menos uma aplicação configurada, então, vamos instanciar a aplicação `frontend`.
+
+    $ php symfony generate:app frontend
+
+Agora vamos configurar nosso banco de dados em `config/databases.yml`. Abra o arquivo no seu editor predileto e utilize o YAML abaixo. Para esse teste, estamos simplesmente utilizando um banco de dados SQLite. O Doctrine é capaz de criar o banco de dados em `config/doctrine.db`. 
+
+    [yml]
+    all:
+      doctrine:
+        class:    sfDoctrineDatabase
+        param:
+          dsn:    sqlite:///<?php echo dirname(__FILE__); ?>/doctrine.db
+
+Agora que nós temos nosso banco de dados configurado, vamos definir nosso schema em `config/doctrine/schema.yml`. Nesse exemplo nós estamos configurando o modelo `BlogPost` que `hasMany` (possui diversas) , `Tags`.
+
+    [yml]
+    ---
+    BlogPost:
+      actAs:
+        Sluggable:
+          fields: [title]
+        Timestampable:
+      columns:
+        title: string(255)
+        body: clob
+        author: string(255)
+      relations:
+        Tags:
+          class: Tag
+          refClass: BlogPostTag
+          foreignAlias: BlogPosts
+    
+    BlogPostTag:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
+    
+    Tag:
+      actAs: [Timestampable]
+      columns:
+        name: string(255)
+
+Agora que nos temos nosso schema definido, vamos criar uma massa de teste em `data/fixtures/data.yml`. Abra o arquivo, e cole o YAML abaixo.
+
+    [yml]
+    ---
+    BlogPost:
+      BlogPost_1:
+        title:  symfony + Doctrine
+        body:   symfony and Doctrine are great!
+        author: Jonathan H. Wage
+        Tags:   [symfony, doctrine, php]
+    
+    Tag:
+      symfony:
+        name: symfony
+      doctrine:
+        name: doctrine
+      php:
+        name: php
+
+Ok, vamos para parte legal. Nós temos nosso schema, e temos também nossa massa, então vamos rodar uma única fez o comando do Doctrine abaixo para criar nosso banco de dados, gerar os modelos, criar as tabelas e carregar a massa de teste.
+
+    $ php symfony doctrine-build-all-reload frontend
+    >> doctrine  Are you sure you wish to drop your databases? (y/n)
+    y
+    >> doctrine  Successfully dropped database f...1.1Doctrine/config/doctrine.db"
+    >> doctrine  Successfully created database f...1.1Doctrine/config/doctrine.db"
+    >> doctrine  Generated models successfully
+    >> doctrine  Created tables successfully
+    >> doctrine  Data was successfully loaded
+
+Agora nosso banco de dados SQLite `doctrine.db` foi criado, todas as tabelas do nosso schema foram criadas e populadas. Agora vamos começar a brincar com os dados e ver como nós podemos utilizar o Doctrine Query Language para trazer as informações do banco.
+
+    $ php symfony doctrine:dql frontend "FROM BlogPost p, p.Tags t"
+    >> doctrine  executing: "FROM BlogPost p, p.Tags t" ()
+    >> doctrine  - 
+    >> doctrine    id: 1
+    >> doctrine    title: symfony + Doctrine
+    >> doctrine    body: symfony and Doctrine are great!
+    >> doctrine    author: Jonathan H. Wage
+    >> doctrine    slug: symfony-doctrine
+    >> doctrine    created_at: 2008-06-16 12:28:57
+    >> doctrine    updated_at: 2008-06-16 12:28:57
+    >> doctrine    Tags: 
+    >> doctrine      - 
+    >> doctrine        id: 1
+    >> doctrine        name: symfony
+    >> doctrine        created_at: 2008-06-16 12:28:57
+    >> doctrine        updated_at: 2008-06-16 12:28:57
+    >> doctrine      - 
+    >> doctrine        id: 2
+    >> doctrine        name: doctrine
+    >> doctrine        created_at: 2008-06-16 12:28:57
+    >> doctrine        updated_at: 2008-06-16 12:28:57
+    >> doctrine      - 
+    >> doctrine        id: 3
+    >> doctrine        name: php
+    >> doctrine        created_at: 2008-06-16 12:28:57
+    >> doctrine        updated_at: 2008-06-16 12:28:57
+
+Agora, vamos explicar um pouco os resultados obtidos. Como você pode ver, nos modelos nós temos as colunas created_at, updated_at and slug que não foram definidas no schema. Essas colunas são adicionadas pelo behavior anexado ao schema dentro da configuração actAs. As colunas `created_at` e `updated_at` são automaticamente atualizadas `onInsert` e `onUpdate`, e a coluna do slug é uma string criada baseada na coluna name para ser utilizada na url(url amigável). O Doctrine tem alguns behaviors que são incluídos no core como `Sluggable` e `Timestampable`, mas o sistema de behavior é feito para permitir que qualquer pessoa escreva novos behaviors para os modelos e serem reutilizados.
+
+Agora que nós temos nossa base configurada e populada, vamos fazer alguns testes utilizando o admin generator para manipular os posts e tags do blog.
+
+    $ php symfony doctrine:init-admin frontend blog_posts BlogPost
+    $ php symfony doctrine:init-admin frontend tags Tag
+
+>**Nota**
+> Os templates do admin generator para `sfDoctrinePlugin` ainda não foram totalmente atualizados para o symfony 1.1, então vamos precisar ativar a opção `compat_10` em `apps/frontend/config/settings.yml`. Eles vão ser atualizados antes do lançamento da versão estável do symfony 1.1.
+
+Agora vamos abrir nosso browser e verificar a aplicação `frontend` e os módulos `blog_posts` e `tags`. Eles devem ser localizados numas urls parecida com essas
+
+    $ http://localhost/symfony1.1Doctrine/web/frontend_dev.php/blog_posts
+    $ http://localhost/symfony1.1Doctrine/web/frontend_dev.php/tags
+
+![blog posts](/uploads/assets/doctrine/blog_posts.gif)
+
+Agora, com um pouco de configuração no admin generator do blog_post, nós podemos controlar o relacionamento entre blog_post e tags marcando checkboxes quando editando um post. Abra o arquivo `apps/frontend/modules/blog_posts/config/generator.yml` e troque o conteúdo pelo YAML abaixo:
+
+    [yml]
+    generator:
+      class:              sfDoctrineAdminGenerator
+      param:
+        model_class:      BlogPost
+        theme:            default
+        list:
+          display:        [=title, author]
+          object_actions:
+            _edit:        -
+            _delete:      -
+        edit:
+          display:        [author, title, body, Tags]
+          fields:
+            author:
+              type:       input_tag
+            title:
+              type:       input_tag
+            body:
+              type:       textarea_tag
+              params:     size=50x10
+            Tags:
+              type:       doctrine_admin_check_list
+              params:     through_class=BlogPostTag
+
+Agora atualize (f5) seu browser para listar os posts do blog. Você vai ver tudo de uma maneira mais limpa. Edite um post clicando no ícone ou no título. Veja abaixo como você pode marcar as tags associadas ao post.
+
+![edit blog posts](/uploads/assets/doctrine/edit_blog_post.gif)
+
+99% das ferramentas que você vê funcionando no Propel, você pode ver também no Doctrine. Então, é fácil entender e aplicar. O sfDoctrinePlugin implementa todas as funcionalidades que o sfPropelPlugin e algumas mais. Nos links abaixo você pode obter mais informação sobre o que o Doctrine suporta.
+
+  * [Behaviors](http://www.phpdoctrine.org/documentation/manual/0_11?chapter=plugins) - Easily create reusable behaviors for your Doctrine models.
+  * [Migrations](http://www.phpdoctrine.org/documentation/manual/0_11?chapter=migration) - Deploy database schema changes to your production environment through a programmatic interface.
+  * [Doctrine Query Language](http://www.phpdoctrine.org/documentation/manual/0_11?chapter=dql-doctrine-query-language) - Build your database queries through a fluent OO interface
+  * [Validators](http://www.phpdoctrine.org/documentation/manual/0_11?chapter=basic-schema-mapping#constraints-and-validators)  - Turn on column validators for both database and code level validation.
+  * [Hierarchical Data](http://www.phpdoctrine.org/documentation/manual/0_11?chapter=hierarchical-data) - Turn your models in to nested sets easily with the flip of a switch.
+  * [Caching](http://www.phpdoctrine.org/documentation/manual/0_11?chapter=caching) - Tune performance by caching your DQL query parsing and the result sets of queries.
+
+Se esse pequeno tutorial despertou seu interesse no Doctrine, você pode encontrar mais informações do Doctrine abaixo e aprender um pouco mais sobre ele:
+
+  * [Full User Manual](http://www.phpdoctrine.org/documentation/manual/0_11?one-page)
+  * [API Documentation](http://www.phpdoctrine.org/documentation/api/0_11)
+  * [Cheatsheet](http://www.phpdoctrine.org/Doctrine-Cheat-Sheet.pdf)
+  * [Blog](http://www.phpdoctrine.org/blog)
+  * [Community](http://www.phpdoctrine.org/community)
+  * [Frequently Asked Questions](http://www.phpdoctrine.org/faq)
+  * [Download](http://www.phpdoctrine.org/download)
