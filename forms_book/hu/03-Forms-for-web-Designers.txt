@@ -1,0 +1,579 @@
+3. fejezet - Űrlapokról web designereknek
+=========================================
+
+Az 1. és 2. fejezetekben megnéztük, hogyan készíthetünk űrlapkat widgetekkel és érvényesítő szabályokkal. A megjelenítéshez a `<?php echo $form ?>` kifejezést használtuk. Ez lehetővé teszi a fejlesztők számára, hogy az alkalmazás-logikára koncentráljanak, nem foglalkozva a megjelenéssel. Ha új mezőket veszünk fel, vagy megváltoztatjuk a már meglévőket (név, widget, ...), a sablon megváltoztatása szükségtelen. Mindez megfelelő a fejlesztés kezdeti szakaszában, ahol a fejlesztő a modelre és alkalmazás-logikára fókuszál.
+
+Ha az objektum model már stabil és a stílus irányelvek is elkészültek, a designereken a sor, hogy megformázzák az űrlapokat.
+
+A fejezet elkezdése előtt jó ha tisztában vagyunk a symfony template rendszerével és a view réteggel. Mindezt megtaláljuk a "The Definitive Guide to symfony" könyv [Inside the View Layer](http://www.symfony-project.org/book/1_1/07-Inside-the-View-Layer) fejezetében.
+
+>**Note**
+>A symfony űrlap rendszere az MVC modelnek megfelelően lett felépítve. Az MVC minta segít elkülöníteni egy fejlesztői csapat minden teendőjét: a fejlesztők elkészítik az űrlapokat és az üzleti logikát, a web designerek pedig a megfelelő megjelenítést biztosítják. Bár a feladatok jól különválnak, a csapaton belüli megfelelő kommunikációt mindez nem helyettesítheti.
+
+Előkészítés
+-----------
+
+Nézzük végig, hogy az 1. és második fejezetben használt kacsolat űrlapunk miből épül fel (3-1 ábra). Itt egy technikai áttekintés azon designerek számára, akik csak ezt fejezetet olvassák át:
+
+  * Az űrlap négy mezőből áll: `name`, `email`, `subject` és `message`.
+
+  * Az űrlapot a `contact` modul kezeli.
+
+  * Az `index` action egy `form` változót ad át a templatenek, amely az űrlapot reprezentálja.
+
+Ebben a fejezetben megnézzük milyen lehetőségek vannak a korábbi template prototípus (3-1 melléklet) testreszabására.
+
+3-1 ábra - A kapcsolat űrlap
+
+![A kapcsolat űrlap](/images/forms_book/en/03_01.png "A kapcsolat űrlap")
+
+3-1 melléklet - A kapcsolat űrlap template prototípusa
+
+    [php]
+    // apps/frontend/modules/contact/templates/indexSuccess.php
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <?php echo $form ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+>**SIDEBAR**
+>File feltöltés
+>
+>Ha file feltöltésre szolgáló mezőt is tartalmaz az űrlap, meg kell adnunk a `form` tag `enctype` attribútumát is:
+>
+>     [php]
+>     <form action="<?php echo url_for('contact/index') ?>" method="POST" enctype="multipart/data">
+>
+>A `form` objektum `isMultipart()` metódusa `true` értékkel tér vissza, ha szükség van erre az attribútumra:
+>
+>     [php]
+>     <form action="<?php echo url_for('contact/index') ?>" method="POST" <?php $form->isMultipart() and print 'enctype="multipart/form-data"' ?>>
+
+A template prototípus
+---------------------
+
+Jelenleg a `<?php echo $form ?>` formulát hasznájuk az űrlap prototípus megjelenítéséhez, amely automatikusan generálja a szükséges HTML kódot.
+
+Egy űrlap mezőkből épül fel. Template szinten minden mező három elemből áll:
+
+  * A cimkéből
+
+  * Az űrlap mezőből
+
+  * A lehetséges hibaüzenetekből
+
+A `<?php echo $form ?>` formula automatikusan előállítja ezeket az elemeket, ahogyan a 3-2 mellékleten látható hibás küldés esetén.
+
+3-2 melléklet - Hibás küldés esetén generált template
+
+    [php]
+    <form action="/frontend_dev.php/contact" method="POST">
+      <table>
+        <tr>
+          <th><label for="contact_name">Name</label></th>
+          <td><input type="text" name="contact[name]" id="contact_name" /></td>
+        </tr>
+        <tr>
+          <th><label for="contact_email">Email</label></th>
+          <td>
+            <ul class="error_list">
+              <li>This email address is invalid.</li>
+            </ul>
+            <input type="text" name="contact[email]" value="fabien" id="contact_email" />
+          </td>
+        </tr>
+        <tr>
+          <th><label for="contact_subject">Subject</label></th>
+          <td>
+            <select name="contact[subject]" id="contact_subject">
+              <option value="0" selected="selected">Subject A</option>
+              <option value="1">Subject B</option>
+              <option value="2">Subject C</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <th><label for="contact_message">Message</label></th>
+          <td>
+            <ul class="error_list">
+              <li>The message "foo" is too short. It must be of 4 characters at least.</li>
+            </ul>
+            <textarea rows="4" cols="30" name="contact[message]" id="contact_message">foo</textarea>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+Nézzük meg részenként. A 3-2 ábrán minden mezőhöz tartozó `<tr>` sor külön van választva.
+
+3-2 ábra - Az űrlap mezőnként szétválasztva
+
+![Az űrlap mezőnként szétválasztva](/images/forms_book/en/03_02.png "Az űrlap mezőnként szétválasztva")
+
+Minden mező három HTML kód darabból áll (3-3 ábra), a mező három elemének megfelelően. Nézzük meg az `email` mezőhöz tartozó HTML kódot:
+
+  * A **cimke**
+
+        [php]
+        <label for="contact_email">Email</label>
+
+  * Az **űrlap mező**
+
+        [php]
+        <input type="text" name="contact[email]" value="fabien" id="contact_email" />
+
+  * A **hibaüzenetek**
+
+        [php]
+        <ul class="error_list">
+          <li>The email address is invalid.</li>
+        </ul>
+
+3-3 ábra - Az `email` mező részei
+
+![Az `email` mező részei](/images/forms_book/en/03_03.png "Az `email` mező részei")
+
+>**TIP**
+>Minden mezőhöz tartozik egy generált `id` attribútum, amelynek segítségével a fejlesztők könnyen kapcsolhatnak hozzá JavaScript kódot.
+
+A template prototípus testreszabása
+-----------------------------------
+
+A `<?php echo $form ?>` formula elegendő az olyan egyszerű űrlapok esetén, mint a kapcsolat űrlap. Ez tulajdonképpen `<?php echo $form->render() ?>` forma rövid változata.
+
+A `render()` metódus megengedi az egyes mezőkhöz tartozó HTML attribútumok átadását. A 3-3 mellékleten látható módon megadhatjuk az `email` mező osztályát.
+
+3-3 melléklet - HTML attribútumok testreszabása a `render()` metóduson keresztül.
+
+    [php]
+    <?php echo $form->render(array('email' => array('class' => 'email'))) ?>
+    
+    // Generated HTML
+    <input type="text" name="contact[email]" value="" id="contact_email" class="email" />
+
+Ezzel a módszerrel megadhatók az űrlap stílusok, de nem szolgáltatja azt a szintű rugalmasságot, amely a mezők testreszabásához szükséges.
+
+A megjelenés testreszabása
+--------------------------
+
+Lássuk, hogy a `render()` nyújtotta globál beállításokon túl, hogyan érhetünk el nagyobb rugalmasságot a mezők megjelenítésében.
+
+### A `renderRow()` metódus használata mezők esetén
+
+Az egyik lehetőség, hogy minden mezőt egyenként jelenítünk meg. A `<?php echo $form ?>` forma megfelel minden mező `renderRow()` metódusának meghívásával, ahogy a 3-4 mellékleten látható.
+
+3-4 melléklet - A `renderRow()` használata
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <?php echo $form['name']->renderRow() ?>
+        <?php echo $form['email']->renderRow() ?>
+        <?php echo $form['subject']->renderRow() ?>
+        <?php echo $form['message']->renderRow() ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+A mezőket a `form` objektumon keresztül érhetjük el, tömbként használva azt. Az `email` mező elérhető a `$form['email']` formában. A `renderRow()` metódus a mezőt egy HTML táblázat soraként jeleníti meg. A `$form['email']->renderRow()` kifejezés az `email` mezőhöz tartozó sort generálja. Ezt a módszert alkalmazva a megmaradt három mezőre (`subject`, `email` és `message`) megkapjuk a teljes űrlapot.
+
+>**SIDEBAR**
+>Hogyan használható egy objektum tömbként?
+>
+>A PHP 5-ös verziótól kezdve lehetőségünk van az objektumokat tömbként használni. Az `sfForm` osztály implementája az ArrayAccess interfacet, amely lehetővé teszi a mezők elérésehez ezt az egyszerűbb szintakszist. A tömb indexe egy mezőnév, a visszatérési értéke pedig a mezőhöz tartozó widget objektum:
+>
+>     [php]
+>     <?php echo $form['email'] ?>
+>     
+>     // Syntax that should have been used if sfForm didn't implement the ArrayAccess interface.
+>     <?php echo $form->getField('email') ?>
+>
+>Mivel a templateben minden változó csak olvasható lehet, ezért bármilyen mező módosítására tett próbálkozás egy `LogicException` kivételt fog dobni:
+>
+>     [php]
+>     <?php $form['email'] = ... ?>
+>     <?php unset($form['email']) ?>
+
+A jelenlegi template és az eredeti, amivel kezdtünk funkcionálisan azonos. Habár megjelenésükben megegyeznek, a testreszabás most már egyszerűbb. A `renderRow()` metódus két paramétert fogad: egy tömböt, amely HTML attribútumokat tartalmaz, valamint a cimkét. A 3-5 melléklet ezt a két paramétert használja az űrlap testreszabásához. (3-4 ábrán mutatja az eredményt).
+
+3-5 melléklet - A `renderRow()` metódus paramétereinek használata a testreszabáshoz.
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <?php echo $form['name']->renderRow() ?>
+        <?php echo $form['email']->renderRow(array('class' => 'email')) ?>
+        <?php echo $form['subject']->renderRow() ?>
+        <?php echo $form['message']->renderRow(array(), 'Your message') ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+3-4 ábra - A `renderRow()` segítségével testreszabott űrlap megjelenése
+
+![A `renderRow()` segítségével testreszabott űrlap megjelenése](/images/forms_book/en/03_04.png "A `renderRow()` segítségével testreszabott űrlap megjelenése")
+
+Nézzük meg közelebbről az `email` mezőnek átadott `renderRow()` paraméterek hatását:
+
+  * `array('class' => 'email')` az `<input>` taghoz hozzáadja az `email` css osztályt
+
+A `message` mező esetén hasonlóan működik:
+
+  * az `array()` azt jelenti, hogy nem adunk át HTML attribútumokat a `<textarea>` tagnak
+  * a `'Your message'` kicseréli az alapértelmezett cimkét
+
+Minden `renderRow()` paraméter opcionális, így egyiket sem kell megadnunk a `name` és a `subject` mezők esetén.
+
+Bár a `renderRow()` segít az egyes mezők testreszabásában, a renderelés csupán a mezők HTML kódjának dekorációjára van korlátozva, ahogy a 3-5 ábrán látható.
+
+3-5 ábra - A `renderRow()` és a `render()` által használt HTML struktúra
+
+![A `renderRow()` és a `render()` által használt HTML struktúra](/images/forms_book/en/03_05.png "A `renderRow()` és a `render()` által használt HTML struktúra")
+
+>**SIDEBAR**
+>Hogyan változtatható meg a prototípus struktúrája?
+>
+>Alapértelmezetten a symfony egy HTML tömböt használ egy űrlap megjelenítéséhez. Ez a viselkedés *formázó* osztályokon (*formatter*) keresztül befolyásolható, ami lehet beépített, vagy speciálisan a projekthez fejlesztett. Az 5. fejezetben fogunk foglalkozni formázó osztályok készítésével.
+
+Minden mező tartalmaz metódusokat az egyes elemek generálásához, így az elkülönül az előbb bemutatott struktúrától, ahogy a 3-6 ábrán látható:
+
+  * `renderLabel()` : a cimke (a mezőhöz tartozó `<label>` tag)
+  * `render()`      : a mező maga (például az `<input>` tag)
+  * `renderError()` : hibaüzenetek (`<ul class="error_list">` lista formájában)
+
+3-6 ábra - Elérhető metódusok egy mező testreszabásához
+
+![Elérhető metódusok egy mező testreszabásához](/images/forms_book/en/03_06.png "Elérhető metódusok egy mező testreszabásához")
+
+A fejezet további részében részletesen is megnézzük ezek használatát.
+
+### A mező `render()` metódusának használata
+
+Tegyük fel, hogy 2 oszlopos űrlapot szeretnénk megjeleníteni. A 3-7 ábrának megfelelően a `name` és az `email` mezők egy sorban vannak, míg a `subject` és a `message` mezők külön sorban jelennek meg.
+
+3-7 ábra - Űrlap megjelenítése több sorban
+
+![Űrlap megjelenítése több sorban](/images/forms_book/en/03_07.png "Űrlap megjelenítése több sorban")
+
+Az egyes mezők minden elemét külön-külön kell tudnunk előállítani. Láthattuk, hogy a `form` objektumot tömbként használva elérhetők a hozzá tartozó mezők, a mező nevét használva indexként. Például az `email` mező elérhető `$form['email']` formában. A 3-6 mellékleten látható, hogyan készíthető el az űrlap két oszlopos változata.
+
+3-6 melléklet - Két oszlopos megjelenítés
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <tr>
+          <th>Name:</th>
+          <td><?php echo $form['name']->render() ?></td>
+          <th>Email:</th>
+          <td><?php echo $form['email']->render() ?></td>
+        </tr>
+        <tr>
+          <th>Subject:</th>
+          <td colspan="3"><?php echo $form['subject']->render() ?></td>
+        </tr>
+        <tr>
+          <th>Message:</th>
+          <td colspan="3"><?php echo $form['message']->render() ?></td>
+        </tr>
+        <tr>
+          <td colspan="4">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+A `<?php echo $form ?>` formához hasonlóan a mező `render()` metódusát sem kötelező meghívni, átírhatjuk a templatet a 3-7 mellékleten látható formára.
+
+3-7 melléklet - Egyszerűsített két oszlopos megjelenítés
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <tr>
+          <th>Name:</th>
+          <td><?php echo $form['name'] ?></td>
+          <th>Email:</th>
+          <td><?php echo $form['email'] ?></td>
+        </tr>
+        <tr>
+          <th>Subject:</th>
+          <td colspan="3"><?php echo $form['subject'] ?></td>
+        </tr>
+        <tr>
+          <th>Message:</th>
+          <td colspan="3"><?php echo $form['message'] ?></td>
+        </tr>
+        <tr>
+          <td colspan="4">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+Az űrlaphoz hasonlóan, az egyes mezők is testreszabhatók a `render()`nek átadott HTML attribútum tömbbel. A 3-8 melléleten az `email` mező HTML osztályának módosítása látható.
+
+3-8 melléklet - HTML attribútumok módosítása a `render()` metódus segítségével
+
+    [php]
+    <?php echo $form['email']->render(array('class' => 'email')) ?>
+
+    // Generated HTML
+    <input type="text" name="contact[email]" class="email" id="contact_email" />
+
+### A mező `renderLabel()` metódusának használata
+
+Az előző bekezdésben a cimkéket nem generáltuk. A 3-9 mellékletben a mező `renderLabel()` metódusát használjuk a megfelelő cimke megjelenítéséhez.
+
+3-9 melléklet - A `renderLabel()` használata
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <tr>
+          <th><?php echo $form['name']->renderLabel() ?>:</th>
+          <td><?php echo $form['name'] ?></td>
+          <th><?php echo $form['email']->renderLabel() ?>:</th>
+          <td><?php echo $form['email'] ?></td>
+        </tr>
+        <tr>
+          <th><?php echo $form['subject']->renderLabel() ?>:</th>
+          <td colspan="3"><?php echo $form['subject'] ?></td>
+        </tr>
+        <tr>
+          <th><?php echo $form['message']->renderLabel() ?>:</th>
+          <td colspan="3"><?php echo $form['message'] ?></td>
+        </tr>
+        <tr>
+          <td colspan="4">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+A cimke a mező neve alapján automatikusan generálódik. Ennek megváltoztatásához átadhatjuk a megfelelő szöveget a `renderLabel()` első paraméterében, ahogy a 3-10 mellékleten látható.
+
+3-10 melléklet - A cimke megváltoztatása
+
+    [php]
+    <?php echo $form['message']->renderLabel('Your message') ?>
+
+    // Generated HTML
+    <label for="contact_message">Your message</label>
+
+Mi értelme van a `renderLabel()`nek átadni a cimke szövegét? Miért nem használjuk egyszerűen a `label` tagot? Azért, mert a `renderLabel()` a teljes `label` tagot generálja, beállítja a `for` attribútumot a hozzá tartozó mező azonosítójával (`id`). Ez biztosítja a mező elérhetőségét; automatikusan megkapja a fókuszt a cimkére kattintva:
+
+    [php]
+    <label for="contact_email">Email</label>
+    <input type="text" name="contact[email]" id="contact_email" />
+
+Továbbá HTML attribútumokat adhatunk át a cimkének a `renderLabel()` második paramétereként:
+
+    [php]
+    <?php echo $form['send_notification']->renderLabel(null, array('class' => 'inline')) ?>
+
+    // Generált HTML
+    <label for="contact_send_notification" class="inline">Send notification</label>
+
+A példában az első paraméter `null`, tehát a cimke szövege automatikusan generálódik.
+
+### A mező `renderError()` metódusának használata
+
+A jelenlegi template nem kezeli a hibaüzeneteket. A 3-11 mellékleten visszaállítjuk azokat a `renderError()` metódus segítségével.
+
+3-11 melléklet - Hibaüzenetek megjelenítese a `renderError()` metódussal
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <tr>
+          <th><?php echo $form['name']->renderLabel() ?>:</th>
+          <td>
+            <?php echo $form['name']->renderError() ?>
+            <?php echo $form['name'] ?>
+          </td>
+          <th><?php echo $form['email']->renderLabel() ?>:</th>
+          <td>
+            <?php echo $form['email']->renderError() ?>
+            <?php echo $form['email'] ?>
+          </td>
+        </tr>
+        <tr>
+          <th><?php echo $form['subject']->renderLabel() ?>:</th>
+          <td colspan="3">
+            <?php echo $form['subject']->renderError() ?>
+            <?php echo $form['subject'] ?>
+          </td>
+        </tr>
+        <tr>
+          <th><?php echo $form['message']->renderLabel() ?>:</th>
+          <td colspan="3">
+            <?php echo $form['message']->renderError() ?>
+            <?php echo $form['message'] ?>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="4">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+### Hibaüzenetek finomhangolása
+
+A `renderError()` a mezőhöz tartozó hibák listáját hozza létre. Csak abban az esetben generál HTML kódot, ha a mező tartalmaz hibákat. Alapértelmezetten egy nem sorszámozott listát készít (`<ul>`).
+
+Bár ez a viselkedés a legtöbb esetben megfelelő, a `hasError()` és `getError()` metódusok lehetőséget biztosítanak a hibák közvetlen kezeléséhez. A 3-12 mellékleten az `email` mezőhöz tartozó hibaüzenetek kezelése látható.
+
+3-12 melléklet - Hibaüzenetek közvetlen elérése
+
+    [php]
+    <?php if ($form['email']->hasError()): ?>
+      <ul class="error_list">
+        <?php foreach ($form['email']->getError() as $error): ?>
+          <li><?php echo $error ?></li>
+        <?php endforeach; ?>
+      </ul>
+    <?php endif; ?>
+
+A példában előállított kód teljes mértékben megegyezik a `renderError()` által visszaadottal.
+
+### Rejtett mezők kezelése
+
+Tegyük fel, hogy van egy `referrer` nevű rejtett mező az űrlapon, ami kötelezően kitöltendő. A mező annak az oldalnak a címét tárolja, ahonnan a felhasználó az űrlaphoz érkezett. A `<?php echo $form ?>` elkészíti a rejtett mezőkhöz tartozó HTML kódot és az utolsó látható mező után beilleszti azt., ahogy a 3-13 mellékleten látható.
+
+3-13 melléklet - A rejtett mezőkhöz generált kód
+
+    [php]
+    <tr>
+      <th><label for="contact_message">Message</label></th>
+      <td>
+        <textarea rows="4" cols="30" name="contact[message]" id="contact_message"></textarea>
+        <input type="hidden" name="contact[referrer]" id="contact_referrer" />
+      </td>
+    </tr>
+
+Mint láthatjuk a `referrer` mezőhöz tartozó kódból, csak az `input` tag került generálásra. Cimkének ebben az esetben nem túl sok értelme lenne. De mi van a mezőhöz kapcsolódó lehetséges hibaüzenetekkel? Habár a mező rejtett, mégis módosítható a feldolgozás alatt akár szándékosan, akár hibás kód miatt. Ezek a hibák nem közvetlenül a `referrer` mezőhöz kapcsolódnak, hanem globális hibaként jelennek meg. Az 5. fejezetben látni fogjuk, hogy más esetekben is globális hibák keletkeznek. A 3-8 ábrán látható, hogyan jelenik meg a `referrer` mezőhöz tartozó hibaüzenet, a 3-14 melléklet pedig a generált kódot mutatja be.
+
+3-8 ábra - Globális hibaüzenetek megjelenítése
+
+![Globális hibaüzenetek megjelenítése](/images/forms_book/en/03_08.png "Globális hibaüzenetek megjelenítése")
+
+3-14 melléklet - Globális hibaüzenetek generálása
+
+    [php]
+    <tr>
+      <td colspan="2">
+        <ul class="error_list">
+          <li>Referrer: Required.</li>
+        </ul>
+      </td>
+    </tr>
+
+>**Caution**
+>Valahányszor testreszabunk egy űrlapot, ne feledkezzünk meg a rejtett mezők és a globális hibaüzenetek kezeléséről.
+
+### Globális hibák kezelése
+
+Egy űrlap három különböző típusú hibát tartalmazhat:
+
+  * Egy meghatározott mezővel összefüggő hibák
+  * Globális hibák
+  * Rejtett mezőkhöz, vagy meg nem jelenített mezőkhöz tartozó hibák. Ezek össze vannak vonva a globális hibákkal.
+
+Már láttuk a mezőkhöz tartozó hibaüzenetek megjelenítésének megvalósítását, a 3-15 mellékleten a globális hibaüzenetek megjelenítése látható.
+
+3-15 melléklet - Globális hibaüzenetek megjelenítése
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <tr>
+          <td colspan="4">
+            <?php echo $form->renderGlobalErrors() ?>
+          </td>
+        </tr>
+
+        // ...
+      </table>
+
+A `renderGlobalError()` metódus megjeleníti a globáls hibák listáját. A `hasGlobalErrors()` és `getGlobalErrors()` metódus segítségével is kezelhetjük a globális hibákat, ahogy a 3-16 mellékleten látható.
+
+3-16 melléklet - Globális hibák testreszabása a `hasGlobalErrors()` és `getGlobalErrors()` segítségével
+
+      [php]
+      <?php if ($form->hasGlobalErrors()): ?>
+        <tr>
+          <td colspan="4">
+            <ul class="error_list">
+              <?php foreach ($form->getGlobalErrors() as $name => $error): ?>
+                <li><?php echo $name.': '.$error ?></li>
+              <?php endforeach; ?>
+            </ul>
+          </td>
+        </tr>
+      <?php endif; ?>
+
+Minden globális hibához tartozik egy név (`name`) és egy üzenet (`error`).  A név üres, ha "valódi" globális hibáról van szó, és a cimkét tartalmazza, ha egy rejtett mezőhöz, vagy egy meg nem jelenített mezőhöz tartozik.
+
+Bár a mostani template technikailag azonos azzal, amivel a fejezetet kezdtük (3-8 ábra), a mostani már testreszabható.
+
+3-8 ábra - A mezőkhöz tartozó metódusokkal testreszabott űrlap
+
+![A mezőkhöz tartozó metódusokkal testreszabott űrlap](/images/forms_book/en/03_08.png "A mezőkhöz tartozó metódusokkal testreszabott űrlap")
+
+Nemzetköziesítés (i18n)
+-----------------------
+
+A symfony i18n rendszere automatikusan kezeli a mezőkhöz tartozó elemeket (cimkék, hibaüzenetek). Ez azt jelenti, hogy a web designernek semmi különlegeset sem kell tennie, ha többnyelvű űrlapokat szeretne készíteni, még akkor sem, ha explicit felülírja a cimkét a `renderLabel()` metóduson keresztül. A fordításokat a rendszer automatikusan figyelembe veszi. További információk az űrlap nemzetköziesítéséről a 9. fejezetben találhatók.
+
+Együttműködés a fejlesztővel
+----------------------------
+
+Zárjuk ezt a fejezetet egy általános leírással, hogyan történik az űrlap fejlesztése symfony alatt:
+
+  * A fejlesztő csapat az űrlap osztály és műveleteinek implementálásával kezdi a munkát. A template ekkor nem több, mint a `<?php echo $form ?>` prototípus.
+
+  * Ezidő alatt a designerek megtervezik a stílus irányelveket és az űrlapok megjelenési szabályait: globális struktúra, hibaüzenet megjelenítési szabályok, ...
+
+  * Ha az üzleti logika kész és a stílus irányelveket elfogadták, a designer csapat módosítja az űrlap templatet, megfelelően testreszabva azt. A csapatnak csak a mezőnevekre van szükségük és az űrlap kezelését végző műveletre.
+
+Mikor ezen a körön túl vagyunk, az üzleti logika és a template akár egyszerre is változtatható.
+
+A fejlesztő csapat ezután a templatek módosítása, s így a designer csapat beavatkozása nélkül:
+
+  * Módosíthatja az űrlaphoz tartozó widgeteket
+  * Testreszabhatja a hibaüzeneteket
+  * Módosíthatja, bővítheti, vagy szűkítheti az érvényesítő szabályokat
+
+Hasonlóan a designer csapat szabadon megváltoztathatja az űrlap felépítését vagy megjelenítését, anélkül, hogy rászorulna a fejlesztő csapat segítségére.
+
+A következő műveletekhez azonban a két csapat közreműködése szükséges:
+
+  * Mező átnevezése
+  * Mező felvétele vagy eltávolítása
+
+Ennek az együttműködésnek csak akkor van jelentősége, ha mind az üzleti logika, mind az űrlap megjelenés egyszerre változik. Ahogy a fejezetet is kezdtük, habár az űrlap keretrendszer szépen különválasztja a feladatokat, a csapatok közötti megfelelő kommunikáció mindennél többet ér.
