@@ -152,8 +152,8 @@ symfony code from scratch, but rather let it generate the code that you may use
 and modify as needed. Symfony can interpret the data model to generate the CRUD
 interface automatically:
 
-    $ php symfony propel:generate-crud frontend post Post
-    $ php symfony propel:generate-crud frontend comment Comment
+    $ php symfony propel:generate-crud frontend post Post --with-show
+    $ php symfony propel:generate-crud frontend comment Comment --with-show
     $ php symfony cache:clear
 
     On *nix systems, you will have to change some rights:
@@ -233,13 +233,13 @@ locate the line showing the `title` key and change it to:
     default:
       http_metas:
         content-type: text/html
-
-    metas:
-      title:        The best blog ever
-      robots:       index, follow
-      description:  symfony project
-      keywords:     symfony, project
-      language:     en
+  
+      metas:
+        title:        The best blog ever
+        robots:       index, follow
+        description:  symfony project
+        keywords:     symfony, project
+        language:     en
 
 The home page itself needs to be changed. It uses the default template of the
 `default` module, which is kept in the framework but not in your application
@@ -569,7 +569,7 @@ Just one more step: Edit the `routing.yml` located in the
 
     list_of_posts:
       url:   /latest_posts
-      param: { module: post, action: list }
+      param: { module: post, action: index }
 
     post:
       url:   /blog/:title
@@ -626,8 +626,8 @@ to add global navigation:
 
     <div id="navigation">
       <ul style="list-style:none;">
-        <li><?php echo link_to('Manage posts', 'post/list') ?></li>
-        <li><?php echo link_to('Manage comments', 'comment/list') ?></li>
+        <li><?php echo link_to('Manage posts', 'post/index') ?></li>
+        <li><?php echo link_to('Manage comments', 'comment/index') ?></li>
       </ul>
     </div>
     <div id="content">
@@ -677,7 +677,12 @@ Note that among the existing columns of the `Post` table, the admin will look
 for a `nb_comments`. There is no associated getter yet, but it is simple to
 add to the `sf_sandbox/lib/model/Post.php`:
 
-    [php]
+    [php]    
+    function __toString()
+    {
+      return $this->getTitle();
+    }
+
     public function getNbComments()
     {
       return count($this->getComments());
