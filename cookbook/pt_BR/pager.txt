@@ -1,0 +1,282 @@
+Paginando uma lista
+===================
+
+Visão geral
+-----------
+
+O symfony dispõe de um componente: `sfPropelPager`. Ele pode separar os resultados obtidos a partir de um objeto criteria (da classe `Criteria`) dentro de diversas páginas oferecendo métodos para acessar as páginas e aos objetos resultantes.
+
+O objeto `sfPropelPager` 
+------------------------
+
+A classe `sfPropelPager` utiliza a camada de abstração do Propel como descrito no capítulo [Model](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer) .
+
+Esse capítulo vai mostrar a maneira como utilizar os métodos do `sfPropelPager` com um simples exemplo: mostrando uma lista de artigos de 10 em 10. Assumindo que o objeto `Article` possui os métodos `getPublished()`, `getTitle()`, `getOverview()` e `getContent()`. 
+
+Se você quisesse ter um resultado sem paginação, mostrando apenas artigos publicados, você precisaria disso:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeList()
+      {
+        ...
+        $c = new Criteria();
+        $c->add(ArticlePeer::PUBLISHED, true);
+        $articles = ArticlePeer::doSelect($c);
+        $this->articles = $articles;
+        ...
+      }
+    }
+
+A variável `$articles`, acessível no template, teria um array com todos os objetos `Article` que estão no filtro do criteria (published).
+
+Para obter uma lista paginada, você vai precisar fazer uma pequena alteração no código; os resultados precisam ser colocados no objeto `sfPropelPager` ao invés de um array:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeList()
+      {
+        ...
+        $c = new Criteria();
+        $c->add(ArticlePeer::PUBLISHED, true);
+        $pager = new sfPropelPager('Article', 10);
+        $pager->setCriteria($c);
+        $pager->setPage($this->getRequestParameter('page', 1));
+        $pager->init();
+        $this->pager = $pager;
+        ...
+      }
+    }
+
+A diferença começa depois da definição do criteria:
+
+* criar um novo pager para paginar os objetos `Article` de 10 em 10
+* setar o criteria ao pager
+* setar a página atual para a página requerida ou para a primeira
+* inicializar o pager
+* passar o pager para o template pela variavel $pager
+
+O template `listSuccess.php` pode então acessar o objeto `sfPropelPager`. Esse objeto sabe qual é a página corrente e a lista de todas as páginas. Ele possui também os métodos para acessar as páginas e os objetos das respectivas páginas. Vamos ver como manipular isso.
+
+Para mostrar o número total de resultados obtidos, utilizamos o método `getNbResults()`:
+
+    [php]
+    <?php echo $pager->getNbResults() ?> results found.<br />
+    Displaying results <?php echo $pager->getFirstIndice() ?> to  <?php echo $pager->getLastIndice() ?>.
+
+Para mostrar os artigos de uma página requerida, usamos o método `getResults()` do objeto `pager`.
+
+    [php]
+    <?php foreach ($pager->getResults() as $article): ?>
+      <?php echo link_to($article->getTitle(), 'article/read?id='.$article->getId()) ?>
+      <?php echo $article->getOverview() ?>
+    <?php endforeach ?>
+
+Navegando através das páginas
+-----------------------------
+
+O objeto pager sabe se o número de resultados exede ou não o número máximo que pode ser mostrado (10 nesse caso) graças ao método `haveToPaginate()`.
+
+Para adicionar os links das paginações no final da lista (« < > »), usamos os métodos de navegação `getFirstPage()`, `getPreviousPage()`, `getNextPage()` e `getLastPage()`. A página corrente é dada por `getPage()`. Todos esses métodos retornam inteiro: o número da página.
+
+Para apontar para uma página específica, fazemos um loop nos links otidos através da chamada ao método `getLinks()`:
+
+    [php]
+    <?php if ($pager->haveToPaginate()): ?>
+      <?php echo link_to('&laquo;', 'article/list?page='.$pager->getFirstPage()) ?>
+      <?php echo link_to('&lt;', 'article/list?page='.$pager->getPreviousPage()) ?>
+      <?php $links = $pager->getLinks(); foreach ($links as $page): ?>
+        <?php echo ($page == $pager->getPage()) ? $page : link_to($page, 'article/list?page='.$page) ?>
+        <?php if ($page != $pager->getCurrentMaxLink()): ?> - <?php endif ?>
+      <?php endforeach ?>
+      <?php echo link_to('&gt;', 'article/list?page='.$pager->getNextPage()) ?>
+      <?php echo link_to('&raquo;', 'article/list?page='.$pager->getLastPage()) ?>
+    <?php endif ?>
+
+Isso deve renderizar algo do tipo:
+
+&nbsp;&nbsp;&nbsp;[&laquo;](#) [&lt;](#) [1](#) - 2 - [3](#) - [4](#) - [5](#) [&gt;](#) [&raquo;](#)
+
+Uma vez que temos o artigo renderizado, para permitir uma navegação para a próxima página ou anterior sem ter que voltar para a listagem, você vai precisar de um cursor.
+
+*Dica*: O código abaixo é automatizado pelo plugin `sfPagerNavigation`. Saiba na [página de descrição](http://trac.symfony-project.org/wiki/sfPagerNavigationPlugin) mais informações de instalação e utilização.
+
+Navegando pelos objetos
+-----------------------
+
+Navegando de página em página com a lista é fácil, mas os usuários podem não querer voltar para a lista para navegar de objeto em objeto. O atributo `cursor` do objeto `sfPropelPager` pode guardar o offset do objeto corrente.
+
+Isso vai permitir a navegação de artigo em artigo no template `readSuccess.php`. Primeiramente, vamos modificar um pouco o código do `listSuccess.php`:
+
+    [php]
+    <?php $cursor = $pager->getFirstIndice(); foreach ($pager->getResults() as $article): ?>
+      <?php echo link_to($article->getTitle(), 'article/read?cursor='.$cursor) ?>
+      <?php echo $article->getOverview() ?>
+    <?php ++$cursor; endforeach ?>
+
+A ação `read` vai precisar saber qual o handle do cursor:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeRead()
+      {
+        ...
+        if ($this->getRequestParameter('cursor'))
+        {
+          $article = $pager->getObjectByCursor($this->getRequestParameter('cursor'));
+        }
+        else if ($this->getRequestParameter('id'))
+        {
+          $article = ArticlePeer::retrieveByPK($this->getRequestParameter('id'));
+        }
+
+        // Error
+        $this->forward404Unless($article);
+      }
+    }
+
+O método `getObjectByCursor($cursor)` seta o cursor na posição especificada e retorna o objeto naquela posição.
+
+Você pode setar o cursor sem receber nenhum objeto com o método `setCursor($cursor)`. E mais uma vez com o cursor setado, você pode não só ter o objeto na posição corrente (`getCurrent()`) como também o anterior (`getPrevious()`) ou até mesmo o próximo (`getNext()`).
+
+Isso significa que a ação `read` pode passar para o template a informação necessária para uma navegação de artigo por artigo com poucas modificações:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeRead()
+      {
+        ...
+        if ($this->getRequestParameter('cursor'))
+        {
+          $pager->setCursor($this->getRequestParameter('cursor'));
+          $previous_article = $pager->getPrevious();
+          $article = $pager->getCurrent();
+          $next_article = $pager->getNext();
+        }
+        else if ($this->getRequestParameter('id'))
+        {
+          $article = ArticlePeer::retrieveByPK($this->getRequestParameter('id'));
+        }
+
+        // Error
+        $this->forward404Unless($article);
+      }
+    }
+
+>*Dica*: Os métodos `getPrevious()` e `getNext()` retornam `null` se não houver anterior nem próximo.
+
+O template `readSuccess.php` pode ser:
+
+    [php]
+    <h1><?php echo $article->getTitle() ?></h1>
+    <p class="overview"><?php echo $article->getOverview() ?></p>
+    <div class="content">
+      <?php echo $article->getContent() ?>
+    </div>
+    &lt; <?php echo link_to_if($previous_article, $previous_article->getTitle(), 'article/read?id='.$previous_article->getId()) ?>
+    -
+    &gt; <?php echo link_to_if($next_article, $next_article->getTitle(), 'article/read?id='.$next_article->getId()) ?>
+
+Alterando o ordenamento
+-----------------------
+
+Como o `sfPropelPager` invoca um objeto `Criteria`, para trocarmos a ordem do pager é simples. Basta adicionarmos um sort ao criteria antes de passá-lo para o pager.
+
+Por exemplo, você pode escolher qual coluna ordenar passando o parâmetro sort e deixar uma por padrão:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeList()
+      {
+        ...
+        $c = new Criteria();
+        $c->add(ArticlePeer::PUBLISHED, true);
+        if ($this->getRequestParameter('sort'))
+        {
+          $c->addAscendingOrderByColumn(ArticlePeer::translateFieldName($this->getRequestParameter('sort'), BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_COLNAME));
+        }
+        else
+        {
+          // sorted by date by default
+          $c->addAscendingOrderByColumn(ArticlePeer::UPDATED_AT);
+        }
+        $pager = new sfPropelPager('Article', 10);
+        $pager->setCriteria($c);
+        $pager->init();
+        $this->pager = $pager;
+        ...
+      }
+    }
+
+Adicione o código abaixo no template `listSuccess.php`:
+
+    [php]
+    Sort by : <?php echo link_to('Title', 'article/list?sort=title') ?> - <?php echo link_to('Id', 'article/list?sort=Id') ?>
+
+Alterando o número de resultados por página
+-------------------------------------------
+
+O método `setMaxPerPage($max)` troca o número de resultados a ser mostrado por página sem precisar reprocessar o pager (sem precisar chamar o `init()` denovo). Se você passar o valor `0` para o parâmetro, o pager vai mostrar todos os resultados em uma única página.
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeList()
+      {
+        ...
+        $c = new Criteria();
+        $c->add(ArticlePeer::PUBLISHED, true);
+        $pager = new sfPropelPager('Article', 10);
+        $pager->setCriteria($c);
+        if ($this->getRequestParameter('maxperpage'))
+        {
+          $pager->setMaxPerPage($this->getRequestParameter('maxperpage'));
+        }
+        $pager->init();
+        $this->pager = $pager;
+        ...
+      }
+    }
+
+Então você pode adicionar o código abaixo no seu template `listSuccess.php`:
+
+    [php]
+    Display : <?php echo link_to('10', 'article/list?maxperpage=10') ?> - <?php echo link_to('20', 'article/list?maxperpage=20') ?> results per page
+
+Alterando o método de seleção
+-----------------------------
+
+Se você precisa otimizar a performance de uma action baseado no `sfPropelPager`, você pode querer forçar um pager a utilizar o método `doSelectJoinXXX()` ao invés de um simples `doSelect()`. Isso é facilmente feito através do `setPeerMethod()` do `sfPropelPager`:
+
+    [php]
+    $pager->setPeerMethod('doSelectJoinUser');
+
+Note que o pager atualmente processa a query com o `doSelect()` ao mostrar a página. A primeira query (feita pelo `$pager->init()`) faz apenas um `doCount` e você pode querer personalizar esse método chamando:
+
+    [php]
+    $pager->setPeerCountMethod('doCountJoinUser');
+
+Armazenando informações adicionais no pager
+-------------------------------------------
+
+Você pode precisar algumas vezes de armazenar certo contexto no pager. É por isso que a class `sfPropelPager` trata *parâmetros* numa forma normal:
+
+    [php]
+    $pager->setParameter('foo', 'bar');
+
+    if ($pager->hasParameter('foo'))
+    {
+      $pager->getParameter('foo');
+      $pager->getParameterHolder()->removeParameter('foo');
+    }
+
+    $pager->getParameterHolder()->clearParameters();
+
+Esses parâmetros nunca são utilizados diretamente pelo pager.
+
+Para saber mais sobre parâmetros customizados, veja o [capítulo 2](http://www.symfony-project.org/book/1_1/02-Exploring-Symfony-s-Code#Parameter%20Holders)

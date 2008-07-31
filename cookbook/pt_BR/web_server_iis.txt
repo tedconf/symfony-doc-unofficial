@@ -1,0 +1,166 @@
+Instalando o symfony no IIS
+===========================
+
+Sim, existe algo mais que o Apache para servidores web. É por isso que nós vamos ver esse tutorial sobre como instalar o symfony no IIS.
+
+De que precisamos?
+------------------
+
+- Um servidor windows
+- Um servidor IIS (óbvio)
+- PHP5 instalado e configurado no IIS como um módulo isapi (veja as instruções de instalação do PHP%)
+- isapi/rewrite/ "www.isapirewrite.com":http://www.isapirewrite.com, um motor de manipulação de URL que vamos utilizar ao invés do mod_rewrite do Apache. Por que esse produto? Isso parece ser bastante usado no IIS e a versão lite free funciona com o symfony. Se você está acostumado a utilizar algum outro método, vá em frente, deve ter apenas uma diferença no final deste tutorial.
+
+Instalar o symfony
+------------------
+
+Primeiramente, atualize o pacote do pear, porque você precisa de pelo menos da versão 1.4.0 para utilizar o canais:
+
+    $ pear upgrade PEAR
+
+Então, adicione o canal do symfony:
+
+    $ pear channel-discover pear.symfony-project.com
+
+Instale a versão do symfony >= 0.5.73:
+
+    $ pear install symfony/symfony-beta
+
+>**Nota**: se você não possui o pacote `phing`, você precisa instalar:
+>
+>     $ pear install http://phing.info/pear/phing-current.tgz
+>
+
+Saiba mais sobre a [instalação do symfony](http://www.symfony-project.org/book/1_1/03-Running-Symfony)
+
+Iniciando um projeto
+--------------------
+
+Para criar o diretório do seu projeto (vamos usar `c:\myproject`) e a estrutura básica para uma aplicação chamada `myapp`, abra o console (command) e digite:
+
+    $ cd c:\myproject
+    $ symfony init-project myproject
+    $ symfony init-app myapp
+
+
+Configurando o IIS
+------------------
+
+Vamos considerar dois tipo de configuração por agora:
+
+- No primeiro caso, o servidor será usado somente para o nosso projeto symfony, e a url será algo parecido com `http://myproject/`. Assumindo que o diretório criado para `myapp` esteja dentro de `c:\myproject\`, vamos configurar o diretório root do servidor para `c:\myproject\web` (na tela de administração do IIS)
+- A outra opção é instalar o projeto symfony num diretório (pode ser virtual) do seu servidor. A URL nesse caso será algo parecido com `http://myserver/myproject/`. Na tela de administração do IIS, vamos criar um novo diretório virtual, `c:\myproject\web`, no diretório root do seu site. 
+
+Adicionaremos um diretório virtual no diretório principal do servidor. Vamos nomeá-lo de `sf` e configurar ele para o caminho `data\symfony\web\sf` dentro do diretório do pear. Se você tem o PHP5 instalado na pasta `c:\php5`, o caminho será `C:\php5\PEAR\pear\data\symfony\web\sf`.
+
+Configurando URL rewriting
+--------------------------
+
+Vamos assumir que o módulo isapi/rewrite está instalado e funcionando no nosso servidor.  Nós precisamos configurar apenas nosso httpd.ini. Essa configuração vai depender da opção escolhida anteriormente:
+
+- para URLs do tipo `http://myproject/` vamos precisar de:
+
+        [ISAPI_Rewrite]
+        
+        # Defend your computer from some worm attacks
+        RewriteRule .*(?:global.asa|default\.ida|root\.exe|\.\.).* . [F,I,O]
+        
+        # we skip all files with .something except .html
+        RewriteCond URL .*\..+$
+        RewriteCond URL (?!.*\.html$).*
+        RewriteRule (.*) $1 [L]
+        
+        # we keep the .php files unchanged
+        RewriteRule (.*\.php)(.*) $1$2 [L]
+        
+        # finally we redirect to our front web controller
+        RewriteRule (.*) /index.php [L]
+
+- para URLs do tipo `http://myserver/myproject/` vamos precisar de:
+
+        [ISAPI_Rewrite]
+        
+        # Defend your computer from some worm attacks
+        RewriteRule .*(?:global.asa|default\.ida|root\.exe|\.\.).* . [F,I,O]
+        
+        # we skip all files with .something except .html
+        RewriteCond URL /myproject/.*\..+$
+        RewriteCond URL (?!/myproject/.*\.html$).*
+        RewriteRule /myproject/(.*) /myproject/$1 [L]
+        
+        # we keep the .php files unchanged
+        RewriteRule /myproject/(.*\.php)(.*) /myproject/$1$2 [L]
+        
+        # finally we redirect to our front web controller
+        RewriteRule /myproject/(.*) /myproject/index.php [L]
+
+Reinicie o IIS.
+
+Configurando o symfony
+----------------------
+
+O último passo é editar o arquivo `settings.yml` que fica no diretório config do projeto symfony (`c:\myproject\apps\myapp\config\`). Você não vai se surpreender se encontrar uma pequena diferença nos dois casos:
+
+- para URLs do tipo `http://myproject/` vamos precisar de:
+
+        all:
+         .settings:
+           path_info_key:          HTTP_X_REWRITE_URL
+
+- para URLs do tipo `http://myserver/myproject/` vamos precisar de:
+
+        all:
+         .settings:
+           path_info_key:          HTTP_X_REWRITE_URL
+
+>**Dica importante**: se você não está usando o módulo isapi/rewrite/, o `HTTP_X_REWRITE_URL` pode estar errado. Você vai precisar fazer um teste específico para configurar o symfony. Abra o arquivo `myapp_dev.php` (`ou qualquer outro nome application_dev.php`) no diretório web do seu projeto e adicione as 2 linhas seguintes:
+>
+>     print phpinfo();
+>     die();
+>
+>Agora abra a URL: `http://myproject/myapp_dev.php/test/rewrite` (ou `http://myserver/myproject/myapp_dev.php/test/rewrite` dependendo da sua configuração), e veja as variáveis do PHP. Se `_SERVER["PATH_INFO"]` for igual a /test/rewrite, remova a linha que contém o `path_info_key` do `settings.yml`, senão você vai ter que achar o nome da variável que contém o valor (`HTTP_X_REWRITE_URL` para `isapi/rewrite/`). Depois que achar, remova as 2 linhas acima e pronto.
+
+Configurando uma aplicação symfony com diretório específico
+-----------------------------------------------------------
+
+Um projeto symfony pode conter diversas aplicações. Por padrão, todas as aplicações podem compartilhar o mesmo diretório de css e uploads. Vamos trocar isso e criar um diretório específico para nossa aplicação myapp. Considerando as opções anteriores, vamos interpretar as seguintes URLs: `http://myproject/myapp` e `http://myserver/myapp`. Agora não temos mais diferença na configuração das próximas opções.
+
+Vamos criar um subdiretório `myapp` dentro do diretório web do nosso projeto (no nosso caso `c:\myproject\web\myapp`).
+
+Vamos copiar os arquivos `index.php` e `myapp_dev.php`  para esse diretório e criar mais dois diretórios lá dentro, `css` e `uploads`.
+
+Na tela de administração do IIS, vamos criar um novo diretório virtual chamado `myapp`. Configure esse diretório apontando para `c:\myproject\web\myapp`.
+
+Adicione as linhas abaixo no final do `httpd.ini`:
+
+      #[Configuration for direct myapp access]
+      # we skip all files with .something except .html
+      RewriteCond URL /myapp/.*\..+$
+      RewriteCond URL (?!/myapp/.*\.html$).*
+      RewriteRule /myapp/(.*) /myapp/$1 [L]
+  
+      # we keep the .php files unchanged
+      RewriteRule /myapp/(.*\.php)(.*) /myapp/$1$2 [L]
+  
+      # finally we redirect to our front web controller
+      RewriteRule /myapp/(.*) /myapp/index.php [L]
+
+Edite o `settings.yml` da aplicação `myapp` (`c:\myproject\apps\myapp\config\settings.yml`) e tenha certeza das seguintes linhas:
+
+      all:
+       .settings:
+         path_info_key:          HTTP_X_REWRITE_URL
+
+(veja as considerações anteriores para `HTTP_X_REWRITE_URL`)
+
+Finalmente, vamos editar nossos front controllers (`index.php` e `myapp_dev.php` em `c:\myproject\web\myapp`) e trocar:
+
+    [php]
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
+
+para:
+
+    [php]
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/../..'));
+
+É isso ai. Terminamos.
