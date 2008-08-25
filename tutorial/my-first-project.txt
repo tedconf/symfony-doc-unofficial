@@ -140,8 +140,8 @@ the same table structure.
 >1.1 sandbox is not set up correctly. This however is easily fixed: just open up
 >`/config/propel.ini` and ensure that the following lines have 7 sets of '..' in them:
 >
->    propel.database.createUrl  = sqlite://./../../../../../../../data/sandbox.db
->    propel.database.url        = sqlite://./../../../../../../../data/sandbox.db
+>     propel.database.createUrl  = sqlite://./../../../../../../../data/sandbox.db
+>     propel.database.url        = sqlite://./../../../../../../../data/sandbox.db
 >
 >If they do not, copy the lines as they appear here, and save the file.
 
@@ -385,87 +385,172 @@ linking an action to a template.
 Add a record relative to another table
 --------------------------------------
 
->**Caution**
->The following section refers to code that would appear in the 1.0 version of the
->sandbox, however symfony 1.1 uses a new Forms system. It will take a while longer
->to convert this section. Please bear with us!
+Currently we can't add comments to posts directly; if we're editing a post, we
+have to go to the comments editing section, create a new one, then select the post we
+want to comment on using the drop-down menu. It would be better if there was a link
+on each post editing page to go straight to the comment editing facility.
 
-When adding a comment, you can choose the `id` of the related post.
-That's not very user-friendly. Let's change this, and make sure that the user
-comes back to the post he was looking at after adding a comment.
-
-First, in the `modules/post/templates/showSuccess.php` template,
-add a line at the bottom:
+So let's arrange that first. In the `modules/post/templates/showSuccess.php` template,
+add this line at the bottom:
 
     [php]
     <?php echo link_to('Add a comment', 'comment/edit?post_id='.$blog_post->getId()) ?>
 
-The `link_to()` helper creates a hyperlink pointing to the `edit` action of
-the `comment` module, so you can add a comment directly from the post details page.
-Next, open the `modules/comment/templates/editSuccess.php` and replace the
-following lines:
+The `link_to()` function (which we call a "helper") creates a hyperlink pointing to the
+`edit` action of the `comment` module, so you can add a comment directly from the post
+details page. At the moment, however, the comments edit page still offers a form element
+to select which post to relate a comment to. What we want is for that field to be
+replaced by a hidden field (containg the post primary key) if the comments edit page
+URL is called specifying that key.
+
+Before we can do that, we should say a few words about how forms work in symfony 1.1.
+Rather than specifying all the information about the various form elements (input
+boxes, tickable boxes, select menus, radio buttons and so forth) in an HTML template,
+some of this detail is delegated to a "form class". This encapsulates all the
+information required to render a basic version of an HTML form, making them (or at
+least a prototype version) very easy to get working quickly.
+
+As you would expect, form classes are used to create form objects. In common with
+standard object-orientation principles, when an object is instantiated, a constructor
+is called. Therefore, when we create the comments form object, we can read the blog post
+it is to relate to (if any) and pass that to the constructor to determine whether to
+swap the post menu for a hidden field.
+
+In fact, the CRUD generator we used previously to create our post and comment systems
+makes use of a form class to define the form required in each case. Let's open up
+`sf_sandbox/lib/form/base/BaseBlogCommentForm.class.php` together to see how the form
+is defined. The most important method is setup(), which contains (amongst other items)
+the following code:
 
     [php]
-    <tr>
-      <th>Post:</th>
-      <td><?php echo object_select_tag($comment, 'getPostId', array (
-      'related_class' => 'Post',
-    )) ?></td>
-    </tr>
-
-By:
-
-    [php]
-    <?php if ($sf_params->has('post_id')): ?>
-      <?php echo input_hidden_tag('post_id',$sf_params->get('post_id')) ?>
-    <?php else: ?>
-      <tr>
-        <th>Post*:</th>
-        <td><?php echo object_select_tag($comment, 'getPostId', array('related_class' => 'Post')) ?></td>
-      </tr>
-    <?php endif; ?>
-
-The form in the `comment/create` page points to a `comment/update` action, which
-redirects to `comment/show` when submitted (this is the default behaviour in generated CRUDs).
-For the blog, that means that after adding a comment to a post, the detail of the
-comment is displayed. It is better to display the post with the comments at that point.
-So open the `modules/comment/actions/actions.class.php` and look for the `executeUpdate()`
-method. Note that the `created_at` field is not defined by the action: symfony knows
-that a field named `created_at` has to be set to the system time when a record is created.
-The final redirect of the action has to be modified to point to the correct action.
-Change it to:
-
-    [php]
-    public function executeUpdate($request)
+    public function setup()
     {
-      if (!$request->getParameter('id'))
-      {
-        $comment = new Comment();
-      }
-      else
-      {
-        $comment = CommentPeer::retrieveByPk($request->getParameter('id'));
-        $this->forward404Unless($comment);
-      }
+      $this->setWidgets(array(
+        'id'           => new sfWidgetFormInputHidden(),
+        'blog_post_id' => new sfWidgetFormPropelSelect(array('model' => 'BlogPost', 'add_empty' => true)),
+        'author'       => new sfWidgetFormInput(),
+        'email'        => new sfWidgetFormInput(),
+        'body'         => new sfWidgetFormTextarea(),
+        'created_at'   => new sfWidgetFormDateTime(),
+      ));
 
-      $comment->setId($request->getParameter('id'));
-      $comment->setPostId($request->getParameter('post_id'));
-      $comment->setAuthor($request->getParameter('author'));
-      $comment->setEmail($request->getParameter('email'));
-      $comment->setBody($request->getParameter('body'));
+      $this->setValidators(array(
+        'id'           => new sfValidatorPropelChoice(array('model' => 'BlogComment', 'column' => 'id', 'required' => false)),
+        'blog_post_id' => new sfValidatorPropelChoice(array('model' => 'BlogPost', 'column' => 'id', 'required' => false)),
+        'author'       => new sfValidatorString(array('max_length' => 255, 'required' => false)),
+        'email'        => new sfValidatorString(array('max_length' => 255, 'required' => false)),
+        'body'         => new sfValidatorString(array('required' => false)),
+        'created_at'   => new sfValidatorDateTime(array('required' => false)),
+      ));
 
-      $comment->save();
-
-      return $this->redirect('post/show?id='.$comment->getPostId());
+      // ...
     }
 
-Users can now add comments to a post and come back to the post afterwards.
-You wanted a blog? You have a blog.
+There are two things being specified here: first are the "widgets", which are the HTML
+elements used in the form, and second, validators, which are used to check user input
+against a set of correctness checks. Symfony 1.0 users will notice a change of approach
+here: form elements were previously defined in the template, and validators were
+defined in YAML files (and sometimes also programmatically in actions).
 
-Find more about [actions](http://www.symfony-project.org/book/1_1/06-Inside-the-Controller-Layer).
+Now that we have examined the base definition of the comments form, we can make some
+changes. Changes however are not best made in the base form, so close that file and open
+`sf_sandbox/lib/form/BlogCommentForm.class.php`. This inherits from
+BaseBlogCommentForm, which means we can take advantage of that definition and add our
+own modifications as required.
+
+By default, the BlogCommentForm class has an empty configure method. We want to add
+a constructor that accepts both the blog comment object to edit (this is a Propel
+database object) and a reference to the post to attach it to. Then, when the configure()
+method is called, we need to change the blog post element from a menu (as defined in the
+base class) to a hidden field containing an automatically-filled value. Lets do that
+now; change the code in this file to the following:
+
+    [php]
+    class BlogCommentForm extends BaseBlogCommentForm
+    {
+      // Place to store related post PK class-wide
+      private $idPost;
+
+      /**
+       * Constructor method for this class
+       */
+      public function __construct($comment, $idPost)
+      {
+        $this->idPost = $idPost;
+        parent::__construct();
+      }
+
+      /**
+       * Configure method, called automatically by ancestor class
+       */
+      public function configure()
+      {
+      	// If there is a specified related post, swap menu for hidden field
+  	    if ($this->idPost)
+  	    {
+          $this->widgetSchema[$name = 'blog_post_id'] = new sfWidgetFormInputHidden();
+  	      $this->setDefault($name, $this->idPost);
+  	    }
+      }  
+    }
+
+To use this new class, we need to find the place where this form is created, and
+add the post primary key as a new parameter. This is stored in
+`sf_sandbox/apps/frontend/modules/comment/actions/actions.class.php`. Find the code in
+the executeEdit method which reads thus:
+
+    [php]
+    $this->form = new BlogCommentForm(BlogCommentPeer::retrieveByPk($request->getParameter('id')));
+
+Change that to the following:
+
+    [php]
+    $this->form = new BlogCommentForm(BlogCommentPeer::retrieveByPk($request->getParameter('id')), $request->getParameter('post_id'));
+
+After you have made these changes, you will now be able to add a comment directly to a
+post without having to explicitly specify the post to attach it to.
+
+Next, after adding a comment, we want the user to come back to the post it relates to,
+rather that remaining on the comment editing page. To accomplish this, we need to edit
+executeEdit again. Find the following code:
+
+    [php]
+    if ($request->isMethod('post'))
+    {
+      $this->form->bind($request->getParameter('blog_comment'));
+      if ($this->form->isValid())
+      {
+        $blog_comment = $this->form->save();
+
+        $this->redirect('comment/edit?id='.$blog_comment->getId());
+      }
+    }
+
+And change the redirect line so it reads thus:
+
+    [php]
+    $this->redirect('post/show?id='.$blog_comment->getBlogPostId());
+    
+This will ensure that when a comment is saved, the user is returned to the post that
+the comment is related to. There are two things here that are worthy of note: firstly,
+the save is achieved simply by calling the save method on the form object (this is
+possible as a result of the form being a child of sfFormPropel, which is a special
+symfony form class that understands database tables). Secondly, we redirect immediately
+after the save, so that if the page is subsequently refreshed, the user is not asked if
+they wish to repeat the POST action again.
+
+Okay, so that wraps up this part of the tutorial. You wanted a blog? You have a blog.
+Incidentally, since we've covered symfony actions a lot here, you may wish to find out
+more about them from
+[the manual](http://www.symfony-project.org/book/1_1/06-Inside-the-Controller-Layer).
 
 Form Validation
 ---------------
+
+>**Caution**
+>The following part of the tutorial refers to code that would have appeared in the 1.0
+> version of the sandbox, and has not been updated to take account of symfony 1.1. It will
+>take a while longer to convert this section. Please bear with us!
 
 Visitors can enter comments, but what if they submit the form without any data
 in it? You will have a dirty database. To avoid that, create a file called
