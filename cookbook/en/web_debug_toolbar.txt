@@ -18,9 +18,9 @@ The toolbar is composed of panels. Each panel is composed of a title and an opti
  cache information    | `sfWebDebugPanelCache`          | ![cache](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/cache.png)
  configuration        | `sfWebDebugPanelConfig`         | ![configuration](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/configuration.png)
  logs                 | `sfWebDebugPanelLogs`           | ![logs](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/logs.png)
- database information | `sfWebDebugPanelTimer`          | ![database](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/database.png)
+ database information | `sfWebDebugPanelDatabase`       | ![database](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/database.png)
  memory usage         | `sfWebDebugPanelMemory`         | ![memory](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/memory.png)
- timer                | `sfWebDebugPanelPropel`         | ![timer](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/timer.png)
+ timer                | `sfWebDebugPanelTimer`          | ![timer](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/timer.png)
 
 Customizing the toolbar
 -----------------------
@@ -191,11 +191,19 @@ When a user install your plugin, you can ask him to change his configuration cla
 
     // ...
 
-    $this->dispatcher->connect('debug.web.load_panels', 'myPluginNameConfigureWebDebugToolbar');
+    require_once '/path/to/sfWebDebugPanelAssets';
 
-    function myPluginNameConfigureWebDebugToolbar(sfEvent $event)
+    $this->dispatcher->connect('debug.web.load_panels', array('sfWebDebugPanelAssets', 'listenToAddPanelEvent'));
+
+Then, add the `listenToAddPanelEvent()` method to your `sfWebDebugPanelAssets` class:
+
+    [php]
+    class sfWebDebugPanelAssets extends sfWebDebugPanel
     {
-      $event->getSubject()->setPanel('assets', new sfWebDebugPanelAssets($event->getSubject()));
+      static public function listenToAddPanelEvent(sfEvent $event)
+      {
+        $event->getSubject()->setPanel('assets', new sfWebDebugPanelAssets($event->getSubject()));
+      }
     }
 
 That way, your panel will to be automatically added to the web debug toolbar without any change from the developer.
