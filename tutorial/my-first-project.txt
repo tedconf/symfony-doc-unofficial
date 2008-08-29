@@ -11,7 +11,7 @@ one hour. You name it. A bookseller application? Okay, another idea. A blog!
 That's a good one. Let's go.
 
 We'll assume that you are working with Apache installed and running on your
-local host. You will also need PHP 5.1.3 or newer.
+local machine. You will also need PHP 5.1.3 or newer.
 
 Install symfony and initialize the project
 ------------------------------------------
@@ -299,7 +299,7 @@ Edit the `sf_sandbox/apps/frontend/modules/main/templates/indexSuccess.php` file
 to show a nice welcome message:
 
     [php]
-    <h1>Welcome to my swell blog</h1>
+    <h1>Welcome to my new blog</h1>
     <p>You are the <?php echo rand(1000,5000) ?>th visitor today.</p>
 
 Now, you must tell symfony which action to execute when the homepage is requested.
@@ -550,99 +550,97 @@ more about them from
 Form Validation
 ---------------
 
->**Caution**
->The following part of the tutorial refers to code that would have appeared in the 1.0
-> version of the sandbox, and has not been updated to take account of symfony 1.1. It will
->take a while longer to convert this section. Please bear with us!
-
 Visitors can enter comments, but what if they submit the form without any data
-in it? You will have a dirty database. To avoid that, create a file called
-`update.yml` in the `sf_sandbox/apps/frontend/modules/comment/validate/`
-directory (you also have to create the directory) and write in:
+in it, or data that is obviously wrong? You would end up with a database containing
+invalid rows. To avoid that, we need to set up some validation rules to specify what
+data is allowed. You will recall that some default rules were set up for us already
+during the CRUD build process, in the BaseBlogCommentForm class. We will override some
+of these rules now.
 
-    methods:
-      post:           [author, email, body]
-      get:            [author, email, body]
-
-    fillin:
-      enabled:       on
-
-    names:
-      author:
-        required:     Yes
-        required_msg: The name field cannot be left blank
-
-      email:
-        required:     No
-        validators:   emailValidator
-
-      body:
-        required:     Yes
-        required_msg: The text field cannot be left blank
-
-    emailValidator:
-      class:          sfEmailValidator
-      param:
-        email_error:  The email address is not valid.
-
->**Note**: Beware that you don't copy 4 extra spaces at the beginning of each
->line, since the YAML parser would fail in that case. The first letter of this
->file must be the 'm' of 'methods'.
-
-The `fillin` activation enables the repopulation of the form with the value
-previously entered by the user in case of failed validation. The `names` declarations
-set the validation rules for each input of the form.
-
-By itself, the controller will redirect the user to a `updateError.php` template
-if an error is detected. It would be better to display the form again with an
-error message. To do that, add a `handleErrorUpdate` method to the action class
-of the `modules/comment/actions/actions.class.php` file:
+Again, our changes go in BlogCommentForm.class.php, and not in the base class. So,
+open that file, and add in the following PHP code at the end of the configure() method:
 
     [php]
-    public function handleErrorUpdate()
+  	$this->validatorSchema['blog_post_id'] = new sfValidatorPropelChoice(
+      array('model' => 'BlogPost', 'column' => 'id', 'required' => true),
+      array('required' => 'This comment must have an associated post'));
+    $this->validatorSchema['author'] = new sfValidatorString(
+      array('required' => true),
+      array('required' => 'The author field cannot be left blank'));
+    $this->validatorSchema['email'] = new sfValidatorEmail(
+      array('required' => false),
+      array('invalid' => 'The email address is not valid'));
+    $this->validatorSchema['body'] = new sfValidatorString(
+      array('required' => true),
+      array('required' => 'The body field cannot be left blank'));
+
+Each of these rows overwrites the base validator for the specified form element name
+&mdash; the default definitions for 'blog_post_id', 'author', 'email' and 'body' are
+effectively deleted. It is worth bearing in mind that we could equally have used the
+syntax that was used in the base class &mdash; the setValidators() method &mdash; but
+that method requires all validators to be specified. By doing it this alternative way,
+we have avoided duplicating a little code.
+
+The syntax of the validators themselves is fairly simple. As you can see, the first
+array parameter contains a number of options, such as whether the parameter is required,
+and the second array parameter contains message(s) to use if the validation fails. If
+an error message is not specified, then symfony will even output a simple default
+message instead.
+
+Once these rules are in place, try saving a comment without an author name, a bad email
+address, or no body text - you now have a robust form! You will notice a number of
+things: first of all, where the form contains data, that data will automatically be
+preserved during the form submission. This saves the user having to type it back in
+(and normally is something in that the programmer has to arrange manually). Also, errors
+(in this case) are placed next to the fields that failed their associated validation
+tests.
+
+Now would be a good time to explain a little about how the form save process works. It
+uses the following action code, which you edited earlier in
+`/sf_sandbox/apps/frontend/modules/comment/actions/actions.class.php`:
+
+    [php]
+    $this->form = new BlogCommentForm(BlogCommentPeer::retrieveByPk($request->getParameter('id')), $request->getParameter('post_id'));
+
+    if ($request->isMethod('post'))
     {
-      // forward it to edit if the id exists
-      if (!$this->getRequestParameter('id'))
+      $this->form->bind($request->getParameter('blog_comment'));
+      if ($this->form->isValid())
       {
-        $this->forward('comment', 'create');
-      }
-      else
-      {
-        $this->forward('comment', 'edit');
+      	$blog_comment = $this->form->save();
+
+        $this->redirect('post/show?id='.$blog_comment->getBlogPostId());
       }
     }
 
-Now to finish, open again the `modules/comment/templates/editSuccess.php` template
-and insert at the top:
+After the form object is instantiated, the following happens:
 
-    [php]
-    <?php if ($sf_request->hasErrors()): ?>
-      <div id="errors" style="padding:10px;">
-        Please correct the following errors and resubmit:
-        <ul>
-        <?php foreach ($sf_request->getErrors() as $error): ?>
-          <li><?php echo $error ?></li>
-        <?php endforeach; ?>
-        </ul>
-      </div>
-    <?php endif; ?>
-
-You now have a robust form.
+*   The code checks that the HTTP method is a POST operation
+*   The parameter array 'blog_comment' is retrieved. The getParameter() method detects
+that this name is an array of values in the form, not a single value, and returns them
+as an associative array (e.g. form element 'blog_comment[author]' is returned in an
+array having a key of 'author')
+*   This associative array is then fed into the form using a process called *binding*,
+in which the values are used to fill form elements in the form object. After this, the
+values are determined to have either passed or failed the validation checks
+*   Only if the form is valid does the save go ahead, after which the page redirects
+immediately to the show action.
 
 ![Form validation](/images/tutorials/first_form_validation.gif)
 
-Find more about [form validation](http://www.symfony-project.org/book/1_1/10-Forms).
+Find more about
+[form validation](http://www.symfony-project.org/book/1_1/en/02-Form-Validation).
 
-Change the URL aspect
+Change the URL format
 ---------------------
 
 Did you notice the way the URLs are rendered? You can make them more user and
 search engine-friendly. Let's use the post title as an URL for posts.
 
 The problem is that post titles can contain special characters like spaces.
-If you just escape them, the URL will show some ugly `%20` kind of things,
-so you'd better extend the model to add a new method to the `Post` object
-to get a clean, stripped title. To do that, edit the file `Post.php` located
+If you just escape them, the URL will contain some ugly `%20` strings,
+so we will extend the model to add a new method to the `BlogPost` object
+to get a clean, stripped title. To do that, edit the file `BlogPost.php` located
 in the `sf_sandbox/lib/model/` directory, and add the following method:
 
     [php]
@@ -669,7 +667,7 @@ method to the `modules/post/actions/actions.class.php`:
     [php]
     public function executePermalink($request)
     {
-      $posts = PostPeer::doSelect(new Criteria());
+      $posts = BlogPostPeer::doSelect(new Criteria());
       $title = $request->getParameter('title');
       foreach ($posts as $post)
       {
@@ -685,16 +683,16 @@ method to the `modules/post/actions/actions.class.php`:
     }
 
 The post list can call this `permalink` action instead of the `show` one for
-each post. In `modules/post/templates/listSuccess.php`, delete the `id` table
-header and cell, and change the `Title` cell from:
+each post. In `modules/post/templates/indexSuccess.php`, delete the `id` table
+header and cell, and change the `Title` cell from this:
 
     [php]
     <td><?php echo $post->getTitle() ?></td>
 
-To a link using a named rule we will create in a second:
+to this, which uses a named rule we will create in a second:
 
     [php]
-    <td><?php echo link_to($post->getTitle(), '@post?title='.$post->getStrippedTitle()) ?></td>
+    <td><?php echo link_to($blog_post->getTitle(), '@post?title='.$blog_post->getStrippedTitle()) ?></td>
 
 Just one more step: Edit the `routing.yml` located in the
 `sf_sandbox/apps/frontend/config/` directory and add these rules at the top:
@@ -707,38 +705,39 @@ Just one more step: Edit the `routing.yml` located in the
       url:   /blog/:title
       param: { module: post, action: permalink }
 
-Now navigate again in your application and watch the URLs.
+Now navigate again in your application to see your new URLs in action. If you get an
+error, it may be because the routing cache needs to be cleared. To do that, type the
+following at the command line while in your sf_sandbox folder:
+
+    $ php symfony cc
 
 ![Routed URLs](/images/tutorials/first_routing.gif)
 
 Find more about [smart URLs](http://www.symfony-project.org/book/1_1/09-Links-and-the-Routing-System).
 
-Cleanup in the frontend
------------------------
+Cleaning up the frontend
+------------------------
 
-Well, if this is a blog, then everybody has the right to post.
-This isn't exactly what you thought about, right? Ok, let's clean up our
+Well, if this is meant to be a blog, then it is perhaps a little strange that everybody
+is allowed to post! This isn't generally how blogs are meant to work, so let's clean up our
 templates a bit.
 
 In the template `modules/post/templates/showSuccess.php`, get rid of the
 'edit' link by removing the line:
 
-    [php]
-    <?php echo link_to('edit', 'post/edit?id='.$post->getId()) ?>
+    <a href="<?php echo url_for('post/edit?id='.$blog_post->getId()) ?>">Edit</a>
+    &nbsp;
 
 Do the same for the `modules/post/templates/listSuccess.php` template and remove:
 
-    [php]
-    <?php echo link_to('create', 'post/create') ?>
+    <a href="<?php echo url_for('post/edit') ?>">Create</a>
 
-You also have to remove the following methods from the `modules/post/actions/actions.class.php`:
+You also have to remove the following methods from `modules/post/actions/actions.class.php`:
 
-    * executeCreate
     * executeEdit
-    * executeUpdate
     * executeDelete
 
-All right, readers cannot post anymore.
+This means that readers cannot post anymore, which is what we want.
 
 Generation of the backend
 -------------------------
@@ -747,8 +746,8 @@ For you to write posts, let's create a backend application by typing in the
 command line (still from the `sf_sandbox` project directory):
 
     $ php symfony generate:app backend
-    $ php symfony propel:init-admin backend post Post
-    $ php symfony propel:init-admin backend comment Comment
+    $ php symfony propel:init-admin backend post BlogPost
+    $ php symfony propel:init-admin backend comment BlogComment
 
 This time, we use the [admin generator](http://www.symfony-project.org/book/1_1/14-Generators).
 It offers much more features and customization than the basic CRUD generator.
@@ -780,11 +779,11 @@ Change the `backend/modules/post/config/generator.yml` to:
     generator:
       class:              sfPropelAdminGenerator
       param:
-        model_class:      Post
+        model_class:      BlogPost
         theme:            default
         fields:
           title:          { name: Title }
-          excerpt:        { name: Exerpt }
+          excerpt:        { name: Excerpt }
           body:           { name: Body }
           nb_comments:    { name: Comments }
           created_at:     { name: Creation date }
@@ -805,37 +804,41 @@ Change the `backend/modules/post/config/generator.yml` to:
             body:         { type: textarea_tag, params: size=50x10 }
             created_at:   { type: input_date_tag, params: rich=on }
 
-Note that among the existing columns of the `Post` table, the admin will look
-for a `nb_comments`. There is no associated getter yet, but it is simple to
-add to the `sf_sandbox/lib/model/Post.php`:
+Note that among the existing columns of the `blog_post` table, the admin will look
+for a column (or getter method) for `nb_comments`. Since this is a generated value and
+not a column, we can add a getter to our model (`sf_sandbox/lib/model/BlogPost.php`):
 
     [php]
     public function getNbComments()
     {
-      return count($this->getComments());
+      return count($this->getBlogComments());
     }
 
-Now refresh the Post administration an see the changes:
+Now refresh the Post administration screen to see the changes:
 
 ![customized generated admin](/images/tutorials/first_custom_admin.gif)
 
 Restrict access to the backend
 ------------------------------
 
-The backend can be accessed by everybody. You have to add access restriction.
-
-In `apps/backend/modules/post/config/`, add a `security.yml` with the following content:
+Currently the backend application can be accessed by everybody. We therefore need to
+add some access restrictions. In `apps/backend/modules/post/config/`, add a
+file called `security.yml` with the following content:
 
     all:
       is_secure: on
 
-Repeat the operation for the `comment` module. Now you can't access these modules
-anymore unless you are logged.
-
-But the login action doesn't exist! Ok, so you can easily add it.
-First, create the `security` module skeleton:
+Repeat this operation for the `comment` module. Now you can no longer access these
+modules, unless you are logged in. However, currently the login action doesn't
+exist! Of course, we can easily add it. To do so, create the `security` module
+skeleton:
 
     $ php symfony generate:module backend security
+
+>**Caution**
+>The following part of the tutorial refers to code that would have appeared in the 1.0
+> version of the sandbox, and has not been updated to take account of symfony 1.1. It will
+>take a while longer to convert this section. Please bear with us!
 
 This new module will be used to handle the login form and the request.
 Edit the `apps/backend/modules/security/templates/indexSuccess.php` to
