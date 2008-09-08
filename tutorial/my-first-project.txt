@@ -2,9 +2,10 @@ My first symfony project
 ========================
 
 >**Caution**
->This tutorial is presently being converted from the 1.0 version. It is entirely possible
->to get a basic version running on 1.1, but you may need to get a few hints from more
->experienced users in the [users' forum](http://www.symfony-project.org/forum/index.php/f/15/).
+>This tutorial is presently being converted from the 1.0 version. The instructions
+>should be sufficient to get things running on 1.1, but the images relate to the
+>previous version. If you need assistance, post a message in the
+>[users' forum](http://www.symfony-project.org/forum/index.php/f/15/).
 
 So, you want to give it a go? Let's build together a fully-functional web app in
 one hour. You name it. A bookseller application? Okay, another idea. A blog!
@@ -100,7 +101,7 @@ Save the file, open a command line, browse to the `sf_sandbox/` directory and ty
 A few classes are created in the `sf_sandbox/lib/model/` directory. These are the
 classes of the object-relational mapping system, which allows us to have access to a relational
 database from within an object-oriented code without writing a single SQL query.
-By default, symfony uses the Propel library for this purpose. Theses classes are
+By default, symfony uses the Propel library for this purpose. These classes are
 part of the **model** of our application
 (find more in the [model chapter](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer)).
 
@@ -835,58 +836,144 @@ skeleton:
 
     $ php symfony generate:module backend security
 
->**Caution**
->The following part of the tutorial refers to code that would have appeared in the 1.0
-> version of the sandbox, and has not been updated to take account of symfony 1.1. It will
->take a while longer to convert this section. Please bear with us!
-
-This new module will be used to handle the login form and the request.
-Edit the `apps/backend/modules/security/templates/indexSuccess.php` to
-create the login form:
+This new module will be used to handle the login form. Rather than generate the form
+automatically, as we did with posts and comments, we will create this manually. To do
+this, create a new file in `/sf_sandbox/lib/form/LoginForm.class.php` and enter the
+following code:
 
     [php]
-    <h2>Authentication</h2>
-
-    <?php if ($sf_request->hasErrors()): ?>
-      Identification failed - please try again
-    <?php endif; ?>
-
-    <?php echo form_tag('security/login') ?>
-      <label for="login">login:</label>
-      <?php echo input_tag('login', $sf_params->get('login')) ?>
-
-      <label for="password">password:</label>
-      <?php echo input_password_tag('password') ?>
-
-      <?php echo submit_tag('submit', 'class=default') ?>
-    </form>
-
-Add the `login` action that is called by the form to the `security` module
-(in the `apps/backend/modules/security/actions/actions.class.php` file):
-
-    [php]
-    public function executeLogin($request)
+    class LoginForm extends sfForm
     {
-      if ($request->getParameter('login') == 'admin' && $request->getParameter('password') == 'password')
-      {
-        $this->getUser()->setAuthenticated(true);
+      private $accounts;
 
-        return $this->redirect('post/list');
+      /**
+       * Associative array of users => passwords is passed to the form
+       */
+      public function __construct($accounts)
+      {
+        $this->accounts = $accounts;
+    
+        parent::__construct();
       }
-      else
+    
+      /**
+       * Called by symfony to configure the form elements and validators
+       */
+      public function setup()
       {
-        $request->setError('login', 'incorrect entry');
+        $this->setWidgets(array(
+          'username' => new sfWidgetFormInput(),
+          'password' => new sfWidgetFormInputPassword(),
+        ));
+    
+        $this->setValidators(array(
+          'username' => new sfValidatorString(array('required' => true), array('required' => 'A username is required')),
+          'password' => new sfValidatorString(array('required' => true), array('required' => 'A password is required')),
+        ));
+    
+        // We also want to check the password
+        $this->validatorSchema->setPostValidator(new sfValidatorCallback(array('callback' => array($this, 'checkPassword'))));
 
-        return $this->forward('security', 'index');
+        $this->widgetSchema->setNameFormat('login[%s]');
+            
+        parent::setup();
+      }
+
+       /**
+       * Callback function that lets us create our own customised validator
+       */    
+      public function checkPassword($validator, $values)
+      {
+      	// Get the values we need
+        $username = $values['username'];
+        $password = $values['password'];
+    
+        // Only validate if a username and password have been supplied
+        if ($username && $password)
+        {
+          if (!array_key_exists($username, $this->accounts) || $this->accounts[$username] != $password)
+          {
+      	    $error = new sfValidatorError($validator, 'Password wrong - try again');
+    
+            // Bind the error to the password field
+            throw new sfValidatorErrorSchema($validator, array('password' => $error));
+          }
+        }
+
+        // Note that we can clean some values here if we wish
+        return $values;
       }
     }
 
-Like for the `main` module, remove the default code in the `index` action:
+After adding the class, clear your cache again (`php symfony cc`), so symfony rescans
+its lib folders for classes it 'knows' about.
+
+Okay, so let's look at this code section by section. Firstly, when this class is
+instantiated, we have to pass to the constructor an associated array of users and
+passwords. This is then saved in the object for later reference. Of course in a real
+system this would not be necessary, since we'd just query a user table in a database
+instead, or call some kind of authentication service.
+
+In the same way as the CRUD-generated forms, we have a setup() method, which is called
+by symfony automatically. This creates the necessary elements in the form (username and
+password) and sets up some basic validators. Most of this is fairly self-explanatory:
+the elements are set to have an appropriate type (input box and password box
+respectively) and both require some input to validate ('required' => true).
+
+The last validator, which checks the password, is worth some extra explanation.
+Firstly, rather than using a standard validator, it uses a "callback" validator, which
+allows the programmer the flexibility of defining their own validation test. Secondly,
+in our example we have called this validator as part of the "post validator" sequence,
+which is called once all the individual element validators have been executed. This is
+useful as at this later stage, we get access to cleaned copies of all the values in
+the form.
+
+We can also see from the code that the password will only be checked if the username
+and password have been supplied: if they are not, the form will be invalid anyway
+from the 'required' rules. However if we do have a username and password, the
+existence of the user and the correctness of the password can be checked, and a
+validation error thrown if either check fails.
+
+So, now we can plug the new form into our system. In the actions class of your backend
+security module (`/sf_sandbox/apps/backend/modules/security/actions/actions.class.php`),
+paste this class definition (overwriting the existing contents):
 
     [php]
-    public function executeIndex()
+    class securityActions extends sfActions
     {
+     /**
+      * Executes index action
+      *
+      * @param sfRequest $request A request object
+      */
+      public function executeIndex($request)
+      {
+        $this->form = new LoginForm(array('admin' => 'password'));
+    
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('login'));
+          if ($this->form->isValid())
+          {
+            // Login here
+            $this->getUser()->setAuthenticated(true);
+    
+            // Go to the post module
+            $this->redirect('post/index');
+          }
+        }
+        
+      }
     }
+
+The action code works in much the same way as the generated actions we looked at
+previously. A form instance is instantiated, then if the operation is a POST *and*
+the form is valid then the system authorises the user and redirects them to the
+post page.
+
+Let's now make the post administration module the default one in our backend system. To
+do this, open up the `apps/backend/config/routing.yml` file and locate the
+'homepage' key. Change the module from 'default' to 'post'.
 
 The last thing to do is to set the `security` module as the default module to
 handle login actions. To do that, open the `apps/backend/config/settings.yml`
@@ -898,7 +985,7 @@ configuration file and add:
         login_action:           index
 
 At that point, if you try to access the Posts management, you will have to enter
-a login and a password:
+a username and a password (which is 'admin' and 'password' respectively):
 
 ![login form](/images/tutorials/first_login.gif)
 
