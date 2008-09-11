@@ -1,0 +1,211 @@
+Hoe kan je de Web Debug Toolbar aanpassen?
+==========================================
+
+De symfony web debug toolbar is een van de beste vrienden van een ontwikkelaar. Het is altijd makkelijk toegankelijk in de browser wanneer je werkt in een ontwikkelomgeving. Het geeft je alles wat je moet weten over de huidige pagina en maakt het makkelijk om je applicaties te debuggen. En het beste nieuws is dat je web debug toolbar volledig configurabel is.
+
+De web debug toolbar
+---------------------
+
+Zonder enige configuratie ziet de standaard toolbar er zo uit:
+
+![De standaard web debug toolbar](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/default.png)
+
+De toolbar bestaat uit verschillende panelen. Elke paneel bestaat uit een titel en een optioneel deel inhoud> Het paneel is eigenlijk een PHP object. Standaard zijn er zeven panelen:
+
+ *Naam*               | *Class naam*                    | *Representatie*
+ -------------------- | ------------------------------- | ----------------
+ symfony versie       | `sfWebDebugPanelSymfonyVersion` | ![symfony version](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/symfony_version.png)
+ cache informatie     | `sfWebDebugPanelCache`          | ![cache](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/cache.png)
+ configuratie         | `sfWebDebugPanelConfig`         | ![configuration](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/configuration.png)
+ logs                 | `sfWebDebugPanelLogs`           | ![logs](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/logs.png)
+ database informatie  | `sfWebDebugPanelDatabase`       | ![database](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/database.png)
+ geheugen gebruik     | `sfWebDebugPanelMemory`         | ![memory](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/memory.png)
+ timer                | `sfWebDebugPanelTimer`          | ![timer](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/timer.png)
+
+De toolbar aanpassen
+--------------------
+
+Je kan de web debug toolbar aanpassen door te luisteren naar de `debug.web.load_panels` event in je applicatie of project configuratie bestand. De volgende code toont hoe je kan luisteren naar dit event in de frontend configuratie class:
+
+    [php]
+    <?php
+
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->dispatcher->connect('debug.web.load_panels', array($this, 'configureWebDebugToolbar'));
+      }
+    }
+
+Met deze configuratie aanwezig zal symfony automatisch de `configureWebDebugToolbar()` methode aanroepen wanneer het de web debug toolbar initialiseert. Deze methode kan vervolgens panelen toevoegen, vervangen of verwijderen.
+
+Net als bij elke andere listener roept symfony de `configureWebDebugToolbar()` methode aan met een event als argument. Het onderwerp van het event is het web debug toolbar object dat we willen manipuleren:
+
+    [php]
+    <?php
+
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      public function configure()
+      {
+        $this->dispatcher->connect('debug.web.load_panels', array($this, 'configureWebDebugToolbar'));
+      }
+
+      public function configureWebDebugToolbar(sfEvent $event)
+      {
+        $webDebugToolbar = $event->getSubject();
+      }
+    }
+
+Een paneel verwijderen
+----------------------
+
+Om een paneel te verwijderen, roep de `removePanel()` methode aan met de naam van het paneel:
+
+    [php]
+    <?php
+
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      // ...
+
+      public function configureWebDebugToolbar(sfEvent $event)
+      {
+        $webDebugToolbar = $event->getSubject();
+
+        $webDebugToolbar->removePanel('memory');
+      }
+    }
+
+Vervangen of toevoegen van een paneel
+-------------------------------------
+
+Om een paneel te vervangen, roep de `setPanel()` methode aan met de naam van een van de bestaande panelen.
+
+Om een nieuw paneel toe te voegen, roep dezelfde `setPanel()` methode aan, maar met een unieke nieuwe naam.
+
+Je kan natuurlijk de bestaande paneel classes extenden om informatie toe te voegen of te verwijderen, maar voor dit voorbeeld maken we een nieuw paneel die de javascript en stylesheet bestanden toont die in ons response object zijn geregistreerd:
+
+    [php]
+    <?php
+
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      // ...
+
+      public function configureWebDebugToolbar(sfEvent $event)
+      {
+        $webDebugToolbar = $event->getSubject();
+
+        $webDebugToolbar->setPanel('assets', new sfWebDebugPanelAssets($webDebugToolbar));
+      }
+    }
+
+We moeten hiervoor de `sfWebDebugPanelAssets` class maken. Alle paneel classes moeten de `sfWebDebugPanelz class extenden en in ieder geval de volgende drie abstracte methodes implementeren:
+
+  * `getTitle()`:        Geeft de HTML terug die moet worden getoond in de web debug toolbar. Als deze methode `null` teruggeeft, wordt het paneel niet getoond.
+  * `getPanelContent()`: Geeft de HTML terug die moet worden getoond in het paneel. Wanneer deze methode `null` teruggeeft is de titel niet klikbaar.
+  * `getPanelTitle()`:   Geeft de titel van het paneel terug wanneer het wordt getoond.
+
+Met deze informatie in het achterhoofd, is hier het meest simpele paneel dat zal werken:
+
+    [php]
+    <?php
+
+    class sfWebDebugPanelAssets extends sfWebDebugPanel
+    {
+      public function getTitle()
+      {
+        return 'assets';
+      }
+
+      public function getPanelTitle()
+      {
+        return 'Stylesheet and JavaScript files from sfWebResponse';
+      }
+
+      public function getPanelContent()
+      {
+        return null;
+      }
+    }
+
+Dit zal een nieuw `assets` paneel in de web debug toolbar toevoegen, maar de tekst is niet klikbaar omdat de inhoud van het paneel leeg is.
+
+Laten we het wat interessanter maken door wat inhoud toe te voegen aan het paneel. Het response object heeft twee methodes, `getJavascripts()` en `getStylesheets()`, en deze methodes geven een array van javascript en stylesheets terug die door het response object worden geinclude. 
+
+De `getPanelContent()` methode itereert over deze twee arrays om de paneel inhoud op te bouwen, en geeft deze terug als een HTML string:
+
+    [php]
+    <?php
+
+    class sfWebDebugPanelAssets extends sfWebDebugPanel
+    {
+      // ...
+
+      public function getPanelContent()
+      {
+        $response = sfContext::getInstance()->getResponse();
+        $html = '';
+
+        if ($stylesheets = $response->getStylesheets())
+        {
+          $html .= '<h2>Stylesheets</h2><ul>';
+          foreach ($stylesheets as $file => $options)
+          {
+            $html .= sprintf('<li><strong>%s</strong> %s</li>', stylesheet_path($file), count($options) ? '('.var_export($options, true).')' : '');;
+          }
+          $html .= '</ul>';
+        }
+
+        if ($javascripts = $response->getJavascripts())
+        {
+          $html .= '<h2>Javascripts</h2><ul>';
+          foreach ($javascripts as $file => $options)
+          {
+            $html .= sprintf('<li><strong>%s</strong> %s</li>', javascript_path($file), count($options) ? '('.var_export($options, true).')' : '');;
+          }
+          $html .= '</ul>';
+        }
+
+        return $html;
+      }
+    }
+
+Hier is het resultaat op een symfony pagina:
+
+![De aangepaste web debug toolbar](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/final.png)
+
+Pak je panelen in als plugins
+-----------------------------
+
+Je kan je nieuwe panelen zelfs als [symfony plugin](http://www.symfony-project.org/plugins/) inpakken en distribueren.
+
+Wanneer een gebruiker je plugin installeert, kan je hem vragen zijn configuratie class aan te passen om de event listener toe te voegen zoals we hierboven hebben gedaan, maar je kan ook in je plugin aansluiten op het `web.debug.load_panels` event in een `config.php` bestand zoals deze:
+
+    [php]
+    <?php
+
+    // ...
+
+    require_once '/path/to/sfWebDebugPanelAssets';
+
+    $this->dispatcher->connect('debug.web.load_panels', array('sfWebDebugPanelAssets', 'listenToAddPanelEvent'));
+
+Voeg vervolgens de `listenToAddPanelEvent()` methode toe aan je `sfWebDebugPanelAssets` class:
+
+    [php]
+    class sfWebDebugPanelAssets extends sfWebDebugPanel
+    {
+      static public function listenToAddPanelEvent(sfEvent $event)
+      {
+        $event->getSubject()->setPanel('assets', new sfWebDebugPanelAssets($event->getSubject()));
+      }
+    }
+
+Op die manier zal je paneel automatisch toegevoegd worden aan de web debug toolbar zonder enige aanpassing door de developer.
+
+Dat is alles wat er is. Met dank aan de nieuwe `web.debug.load_panels` event kan je nu zelf de web debug toolbar aanpassen zoals je wilt. Als je meer informatie wil of nieuwe trucjes wil leren, kan je de code bekijken van de [ingebouwde panelen](http://trac.symfony-project.org/browser/branches/1.2/lib/debug).
