@@ -1,0 +1,350 @@
+Chapter 4 - Schema Files
+========================
+
+In the previous chapters you've seen some various syntaxes for specifying your schema information in YAML files placed in `config/doctrine/*.yml`. This chapter explains the syntaxes and how to specify all your schema meta data in schema files.
+
+# Columns
+
+## Data Types
+
+Doctrine offers several column data types. When you specify the portable Doctrine type it is automatically converted to the appropriate type of the dbms you are using. below is a list of the available column types that can be used.
+
+ * integer
+ * float
+ * decimal
+ * string
+ * array
+ * object
+ * blob
+ * clob
+ * timestamp
+ * time
+ * date
+ * enum
+ * gzip
+
+Below is a sample yaml schema file that implements each of the different column types.
+
+    User:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        username: string(255)
+        password: string(255)
+        latitude: float
+        longitude: float
+        hourly_rate:
+          type: decimal
+          scale: 2
+        groups_array: array
+        session_object: object
+        description: clob
+        profile_image_binary_data: glob
+        created_at: timestamp
+        time_last_available: time
+        date_last_available: date
+        roles:
+          type: enum
+          values: [administrator, moderator, normal]
+          default: normal
+        html_header: gzip
+
+# Table Options
+
+Often you need to set options on your table for controlling things like charset, collation and table type in mysql. These can be controlled easily with options.
+
+    User:
+      options:
+        type: MyISAM
+        collate: utf8_unicode_ci
+        charset: utf8
+      columns:
+        username: string(255)
+        password: string(255)
+
+# Indexes
+
+You can optimize your database by defining indexes on columns which are used in conditions on your queries. Below is an example of indexing the username column of a user table since it is common to do lookups on the table by the users username.
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+      indexes:
+        username_indext:
+          fields: [username]
+          type: unique
+
+You can also optional specify unique directly on the column when dealing with single column unique indexes.
+
+    User:
+      columns:
+        username:
+          type: string(255)
+          unique: true
+        password: string(255)
+
+>**Note**
+>Indexes are automatically created on relationship foreign keys when the relationships are defined. The next section explains how to define relationships between foreign keys on your tables.
+
+# Relationships
+
+Doctrine offers the ability to map the relationships which exist in your database to the ORM so that it can be the most help when working with your data.
+
+## One to One
+
+Here is a simple example of how to define a one-to-one relation between a User and Profile model.
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+        profile_id: integer
+      relations:
+        Profile:
+          type: one
+          foreignType: one
+          local: profile_id
+          foreign: id
+    Profile:
+      columns:
+        name: string(255)
+        email_address:
+          type: string(255)
+          email: true
+
+## One to Many
+
+Here is a simple example of how to define a one-to-many relation between a User and Phonenumber model.
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+
+## Many to Many
+
+Here is a smiple example of how to define a many-to-many relation between a BlogPost and Tag model.
+
+    BlogPost:
+      columns:
+        title: string(255)
+        body: clob
+      relations:
+        Tags:
+          class: Tag
+          foreignAlias: BlogPosts
+          refClass: BlogPostTag
+          local: blog_post_id
+          foreign: tag_id
+    Tag:
+      columns:
+        name: string(255)
+    BlogPostTag:
+      columns:
+        blog_post_id: integer
+        tag_id: integer
+      relations:
+        BlogPost:
+        Tag:
+
+# Cascading Operations
+
+When saving objects in Doctrine it is cascaded to associated objects by default. Deleting is slightly different. Doctrine has the ability to do both application and database level cascading deletes.
+
+## Application Level
+
+Unlike the save() operations the delete() cascading needs to be turned on explicitly. Here is an example:
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+      relations:
+        Phonenumbers:
+          class: Phonenumber
+          local: id
+          foreign: id
+          type: many
+          foreignType: one
+          cascade: [delete]
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+
+## Database Level
+
+Doctrine also has the ability to export cascading operations to the database level. Below is an example of how to setup a model with some cascading options.
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+          onDelete: CASCADE
+
+# Behaviors
+
+One great feature of Doctrine is the ability to have plug n' play behavior. These behaviors can be easily included in your model definitions and you inherit functionality automatically.
+
+Here is a list of behavior bundled with Doctrine core. You can use any of the behaviors in your models without writing any code.
+
+ * Geographical
+ * I18n
+ * NestedSet
+ * Searchable
+ * Sluggable
+ * SoftDelete
+ * Timestampable
+ * Versionable
+
+You can easily enable a behavior by using the actAs functionality. Below is an example of how to use the Sluggable behavior.
+
+    BlogPost:
+      actAs:
+        Sluggable:
+          fields: [title]
+          unique: true
+      columns:
+        title: string(255)
+        body: clob
+
+The above example will automatically add a slug column to the model and will set the value of the slug column based on the value of the title column and make sure the value is unique. If a slug already exists in the database with the same value then 1, 2, 3, etc. is appended to the end.
+
+# Inheritance
+
+Another great feature of Doctrine is the ability to use native PHP oop inheritance with your models. It supports three different inheritance strategies which can be used independently or mixed together. Below are some examples of the different inheritance strategies.
+
+## Concrete Inheritance
+
+Concrete inheritance creates separate tables for child classes. However in concrete inheritance each class generates a table which contains all columns, including inherited columns.
+
+    TextItem:
+      columns:
+        topic: string(100)
+
+    Comment:
+      inheritance:
+        extends: TextItem
+        type: concrete
+      columns:
+        content: string(300)
+
+## Simple Inheritance
+
+Simple inheritance is the simpliest inheritance. In simple inheritance all the child classes share the same columns as the parent.
+
+    Entity:
+      columns:
+        name: string(30)
+        username: string(20)
+        password: string(16)
+        created: integer(11)
+
+    User:
+      inheritance:
+        extends: Entity
+        type: simple
+
+    Group:
+      inheritance:
+        extends: Entity
+        type: simple
+
+## Column Aggregation Inheritance
+
+In the following example we have one database table called entity. Users and groups are both entities and they share the same database table.
+
+The entity table has a column called type automatically added which tells whether an entity is a group or a user.
+
+    Entity:
+      columns:
+        name: string(30)
+        username: string(20)
+        password: string(16)
+        created: integer(11)
+
+    User:
+      inheritance:
+        extends: Entity
+        type: column_aggregation
+
+    Group:
+      inheritance:
+        extends: Entity
+        type: column_aggregation
+
+# Global Schema Information
+
+Doctrine schemas allow you to specify certain parameters that will apply to all of the models defined in the schema file. Below you can find an example on what global parameters you can set for schema files.
+
+List of global parameters:
+
+ * connection
+ * attributes
+ * templates
+ * actAs
+ * options
+ * inheritance
+
+Here is a sample schema file which implements some global schema information:
+
+    connection: conn_name1
+    actAs: [Timestampable]
+    options:
+      type: INNODB
+
+    User:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        contact_id:
+          type: integer(4)
+        username:
+          type: string(255)
+        password:
+          type: string(255)
+
+    Contact:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        name:
+          type: string(255)
+
+All of the settings at the top will be applied to every model which is defined in that yaml file.
