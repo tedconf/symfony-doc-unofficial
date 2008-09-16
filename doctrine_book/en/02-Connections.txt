@@ -1,0 +1,108 @@
+# Connections
+
+In this chapter we'll explain some things about Doctrine connections. How to configure them, how to use multiple of them and bind models to connections, how to create and drop your databases and other connection related activities.
+
+The default databases.yml should look something like this.
+
+    all:
+      doctrine:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          mysql://root@localhost/dbname
+
+## Supported Drivers
+
+Doctrine supports all drivers which PDO supports. PHP must be compiled with both PDO and the PDO_* drivers you wish to use. Below is a list of databases PDO will work with.
+
+* MS SQL Server — Microsoft SQL Server and Sybase Functions (PDO_DBLIB)
+* Firebird/Interbase — Firebird/Interbase Functions (PDO_FIREBIRD)
+* IBM — IBM Functions (PDO_IBM)
+* Informix — Informix Functions (PDO_INFORMIX)
+* MySQL — MySQL Functions (PDO_MYSQL)
+* Oracle — Oracle Functions (PDO_OCI)
+* ODBC and DB2 — ODBC and DB2 Functions (PDO_ODBC)
+* PostgreSQL — PostgreSQL Functions (PDO_PGSQL)
+* SQLite — SQLite Functions (PDO_SQLITE)
+
+
+## DSN
+
+### Doctrine Style
+
+Doctrine has a DSN syntax which is based off of PEAR MDB2 and is portable across all dbms.
+
+    all:
+      doctrine:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          driver://username:password@host/database_name
+
+## PDO Style
+
+You may alternatively specify your DSN information in the PDO style syntax.
+
+    all:
+      dictrube:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          driver:dbname=database_name;host=localhost
+          username:     username
+          password:     password
+
+## Multiple Connections
+
+Doctrine offers the ability to have multiple connection instances and bind models to connections so all model operations are executed on a specific connection. Below is an example config/databases.yml with multiple databases.
+
+    all:
+      master:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          mysql://root@localhost/master
+      client:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          mysql://root@localhost/client
+
+Now say we have a User model which you want to bind to the master database. You can simply do this directly in the definition of the model like below. Place the following YAML code in config/doctrine/schema.yml
+
+    Client:
+      connection: master
+      columns:
+        name: string(255)
+        username: string(255)
+        password: string(255)
+
+Now each Client can have Stores but they are stored in a separate database from the Users.
+
+    Store:
+      connection: client
+      attributes:
+        export: tables
+      columns:
+        name: string(255)
+        description: string(500)
+        client_id: integer
+      relations:
+        Client:
+         foreignAlias: Stores
+
+>**Note**
+>Because the tables are in separate databases the data can only be lazily loaded. Doctrine does not currently support generating sql for joining tables across databases. Also notice the export attributes being set to tables so Doctrine does not try and export any foreign keys to the dbms.
+
+## Build Everything
+
+Now that we have our connections and schema defined we can build everything with the following command.
+
+    ./symfony doctrine-build-all-reload frontend
+    >> doctrine  Are you sure you wish to drop your databases? (y/n)
+    y
+    >> doctrine  Successfully dropped database f...nection "master" named "master"
+    >> doctrine  Successfully dropped database f...nection "client" named "client"
+    >> doctrine  Successfully created database f...nection "master" named "master"
+    >> doctrine  Successfully created database f...nection "client" named "client"
+    >> doctrine  Generated models successfully
+    >> doctrine  Created tables successfully
+    >> doctrine  Data was successfully loaded
+
+>**Note**
+>You can take a look at the models which were generated from your YAML schema files in lib/model/doctrine and lib/model/doctrine/generated. The files in the generated folder are re-written each time you build your models whereas the ones below the generated directory are not. You may customize your models by editing the classes in lib/model/doctrine.

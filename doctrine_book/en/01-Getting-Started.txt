@@ -1,0 +1,72 @@
+# Getting Started
+
+In order to begin using Doctrine you must first enable it in your application with the following command. It will automatically make some configuration changes and create directories that Doctrine require.
+
+    $ ./symfony doctrine:enable frontend
+    >> doctrine  Changed /Users/jwage/Sites/symf...ngs.yml default orm to Doctrine
+    >> doctrine  Changed /Users/jwage/Sites/symf...s.yml to use sfDoctrineDatabase
+    >> dir+      /Users/jwage/Sites/symfony12/config/doctrine
+    >> dir+      /Users/jwage/Sites/symfony12/lib/model/doctrine
+    >> dir+      /Users/jwage/Sites/symfony12/lib/migration/doctrine
+    >> dir+      /Users/jwage/Sites/symfony12/lib/form/doctrine
+
+## Available Tasks
+
+    $ ./symfony list doctrine
+    Usage:
+      symfony [options] task_name [arguments]
+
+    Options:
+      --dry-run     -n  Do a dry run without executing actions.
+      --help        -H  Display this help message.
+      --quiet       -q  Do not log messages to standard output.
+      --trace       -t  Turn on invoke/execute tracing, enable full backtrace.
+      --version     -V  Display the program version.
+
+    Available tasks for the "doctrine" namespace:
+      :build-all                   Generates Doctrine model, SQL and initializes the database (doctrine-build-all)
+      :build-all-load              Generates Doctrine model, SQL, initializes database, and load data (doctrine-build-all-load)
+      :build-all-reload            Generates Doctrine model, SQL, initializes database, and load data (doctrine-build-all-reload)
+      :build-all-reload-test-all   Generates Doctrine model, SQL, initializes database, load data and run all test suites (doctrine-build-all-reload-test-all)
+      :build-db                    Creates database for current model (doctrine-build-db)
+      :build-forms                 Creates form classes for the current model (doctrine-build-forms)
+      :build-model                 Creates classes for the current model (doctrine-build-model)
+      :build-schema                Creates a schema.xml from an existing database (doctrine-build-schema)
+      :build-sql                   Creates SQL for the current model (doctrine-build-sql)
+      :data-dump                   Dumps data to the fixtures directory (doctrine-dump-data)
+      :data-load                   Loads data from fixtures directory (doctrine-load-data)
+      :dql                         Execute a DQL query and view the results (doctrine-dql)
+      :drop-db                     Drops database for current model (doctrine-drop-db)
+      :enable                      Enable Doctrine as the default orm in a given symfony application (doctrine-enable)
+      :generate-crud               Generates a Doctrine CRUD module (doctrine-generate-crud)
+      :generate-migration          Generate migration class (doctrine-generate-migration)
+      :generate-migrations-db      Generate migration classes from existing database connections (doctrine-generate-migrations-db, doctrine-gen-migrations-from-db)
+      :generate-migrations-models  Generate migration classes from an existing set of models (doctrine-generate-migrations-models, doctrine-gen-migrations-from-models)
+      :init-admin                  Initializes a Doctrine admin module (doctrine-init-admin)
+      :insert-sql                  Inserts SQL for current model (doctrine-insert-sql)
+      :migrate                     Migrates database to current/specified version (doctrine-migrate)
+      :rebuild-db                  Creates database for current model (doctrine-rebuild-db)
+
+## Import from Propel
+
+Doctrine has the ability to generate schema files from existing databases so all you need to do is make your configured Doctrine database have the schema of the database you want to import in to Doctrine. Run the following command to generate your yaml schema files from the existing database.
+
+    $ ./symfony doctrine:build-schema frontend
+    >> doctrine  Generate YAML schema successfully from database
+
+Now have a look in config/doctrine/schema.yml and you will see the yaml for the database. In this example we have a user table.
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+The above mysql table would generate a yaml schema like the following.
+
+    ---
+    User:
+      tableName: user
+      columns:
+        id:
+          type: integer(8)
+          primary: true
+          autoincrement: true
+        username: string(255)
+        password: string(255)
