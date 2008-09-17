@@ -1,0 +1,367 @@
+Chapter 6 - Working with Data
+================================
+
+# Retrieving Data
+
+The recommended way to efficiently retrieve data in Doctrine is to use the Doctrine Query Language. It is the best way to retrieve all your data in the lowest amount of queries possible. For convenience when working with single tables we offer some simple finder methods as well.
+
+## DQL
+
+Doctrine uses DQL for retrieving data and offers a complete Doctrine_Query api for building your DQL queries. Below you'll find examples utilizing all the different api functions as well as a complete list of the functions that can be used.
+
+### Query API
+
+**Common API**
+
+  * where('u.username = ?', 'jwage')
+  * addWhere('u.username = ?', 'jwage')
+  * whereIn('u.id', array(1, 2, 3))
+  * andWhereIn('u.id', array(1, 2, 3))
+  * orWhereIn('u.id', array(1, 2, 3))
+  * whereNotIn('u.id', array(1, 2, 3))
+  * andWhereNotIn('u.id', array(1, 2, 3))
+  * orWhereNotIn('u.id', array(1, 2, 3))
+  * orWhere('u.username = ?', 'jwage')
+  * andWhere('u.username = ?', 'jwage')
+  * groupBy('u.id, u.username')
+  * addGroupBy('u.username')
+  * having('num_phonenumbers > 0')
+  * addHaving('u.username = ?', 'jwage')
+
+**Select API**
+
+  * distinct($flag = true)
+  * select('u.id, u.username, COUNT(p.id) as num_phonenumbers')
+  * addSelect('u.email_address')
+  * from('User u, u.Phonenumber p')
+  * leftJoin('u.Phonenumber p')
+  * innerJoin('u.Profile p')
+  * addFrom('u.Phonenumber p')
+  * orderBy('u.username')
+  * addOrderBy('u.is_active = ?', 1)
+  * limit(20)
+  * offset(5)
+
+**Update API**
+
+  * forUpdate($flag = true)
+  * update('User u')
+  * set('u.username', '?', 'jwage')
+
+**Delete API**
+
+  * delete()
+
+### Create New Query
+
+Create new query from Doctrine_Table instance.
+
+    [php]
+    $q = Doctrine::getTable('User')->createQuery('u')
+      ->where('u.username = ?', 'jwage');
+
+Create new query manually
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username = ?', 'jwage');
+
+### Example Queries
+
+Below you will find a few example queries which you can learn from and see how to retrieve result sets in Doctrine.
+
+**Calculated Columns**
+
+When you use dbms functions to calculate columns they are hydrated in to the component/model that is the first one involved in the expression. So in the below example it is hydrated in to the Phonenumber relation because it is the first component encountered in the query.
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->select('u.*, COUNT(DISTINCT p.id) AS num_phonenumbers')
+            ->from('User u')
+            ->leftJoin('u.Phonenumbers p')
+            ->groupBy('u.id');
+
+    $users = $q->fetchArray();
+
+    echo $users[0]['Phonenumbers'][0]['num_phonenumbers'];
+
+**Retrieve Users and the Groups they belong to**
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->leftJoin('u.Groups g');
+    $users = $q->fetchArray();
+
+    foreach ($users[0]['Groups'] as $group) {
+        echo $group['name'];
+    }
+
+**Simple WHERE with one parameter value**
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->where('u.username = ?', 'jwage');
+    $users = $q->fetchArray();
+
+**Multiple WHERE with multiple parameters values**
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->where('u.is_active = ? AND u.is_online = ?', array(1, 1));
+    $users = $q->fetchArray();
+
+    // You can also optionally use the addWhere() to add to the existing where parts
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->where('u.is_active = ?', 1)
+            ->addWhere('u.is_online = ?', 1);
+    $users = $q->fetchArray();
+
+**Using whereIn() convenience method**
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->whereIn('u.id', array(1, 2, 3))
+    $users = $q->fetchArray();
+
+    // This is the same as above
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->where('u.id IN (1, 2, 3)');
+    $users = $q->fetchArray();
+
+**Using DBMS function in your WHERE**
+
+    [php]
+    $userEncryptedKey = 'a157a558ac00449c92294c7fab684ae0';
+    $q = Doctrine_Query::create()
+          ->from('User u')
+          ->where("MD5(CONCAT(u.username, 'secret_user_key')) = ?", $userEncryptedKey);
+    $user = $q->fetchOne();
+
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->where('LOWER(u.username) = LOWER(?)', 'jwage');
+    $user = $q->fetchOne();
+
+**Limiting resultsets using aggregate functions**
+
+    [php]
+    // Users with more than 1 phonenumber
+    $q = Doctrine_Query::create()
+            ->select('u.*, COUNT(DISTINCT p.id) AS num_phonenumbers')
+            ->from('User u')
+            ->leftJoin('u.Phonenumbers p')
+            ->having('num_phonenumbers > 1')
+            ->groupBy('u.id');
+    $users = $q->fetchArray();
+
+**Join only primary phonenumbers using WITH**
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->leftJoin('u.Phonenumbers p WITH p.primary_num = ?', true);
+    $users = $q->fetchArray();
+
+**Selecting certain columns for optimization**
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->select('u.username, p.phone')
+            ->from('User u')
+            ->leftJoin('u.Phonenumbers p');
+    $users = $q->fetchArray();
+
+**Using wildcards to select all columns**
+
+    [php]
+    // Select all User columns but only the phone phonenumber column
+    $q = Doctrine_Query::create()
+            ->select('u.*, p.phone')
+            ->from('User u')
+            ->leftJoin('u.Phonenumbers p');
+    $users = $q->fetchArray();
+
+**Perform DQL delete with simple WHERE**
+
+    [php]
+    // Delete phonenumbers for user id = 5
+    $deleted = Doctrine_Query::create()
+               ->delete()
+               ->from('Phonenumber')
+               ->addWhere('user_id = 5')
+               ->execute();
+
+**Perform simple DQL update for a column**
+
+    [php]
+    // Set user id = 1 to active
+    Doctrine_Query::create()
+        ->update('User u')
+        ->set('u.is_active', '?', true)
+        ->where('u.id = ?', 1)
+        ->execute();
+
+**Perform DQL update with dbms functions**
+
+    [php]
+    // Make all usernames lowercase
+    Doctrine_Query::create()
+      ->update('User u')
+      ->set('u.username', 'LOWER(u.username)')
+      ->execute();
+
+**Using mysql LIKE to search for records**
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->where('u.username LIKE ?', '%jwage%');
+    $users = $q->fetchArray();
+
+**Use the INDEXBY keyword to hydrate the data where the key of record entry is the name of the column you assign**
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->from('User u INDEXBY u.username');
+
+    $users = $q->fetchArray();
+    print_r($users['jwage']); // Will print the user with the username of jwage
+
+**Using positional and named parameters**
+
+    [php]
+    // Positional parameters
+    $q = Doctrine_Query::create()
+              ->from('User u')
+              ->where('u.username = ?', array('Arnold'));
+    $users = $q->fetchArray();
+
+    // Named parameters
+    $q = Doctrine_Query::create()
+              ->from('User u')
+              ->where('u.username = :username', array(':username' => 'Arnold'));
+    $users = $q->fetchArray();
+
+**Using subqueries in your WHERE**
+
+    [php]
+    // Find uers not in group named Group 2
+    $q = Doctrine_Query::create()
+              ->from('User u')
+              ->where('u.id NOT IN (SELECT u.id FROM User u2 INNER JOIN u2.Groups g WHERE g.name = ?)', 'Group 2');
+    $users = $q->fetchArray();
+
+    // You can accomplish this without subqueries like the 2 below
+    // This is similar as above
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->innerJoin('u.Groups g WITH g.name != ?', 'Group 2')
+    $users = $q->fetchArray();
+
+    // or this
+    $q = Doctrine_Query::create()
+            ->from('User u')
+            ->leftJoin('u.Groups g')
+            ->where('g.name != ?', 'Group 2');
+
+**Doctrine has many different ways you can execute queries and retrieve the data. Below is a list of all the different ways you can execute queries.**
+
+    [php]
+    $q = Doctrine_Query::create()
+            ->from('User u');
+
+    // Array hydration
+    $users = $q->fetchArray();                                         // Fetch the results as a hydrated array
+    $users = $q->execute(array(), Doctrine::HYDRATE_ARRAY);            // This is the same as above
+    $users = $q->setHydrationMode(Doctrine::HYDRATE_ARRAY)->execute(); // So is this
+
+    // No hydration
+    $users = $q->execute(array(), Doctrine::HYDRATE_NONE);             // Execute the query with plain PDO and no hydration
+    $users = $q->setHydrationMode(Doctrine::HYDRATE_NONE)->execute();  // This is the same as above
+
+    // Fetch one
+    $user = $q->fetchOne();
+
+    // Fetch all and get the first from collection
+    $user = $q->execute()->getFirst();
+
+## Finders
+
+Doctrine offers some simple magic finder methods that automatically create Doctrine_Query objects in the background. Below are some examples of how you can utilize these methods.
+
+**Magic Find By Methods**
+
+You can utilize the magic findBy*() and findOneBy*() methods to find records by single fields value.
+
+    [php]
+    $user = Doctrine::getTable('User')->findOneByUsername('jwage');
+    $users = Doctrine::getTable('User')->findByIsActive(1);
+
+**Find by Identifier**
+
+The Doctrine_Table::find() method is for finding records by its primary key. It works for both models that have surrogate or composite primary keys.
+
+    [php]
+    $user = Doctrine::getTable('User')->find(1);
+    $userGroup = Doctrine::getTable('UserGroup')->find(array(1, 2));
+
+# Altering Data
+
+With Doctrine you can alter data by issuing direct DQL update and delete queries or you can fetch objects, alter properties and save. Below we'll show examples of both strategies.
+
+## Object Properties
+
+Doctrine offers 3 ways to alter your object properties and sfDoctrinePlugin implements a fourth. They are object access, array access, function access and propel style access.
+
+    [php]
+    $user = new User();
+    $user->username = 'jwage';        // Object
+    $user['username'] = 'jwage';      // Array
+    $user->set('username', 'jwage');  // Function
+    $user->setUsername('jwage');      // Propel access
+    $user->save();
+
+## Overriding Accessors and Mutators
+
+    [php]
+    class User extends BaseUser
+    {
+      public function setPassword($password)
+      {
+        return $this->_set('password', md5($password));
+      }
+
+      public function getUsername()
+      {
+        return 'PREFIX_' . $this->_get('username');
+      }
+    }
+
+    $user = new User();
+    $user->username = 'jwage';
+    $user->password = 'changeme'; // Invokes setPassword()
+    echo $user->username; // Invokes getPassword() and returns PREFIX_jwage
+
+# Deleting Data
+
+You have two options for deleting data. You can retrieve the object first and call the Doctrine_Record::delete() method or you can issue a single DQL delete query.
+
+    [php]
+    $user = Doctrine::getTable('User')->find(1);
+    $user->delete();
+
+Issue single DQL delete query. This is more efficient than the above because it only uses one query. The above example has to retrieve the object and then delete it.
+
+    [php]
+    $deleted = Doctrine_Query::create()
+      ->delete()
+      ->from('User u')
+      ->where('u.id = ?', 1)
+      ->execute();
