@@ -1,59 +1,29 @@
 Chapter 3 - Configuration
 =========================
 
-Doctrine controls most configuration from the `project/apps/frontend/config/doctrine.yml` which was copied for you with the `$ ./symfony doctrine:enable frontend` command. Below is the sample configuration that comes bundled with Doctrine.
-
-    all:
-      # all attributes below are set on the Doctrine_Manager instance
-      attributes:
-        # export sql (none, tables, constraints, all)
-        export:  all
-
-        # enable doctrine side validation (true, false)
-        validate: false
-    
-        # recursive merge functions from different directories/plugins
-        recursive_merge_fixtures: true
-
-        # enable quoting
-        quote_identifier: false
-    
-        # enable autoloading of table class
-        autoload_table_classes: true
-
-      listeners:        []
-      record_listeners: []
-
-    # Configuration for specific connection names 
-    #  connections:
-    #    doctrine:
-    #      attributes:
-    #        export: all
-    #      listeners:        []
-    #      record_listeners: []
-
 ## Attributes
 
 Doctrine controls features and settings with attributes. The attributes can be defined at different levels of a hierarchy. Some attributes can be specified at all levels and others cannot. Below explains how you can specify attributes at each level. Attributes can be specified globally, on each connection, or on each individual model.
 
+In symfony you can control the Doctrine configuration in your `config/ProjectConfiguration.class.php` or `apps/frontend/config/frontendConfiguration.class.php` by creating a configureDoctrine() function.
+
 ### Global Attributes
 
-You can specify global attributes by editing `project/apps/frontend/config/doctrine.yml`.
-
-    all:
-      attributes:
-        use_dql_callbacks: true # Enable DQL callbacks globally
+    [php]
+    public function configureDoctrine()
+    {
+      $manager = Doctrine_Manager::getInstance();
+      $manager->setAttribute('use_dql_callbacks', true);
+    }
 
 ### Connection Attributes
 
-You can specify connection attributes the same way you do global ones in `project/apps/frontend/config/doctrine.yml` with the following YAML.
-
-    all:
-      connections:
-        doctrine:
-          attributes:
-            export: tables          # Only export tables when creating database from models
-            use_dql_callbacks: true # Enable DQL callbacks on this connection
+    [php]
+    public function configureDoctrine()
+    {
+      $conn = Doctrine_Manager::getInstance()->getConnection('connection_name');
+      $conn->setAttribute('use_dql_callbacks', true);
+    }
 
 ### Model Attributes
 

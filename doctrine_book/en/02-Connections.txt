@@ -1,9 +1,6 @@
 Chapter 2 - Connections
 =======================
 
->**TIP**
->More can be read about connections in the Doctrine Manual [here](http://www.doctrine-project.org/documentation/manual/1_0?chapter=connection-management).
-
 In this chapter we'll explain some things about Doctrine connections, how to configure them, how to use multiple of them and bind models to connections, how to create and drop your databases and other connection related activities.
 
 The default `config/databases.yml` should look like the following. The only difference here is that it is sfDoctrineDatabase instead of sfPropelDatabase and the connection name is doctrine instead of propel.
@@ -47,7 +44,7 @@ Doctrine has a DSN syntax which is based off of PEAR MDB2 and is portable across
 You may alternatively specify your DSN information in the PDO style syntax.
 
     all:
-      dictrube:
+      doctrine:
         class:          sfDoctrineDatabase
         param:
           dsn:          driver:dbname=database_name;host=localhost
@@ -56,6 +53,30 @@ You may alternatively specify your DSN information in the PDO style syntax.
 
 >**TIP**
 >Using the PDO style syntax offers more flexibility and ability to specify non standard information about your connection to PDO. For example, when specifying non standard unix_socket paths or ports to use when connecting, specifying it in PDO syntax is more flexible.
+
+## Import from Propel
+
+Doctrine has the ability to generate schema files from existing databases so all you need to do is make your configured Doctrine database have the schema of the database you want to import in to Doctrine. Run the following command to generate your yaml schema files from the existing database.
+
+    $ ./symfony doctrine:build-schema frontend
+    >> doctrine  Generate YAML schema successfully from database
+
+Now have a look in `config/doctrine/schema.yml` and you will see the yaml for the database. In this example we have a user table.
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+The above mysql table would generate a yaml schema like the following in `config/doctrine/schema.yml`
+
+    ---
+    User:
+      tableName: user
+      columns:
+        id:
+          type: integer(8)
+          primary: true
+          autoincrement: true
+        username: string(255)
+        password: string(255)
 
 ## Multiple Connections
 
@@ -96,6 +117,20 @@ Now each Client can have Stores but they are saved in a separate database from t
 
 >**Note**
 >Because the tables are in separate databases the data can only be lazily loaded. Doctrine does not currently support generating sql for joining tables across databases. Also, notice the export attribute being set to tables. This tells Doctrine to only export the create table statement and not any foreign keys.
+
+## Connection Attributes
+
+sfDoctrinePlugin allows you to specify connection attributes directly in the `config/databases.yml` file like the following.
+
+    all:
+      doctrine:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          mysql://root@localhost/dbname
+          attributes:
+            use_dql_callbacks: true
+
+The attributes you specify here will be set on the Doctrine_Connection instances when the connection is created.
 
 ## Build Everything
 
