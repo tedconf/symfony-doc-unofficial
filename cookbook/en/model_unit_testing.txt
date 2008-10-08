@@ -1,0 +1,198 @@
+Unit Testing your Models
+========================
+
+Writing unit tests for your Propel or Doctrine model is quite easy.
+In this tutorial, you will learn some great tips and best practices
+to write better tests for your models.
+
+Database Configuration
+----------------------
+
+To test a Propel model class, you need a database. You already have the one you
+use for your development, but it is always a good habit to create a dedicated
+one for your tests.
+
+As all tests are run under the `test` environment, we just need to edit the
+`config/databases.yml` configuration file and override the default settings
+for the `test` environment:
+
+    [yml]
+    test:
+      propel:
+        param:
+          database:     myproject_test
+
+    dev:
+      # dev configuration
+
+    all:
+      propel:
+        class:          sfPropelDatabase
+        param:
+          datasource:   propel
+          phptype:      mysql
+          hostspec:     localhost
+          database:     myproject
+          username:     someuser
+          password:     somepa$$word
+
+In this case, we have only changed the database name, but you can also
+change the database engine and use SQLite for example.
+
+Test Data
+---------
+
+Now that we have a dedicated database for our tests, we need a way to load some
+test data (fixtures) each time we launch the unit tests. That's because we want
+to put the database in the same state each time we run our tests.
+
+It is pretty easy thanks to the `sfData` class:
+
+    [php]
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+
+The `loadData()` method takes a directory or a file as its first argument.
+A common `fixtures` directory looks like this:
+
+    test/
+      fixtures/
+        10_categories.yml
+        20_articles.yml
+        30_comments.yml
+
+Notice the numbers prefixing all filenames. This is a simple way to control
+the order of data loading. Later in the project, if we need to insert some
+fixture file, it will be easy as we have some free numbers between existing ones:
+
+    test/
+      fixtures/
+        10_categories.yml
+        15_must_be_laoded_between_categories_and_articles.yml
+        20_articles.yml
+        30_comments.yml
+
+Astute readers will have spotted that we have put our fixtures in the `test/`
+directory, whereas the symfony book advocates to put them in the `data/` directory.
+This is really a matter of taste, but I like to organize my fixtures in these two
+directories because fixtures can be categorized in two different groups:
+
+  * `data/fixtures`: contains all initial data needed to make the application
+                     actually work
+  * `test/fixtures`: contains all data needed by the tests (unit and functional)
+
+This simple scheme works fine when you have a small set of test data, but when
+your model grows, you start having a lot more fixtures, and the time it
+takes to load them in the database can become significant. So, we need a way
+to only load a sub-set of our test data. One way to do it is to sub-categorize
+your test data by creating a sub-directory per main feature:
+
+    test/
+      fixtures/
+        10_cms/
+          10_categories.yml
+          20_articles.yml
+          30_comments.yml
+        20_forum/
+          10_threads.yml
+
+Now, instead of loading the main `fixtures` directory, we can just load one of
+the sub-directories, depending on the model class you want to test. But most of
+the time, you also need to load some shared data, like users:
+
+    test/
+      fixtures/
+        00_common/
+          10_users.yml
+        10_cms/
+          10_categories.yml
+          20_articles.yml
+          30_comments.yml
+        20_forum/
+          10_threads.yml
+
+To load several test files or directories, we can call the `loadData()`
+method several times:
+
+    [php]
+    // load users and all the CMS data
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures/00_common/10_users.yml');
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures/10_cms');
+
+This will load the `10_users.yml` fixture file and then all the fixtures
+found in the `10_cms` directory.
+
+Writing Unit Tests
+------------------
+
+Now that we have a dedicated database and a way to put our database in a know state,
+let's create some unit tests for the `Article` model.
+
+Here is a typical Propel unit test bootstrapping file:
+
+    [php]
+    // test/unit/model/ArticlePeerTest.php
+    include(dirname(__FILE__).'/../../bootstrap/unit.php');
+
+    $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'test', true);
+
+    new sfDatabaseManager($configuration);
+
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+
+    $t = new lime_test(1, new lime_output_color());
+
+    $t->diag('::retrieveBySlug()');
+    $article = ArticlePeer::retrieveBySlug('the-best-framework-ever');
+    $t->is($article->getTitle(), 'The Best Framework Ever', '->retrieveBySlug() returns the article that matches the given slug');
+
+The script is pretty self-explanatory:
+
+  * As for every unit test, we include the bootstrapping file.
+
+        [php]
+        include(dirname(__FILE__).'/../../bootstrap/unit.php');
+
+  * We create a configuration object for the `test` environment and we
+    enable debugging:
+
+        [php]
+        $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'test', true);
+
+    This will also initialize the autoloading of all Propel classes.
+
+  * We create a database manager. It initializes the Propel connection
+    by loading the `databases.yml` configuration file:
+
+        [php]
+        new sfDatabaseManager($configuration);
+
+  * We load our test data by using `sfPropelData`:
+
+        [php]
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+
+  * Now that everything is in place, we can start testing our model object.
+
+If you are not used to write unit tests, it can be intimidating at first.
+
+Here are some tips I use all the time to know what I need to test:
+
+  * Test one method of a class at a time
+  * Test that for a given input, the output of the method is what you expect
+  * Read the method code and test all the business rules you might have
+  * Never test obvious things or things that are done by another method
+
+My test files are always structured with the same pattern:
+
+    [php]
+    // output a message with the method you test (-> for instance methods, and :: for class methods)
+    $t->diag('->methodName()');
+
+    // test 1 thing at a time that can be expressed as a simple sentence
+    // The sentence always begin with the method name
+    // then a verb to express what must be done, how it must behave, ...
+    $t->is($object->methodName(), 1, '->methodName() returns 1 if you pass no argument');
