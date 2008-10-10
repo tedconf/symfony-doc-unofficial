@@ -1,0 +1,202 @@
+Unit Testen van je Models
+=========================
+
+Het schrijven van unit tests voor je Propel of Doctrine model is erg makkelijk.
+In deze tutorial zal een aantal goede tips en best practices vinden om betere 
+tests te schrijven voor je models.
+
+Database Configuratie
+---------------------
+
+Om een Propel model class te testen, heb je een database nodig. Je hebt er al
+een voor je ontwikkelomgeving, maar het is altijd een goede eigenschap om een 
+aparte speciaal voor je tests te maken.
+
+Omdat alle tests draaien onder de `test` omgeving, hoeven we alleen maar de 
+`config/databases.yml` te wijzigen en de standaard instellingen voor de `test`
+omgeving te overschrijven:
+
+    [yml]
+    test:
+      propel:
+        param:
+          database:     myproject_test
+
+    dev:
+      # dev configuratie
+
+    all:
+      propel:
+        class:          sfPropelDatabase
+        param:
+          datasource:   propel
+          phptype:      mysql
+          hostspec:     localhost
+          database:     myproject
+          username:     someuser
+          password:     somepa$$word
+
+In dit geval hebben we alleen de database naam aangepast, maar je kan ook bijvoorbeeld
+de database engine aanpassen en SQLite gebruiken.
+
+Test Gegevens
+-------------
+
+Nu we een aparte database hebben voor onze tests, hebben we een manier nodig om
+test gegevens (fixtures) te laden elke keer als we de unit tests starten. Dit is
+nodig omdat we de database iedere keer in dezelfde staat willen hebben om onze
+tests te doen.
+
+Dit is erg handig met dank aan de `sfData`class:
+
+    [php]
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+
+De `loadData()` methode verwacht een directory of bestand als eerste argument.
+Een veelvoorkomende `fixtures` directory ziet er uit als:
+
+    test/
+      fixtures/
+        10_categories.yml
+        20_articles.yml
+        30_comments.yml
+
+Let vooral op de nummers die aan het begin van de bestandsnamen staan. Dit is een
+simpele manier om de volgorde te bepalen van het inladen van de gegevens.  Later
+in het project, als we ergens een fixture bestand tussen moeten zetten, is het
+handiger als er nog wat ruimte is tussen de bestaande bestanden:
+
+    test/
+      fixtures/
+        10_categories.yml
+        15_must_be_laoded_between_categories_and_articles.yml
+        20_articles.yml
+        30_comments.yml
+
+Oplettende lezers zullen hebben opgemerkt dat we de fixtures directory in de `test/`
+directory hebben geplaatst, waar het symfony boek adviseert om deze in de `data/`
+directory te plaatsen. Dit is meer een persoonlijke voorkeur, maar ik hou er van om
+mijn fixtures in deze twee directories te organiseren omdat ze dan kunnen worden
+gecategoriseerd in twee groepen:
+
+  * `data/fixtures`: bevat alle initiele gegevens die nodig zijn om de applicatie
+                     te laten werken
+  * `test/fixtures`: bevat alle gegevens die nodig zijn om te testen (unit en 
+                     functioneel)
+
+Dit simpele schema werkt prima wanneer je een kleine set test data hebt, maar
+wanneer je model groeit, heb je een stuk meer fixtures, en is de tijd om de gegevens
+te laden steeds groter. We moeten daarom een manier hebben om alleen een subset van
+de testdata te laden. Een manier om dit te doen is door subcategorien in te voeren
+voor je testgegevens door het aanmaken van een sub-directory per feature:
+
+    test/
+      fixtures/
+        10_cms/
+          10_categories.yml
+          20_articles.yml
+          30_comments.yml
+        20_forum/
+          10_threads.yml
+
+In plaats van het laden van de hele `fixtures` directory, kunnen we nu alleen een
+van de subdirectories laden, afhankelijk van de model class die je wil testen. In de
+meeste gevallen moet je echter ook wat gedeelde gegevens laden, zoals gebruikers:
+
+    test/
+      fixtures/
+        00_common/
+          10_users.yml
+        10_cms/
+          10_categories.yml
+          20_articles.yml
+          30_comments.yml
+        20_forum/
+          10_threads.yml
+
+Om meerdere testbestanden of directories te laden, kunnen we de `loadData` methode
+meerdere keren aanroepen:
+
+    [php]
+    // laad gebruikers en alle CMS gegevens
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures/00_common/10_users.yml');
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures/10_cms');
+
+Dit zal de `10_users.yml` fixtures laden, en daarna alle fixtures die in de `10_cms`
+directory worden gevonden.
+
+Het schrijven van Unit Tests
+----------------------------
+
+Nu we een aparte database hebben en een manier om onze database in een van te voren 
+bepaalde staat te krijgen, kunnen we een unit test gaan maken voor het `Article` model.
+
+Here is een typisch Propel unit test bootstrapping bestand:
+
+    [php]
+    // test/unit/model/ArticlePeerTest.php
+    include(dirname(__FILE__).'/../../bootstrap/unit.php');
+
+    $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'test', true);
+
+    new sfDatabaseManager($configuration);
+
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+
+    $t = new lime_test(1, new lime_output_color());
+
+    $t->diag('::retrieveBySlug()');
+    $article = ArticlePeer::retrieveBySlug('the-best-framework-ever');
+    $t->is($article->getTitle(), 'The Best Framework Ever', '->retrieveBySlug() returns the article that matches the given slug');
+
+Dit script legt zichzelf eigenlijk uit:
+
+  * Net als iedere andere unit test, includen we ook hier het bootstrap bestand
+
+        [php]
+        include(dirname(__FILE__).'/../../bootstrap/unit.php');
+
+  * We maken het configuratie object aan voor de `test` omgeving en zetten debugging aan:
+
+        [php]
+        $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'test', true);
+
+    Dit zal ook het autoloaden van Propel classes initialiseren.
+    
+  * We maken de database manager aan. Dit initialiseert de Propel verbinding door
+    het laden van het `databases.yml` configuratie bestand:
+
+        [php]
+        new sfDatabaseManager($configuration);
+
+  * We laden onze test data met `sfPropelData`:
+  
+        [php]
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+
+  * Nu alles klaar staat, kunnen we beginnen met het testen van ons model object.
+
+Wanneer je niet gewend bent aan het schrijven van unit tests, kan dit in het begin
+nogal intimiderend zijn.
+
+Hier zijn een aantal tips die ik regelmatig gebruik om te bepalen wat te testen:
+
+  * Test een enkele methode van een class per keer
+  * Test of voor een bepaalde input, de output is wat je verwacht
+  * Lees de methode code en test alle business regels die je hebt
+  * Test niet die dingen die te logisch zijn of dingen die door een andere methode gedaan worden
+  
+Mijn test bestanden hebben altijd dezelfde structuur:
+
+    [php]
+    // Geef een bericht weer met welke methode je test (-> voor instantie methodes, en :: voor statische methodes)
+    $t->diag('->methodName()');
+
+    // test 1 ding tegelijk die in een simpele regel kan worden samengevat
+    // De regel begint altijd met de methode naam
+    // en vervolgens een werkwoord dat uitdrukt wat er moet gebeuren, hoe het zich moet gedragen, ...
+    $t->is($object->methodName(), 1, '->methodName() returns 1 if you pass no argument');
