@@ -1,0 +1,99 @@
+How to customize Error Templates
+================================
+
+When an error occurs, be it a page not found error, and internal server error, or any other exception, symfony
+displays an error page. The page content depends on the environment and on the request format.
+
+Let's take an example to make it easier to explain.
+You have an application with an API module which returns an HTML, XML, or JSON representation of the `Article` model.
+
+Here is the routing configuration that makes it work:
+
+    [yml]
+    // apps/frontend/config/routing.yml
+    api_article:
+      url:   /api/article/:id.:sf_format
+      param: { module: api, action: article }
+      requirements:
+        sf_format: (?:html|xml|json)
+
+And the associated module:
+
+    [php]
+    class apiActions extends sfActions
+    {
+      public function executeArticle($request)
+      {
+        $this->article = ArticlePeer::retrieveByPK($request->getParameter('id'));
+
+        $this->forward404Unless($this->article);
+      }
+
+      // ...
+    }
+
+If you pass a non existent `id` in the request, the action is forwarded to the `404` page. If you use the
+HTML format (`http://localhost/frontend_dev.php/api/article/1.html`) in the development
+environment, you will have an error message that looks like this:
+
+![404.html in the development environment](http://www.symfony-project.org/uploads/assets/error_templates/1.png)
+
+In the production environment (`http://localhost/frontend_dev.php/api/article/1.html`), the page
+is quite different for obvious security reasons:
+
+![404.html in the production environment](http://www.symfony-project.org/uploads/assets/error_templates/2.png)
+
+Now, let's see how it behaves when we change the format to `XML` in the development environment
+(`http://localhost/frontend_dev.php/api/article/1.xml`):
+
+![404.xml in the development environment](http://www.symfony-project.org/uploads/assets/error_templates/3.png)
+
+And now, in the production environment (`http://localhost/api/article/1.xml`):
+
+![404.xml in the production environment](http://www.symfony-project.org/uploads/assets/error_templates/4.png)
+
+As you can see for yourself, the error message returned by symfony is now in the requested format, XML.
+
+This example demonstrates how the error messages are customized for a 404 page, but the same goes for any
+other uncaught exception.
+
+You can even customize each format's output by adding a template to
+your project directory (`config/error/`) or application directory (`apps/frontend/config/error/`).
+
+For example, to customize the output for XML error messages, create a `config/error/error.xml.php` file.
+symfony is smart enough to use the customized template if it exists instead of the default one:
+
+    [xml]
+    <?xml version="1.0" encoding="<?php echo sfConfig::get('sf_charset', 'UTF-8') ?>"?>
+    <error>
+       <code><?php echo $code ?></code>
+       <message><?php echo $text ?></message>
+    </error>
+
+![404.xml customized in the production environment](http://www.symfony-project.org/uploads/assets/error_templates/5.png)
+
+When you customize an error message template, you have access to the following variables:
+
+ * `$code`:    The response status code
+ * `$text`:    The response status text
+ * `$name`:    The class name of the exception
+ * `$message`: The message of the exception message
+ * `$traces`:  An array containing the full PHP trace
+ * `$format`:  The requested format
+
+It is also possible to customize the output in the development environment, even if it
+is a bit less interesting, by creating a `config/error/exception.xml.php`.
+
+The default templates are stored in the `lib/exception/data/` directory of symfony and are a good
+starting point for your customized templates.
+
+When you create your very own format, you will need to create the appropriate error message templates
+(`config/error/error.FORMAT_NAME.php` and `config/error/exception.FORMAT_NAME.php`).
+
+To ease the task, you can include an existing error template. For example, if your format is XML like,
+you can include the default XML error message template:
+
+    [php]
+    <?php include sfException::getTemplatePathForError('xml', true) ?>
+
+Format support is yet another example of symfony 1.2 embracing HTTP as much as possible.
