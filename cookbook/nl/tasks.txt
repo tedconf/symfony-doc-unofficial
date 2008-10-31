@@ -1,0 +1,145 @@
+Hoe maak je een task?
+=====================
+
+Net als iedere web applicatie zal je project een aantal terugkerende onderhoudstaken, database operaties of andere console scripts regelmatig moeten draaien.
+
+Symfony 1.1 breid de symfony 1.0 pake tasks uit om een krachtige en uniforme command line utility voor je projecten te bieden, volledig geintegreerd met de symfony Command Line Interface (CLI).
+
+  * **Toegankelijkheid**: Iedere task kan worden uitgevoerd met de help parameter voorgevoegd, om de syntax te krijgen, een omschrijving, beschikbare opties en meer. Iedereen zal je tasks kunnen uitvoeren.
+  * **Bruikbaarheid**: Door de symfony CLI uit te voeren krijg je een task lijst, en zelfs een niet-ontwikkelaar kan makkelijk leren er een uit te voeren.
+  * **Uniformiteit**: Door expliciet alle opties en parameters te omschrijven, kan de symfony CLI ze parsen zodat jij de problematische $argv parsing kan vergeten. Het zal automatisch de gebruiker waarschuwen wanneer een verkeerde syntax wordt gebruikt of parameters worden vergeten.
+  * **Omgeving**: De context is volledig onder controle, met dank aan de nieuwe ProjectConfiguration en ApplicationConfiguration classes. Je hoeft je geen zorgen meer te maken over gehardcode omgevings- of debug instellingen.
+  * **Leesbaarheid**: Iedereen die de source code opent zal een goede omschrijving krijgen van de verwachte input en de doelen van een task. Onderhoudstijd om te begrijpen wat de code doet en deze te debuggen wordt enorm verminderd.
+
+Laten we onze eerste task schrijven
+-----------------------------------
+
+Open je symfony 1.1 project directory en typ:
+
+    $ php symfony generate:task doNothing
+
+Dit zal een lege task aanmaken in lib/task/doNothingTask.class.php. Laten we die eens wat gaat aanpassen.
+
+    [php]
+    class doNothingTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->namespace        = 'project';
+        $this->name             = 'do-nothing';
+        $this->briefDescription = 'Does strictly nothing';
+   
+        $this->detailedDescription = <<<EOF
+    This task is completely useless, and should be run as often as possible.
+    EOF;
+      }
+   
+      protected function execute($arguments = array(), $options = array())
+      {
+        $this->logSection('do-nothing', 'I did nothing successfully!');
+      }
+    }
+
+Deze taak doet zeker niet veel, maar het demonstreert de eerste basis concepten:
+
+  * De `configure()` methode beschrijft de task. Naam om aan te roepen, scope, syntax, help, opties en argumenten.
+  * De `execute()` methode is degene die alles det, en zal worden aangeroepen wanneer de task wordt uitgevoerd.
+  * De `logSection()` methode kan worden gebruikt om berichten naar de console output te sturen.
+  
+Je kan een beetje hiermee spelen:
+    $ php symfony help project:do-nothing
+    $ php symfony project:do-nothing
+    
+Wat command line interactie
+---------------------------
+
+Argumenten en opties zijn een manier om parameters aan een task mee te geven.
+
+    $ php symfony project:hello-world --name="Romain"
+
+Hier draaien we de `project:hello-world` task met de `name` optie gezet naar `Romain`
+
+    $ php symfony project:hello-world Hi
+
+Nu draaien we dezelfde task met het eerste argument gezet als `Hi`.
+
+Opties en argumenten kunnen standaard waardes hebben, optioneel of verplicht zijn en hun doel tonen in de syntax van de task.
+
+Laten we onze `project:hello-world` task schrijven:
+
+
+    [php]
+    class doHelloWorldTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->addArgument('verb', sfCommandArgument::OPTIONAL, 'Customize the verb used to say hello', 'hello');
+        $this->addOption('name', null, sfCommandOption::PARAMETER_OPTIONAL, 'Customize the person to say hello to', 'world');
+    
+        $this->namespace        = 'project';
+        $this->name             = 'hello-world';
+        $this->briefDescription = 'Spread the (hello) world';
+    
+        $this->detailedDescription = <<<EOF
+    Runs an evolved hello world display, with customisable name and word.
+    EOF;
+      }
+    
+      protected function execute($arguments = array(), $options = array())
+      {
+        $this->logSection('do', ucfirst($arguments['verb']).' '.ucfirst($options['name']));
+      }
+    }
+
+Kijk nu hoe symfony helpt om een verdwaalde gebruiker hoe ze onze nieuwe task moeten gebruiken:
+
+    $ php symfony project:hello-world invalid arguments given
+    $ php symfony help project:hello-world
+
+En speel wat met de task:
+
+    $ php symfony project:hello-world
+    $ php symfony project:hello-world --name="romain"
+    $ php symfony project:hello-world --name=romain hi
+    $ php symfony project:hello-world hi --name=romain
+
+Een aantal andere handige functionaliteiten
+-------------------------------------------
+
+  * **Heb je een database laag nodig?**
+  
+    Om de database manager op te halen, moeten we in een applicatie context zijn. Dit is makkelijk gedaan door het speciale `application` argument te gebruiken.
+
+        [php]
+        protected function configure()
+        {
+          // ...
+
+          $this->addArgument('application', sfCommandArgument::REQUIRED, 'Changes the application context of the task');
+
+          // ...
+        }
+
+    Nu is de `$this->configuration` class eigenschap een instantie van de `sfApplicationConfiguration` in plaats van de standaard `sfProjectConfiguration`, en kan je die gebruiken om de database manager te initialiseren:
+
+        [php]
+        protected function execute($arguments = array(), $options = array())
+        {
+          $databaseManager = new sfDatabaseManager($this->configuration);
+       
+          // ...
+        }
+  
+  * **Een task in een andere task uitvoeren?**
+  
+        [php]
+        $myOtherTask = new myOtherTask($this->dispatcher, $this->formatter);
+        $myOtherTask->run($arguments = array('foo' => 'bar'), $options = array('far' => 'boo'));
+
+  * **Wil je de gebruiker laten kiezen uit een omgeving, terwijl je ook een standaard omgeving bied?**
+
+    Voeg gewoon de nieuwe `env` optie toe in de `::configure()` methode en symfony zal de waarde gebruiken als de standaard omgeving.
+
+        [php]
+        $this->addOption('env', null, sfCommandOption::PARAMETER_OPTIONAL, 'Changes the environment this task is run in', 'prod');
+
