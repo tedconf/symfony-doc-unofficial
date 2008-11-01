@@ -1,0 +1,409 @@
+How to test an application?
+===========================
+
+The symfony framework has always been bundled with a functional testing framework
+and it is certainly one of its main strengths.
+
+What is a functional test? Functional tests goal is to test the integration
+of all your application layers: from the routing to the controller, templates, and database calls.
+They do not replace unit tests. 
+
+The only thing it cannot test easily is the JavaScript code embedded in your templates.
+You can of course use a tool like [selenium](http://selenium.openqa.org/) for this.
+But the good news is that the functional test framework can test "some" JavaScript code
+like Ajax calls.
+
+To do its job, the functional testing framework simulates a browser. It does not need a web server
+as it knows symfony internals and how to generate a response based on a request.
+This allows easy and deep introspection of the state of your application after
+each request. You can of course introspect the symfony core objects like the response
+or the user session, but also your own code like the model.
+
+Each release of symfony makes the functional testing framework even better.
+Today, I will show you all the goodness we have added for the symfony 1.2 version.
+Be prepared to be amazed!
+
+Decoupling
+----------
+
+Everybody knows that I like testing very much. I also like to refactor old code
+to make it better. For symfony 1.2, I have refactored the browser (`sfBrowser`)
+and the test browser (`sfTextBrowser`) classes to make them much more flexible
+and configurable.
+
+As of symfony 1.2, the functional testing framework is made of several
+distinct and reusable layers.
+
+The biggest changes is the introduction of testers.
+Testers are objects that knows how to test a specific layer of your application.
+Symfony comes with several built-in testers for the request, the response,
+the user, the view cache, forms, and Propel.
+
+A less important change is the introduction of the **`sfTestFunctional` class**, which
+relies on a **`sfBrowser` object** to test your application and manages all the registered **testers**.
+
+Here is a typical functional test:
+
+    [php]
+    $browser = new sfTestFunctional(new sfBrowser());
+
+    $browser->
+      get('/')->
+      // do some tests
+    ;
+
+To retain backward compatibility with symfony 1.0 and 1.1, you can still use
+the now deprecated `sfTestBrowser` class:
+
+    [php]
+    $browser = new sfTestBrowser();
+
+    $browser->
+      get('/')->
+      // do some tests
+    ;
+
+Testers
+-------
+
+So, all the testing is actually done by tester classes.
+A tester knows how to test a specific part of your application.
+
+The testers replace all the methods you are used to, like `checkResponseElement()`
+or `isRequestParameter()`. Of course, these methods are still available to retain
+backward compatibility (the [UPGRADE_TO_1_2](http://www.symfony-project.org/installation/1_2/upgrade)
+file contains a table that references all the old methods and their tester equivalent).
+
+Here is a simple example that demonstrates how to replace `isRequestParameter()` calls
+by using the request tester:
+
+    [php]
+    // before symfony 1.2
+    $browser->
+      get('/')->
+
+      isRequestParameter('module', 'foo')->
+      checkResponseElement('h1', 'foo')
+    ;
+
+    // as of symfony 1.2
+    $browser->
+      get('/')->
+
+      with('request')->isParameter('module', 'foo')->
+      checkResponseElement('h1', 'foo')
+    ;
+
+The `with('request')` call switches the context of the fluent interface
+to the request tester object for the very next call. So, the `isParameter()`
+method is a `sfTesterRequest` method.
+
+You can also create a block of calls in which the context is the tester object:
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('request')->begin()->
+        isParameter('module', 'foo')->
+        isParameter('action', 'index')->
+      end()->
+
+      checkResponseElement('h1', 'foo')
+    ;
+
+All the method calls between `begin()` and `end()` are called against the current
+tester object.
+
+Let's see the testing methods provided by the built-in tester classes.
+
+### Request Tester
+
+The `request` tester is defined in the `sfTesterRequest` class and contains the
+following methods:
+
+ **Method**    | **Description**
+ ------------- | ---------------------------------------
+ `isParameter` | Tests a request parameter
+ `isMethod`    | Tests the request method
+ `isFormat`    | Tests the request format
+ `hasCookie`   | Tests if the request has a given cookie
+ `isCookie`    | Tests the value of a cookie
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('request')->begin()->
+        isParameter('module', 'foo')->
+        isMethod('get')->
+        isFormat('html')->
+        hasCookie('foo')->
+        isCookie('foo', 'bar')->
+      end()
+    ;
+
+### Response Tester
+
+The `response` tester is defined in the `sfTesterResponse` class and contains the
+following methods:
+
+ **Method**     | **Description**
+ -------------- | -----------------------------------------------------------
+ `isStatusCode` | Tests the response status code
+ `contains`     | Tests the response content with a simple regular expression
+ `isHeader`     | Tests the value of a given header
+ `checkElement` | Checks the value of a CSS3 selector
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('response')->begin()->
+        isStatusCode(200)->
+        contains('foo')->
+        isHeader('Content-Type', 'text/plain')->
+        checkElement('ul.foo li:last', '/foo/')->
+      end()
+    ;
+
+### View cache tester
+
+The `view cache` tester is defined in the `sfTesterViewCache` class and contains the
+following methods:
+
+ **Method**    | **Description**
+ ------------- | -------------------------------------------------------
+ `isCached`    | Checks if a page/action is in the cache
+ `isUriCached` | Checks if a specific URI (can be a partial) is in cache
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('view_cache')->begin()->
+        isCached(true)->
+        isUriCached('@sf_cache_partial?module=foo&action=_partial&sf_cache_key=some_cache_key')->
+      end()
+    ;
+
+### User tester
+
+The `user` tester is defined in the `sfTesterUser` class and contains the
+following methods:
+
+ **Method**        | **Description**
+ ----------------- | -------------------------------------
+ `isCulture`       | Tests the culture of the user
+ `isAuthenticated` | Checks that the user is authenticated
+ `hasCredential`   | Checks for a user credential
+ `isAttribute`     | Tests the value of a given attribute
+ `isFlash`         | Tests the value of a flash variable
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('user')->begin()->
+        isCulture('fr')->
+        isAuthenticated(true)->
+        hasCredential('admin')->
+        isAttribute('sfguard_user_id', '3')->
+        isFlash('notice', '/foo/')->
+      end()
+    ;
+
+### Form Tester
+
+Time to discover some new sexy testers!
+
+The `form` tester is defined in `sfTesterForm` class. It knows if a form
+has been used in the previous request, has a reference to the form object itself,
+and allows you to introspect it.
+
+ **Method**        | **Description**
+ ----------------- | ---------------------------------------------
+ `hasErrors`       | Checks if the submitted form has some error
+ `isError`         | Tests the value of an error for a given field
+ `hasGlobalError`  | Same as `isError` but for global errors
+
+The `isError()` method takes the same kind of second argument as the
+`checkResponseElement()` method.
+
+    [php]
+    $browser->
+      click('save', array(...))->
+      with('form')->begin()->
+        hasErrors()->
+        hasGlobalError('The login and password does not match.')->
+        isError('name', 'Required.')->
+        isError('name', '/Required/')->
+        isError('name', '!/Invalid/')->
+        isError('name')->
+        isError('name', false)->
+        isError('name', 1)->
+      end()
+    ;
+
+### Propel Tester
+
+Here is another great tester: the `propel` tester.
+
+It does not replace HTML response checks but is a mean to also check
+things that are not displayed in the browser but nonetheless important to test
+(for example if the `last_connection` timestamp for a user has been updated,
+or if the number of views for an article has been incremented, ...).
+
+The `propel` tester is defined in `sfTesterPropel` in the Propel plugin and must be registered
+before being used:
+
+    [php]
+    $browser->setTester('propel', 'sfTesterPropel');
+
+After the tester is registered, you can use it in your tests:
+
+    [php]
+    $browser->
+      post('/')->
+      with('propel')->begin()->
+        check('Article', array('title' => 'foo'), false)->
+        check('Article', array('title' => '!foo'), false)->
+        check('Article', array(), 4)->
+        check('Article', array('title' => '%foo%'), true)->
+        check('Article', array('title' => '!%foo%'))->
+        check('Article', $criteria)->
+      end()
+    ;
+
+The `propel` tester only provides one method: `check()`.
+This method behaves differently based on the arguments you pass to it:
+
+  * The first argument is the model class name
+  * The second one is a `Criteria` object or a simple array of conditions
+  * The third one can be:
+      * `true` to check that some objects match the conditions
+      * `false` to check that no object matches the conditions
+      * or an integer to check the number of matching objects
+
+Extend or create a tester
+-------------------------
+
+Using testers have severals advantages:
+
+  * **Isolation**:     Thanks to the decoupling of the testers, we provide
+                       many more testing methods than before.
+  * **Readability**:   Your tests are much more readable, thanks to the block concept
+                       and shorter method names.
+  * **Extensibility**: You can extend each tester with your very own methods
+                       or create your own tester class.
+
+### Extend a built-in tester
+
+If you want to add some methods to an existing tester, you need to create a class
+that inherits from the built-in tester and re-register it with your own class name:
+
+    [php]
+    class ApplicationTesterRequest extends sfTesterRequest
+    {
+      // add some tester methods
+    }
+
+    // in your functional tests
+    $browser->setTester('request', 'ApplicationTesterRequest');
+
+If you need to override a bunch of built-in testers, you can use the `setTesters` method:
+
+    [php]
+    $browser->setTesters(array(
+      'request'  => 'ApplicationTesterRequest',
+      'response' => 'ApplicationTesterResponse',
+    ));
+
+A tester method can do anything you like but must always end with the following
+code for the fluent interface to work correctly:
+
+    [php]
+    return $this->getObjectToReturn();
+
+In your method, you have access to several objects:
+
+  * `$this->browser`: The current browser object
+  * `$this->tester`:  The `lime_test` object
+
+### Create a new tester
+
+You can also create new tester class by registering it with a unique name:
+
+    [php]
+    $browser->setTester('my_tester', 'myTester');
+
+A tester class inherits from `sfTester` and must implement the following methods:
+
+  * `initialize()`: This method is called every time you are using `with()` in your tests.
+                    This is useful to get some object after the request has been sent:
+
+        [php]
+        public function initialize()
+        {
+          $this->request = $this->browser->getRequest();
+        }
+
+  * `prepare()`: This method is called just before any call to the browser object.
+                 This is useful if you need to do something just before the request
+                 is send.
+
+Be fluent
+---------
+
+When you write a lot of functional tests for a given module, it is sometimes
+useful to have some visual information about what it is being done. The new
+testers adds a new level of indentation and make tests more readable.
+
+Also, there is a new `info()` method that outputs some text to help categorize
+your tests:
+
+    [php]
+    $browser->
+      info('First scenario: Form with errors')->
+      // ... some tests
+      info('Second scenario: Valid form submission')->
+      // ... some more tests
+    ;
+
+![info in the browser](http://www.symfony-project.org/uploads/assets/functional_tests_1_2/1.png)
+
+Debugging tests
+---------------
+
+When a problem occurs in a functional test, the HTML transfered to the browser
+help diagnose the cause. As of symfony 1.2, this is quite easy to display
+the generated HTML without interrupting the fluent interface style:
+
+    [php]
+    $browser->
+      get('/a_uri_with_an_error')->
+      with('response')->debug()->
+      // some tests that won't be executed
+    ;
+
+The `debug()` method will output the response headers and content and will
+interrupt the flow of the browser.
+
+The same `debug()` method exists for the `form` tester and outputs the submitted
+values and the form errors if any:
+
+    [php]
+    $browser->
+      post('/post_to_a_form_with_some_errors')->
+      with('form')->debug()->
+      // some tests that won't be executed
+    ;
+
+![debug](http://www.symfony-project.org/uploads/assets/functional_tests_1_2/2.png)
+
+That's all for today. It has never been easier to test your symfony applications. So,
+I hope the new testing framework will convince you that it is not that hard and that it can save
+your day.
+
+As for the new [web debug toolbar](http://www.symfony-project.org/blog/2008/08/27/new-in-symfony-1-2-customize-the-web-debug-toolbar)
+panels, if you create new testers, don't hesitate to package them as a plugin.
