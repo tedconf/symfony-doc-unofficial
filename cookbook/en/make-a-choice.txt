@@ -1,0 +1,373 @@
+How to implement a choice in a form?
+====================================
+
+When displaying a form, you often want the user to make a choice amongst a list of possibilities.
+
+In HTML, a choice is represented by a `select` tag:
+
+![select tag](http://www.symfony-project.org/uploads/assets/choices/1.png)
+
+You can add a `multiple` attribute to make it accept several choices:
+
+![multiple select tag](http://www.symfony-project.org/uploads/assets/choices/2.png)
+
+The `sfWidgetFormChoice`
+------------------------
+
+But a choice can also be represented by a list of radio button (single choice) or a list of checkboxes
+(multiple choices).
+
+To unify all these possibilities, symfony 1.2 comes with a new widget called `sfWidgetFormChoice`.
+`sfWidgetFormChoice` is an **abstract widget** in the sense that it delegates the rendering to another
+widget (the **renderer** widget).
+
+Let's take a simple example to illustrate all the possible combinations.
+In a project, we have the following schema:
+
+![database schema](http://www.symfony-project.org/uploads/assets/choices/3.png)
+
+    [yml]
+    // config/schema.yml
+    propel:
+      demo_article:
+        id:           ~
+        author_id:    { type: integer, foreignReference: id, foreignTable: demo_author, onDelete: cascade, onUpdate: cascade, required: true }
+        status:       varchar(255)
+        title:        varchar(255)
+        content:      longvarchar
+        published_at: timestamp
+
+      demo_category:
+        id:          ~
+        name:        varchar(255)
+
+      demo_author:
+        id:          ~
+        name:        varchar(255)
+
+      demo_tag:
+        id:          ~
+        name:        varchar(255)
+
+      demo_tag_article:
+        tag_id:      { type: integer, primaryKey: true, foreignReference: id, foreignTable: demo_tag, onDelete: cascade, onUpdate: cascade, required: true }
+        article_id:  { type: integer, primaryKey: true, foreignReference: id, foreignTable: demo_article, onDelete: cascade, onUpdate: cascade, required: true }
+
+      demo_category_article:
+        category_id: { type: integer, primaryKey: true, foreignReference: id, foreignTable: demo_category, onDelete: cascade, onUpdate: cascade, required: true }
+        article_id:  { type: integer, primaryKey: true, foreignReference: id, foreignTable: demo_article, onDelete: cascade, onUpdate: cascade, required: true }
+
+This is a classic schema for a simple CMS. Articles have an author and can have many tags and categories.
+Each article has also a status which value can be one of: `published`, `draft`, or `deleted`. The status value is stored
+as plain text as no table has been created to store the statuses.
+
+Let's play with the `DemoArticle` model by creating a module that provides the basic CRUD operations:
+
+    $ php symfony propel:build-all
+    $ php symfony propel:generate-module frontend article DemoArticle
+
+If you navigate to the edit page, you will see something like this:
+
+![raw form](http://www.symfony-project.org/uploads/assets/choices/4.png)
+
+If you have a look at the generated form class for the `DemoArticle` model (`lib/form/base/BaseDemoArticle.class.php`),
+you will see that symfony uses `sfWidgetFormPropelChoice` for the `author_id` widget and `sfWidgetFormPropelChoiceMany`
+for the `demo_category_article_list` and `demo_tag_article_list` widgets. symfony has guessed the best
+widget to use based on the schema definition.
+
+`sfWidgetFormPropelChoice` represents a single choice widget based on a Propel object and
+`sfWidgetFormPropelChoiceMany` represents a multiple choice widget also based on a Propel object.
+
+Customizing the Form
+--------------------
+
+The first thing we can do to customize our form is to convert the `status` widget to a choice:
+
+![form with a choice for the status](http://www.symfony-project.org/uploads/assets/choices/5.png)
+
+First, we need to define the statuses in the `DemoArticlePeer` model class:
+
+    [php]
+    // lib/model/DemoArticlePeer.php
+    class DemoArticlePeer extends BaseDemoArticlePeer
+    {
+      static protected $choices = array(
+        'published' => 'published',
+        'draft'     => 'draft',
+        'deleted'   => 'deleted'
+      );
+
+      static public function getStatusChoices()
+      {
+        return self::$choices;
+      }
+    }
+
+Then, edit the `DemoArticleForm` class to change the widget and the validator associated with the `status`
+field:
+
+    [php]
+    // lib/form/DemoArticleForm.class.php
+    class DemoArticleForm extends BaseDemoArticleForm
+    {
+      public function configure()
+      {
+        $this->widgetSchema['status'] = new sfWidgetFormChoice(array(
+          'choices' => DemoArticlePeer::getStatusChoices()
+        ));
+
+        $this->validatorSchema['status'] = new sfValidatorChoice(array(
+          'choices' => array_keys(DemoArticlePeer::getStatusChoices())
+        ));
+      }
+    }
+
+The `sfWidgetFormChoice` takes an array of choices to use in the `select` tag as the `choices` option.
+
+The `sfValidatorChoice` also takes a `choices` option which is the valid
+values for the `status` column (the keys of the `DemoArticlePeer::getStatusChoices()` array).
+
+Playing with the Choices
+------------------------
+
+### Radio button list
+
+Time to play a bit with the `sfWidgetFormChoice` widget!
+As you can see on the previous screenshot, the status is now represented by
+a `select` tag. But as the number of values for status is quite low, it would
+have been better to display the statuses as a list of radio buttons:
+
+![form with a radio list for status](http://www.symfony-project.org/uploads/assets/choices/6.png)
+
+That's quite easy to achieve. The `sfWidgetFormChoice` takes an `expanded` option that changes
+the output from a `select` tag to a list of radio buttons:
+
+    [php]
+    $this->widgetSchema['status'] = new sfWidgetFormChoice(array(
+      'choices'  => DemoArticlePeer::getStatusChoices(),
+      'expanded' => true,
+    ));
+
+### Checkboxes list
+
+The list of categories is also quite small, so it would be better to display them as a list of checkboxes:
+
+![form with a checkbox list for categories](http://www.symfony-project.org/uploads/assets/choices/7.png)
+
+The `expanded` option we have used for single choices can also be used for multiple choice widgets.
+As the widget has been generated in the base form class and don't need to be changed,
+we can just set the `expanded` option to `true`:
+
+    [php]
+    $this->widgetSchema['demo_category_article_list']->setOption('expanded', true);
+
+### Summary
+
+The following table summarizes the different configuration of `sfWidgetFormChoice` and the renderer widget
+used by symfony:
+
+ **`sfWidgetFormChoice`** | `expanded` is `false`    | `expanded` is `true`
+ ------------------------ | ------------------------ | ----------------------------
+ `multiple` is `false`    | `sfWidgetFormSelect`     | `sfWidgetFormSelectRadio`
+ `multiple` is `true`     | `sfWidgetFormSelectMany` | `sfWidgetFormSelectCheckbox`
+
+The same table with some screenshots:
+
+ **`sfWidgetFormChoice`** | `expanded` is `false`                                                                  | `expanded` is `true`
+ ------------------------ | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------
+ `multiple` is `false`    | ![single not expanded](http://www.symfony-project.org/uploads/assets/choices/8.png)    | ![single expanded](http://www.symfony-project.org/uploads/assets/choices/9.png)
+ `multiple` is `true`     | ![multiple not expanded](http://www.symfony-project.org/uploads/assets/choices/10.png) | ![multiple expanded](http://www.symfony-project.org/uploads/assets/choices/11.png)
+
+Group your Choices
+------------------
+
+One of the less-known possibility of the `select` tag is the way you can group your choices
+with the `optgroup` feature:
+
+![optgroup feature](http://www.symfony-project.org/uploads/assets/choices/17.png)
+
+The `sfWidgetFormChoice` family widgets has built-in support for groups. You just need to
+pass an array of arrays for the `choices` options:
+
+    [php]
+    $choices = array(
+      'Europe'  => array('France' => 'France', 'Spain' => 'Spain', 'Italy' => 'Italy'),
+      'America' => array('USA' => 'USA', 'Canada' => 'Canada', 'Brazil' => 'Brazil'),
+    );
+    
+    $this->widgetSchema['country'] = new sfWidgetFormChoice(array('choices' => $choices));
+
+You can of course expand it to a list of radio buttons:
+
+    [php]
+    $this->widgetSchema['country'] = new sfWidgetFormChoice(array(
+      'choices'  => $choices,
+      'expanded' => true,
+    ));
+
+![expanded optgroup feature](http://www.symfony-project.org/uploads/assets/choices/18.png)
+
+You can also customize the layout used by the renderer widget:
+
+    [php]
+    $this->widgetSchema['country'] = new sfWidgetFormChoice(array(
+      'choices'  => $choices,
+      'expanded' => true,
+      'renderer_options' => array('template' => '<strong>%group%</strong> %options%'),
+    ));
+
+![expanded optgroup feature customized](http://www.symfony-project.org/uploads/assets/choices/19.png)
+
+And yes, it also works with the `multiple` option:
+
+![multiple optgroup feature](http://www.symfony-project.org/uploads/assets/choices/20.png)
+
+![multiple expanded optgroup feature](http://www.symfony-project.org/uploads/assets/choices/21.png)
+
+More with JavaScript
+--------------------
+
+That was easy enough. Let's add some JavaScript to the mix to explore more possibilities.
+
+### Double list
+
+If our CMS is used extensively, we will have more and more tags, and it will
+become more and more difficult to spot the tags associated with the current article.
+For such situations, a double list widget is one of the best solution:
+
+![double list for tags](http://www.symfony-project.org/uploads/assets/choices/12.png)
+
+Until now, symfony has chosen the best widget to use based on some simple configuration (`multiple` and `expanded`).
+But the `sfWidgetFormChoice` is not able to render our `select` tag widget as a double list out of the box.
+
+Luckily enough, we know that `sfWidgetFormChoice` delegates the rendering to another widget.
+Changing the rendering widget is as simple as modifying the `renderer_class` option.
+
+If you install the [`sfFormExtraPlugin`](http://www.symfony-project.org/plugins/sfFormExtraPlugin),
+you will find a lot of interesting widgets and validators that are quite useful but did not make
+it into the core because they have third-party dependencies.
+
+The `sfWidgetFormSelectDoubleList` widget is one of them:
+
+    [php]
+    $this->widgetSchema['demo_tag_article_list']->setOption('renderer_class', 'sfWidgetFormSelectDoubleList');
+
+If you refresh the page now, it won't work as the widget relies on some JavaScript to work correctly.
+The widget API documentation contains all you need to know to configure it properly:
+
+    [php]
+    // apps/frontend/modules/article/templates/_form.php
+    <?php use_javascript('/sfFormExtraPlugin/js/double_list.js') ?>
+
+    <form action="<?php echo url_for('@article_update') ?>" onsubmit="double_list_submit(this, 'double_list_select'); return true;">
+      <table>
+        <?php echo $form ?>
+
+        <!-- ... -->
+      </table>
+    </form>
+
+### Autocomplete
+
+We haven't played with the `author_id` field yet. Let's imagine that we have a lot of authors for our CMS, really a lot.
+It is not very easy to find something in a very long list of names in a drop-down select tag. So, let's convert this
+to an autocomplete widget.
+
+![autocomplete for authors](http://www.symfony-project.org/uploads/assets/choices/13.png)
+
+![autocomplete for authors](http://www.symfony-project.org/uploads/assets/choices/14.png)
+
+![autocomplete for authors](http://www.symfony-project.org/uploads/assets/choices/15.png)
+
+That's impressive, isn't it? To make it work, we will have to work a bit more than before.
+
+`sfFormExtraPlugin` contains two autocomplete widgets based on the JQuery library:
+
+  * `sfWidgetFormJQueryAutocompleter`: Can be used for any autocomplete task
+  * `sfWidgetFormPropelJQueryAutocompleter`: Is optimized for Propel related autocompleter
+
+In our situation, we will use the Propel based one:
+
+    [php]
+    // lib/form/DemoArticleForm.class.php
+    $this->widgetSchema['author_id']->setOption('renderer_class', 'sfWidgetFormPropelJQueryAutocompleter');
+    $this->widgetSchema['author_id']->setOption('renderer_options', array(
+      'model' => 'DemoAuthor',
+      'url'   => $this->getOption('url'),
+    ));
+
+We have passed some options to the widget by setting `renderer_options`. In these options, you may have
+noticed the `url` is set to a `url` form option (`$this->getOption('url')`).
+When you create a form instance, the first constructor argument is the default values,
+and the second one is an array of options:
+
+    [php]
+    public function executeEdit($request)
+    {
+      // ...
+
+      $this->form = new DemoArticleForm($article, array('url' => $this->getController()->genUrl('article/ajax')));
+
+      // ...
+    }
+
+We now need to create the `article/ajax` action. When the widget calls this action, it passes several
+request parameters:
+
+  * `q`:     The string entered by the user
+  * `limit`: The maximum number of items to return
+
+Here is the code:
+
+    [php]
+    // apps/frontend/modules/article/actions/actions.class.php
+    public function executeAjax($request)
+    {
+      $this->getResponse()->setContentType('application/json');
+
+      $authors = DemoAuthorPeer::retrieveForSelect($request->getParameter('q'), $request->getParameter('limit'));
+
+      return $this->renderText(json_encode($authors));
+    }
+
+    // lib/model/DemoAuthorPeer.php
+    class DemoAuthorPeer extends BaseDemoAuthorPeer
+    {
+      static public function retrieveForSelect($q, $limit)
+      {
+        $criteria = new Criteria();
+        $criteria->add(DemoAuthorPeer::NAME, '%'.$q.'%', Criteria::LIKE);
+        $criteria->addAscendingOrderByColumn(DemoAuthorPeer::NAME);
+        $criteria->setLimit($limit);
+
+        $authors = array();
+        foreach (DemoAuthorPeer::doSelect($criteria) as $author)
+        {
+          $authors[$author->getId()] = (string) $author;
+        }
+
+        return $authors;
+      }
+    }
+
+Now, as for every JavaScript widget, we also need to add some files to the form template to make it work properly:
+
+    [php]
+    // apps/frontend/modules/article/templates/_form.php
+    <?php use_javascript('/sfFormExtraPlugin/js/jquery.autocompleter.js') ?>
+    <?php use_stylesheet('/sfFormExtraPlugin/css/jquery.autocompleter.css') ?>
+
+    <!-- ... -->
+
+We are done. We now have an autocomplete widget which is able to display the author names, and submit
+the author id to the form. And thanks to the validator, we are sure that only valid ids are submitted
+and saved to the database.
+
+Final Form
+----------
+
+Here is the final form which shows all the different way to ask the user for a choice:
+
+![all possibilities](http://www.symfony-project.org/uploads/assets/choices/16.png)
+
+That's a lot of flexibility for just one widget!
