@@ -11,13 +11,13 @@ So, you want to give it a go? Let's build together a fully-functional web app in
 one hour. You name it. A bookseller application? Okay, another idea. A blog!
 That's a good one. Let's go.
 
-We'll assume that you are working with Apache installed and running on your
+This tutorial assumes that you are working with Apache installed and running on your
 local machine. You will also need PHP 5.1.3 or newer.
 
 Install symfony and initialize the project
 ------------------------------------------
 
-To go fast, we will use the symfony sandbox. This is an empty symfony project where all
+To go fast, the symfony sandbox will be used. This is an empty symfony project where all
 the required libraries are already included,
 and where the basic configuration is already done. The great advantage of the sandbox
 over other types of installation is that you can start experimenting with symfony
@@ -26,7 +26,7 @@ immediately.
 Get it here: [sf_sandbox_1_1.tgz](http://www.symfony-project.org/get/sf_sandbox_1_1.tgz)
 or here: [sf_sandbox_1_1.zip](http://www.symfony-project.org/get/sf_sandbox_1_1.zip),
 and unpack it in your root web directory. On Linux systems, it is recommended to keep the
-permissions as they are in the tar file (for example by using -p with tar command).
+permissions as they are in the tar file (for example by using `-p` with `tar` command).
 Refer to the included `README` file for more information. The resulting file structure
 should look like this:
 
@@ -70,7 +70,7 @@ So, the blog will handle posts, and you will enable comments on them. Create a
     propel:
       blog_post:
         id:           ~
-        title:        varchar(255)
+        title:        { varchar(255), required: true }
         excerpt:      longvarchar
         body:         longvarchar
         created_at:   ~
@@ -90,7 +90,7 @@ You will find more about YAML and the symfony configuration in the
 [configuration chapter](http://www.symfony-project.org/book/1_1/05-Configuring-Symfony).
 
 This schema describes the structure of two of the tables needed for the blog.
-`Post` and `Comment` are the names of the related classes to be generated.
+`blog_post` and `blog_comment` are the names of the related classes to be generated.
 Save the file, open a command line, browse to the `sf_sandbox/` directory and type:
 
     $ php symfony propel:build-model
@@ -146,13 +146,16 @@ To build the table structure based on the the SQL file, type:
 >The `propel:insert-sql` command removes existing tables before adding the ones
 >from your `lib.model.schema.sql`, and there are no tables to remove at the moment.
 
-As we want to be able to create and edit the blog posts and comments, we also need to
-generate some forms based on our model schema:
+As you want to be able to create and edit blog posts and comments, you also need to
+generate some forms based on the model schema:
 
     $ php symfony propel:build-forms
 
 This task generates classes in the `sf_sandbox/lib/form/` directory.
-These classes are used to manage our model objects as forms.
+These classes are used to manage your model objects as forms.
+
+>**Tip**
+>All the above commands can be done in a single one by using `propel:build-all`.
 
 Create the application
 ----------------------
@@ -168,7 +171,7 @@ interface automatically:
     $ php symfony cache:clear
 
 >**Tip**
->When using the `propel:generate-crud` task, we have used the `--non-verbose-templates`
+>When using the `propel:generate-crud` task, you have used the `--non-verbose-templates`
 >and `--non-atomic-actions` options. If you want to learn the meaning of the available
 >arguments and options for a given task, you can use the special `help` task:
 >
@@ -200,10 +203,10 @@ Lastly, add the following CSS to `sf_sandbox\web\css\main.css`:
 
     body, td
     {
-        font-family: Arial, Verdana, sans-serif;
-        font-size: 12px;
+      font-family: Arial, Verdana, sans-serif;
+      font-size: 12px;
     }
-        
+
     td { margin: 4px; padding: 4px; }
 
 Now, feel free to create some new posts to make the blog look less empty.
@@ -265,17 +268,19 @@ one hour is rather a short amount of time!
 
 While you are at it, you can change the title of your pages.
 Edit the view configuration file of the application (`sf_sandbox/apps/frontend/config/view.yml`),
-locate the line showing the `title` key and change it to:
+locate the line showing the `title` key and change it something appropriate. Note that
+several lines here are commented out with a hash symbol - you can uncomment these if
+you wish.
 
     default:
       http_metas:
         content-type: text/html
-  
+
       metas:
         title:        The best blog ever
-        description:  symfony project
-        keywords:     symfony, project
-        language:     en
+        #description:  symfony project
+        #keywords:     symfony, project
+        #language:     en
         robots:       index, follow
 
 The home page itself needs to be changed. It uses the default template of the
@@ -334,7 +339,7 @@ That was fast, wasn't it? Now it is time to mix the `comment` module into the
 First, you need to make the post comments available for the post display template.
 In symfony, this kind of logic is kept in **actions**. Edit the actions file
 `sf_sandbox/apps/frontend/modules/post/actions/actions.class.php` and change
-the `executeShow()` method by adding the 4 last lines:
+the `executeShow()` method by adding the four last lines:
 
     [php]
     public function executeShow($request)
@@ -350,9 +355,7 @@ the `executeShow()` method by adding the 4 last lines:
 
 The `Criteria` and `-Peer` objects are part of Propel's object-relational mapping.
 Basically, these four lines will handle a SQL query to the `blog_comment` table to get
-the comments related to the current `blog_post` (the one designated by the URL parameter `id`).
-The `$this->comments` line in the action will give access to a `$comments` variable
-in the corresponding template. Now, modify the post display template
+the comments related to the current `blog_post`. Now, modify the post display template
 `sf_sandbox/apps/frontend/modules/post/templates/showSuccess.php` by adding at the end:
 
     [php]
@@ -370,9 +373,8 @@ in the corresponding template. Now, modify the post display template
       <?php endforeach; ?>
     <?php endif; ?>
 
-This page uses new PHP functions (`format_date()` and `simple_format_text()`)
-provided by symfony, and called 'helpers' because they do some tasks for you
-that would normally require more time and code. Create a new comment for your
+This page uses new PHP functions that are called 'helpers', because they do some tasks
+for you that would normally require more time and code. Create a new comment for your
 first post, then check again the first post, either by clicking on its number
 in the list, or by typing directly:
 
@@ -388,137 +390,52 @@ linking an action to a template.
 Add a record relative to another table
 --------------------------------------
 
-Currently we can't add comments to posts directly; if we're editing a post, we
-have to go to the comments editing section, create a new one, then select the post we
-want to comment on using the drop-down menu. It would be better if there was a link
-on each post editing page to go straight to the comment editing facility.
+Currently you can't add comments to posts directly; if you edit a post, you
+have to go to the comments editing section, create a new one, then select the post you
+want to comment on using the drop-down menu. The screen looks like this:
 
-So let's arrange that first. In the `modules/post/templates/showSuccess.php` template,
-add this line at the bottom:
+********* SCREEN REQUIRED HERE ****************
+
+It would be better if there was a link on each post editing page to go straight to
+the comment editing facility, so let's arrange that first. In the
+`modules/post/templates/showSuccess.php` template, add this line at the bottom:
 
     [php]
     <?php echo link_to('Add a comment', 'comment/edit?post_id='.$blog_post->getId()) ?>
 
-The `link_to()` function (which we call a "helper") creates a hyperlink pointing to the
+The `link_to()` helper creates a hyperlink pointing to the
 `edit` action of the `comment` module, so you can add a comment directly from the post
 details page. At the moment, however, the comments edit page still offers a form element
-to select which post to relate a comment to. What we want is for that field to be
-replaced by a hidden field (containg the post primary key) if the comments edit page
+to select which post to relate a comment to. This would be best
+replaced by a hidden field (containing the post primary key) if the comments edit page
 URL is called specifying that key.
 
-Before we can do that, we should say a few words about how forms work in symfony 1.1.
-Rather than specifying all the information about the various form elements (input
-boxes, tickable boxes, select menus, radio buttons and so forth) in an HTML template,
-some of this detail is delegated to a "form class". This encapsulates all the
-information required to render a basic version of an HTML form, making them (or at
-least a prototype version) very easy to get working quickly.
-
-As you would expect, form classes are used to create form objects. In common with
-standard object-orientation principles, when an object is instantiated, a constructor
-is called. Therefore, when we create the comments form object, we can read the blog post
-it is to relate to (if any) and pass that to the constructor to determine whether to
-swap the post menu for a hidden field.
-
-In fact, the CRUD generator we used previously to create our post and comment systems
-makes use of a form class to define the form required in each case. Let's open up
-`sf_sandbox/lib/form/base/BaseBlogCommentForm.class.php` together to see how the form
-is defined. The most important method is setup(), which contains (amongst other items)
-the following code:
-
-    [php]
-    public function setup()
-    {
-      $this->setWidgets(array(
-        'id'           => new sfWidgetFormInputHidden(),
-        'blog_post_id' => new sfWidgetFormPropelSelect(array('model' => 'BlogPost', 'add_empty' => true)),
-        'author'       => new sfWidgetFormInput(),
-        'email'        => new sfWidgetFormInput(),
-        'body'         => new sfWidgetFormTextarea(),
-        'created_at'   => new sfWidgetFormDateTime(),
-      ));
-
-      $this->setValidators(array(
-        'id'           => new sfValidatorPropelChoice(array('model' => 'BlogComment', 'column' => 'id', 'required' => false)),
-        'blog_post_id' => new sfValidatorPropelChoice(array('model' => 'BlogPost', 'column' => 'id', 'required' => false)),
-        'author'       => new sfValidatorString(array('max_length' => 255, 'required' => false)),
-        'email'        => new sfValidatorString(array('max_length' => 255, 'required' => false)),
-        'body'         => new sfValidatorString(array('required' => false)),
-        'created_at'   => new sfValidatorDateTime(array('required' => false)),
-      ));
-
-      // ...
-    }
-
-There are two things being specified here: first are the "widgets", which are the HTML
-elements used in the form, and second, validators, which are used to check user input
-against a set of correctness checks. Symfony 1.0 users will notice a change of approach
-here: form elements were previously defined in the template, and validators were
-defined in YAML files (and sometimes also programmatically in actions).
-
-Now that we have examined the base definition of the comments form, we can make some
-changes. Changes however are not best made in the base form, so close that file and open
-`sf_sandbox/lib/form/BlogCommentForm.class.php`. This inherits from
-BaseBlogCommentForm, which means we can take advantage of that definition and add our
-own modifications as required.
-
-By default, the BlogCommentForm class has an empty configure method. We want to add
-a constructor that accepts both the blog comment object to edit (this is a Propel
-database object) and a reference to the post to attach it to. Then, when the configure()
-method is called, we need to change the blog post element from a menu (as defined in the
-base class) to a hidden field containing an automatically-filled value. Lets do that
-now; change the code in this file to the following:
+In symfony, forms are managed by classes. So, let's edit the `BlogCommentForm` class to
+make our changes. The file is located under the `sf_sandbox/lib/form/` directory:
 
     [php]
     class BlogCommentForm extends BaseBlogCommentForm
     {
-      // Place to store related post PK class-wide
-      private $idPost;
-
       /**
-       * Constructor method for this class
-       */
-      public function __construct($comment, $idPost)
-      {
-        // Save PK for configure action
-        $this->idPost = $idPost;
-
-        // Pass object to ancestor class sfPropelForm to allow editing
-        parent::__construct($comment);
-      }
-
-      /**
-       * Configure method, called automatically by ancestor class
+       * Configure method, called when the form is instantiated
        */
       public function configure()
       {
-      	// If there is a specified related post, swap menu for hidden field
-  	    if ($this->idPost)
-  	    {
-          $this->widgetSchema[$name = 'blog_post_id'] = new sfWidgetFormInputHidden();
-  	      $this->setDefault($name, $this->idPost);
-  	    }
-      }  
+        $this->widgetSchema['blog_post_id'] = new sfWidgetFormInputHidden();
+      }
     }
 
-To use this new class, we need to find the place where this form is created, and
-add the post primary key as a new parameter. This is stored in
-`sf_sandbox/apps/frontend/modules/comment/actions/actions.class.php`. Find the code in
-the executeEdit method which reads thus:
+>**Note**: For more details on the form framework, you are advised to read the
+[Forms Book](http://www.symfony-project.org/book/forms/1_1/en/).
 
-    [php]
-    $this->form = new BlogCommentForm(BlogCommentPeer::retrieveByPk($request->getParameter('id')));
+After you have made this change, you will now be able to add a comment directly to a
+post without having to explicitly specify the post to attach it to:
 
-Change that to the following:
-
-    [php]
-    $this->form = new BlogCommentForm(BlogCommentPeer::retrieveByPk($request->getParameter('id')), $request->getParameter('post_id'));
-
-After you have made these changes, you will now be able to add a comment directly to a
-post without having to explicitly specify the post to attach it to.
+*********** NEW SCREENSHOT MINUS DROPDOWN *************
 
 Next, after adding a comment, we want the user to come back to the post it relates to,
 rather that remaining on the comment editing page. To accomplish this, we need to edit
-executeEdit again. Find the following code:
+`executeEdit` method. Find the following code in `sf_sandbox/apps/frontend/modules/post/actions/actions.class.php`:
 
     [php]
     if ($request->isMethod('post'))
@@ -536,12 +453,12 @@ And change the redirect line so it reads thus:
 
     [php]
     $this->redirect('post/show?id='.$blog_comment->getBlogPostId());
-    
+
 This will ensure that when a comment is saved, the user is returned to the post that
 the comment is related to. There are two things here that are worthy of note: firstly,
 the save is achieved simply by calling the save method on the form object (this is
-possible as a result of the form being a child of sfFormPropel, which is a special
-symfony form class that understands database tables). Secondly, we redirect immediately
+because the form is associated with the Propel model and therefor knows how to serialize
+the object back to the database). Secondly, we redirect immediately
 after the save, so that if the page is subsequently refreshed, the user is not asked if
 they wish to repeat the POST action again.
 
@@ -556,42 +473,26 @@ Form Validation
 Visitors can enter comments, but what if they submit the form without any data
 in it, or data that is obviously wrong? You would end up with a database containing
 invalid rows. To avoid that, we need to set up some validation rules to specify what
-data is allowed. You will recall that some default rules were set up for us already
-during the CRUD build process, in the BaseBlogCommentForm class. We will override some
-of these rules now.
+data is allowed.
 
-Again, our changes go in BlogCommentForm.class.php, and not in the base class. So,
-open that file, and add in the following PHP code at the end of the configure() method:
+When symfony has created the form classes for us, if has generated the form elements
+to render on the screen, but it has also added some default validation rules by introspecting
+the schema. As the `title` is required in the `blog_post` table, you won't be able to
+submit a form without a title. You also won't be able to submit a post with a title
+longer than 255 character.
+
+Let's override some of these rules now in the `BlogCommentForm` class.
+So, open the file, and add in the following PHP code at the end of the configure() method:
 
     [php]
-  	$this->validatorSchema['blog_post_id'] = new sfValidatorPropelChoice(
-      array('model' => 'BlogPost', 'column' => 'id', 'required' => true),
-      array('required' => 'This comment must have an associated post'));
-    $this->validatorSchema['author'] = new sfValidatorString(
-      array('required' => true),
-      array('required' => 'The author field cannot be left blank'));
     $this->validatorSchema['email'] = new sfValidatorEmail(
       array('required' => false),
       array('invalid' => 'The email address is not valid'));
-    $this->validatorSchema['body'] = new sfValidatorString(
-      array('required' => true),
-      array('required' => 'The body field cannot be left blank'));
 
-Each of these rows overwrites the base validator for the specified form element name
-&mdash; the default definitions for 'blog_post_id', 'author', 'email' and 'body' are
-effectively deleted. It is worth bearing in mind that we could equally have used the
-syntax that was used in the base class &mdash; the setValidators() method &mdash; but
-that method requires all validators to be specified. By doing it this alternative way,
-we have avoided duplicating a little code.
+By redefining the validator for the `email` column, we have overridden the default behavior.
 
-The syntax of the validators themselves is fairly simple. As you can see, the first
-array parameter contains a number of options, such as whether the parameter is required,
-and the second array parameter contains message(s) to use if the validation fails. If
-an error message is not specified, then symfony will even output a simple default
-message instead.
-
-Once these rules are in place, try saving a comment without an author name, a bad email
-address, or no body text - you now have a robust form! You will notice a number of
+Once this new rule is in place, try saving a comment with a bad email
+address - you now have a robust form! You will notice a number of
 things: first of all, where the form contains data, that data will automatically be
 preserved during the form submission. This saves the user having to type it back in
 (and normally is something in that the programmer has to arrange manually). Also, errors
@@ -603,14 +504,14 @@ uses the following action code, which you edited earlier in
 `/sf_sandbox/apps/frontend/modules/comment/actions/actions.class.php`:
 
     [php]
-    $this->form = new BlogCommentForm(BlogCommentPeer::retrieveByPk($request->getParameter('id')), $request->getParameter('post_id'));
+    $this->form = new BlogCommentForm(BlogCommentPeer::retrieveByPk($request->getParameter('id')));
 
     if ($request->isMethod('post'))
     {
       $this->form->bind($request->getParameter('blog_comment'));
       if ($this->form->isValid())
       {
-      	$blog_comment = $this->form->save();
+        $blog_comment = $this->form->save();
 
         $this->redirect('post/show?id='.$blog_comment->getBlogPostId());
       }
@@ -618,15 +519,15 @@ uses the following action code, which you edited earlier in
 
 After the form object is instantiated, the following happens:
 
-*   The code checks that the HTTP method is a POST operation
-*   The parameter array 'blog_comment' is retrieved. The getParameter() method detects
+ * The code checks that the HTTP method is a POST
+ * The parameter array `blog_comment` is retrieved. The `getParameter()` method detects
 that this name is an array of values in the form, not a single value, and returns them
-as an associative array (e.g. form element 'blog_comment[author]' is returned in an
-array having a key of 'author')
-*   This associative array is then fed into the form using a process called *binding*,
+as an associative array (e.g. form element `blog_comment[author]` is returned in an
+array having a key of `author`)
+ * This associative array is then fed into the form using a process called **binding**,
 in which the values are used to fill form elements in the form object. After this, the
 values are determined to have either passed or failed the validation checks
-*   Only if the form is valid does the save go ahead, after which the page redirects
+ * Only if the form is valid does the save go ahead, after which the page redirects
 immediately to the show action.
 
 ![Form validation](/images/tutorials/first_form_validation.gif)
@@ -638,11 +539,11 @@ Change the URL format
 ---------------------
 
 Did you notice the way the URLs are rendered? You can make them more user and
-search engine-friendly. Let's use the post title as an URL for posts.
+search engine-friendly. Let's use the post title as a URL for posts.
 
 The problem is that post titles can contain special characters like spaces.
 If you just escape them, the URL will contain some ugly `%20` strings,
-so we will extend the model to add a new method to the `BlogPost` object
+so the model needs to be extended with a new method in the `BlogPost` object,
 to get a clean, stripped title. To do that, edit the file `BlogPost.php` located
 in the `sf_sandbox/lib/model/` directory, and add the following method:
 
@@ -697,7 +598,7 @@ to this, which uses a named rule we will create in a second:
     [php]
     <td><?php echo link_to($blog_post->getTitle(), '@post?title='.$blog_post->getStrippedTitle()) ?></td>
 
-Just one more step: Edit the `routing.yml` located in the
+Just one more step: edit the `routing.yml` located in the
 `sf_sandbox/apps/frontend/config/` directory and add these rules at the top:
 
     list_of_posts:
@@ -710,7 +611,7 @@ Just one more step: Edit the `routing.yml` located in the
 
 Now navigate again in your application to see your new URLs in action. If you get an
 error, it may be because the routing cache needs to be cleared. To do that, type the
-following at the command line while in your sf_sandbox folder:
+following at the command line while in your `sf_sandbox` folder:
 
     $ php symfony cc
 
@@ -731,21 +632,21 @@ In the template `modules/post/templates/showSuccess.php`, get rid of the
     <a href="<?php echo url_for('post/edit?id='.$blog_post->getId()) ?>">Edit</a>
     &nbsp;
 
-Do the same for the `modules/post/templates/listSuccess.php` template and remove:
+Do the same for the `modules/post/templates/indexSuccess.php` template and remove:
 
     <a href="<?php echo url_for('post/edit') ?>">Create</a>
 
-You also have to remove the following methods from `modules/post/actions/actions.class.php`:
+You should also remove the following methods from `modules/post/actions/actions.class.php`:
 
-    * executeEdit
-    * executeDelete
+ * `executeEdit`
+ * `executeDelete`
 
-This means that readers cannot post anymore, which is what we want.
+This means that readers cannot post anymore, which is what is required.
 
 Generation of the backend
 -------------------------
 
-For you to write posts, let's create a backend application by typing in the
+To allow you to write posts, let's create a backend application by typing in the
 command line (still from the `sf_sandbox` project directory):
 
     $ php symfony generate:app backend
@@ -777,7 +678,7 @@ You can access your new back-office application in the development environment b
 The great advantage of the generated admin is that you can easily customize it by
 editing a configuration file.
 
-Change the `backend/modules/post/config/generator.yml` to:
+Change the `sf_sandbox/apps/backend/modules/post/config/generator.yml` to:
 
     generator:
       class:              sfPropelAdminGenerator
@@ -825,182 +726,89 @@ Restrict access to the backend
 ------------------------------
 
 Currently the backend application can be accessed by everybody. We therefore need to
-add some access restrictions. In `apps/backend/modules/post/config/`, add a
-file called `security.yml` with the following content:
+add some access restrictions. In `apps/backend/config/`, edit the file called
+`security.yml` and reset the content to:
 
     all:
       is_secure: on
 
-Repeat this operation for the `comment` module. Now you can no longer access these
-modules, unless you are logged in. However, currently the login action doesn't
-exist! Of course, we can easily add it. To do so, create the `security` module
-skeleton:
+Now you can no longer access these modules, unless you are logged in. However,
+currently the login action doesn't exist! Of course, we can easily add it.
+To do so, let's install a suitable plugin from the symfony website - sfGuardPlugin.
+Type the following at the command line:
 
-    $ php symfony generate:module backend security
+    $ php symfony plugin:install sfGuardPlugin
 
-This new module will be used to handle the login form. Rather than generate the form
-automatically, as we did with posts and comments, we will create this manually. To do
-this, create a new file in `/sf_sandbox/lib/form/LoginForm.class.php` and enter the
-following code:
+This will download the plugin from the symfony plugin repository. At this point the
+command line should give you an indication that the installation was successful:
 
-    [php]
-    class LoginForm extends sfForm
-    {
-      private $accounts;
+    $ php symfony plugin:install sfGuardPlugin
+    >> plugin    installing plugin "sfGuardPlugin"
+    >> sfPearFrontendPlugin Attempting to discover channel "pear.symfony-project.com"...
+    >> sfPearFrontendPlugin downloading channel.xml ...
+    >> sfPearFrontendPlugin Starting to download channel.xml (663 bytes)
+    >> sfPearFrontendPlugin .
+    >> sfPearFrontendPlugin ...done: 663 bytes
+    >> sfPearFrontendPlugin Auto-discovered channel "pear.symfony-project.com", alias
+    >> sfPearFrontendPlugin "symfony", adding to registry
+    >> sfPearFrontendPlugin Attempting to discover channel
+    >> sfPearFrontendPlugin "plugins.symfony-project.org"...
+    >> sfPearFrontendPlugin downloading channel.xml ...
+    >> sfPearFrontendPlugin Starting to download channel.xml (639 bytes)
+    >> sfPearFrontendPlugin ...done: 639 bytes
+    >> sfPearFrontendPlugin Auto-discovered channel "plugins.symfony-project.org", alias
+    >> sfPearFrontendPlugin "symfony-plugins", adding to registry
+    >> sfPearFrontendPlugin downloading sfGuardPlugin-2.2.0.tgz ...
+    >> sfPearFrontendPlugin Starting to download sfGuardPlugin-2.2.0.tgz (18,589 bytes)
+    >> sfPearFrontendPlugin ...done: 18,589 bytes
+    >> sfSymfonyPluginManager Installation successful for plugin "sfGuardPlugin"
 
-      /**
-       * Associative array of users => passwords is passed to the form
-       */
-      public function __construct($accounts)
-      {
-        $this->accounts = $accounts;
-    
-        parent::__construct();
-      }
-    
-      /**
-       * Called by symfony to configure the form elements and validators
-       */
-      public function setup()
-      {
-        $this->setWidgets(array(
-          'username' => new sfWidgetFormInput(),
-          'password' => new sfWidgetFormInputPassword(),
-        ));
-    
-        $this->setValidators(array(
-          'username' => new sfValidatorString(array('required' => true), array('required' => 'A username is required')),
-          'password' => new sfValidatorString(array('required' => true), array('required' => 'A password is required')),
-        ));
-    
-        // We also want to check the password
-        $this->validatorSchema->setPostValidator(new sfValidatorCallback(array('callback' => array($this, 'checkPassword'))));
+Next, the plugin needs to be enabled. Edit `sf_sandbox/apps/backend/config/settings.yml`
+to enable the login system, as follows. Uncomment the `all:` key and add the following:
 
-        $this->widgetSchema->setNameFormat('login[%s]');
-            
-        parent::setup();
-      }
+    # (Some stuff here)
+    all:
+      .actions:
+        login_module:    sfGuardAuth   # To be called when a non-authenticated user
+        login_action:    signin     # Tries to access a secure page
 
-       /**
-       * Callback function that lets us create our own customised validator
-       */    
-      public function checkPassword($validator, $values)
-      {
-      	// Get the values we need
-        $username = $values['username'];
-        $password = $values['password'];
-    
-        // Only validate if a username and password have been supplied
-        if ($username && $password)
-        {
-          if (!array_key_exists($username, $this->accounts) || $this->accounts[$username] != $password)
-          {
-      	    $error = new sfValidatorError($validator, 'Password wrong - try again');
-    
-            // Bind the error to the password field
-            throw new sfValidatorErrorSchema($validator, array('password' => $error));
-          }
-        }
+        secure_module:   sfGuardAuth   # To be called when a user doesn't have
+        secure_action:   secure    # The credentials required for an action
 
-        // Note that we can clean some values here if we wish
-        return $values;
-      }
-    }
+      .settings
+        enabled_modules: [default, sfGuardAuth, sfGuardGroup, sfGuardPermission, sfGuardUser]
 
-After adding the class, clear your cache again (`php symfony cc`), so symfony rescans
-its lib folders for classes it 'knows' about.
-
-Okay, so let's look at this code section by section. Firstly, when this class is
-instantiated, we have to pass to the constructor an associated array of users and
-passwords. This is then saved in the object for later reference. Of course in a real
-system this would not be necessary, since we'd just query a user table in a database
-instead, or call some kind of authentication service.
-
-In the same way as the CRUD-generated forms, we have a setup() method, which is called
-by symfony automatically. This creates the necessary elements in the form (username and
-password) and sets up some basic validators. Most of this is fairly self-explanatory:
-the elements are set to have an appropriate type (input box and password box
-respectively) and both require some input to validate ('required' => true).
-
-The last validator, which checks the password, is worth some extra explanation.
-Firstly, rather than using a standard validator, it uses a "callback" validator, which
-allows the programmer the flexibility of defining their own validation test. Secondly,
-in our example we have called this validator as part of the "post validator" sequence,
-which is called once all the individual element validators have been executed. This is
-useful as at this later stage, we get access to cleaned copies of all the values in
-the form.
-
-We can also see from the code that the password will only be checked if the username
-and password have been supplied: if they are not, the form will be invalid anyway
-from the 'required' rules. However if we do have a username and password, the
-existence of the user and the correctness of the password can be checked, and a
-validation error thrown if either check fails.
-
-So, now we can plug the new form into our system. In the actions class of your backend
-security module (`/sf_sandbox/apps/backend/modules/security/actions/actions.class.php`),
-paste this class definition (overwriting the existing contents):
+Now, enable the new user system by editing `sf_sandbox/apps/backend/lib/myUser.class.php`,
+so that it reads:
 
     [php]
-    class securityActions extends sfActions
+    class myUser extends sfGuardSecurityUser
     {
-     /**
-      * Executes index action
-      *
-      * @param sfRequest $request A request object
-      */
-      public function executeIndex($request)
-      {
-        $this->form = new LoginForm(array('admin' => 'password'));
-    
-        if ($request->isMethod('post'))
-        {
-          $this->form->bind($request->getParameter('login'));
-          if ($this->form->isValid())
-          {
-            // Login here
-            $this->getUser()->setAuthenticated(true);
-    
-            // Go to the post module
-            $this->redirect('post/index');
-          }
-        }
-        
-      }
     }
 
-The action code works in much the same way as the generated actions we looked at
-previously. A form instance is instantiated, then if the operation is a POST *and*
-the form is valid then the system authorises the user and redirects them to the
-post page.
+Now, the model needs to be built, the new SQL needs to be generated, and the database tables
+need to be updated:
 
-Now add a template in `apps/backend/modules/security/templates/indexSuccess.php`:
+    $ php symfony propel:build-model
+    $ php symfony propel:build-sql
+    $ php symfony propel:insert-sql
 
-    <form method="POST" action="<?php echo url_for('security/index') ?>">
-    <table>
-    <tr>
-    <?php echo $form ?>
-    </tr>
-    <tr>
-    <td colspan="2"><input type="submit" name="submit" value="Login"/></td>
-    </tr>
-    </table>
-    </form>
+>**Note**
+>When launching the `propel:insert-sql` task, symfony will drop all tables to re-create them.
+>As during the development this happens a lot, symfony can store initial data in fixtures
+>(see [populating a database](http://www.symfony-project.org/book/1_1/16-Application-Management-Tools#Populating%20a%20Database) for more information).
+
+Now, clear your cache again. Finally, create a user by running:
+
+    $ symfony guard:create-user frontend jon SoMePasSwOrD
 
 Let's now make the post administration module the default one in our backend system. To
 do this, open up the `apps/backend/config/routing.yml` file and locate the
-'homepage' key. Change the module from 'default' to 'post'.
+`homepage` key. Change the module from `default` to `post`.
 
-The last thing to do is to set the `security` module as the default module to
-handle login actions. To do that, open the `apps/backend/config/settings.yml`
-configuration file and add:
-
-    all:
-      .actions:
-        login_module:           security
-        login_action:           index
-
-At that point, if you try to access the Posts management, you will have to enter
-a username and a password (which is 'admin' and 'password' respectively):
+At that point, if you try to access the posts management
+(http://localhost/sf_sandbox/web/backend_dev.php/post), you will have to enter a valid username
+and password:
 
 ![login form](/images/tutorials/first_login.gif)
 
@@ -1021,7 +829,7 @@ To clear the cache, simply type:
 
     $ php symfony cc
 
-See, the application is fast and runs smoothly. Pretty darn cool, isn't it?
+See, the application is fast and runs smoothly. Pretty cool, isn't it?
 Feel free to explore the code, add new modules, and change the design of pages.
 
 And don't forget to mention your working symfony applications in the
