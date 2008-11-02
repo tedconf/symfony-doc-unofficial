@@ -1,24 +1,24 @@
 Comment configurer un serveur web
 =================================
 
-Aperçu
+AperÃ§u
 ------
 
-Il y a plusieurs façons de configurer un serveur web afin qu'il puisse accéder à des applications symfony. Ce chapitre illustre les différentes possibiltés de configuration, ainsi que quelques astuces pour optimiser les accès.
+Il y a plusieurs faÃ§ons de configurer un serveur web afin qu'il puisse accÃ©der Ã  des applications symfony. Ce chapitre illustre les diffÃ©rentes possibiltÃ©s de configuration, ainsi que quelques astuces pour optimiser les accÃ¨s.
 
 Introduction
 ------------
 
-Dans l'exemple décrit ci-dessous, le projet « monprojet » contient une application « monappli ». Le contrôleur de cette application est appelé « index.php » et réside dans « /home/steve/monprojet/web/ ». Le répertoire data de symfony est « $data_dir ».
+Dans l'exemple dÃ©crit ci-dessous, le projet Â« monprojet Â» contient une application Â« monappli Â». Le contrÃ´leur de cette application est appelÃ© Â« index.php Â» et rÃ©side dans Â« /home/steve/monprojet/web/ Â». Le rÃ©pertoire data de symfony est Â« $data_dir Â».
 
 Virtual host
 ------------
 
-Les hôtes virtuels (virtual hosts) permettent de configurer votre serveur web de telle manière que votre application symfony apparaisse à la racine de votre domaine (ou un sous-domaine) :
+Les hÃ´tes virtuels (virtual hosts) permettent de configurer votre serveur web de telle maniÃ¨re que votre application symfony apparaisse Ã  la racine de votre domaine (ou un sous-domaine) :
 
     http://monappli.exemple.com/
 
-Nous supposons que vous utilisez le serveur Apache. Pour configurer l'hôte virtuel pour l'application « monappli », ajouter les lignes suivantes au fichier « httpd.conf » :
+Nous supposons que vous utilisez le serveur Apache. Pour configurer l'hÃ´te virtuel pour l'application Â« monappli Â», ajouter les lignes suivantes au fichier Â« httpd.conf Â» :
 
     <Directory "/$data_dir/symfony/web/sf">
      AllowOverride All
@@ -36,13 +36,13 @@ Nous supposons que vous utilisez le serveur Apache. Pour configurer l'hôte virtu
       </Directory>
     </VirtualHost>
 
-La directive « Alias » au milieu est nécessaire à l'affichage des images dans la barre d'outils symfony. Les occurences de « $data_dir » doivent être remplacées par le répertoire PEAR de symfony (selon le mode d'installation). Par exemple, sous *nix, vous devriez avoir :
+La directive Â« Alias Â» au milieu est nÃ©cessaire Ã  l'affichage des images dans la barre d'outils symfony. Les occurences de Â« $data_dir Â» doivent Ãªtre remplacÃ©es par le rÃ©pertoire PEAR de symfony (selon le mode d'installation). Par exemple, sous *nix, vous devriez avoir :
 
     Alias /sf /usr/local/lib/php/data/symfony/web/sf
 
-Vous pouvez en apprendre plus sur les répertoire PEAR dans le [chapitre d'installation](http://www.symfony-project.org/book/1_1/03-Running-Symfony).
+Vous pouvez en apprendre plus sur les rÃ©pertoire PEAR dans le [chapitre d'installation](http://www.symfony-project.org/book/1_1/03-Running-Symfony).
 
-Redémarrez Apache, et voila : l'application peut maintenant être appelée et vue dans un navigateur web standard à l'URL :
+RedÃ©marrez Apache, et voila : l'application peut maintenant Ãªtre appelÃ©e et vue dans un navigateur web standard Ã  l'URL :
 
     http://monappli.exemple.com/
 
@@ -53,38 +53,38 @@ ou, en mode debug :
 URL rewriting
 -------------
 
-Par défaut, le serveur web est configuré pour éviter de spécifier le contrôleur de front de prodution (« index.php ») dans l'URL. Cela veut dire qu'à la place d'afficher :
+Par dÃ©faut, le serveur web est configurÃ© pour Ã©viter de spÃ©cifier le contrÃ´leur de front de prodution (Â« index.php Â») dans l'URL. Cela veut dire qu'Ã  la place d'afficher :
 
     http://monappli.exemple.com/index.php/
 
-votre serveur affiche et reconnaît :
+votre serveur affiche et reconnaÃ®t :
 
     http://monappli.exemple.com/
 
-Cela est possible grâce au module Apache « mod_rewrite », et nécessite la présence des lignes suivantes dans « monprojet/web/.htaccess » (ce qui est le cas par défaut) :
+Cela est possible grÃ¢ce au module Apache Â« mod_rewrite Â», et nÃ©cessite la prÃ©sence des lignes suivantes dans Â« monprojet/web/.htaccess Â» (ce qui est le cas par dÃ©faut) :
 
-    # tous les fichiers avec .quelquechose sont sautés
+    # tous les fichiers avec .quelquechose sont sautÃ©s
     RewriteCond %{REQUEST_URI} \..+$
     RewriteCond %{REQUEST_URI} !\.html$
     RewriteRule .* - [L]
-    # les autres sont redirigés vers le contrôleur de front
+    # les autres sont redirigÃ©s vers le contrÃ´leur de front
     RewriteRule ^(.*)$ index.php [QSA,L]
 
-Il y a un autre ajout esthétique que vous pourriez souhaiter avoir dans vos URLs : une extension « .html ». Normalement, en appelant l'action « index » du module « main », avec la configuration de routage par défaut, l'URL affichée serait :
+Il y a un autre ajout esthÃ©tique que vous pourriez souhaiter avoir dans vos URLs : une extension Â« .html Â». Normalement, en appelant l'action Â« index Â» du module Â« main Â», avec la configuration de routage par dÃ©faut, l'URL affichÃ©e serait :
 
     http://monappli.exemple.com/main/index
 
-Le fichier « settings.yml » par défaut de l'application contient un paramètre « suffix » commenté :
+Le fichier Â« settings.yml Â» par dÃ©faut de l'application contient un paramÃ¨tre Â« suffix Â» commentÃ© :
 
     all:
     #  .settings:
     #    suffix:        .
 
-Afin de faire apparaître l'action « index » du module « main » comme ceci :
+Afin de faire apparaÃ®tre l'action Â« index Â» du module Â« main Â» comme ceci :
 
     http://monappli.exemple.com/main/index.html
 
-vous pouvez décommenter et mettre le paramètre « suffixe » en « .html » :    
+vous pouvez dÃ©commenter et mettre le paramÃ¨tre Â« suffixe Â» en Â« .html Â» :    
 
     all:
       .settings:
@@ -93,11 +93,11 @@ vous pouvez décommenter et mettre le paramètre « suffixe » en « .html » :
 Alias
 -----
 
-Si vous avez déjà un site web avec un nom de domaine, et si vous voulez que votre application symfony soit accessible par ce domaine, alors la solution de l'hôte virtuel ne peut pas fonctionner. Considérons le fait que vous vouliez accéder à votre application symfony par :
+Si vous avez dÃ©jÃ  un site web avec un nom de domaine, et si vous voulez que votre application symfony soit accessible par ce domaine, alors la solution de l'hÃ´te virtuel ne peut pas fonctionner. ConsidÃ©rons le fait que vous vouliez accÃ©der Ã  votre application symfony par :
 
     http://www.exemple.com/monappli/
 
-Pour cela, ouvrez le fichier « httpd.conf » et ajoutez les lignes suivantes :
+Pour cela, ouvrez le fichier Â« httpd.conf Â» et ajoutez les lignes suivantes :
 
     Alias /monappli/ /home/steve/monprojet/web/
     <Directory "/home/steve/monprojet/web">
@@ -105,7 +105,7 @@ Pour cela, ouvrez le fichier « httpd.conf » et ajoutez les lignes suivantes :
        Allow from All
     </Directory>
 
-Vous devez aussi éditer le fichier « .htaccess » situé dans « monprojet/web/ » et changer la dernière règle de réécriture de
+Vous devez aussi Ã©diter le fichier Â« .htaccess Â» situÃ© dans Â« monprojet/web/ Â» et changer la derniÃ¨re rÃ¨gle de rÃ©Ã©criture de
 
     RewriteRule ^(.*)$ index.php [QSA,L]
 
@@ -113,18 +113,18 @@ en
 
     RewriteRule ^(.*)$ /monappli/index.php [QSA,L]
 
-Redémarrez Apache, et essayer d'accéder à votre application :
+RedÃ©marrez Apache, et essayer d'accÃ©der Ã  votre application :
 
     http://www.exemple.com/monappli/
 
 Applications multiples dans un seul projet
 ------------------------------------------
 
-Durant le cycle de création d'un projet, vous allez rencontrer un jour ou l'autre le problème des accès multiples aux applications. Par exemple, dans notre projet « monprojet », vous avez certainement une application « monappli » pour le public et une application « admin » pour gérer le contenu (généralement appelée back-office). Comment autoriser les accès aux applications multiples au sein d'un projet ?
+Durant le cycle de crÃ©ation d'un projet, vous allez rencontrer un jour ou l'autre le problÃ¨me des accÃ¨s multiples aux applications. Par exemple, dans notre projet Â« monprojet Â», vous avez certainement une application Â« monappli Â» pour le public et une application Â« admin Â» pour gÃ©rer le contenu (gÃ©nÃ©ralement appelÃ©e back-office). Comment autoriser les accÃ¨s aux applications multiples au sein d'un projet ?
 
 ### Virtual hosts
 
-Vous pouvez ajouter un nouvel hôte virtuel dans « httpd.conf ». C'est assez simple à comprendre :
+Vous pouvez ajouter un nouvel hÃ´te virtuel dans Â« httpd.conf Â». C'est assez simple Ã  comprendre :
 
     <Directory "/$data_dir/symfony/web/sf">
      AllowOverride All
@@ -157,20 +157,20 @@ Vous pouvez ajouter un nouvel hôte virtuel dans « httpd.conf ». C'est assez simp
 
 ### Alias
 
-Une autre possibilité est la création d'alias. Cela vous permettra d'avoir des contenus web séparés (.css, .js, images, etc.) pour chaque application. Cela évite aussi la modification directe du fichier « httpd.conf ».
+Une autre possibilitÃ© est la crÃ©ation d'alias. Cela vous permettra d'avoir des contenus web sÃ©parÃ©s (.css, .js, images, etc.) pour chaque application. Cela Ã©vite aussi la modification directe du fichier Â« httpd.conf Â».
 
-Tout d'abord, créez un nouveau répertoire dans votre dossier « web » :
+Tout d'abord, crÃ©ez un nouveau rÃ©pertoire dans votre dossier Â« web Â» :
 
     $ mkdir /home/steve/monprojet/web/admin
 
-Puis, déplacez les contrôleurs de front de l'application « admin » vers ce nouveau répertoire, et copiez « .htaccess » pour cette nouvelle application :
+Puis, dÃ©placez les contrÃ´leurs de front de l'application Â« admin Â» vers ce nouveau rÃ©pertoire, et copiez Â«Â .htaccess Â» pour cette nouvelle application :
 
     $ cd /home/steve/monprojet/web
     $ mv admin.php admin/index.php
     $ mv admin_dev.php admin/
     $ cp .htaccess admin/
 
-Ensuite, exécutez les deux dernières étapes décrites plus haut pour configurer l'alias. Éditez le fichier « .htaccess » situé dans « monprojet/web/admin/ » et changez     
+Ensuite, exÃ©cutez les deux derniÃ¨res Ã©tapes dÃ©crites plus haut pour configurer l'alias. Ã‰ditez le fichier Â« .htaccess Â» situÃ© dans Â« monprojet/web/admin/ Â» et changez     
 
     RewriteRule ^(.*)$ index.php [QSA,L]
 
@@ -178,7 +178,7 @@ en
 
     RewriteRule ^(.*)$ /admin/index.php [QSA,L]
 
-Enfin, éditez les deux contrôleurs de front (`monprojet/web/admin/index.php` et `monprojet/web/admin/admin_dev.php`) et changez :
+Enfin, Ã©ditez les deux contrÃ´leurs de front (`monprojet/web/admin/index.php` et `monprojet/web/admin/admin_dev.php`) et changez :
 
     [php]
     define('SF_ROOT_DIR', realpath(dirname(__FILE__).'/..'));
@@ -188,13 +188,13 @@ en
     [php]
     define('SF_ROOT_DIR', realpath(dirname(__FILE__).'/../..'));
     
-Et ceci suffira à pouvoir accéder à l'application « admin » par :
+Et ceci suffira Ã  pouvoir accÃ©der Ã  l'application Â« admin Â» par :
 
     http://exemple.com/admin/
 
->**Note** : vous allez devoir recréer la même structure de fichiers dans votre répertoire « web/admin/ » que dans le dossier « web » classique (avec les dossiers `css`, `js`, `images`, `uploads`) puisque tous les chemins vers la racine pointent maintenant sur ce dossier « admin ».
+>**Note** : vous allez devoir recrÃ©er la mÃªme structure de fichiers dans votre rÃ©pertoire Â« web/admin/ Â» que dans le dossier Â« web Â» classique (avec les dossiers `css`, `js`, `images`, `uploads`) puisque tous les chemins vers la racine pointent maintenant sur ce dossier Â« admin Â».
 
 IIS
 ---
 
-Symfony est compatible avec IIS. Pour tout apprendre sur l'installation et la configuration d'un projet Symfony sous un environnement IIS, lisez le [tutoriel dédié](http://www.symfony-project.org/cookbook/1_1/en/web_server_iis).
+Symfony est compatible avec IIS. Pour tout apprendre sur l'installation et la configuration d'un projet Symfony sous un environnement IIS, lisez le [tutoriel dÃ©diÃ©](http://www.symfony-project.org/cookbook/1_1/en/web_server_iis).
