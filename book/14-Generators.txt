@@ -59,26 +59,32 @@ Administration modules interpret the model by way of a special configuration fil
 
 ### Initiating an Administration Module
 
-With symfony, you build an administration on a per-model basis. As the administration modules are based on a REST architecture, you need to define a Propel route collection definition for your model first in `routing.yml`:
+With symfony, you build an administration on a per-model basis. A module is generated based on a Propel object using the `propel:generate-admin` task:
 
-    [yml]
-    # apps/backend/config/routing.yml
-    articles:
-      class: sfPropelRouteCollection
-      options:
-        model:              Article
-        module:             article
-        collection_actions: { filter: post, batch: post }
-
-Based on this route, the `propel:generate-admin` task can generate the admin module:
-
-    > php symfony propel:generate-admin backend articles
+    > php symfony propel:generate-admin backend Article
 
 This call is enough to create an `article` module in the `backend` application based on the `Article` class definition, and is accessible by the following:
 
     http://localhost/backend.php/articles
 
 The look and feel of a generated module, illustrated in Figures 14-5 and 14-6, is sophisticated enough to make it usable out of the box for a commercial application.
+
+>**NOTE**
+>The administration modules are based on a REST architecture. The `propel:generate-admin` task automatically adds such a route to the `routing.yml` configuration file:
+>
+>     [yml]
+>     # apps/backend/config/routing.yml
+>     article:
+>       class: sfPropelRouteCollection
+>       options:
+>         model:               Article
+>         module:              article
+>         prefix_path:         article
+>         with_wilcard_routes: true
+>
+>You can also create your own route and pass the name as an argument to the task instead of the model class name:
+>
+>     > php symfony propel:generate-admin backend article
 
 Figure 14-5 - `list` view of the `article` module in the `backend` application
 
