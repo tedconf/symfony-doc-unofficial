@@ -1605,3 +1605,49 @@ a single path or array of paths, and a position string (either "front" or
       sfConfig::get('sf_symfony_lib_dir'),
       realpath(dirname(__FILE__).'/../lib/vendor'),
     ));
+
+Admin Generator
+---------------
+
+The admin generator has been rewritten for symfony 1.2. It is based on the form
+framework. To generate an admin module, use the `propel:generate-admin` task:
+
+    $ php symfony propel:generate-admin backend Article
+
+By default, the task adds a REST route for your module. You can also create a
+route by yourself and pass it as an argument instead of the model class name:
+
+    $ php symfony propel:generate-admin backend article
+
+The configuration is done via the `generator.yml`. All the configuration is now
+done under the `config` key:
+
+    [yml]
+    generator:
+      class: sfPropelGenerator
+      param:
+        model_class:           DemoCategory
+        theme:                 admin
+        non_verbose_templates: true
+        with_show:             false
+        singular:              ~
+        plural:                ~
+        route_prefix:          categories
+        with_propel_route:     1
+
+        config:
+          actions: ~
+          fields:  ~
+          list:    ~
+          filter:  ~
+          form:    ~
+          edit:    ~
+          new:     ~
+
+You can now have different configuration for the `edit` and `new` form, and they
+both inherit from the `form` configuration.
+
+The `name` entry has been renamed `label`.
+
+The old admin generator has been kept for backward compatibility, so you can still
+use it if you want by running the `propel:init-admin` task.
