@@ -1,30 +1,57 @@
 Chapter 4 - Schema Files
 ========================
 
-In the previous chapters you've seen some various syntaxes for specifying your schema information in YAML files placed in `config/doctrine/*.yml`. This chapter explains the syntaxes and how to specify all your schema meta data in schema files.
+In the previous chapters you've seen some various syntaxes for specifying your schema information in YAML files placed in `config/doctrine/*.yml`. This chapter explains the syntaxes and how to specify all your schema meta data in yaml format.
 
 ## Columns
 
 ### Data Types
 
-Doctrine offers several column data types. When you specify the portable Doctrine type it is automatically converted to the appropriate type of the dbms you are using. below is a list of the available column types that can be used.
+Doctrine offers several column data types. When you specify the portable Doctrine type it is automatically converted to the appropriate type of the dbms you are using. Below is a list of the available column types that can be used as well as the type it is translated to when using the MySQL dbms engine.
 
- * integer
- * float
- * decimal
- * string
- * array
- * object
- * blob
- * clob
- * timestamp
- * time
- * date
- * enum
- * gzip
+| Type        | MySQL Type   |
+|-------------|--------------|
+| integer     | integer      |
+| float       | double       |
+| decimal     | decimal      |
+| string      | varchar      |
+| array       | text         |
+| object      | text         |
+| blob        | longblob     |
+| clob        | longtext     |
+| timestamp   | datetime     |
+| time        | time         |
+| date        | date         |
+| enum        | varchar/enum |
+| gzip        | text         |
+
+>**NOTE**
+>Obviously some of these types are not supported by any DBMS so Doctrine has the ability to process the data on the way in and out of your database. For example the Doctrine `array` and `object` type contents are serialized on the way in and unserialized on the way out.
+
+>**SIDEBAR**
+>The Doctrine enum type can either be emulated or you can use the native enum type if your DBMS supports it. It is off by default so you will need to enable an attribute to use native enums on your connection.
+>
+>>Before we enable the attribute Doctrine will generate SQL like the following:
+>
+>     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+>
+>     [yml]
+>     all:
+>       doctrine:
+>         class: sfDoctrineDatabase
+>         param:
+>           dsn: 'mysql:host=localhost;dbname=symfony12doctrine'
+>           username: root
+>           attributes:
+>             use_native_enum: true
+>
+>Now that we have enabled the attribute Doctrine generates the following SQL under MySQL:
+>
+>     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type ENUM('Normal', 'Administrator'), PRIMARY KEY(id)) ENGINE = INNODB;
 
 Below is a sample yaml schema file that implements each of the different column types.
 
+    [yml]
     User:
       columns:
         id:
@@ -41,7 +68,7 @@ Below is a sample yaml schema file that implements each of the different column 
         groups_array: array
         session_object: object
         description: clob
-        profile_image_binary_data: glob
+        profile_image_binary_data: blob
         created_at: timestamp
         time_last_available: time
         date_last_available: date
@@ -55,6 +82,7 @@ Below is a sample yaml schema file that implements each of the different column 
 
 Often you need to set options on your table for controlling things like charset, collation and table type in mysql. These can be controlled easily with options.
 
+    [yml]
     User:
       options:
         type: MyISAM
@@ -68,6 +96,7 @@ Often you need to set options on your table for controlling things like charset,
 
 You can optimize your database by defining indexes on columns which are used in conditions on your queries. Below is an example of indexing the username column of a user table since it is common to do lookups on the table by the users username.
 
+    [yml]
     User:
       columns:
         username: string(255)
@@ -79,6 +108,7 @@ You can optimize your database by defining indexes on columns which are used in 
 
 You can also optional specify unique directly on the column when dealing with single column unique indexes.
 
+    [yml]
     User:
       columns:
         username:
@@ -97,32 +127,26 @@ Doctrine offers the ability to map the relationships which exist in your databas
 
 Here is a simple example of how to define a one-to-one relation between a User and Profile model.
 
-    User:
-      columns:
-        username: string(255)
-        password: string(255)
-        profile_id: integer
-      relations:
-        Profile:
-          type: one
-          foreignType: one
-          local: profile_id
-          foreign: id
+    [yml]
     Profile:
       columns:
+        user_id: integer
         name: string(255)
         email_address:
           type: string(255)
           email: true
+      relations:
+        User:
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: one
 
 ### One to Many
 
 Here is a simple example of how to define a one-to-many relation between a User and Phonenumber model.
 
-    User:
-      columns:
-        username: string(255)
-        password: string(255)
+    [yml]
     Phonenumber:
       columns:
         user_id: integer
@@ -137,70 +161,64 @@ Here is a simple example of how to define a one-to-many relation between a User 
 
 ### Many to Many
 
-Here is a smiple example of how to define a many-to-many relation between a BlogPost and Tag model.
+Here is a simple example of how to define a many-to-many relation between a BlogPost and Tag model.
 
+    [yml]
     BlogPost:
       columns:
+        user_id: integer
         title: string(255)
         body: clob
       relations:
+        User:
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: one
+          foreignAlias: BlogPosts
         Tags:
           class: Tag
           foreignAlias: BlogPosts
           refClass: BlogPostTag
           local: blog_post_id
           foreign: tag_id
+
     Tag:
       columns:
         name: string(255)
+
     BlogPostTag:
       columns:
-        blog_post_id: integer
-        tag_id: integer
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
       relations:
         BlogPost:
+          local: blog_post_id
+          foreign: id
+          foreignAlias: BlogPostTags
         Tag:
+          local: tag_id
+          foreign: id
+          foreignAlias: BlogPostTags
 
 ## Cascading Operations
 
 When saving objects in Doctrine it is cascaded to associated objects by default. Deleting is slightly different. Doctrine has the ability to do both application and database level cascading deletes.
 
-### Application Level
-
-Unlike the save() operations the delete() cascading needs to be turned on explicitly. Here is an example:
-
-    User:
-      columns:
-        username: string(255)
-        password: string(255)
-      relations:
-        Phonenumbers:
-          class: Phonenumber
-          local: id
-          foreign: id
-          type: many
-          foreignType: one
-          cascade: [delete]
-    Phonenumber:
-      columns:
-        user_id: integer
-        phonenumber: string(255)
-      relations:
-        User:
-          foreignAlias: Phonenumbers
-          local: user_id
-          foreign: id
-          type: one
-          foreignType: many
-
 ### Database Level
 
 Doctrine also has the ability to export cascading operations to the database level. Below is an example of how to setup a model with some cascading options.
 
+    [yml]
     User:
       columns:
         username: string(255)
         password: string(255)
+
     Phonenumber:
       columns:
         user_id: integer
@@ -214,6 +232,44 @@ Doctrine also has the ability to export cascading operations to the database lev
           foreignType: many
           onDelete: CASCADE
 
+>**NOTE**
+>Database level cascading is specified on the side where the foreign key lives.
+
+### Application Level
+
+Unlike the `save()` operations the `delete()` cascading needs to be turned on explicitly. Here is an example:
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+      relations:
+        Phonenumbers:
+          class: Phonenumber
+          local: id
+          foreign: id
+          type: many
+          foreignType: one
+          cascade: [delete]
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+
+>**NOTE**
+>Application level cascading `save()` and `delete()` does not apply when doing DQL update and delete statements, only when calling `save()` and `delete()` on your objects.
+
+>**NOTE**
+>Application level cascading deletes differ from database level in that they are defined on the side where the relationship you wish to cascade on is defined. This is different than database level cascades where you always specify it on the side where the foreign key lives.
+
 ## Behaviors
 
 One great feature of Doctrine is the ability to have plug n' play behavior. These behaviors can be easily included in your model definitions and you inherit functionality automatically.
@@ -222,14 +278,16 @@ One great feature of Doctrine is the ability to have plug n' play behavior. Thes
 
 Here is a list of behavior bundled with Doctrine core. You can use any of the behaviors in your models without writing any code.
 
- * Geographical
- * I18n
- * NestedSet
- * Searchable
- * Sluggable
- * SoftDelete
- * Timestampable
- * Versionable
+| Name           | Description                        |
+|----------------|------------------------------------|
+| Geographical   | Adds latitude and longitude to your model and offers functionality for calculating miles/kilometers between records. |
+| I18n           | Adds internationalization capabilities to your models. |
+| NestedSet      | Turn your models in to a traversable tree. |
+| Searchable     | Index all the data in your models and make it searchable. |
+| Sluggable      | Add a `slug` field to your models and have it automatically create a slug based on your configuration. |
+| SoftDelete     | Never really delete a record. Will simply set a deleted flag instead and filter all deleted records from select queries. |
+| Timestampable  | Add a `created_at` and `updated_at` column to your models have Doctrine set them when inserting and updating records. |
+| Versionable    | Turn your models in to an audit log and record all changes. Offers the ability to revert back to previous versions easily. |
 
 You can easily enable a behavior by using the actAs functionality. Below is an example of how to use the Sluggable behavior.
 
@@ -239,10 +297,14 @@ You can easily enable a behavior by using the actAs functionality. Below is an e
           fields: [title]
           unique: true
       columns:
+        user_id: integer
         title: string(255)
         body: clob
 
 The above example will automatically add a slug column to the model and will set the value of the slug column based on the value of the title column and make sure the value is unique. If a slug already exists in the database with the same value then 1, 2, 3, etc. is appended to the end.
+
+>**NOTE**
+>You can also write your own behaviors. Check out the source code of the existing behaviors to get a peak at how they work. They can be found in `SF_ROOT/plugins/sfDoctrinePlugin/lib/doctrine/Doctrine/Template`.
 
 ## Inheritance
 
