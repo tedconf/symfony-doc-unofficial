@@ -7,6 +7,9 @@ In the previous chapters you've seen some various syntaxes for specifying your s
 
 Doctrine offers several column data types. When you specify the portable Doctrine type it is automatically converted to the appropriate type of the dbms you are using. Below is a list of the available column types that can be used as well as the type it is translated to when using the MySQL dbms engine.
 
+>**NOTE**
+>Doctrine data types are standardized and made portable across all DBMS. For the types that the DBMS do not support natively, Doctrine has the ability to convert the data on the way in to the and on the way out of the database. For example the Doctrine `array` and `object` types are `serialized()` on the way in and `unserialized()` on the way out.
+
 | Type        | MySQL Type   |
 |-------------|--------------|
 | integer     | integer      |
@@ -22,9 +25,6 @@ Doctrine offers several column data types. When you specify the portable Doctrin
 | date        | date         |
 | enum        | varchar/enum |
 | gzip        | text         |
-
->**NOTE**
->Doctrine data types are standardized and made portable across all DBMS. For the types that the DBMS do not support natively, Doctrine has the ability to convert the data on the way in to the and on the way out of the database. For example the Doctrine `array` and `object` types are `serialized()` on the way in and `unserialized()` on the way out.
 
 >**SIDEBAR**
 >The Doctrine `enum` type can either be emulated or you can use the native enum type if your DBMS supports it. It is off by default so you will need to enable an attribute to use native enums.
@@ -239,6 +239,9 @@ Doctrine also has the ability to export cascading operations to the database lev
 
 Unlike the `save()` operations the `delete()` cascading needs to be turned on explicitly. Here is an example:
 
+>**NOTE**
+>Application level cascading `save()` and `delete()` does not apply when doing DQL update and delete statements, only when calling `save()` and `delete()` on your objects.
+
     User:
       columns:
         username: string(255)
@@ -263,9 +266,6 @@ Unlike the `save()` operations the `delete()` cascading needs to be turned on ex
           foreign: id
           type: one
           foreignType: many
-
->**NOTE**
->Application level cascading `save()` and `delete()` does not apply when doing DQL update and delete statements, only when calling `save()` and `delete()` on your objects.
 
 >**NOTE**
 >Application level cascading deletes differ from database level in that they are defined on the side where the relationship you wish to cascade on is defined. This is different than database level cascades where you always specify it on the side where the foreign key lives.
@@ -309,6 +309,16 @@ The above example will automatically add a slug column to the model and will set
 ## Inheritance
 
 Another great feature of Doctrine is the ability to use native PHP oop inheritance with your models. It supports three different inheritance strategies which can be used independently or mixed together. Below are some examples of the different inheritance strategies.
+
+**Inheritance Types**
+
+| Name                | Description                                |
+|---------------------|--------------------------------------------|
+| Concrete            | Each child class has a separate table has all the columns of its parents |
+| Simple              | Each child class shares the same table and columns as its parents |
+| Column Aggregation  | All columns must be defined in the parent and each child class is determined by a `type` column |
+
+Below are some examples of the three different inheritance strategies supported by Doctrine.
 
 ### Concrete Inheritance
 
