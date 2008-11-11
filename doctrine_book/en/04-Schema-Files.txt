@@ -3,9 +3,7 @@ Chapter 4 - Schema Files
 
 In the previous chapters you've seen some various syntaxes for specifying your schema information in YAML files placed in `config/doctrine/*.yml`. This chapter explains the syntaxes and how to specify all your schema meta data in yaml format.
 
-## Columns
-
-### Data Types
+## Data Types
 
 Doctrine offers several column data types. When you specify the portable Doctrine type it is automatically converted to the appropriate type of the dbms you are using. Below is a list of the available column types that can be used as well as the type it is translated to when using the MySQL dbms engine.
 
@@ -26,14 +24,16 @@ Doctrine offers several column data types. When you specify the portable Doctrin
 | gzip        | text         |
 
 >**NOTE**
->Obviously some of these types are not supported by any DBMS so Doctrine has the ability to process the data on the way in and out of your database. For example the Doctrine `array` and `object` type contents are serialized on the way in and unserialized on the way out.
+>Doctrine data types are standardized and made portable across all DBMS. For the types that the DBMS do not support natively, Doctrine has the ability to convert the data on the way in to the and on the way out of the database. For example the Doctrine `array` and `object` types are `serialized()` on the way in and `unserialized()` on the way out.
 
 >**SIDEBAR**
->The Doctrine enum type can either be emulated or you can use the native enum type if your DBMS supports it. It is off by default so you will need to enable an attribute to use native enums on your connection.
+>The Doctrine `enum` type can either be emulated or you can use the native enum type if your DBMS supports it. It is off by default so you will need to enable an attribute to use native enums.
 >
->>Before we enable the attribute Doctrine will generate SQL like the following:
+>Before we enable the attribute Doctrine will generate SQL like the following and simply emulate the enum type and will make sure the value you specify is one of the valid specified values.
 >
 >     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+>
+>Now lets specify the `use_native_enum` attribute on our connection so that Doctrine knows to generate the native enum sql for your dbms.
 >
 >     [yml]
 >     all:
@@ -375,15 +375,17 @@ Doctrine schemas allow you to specify certain parameters that will apply to all 
 
 List of global parameters:
 
- * connection
- * attributes
- * templates
- * actAs
- * options
- * inheritance
+| Name        | Description   |
+|-------------|---------------|
+| connection  | Name of the connection to bind the models to |
+| attributes  | Array of attributes to apply to the models |
+| actAs       | Array of actAs behaviors and options to enable on the models |
+| options     | Array of table options to apply to the models |
+| inheritance | Inheritance options to apply to the models |
 
 Here is a sample schema file which implements some global schema information:
 
+    [yml]
     connection: conn_name1
     actAs: [Timestampable]
     options:

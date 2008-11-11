@@ -41,35 +41,31 @@ Create data/fixtures/client.yml and load the following YAML code.
         username: dwhittle
         password: changeme
 
-Run the following commands to rebuild the database and inspect the data which was loaded.
+Run the following commands to rebuild the database.
 
-    $ ./symfony doctrine-build-all-reload frontend
-    >> doctrine  Are you sure you wish to drop your databases? (y/n)
-    y
-    >> doctrine  Successfully dropped database f...nection "master" named "master"
-    >> doctrine  Successfully dropped database f...nection "client" named "client"
-    >> doctrine  Successfully created database f...nection "master" named "master"
-    >> doctrine  Successfully created database f...nection "client" named "client"
-    >> doctrine  Generated models successfully
-    >> doctrine  Created tables successfully
-    >> doctrine  Data was successfully loaded
-    $ ./symfony doctrine:dql frontend "FROM Client c"
-    >> doctrine  executing: "FROM Client c" ()
-    >> doctrine    id: '1'
-    >> doctrine    name: 'Jonathan H. Wage'
-    >> doctrine    username: jwage
-    >> doctrine    password: changeme
-    >> doctrine  -
-    >> doctrine    id: '2'
-    >> doctrine    name: 'Fabien Potencier'
-    >> doctrine    username: fabpot
-    >> doctrine    password: changeme
-    >> doctrine  -
-    >> doctrine    id: '3'
-    >> doctrine    name: 'Dustin Whittle'
-    >> doctrine    username: dwhittle
-    >> doctrine    password: changeme
+    $ ./symfony doctrine:build-all-reload
 
+Now run a simple DQL query to inspect that the data was loaded properly.
+
+    $ ./symfony doctrine:dql "FROM Client c"
+    >> doctrine  executing dql query
+    DQL: FROM Client c
+    found 3 results
+    -
+      id: '1'
+      name: 'Jonathan H. Wage'
+      username: jwage
+      password: changeme
+    -
+      id: '2'
+      name: 'Fabien Potencier'
+      username: fabpot
+      password: changeme
+    -
+      id: '3'
+      name: 'Dustin Whittle'
+      username: dwhittle
+      password: changeme
 
 ## Linking Relationships
 
@@ -91,48 +87,47 @@ Create data/fixtures/store.yml and load the following YAML data fixtures.
 
 Rebuild the database and run another DQL query to inspect the loaded data fixtures.
 
-    $ ./symfony doctrine-build-all-reload frontend
-    >> doctrine  Are you sure you wish to drop your databases? (y/n)
-    y
-    >> doctrine  Successfully dropped database f...ction "doctrine" named "dbname"
-    >> doctrine  Successfully created database f...ction "doctrine" named "dbname"
-    >> doctrine  Generated models successfully
-    >> doctrine  Created tables successfully
-    >> doctrine  Data was successfully loaded
-    $ ./symfony doctrine:dql frontend "FROM Client c, c.Stores s"
-    >> doctrine  executing: "FROM Client c, c.Stores s" ()
-    >> doctrine    id: '1'
-    >> doctrine    name: 'Jonathan H. Wage'
-    >> doctrine    username: jwage
-    >> doctrine    password: changeme
-    >> doctrine    Stores:
-    >> doctrine      -
-    >> doctrine        id: '1'
-    >> doctrine        name: 'The Wage Store'
-    >> doctrine        description: 'My store'
-    >> doctrine        client_id: '1'
-    >> doctrine  -
-    >> doctrine    id: '2'
-    >> doctrine    name: 'Fabien Potencier'
-    >> doctrine    username: fabpot
-    >> doctrine    password: changeme
-    >> doctrine    Stores:
-    >> doctrine      -
-    >> doctrine        id: '2'
-    >> doctrine        name: 'symfony Store'
-    >> doctrine        description: 'The symfony store'
-    >> doctrine        client_id: '2'
-    >> doctrine  -
-    >> doctrine    id: '3'
-    >> doctrine    name: 'Dustin Whittle'
-    >> doctrine    username: dwhittle
-    >> doctrine    password: changeme
-    >> doctrine    Stores:
-    >> doctrine      -
-    >> doctrine        id: '3'
-    >> doctrine        name: 'Yahoo! Store'
-    >> doctrine        description: 'The Yahoo! store'
-    >> doctrine        client_id: '3'
+    $ ./symfony doctrine:build-all-reload
+
+Now inspect the data with a little more complex query that joins the `Client` `Store` records.
+
+    $ ./symfony doctrine:dql "FROM Client c, c.Stores s"
+    >> doctrine  executing dql query
+    DQL: FROM Client c, c.Stores s
+    found 3 results
+    -
+      id: '1'
+      name: 'Jonathan H. Wage'
+      username: jwage
+      password: changeme
+      Stores:
+        -
+          id: '1'
+          name: 'The Wage Store'
+          description: 'My store'
+          client_id: '1'
+    -
+      id: '2'
+      name: 'Fabien Potencier'
+      username: fabpot
+      password: changeme
+      Stores:
+        -
+          id: '2'
+          name: 'symfony Store'
+          description: 'The symfony store'
+          client_id: '2'
+    -
+      id: '3'
+      name: 'Dustin Whittle'
+      username: dwhittle
+      password: changeme
+      Stores:
+        -
+          id: '3'
+          name: 'Yahoo! Store'
+          description: 'The Yahoo! store'
+          client_id: '3'
 
 ## Many to Many
 
@@ -177,32 +172,31 @@ Load the below data fixtures in to data/fixtures/data.yml
 
 Rebuild the database again and run a DQL query to see the loaded data.
 
-    $ ./symfony doctrine-build-all-reload frontend
-    >> doctrine  Are you sure you wish to drop your databases? (y/n)
-    y
-    >> doctrine  Successfully dropped database f...ction "doctrine" named "dbname"
-    >> doctrine  Successfully created database f...ction "doctrine" named "dbname"
-    >> doctrine  Generated models successfully
-    >> doctrine  Created tables successfully
-    >> doctrine  Data was successfully loaded
-    ./symfony doctrine:dql frontend "FROM BlogPost p, p.Tags"
-    >> doctrine  executing: "FROM BlogPost p, p.Tags" ()
-    >> doctrine    id: '1'
-    >> doctrine    title: 'Test Blog Post'
-    >> doctrine    body: 'This is the body of the test blog post'
-    >> doctrine    Tags:
-    >> doctrine      -
-    >> doctrine        id: '1'
-    >> doctrine        name: test
-    >> doctrine      -
-    >> doctrine        id: '2'
-    >> doctrine        name: php
-    >> doctrine      -
-    >> doctrine        id: '3'
-    >> doctrine        name: doctrine
-    >> doctrine      -
-    >> doctrine        id: '4'
-    >> doctrine        name: orm
+    $ ./symfony doctrine:build-all-reload
+
+Now inspect the data with another DQL query that fetches all `BlogPost` records and its related `Tags`
+
+    $ ./symfony doctrine:dql "FROM BlogPost p, p.Tags"
+    >> doctrine  executing dql query
+    DQL: FROM BlogPost p, p.Tags
+    found 1 results
+    -
+      id: '1'
+      title: 'Test Blog Post'
+      body: 'This is the body of the test blog post'
+      Tags:
+        -
+          id: '1'
+          name: test
+        -
+          id: '2'
+          name: php
+        -
+          id: '3'
+          name: doctrine
+        -
+          id: '4'
+          name: orm
 
 ## Inline Data Fixtures
 
@@ -231,6 +225,8 @@ Doctrine offers the ability to specify data fixture relationships inline like be
             name: doctrine
           orm:
             name: orm
+
+This alternative syntax can greatly reduce the length and complexity of you data fixtures.
 
 >**TIP**
 >More can be read about data fixtures in the Doctrine Manual [here](http://www.doctrine-project.org/documentation/manual/1_0?chapter=data-fixtures).

@@ -5,30 +5,47 @@ Chapter 3 - Configuration
 
 Doctrine controls features and settings with attributes. The attributes can be defined at different levels of a hierarchy. Some attributes can be specified at all levels and others cannot. Below explains how you can specify attributes at each level. Attributes can be specified globally, on each connection, or on each individual model.
 
-In symfony you can control the Doctrine configuration in your `config/ProjectConfiguration.class.php` or `apps/frontend/config/frontendConfiguration.class.php` by creating a configureDoctrine() function. This function is automatically invoked 
+In symfony you can control the Doctrine configuration in your `config/ProjectConfiguration.class.php` or `apps/appname/config/appnameConfiguration.class.php`
 
 ### Global
+
+You can control global attributes by creating a `configureDoctrine()` in your configuration. All global attributes are set on the `Doctrine_Manager` singleton instance. This method is invoked when the `sfDoctrinePlugin` `config.php` is loaded. This is before any connections exist so only `Doctrine_Manager` attribute can be controlled at this point.
 
     [php]
     public function configureDoctrine()
     {
       $manager = Doctrine_Manager::getInstance();
       $manager->setAttribute('use_dql_callbacks', true);
+      $manager->setAttribute('use_native_enum', true);
     }
 
-### Connection
+### All Connections
+
+You can control per connection attributes by creating a `configureDoctrineConnection()` in your configuration class. This method is invoked in `sfDoctrineDatabase` as each connection is instantiated by symfony in the order they exist in `config/databases.yml`.
 
     [php]
-    public function configureDoctrine()
+    public function configureDoctrineConnection(Doctrine_Connection $connection)
     {
-      $conn = Doctrine_Manager::getInstance()->getConnection('connection_name');
-      $conn->setAttribute('use_dql_callbacks', true);
+      $connection->setAttribute('use_dql_callbacks', true);
+      $connection->setAttribute('use_native_enum', true);
     }
+
+You may also want to have a different configuration for each connection so you can create a specific function that is also invoked on each individual connection. If you have a connection named `doctrine` then you will need to create a function named `configureDoctrineConnectionDoctrine()` in your
+
+    [php]
+    public function configureDoctrineConnectionDoctrine(Doctrine_Connection $connection)
+    {
+      $connection->setAttribute('use_dql_callbacks', false);
+      $connection->setAttribute('use_native_enum', false);
+    }
+
+In the above example we have enabled `use_dql_callbacks` and `use_native_enum` for every connection except the connection named `doctrine` by enabling it for all connections and disabling the attributes specifically for that connection.
 
 ### Model
 
 The last level of the hierarchy is for Doctrine models. The attributes can be specified directly in the YAML definition of the model.
 
+    [yml]
     Store:
       connection: client
       attributes:
@@ -36,6 +53,15 @@ The last level of the hierarchy is for Doctrine models. The attributes can be sp
       columns:
         name: string(255)
         description: string(500)
+
+You can also set attributes using php code in the generated model classes in `lib/model/doctrine`. Check out `lib/model/doctrine/Store.class.php` and override the `setTableDefinition()` to specify some additional attributes. 
+
+    [php]
+    public function setTableDefinition()
+    {
+      parent::setTableDefinition()
+      $this->setAttribute('export', 'tables');
+    }
 
 >**TIP**
 >More can be read about configuration in the Doctrine Manual [here](http://www.doctrine-project.org/documentation/manual/1_0?chapter=configuration).
