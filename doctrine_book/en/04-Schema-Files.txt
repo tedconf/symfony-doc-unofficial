@@ -78,6 +78,10 @@ Below is a sample yaml schema file that implements each of the different column 
           default: normal
         html_header: gzip
 
+Generates the following SQL with MySQL:
+
+    CREATE TABLE user (id INT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), latitude DOUBLE, longitude DOUBLE, hourly_rate DECIMAL(18,2), groups_array TEXT, session_object TEXT, description LONGTEXT, profile_image_binary_data LONGBLOB, created_at DATETIME, time_last_available TIME, date_last_available DATE, roles ENUM('administrator', 'moderator', 'normal') DEFAULT 'normal', html_header TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
+
 ## Options
 
 Often you need to set options on your table for controlling things like charset, collation and table type in mysql. These can be controlled easily with options.
@@ -91,6 +95,10 @@ Often you need to set options on your table for controlling things like charset,
       columns:
         username: string(255)
         password: string(255)
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = MyISAM;
 
 ## Indexes
 
@@ -106,6 +114,10 @@ You can optimize your database by defining indexes on columns which are used in 
           fields: [username]
           type: unique
 
+Generates the following SQL with MySQL:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), UNIQUE INDEX username_indext_idx (username), PRIMARY KEY(id)) ENGINE = INNODB;
+
 You can also optional specify unique directly on the column when dealing with single column unique indexes.
 
     [yml]
@@ -115,6 +127,10 @@ You can also optional specify unique directly on the column when dealing with si
           type: string(255)
           unique: true
         password: string(255)
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255) UNIQUE, password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
 
 >**Note**
 >Indexes are automatically created on relationship foreign keys when the relationships are defined. The next section explains how to define relationships between foreign keys on your tables.
@@ -142,6 +158,11 @@ Here is a simple example of how to define a one-to-one relation between a User a
           type: one
           foreignType: one
 
+Generates the following SQL with MySQL:
+
+    CREATE TABLE profile (id BIGINT AUTO_INCREMENT, user_id BIGINT, name VARCHAR(255), email_address VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE profile ADD FOREIGN KEY (user_id) REFERENCES user(id);
+
 ### One to Many
 
 Here is a simple example of how to define a one-to-many relation between a User and Phonenumber model.
@@ -158,6 +179,11 @@ Here is a simple example of how to define a one-to-many relation between a User 
           foreign: id
           type: one
           foreignType: many
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id);
 
 ### Many to Many
 
@@ -205,6 +231,15 @@ Here is a simple example of how to define a many-to-many relation between a Blog
           foreign: id
           foreignAlias: BlogPostTags
 
+Generates the following SQL with MySQL:
+
+    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE blog_post_tag (blog_post_id BIGINT, tag_id BIGINT, PRIMARY KEY(blog_post_id, tag_id)) ENGINE = INNODB;
+    CREATE TABLE tag (id BIGINT AUTO_INCREMENT, name VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE blog_post ADD FOREIGN KEY (user_id) REFERENCES user(id);
+    ALTER TABLE blog_post_tag ADD FOREIGN KEY (tag_id) REFERENCES tag(id);
+    ALTER TABLE blog_post_tag ADD FOREIGN KEY (blog_post_id) REFERENCES blog_post(id);
+
 ## Cascading Operations
 
 When saving objects in Doctrine it is cascaded to associated objects by default. Deleting is slightly different. Doctrine has the ability to do both application and database level cascading deletes.
@@ -231,6 +266,11 @@ Doctrine also has the ability to export cascading operations to the database lev
           type: one
           foreignType: many
           onDelete: CASCADE
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE;
 
 >**NOTE**
 >Database level cascading is specified on the side where the foreign key lives.
@@ -303,6 +343,10 @@ You can easily enable a behavior by using the actAs functionality. Below is an e
 
 The above example will automatically add a slug column to the model and will set the value of the slug column based on the value of the title column and make sure the value is unique. If a slug already exists in the database with the same value then 1, 2, 3, etc. is appended to the end.
 
+Generates the following SQL with MySQL:
+
+    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, slug VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+
 >**NOTE**
 >You can also write your own behaviors. Check out the source code of the existing behaviors to get a peak at how they work. They can be found in `SF_ROOT/plugins/sfDoctrinePlugin/lib/doctrine/Doctrine/Template`.
 
@@ -335,9 +379,14 @@ Concrete inheritance creates separate tables for child classes. However in concr
       columns:
         content: string(300)
 
+Generates the following SQL with MySQL:
+
+    CREATE TABLE text_item (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE comment (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), content TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
+
 ### Simple Inheritance
 
-Simple inheritance is the simpliest inheritance. In simple inheritance all the child classes share the same columns as the parent.
+Simple inheritance is the simplest inheritance. In simple inheritance all the child classes share the same columns as the parent.
 
     Entity:
       columns:
@@ -355,6 +404,10 @@ Simple inheritance is the simpliest inheritance. In simple inheritance all the c
       inheritance:
         extends: Entity
         type: simple
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, PRIMARY KEY(id)) ENGINE = INNODB;
 
 ### Column Aggregation Inheritance
 
@@ -378,6 +431,10 @@ The entity table has a column called type automatically added which tells whethe
       inheritance:
         extends: Entity
         type: column_aggregation
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
 
 ## Global Schema Information
 
@@ -413,6 +470,9 @@ Here is a sample schema file which implements some global schema information:
           type: string(255)
         password:
           type: string(255)
+      relations:
+        Contact:
+          foreignType: one
 
     Contact:
       columns:
@@ -422,6 +482,12 @@ Here is a sample schema file which implements some global schema information:
           autoincrement: true
         name:
           type: string(255)
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE contact (id INT AUTO_INCREMENT, name VARCHAR(255), created_at DATETIME, updated_at DATETIME, PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE user (id INT AUTO_INCREMENT, contact_id INT, username VARCHAR(255), password VARCHAR(255), created_at DATETIME, updated_at DATETIME, INDEX contact_id_idx (contact_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE user ADD FOREIGN KEY (contact_id) REFERENCES contact(id);
 
 All of the settings at the top will be applied to every model which is defined in that yaml file.
 
