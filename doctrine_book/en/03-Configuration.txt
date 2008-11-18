@@ -62,5 +62,38 @@ You can also set attributes using php code in the generated model classes in `li
       $this->setAttribute('export', 'tables');
     }
 
+## Configuring Model Building
+
+sfDoctrinePlugin offers the ability to override some of the default model building options. These settings can be controlled using the `sfConfig` class using the parameter named `doctrine_model_builder_options`.
+
+Here is an example of how you can change the base class used when generating models. You can set it to use a class named `myDoctrineRecord` or whatever you want. Just make sure that a class exists somewhere in your project for the symfony autoloading to find.
+
+    [php]
+    public function configureDoctrine(Doctrine_Manager $manager)
+    {
+      $options = array('baseClassName' => 'myDoctrineRecord');
+      sfConfig::set('doctrine_model_builder_options', $options);
+    }
+
+Make sure you create the class. For example, `sfproject/lib/myDoctrineRecord.class.php` with the following php code.
+
+    [php]
+    class myDoctrineRecord extends sfDoctrineRecord
+    {
+    }
+
+Now when you generate your models, all the classes will extend from `myDoctrineRecord` instead of `sfDoctrineRecord` so you can add custom functionality to all your models.
+
+Here is a list of all the other options which can be changed to different values for the model building process.
+
+| Name                 | Description                               | Default          |
+|----------------------|-------------------------------------------|------------------|
+| suffix               | Suffix to use for generated classes       | .class.php       |
+| generateBaseClasses  | Whether or not to generate base classes   | true             |
+| generateTableClasses | Whether or not to generate *Table classes | true             |
+| baseClassPrefix      | Word to prefix base classes with          | Base             |
+| baseClassesDirectory | Directory to generate base classes in     | base             |
+| baseClassName        | Super parent to extend models from        | sfDoctrineRecord |
+
 >**TIP**
 >More can be read about configuration in the Doctrine Manual [here](http://www.doctrine-project.org/documentation/manual/1_0?chapter=configuration).
