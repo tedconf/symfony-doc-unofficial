@@ -42,7 +42,7 @@ There is another important point to consider when building data-access procedure
 
 The main benefit of an abstraction layer is portability, because it makes switching to another database possible, even in the middle of a project. Suppose that you need to write a quick prototype for an application, but the client hasn't decided yet which database system would best suit his needs. You can start building your application with SQLite, for instance, and switch to MySQL, PostgreSQL, or Oracle when the client is ready to decide. Just change one line in a configuration file, and it works.
 
-Symfony uses Propel as the ORM, and Propel uses Creole for database abstraction. These two third-party components, both developed by the Propel team, are seamlessly integrated into symfony, and you can consider them as part of the framework. Their syntax and conventions, described in this chapter, were adapted so that they differ from the symfony ones as little as possible.
+Symfony uses Propel as the ORM, and Propel uses PHP Data Objects for database abstraction. These two third-party components, both developed by the Propel team, are seamlessly integrated into symfony, and you can consider them as part of the framework. Their syntax and conventions, described in this chapter, were adapted so that they differ from the symfony ones as little as possible.
 
 >**NOTE**
 >In a symfony project, all the applications share the same model. That's the whole point of the project level: regrouping applications that rely on common business rules. This is the reason that the model is independent from the applications and the model files are stored in a `lib/model/` directory at the root of the project.
@@ -413,9 +413,9 @@ Finally, if you just want the first object returned, replace `doSelect()` with a
 
 Sometimes, you don't want to retrieve objects, but want to get only synthetic results calculated by the database. For instance, to get the latest creation date of all articles, it doesn't make sense to retrieve all the articles and to loop on the array. You will prefer to ask the database to return only the result, because it will skip the object hydrating process.
 
-On the other hand, you don't want to call the PHP commands for database management directly, because then you would lose the benefit of database abstraction. This means that you need to bypass the ORM (Propel) but not the database abstraction (Creole).
+On the other hand, you don't want to call the PHP commands for database management directly, because then you would lose the benefit of database abstraction. This means that you need to bypass the ORM (Propel) but not the database abstraction (PDO).
 
-Querying the database with Creole requires that you do the following:
+Querying the database with PHP Data Objects requires that you do the following:
 
   1. Get a database connection.
   2. Build a query string.
@@ -424,21 +424,22 @@ Querying the database with Creole requires that you do the following:
 
 If this looks like gibberish to you, the code in Listing 8-15 will probably be more explicit.
 
-Listing 8-15 - Custom SQL Query with Creole
+Listing 8-15 - Custom SQL Query with PDO
 
     [php]
     $connection = Propel::getConnection();
     $query = 'SELECT MAX(%s) AS max FROM %s';
     $query = sprintf($query, ArticlePeer::CREATED_AT, ArticlePeer::TABLE_NAME);
-    $statement = $connection->prepareStatement($query);
-    $resultset = $statement->executeQuery();
-    $resultset->next();
-    $max = $resultset->getInt('max');
+    $statement = $connection->prepare($query);
+    $statement->execute();
+    $resultset = $statement->fetch(PDO::FETCH_OBJ);
+    $max = $resultset->max;
 
-Just like Propel selections, Creole queries are tricky when you first start using them. Once again, examples from existing applications and tutorials will show you the right way.
+
+Just like Propel selections, PDO queries are tricky when you first start using them. Once again, examples from existing applications and tutorials will show you the right way.
 
 >**CAUTION**
->If you are tempted to bypass this process and access the database directly, you risk losing the security and abstraction provided by Creole. Doing it the Creole way is longer, but it forces you to use good practices that guarantee the performance, portability, and security of your application. This is especially true for queries that contain parameters coming from a untrusted source (such as an Internet user). Creole does all the necessary escaping and secures your database. Accessing the database directly puts you at risk of SQL-injection attacks.
+>If you are tempted to bypass this process and access the database directly, you risk losing the security and abstraction provided by Propel. Doing it the Propel way is longer, but it forces you to use good practices that guarantee the performance, portability, and security of your application. This is especially true for queries that contain parameters coming from a untrusted source (such as an Internet user). Propel does all the necessary escaping and secures your database. Accessing the database directly puts you at risk of SQL-injection attacks.
 
 ### Using Special Date Columns
 
@@ -553,7 +554,7 @@ Listing 8-19 - Database Connection Settings for SQLite Use a File Path As Host
     [yml]
     all:
       propel:
-        class:          sfPropelDatabase
+        class:      sfPropelDatabase
         param:
           phptype:  sqlite
           database: %SF_DATA_DIR%/blog.db
@@ -955,7 +956,7 @@ The generated SQL is also helpful to rebuild the database in another environment
 
 ### Generating a YAML Data Model from an Existing Database
 
-Symfony can use the Creole database access layer to generate a `schema.yml` file from an existing database, thanks to introspection (the capability of databases to determine the structure of the tables on which they are operating). This can be particularly useful when you do reverse-engineering, or if you prefer working on the database before working on the object model.
+Symfony can use Propel to generate a `schema.yml` file from an existing database, thanks to introspection (the capability of databases to determine the structure of the tables on which they are operating). This can be particularly useful when you do reverse-engineering, or if you prefer working on the database before working on the object model.
 
 In order to do this, you need to make sure that the project `propel.ini` file points to the correct database and contains all connection settings, and then call the `propel:build-schema` command:
 
@@ -1002,7 +1003,7 @@ Instead of generating a `schema.yml` file, this will create a `schema.xml` file 
 Summary
 -------
 
-Symfony uses Propel as the ORM and Creole as the database abstraction layer. It means that you must first describe the relational schema of your database in YAML before generating the object model classes. Then, at runtime, use the methods of the object and peer classes to retrieve information about a record or a set of records. You can override them and extend the model easily by adding methods to the custom classes. The connection settings are defined in a `databases.yml` file, which can support more than one connection. And the command line contains special tasks to avoid duplicate structure definition.
+Symfony uses Propel as the ORM and PHP Data Objects as the database abstraction layer. It means that you must first describe the relational schema of your database in YAML before generating the object model classes. Then, at runtime, use the methods of the object and peer classes to retrieve information about a record or a set of records. You can override them and extend the model easily by adding methods to the custom classes. The connection settings are defined in a `databases.yml` file, which can support more than one connection. And the command line contains special tasks to avoid duplicate structure definition.
 
 The model layer is the most complex of the symfony framework. One reason for this complexity is that data manipulation is an intricate matter. The related security issues are crucial for a website and should not be ignored. Another reason is that symfony is more suited for middle- to large-scale applications in an enterprise context. In such applications, the automations provided by the symfony model really represent a gain of time, worth the investment in learning its internals.
 
