@@ -3,11 +3,10 @@ Chapter 6 - Working with Data
 
 ## Retrieving Data
 
-The recommended way to efficiently retrieve data in Doctrine is to use the Doctrine Query Language. It is the best way to retrieve all your data in the lowest amount of queries possible. For convenience when working with single tables we offer some simple finder methods as well.
-
+In Doctrine you are able to retrieve complex results from your RDBMS and hydrate them in to array or object data structures which represent your relationship structure. This is done by using the Doctrine Query Language. It is the best way to retrieve all your data in the lowest amount of queries possible. For convenience when working with single tables we offer some simple finder methods as well that dynamically build and execute these queries.
 ### DQL
 
-Doctrine uses DQL for retrieving data and offers a complete Doctrine_Query api for building your DQL queries. Below you'll find examples utilizing all the different API functions as well as a complete list of the functions that can be used.
+Doctrine uses DQL for retrieving data and offers a complete `Doctrine_Query` API for building them. Below you'll find a complete list of the methods that can be used as well as examples utilizing all of them.
 
 #### Query API
 
@@ -49,9 +48,9 @@ Doctrine uses DQL for retrieving data and offers a complete Doctrine_Query api f
 
 | Function Name                    | Description                           |
 |----------------------------------|---------------------------------------|
-| forUpdate($flag = true)          | Change a query to be for an `UPDATE`  |
-| update('User u')                 | Specify the model to `UPDATE`         |
-| set('u.username', '?', 'jwage')  | Set new values for the `UPDATE` query |
+| forUpdate($flag = true)          | Change a query to use `FOR UPDATE` |
+| update('User u')                 | Specify the model name to `UPDATE` |
+| set('u.username', '?', 'jwage')  | Set new values for the `UPDATE` query. The first argument is the data to modify, the second is the expression to put directly in the DQL string(can be `?` or a DBMS function), and the third is the new value. |
 
 **Delete API**
 
@@ -83,7 +82,7 @@ Below you will find a few example queries which you can learn from and see how t
 
 **Calculated Columns**
 
-When using DBMS functions to calculate columns, they are hydrated in to the component/model that is the first involved in the expression. In the example below, the model is hydrated in to the Phonenumber relation because it is the first component encountered in the query.
+When using DBMS functions to calculate columns, they are hydrated in to the component/model that is the first involved in the expression. In the example below, the model is hydrated in to the `Phonenumber` relation because it is the first component encountered in the query.
 
     [php]
     $q = Doctrine_Query::create()
@@ -336,7 +335,7 @@ Doctrine offers some simple magic finder methods that automatically create Doctr
 
 **Magic Find By Methods**
 
-You can utilize the magic findBy*() and findOneBy*() methods to find records by single fields value.
+You can utilize the magic `findBy*()` and `findOneBy*()` methods to find records by single fields value.
 
     [php]
     $user = Doctrine::getTable('User')->findOneByUsername('jwage');
@@ -387,9 +386,94 @@ Doctrine offers 3 ways to alter your object properties and sfDoctrinePlugin impl
     $user->password = 'changeme'; // Invokes setPassword()
     echo $user->username; // Invokes getPassword() and returns PREFIX_jwage
 
+### Working with Relationships
+
+With Doctrine it is easy to manipulate the data in your object graph by utilizing PHP objects.
+
+**User hasOne Profile**
+
+    [php]
+    $user = new User();
+    $user->username = 'jwage';
+    $user->password = 'changeme';
+    $user->Profile->name = 'Jonathan H. Wage';
+    $user->Profile->about = 'His name is Jonathan';
+    $user->save();
+
+**User hasMany Phonenumber as Phonenumbers**
+
+    [php]
+    $user = new User();
+    $user->username = 'jwage';
+    $user->password = 'changeme';
+    $user->Phonenumbers[]->phonenumber = '6155139185';
+    $user->Phonenumbers[]->phonenumber = '1234567890';
+    $phonenumber = $user->Phonenumbers[2];
+    $phonenumber->phonenumber = '0987654321';
+
+**BlogPost hasMany Tag as Tags**
+
+    $blogPost = new BlogPost();
+    $blogPost->title = 'Test blog post';
+    $blogPost->body = 'This is the content of the test blog post';
+    $tag = Doctrine::getTable('Tag')->findOneByName('doctrine');
+    if ( ! $tag) {
+      $blogPost->Tags[] = $tag;
+    }
+    $blogPost->Tags[] = $tag;
+
+The above code is ugly, we should extract that login to our `BlogPostTable` child class which is located in `lib/model/doctrine/BlogPostTable.class.php`.
+
+    [php]
+    class BlogPostTable extends Doctrine_Table
+    {
+      public function findOneByName($name)
+      {
+        $tag = $this->findOneBy('name', $name);
+        if ( ! $tag) {
+          $tag = new Tag();
+          $tag->name = $name;
+        }
+        return $tag;
+      }
+    }
+
+Now the first example can be simplified some.
+
+    [php]
+    $blogPost = new BlogPost();
+    $blogPost->title = 'Test blog post';
+    $blogPost->body = 'This is the content of the test blog post';
+    $tag = Doctrine::getTable('Tag')->findOneByName('doctrine');
+    $blogPost->Tags[] = $tag;
+
+Another method would be to override the `Tag` `name` mutator by creating a function named `setName()` in the generated `Tag` class located in `lib/model/doctrine/Tag.class.php`.
+
+    [php]
+    class Tag extends BaseTag
+    {
+      public function setName($name)
+      {
+        $tag = Doctrine::getTable('Tag')->findOneByName($name);
+        if ($tag) {
+          $this->assignIdentifier($tag->identifier());
+        } else {
+          $this->_set('name', $name);
+        }
+      }
+    }
+
+Now the code becomes even simpler to ensure duplicate tags are not inserted in to the database.
+
+    [php]
+    $blogPost = new BlogPost();
+    $blogPost->title = 'Test blog post';
+    $blogPost->body = 'This is the content of the test blog post';
+    $blogPost->Tags[]->name = 'doctrine';
+
 ## Deleting Data
 
-There are two options for deleting data. Retrieve the object first and call the Doctrine_Record::delete() method or issue a single DQL delete query.
+There are two options for deleting data. Retrieve the object first and call the `Doctrine_Record::delete()` method or issue a single DQL delete query.
 
     [php]
     $user = Doctrine::getTable('User')->find(1);

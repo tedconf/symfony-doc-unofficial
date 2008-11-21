@@ -6,38 +6,45 @@ Chapter 5 - Data Fixtures
 Doctrine offers the ability to load small sets of sample test data by using a simple YAML syntax for specifying data to be loaded in to your object relationship hierarchy. It supports easily creating information for your tables and linking foreign keys between records.
 
 >**Note**
->The following data fixture example use this YAML schema file in config/doctrine/schema.yml
+>The examples demonstrated in this chapter use the following simple `User` and `Phonenumber` schema which should be placed in `config/doctrine/schema.yml`.
 
-    Client:
+    User:
       columns:
-        name: string(255)
         username: string(255)
         password: string(255)
 
-    Store:
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(25)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+
+    Profile:
       columns:
         name: string(255)
-        description: string(500)
-        client_id: integer
+        about: string(500)
+        user_id: integer
       relations:
-        Client:
-          foreignAlias: Stores
+        User:
+          foreignType: oneå
 
-## Simple User Data
+>**NOTE**
+>In `sfDoctrinePlugin`, when linking records in data fixtures you use the relationship name, unlike `sfPropelPlugin` where you use the foreign key name. You also have the ability to specify the data fixtures inline. Meaning, a block of YAML that represents a `Doctrine_Record` instance can have nested data structures that define the relationship graph for that `Doctrine_Record` child. Later in this chapter will demonstrate both the `original` and `inline` style data fixtures.
 
-Create data/fixtures/client.yml and load the following YAML code.
+## Original
 
-    Client:
-      Client_1:
-        name: Jonathan H. Wage
+Create `data/fixtures/user.yml` and load the following YAML code.
+
+    User:
+      User_1:
         username: jwage
         password: changeme
-      Client_2:
-        name: Fabien Potencier
+      User_2:
         username: fabpot
         password: changeme
-      Client_3:
-        name: Dustin Whittle
+      User_3:
         username: dwhittle
         password: changeme
 
@@ -47,91 +54,79 @@ Run the following commands to rebuild the database.
 
 Now run a simple DQL query to inspect that the data was loaded properly.
 
-    $ ./symfony doctrine:dql "FROM Client c"
+    $ ./symfony doctrine:dql "FROM User u"
     >> doctrine  executing dql query
-    DQL: FROM Client c
+    DQL: FROM User u
     found 3 results
     -
       id: '1'
-      name: 'Jonathan H. Wage'
       username: jwage
       password: changeme
     -
       id: '2'
-      name: 'Fabien Potencier'
       username: fabpot
       password: changeme
     -
       id: '3'
-      name: 'Dustin Whittle'
       username: dwhittle
       password: changeme
 
 ## Linking Relationships
 
-Create data/fixtures/store.yml and load the following YAML data fixtures.
+Create `data/fixtures/phonenumber.yml` and load the following YAML data fixtures.
 
-    Store:
-      Store_1:
-        name: The Wage Store
-        description: My store
-        Client: Client_1
-      Store_2:
-        name: symfony Store
-        description: The symfony store
-        Client: Client_2
-      Store_3:
-        name: Yahoo! Store
-        description: The Yahoo! store
-        Client: Client_3
+    Phonenumber:
+      Phonenumber_1:
+        phonenumber: 6155139185
+        User: User_1
+      Phonenumber_2:
+        phonenumber: 1234567890
+        User: User_2
+      Phonenumber_3:
+        phonenumber: 0987654321
+        User: User_3
 
 Rebuild the database and run another DQL query to inspect the loaded data fixtures.
 
     $ ./symfony doctrine:build-all-reload
 
-Now inspect the data with a more complex query that joins the `Client` `Store` records.
+Now inspect the data with a more complex query that joins the `User` `Phonenumber` records.
 
-    $ ./symfony doctrine:dql "FROM Client c, c.Stores s"
+    $ ./symfony doctrine:dql "FROM User u, u.Phonenumbers p"
     >> doctrine  executing dql query
-    DQL: FROM Client c, c.Stores s
+    DQL: FROM User u, u.Phonenumbers p
     found 3 results
     -
       id: '1'
-      name: 'Jonathan H. Wage'
       username: jwage
       password: changeme
-      Stores:
+      Phonenumbers:
         -
           id: '1'
-          name: 'The Wage Store'
-          description: 'My store'
-          client_id: '1'
+          phonenumber: 6155139185
+          user_id: '1'
     -
       id: '2'
-      name: 'Fabien Potencier'
       username: fabpot
       password: changeme
-      Stores:
+      Phonenumbers:
         -
           id: '2'
-          name: 'symfony Store'
-          description: 'The symfony store'
-          client_id: '2'
+          phonenumber: 1234567890
+          user_id: '2'
     -
       id: '3'
-      name: 'Dustin Whittle'
       username: dwhittle
       password: changeme
-      Stores:
+      Phonenumbers:
         -
           id: '3'
-          name: 'Yahoo! Store'
-          description: 'The Yahoo! store'
-          client_id: '3'
+          phonenumber: 0987654321
+          user_id: '3'
 
 ## Many to Many
 
-Use the following YAML schema file in config/doctrine/schema.yml with the example data fixtures.
+Use the following YAML schema file in `config/doctrine/schema.yml` with the example data fixtures.
 
     BlogPost:
       columns:
@@ -145,14 +140,23 @@ Use the following YAML schema file in config/doctrine/schema.yml with the exampl
 
     BlogPostTag:
       columns:
-        blog_post_id: integer
-        tag_id: integer
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          foreignAlias: BlogPostTags
+        Tag:
+          foreignAlias: BlogPostTags
 
     Tag:
       columns:
         name: string(255)
 
-Load the below data fixtures in to data/fixtures/data.yml
+Load the below data fixtures in to `data/fixtures/data.yml`
 
     BlogPost:
       BlogPost_1:
@@ -198,19 +202,17 @@ Now inspect the data with another DQL query that fetches all `BlogPost` records 
           id: '4'
           name: orm
 
-## Inline Data Fixtures
+## Inline
 
 Doctrine offers the ability to specify data fixture relationships inline like below.
 
-    Client:
-      Client_1:
-        name: Jonathan H. Wage
+    User:
+      User_1:
         username: jwage
         password: changeme
-        Stores:
-          Store_1:
-            name: The Wage Store
-            description: My store
+        Phonenumbers:
+          Phonenumber_1:
+            6155139185
 
     BlogPost:
       BlogPost_1:
@@ -226,7 +228,7 @@ Doctrine offers the ability to specify data fixture relationships inline like be
           orm:
             name: orm
 
-This alternative syntax can greatly reduce the length and complexity of you data fixtures.
+This alternative syntax can greatly reduce the length and complexity of your data fixtures.
 
 >**TIP**
 >More can be read about data fixtures in the Doctrine Manual [here](http://www.doctrine-project.org/documentation/manual/1_0?chapter=data-fixtures).
