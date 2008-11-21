@@ -12,7 +12,7 @@ The default `config/databases.yml` should look like the following.
         class:      sfPropelDatabase
         param:
           dsn:      mysql:host=localhost;dbname=dbname
-          username: root
+          username: user
 
 The only difference between Propel and Doctrine here is that the class must be  `sfDoctrineDatabase` instead of `sfPropelDatabase` and the connection name is doctrine instead of propel. Both Doctrine and Propel use PHP Data Objects (PDO) as the database abstraction layer.
 
@@ -21,7 +21,7 @@ The only difference between Propel and Doctrine here is that the class must be  
 
 You can configure the connections in `config/databases.yml` with the `configure:database` task like the following.
 
-    $ ./symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=dbname" root secret
+    $ ./symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=dbname" user secret
 
 Now you will see a new connection defined like the following:
 
@@ -29,7 +29,7 @@ Now you will see a new connection defined like the following:
       class: sfDoctrineDatabase
       param:
         dsn: 'mysql:host=localhost;dbname=dbname'
-        username: root
+        username: user
         password: secret
 
 >**NOTE**
@@ -51,13 +51,16 @@ Doctrine supports all drivers which PDO supports. PHP must be compiled with both
 | PostgreSQL        | PostgreSQL Functions (PDO_PGSQL)                     |
 | SQLite            | SQLite Functions (PDO_SQLITE)                        |
 
+>**NOTE**
+>You can read more about PDO at [http://www.php.net/pdo](http://www.php.net/pdo).
+
 ## DSN
 
 Doctrine offers two ways of specifying your DSN information. You can use the portable Doctrine style DSN or use the native PDO style DSN.
 
 ### Doctrine Style
 
-Doctrine has a DSN syntax which is based off of PEAR MDB2 and is portable across all dbms.
+Doctrine has a DSN syntax which is based off of PEAR MDB2.
 
     all:
       doctrine:
@@ -108,8 +111,8 @@ The above mysql table would generate a yaml schema like the following in `config
 
 Doctrine offers the ability to have multiple connections. You can easily bind models to connections so that queries are executed on the appropriate connection. So first we need to add multiple connections with the `configure:database` command like the following.
 
-    $ ./symfony configure:database --name=master --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" root secret
-    $ ./symfony configure:database --name=client --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" root secret
+    $ ./symfony configure:database --name=master --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" user secret
+    $ ./symfony configure:database --name=client --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" user secret
 
 Remove the original connection we created and your `config/databases.yml` will look like the following.
 
@@ -118,13 +121,13 @@ Remove the original connection we created and your `config/databases.yml` will l
         class: sfDoctrineDatabase
         param:
           dsn: 'mysql:host=localhost;dbname=master'
-          username: root
+          username: user
           password: secret
       client:
         class: sfDoctrineDatabase
         param:
           dsn: 'mysql:host=localhost;dbname=master'
-          username: root
+          username: user
           password: secret
 
 Now say we have a User model which you want to bind to the master database. You can simply do this directly in the definition of the model like below. Place the following YAML code in `config/doctrine/schema.yml`
@@ -161,7 +164,7 @@ sfDoctrinePlugin allows you to specify connection attributes directly in the `co
         class: sfDoctrineDatabase
         param:
           dsn: 'mysql:host=localhost;dbname=dbname'
-          username: root
+          username: user
           password: secret
           attributes:
             use_dql_callbacks: true
