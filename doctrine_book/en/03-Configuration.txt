@@ -29,10 +29,23 @@ You can control per connection attributes by creating a `configureDoctrineConnec
       $connection->setAttribute('use_native_enum', true);
     }
 
-You may also want to have a different configuration for each connection so you can create a specific function that is also invoked on each individual connection. If you have a connection named `doctrine` then you will need to create a function named `configureDoctrineConnectionDoctrine()` in your
+You can also optionally specify connection attributes directly on the connection definition in `config/doctrine/databases.yml` like the following:
+
+    [yml]
+    doctrine:
+       class: sfDoctrineDatabase
+       param:
+         dsn: 'mysql:host=localhost;dbname=dbname'
+         username: user
+         password: secret
+         attributes:
+           use_dql_callbacks: true
+           use_native_enum:  true
+
+You may also want to have a different configuration for each connection so you can create a specific function that is also invoked on each individual connection. If you have a connection named `master` then you will need to create a function named `configureDoctrineConnectionMaster()` in your `config/ProjectConfniguration.class.php` file.
 
     [php]
-    public function configureDoctrineConnectionDoctrine(Doctrine_Connection $connection)
+    public function configureDoctrineConnectionMaster(Doctrine_Connection $connection)
     {
       $connection->setAttribute('use_dql_callbacks', false);
       $connection->setAttribute('use_native_enum', false);

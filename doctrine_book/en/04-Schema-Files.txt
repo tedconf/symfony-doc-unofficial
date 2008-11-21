@@ -110,7 +110,7 @@ You can optimize your database by defining indexes on columns which are used in 
         username: string(255)
         password: string(255)
       indexes:
-        username_indext:
+        username_index:
           fields: [username]
           type: unique
 
@@ -350,6 +350,24 @@ Generates the following SQL with MySQL:
 >**NOTE**
 >You can also write your own behaviors. Check out the source code of the existing behaviors to get a peek at how they work. They can be found in `SF_ROOT/plugins/sfDoctrinePlugin/lib/doctrine/Doctrine/Template`. And you can read more about Doctrine behaviors in the [manual](http://www.doctrine-project.org/documentation/manual/1_0?one-page#behaviors).
 
+## Nesting Behaviors
+
+Doctrine offers the ability to easily nest behaviors. For example you may want to have a `Sluggable` behavior on your auto-generated model with the `I18n` behavior.
+
+    [yml]
+    Gallery:
+      actAs:
+        I18n:
+          fields: [title, description]
+          actAs:
+            Sluggable:
+              fields:  [title]
+      columns:
+        title: string(255)
+        description: clob
+
+Now the `GalleryTranslation` model which is automatically generated will have a `slug` column which is automatically set for you based on the translated title column. You can mix your behaviors together but remember some behaviors will not always play together as they are developed standalone and are not aware of each other.
+
 ## Inheritance
 
 Another great feature of Doctrine is the ability to use native PHP OOP inheritance with your models. It supports three different inheritance strategies which can be used independently or mixed together. Below are some examples of the different inheritance strategies.
@@ -490,6 +508,52 @@ Generates the following SQL with MySQL:
     ALTER TABLE user ADD FOREIGN KEY (contact_id) REFERENCES contact(id);
 
 All of the settings at the top will be applied to every model which is defined in that yaml file.
+
+## Plugin Schemas
+
+With symfony plugins, using Doctrine schemas are no different than using them in your main `config/doctrine` folder. The plugin should also have the same `config/doctrine` directory containing YAML files. It is not necessary to specify any package parameter like you have to with Propel. The plugin is smart enough to know it is a part of a plugin because of its location.
+
+The models, forms, filters, etc. are all generated in to sub-folders for the plugin to make organization and maintenance of your models easier. For example in `sfDoctrineGuardPlugin` `sfGuardUser` is generated as follows.
+
+    lib/
+      model/
+       doctrine/
+         sfDoctrineGuardPlugin/
+           sfGuardUser.class.php
+           sfGuardUserTable.class.php
+           base
+             BasesfGuardUser.class.php
+      form/
+        doctrine/
+          BaseFormDoctrine.class.php
+          sfDoctrineGuardPlugin/
+            sfGuardUserForm.class.php
+            base
+              BasesfGuardUserForm.class.php
+    plugins/
+      sfDoctrineGuardPlugin/
+        lib/
+          model/
+            doctrine/
+              PluginsfGuardUser.class.php
+              PluginsfGuardUserTable.class.php
+          form/
+            doctrine/
+              PluginsfGuardUserForm.class.php
+
+The hierarchy of the generated classes are as follows.
+
+| Name                   | Extends                | Description                        |
+|------------------------|------------------------|------------------------------------|
+| sfGuardUser            | PluginsfGuardUser      | Top level model class for all your custom project functionality. |
+| PluginsfGuardUser      | BasesfGuardUser        | Plugin level model class for functionality bundled with the plugin. |
+| BasesfGuardUser        | sfDoctrineRecord       | Generated base model class containing schema meta data. |
+| sfGuardUserTable       | PluginsfGuardUserTable | Top level table class for custom project functionality. |
+| PluginsfGuardUserTable | Doctrine_Table         | Plugin level table class for functionality bundled with the plugin. |
+| sfGuardUserForm        | PluginsfGuardUserForm  | Top level form class for all your custom project functionality. |
+| PluginsfGuardUserForm  | BasesfGuardUserForm    | Plugin level form class for functionality bundled with the plugin. |
+| BasesfGuardUserForm    | BaseFormDoctrine       | Generated base form class containing form widgets and validators. |
+| BaseFormDoctrine       | sfFormDoctrine         | Generated base form class which all generated forms extend. |
 
 ## Element Definitions
 

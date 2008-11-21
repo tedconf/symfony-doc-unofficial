@@ -3,7 +3,7 @@ Chapter 2 - Connections
 
 ## Introduction
 
-In this chapter we'll explain some things about Doctrine connections, how to configure with multiple connections, bind models, and how to create and drop your databases and other connection related activities.
+In this chapter we'll explain some things about Doctrine connections, how to configure multiple connections, bind models, and how to create and drop your databases and other connection related activities.
 
 The default `config/databases.yml` should look like the following.
 
@@ -54,9 +54,9 @@ Doctrine supports all drivers which PDO supports. PHP must be compiled with both
 >**NOTE**
 >You can read more about PDO at [http://www.php.net/pdo](http://www.php.net/pdo).
 
-## DSN
+## Data Source Name(DSN)
 
-Doctrine offers two ways of specifying your DSN information. You can use the portable Doctrine style DSN or use the native PDO style DSN.
+Doctrine offers two ways of specifying your DSN information. You can use the Doctrine style DSN or use the native PDO style.
 
 ### Doctrine Style
 
@@ -83,9 +83,12 @@ You may alternatively specify your DSN information in the PDO style syntax.
 >**TIP**
 >Using the PDO style syntax offers more flexibility and ability to specify non standard information about your connection to PDO. For example, when specifying non standard unix_socket paths or ports to use when connecting, specifying it in PDO syntax is more flexible. The `configure:database` command also only works with the PDO style.
 
-## Import from Propel
+## Import from Database
 
 Doctrine has the ability to generate a schema file in `config/doctrine/schema.yml` from an existing database. Just configure your Doctrine connection for the database you wish to import and run the following command.
+
+>**NOTE**
+>This is a good way to convert your Propel schema to Doctrine. Simply create your database using propel, and then generate the schema in Doctrine from your created database.
 
     $ ./symfony doctrine:build-schema
     >> doctrine  generating yaml schema from database
@@ -126,11 +129,11 @@ Remove the original connection we created and your `config/databases.yml` will l
       client:
         class: sfDoctrineDatabase
         param:
-          dsn: 'mysql:host=localhost;dbname=master'
+          dsn: 'mysql:host=localhost;dbname=client'
           username: user
           password: secret
 
-Now say we have a User model which you want to bind to the master database. You can simply do this directly in the definition of the model like below. Place the following YAML code in `config/doctrine/schema.yml`
+Now say we have a `Client` model which you want to bind to the master database. You can simply do this directly in the definition of the model like below. Place the following YAML code in `config/doctrine/schema.yml`
 
     Client:
       connection: master
@@ -139,7 +142,7 @@ Now say we have a User model which you want to bind to the master database. You 
         username: string(255)
         password: string(255)
 
-Now each Client can have Stores but they are saved in a separate database from the Users.
+Now each `Client` can have `Stores` but they are saved in a separate database from the `Clients`.
 
     Store:
       connection: client
@@ -248,7 +251,7 @@ Here is what the `lib/model/doctrine/base/BaseClient.class.php` should look like
     }
 
 >**TIP**
->It is common practice to run the `./symfony doctrine:build-all-reload-test` command when developing. This will rebuild your entire environment and run the full test suite. This is a good command to run before committing new code to ensure no new regressions have occurred.
+>It is common practice to run the `./symfony doctrine:build-all-reload-test-all` command when developing. This will rebuild your entire environment and run the full test suite. This is a good command to run before committing new code to ensure no new regressions have occurred.
 
 -
 
