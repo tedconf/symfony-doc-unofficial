@@ -1,17 +1,17 @@
-CÛmo escribir un comportamiento (*behavior*) de Propel
+C√≥mo escribir un comportamiento (*behavior*) de Propel
 ======================================================
 
 *traducido por arhak*
 
-IntroducciÛn
+Introducci√≥n
 ------------
 
-Cuando ocurre que se tiene que escribir dos veces el mismo mÈtodo para dos clases del modelo de objetos de Propel, es tiempo de pensar en **Comportamientos** (*Behaviors*). Los comportamientos ofrecen una forma simple de extender varias clases del modelo de la misma forma, ya sea alterando mÈtodos existentes o aÒadiendo nuevos. Utilizar comportamientos existentes es muy simple: Leer la parte relacionada en el CapÌtulo 8 del libro, y seguir las instrucciones escritas en el fichero `README` contenido en cada comportamiento. Pero si se quiere crear un nuevo comportamiento, entonces es necesario entender cÛmo funcionan.
+Cuando ocurre que se tiene que escribir dos veces el mismo m√©todo para dos clases del modelo de objetos de Propel, es tiempo de pensar en **Comportamientos** (*Behaviors*). Los comportamientos ofrecen una forma simple de extender varias clases del modelo de la misma forma, ya sea alterando m√©todos existentes o a√±adiendo nuevos. Utilizar comportamientos existentes es muy simple: Leer la parte relacionada en el Cap√≠tulo 8 del libro, y seguir las instrucciones escritas en el fichero `README` contenido en cada comportamiento. Pero si se quiere crear un nuevo comportamiento, entonces es necesario entender c√≥mo funcionan.
 
 Ejemplo base
 ------------
 
-Para ilustrar el proceso de crear un comportamiento, comencemos con un modelo ya extendido. Por ejemplo, imaginemos que por razones de seguridad, los registros (*records*) de la tabla `article` no deben ser removidos de la base de datos. A pesar de ellos, el mÈtodo `$article->delete()` debe marcar los registros para que no sean retornados por una invocaciÛn a `ArticlePeer::doSelect()`, pero los datos correspondientes no deben ser borrados. AsÌ es cÛmo se podrÌa extender el modelo de Propel para implementar esta regla:
+Para ilustrar el proceso de crear un comportamiento, comencemos con un modelo ya extendido. Por ejemplo, imaginemos que por razones de seguridad, los registros (*records*) de la tabla `article` no deben ser removidos de la base de datos. A pesar de ellos, el m√©todo `$article->delete()` debe marcar los registros para que no sean retornados por una invocaci√≥n a `ArticlePeer::doSelect()`, pero los datos correspondientes no deben ser borrados. As√≠ es c√≥mo se podr√≠a extender el modelo de Propel para implementar esta regla:
 
     [php]
     // en lib/model/Article.php
@@ -35,18 +35,18 @@ Para ilustrar el proceso de crear un comportamiento, comencemos con un modelo ya
       }
     }
 
-Por supuesto, eso implica aÒadir un nuevo campo de tipo timestamp llamado `deleted_at` a la tabla `article`.
+Por supuesto, eso implica a√±adir un nuevo campo de tipo timestamp llamado `deleted_at` a la tabla `article`.
 
->**Nota**: La razÛn por la cual se le aplica la extensiÛn de mÈtodo a `doSelectRS()` en lugar de `doSelect()` es porque el primero es utilizado no solo por `doSelect()`, sino tambiÈn por `doCount()`.
+>**Nota**: La raz√≥n por la cual se le aplica la extensi√≥n de m√©todo a `doSelectRS()` en lugar de `doSelect()` es porque el primero es utilizado no solo por `doSelect()`, sino tambi√©n por `doCount()`.
 
-La combinaciÛn de un nuevo campo y mÈtodos alterados le da al objeto `Article` un comportamiento "paranoico". Por ahora, la palabra "comportamiento" solo se refiere a un conjunto de mÈtodos.
+La combinaci√≥n de un nuevo campo y m√©todos alterados le da al objeto `Article` un comportamiento "paranoico". Por ahora, la palabra "comportamiento" solo se refiere a un conjunto de m√©todos.
 
-Adentr·ndose en Mixins
+Adentr√°ndose en Mixins
 ----------------------
 
-Ahora, imaginemos que se necesita mantener tambiÈn los registros borrados de la tabla `comment`. En lugar de copiar los dos mÈtodos anteriores en las clases `Comment` y `CommentPeer`, lo cual no serÌa [D.R.Y.](http://en.wikipedia.org/wiki/Don't_repeat_yourself), se deberÌa refactorizar el cÛdigo utilizado m·s de una vez en una nueva clase, e inyectarlo vÌa el sistema *Mixins*. El lector deberÌa estar familiarizado con el concepto de Mixins y la clase `sfMixer` para entender lo que sigue, asÌ que puede consultar el [CapÌtulo 17](http://www.symfony-project.org/book/1_1/17-Extending-Symfony#Mixins) del libro de symfony si se est· preguntando de quÈ se trata.
+Ahora, imaginemos que se necesita mantener tambi√©n los registros borrados de la tabla `comment`. En lugar de copiar los dos m√©todos anteriores en las clases `Comment` y `CommentPeer`, lo cual no ser√≠a [D.R.Y.](http://en.wikipedia.org/wiki/Don't_repeat_yourself), se deber√≠a refactorizar el c√≥digo utilizado m√°s de una vez en una nueva clase, e inyectarlo v√≠a el sistema *Mixins*. El lector deber√≠a estar familiarizado con el concepto de Mixins y la clase `sfMixer` para entender lo que sigue, as√≠ que puede consultar el [Cap√≠tulo 17](http://www.symfony-project.org/book/1_1/17-Extending-Symfony#Mixins) del libro de symfony si se est√° preguntando de qu√© se trata.
 
-El primer paso es remover cualquier cÛdigo de las clases del modelo, y aÒadirles ganchos (*hooks*) para permitirles ser extendidas.
+El primer paso es remover cualquier c√≥digo de las clases del modelo, y a√±adirles ganchos (*hooks*) para permitirles ser extendidas.
 
     [php]
     // Paso 1
@@ -112,7 +112,7 @@ El primer paso es remover cualquier cÛdigo de las clases del modelo, y aÒadirles
       }
     }
 
-A continuaciÛn, se debe poner el cÛdigo del comportamiento en una nueva clase, salvar esta clase en un directorio donde pueda ser autocargada (*autoloaded*):
+A continuaci√≥n, se debe poner el c√≥digo del comportamiento en una nueva clase, salvar esta clase en un directorio donde pueda ser autocargada (*autoloaded*):
 
     [php]
     // Paso 2
@@ -133,7 +133,7 @@ A continuaciÛn, se debe poner el cÛdigo del comportamiento en una nueva clase, s
       }
     }
 
-Finalmente, se deben registrar los mÈtodos de la nueva clase `ParanoidBehavior` en los ganchos de las clases `Article` y `Comment`:
+Finalmente, se deben registrar los m√©todos de la nueva clase `ParanoidBehavior` en los ganchos de las clases `Article` y `Comment`:
 
     [php]
     // Paso 3
@@ -143,14 +143,14 @@ Finalmente, se deben registrar los mÈtodos de la nueva clase `ParanoidBehavior` 
     sfMixer::register('Comment:delete:pre', array('ParanoidBehavior', 'preDelete'));
     sfMixer::register('CommentPeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
 
-Gracias al poder de los Mixins, el cÛdigo del comportamiento puede ser reusado en varios objetos del modelo.
+Gracias al poder de los Mixins, el c√≥digo del comportamiento puede ser reusado en varios objetos del modelo.
 
-Pero la tarea de aÒadir ganchos a las clases del modelo y registrar los mÈtodos hacen este proceso m·s largo que una simple copia de cÛdigo... Es aquÌ donde los **Comportamientos** de symfony vienen como gran ayuda.
+Pero la tarea de a√±adir ganchos a las clases del modelo y registrar los m√©todos hacen este proceso m√°s largo que una simple copia de c√≥digo... Es aqu√≠ donde los **Comportamientos** de symfony vienen como gran ayuda.
 
-AÒadir ganchos al modelo autom·ticamente
+A√±adir ganchos al modelo autom√°ticamente
 ----------------------------------------
 
-Symfony puede aÒadir ganchos al modelo autom·ticamente. Para habilitar estos ganchos, basta con poner a `true` la propiedad `AddBehaviors` en el fichero `propel.ini`, como se indica a continuaciÛn:
+Symfony puede a√±adir ganchos al modelo autom√°ticamente. Para habilitar estos ganchos, basta con poner a `true` la propiedad `AddBehaviors` en el fichero `propel.ini`, como se indica a continuaci√≥n:
 
     [php]
     propel.builder.AddBehaviors = true     // El valor por defecto es false
@@ -160,7 +160,7 @@ Se necesita reconstruir (*rebuild*) el modelo para que los ganchos sean insertad
     [php]
     $ php symfony propel-build-model
 
-Los ganchos son aÒadidos a las clases `Base`, las que se encuentran bajo el directorio `lib/model/om/`. Por ejemplo, aquÌ se tienen un extracto de la clase generada `BaseArticlePeer` con los ganchos de comportamientos habilitados:
+Los ganchos son a√±adidos a las clases `Base`, las que se encuentran bajo el directorio `lib/model/om/`. Por ejemplo, aqu√≠ se tienen un extracto de la clase generada `BaseArticlePeer` con los ganchos de comportamientos habilitados:
 
     [php]
     public static function doSelectRS(Criteria $criteria, $con = null)
@@ -170,20 +170,20 @@ Los ganchos son aÒadidos a las clases `Base`, las que se encuentran bajo el dire
         call_user_func($callable, 'BaseArticlePeer', $criteria, $con);
       }
 
-      // Resto del cÛdigo
+      // Resto del c√≥digo
     }
 
-Eso es casi exactamente el mismo gancho que el aÒadido manualmente en `ArticlePeer` durante el paso 1. La diferencia es que el nombre del gancho registrado es `BaseArticlePeer:doSelectRS:doSelectRS` en lugar de `ArticlePeer:doSelectRS:doSelectRS`. Entonces se puede remover el cÛdigo aÒadido a la clase personalizada durante el Paso 1. Esto significa que cuando los Comportamientos est·n habilitados en `propel.ini` no es necesario aÒadir ganchos manualmente dentro de las clases del modelo.
+Eso es casi exactamente el mismo gancho que el a√±adido manualmente en `ArticlePeer` durante el paso 1. La diferencia es que el nombre del gancho registrado es `BaseArticlePeer:doSelectRS:doSelectRS` en lugar de `ArticlePeer:doSelectRS:doSelectRS`. Entonces se puede remover el c√≥digo a√±adido a la clase personalizada durante el Paso 1. Esto significa que cuando los Comportamientos est√°n habilitados en `propel.ini` no es necesario a√±adir ganchos manualmente dentro de las clases del modelo.
 
-Como el nombre de los ganchos cambiÛ (ahora todos tienen el prefijo `Base`), la forma en que los mÈtodos del comportamiento Paranoico fueron registrados en el Paso 3 debe ser cambiada. Pero antes de hacerlo, observe la lista complete de ganchos aÒadidos:
+Como el nombre de los ganchos cambi√≥ (ahora todos tienen el prefijo `Base`), la forma en que los m√©todos del comportamiento Paranoico fueron registrados en el Paso 3 debe ser cambiada. Pero antes de hacerlo, observe la lista complete de ganchos a√±adidos:
 
-    // Ganchos aÒadidos a la clase base de objeto
-    [nombreClase]:delete:pre     // antes de la eliminaciÛn
-    [nombreClase]:delete:post    // despuÈs de la eliminaciÛn
+    // Ganchos a√±adidos a la clase base de objeto
+    [nombreClase]:delete:pre     // antes de la eliminaci√≥n
+    [nombreClase]:delete:post    // despu√©s de la eliminaci√≥n
     [nombreClase]:save:pre       // antes de salvar
-    [nombreClase]:save:post      // despuÈs de salvar
-    [nombreClase]:[nombreMetodo] // dentro de __call() (permite nuevos mÈtodos)
-    // Ganchos aÒadidos a la clase base Peer
+    [nombreClase]:save:post      // despu√©s de salvar
+    [nombreClase]:[nombreMetodo] // dentro de __call() (permite nuevos m√©todos)
+    // Ganchos a√±adidos a la clase base Peer
     [NombreClasePeer]:doSelectRS:doSelectRS
     [NombreClasePeer]:doSelectJoin:doSelectJoin
     [NombreClasePeer]:doSelectJoinAll:doSelectJoinAll
@@ -193,12 +193,12 @@ Como el nombre de los ganchos cambiÛ (ahora todos tienen el prefijo `Base`), la 
     [NombreClasePeer]:doInsert:pre
     [NombreClasePeer]:doInsert:post
 
->**Nota**: Desde symfony 1.0, solamente existe un gancho relacionado con los mÈtodos `doSelect`, en lugar de los cuatro ganchos descritos anteriormente. This explains why some behaviors work only with symfony 1.1 and not with symfony 1.0, which has an incomplete support for behaviors.
+>**Nota**: Desde symfony 1.0, solamente existe un gancho relacionado con los m√©todos `doSelect`, en lugar de los cuatro ganchos descritos anteriormente. This explains why some behaviors work only with symfony 1.1 and not with symfony 1.0, which has an incomplete support for behaviors.
 
-AÒadiendo nuevos mÈtodos
+A√±adiendo nuevos m√©todos
 ------------------------
 
-Uno de los ganchos que debe ser observado m·s de cerca: el que permite nuevos mÈtodos en la clase objeto. Cuando los comportamientos est·n habilitados en `propel.ini`, todas las clases base de objeto generadas contienen un mÈtodo `__call()` similar a este:
+Uno de los ganchos que debe ser observado m√°s de cerca: el que permite nuevos m√©todos en la clase objeto. Cuando los comportamientos est√°n habilitados en `propel.ini`, todas las clases base de objeto generadas contienen un m√©todo `__call()` similar a este:
 
     [php]
     // en lib/model/om/BaseArticle.php
@@ -214,7 +214,7 @@ Uno de los ganchos que debe ser observado m·s de cerca: el que permite nuevos mÈ
       return call_user_func_array($callable, $arguments);
     }
 
-Como se explica en el [CapÌtulo 17](http://www.symfony-project.org/book/1_1/17-Extending-Symfony#Mixins) del libro de symfony, un gancho hubicado en `__call()` hace posible la adiciÛn de nuevos mÈtodos en tiempo de ejecuciÛn. Por ejemplo,  si se quiere aÒadir un mÈtodo `undelete()` a la clase `Article` para permitir borrar la marca (*flag*) de `deleted_at`, comience por aÒadirlo a la clase del Comportamiento:
+Como se explica en el [Cap√≠tulo 17](http://www.symfony-project.org/book/1_1/17-Extending-Symfony#Mixins) del libro de symfony, un gancho hubicado en `__call()` hace posible la adici√≥n de nuevos m√©todos en tiempo de ejecuci√≥n. Por ejemplo,  si se quiere a√±adir un m√©todo `undelete()` a la clase `Article` para permitir borrar la marca (*flag*) de `deleted_at`, comience por a√±adirlo a la clase del Comportamiento:
 
     [php]
     // En lib/ParanoidBehavior.php
@@ -224,21 +224,21 @@ Como se explica en el [CapÌtulo 17](http://www.symfony-project.org/book/1_1/17-E
       $object->save($con);
     }
 
-Entonce, registre el nuevo mÈtodo como sigue:
+Entonce, registre el nuevo m√©todo como sigue:
 
     [php]
     // en config/config.php
     sfMixer::register('BaseArticle:undelete', array('ParanoidBehavior', 'undelete'));
     // otros ganchos
 
-Ahora, cada invocaciÛn a `$article->undelete()` har· una invocaciÛn a `ParanoidBehavior::undelete($article)`.
+Ahora, cada invocaci√≥n a `$article->undelete()` har√° una invocaci√≥n a `ParanoidBehavior::undelete($article)`.
 
->**Nota**: Desafortunadamente, desde PHP 5, la invocaciÛn a mÈtodos est·ticos no puede ser capturada por un `__call()`. Esto significa que los comportamientos de symfony no pueden aÒadir nuevos mÈtodos a las clases Peer.
+>**Nota**: Desafortunadamente, desde PHP 5, la invocaci√≥n a m√©todos est√°ticos no puede ser capturada por un `__call()`. Esto significa que los comportamientos de symfony no pueden a√±adir nuevos m√©todos a las clases Peer.
 
 Registrar ganchos en un solo paso
 ---------------------------------
 
-TodavÌa falta reescribir la forma en que se registran los otros ganchos para usar los nombres de ganchos `Base`, para ambas clases `Article` y `Comment`. Eso darÌa algo como:
+Todav√≠a falta reescribir la forma en que se registran los otros ganchos para usar los nombres de ganchos `Base`, para ambas clases `Article` y `Comment`. Eso dar√≠a algo como:
 
     [php]
     // Paso 3
@@ -251,12 +251,12 @@ TodavÌa falta reescribir la forma en que se registran los otros ganchos para usa
     sfMixer::register('BaseComment:delete:pre', array('ParanoidBehavior', 'preDelete'));
     sfMixer::register('BaseCommentPeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
 
-Pero este cÛdigo no es muy D.R.Y., ya que se necesita repetir toda la lista de mÈtodos para cada clase. °Imagine lo doloroso que serÌa si el comportamiento tuviese docenas de mÈtodos! SerÌa mucho m·s eficiente si se pudiese separar el proceso de registrar en dos fases:
+Pero este c√≥digo no es muy D.R.Y., ya que se necesita repetir toda la lista de m√©todos para cada clase. ¬°Imagine lo doloroso que ser√≠a si el comportamiento tuviese docenas de m√©todos! Ser√≠a mucho m√°s eficiente si se pudiese separar el proceso de registrar en dos fases:
 
-1. Registrar los mÈtodos del comportamiento en una lista de ganchos independientes de clase (*class-agnostic*).
+1. Registrar los m√©todos del comportamiento en una lista de ganchos independientes de clase (*class-agnostic*).
 2. Para cada clase, transformar el gancho independiente de clase en ganchos reales y registrarlos utilizando el sistema de mixins.
 
-Symfony provee una clase utilitaria, llamada `sfPropelBehavior`, la cual facilita este trabajo. AsÌ es como el Paso 3 puede ser reescrito para tomar ventaja de dicha clase:
+Symfony provee una clase utilitaria, llamada `sfPropelBehavior`, la cual facilita este trabajo. As√≠ es como el Paso 3 puede ser reescrito para tomar ventaja de dicha clase:
 
     [php]
     // Fase 1
@@ -276,69 +276,69 @@ Symfony provee una clase utilitaria, llamada `sfPropelBehavior`, la cual facilit
     // en lib/model/Comment.php
     sfPropelBehavior::add('Comment', array('paranoid'));
 
-Ambos mÈtodos `registerMethods` y `registerHooks` esperan un nombre de lista de ganchos como primer par·metro. Este nombre es utilizado entonces como atajo cuando los mÈtodos del comportamiento son aÒadidos a las clases del modelo. Observe cÛmo los nombres de gancho utilizados cuando se invoca `registerHooks` no contienen ninguna referencia a una clase especÌfica del modelo (la parte `BaseArticle` del nombre del gancho fue removida).
+Ambos m√©todos `registerMethods` y `registerHooks` esperan un nombre de lista de ganchos como primer par√°metro. Este nombre es utilizado entonces como atajo cuando los m√©todos del comportamiento son a√±adidos a las clases del modelo. Observe c√≥mo los nombres de gancho utilizados cuando se invoca `registerHooks` no contienen ninguna referencia a una clase espec√≠fica del modelo (la parte `BaseArticle` del nombre del gancho fue removida).
 
-Por otra parte, no es necesario especificar un nombre de mÈtodo para los mÈtodos aÒadidos por vÌa de `registerMethods`. El nombre del mÈtodo en la clase del comportamiento es utilizado por defecto.
+Por otra parte, no es necesario especificar un nombre de m√©todo para los m√©todos a√±adidos por v√≠a de `registerMethods`. El nombre del m√©todo en la clase del comportamiento es utilizado por defecto.
 
-Solamente cuando la instrucciÛn `sfPropelBehavior::add()` es ejecutada es que los ganchos son realmente registrados contra la clase `sfMixer`... con un nombre real de gancho. Como el primer par·metro de esta invocaciÛn es un nombre de clase del modelo, la clase `sfPropelBehavior` tiene todos los elementos para recrear los nombres completos del gancho (en este caso, concatenando la cadena `Base` con el nombre de la clase del modelo y el nombre del gancho del comportamiento).
+Solamente cuando la instrucci√≥n `sfPropelBehavior::add()` es ejecutada es que los ganchos son realmente registrados contra la clase `sfMixer`... con un nombre real de gancho. Como el primer par√°metro de esta invocaci√≥n es un nombre de clase del modelo, la clase `sfPropelBehavior` tiene todos los elementos para recrear los nombres completos del gancho (en este caso, concatenando la cadena `Base` con el nombre de la clase del modelo y el nombre del gancho del comportamiento).
 
 Empaquetando un comportamiento en un plug-in
 --------------------------------------------
 
-Para empaquetar el comportamiento dentro de una pieza de cÛdigo verdaderamente reusable, lo mejor es crear un plugin.
+Para empaquetar el comportamiento dentro de una pieza de c√≥digo verdaderamente reusable, lo mejor es crear un plugin.
 
-Hay un convenio no excrito acerca de los nombres de los plugins de comportamientos. Deben ser prefijados con 'Propel' dado que solamente funcionan para este ORM, y deben terminar con 'BehaviorPlugin'. Entonces un buen nombre para nuestro comportamiento Paranoico podrÌa ser 'myPropelParanoidBehaviorPlugin'.
+Hay un convenio no excrito acerca de los nombres de los plugins de comportamientos. Deben ser prefijados con 'Propel' dado que solamente funcionan para este ORM, y deben terminar con 'BehaviorPlugin'. Entonces un buen nombre para nuestro comportamiento Paranoico podr√≠a ser 'myPropelParanoidBehaviorPlugin'.
 
-Hasta ahora, solo hay dos ficheros para poner en el plugin: la clase `ParanoidBehavior`, y el cÛdigo escrito en `config/config.php` para registrar los mÈtodos y ganchos del comportamiento. El [CapÌtulo 17](http://www.symfony-project.org/book/1_1/17-Extending-Symfony#Plug-Ins) explica cÛmo organizar estos ficheros en una estructura de ·rbol de plugin:
+Hasta ahora, solo hay dos ficheros para poner en el plugin: la clase `ParanoidBehavior`, y el c√≥digo escrito en `config/config.php` para registrar los m√©todos y ganchos del comportamiento. El [Cap√≠tulo 17](http://www.symfony-project.org/book/1_1/17-Extending-Symfony#Plug-Ins) explica c√≥mo organizar estos ficheros en una estructura de √°rbol de plugin:
 
     plugins/
       myPropelParanoidBehaviorPlugin/
         lib/
-          ParanoidBehavior.php    // la clase que contiene los mÈtodos para ser mezclados (*mixed in*)
+          ParanoidBehavior.php    // la clase que contiene los m√©todos para ser mezclados (*mixed in*)
         config/
-          config.php              // registrar los mÈtodos del comportamiento
+          config.php              // registrar los m√©todos del comportamiento
 
-El fichero `config.php` de cada plugin instalado en un proyecto es ejecutado en cada peticiÛn (*request*), por tanto este es el lugar perfecto para registrar los mÈtodos del comportamiento.
+El fichero `config.php` de cada plugin instalado en un proyecto es ejecutado en cada petici√≥n (*request*), por tanto este es el lugar perfecto para registrar los m√©todos del comportamiento.
 
-Para completar el plugin, se debe adicionar un fichero `README` en la raÌz del directorio del plugin, con instrucciones de instalaciÛn y modo de empleo. Los mejores comportamientos tambiÈn incluyen pruebas de unidad (*unit tests*).
+Para completar el plugin, se debe adicionar un fichero `README` en la ra√≠z del directorio del plugin, con instrucciones de instalaci√≥n y modo de empleo. Los mejores comportamientos tambi√©n incluyen pruebas de unidad (*unit tests*).
 
-Finalmente, adicione un `package.xml` (ya sea manualmente o mediante [sfPackageMakerPlugin](http://trac.symfony-project.org/trac/wiki/sfPackageMakerPlugin)), empaquete el plugin con PEAR, y est· listo para ser usado. TambiÈn puede ser publicado en el sitio web de symfony.
+Finalmente, adicione un `package.xml` (ya sea manualmente o mediante [sfPackageMakerPlugin](http://trac.symfony-project.org/trac/wiki/sfPackageMakerPlugin)), empaquete el plugin con PEAR, y est√° listo para ser usado. Tambi√©n puede ser publicado en el sitio web de symfony.
 
-Pasando un par·metro a un comportamiento
+Pasando un par√°metro a un comportamiento
 ----------------------------------------
 
-Un comportamiento bien diseÒado no hace uso de valores clavados en el cÛdigo (*hard coded*). En el ejemplo anterior del comportamiento Paranoico, el nombre de la columna `deleted_at` est· clavado en el cÛdigo y deberÌa ser transformado en un par·metro.
+Un comportamiento bien dise√±ado no hace uso de valores clavados en el c√≥digo (*hard coded*). En el ejemplo anterior del comportamiento Paranoico, el nombre de la columna `deleted_at` est√° clavado en el c√≥digo y deber√≠a ser transformado en un par√°metro.
 
-Para pasar un par·metro a un comportamiento, se utiliza un arreglo asociativo como segundo par·metro a la invocaciÛn de `sfPropelBehavior::add()` en lugar de un arreglo ordinario, como se muestra a continuaciÛn:
+Para pasar un par√°metro a un comportamiento, se utiliza un arreglo asociativo como segundo par√°metro a la invocaci√≥n de `sfPropelBehavior::add()` en lugar de un arreglo ordinario, como se muestra a continuaci√≥n:
 
     [php]
     sfPropelBehavior::add('Article', array('paranoid' => array(
       'column' => 'deleted_at'
     )));
 
-Entonces, para tomar el valor de este par·metro en la clase del comportamiento, se debe usar el registro `sfConfig`. El par·metro es almacenado en una entrada `sfConfig` compuesta asÌ:
+Entonces, para tomar el valor de este par√°metro en la clase del comportamiento, se debe usar el registro `sfConfig`. El par√°metro es almacenado en una entrada `sfConfig` compuesta as√≠:
 
     [php]
     'propel_behavior_' . [BehaviorName] . '_' . [ClassName] . '_' . [ParameterName]
     // en el ejemplo arriba, se toma el valor 'deleted_at' invocando
     sfConfig::get('propel_behavior_paranoid_Article_column')
 
-El problema es que los mÈtodos del comportamiento no utilizan solamente nombres de columa. Utilizan varias versiones de estos nombres acorde con la operaciÛn que se pretenda:
+El problema es que los m√©todos del comportamiento no utilizan solamente nombres de columa. Utilizan varias versiones de estos nombres acorde con la operaci√≥n que se pretenda:
 
     Nombre de formato           | Ejemplo       | Utilizado en
     ----------------------------|---------------|-------------
     `BasePeer::TYPE_FIELDNAME`  | `deleted_at`  | schema.yml
-    `BasePeer::TYPE_COLNAME`    | `DeletedAt`   | Nombres de mÈtodos
-    `BasePeer::TYPE_PHPNAME`    | `DELETED_AT`  | Par·metros de criteria.
+    `BasePeer::TYPE_COLNAME`    | `DeletedAt`   | Nombres de m√©todos
+    `BasePeer::TYPE_PHPNAME`    | `DELETED_AT`  | Par√°metros de criteria.
 
-Entonces la clase del comportamiento necesitar· una forma de traducir un nombre de campo de un formato a otro. Afortunadamente, la clase Base Peer generada de cada modelo provee un mÈtodo est·tico `translateFieldName()`. Su sintaxis es bastante simple:
+Entonces la clase del comportamiento necesitar√° una forma de traducir un nombre de campo de un formato a otro. Afortunadamente, la clase Base Peer generada de cada modelo provee un m√©todo est√°tico `translateFieldName()`. Su sintaxis es bastante simple:
 
     [php]
     // translateFieldName($name, $origin_format, $dest_format)
     // por ejemplo
     $name = ArticlePeer::translateFieldName('deleted_at', BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_COLNAME);
 
-Entonces ahora se puede reescribir la clase `ParanoidBehavior` para tomar el par·metro `column` en cuenta:
+Entonces ahora se puede reescribir la clase `ParanoidBehavior` para tomar el par√°metro `column` en cuenta:
 
     [php]
     class sfPropelParanoidBehavior
@@ -363,9 +363,9 @@ Entonces ahora se puede reescribir la clase `ParanoidBehavior` para tomar el par
       }
     }
 
-ConclusiÛn
+Conclusi√≥n
 ----------
 
-Los comportamientos de Propel no son m·s que un conjunto de ganchos predefinidos, y una clase ayudante (*helper*) diseÒada para facilitar el proceso de registrar varios ganchos en una sola instrucciÛn. Si usted entiende los Mixins, no deberÌa resultarle muy difÌcil crear su propios comportamientos. Aseg˙rese de que verifica [plugins de comportamientos existentes](http://trac.symfony-project.org/wiki/SymfonyPlugins#Propelbehaviorplugins) antes de comenzar uno por su cuenta: hay ejemplo pr·cticos de la sintaxis de los comportamientos.
+Los comportamientos de Propel no son m√°s que un conjunto de ganchos predefinidos, y una clase ayudante (*helper*) dise√±ada para facilitar el proceso de registrar varios ganchos en una sola instrucci√≥n. Si usted entiende los Mixins, no deber√≠a resultarle muy dif√≠cil crear su propios comportamientos. Aseg√∫rese de que verifica [plugins de comportamientos existentes](http://trac.symfony-project.org/wiki/SymfonyPlugins#Propelbehaviorplugins) antes de comenzar uno por su cuenta: hay ejemplo pr√°cticos de la sintaxis de los comportamientos.
 
->**Nota del traductor**: *Los ejemplos carecen de traducciÛn en lo referente a nombres de tablas, columnas y clases de objetos, debido a que ciertos nombres de columnas tienen que ser en inglÈs para que su funcionamiento por defecto funcione tal y como se dice en el ejemplo. Por ejemplo, las columnas `created_at`, `updated_at`, entre otras son manejadas por symfony y/o plugins autom·ticamente, lo cual no evita que puedan ser nombradas por ejemplo `fecha_de_creacion` y `fecha_de_modificacion`, solo que en tales casos habrÌa que realizar algunos ajustes adicionales con los que no cuentan los ejemplos. Por otra parte, los objetos creados por el ORM contar·n con getters y setters por lo cual resultarÌa bastante conveniente evitar la mezcla de idiomas en el nombre de dichas funciones.*
+>**Nota del traductor**: *Los ejemplos carecen de traducci√≥n en lo referente a nombres de tablas, columnas y clases de objetos, debido a que ciertos nombres de columnas tienen que ser en ingl√©s para que su funcionamiento por defecto funcione tal y como se dice en el ejemplo. Por ejemplo, las columnas `created_at`, `updated_at`, entre otras son manejadas por symfony y/o plugins autom√°ticamente, lo cual no evita que puedan ser nombradas por ejemplo `fecha_de_creacion` y `fecha_de_modificacion`, solo que en tales casos habr√≠a que realizar algunos ajustes adicionales con los que no cuentan los ejemplos. Por otra parte, los objetos creados por el ORM contar√°n con getters y setters por lo cual resultar√≠a bastante conveniente evitar la mezcla de idiomas en el nombre de dichas funciones.*
