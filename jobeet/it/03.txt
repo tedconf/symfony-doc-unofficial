@@ -148,9 +148,182 @@ deciderà la migliore configurazione (chiave primaria per `id` e timestamp per
 >associati verranno automaticamente eliminati dal database o da Propel se 
 >il sottostante engine non dovesse supportare tale funzionalità.
 
-=================
-QUI SECONDA PARTE
-=================
+Il Database
+------------
+
+Symfony supporta tutti i database supportati da PDO (MySQL, PostgreSQL, SQLite,
+Oracle, MSSQL...). PDO è l'abstraction layer incluso di default in PHP.
+
+
+Per questo tutorial useremo MySQL.
+
+    $ mysqladmin -uroot -pmYsEcret create jobeet
+
+>**NOTA**
+>Sentiti libero di utilizzare un altro database engine se vuoi.
+>Non sarà difficile adattare il codice che scriveremo, dato che l'ORM scriverà
+>il codice SQL al nostro posto.
+
+Dobbiamo dire a symfony di usare questo database per Jobeet:
+
+    $ php symfony configure:database "mysql:host=localhost;dbname=jobeet" root mYsEcret
+
+Il task `configure:database` accetta tre argomenti: il
+[PDO DSN](http://www.php.net/manual/en/pdo.drivers.php), l'username e la
+password per accedere al database. Se non utilizzi alcuna password nel tuo
+server di sviluppo, semplicemente ometti il terzo parametro.
+
+>**NOTA**
+>Il task `configure:database` salva la configurazione all'interno del file
+>config/databases.yml. Al posto di usare questo task, puoi modificare questo
+>file a mano.
+
+L'ORM
+-------
+
+Grazie alla descrizione del database nel file `schema.yml`, possiamo usare
+alcuni dei task integrati di propel per generare l'SQL necessario alla creazione
+delle tabelle.
+
+    $ php symfony propel:build-sql
+
+Il task `propel:build-sql` genera le istruzioni SQL della directory `data/sql`,
+ottimizzato per il database che abbiamo scelto.
+
+    [sql]
+    # snippet from data/sql/lib.model.schema.sql
+    CREATE TABLE `jobeet_category`
+    (
+      `id` INTEGER  NOT NULL AUTO_INCREMENT,
+      `name` VARCHAR(255)  NOT NULL,
+      PRIMARY KEY (`id`)
+    )Type=InnoDB;
+
+Per creare le tabelle nel database, devi eseguire il task `propel:insert-sql`:
+
+    $ php symfony propel:insert-sql
+
+Dato che questo task elimina le tabelle correnti dal database prima di
+ricrearle, è richiesta una conferma dell'operazione. Puoi comunque aggiungere
+il parametro --no-confirmation per saltare questa domanda, cosa che potrebbe
+essere utile durante l'esecuzione di un processo batch non interattivo.
+
+    $ php symfony propel:insert-sql --no-confirmation
+
+>**SUGGERIMENTO**
+>Come ogni tool da riga di comando, symfony può accettare argomenti ed opzioni.
+>Ogni task ha un messaggio d'aiuto che può essere visualizzato utilizzando il
+>task `help`:
+>
+>     $ php symfony help propel:insert-sql
+>
+>Il messaggio di help elenca tutti i possibili argomenti ed opzioni, mostra i
+>valori di default per ognuno di essi, e fornisce degli utili esempi.
+
+L'ORM genera anche le classi PHP per mappare i record delle tabelle all'interno
+di oggetti.
+
+    $ php symfony propel:build-model
+
+Il task `propel:build-model` genera i file PHP all'interno della directory
+`lib/model`, che può essere utilizzata per interagire con il database.
+
+Curiosando tra i file generati, probabilmente noterai che Propel genera quattro
+classi per ogni tabella. Per la tabella `jobeet_job`:
+
+  * `JobeetJob`: Un oggetto di questa classe rappresenta un singolo record della
+                 tabella `jobeet_job`. La classe è vuota di default.
+  * `BaseJobeetJob`: La classe estesa da `JobeetJob`. Ogni volta che esegui
+                     `propel:build-model`, questa classe è sovrascritta, per cui
+                     le personalizzazione dovranno venir eseguite nella classe
+                     `JobeetJob`.
+  * `JobeetJobPeer`: La classe definisce i metodi statici che devono ritornare
+                     collezioni di oggetti del tipo `JobeetJob`. Questa classe
+                     è vuota di default.
+  * `BaseJobeetJobPeer`: La classe estesa da `JobeetJobPeer`. Ogni volta che
+                         esegui `propel:build-model`, questa classe è
+                         sovrascritta, per cui le personalizzazioni dovranno
+                         venir eseguite nella classe `JobeetJobPeer`.
+
+I valori delle colonne di un record possono venire manipolati tramite un oggetto
+model, utilizzando dei getter (metodi `get*()`) e dei setter (metodi `set*()`):
+
+    [php]
+    $job = new JobeetJob();
+    $job->setPosition('Web developer');
+    $job->save();
+
+    echo $job->getPosition();
+
+    $job->delete();
+
+Puoi inoltre definire foreign keys direttamente collegando oggetti tra loro:
+
+    [php]
+    $category = new JobeetCategory();
+    $category->setName('Programming');
+
+    $job = new JobeetJob();
+    $job->setCategory($category);
+
+Il task `propel:build-all` è una scorciatoia per i task che abbiamo eseguito in
+questa sezione più alcuni altri. Per cui esegui questo task per generare form e
+validatori per le classi model di Jobeet.
+
+    $ php symfony propel:build-all
+
+Vedrai validatori in azione alla fine della giornata, mentre i form verranno
+discussi nel dettaglio nel giorno 10.
+
+>**SUGGERIMENTO**
+>Il task `propel:build-all-load` è una scorciatoia per il task
+>`propel:build-all` seguito dal task `propel:data-load`.
+
+Come vedrai in seguito, symfony carica automaticamente le classi per te, ciò
+significa che non avrai mai bisogno di usare un `require` nel tuo codice. E' una
+delle numerose funzionalità che symfony automatizza per lo sviluppatore, ma
+purtroppo questo implica il dover svuotare la cache ogni volta si aggiunge una
+nuova classe. Dato che `propel:build-model` ha creato molte nuove classi,
+puliamo la cache:
+
+     $ php symfony cache:clear
+
+>**SUGGERIMENTO**
+>Un task di symfony è composto da un namespace e da un nome. Ognuno può essere
+>accorciato se non c'è ambiguità con altri task. Per cui il seguente comando è
+>equivalente a `cache:clear`:
+>
+>     $ php symfony cc
+
+I Dati Iniziali
+----------------
+
+Le tabelle create nel database ci sono, ma al momento sono vuote.
+Per ogni web application, ci sono tre tipi da dati:
+
+  * **Dati iniziali**: I dati iniziali sono necessari dall'applicazione per
+                       funzionare. Per esempio, Jobeet necessita di alcune
+                       categorie iniziali. Altrimenti nessuno sarebbe capace di
+                       postare un annuncio. Abbiamo inoltre bisogno di un utente
+                       amministratore, per eseguire il login al backend.
+
+  * **Dati per il test**: I dati per il test sono necessari alle applicazioni
+                          per venire testate. Come sviluppatore, scriverai dei
+                          test per assicurarti che Jobeet si comporti come
+                          descritto nelle previsioni, ed il modo migliore è
+                          scrivere dei test automatizzati. Così, ogni volta che
+                          eseguirai un test, avrai bisogno di un database pulito
+                          con dei dati da testare.
+
+  * **Dati degli utenti**: I dati degli utenti sono i dati creati dagli utenti
+                           durante il normale ciclo di vita di un'applicazione.
+
+Ogni volta che symfony crea le tabelle nel database, tutti i dati saranno
+eliminati. Per popolare un database con i dati iniziali, dovrebbe create uno
+script PHP o eseguire delle query con il programma `mysql`. Ma dato che questo
+è un bisogno abbastanza comune, in symfony c'è un modo migliore per farlo:
+creare dei file YAML nella directory `data/fixtures/` ed usare il task
+`propel:data-load` per caricarli nel database.
 
     [yml]
     # data/fixtures/010_categories.yml
