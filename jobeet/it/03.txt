@@ -1,0 +1,192 @@
+
+
+    [yml]
+    # data/fixtures/010_categories.yml
+    JobeetCategory:
+      design:        { name: Design }
+      programming:   { name: Programming }
+      manager:       { name: Manager }
+      administrator: { name: Administrator }
+
+    # data/fixtures/020_jobs.yml
+    JobeetJob:
+      job_sensio_labs:
+        category_id:  programming
+        type:         full-time
+        company:      Sensio Labs
+        logo:         /uploads/jobs/sensio_labs.png
+        url:          http://www.sensiolabs.com/
+        position:     Web Developer
+        location:     Paris, France
+        description:  |
+          You've already developed websites with symfony and you want to work
+          with Open-Source technologies. You have a minimum of 3 years
+          experience in web development with PHP or Java and you wish to
+          participate to development of Web 2.0 sites using the best
+          frameworks available.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_sensio_labs
+        email:        job@example.com
+        expires_at:   2010-10-10
+
+      job_extreme_sensio:
+        category_id:  design
+        type:         part-time
+        company:      Extreme Sensio
+        logo:         /uploads/jobs/extreme_sensio.png
+        url:          http://www.extreme-sensio.com/
+        position:     Web Designer
+        location:     Paris, France
+        description:  |
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+          enim ad minim veniam, quis nostrud exercitation ullamco laboris
+          nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+          in reprehenderit in.
+
+          Voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+          Excepteur sint occaecat cupidatat non proident, sunt in culpa
+          qui officia deserunt mollit anim id est laborum.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_extreme_sensio
+        email:        job@example.com
+        expires_at:   2010-10-10
+
+Un file fixture è scritto in YAML e definisce gli oggetti del modello, etichettati con un
+nome univoco. Questa etichetta è molto utile per collegare gli oggetti correlati senza
+dover definire delle chiavi primarie (che sono spesso degli auto-increment e quindi non
+possono essere impostate). Per esempio, la categoria `job_sensio_labs` è `programming`,
+che è l'etichetta assegnata alla categoria 'Programming'.
+
+Un file fixture può contenere oggetti provenienti da diversi modelli.
+
+>**TIP**
+>Nota i numeri che precedono i nomi dei file. Questo è un modo semplice per controllare
+>l'ordine del caricamento dei dati. Più avanti nel progetto, se avremo bisogno di inserire
+>nuovi file fixture, sarà facile perché avremo alcuni numeri liberi tra quelli
+>esistenti.
+
+In un file fixture, non hai bisgno di definire tutti i valori delle colonne. Se non lo
+fai, symfony userà i valori di default definiti nello schema del database. E siccome
+syfmony usa Propel per caricare i dati nel database, tutti i comportamenti predefiniti
+(come impostare le colonne `created_at` o `updated_at`), o i comportamenti personalizzati
+che potresti aver aggiunto alle classi del modello saranno attivati.
+
+Caricare i dati iniziali nel database è facile come eseguire il task:
+`propel:data-load`:
+
+    $ php symfony propel:data-load
+
+Vediamolo in azione nel browser
+-------------------------------
+
+Abbiamo usato molto la linea di comando ma questo non è molto eccitante, specialmente
+per un progetto web. Ora abbiamo tutto ciò che ci serve per creare pagine web che
+interagiscano col database.
+
+Vediamo come mostrare una lista di lavori, come modificare un lavoro esistente, e com
+cancellare un lavoro. Come spiegato nel giorno 1, un progetto symfony è composto da
+applicazioni. Ciascuna applicazione è composta da **moduli**. Un modulo è un insieme
+autonomo di codice PHP che rappresenta una feature dell'applicazione (ad esempio il
+modulo delle API), o un insieme di manipolazioni che l'utente può fare su un oggetto del
+modello (ad esempio il modulo `job`).
+
+Symfony è in grado di generare automaticamente per un modello dato un modulo che fornisce
+delle feature basilari di manipolazione:
+
+    $ php symfony propel:generate-module --with-show --non-verbose-templates frontend job JobeetJob
+
+Il comando `propel:generate-module` genera un modulo `job` nell'applicazione `frontend`
+per il modello `JobeetJob`. Come per molti task di symfony, alcuni file e cartelle sono
+stati creati per te sotto la cartella `apps/frontend/modules/job`:
+
+ | Cartella   | Descrizione
+ | ---------- | --------------------
+ | actions/   | Le azioni del modulo
+ | templates/ | I template del modulo
+
+Il file `actions/actions.class.php` definisce tutte le azioni disponibili per il modulo
+`job`:
+
+ | Nome azione  | Descrizione
+ | ------------ | -------------------------------------------------------
+ | index        | Mostra le righe della tabella
+ | show         | Mostra i campi di una data riga
+ | new          | Mostra una form per creare una nuova riga
+ | create       | Crea una nuova riga
+ | edit         | Mostra una form per modificare una riga esistente
+ | update       | Aggiorna una riga con i valori inseriti dall'utente
+ | delete       | Cancella una data riga dalla tabella
+
+Ora puoi provare il modulo `job` in un browser:
+
+     http://jobeet.localhost/frontend_dev.php/job
+
+![Job module](http://www.symfony-project.org/images/jobeet/1_2/03/job.png)
+
+Se provi a modificare un lavoro, avrai un'eccezione perché symfony ha bisogno di una
+rappresentazione testuale di una categoria. La rappresentazione testuale di un oggetto
+PHP può essere definita col metodo magico `__toString()`. La rappresentazione testuale di
+una categoria andrebbe definita nella classe del modello `JobeetCategory`:
+
+    [php]
+    // lib/model/JobeetCategory.php
+    class JobeetCategory extends BaseJobeetCategory
+    {
+      public function __toString()
+      {
+        return $this->getName();
+      }
+    }
+
+Ora ogni volta che symfony ha bisogno della rappresentazione testuale di una categoria,
+chiama il metodo `__toString()` che restituisce il nome della categoria. Siccome abbiamo
+bisogno di una rappresentazione testuale di tutte le classi del modello in un punto o
+nell'altro, definiamo un metodo `__toString()` per ogni classe del modello:
+
+    [php]
+    // lib/model/JobeetJob.php
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function __toString()
+      {
+        return sprintf('%s at %s (%s)', $this->getPosition(), $this->getCompany(), $this->getLocation());
+      }
+    }
+
+    // lib/model/JobeetAffiliate.php
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function __toString()
+      {
+        return $this->getUrl();
+      }
+    }
+
+Ora puoi creare e modificare i lavori. Prova a lasciare un campo richiesto in bianco, o
+prova ad immettere una data non valida. Tutto bene, symfony ha creato delle regole di
+validazione di base, partendo dallo schema del database.
+
+
+![validation](http://www.symfony-project.org/images/jobeet/1_2/03/validation.png)
+
+A domani
+--------
+
+Per oggi è tutto. Siete stati avvertiti nell'introduzione. Oggi abbiamo scritto poco
+codice PHP, ma abbiamo un modulo web funzionante per il modello `job`, pronto per essere
+aggiustato e personalizzato. Ricorda, niente codice PHP significa anche niente bug!
+
+Se vi è rimasta un po' di energia, puoi anche leggere il codice generato per il modulo e
+per il modello, e provare a capire come funziona. Altrimenti, non preoccupati e dormi
+bene, perché domani parleremo di uno dei paradigmi più usati nei framework per il web, il
+[design pattern MVC](http://it.wikipedia.org/wiki/Model-view-controller).
+
+Il codice scritto oggi è stato reso pubblico sul repository SVN di Jobeet sotto il tag
+`release_day_03` tag (`http://svn.jobeet.org/tags/release_day_03/`).
