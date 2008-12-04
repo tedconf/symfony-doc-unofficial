@@ -1,4 +1,156 @@
+Giorno 3: Il Data Model
+=======================
 
+Precedentemente su Jobeet
+-------------------------
+
+Quelli di voi che non vedono l'ora di aprire l'editor di testo e scrivere
+un po' di PHP saranno contenti di sapere che il tutorial di oggi darà la
+possibilità di fare un po' di sviluppo. Definiremo il data model di Jobeet,
+utilizzeremo un ORM per interagire con il database e creeremoil primo modulo 
+della nostra applicazione. Siccome symfony fa il grosso del lavoro per noi
+avremo un modulo completamente funzionante scrivendo solo poche righe di
+codice PHP.
+
+Il modello relazionale
+----------------------
+
+Le user stories che abbiamo scritto ieri descrivono le entità principali
+del nostro progetto: annunci di lavoro, affiliati, categorie. Di seguito 
+abbiamo il corrispondente diagramma entità-relazioni:
+
+![Diagramma entità-relazioni](http://www.symfony-project.org/images/jobeet/1_2/03/diagram.png)
+
+In aggiunta alle colonne descritte nelle user stories abbiamo aggiunto inoltre
+il campo `created_at` ad alcune tabelle. Symfony riconosce questi campi e ne
+imposta il valore all'attuale timestamp di sistema quando un record viene
+creato. Vale lo stesso per il campi `updated_at`: il loro valore è impostato
+all'attuale timestamp di sistema ogni volta che un record viene aggiornato.
+
+Lo Schema
+---------
+
+Per memorizzare gli annunci di lavoro, gli affiliati e le categorie abbiamo ovviamente
+bisogno di un database relazionale.
+
+Dato che symfony è un framework Object-Oriented ci farebbe piacere manipolare
+oggetti il più possibile. Per esempio invece che scrivere query SQL per ottenere
+record dal database preferiamo utilizzare gli oggetti.
+
+Le informazioni del database relazionale devono essere mappate da un modello ad
+oggetti. Questo può essere fatto con un [ORM](http://en.wikipedia.org/wiki/Object-relational_mapping)
+e fortunatamente symfony viene distribuito con due soluzioni di questo tipo:
+[Propel](http://propel.phpdb.org/) e [Doctrine](http://www.doctrine-project.org/).
+In questo tutorial useremo Propel.
+
+L'ORM ha bisogno di della descrizione delle tabelle e delle loro relazioni
+per creare le relative classi. Esistono due metodi per creare questo schema
+descrittivo: analizzando un database esistente o creandone uno a mano.
+
+>**Nota**
+>Alcuni tool permettono di creare un database graficamente
+>(per esempio [Fabforce's Dbdesigner](http://www.fabforce.net/dbdesigner4/))
+>e di generare direttamente uno `schema.xml` (con [DB Designer 4 TO Propel Schema
+>Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php)).
+
+Siccome il database non esiste ancora e non vogliamo prendere decisioni su 
+di esso (come realizzarlo), creeremo lo schema a mano editando un file vuoto
+`config/schema.yml`:
+
+    [yml]
+    # config/schema.yml
+    propel:
+      jobeet_category:
+        id:           ~
+        name:         { type: varchar(255), required: true }
+
+      jobeet_job:
+        id:           ~
+        category_id:  { type: integer, foreignTable: jobeet_category,
+          ➥ foreignReference: id, required: true }
+        type:         { type: varchar(255) }
+        company:      { type: varchar(255), required: true }
+        logo:         { type: varchar(255) }
+        url:          { type: varchar(255) }
+        position:     { type: varchar(255), required: true }
+        location:     { type: varchar(255), required: true }
+        description:  { type: longvarchar, required: true }
+        how_to_apply: { type: longvarchar, required: true }
+        token:        { type: varchar(255), required: true, index: unique }
+        is_public:    { type: boolean, required: true, default: 1 }
+        is_activated: { type: boolean, required: true, default: 0 }
+        email:        { type: varchar(255), required: true }
+        expires_at:   { type: timestamp, required: true }
+        created_at:   ~
+        updated_at:   ~
+
+      jobeet_affiliate:
+        id:           ~
+        url:          { type: varchar(255), required: true }
+        email:        { type: varchar(255), required: true, index: unique }
+        token:        { type: varchar(255), required: true }
+        is_active:    { type: boolean, required: true, default: 0 }
+        created_at:   ~
+
+      jobeet_category_affiliate:
+        category_id:  { type: integer, foreignTable: jobeet_category,
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
+        affiliate_id: { type: integer, foreignTable: jobeet_affiliate,
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
+
+>**SUGGERIMENTO**
+>Se avete deciso di creare le tabelle scrivendo il codice SQL sappiate che
+>potete generare il corrispondente file di configurazione `schema.yml` 
+>utilizzando il task `propel:build-schema`.
+
+Lo schema è la traduzione diretta del diagramma entità-relazioni nel 
+formato YAML.
+
+>**SIDEBAR**
+>Il formato YAML
+>
+>Secondo il sito ufficiale di [YAML](http://yaml.org/), YAML
+>"è uno standard di serializzazione dei dati human friendly per tutti i 
+>linguaggi di programmazione"
+>
+>Detto in altro modo, YAML è un semplice linguaggio per descrivere dati
+>(stringhe, interi, date, array e hash).
+>
+>In YAML la struttura è mostrata basandosi sull'indentazione, entità conseguenti
+>sono indicate con un trattino e le coppie chiave/valore sono separate dai duepunti.
+>YAML ha anche una sintassi ridotta per descrivere la stessa struttura con meno
+>linee dove gli array sono espressi con `[]` e gli hash con `{}`.
+>
+>Se non avete familiarità con YAML è il momento di iniziare ad usarlo visto
+>che symfony framework lo utilizza ampiamente per i suoi file di configurazione.
+
+Il file `schema.yml` contiene la descrizione di tutte le tabelle e delle loro
+colonne. Ogni colonna è descritta con le seguenti informazioni:
+
+  * `type`: Il tipo della colonna (`boolean`, `tinyint`, `smallint`, `integer`,
+            `bigint`, `double`, `float`, `real`, `decimal`, `char`,
+            `varchar(size)`, `longvarchar`, `date`, `time`, `timestamp`,
+            `blob`, and `clob`)
+  * `required`: Impostarlo a `true` se la colonna è obbligatoria (not null)
+  * `index`: Impostarlo a `true` se volete creare un indice per quella colonna o
+            a `unique` se volete un indice con vincolo di unicità per quella colonna.
+
+Per le colonne impostate a `~` (`id`, `created_at`, e `updated_at`) symfony 
+deciderà la migliore configurazione (chiave primaria per `id` e timestamp per
+`created_at` e `updated_at`).
+
+>**NOTA**
+>L'attributo `onDelete` definisce il comportamento `ON DELETE` delle chiavi esterne,
+>Propel supporta `CASCADE`, `SETNULL` e `RESTRICT`. Per esempio quando un 
+>record `job` viene eliminato tutti i record `jobeet_category_affiliate`
+>associati verranno automaticamente eliminati dal database o da Propel se 
+>il sottostante engine non dovesse supportare tale funzionalità.
+
+=================
+QUI SECONDA PARTE
+=================
 
     [yml]
     # data/fixtures/010_categories.yml
