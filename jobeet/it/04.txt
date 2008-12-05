@@ -1,9 +1,246 @@
 Giorno 4: Il controller e la vista
 ==================================
 
-==================================
-QUI CI VA LA PRIMA PARTE!!
-==================================
+Prima di iniziare
+-----------------
+
+Se avete già una tabella `jobeet_category_affiliate` nello schema del
+vostro database potete saltare questa sezione ed andare direttamente alla
+`Precedentemente su Jobeet`.
+
+Se non avete la tabella `jobeet_job_affiliate` continuate a leggere.
+
+Il tutorial su Jobeet è realizzato su base giornaliera. Apprezziamo davvero
+tutti i feedback che ci inviate in real-time. Basandoci su alcuni commenti di 
+ieri abbiamo deciso di modificare lo schema del database. Invece di avere
+una relazione molti a molti tra gli affiliati e le offerte di lavoro alcuni 
+di voi hanno suggerito che potrebbe avere più senso avere una relazione tra
+gli affiliati e le categorie. E non possiamo che essere d'accordo. Perciò,
+prima di iniziare il tutorial di oggi, apportiamo alcune modifiche. Non vi
+impegnerà molto visto che la gran parte delle cose sarà automatizzata dal
+framework.
+
+Per prima cosa sostituite la definizione della tabella `jobeet_job_affiliate`
+con quella della tabella `jobeet_category_affiliate`:
+
+    [yml]
+    // config/schema.yml
+    jobeet_category_affiliate:
+      category_id:  { type: integer, foreignTable: jobeet_category,
+        ➥ foreignReference: id, required: true, primaryKey: true,
+        ➥ onDelete: cascade }
+      affiliate_id: { type: integer, foreignTable: jobeet_affiliate,
+        ➥ foreignReference: id, required: true, primaryKey: true,
+        ➥ onDelete: cascade }
+
+Rigenerate le classi del modello, rigenerate l'SQL per la creazione delle
+tabelle ed inserite i dati delle fixtures:
+
+    $ php symfony propel:build-all-load
+
+Rimuoviamo i file che non sono più necessari:
+
+  * lib/filter/base/BaseJobeetJobAffiliateFormFilter.class.php
+  * lib/filter/JobeetJobAffiliateFormFilter.class.php
+  * lib/form/base/BaseJobeetJobAffiliateForm.class.php
+  * lib/form/JobeetJobAffiliateForm.class.php
+  * lib/model/JobeetJobAffiliate.php
+  * lib/model/JobeetJobAffiliatePeer.php
+  * lib/model/map/JobeetJobAffiliateMapBuilder.php
+  * lib/model/om/BaseJobeetJobAffiliate.php
+  * lib/model/om/BaseJobeetJobAffiliatePeer.php
+
+Pulizia della cache di symfony per rendere effettive le modifiche:
+
+    $ php symfony cc
+
+Abbiamo finito.
+
+>**NOTA**
+>Il tag sull'SVN per il giorno 4 è stato aggiornato per riportare il cambiamento.
+
+Precedentemente su Jobeet
+-------------------------
+
+Ieri abbiamo analizzato come symfony possa semplificare il management
+del database astraendo le differenze tra i vari motori dei database e convertendo
+gli elementi dello schema relazionale in classi object oriented. Abbiamo inoltre
+giocato con Propel per descrivere lo schema del database, creare le tabelle e 
+popolare il database con alcuni dati iniziali.
+
+Oggi andremo a personalizzare il modulo `job` creato ieri. Il modulo `job`
+contiene già tutto il codice di cui abbiamo bisogno per Jobeet:
+
+ * Una pagina per elencare tutte le offerte di lavoro
+ * Una pagina per creare una nuova offerta
+ * Una pagina per aggiornare un'offerta esistente
+ * Una pagina per cancellare un'offerta
+
+Nonostante il codice sia pronto per essere usato com'è, eseguiremo del refactoring
+alle template per attenerci il più possibile ai mockup di Jobeet.
+
+L'architettura MVC
+------------------
+
+Se siete abituati a sviluppare siti web con PHP senza utilizzare un framework
+probabilmente utilizzate il paradigma del singolo file PHP per singola pagina
+HTML. Questi file PHP probabilmente contengono lo stesso tipo di struttura:
+inizializzazione e configurazioni globali, business logic relativa alla pagina
+richiesta, recupero dei record dal database ed infine il codice HTML che 
+construisce la pagina.
+
+Potreste usare un motore per le template per separare la logica dall'HTML.
+Forse usate un layer per l'astrazione del database per separare l'interazione
+tra il modello e la business logic. Purtroppo il più delle volte finite per 
+avere una grande quantità di codice che è un vero e proprio incubo da mantenere.
+E' stato veloce da realizzare ma con il passare del tempo è sempre più difficile
+apportare cambiamenti specialmente perchè nessuno eccetto voi capisce
+come è fatto e come funziona.
+
+Come per tutti i problemi esistono piacevoli soluzioni. Per lo sviluppo web la
+soluzione più diffusa di questi tempi per organizzare il vostro codice è
+rappresentata dall'[**MVC design pattern**](http://en.wikipedia.org/wiki/Model-view-controller).
+Brevemente l'MVC design pattern definisce un modo per organizzare il vostro
+codice secondo la sua natura. Questo pattern separa il codice in **tre strati**:
+
+  * Il **Modello** è lo strato che definisce la business logic (il database
+    appartiene a questo strato). Probabilmente siete al corrente del fatto che symfony
+    memorizza tutte le classu ed i file relativi al Modello nella directory `lib/model`.
+
+  * La **Vista** rappresenta ciò con cui l'utente interagisce (un template engine è
+    parte di questo strato). In symfony lo strato della Vista è principalmente costituito
+    da template PHP. Queste sono memorizzate in varie directory `templates` come 
+    vedremo in seguito.
+
+  * Il **Controllore** è la parte di codice che chiama il Modello per ottenere 
+    alcuni dati da passare alla Vista per visualizzarli attraverso il client.
+    Quando abbiamo installato symfony il primo giorno abbiamo visto che tutte
+    le richieste sono gestite dai front controller (`index.php` e `frontend_dev.php`).
+    Questi front controller delegano il vero lavoro alle **action**. Come
+    abbiamo visto ieri queste action sono raggruppate in **moduli**.
+
+![MVC](http://www.symfony-project.org/images/jobeet/1_2/04/mvc.png)
+
+Oggi utilizzeremo il mockup definito il giorno 2 per personalizzare l'homepage
+e la pagina delle offerte di lavoro per renderle dinamiche. Lungo la strada 
+perfezioneremo molte cose in molti file differenti per mostrare la struttura
+delle directory di symfony e come separare il codice tra i vari strati.
+
+Il Layout
+---------
+
+Per prima cosa se avete guardato con attenzione i mockup avrete notato che
+gran parte di ogni pagina sembra sempre lo stesso. Sapere già che la duplicazione
+del codice è una cattiva pratica se stiamo parlando di codice HTML o PHP, perciò
+abbiamo bisogno di trovare un modo per prevenire il fatto che elementi comuni
+implichino duplicazione del codice.
+
+Un modo per risolvere questo problema è quello di definire un header e un footer
+includendoli in ogni template:
+
+![Header and footer](http://www.symfony-project.org/images/jobeet/1_2/04/header_footer.png)
+
+Ma qui i file di header e footer non contengono HTML valido. Dev'esserci una
+strada migliore. Invece di reinventate la ruota, utilizzeremo un altro design
+pattern per risolvere questo problema: il [decorator design pattern](http://en.wikipedia.org/wiki/Decorator_pattern).
+Il decorator design pattern risolve il problema agendo al contrario: la template
+viene decorata dopo che il contenuto è stato renderizzato da una template globale,
+in symfony questo è definito come un **layout**:
+
+![Layout](http://www.symfony-project.org/images/jobeet/1_2/04/layout.png)
+
+Il layout di default di un'applicazione è chiamato `layout.php` e può
+essere trovato nella directory `apps/frontend/templates/`. Questa directory
+contiene tutte le template globali di un'applicazione.
+
+Rimpiazzate il layout di default di symfony con il seguente codice:
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+      <head>
+        <title>Jobeet - Your best job board</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <?php include_javascripts() ?>
+        <?php include_stylesheets() ?>
+      </head>
+      <body>
+        <div id="container">
+          <div id="header">
+            <div class="content">
+              <h1><a href="/job">
+                <img src="/images/jobeet.gif" alt="Jobeet Job Board" />
+              </a></h1>
+
+              <div id="sub_header">
+                <div class="post">
+                  <h2>Ask for people</h2>
+                  <div>
+                    <a href="/new">Post a Job</a>
+                  </div>
+                </div>
+
+                <div class="search">
+                  <h2>Ask for a job</h2>
+                  <form action="" method="get">
+                    <input type="text" name="keywords" id="search_keywords" />
+                    <input type="submit" value="search" />
+                    <div class="help">
+                      Enter some keywords (city, country, position, ...)
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="content">
+            <?php if ($sf_user->hasFlash('notice')): ?>
+              <div class="flash_notice"><?php echo $sf_user->getFlash('notice') ?></div>
+            <?php endif; ?>
+
+            <?php if ($sf_user->hasFlash('error')): ?>
+              <div class="flash_notice"><?php echo $sf_user->getFlash('error') ?></div>
+            <?php endif; ?>
+
+            <div class="content">
+              <?php echo $sf_content ?>
+            </div>
+          </div>
+
+          <div id="footer">
+            <div class="content">
+              <span class="symfony">
+                <img src="/images/jobeet-mini.png" />
+                powered by <a href="http://www.symfony-project.org/">
+                <img src="/images/symfony.gif" alt="symfony framework" /></a>
+              </span>
+              <ul>
+                <li><a href="">About Jobeet</a></li>
+                <li class="feed"><a href="">Full RSS feed</a></li>
+                <li><a href="">Jobeet API</a></li>
+                <li class="last"><a href="">Affiliates</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+
+Una template di symfony è solamente un semplice file PHP. Nella template del 
+layout vedrete chiamate a funzioni PHP e riferimenti a variabili PHP. 
+`$sf_content` è la variabile più interessante: è definita dal framework stesso
+e contiene l'HTML generato dall'action.
+
+Se navigate il modulo `job` (`http://jobeet.localhost/frontend_dev.php/job`)
+potete vedere che tutte le action sono decorate dal layout.
+
+>**NOTA**
+>Nel layout abbiamo incluso una *favicon*. Potete
+>[scaricare quella di Jobeet](http://www.symfony-project.org/images/jobeet/favicon.ico)
+>e metterla nella direcotry `web/`.
 
 I Fogli di stile, le Immagini e i Javascript
 ----------------------------------------
