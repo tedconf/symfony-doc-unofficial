@@ -1,0 +1,291 @@
+Day 4: The Controller and the View
+==================================
+
+==================================
+Prima parte
+==================================
+
+I Fogli di stile, le Immagini e i Javascript
+----------------------------------------
+
+Dato che organizzeremo un concorso per il miglior design il giorno 21, abbiamo
+preparato un design molto semplice da usare nel frattempo:
+[scarica l'archivio delle immagini](http://www.symfony-project.org/get/jobeet/images.zip)
+e mettile nella directory `web/images`;
+[scarica l'archivio dei fogli di stile](http://www.symfony-project.org/get/jobeet/css.zip)
+e mettili nella directory `web/css/`.
+
+![Il modulo job con layout ed elementi grafici](http://www.symfony-project.org/images/jobeet/1_2/04/job_layout_assets.png)
+
+>**TIP**
+>Di default, il task `generate:project` ha creato tre directory per i file degli
+>elementi grafici: `web/images/` per le immagini, `web/css/` per i fogli di stile
+>`web/js/` per i Javascript. Questa è una delle convenzioni definite da symfony,
+>ma puoi salvarli ovunque tu voglia all'interno della directory `web/`.
+
+Il lettore più attento avrà notato che anche se il file `main.css` non è
+menzionato in nessun posto nel layout, è presente nell'HTML generato. Ma nessun
+altro file è presente. Com'è possibile?
+
+Il foglio di stile è stato incluso dalla funzione `include_stylesheets()`
+chiamata nel tag `<head>` all'interno del layout. La funzione `include_stylesheets()`
+è chiamata **helper**. Un helper è una funzione definita da symfony, che accetta
+dei parametri e ritorna codice HTML. La maggior parte delle volte, gli helper
+fanno risparmiare del tempo, e racchiudono degli spezzoni di codice usati di
+frequente nei template. L'helper `include_stylesheets()` genera il tag `<link>`
+per i fogli di stile.
+
+Ma come fa l'helper a sapere quali fogli di stile includere?
+
+Il layer della View può essere configurato modificando il file di configurazione
+dell'applicazione `view.yml`. Questo è quello generato di default dal comando
+`generate:app`:
+
+    [yml]
+    # apps/frontend/config/view.yml
+    default:
+      http_metas:
+        content-type: text/html
+
+      metas:
+        #title:        symfony project
+        #description:  symfony project
+        #keywords:     symfony, project
+        #language:     en
+        #robots:       index, follow
+
+      stylesheets:    [main.css]
+
+      javascripts:    []
+
+      has_layout:     on
+      layout:         layout
+
+Il file `view.yml` configura le impostazioni di `default` per ogni template
+dell'applicazione. Per esempio, l'elemento `stylesheets` definisce un array di
+fogli di stile da includere in ogni pagina dell'applicazione (l'inclusione è
+fatta dall'helper `include_stylesheets()`).
+
+>**NOTE**
+>Nel file `view.yml` di default, il file referenziato è `main.css`, e non
+>`/css/main.css`. Comunque, le due definizioni sono equivalente in quanto
+>symfony aggiunge il prefisso `/css/` ai percorsi relativi.
+
+Se molti file sono definiti, symfony li includerà nello stesso ordine della
+definizione:
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css]
+
+Puoi anche cambiare l'attributo `media` ed omettere il suffisso `.css`:
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css, print: { media: print }]
+
+Questo file di configurazione sarà tradotto in:
+
+    [php]
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/jobs.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/job.css" />
+    <link rel="stylesheet" type="text/css" media="print" href="/css/print.css" />
+
+>**TIP**
+>Il file di configurazione `view.yml` definisce anche il layout usato dall'applicazione.
+>Di default, il nome è `layout`, cosi symfony decora ogni pagina con il file
+>`layout.php`. Puoi anche disabilitare il processo di decorazione una volta per
+>tutte impostando la proprietà `has_layout` a `false`.
+
+Funziona già così com'è, ma il file `jobs.css` è necessario solo per l'homepage,
+ed il file `job.css` è necessario solo per la pagina del lavoro. Il file `view.yml`
+può essere personalizzato in ogni modulo. Cambia il file `view.yml` dell'applicazione
+per contenere solo il file `main.css`:
+
+    [yml]
+    # apps/frontend/config/view.yml
+    stylesheets:    [main.css]
+
+Per personalizzare la vista del modulo `job`, crea un file `view.yml` all'interno
+della directory `apps/frontend/modules/job/config`:
+
+    [yml]
+    # apps/frontend/modules/job/config/view.yml
+    indexSuccess:
+      stylesheets: [jobs.css]
+
+    showSuccess:
+      stylesheets: [job.css]
+
+All'interno delle sezioni `indexSuccess` e `showSuccess` (sono i nomi dei file dei
+template associati alle azioni `index` e `show`, come vedremo in seguito), puoi
+personalizzare ogni elemento all'interno della sezione `default` del file
+`view.yml` dell'applicazione. Tutti i nuovi elementi sono sostituiti a quelli
+definiti nella configurazione dell'applicazione. Puoi inoltre definire alcune
+configurazioni per tutte le azioni di un modulo con la sezione speciale `all`.
+
+>**SIDEBAR**
+>Principi di configurazione di symfony
+>
+>Per molti file di configurazione di symfony, lo stesso settaggio può venir
+>definito in livelli differenti:
+>
+>  * La configurazione di default è all'interno del framework
+>  * La configurazione globale per il progetto (in `config/`)
+>  * La configurazione locale per l'applicazione (in `apps/APP/config/`)
+>  * La configurazione locale per un modulo (in `apps/APP/modules/MODULE/config/`)
+>
+>Nell'esecuzione, il sistema di configurazione unisce tutti i valori dei
+>differenti file se esistono, e crea un copia cache dei risultati per migliorare
+>le performance.
+
+Solitamente, quando qualcosa è configurabile tramite un file di configurazione,
+lo è anche tramite codice PHP. al posto di create un file `view.yml` per il modulo
+`job` per esempio, puoi anche usare l'helper `use_stylesheet()` per includere
+un foglio di stile da un template:
+
+    [php]
+    <?php use_stylesheet('main.css') ?>
+
+Puoi usare anche questo helper nel layout per includere un foglio di stile globale.
+
+Scegliere tra un metodo è l'altro è solo un questione di gusti. Il file `view.yml`
+fornisce un modo per definire impostazioni per tutte le azioni di un modulo,
+che non è possibile in un template, ma la configurazione è statica. D'altro canto,
+usare l'helper `use_stylehseet()` è più flessibile, e soprattutto, è tutto nello
+stesso posto: la definizione dello stile ed il codice HTMl. Per Jobeet useremo
+l'helper `use_stylesheet()`, per cui puoi eliminare il file `view.yml` che
+abbiamo appena creato e modificare i template `job` con le chiamate a `use_stylesheet()`.
+
+>**NOTE**
+>Simmetricalmente, la configurazione di Javascript è eseguita dell'elemento `javascripts`
+>del file `view.yml` e l'helper `use_javascript()` definisce i file JavaScript
+>da includere in un template.
+
+L'Homepage di Jobeet
+----------------
+
+Come visto nel giorno 3, la pagina dei lavori è generate dall'azione `index` del
+modulo `job`. L'azione `index` è la parte Controller della pagina, ed il template
+associato, `indexSuccess.php`, è la View:
+
+    apps/
+      frontend/
+        modules/
+          job/
+            actions/
+              actions.class.php
+            templates/
+              indexSuccess.php
+
+### L'azione
+
+Ogni azione è rappresentata da un metodo di una classe. Per l'homepage di Jobeet,
+la classe è `jobActions` (il nome del modulo seguito dal suffisso `Actions`) ed
+il metodo è `executeIndex()` (`execute` seguito dal nome dell'azione).
+L'azione recupera tutti i lavori dal database:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    class jobActions extends sfActions
+    {
+      public function executeIndex(sfWebRequest $request)
+      {
+        $this->jobeet_job_list = JobeetJobPeer::doSelect(new Criteria());
+      }
+
+      // ...
+    }
+
+Diamo uno sguardo da vicino al codice: il metodo `executeIndex()` (il Controller)
+chiama il Model `JobeetJobPeer` per recuperare tutti i lavori (`new Criteria()`).
+Esso ritorna un array di oggetti `Job` che sono assegnati alla proprietà `jobeet_job_list`.
+
+Ognuna di queste proprietà è automaticamente passata al template (la View). Per
+passare dati dal controller alla vista, semplicemente crea una nuova proprietà:
+
+    [php]
+    public function executeIndex(sfWebRequest $request)
+    {
+      $this->foo = 'bar';
+      $this->bar = array('bar', 'baz');
+    }
+
+Questo codice renderà le variabili `$foo` e `$bar` accessibili dal template.
+
+### Il Template
+
+Di default, il template associato ad un'azione è dedotto da symfony grazie ad
+una convenzione (il nome dell'azione seguito dal prefisso `Success`).
+
+Il template `indexSuccess.php` genera una tabella HTML per tutti i lavori:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <h1>Job List</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Category</th>
+          <th>Type</th>
+    <!-- more columns here -->
+          <th>Created at</th>
+          <th>Updated at</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($jobeet_job_list as $jobeet_job): ?>
+        <tr>
+          <td>
+            <a href="<?php echo url_for('job/show?id='.$jobeet_job->getId()) ?>">
+              <?php echo $jobeet_job->getId() ?>
+            </a>
+          </td>
+          <td><?php echo $jobeet_job->getCategoryId() ?></td>
+          <td><?php echo $jobeet_job->getType() ?></td>
+    <!-- more columns here -->
+          <td><?php echo $jobeet_job->getCreatedAt() ?></td>
+          <td><?php echo $jobeet_job->getUpdatedAt() ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+
+    <a href="<?php echo url_for('job/new') ?>">New</a>
+
+Nel codice del template, il `foreach` scorre attraverso la lista di oggetti `Job`
+(`$jobeet_job_list`), e per ognuno di loro, ogni valore delle colonne è visualizzato.
+Ricorda, accedere al valore di una colonna è semplice come chiamare un metodo getter
+il cui nome inizia con `get` ed è seguito dal nome della colonna in formato
+camelCase (per esempio il metodo `getCreatedAt()` per la colonna `created_at`).
+
+Ripuliamolo un pò per visualizzare solo un sotto insieme di colonne disponibili:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <div id="jobs">
+      <table class="jobs">
+        <?php foreach ($jobeet_job_list as $i => $job): ?>
+          <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
+            <td><?php echo $job->getLocation() ?></td>
+            <td>
+              <a href="<?php echo url_for('job/show?id='.$job->getId()) ?>">
+                <?php echo $job->getPosition() ?>
+              </a>
+            </td>
+            <td><?php echo $job->getCompany() ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+    </div>
+
+![Homepage](http://www.symfony-project.org/images/jobeet/1_2/04/homepage.png)
+
+La funzione `url_for()` in questo template è un helper che verrà discusso domani.
+
+=============================
+Terza parte
+=============================
