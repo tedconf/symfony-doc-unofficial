@@ -128,7 +128,7 @@ to the database, you can override the `save()` method:
       {
         if ($this->isNew() && !$this->getExpiresAt())
         {
-          $now = $this->getCreatedAt() ? $this->getCreatedAt() : time();
+          $now = $this->getCreatedAt() ? $this->getCreatedAt('U') : time();
           $this->setExpiresAt($now + 86400 * 30);
         }
 
@@ -216,7 +216,8 @@ Let's update the code to take this new setting into account:
     {
       if ($this->isNew() && !$this->getExpiresAt())
       {
-        $this->setExpiresAt(time() + 86400 * sfConfig::get('app_active_days'));
+        $now = $this->getCreatedAt() ? $this->getCreatedAt('U') : time();
+        $this->setExpiresAt($now + 86400 * sfConfig::get('app_active_days'));
       }
 
       return parent::save($con);
@@ -483,10 +484,10 @@ retrieve the object, but you can change it by providing a
 
     [yml]
     # apps/frontend/config/routing.yml
-    job:
+    job_show_user:
       url:     /job/:company_slug/:location_slug/:id/:position_slug
       class:   sfPropelRoute
-      options: 
+      options:
         model: JobeetJob
         type:  object
         method_for_criteria: doSelectActive
