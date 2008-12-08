@@ -40,12 +40,13 @@ The relational database information must be mapped to an object model. This
 can be done with an [ORM tool](http://en.wikipedia.org/wiki/Object-relational_mapping)
 and thankfully, symfony comes bundled with two of them:
 [Propel](http://propel.phpdb.org/) and [Doctrine](http://www.doctrine-project.org/).
-In this tutorial, we will use Propel.
+In this tutorial, we will use ##ORM##.
 
 The ORM needs a description of the tables and their relationships to create
 the related classes. There are two ways to create this description schema:
 by introspecting an existing database or by creating it by hand.
 
+<propel>
 >**Note**
 >Some tools allow you to build a database graphically
 >(for instance [Fabforce's Dbdesigner](http://www.fabforce.net/dbdesigner4/))
@@ -98,6 +99,117 @@ agnostic, let's create the schema file by hand by editing the empty
         affiliate_id: { type: integer, foreignTable: jobeet_affiliate,
           ➥ foreignReference: id, required: true, primaryKey: true,
           ➥ onDelete: cascade }
+</propel>
+<doctrine>
+As the database does not exist yet and as we want to keep Jobeet database
+agnostic, let's create the schema file by hand by editing the empty
+`config/doctrine/schema.yml` file:
+
+    [yml]
+    # config/doctrine/schema.yml
+    ---
+    JobeetCategory:
+      actAs:
+        Timestampable: ~
+      columns:
+        name:
+          type: string(255)
+          notnull:  true
+
+    JobeetJob:
+      actAs:
+        Timestampable: ~
+      columns:
+        category_id:
+          type: integer
+          notnull:  true
+        type:
+          type: string(255)
+        company:
+          type: string(255)
+          notnull:  true
+        logo:
+          type: string(255)
+        url:
+          type: string(255)
+        position:
+          type: string(255)
+          notnull:  true
+        location:
+          type: string(255)
+          notnull:  true
+        description:
+          type: string(4000)
+          notnull:  true
+        how_to_apply:
+          type: string(4000)
+          notnull:  true
+        token:
+          type: string(255)
+          notnull:  true
+          unique: true
+        is_public:
+          type: boolean
+          notnull:  true
+          default:  1
+        is_activated:
+          type: boolean
+          notnull:  true
+          default:  0
+        email:
+          type: string(255)
+          notnull:  true
+        expires_at:
+          type: timestamp
+          notnull:  true
+      relations:
+        JobeetCategory:
+          local:  category_id
+          foreign:  id
+        Affiliates:
+          class:  JobeetAffiliate
+          local:  category_id
+          foreign:  affiliate_id
+          refClass: JobeetCategoryAffiliate
+          foreignAlias: Affiliates
+
+    JobeetAffiliate:
+      actAs:
+        Timestampable: ~
+      columns:
+        url:
+          type: string(255)
+          notnull:  true
+        email:
+          type: string(255)
+          notnull:  true
+          unique: true
+        token:
+          type: string(255)
+          notnull:  true
+        is_active:
+          type: boolean
+          notnull:  true
+          default:  0
+
+    JobeetCategoryAffiliate:
+      columns:
+        category_id:
+          type: integer
+          primary:  true
+        affiliate_id:
+          type: integer
+          primary:  true
+      relations:
+        JobeetCategory:
+          onDelete: CASCADE
+          local:  category_id
+          foreign:  id
+        JobeetAffiliate:
+          onDelete: CASCADE
+          local:  affiliate_id
+          foreign:  id
+</doctrine>
 
 >**TIP**
 >If you have decided to create the tables by writing SQL statements, you can
@@ -127,6 +239,7 @@ the YAML format.
 The `schema.yml` file contains the description of all tables and their columns.
 Each column is described with the following information:
 
+<propel>
   * `type`: The column type (`boolean`, `tinyint`, `smallint`, `integer`,
             `bigint`, `double`, `float`, `real`, `decimal`, `char`,
             `varchar(size)`, `longvarchar`, `date`, `time`, `timestamp`,
@@ -145,6 +258,20 @@ guess the best configuration (primary key for `id` and timestamp for
 >a `job` record is deleted, all the `jobeet_category_affiliate` related
 >records will be automatically deleted by the database or by Propel if the
 >underlying engine does not support this functionality.
+</propel>
+<doctrine>
+  * `type`: The column type (`boolean`, `integer`, `float`, `decimal`,
+            `string`, `array`, `object`, `blob`, `clob`, `timestamp`,
+            `time`, `date`, `enum`, `gzip`)
+  * `notnull`: Set it to `true` if you want the column to be required
+  * `unique`: Set it to `true` if you want to create a unique index for the column.
+
+>**NOTE**
+>The `onDelete` attribute defines the `ON DELETE` behavior of foreign keys,
+>and Doctrine supports `CASCADE`, `SET NULL`, and `RESTRICT`. For instance, when
+>a `job` record is deleted, all the `jobeet_category_affiliate` related
+>records will be automatically deleted by the database.
+</doctrine>
 
 The Database
 ------------
@@ -164,7 +291,12 @@ Let's use MySQL for this tutorial:
 
 We need to tell symfony to use this database for the Jobeet project:
 
+<propel>
     $ php symfony configure:database "mysql:host=localhost;dbname=jobeet" root mYsEcret
+</propel>
+<doctrine>
+    $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=jobeet" root mYsEcret
+</doctrine>
 
 The `configure:database` task takes three arguments: the
 [PDO DSN](http://www.php.net/manual/en/pdo.drivers.php), the username, and
@@ -202,12 +334,14 @@ To actually create the tables in the database, you need to run the
 
     $ php symfony propel:insert-sql
 
+<propel>
 As the task drops the current tables before re-creating them, you are
 required to confirm the operation. You can also add the `--no-confirmation`
 option to bypass the question, which is useful if you want to run the task
 from within a non-interactive batch:
 
     $ php symfony propel:insert-sql --no-confirmation
+</propel>
 
 >**TIP**
 >As for any command line tool, symfony tasks can take arguments and options.
@@ -226,6 +360,7 @@ The ORM also generates PHP classes that map table records to objects:
 The `propel:build-model` task generates PHP files in the `lib/model` directory
 that can be used to interact with the database.
 
+<propel>
 By browsing the generated files, you have probably noticed that Propel
 generates four classes per table. For the `jobeet_job` table:
 
@@ -242,7 +377,21 @@ generates four classes per table. For the `jobeet_job` table:
                          run `propel:build-model`, this class is overridden,
                          so all customizations must be done in the
                          `JobeetJobPeer` class.
+</propel>
+<doctrine>
+By browsing the generated files, you have probably noticed that Doctrine
+generates three classes per table. For the `jobeet_job` table:
 
+ * `JobeetJob`: An object of this class represents a single record of the
+                `jobeet_job` table. The class is empty by default.
+ * `BaseJobeetJob`: The parent class of `JobeetJob`. Each time you run
+                    `doctrine:build-model`, this class is overridden, so all
+                    customizations must be done in the `JobeetJob` class.
+
+ * `JobeetJobTable`: The class defines methods that mostly return
+                    collections of `JobeetJob` objects. The class is empty by
+                    default.
+</doctrine>
 The column values of a record can be manipulated with a model object by using
 some accessors (`get*()` methods) and mutators (`set*()` methods):
 
@@ -319,6 +468,7 @@ or execute some SQL with the `mysql` program. But as the need is quite common,
 there is a better way with symfony: create YAML files in the `data/fixtures/`
 directory and use the `propel:data-load` task to load them into the database:
 
+<propel>
     [yml]
     # data/fixtures/010_categories.yml
     JobeetCategory:
@@ -376,6 +526,70 @@ directory and use the `propel:data-load` task to load them into the database:
         token:        job_extreme_sensio
         email:        job@example.com
         expires_at:   2010-10-10
+</propel>
+<doctrine>
+    [yml]
+    # data/fixtures/categories.yml
+    JobeetCategory:
+      design:
+        name: Design
+      programming:
+        name: Programming
+      manager:
+        name: Manager
+      administrator:
+        name: Administrator
+
+    # data/fixtures/jobs.yml
+    JobeetJob:
+      job_sensio_labs:
+        JobeetCategory: programming
+        type:         full-time
+        company:      Sensio Labs
+        logo:         /uploads/jobs/sensio_labs.png
+        url:          http://www.sensiolabs.com/
+        position:     Web Developer
+        location:     Paris, France
+        description:  |
+          You've already developed websites with symfony and you want to work
+          with Open-Source technologies. You have a minimum of 3 years
+          experience in web development with PHP or Java and you wish to
+          participate to development of Web 2.0 sites using the best
+          frameworks available.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_sensio_labs
+        email:        job@example.com
+        expires_at:   '2008-10-10'
+
+      job_extreme_sensio:
+        JobeetCategory:  design
+        type:         part-time
+        company:      Extreme Sensio
+        logo:         /uploads/jobs/extreme_sensio.png
+        url:          http://www.extreme-sensio.com/
+        position:     Web Designer
+        location:     Paris, France
+        description:  |
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+          enim ad minim veniam, quis nostrud exercitation ullamco laboris
+          nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+          in reprehenderit in.
+
+          Voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+          Excepteur sint occaecat cupidatat non proident, sunt in culpa
+          qui officia deserunt mollit anim id est laborum.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_extreme_sensio
+        email:        job@example.com
+        expires_at:   '2008-10-10'
+</doctrine>
 
 A fixtures file is written in YAML, and defines model objects, labelled with a
 unique name. This label is of great use to link related objects without having
@@ -385,11 +599,13 @@ the label given to the 'Programming' category.
 
 A fixture file can contain object from one or several models.
 
+<propel>
 >**TIP**
 >Notice the numbers prefixing the filenames. This is a simple way to control
 >the order of data loading. Later in the project, if we need to insert some
 >new fixture file, it will be easy as we have some free numbers between
 >existing ones.
+</propel>
 
 In a fixture file, you don't need to define all columns values. If not,
 symfony will use the default value defined in the database schema. And as
@@ -450,6 +666,7 @@ You can now test the job module in a browser:
 
 ![Job module](http://www.symfony-project.org/images/jobeet/1_2/03/job.png)
 
+<propel>
 If you try to edit a job, you will have an exception because symfony needs a
 text representation of a category. A PHP object representation can be defined
 with the PHP `__toString()` magic method. The text representation of a category
@@ -469,6 +686,14 @@ Now each time symfony needs a text representation of a category, it calls the
 `__toString()` method which returns the category name. As we will need a text
 representation of all model classes at one point or another, let's define
 a `__toString()` method for every model class:
+</propel>
+<doctrine>
+If you try to edit a job, you will notice the Category id drop down has a list 
+of all the category names. The value of each option is gotten from the `__toString()` method. 
+Doctrine will try and provide a base `__toString()` method by guessing a 
+descriptive column name like, `title`, `name`, `subject`, etc. If you want 
+something custom then you will need to add your own `__toString()` methods like below.
+</doctrine>
 
     [php]
     // lib/model/JobeetJob.php
@@ -510,3 +735,5 @@ paradigm in web frameworks, the
 
 The code written today is available on the Jobeet SVN repository under the
 `release_day_03` tag (`http://svn.jobeet.org/tags/release_day_03/`).
+
+__ORM__
