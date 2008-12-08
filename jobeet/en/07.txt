@@ -5,7 +5,7 @@ Previously on Jobeet
 --------------------
 
 Yesterday you expanded your knowledge of symfony in a lot of
-different areas: Propel's Criteria object, fixtures, routing, debugging,
+different areas: ##ORM##'s Criteria object, fixtures, routing, debugging,
 and custom configuration. And we finished with a little challenge for today.
 
 I hope you worked on the Jobeet category page as today's tutorial will then be
@@ -35,7 +35,12 @@ As `slug` is not a column of the `category` table, we need to add a virtual
 accessor in `JobeetCategory` to make the route works:
 
     [php]
+<propel>
     // lib/model/JobeetCategory.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetCategory.class.php
+</doctrine>
     public function getSlug()
     {
       return Jobeet::slugify($this->getName());
@@ -72,6 +77,7 @@ category. The link contains the number of jobs not displayed. For this
 template to work, we need to add the `countActiveJobs()` method to
 `JobeetCategory`:
 
+<propel>
     [php]
     // lib/model/JobeetCategory.php
     public function countActiveJobs()
@@ -84,7 +90,24 @@ template to work, we need to add the `countActiveJobs()` method to
 
 The `countActiveJobs()` method uses a `countActiveJobs()` method that does not
 exist yet in `JobeetJobPeer`:
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function countActiveJobs()
+    {
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('j.category_id = ?', $this->getId());
 
+      return Doctrine::getTable('JobeetJob')->countActiveJobs($q);
+    }
+
+The `countActiveJobs()` method uses a `countActiveJobs()` method that does not
+exist yet in `JobeetJobTable`:
+</doctrine>
+
+<propel>
     [php]
     // lib/model/JobeetJobPeer.php
     class JobeetJobPeer extends BaseJobeetJobPeer
@@ -121,14 +144,62 @@ exist yet in `JobeetJobPeer`:
 As you can see for yourself, we have refactored the whole code of
 `JobeetJobPeer` to introduce a new shared `addActiveJobsCriteria()` method to
 make the code more [DRY (Don't Repeat Yourself)](http://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      public function retrieveActiveJob(Doctrine_Query $q)
+      {
+        return $this->addActiveJobsQuery($q)->fetchOne();
+      }
+
+      public function getActiveJobs(Doctrine_Query $q = null)
+      {
+        return $this->addActiveJobsQuery($q)->execute();
+      }
+
+      public function countActiveJobs(Doctrine_Query $q = null)
+      {
+        return $this->addActiveJobsQuery($q)->count();
+      }
+
+      public function addActiveJobsQuery(Doctrine_Query $q = null)
+      {
+        if (is_null($q))
+        {
+          $q = Doctrine_Query::creaye()
+            ->from('JobeetJob j');
+        }
+
+        $alias = $q->getRootAlias();
+
+        $q->andWhere($alias . '.expires_at > ?', date('Y-m-d h:i:s', time()))
+          ->addOrderBy($alias . '.expires_at DESC');
+
+        return $q;
+      }
+    }
+
+As you can see for yourself, we have refactored the whole code of
+`JobeetJobTable` to introduce a new shared `addActiveJobsQuery()` method to
+make the code more [DRY (Don't Repeat Yourself)](http://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+</doctrine>
 
 >**TIP**
 >The first time a piece of code is re-used, copying the code may be sufficient.
 >But if you find another use for it, you need to refactor all uses to a shared
 >function or a method, as we have done here.
 
+<propel>
 In the `countActiveJobs()` method, instead of using `doSelect()` and then
 count the number of results, we have used the much faster `doCount()` method.
+</propel>
+<doctrine>
+In the `countActiveJobs()` method, instead of using `execute()` and then
+count the number of results, we have used the much faster `count()` method.
+</doctrine>
 
 We have changed a lot of files, just for this simple feature. But each time we
 have added some code, we have tried to put it in the right layer of the
@@ -162,6 +233,7 @@ Update the Database
 
 We need to add a `slug` column for the `category` table:
 
+<propel>
     [yml]
     # config/schema.yml
     propel:
@@ -169,10 +241,30 @@ We need to add a `slug` column for the `category` table:
         id:           ~
         name:         { type: varchar(255), required: true }
         slug:         { type: varchar(255), required: true, index: unique }
+</propel>
+<doctrine>
+This `slug` column can be taken care of by a Doctrine behavior named `Sluggable`.
+We simply need to enable the behavior on our `JobeetCategory` model and it will 
+take care of everything for you.
+
+    [yml]
+    # config/doctrine/schema.yml
+    JobeetCategory:
+      actAs:
+        Timestampable: ~
+        Sluggable:
+          fields: [name]
+      columns:
+        name:
+          type: string(255)
+          notnull:  true
+
+</doctrine>
 
 Now that `slug` is a real column, you need to remove the `getSlug()` method
 from `JobeetCategory`.
 
+<propel>
 Each time the `category` name changes, we need to compute and change the
 `slug` as well. Let's override the `setName()` method:
 
@@ -184,6 +276,13 @@ Each time the `category` name changes, we need to compute and change the
 
       $this->setSlug(Jobeet::slugify($name));
     }
+</propel>
+<doctrine>
+>**NOTE**
+>The setting of the slug column is taken care of automatically when you save a
+>record. The slug is built using the value of the `name` field and set to the 
+>object.
+</doctrine>
 
 Use the `propel:build-all-load` task to update the database tables, and
 repopulate the database with our fixtures:
@@ -281,7 +380,7 @@ From day 2 requirements:
 
   "The list is paginated with 20 jobs per page."
 
-To paginate a list of Propel object, symfony provides a dedicated class:
+To paginate a list of ##ORM## object, symfony provides a dedicated class:
 [`sfPropelPager`](http://www.symfony-project.org/api/1_2/sfPropelPager).
 Instead of passing the job objects to the template, we pass a pager:
 
@@ -295,7 +394,12 @@ Instead of passing the job objects to the template, we pass a pager:
         'JobeetJob',
         sfConfig::get('app_max_jobs_on_category')
       );
+<propel>
       $this->pager->setCriteria($this->category->getActiveJobsCriteria());
+</propel>
+<doctrine>
+      $this->page->setQuery($this->category->getActiveJobsQuery());
+</doctrine>
       $this->pager->setPage($request->getParameter('page', 1));
       $this->pager->init();
     }
@@ -315,10 +419,18 @@ items to return per page. Add the latter value to your configuration file:
       max_jobs_on_homepage: 10
       max_jobs_on_category: 20
 
+<propel>
 The `sfPropelPager::setCriteria()` method takes a Criteria object to use when
 selecting the items from the database. Again, we do a bit of refactoring in
 the Model:
+</propel>
+<doctrine>
+The `sfDoctrinePager::setQuery()` method takes a `Doctrine_Query` object to use when
+selecting the items from the database. Again, we do a bit of refactoring in
+the Model:
+</doctrine>
 
+<propel>
     [php]
     // lib/model/JobeetCategory.php
     public function getActiveJobsCriteria()
@@ -328,10 +440,30 @@ the Model:
 
       return JobeetJobPeer::addActiveJobsCriteria($criteria);
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function getActiveJobsQuery()
+    {
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('j.category_id = ?', $this->getId());
 
+      return Doctrine::getTable('JobeetJob')->addActiveJobsQuery($q);
+    }
+</doctrine>
+
+<propel>
 Now that we have the `getActiveJobsCriteria()` method, we can refactor other
 `JobeetCategory` methods to use it:
+</propel>
+<doctrine>
+Now that we have the `getActiveJobsQuery()` method, we can refactor other
+`JobeetCategory` methods to use it:
+</doctrine>
 
+<propel>
     [php]
     // lib/model/JobeetCategory.php
     public function getActiveJobs($max = 10)
@@ -349,12 +481,37 @@ Now that we have the `getActiveJobsCriteria()` method, we can refactor other
 
       return JobeetJobPeer::doCount($criteria);
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function getActiveJobs($max = 10)
+    {
+      $q = $this->getActiveJobsQuery()
+        ->limit($max);
+
+      return $q->execute();
+    }
+
+    public function countActiveJobs()
+    {
+      return $this->getActiveJobsQuery()->count();
+    }
+</doctrine>
 
 Finally, let's update the template:
 
     [php]
     <!-- apps/frontend/modules/category/templates/showSuccess.php -->
     <?php use_stylesheet('jobs.css') ?>
+
+    <div class="category">
+      <div class="feed">
+        <a href="">RSS feed</a>
+      </div>
+      <h1><?php echo $category ?></h1>
+    </div>
+
     <?php include_partial('job/list', array('jobs' => $pager->getResults())) ?>
 
     <?php if ($pager->haveToPaginate()): ?>
@@ -421,3 +578,5 @@ talk about a brand new topic: tests.
 The `release_day_07` subversion tag contains the updated code for today:
 
     http://svn.jobeet.org/tags/release_day_07/
+
+__ORM__

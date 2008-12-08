@@ -385,12 +385,12 @@ a good thing.
 >       $t->skip('::slugify() removes accents - iconv not installed');
 >     }
 
-Propel Unit Tests
+##ORM## Unit Tests
 -----------------
 
 ### Database Configuration
 
-Unit testing a Propel model class is a bit more complex as it requires a
+Unit testing a ##ORM## model class is a bit more complex as it requires a
 database connection. You already have the one you use for your development,
 but it is a good habit to create a dedicated database for tests.
 
@@ -398,7 +398,12 @@ During day 1, we introduced the environments as a way to vary an application's
 settings. By default, all symfony tests are run in the `test` environment, so
 let's configure a different database for the `test` environment:
 
+<propel>
     $ php symfony configure:database --env=test "mysql:host=localhost;dbname=jobeet_test" root mYsEcret
+</propel>
+<doctrine>
+    $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase --env=test "mysql:host=localhost;dbname=jobeet_test" root mYsEcret
+</doctrine>
 
 The `env` option tells the task that the database configuration is only for
 the `dev` environment. When we used this task during day 3, we did not pass
@@ -431,14 +436,18 @@ Now that we have configured the database, we can bootstrap it by using the
 >     dev:
 >       propel:
 >         class: sfPropelDatabase
+<propel>
 >         param:
 >           classname: DebugPDO
+</propel>
 >
 >     test:
 >       propel:
 >         class: sfPropelDatabase
 >         param:
+<propel>
 >           classname: DebugPDO
+</propel>
 >           dsn: 'mysql:host=localhost;dbname=jobeet_test'
 >
 >     all:
@@ -458,9 +467,15 @@ the database in a known state. The `propel:data-load` method internally uses
 the [`sfPropelData`](http://www.symfony-project.org/api/1_2/sfPropelData)
 class to load the data:
 
+<propel>
     [php]
     $loader = new sfPropelData();
     $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+    [php]
+    Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
 
 >**NOTE**
 >The `sfConfig` object can be used to get the full path of a project
@@ -472,7 +487,7 @@ can also take an array of directories and/or files.
 
 We have already created some initial data in the `data/fixtures/` directory.
 For tests, we will put the fixtures into the `test/fixtures/` directory. These
-fixtures will be used for Propel unit and functional tests.
+fixtures will be used for ##ORM## unit and functional tests.
 
 For now, copy the files from `data/fixtures/` to the `test/fixtures/`
 directory.
@@ -481,8 +496,8 @@ directory.
 
 Let's create some unit tests for the `JobeetJob` model class.
 
-As all our Propel unit tests will begin with the same code, create a
-`propel.php` file in the `bootstrap/` test directory with the following code:
+As all our ##ORM## unit tests will begin with the same code, create a
+`##ORM##.php` file in the `bootstrap/` test directory with the following code:
 
     [php]
     // test/bootstrap/propel.php
@@ -493,8 +508,13 @@ As all our Propel unit tests will begin with the same code, create a
 
     new sfDatabaseManager($configuration);
 
+<propel>
     $loader = new sfPropelData();
     $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+    Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
 
 The script is pretty self-explanatory:
 
@@ -504,20 +524,28 @@ The script is pretty self-explanatory:
         [php]
         $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'test', true);
 
-  * We create a database manager. It initializes the Propel connection by
+  * We create a database manager. It initializes the ##ORM## connection by
     loading the `databases.yml` configuration file.
 
         [php]
         new sfDatabaseManager($configuration);
 
+<propel>
   * We load our test data by using `sfPropelData`:
 
         [php]
         $loader = new sfPropelData();
         $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+  * We load our test data by using `Doctrine::loadData()`:
+
+        [php]
+        Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
 
 >**NOTE**
->Propel connects to the database only if it has some SQL statements to
+>##ORM## connects to the database only if it has some SQL statements to
 >execute.
 
 Now that everything is in place, we can start testing the `JobeetJob` class.
@@ -525,8 +553,8 @@ Now that everything is in place, we can start testing the `JobeetJob` class.
 First, we need to create the `JobeetJobTest.php` file in `test/unit/model`:
 
     [php]
-    // test/unit/module/JobeetJobTest.php
-    include(dirname(__FILE__).'/../../bootstrap/propel.php');
+    // test/unit/model/JobeetJobTest.php
+    include(dirname(__FILE__).'/../../bootstrap/##ORM##.php');
 
     $t = new lime_test(0, new lime_output_color());
 
@@ -534,7 +562,12 @@ Then, let's start by adding a test for the `getCompanySlug()` method:
 
     [php]
     $t->comment('->getCompanySlug()');
+<propel>
     $job = JobeetJobPeer::doSelectOne(new Criteria());
+</propel>
+<doctrine>
+    $job = Doctrine::getTable('JobeetJob')->createQuery()->fetchOne();
+</doctrine>
     $t->is($job->getCompanySlug(), Jobeet::slugify($job->getCompany()), '->getCompanySlug() return the slug for the company');
 
 Notice that we only test the `getCompanySlug()` method and not if the slug is
@@ -547,11 +580,21 @@ Writing tests for the `save()` method is slightly more complex:
     $job = create_job();
     $job->save();
     $expiresAt = date('Y-m-d', time() + 86400 * sfConfig::get('app_active_days'));
+<propel>
     $t->is($job->getExpiresAt('Y-m-d'), $expiresAt, '->save() updates expires_at if not set');
+</propel>
+<doctrine>
+    $t->is(date('Y-m-d', strtotime($job->getExpiresAt())), $expiresAt, '->save() updates expires_at if not set');
+</doctrine>
 
     $job = create_job(array('expires_at' => '2008-08-08'));
     $job->save();
+<propel>
     $t->is($job->getExpiresAt('Y-m-d'), '2008-08-08', '->save() does not update expires_at if set');
+</propel>
+<doctrine>
+    $t->is(date('Y-m-d', strtotime($job->getExpiresAt())), '2008-08-08', '->save() does not update expires_at if set');
+</doctrine>
 
     function create_job($defaults = array())
     {
@@ -573,7 +616,12 @@ Writing tests for the `save()` method is slightly more complex:
         'email'        => 'job@example.com',
         'token'        => rand(1111, 9999),
         'is_activated' => true,
+<propel>
       ), $defaults), BasePeer::TYPE_FIELDNAME);
+</propel>
+<doctrine>
+      ), $defaults));
+</doctrine>
 
       return $job;
     }
@@ -583,9 +631,9 @@ Writing tests for the `save()` method is slightly more complex:
 >(the plan) in the `lime_test` constructor method. For the `JobeetJobTest`
 >file, you need to change it from `0` to `3`.
 
-### Test other Propel Classes
+### Test other ##ORM## Classes
 
-You can now add tests for all other Propel classes. As you are now getting
+You can now add tests for all other ##ORM## classes. As you are now getting
 used to the process of writing unit tests, it should be quite easy. Check the
 repository for today if you want to see the fixture files we have created,
 and the associated unit tests (under the `release_day_08` tag).
@@ -618,3 +666,5 @@ more than 9000 tests.
 Tomorrow we will write some functional tests for the job and category modules.
 Until then, take some time to write more unit tests for the Jobeet model
 classes.
+
+__ORM__
