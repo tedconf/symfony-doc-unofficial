@@ -1,0 +1,782 @@
+Jour 3 : Le Modèle de Données
+=============================
+
+Précédemment dans Jobeet
+-------------------------
+
+Ceux d'entre vous à qui cela démangeait d'ouvrir leur éditeur de texte et d'y
+écrire un peu de PHP vont être heureux d'apprendre que le tutorial d'aujourd'hui
+va les faire développer. Nous allons définir le modèle de données de Jobeet,
+utiliser un ORM pour dialoguer avec la base de données, et créer notre premier
+module de notre application. Mais comme symfony fait une grande part du travail
+pour nous, nous aurons un module fonctionnel sans écrire trop de code PHP.
+
+Le Modèle Relationnel
+----------------------
+
+Les histoires utilisateur que nous avons écrites hier, décrivent les principaux
+objets de notre projet : les postes, les affiliés, et les catégories. Ci-dessous
+le diagramme des relations des entités :
+
+![Entity relationship diagram](http://www.symfony-project.org/images/jobeet/1_2/03/diagram.png)
+
+En plus des colonnes décrites dans les histoires nous avons également ajouté le
+champ `created_at` à des tables. Symfony reconnaît certains champs et définit
+lors la création de l'enregistrement la valeur à l'heure système correspondante.
+Il en est de même pour les champs `updated_at` : leur valeur est définit à
+l'heure système de la mise à jour de l'enregistrement.
+
+Le Schéma
+----------
+
+Pour enregistrer les postes, les affiliés et les catégories, nous avons
+évidemment besoin d'une base de données relationnelle.
+
+Mais comme symfony est framework Orienté Objet, nous aimons manipuler des objets
+chaque fois que nous le pouvons. Par exemple, plutôt que d'écrire des requêtes
+SQL pour récupérer des enregistrements de la base de données, nous préfèrerions
+utiliser des objets.
+
+Les informations de la base de données relationnelle doivent correspondre à un
+modèle objet. Cela peut être fait à partir d'un [outils
+ORM](http://en.wikipedia.org/wiki/Object-relational_mapping), et merci à symfony
+qui en fournit deux d'entre eux :
+[Propel](http://propel.phpdb.org/) et [Doctrine](http://www.doctrine-project.org/).
+Dans ce tutoriel nous utiliserons les ##ORM##.
+
+Les ORM nécessitent une description des tables et des relations entre elles pour
+créer les classes associées. Il y a deux façons d'écrire le schéma de
+description :
+En introspectant une base de données existante ou en créant le schéma à la main.
+
+<propel>
+>**Note**
+>Des outils vous permettent de construire une base de données graphiquement (
+>par exemple [Fabforce's Dbdesigner](http://www.fabforce.net/dbdesigner4/)) et
+>ils génèrent automatiquemet un fichier `schema.xml` (avec [DB Designer 4 TO
+>Propel Schema
+>Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php)).
+
+Comme la base de donnée n'existe pas encore et que nous voulons la garder
+agnostique dans Jobeet, créons la à la main en éditant le fichier vide
+`config/schema.yml` :
+
+    [yml]
+    # config/schema.yml
+    propel:
+      jobeet_category:
+        id:           ~
+        name:         { type: varchar(255), required: true }
+
+      jobeet_job:
+        id:           ~
+        category_id:  { type: integer, foreignTable: jobeet_category,
+          ➥ foreignReference: id, required: true }
+        type:         { type: varchar(255) }
+        company:      { type: varchar(255), required: true }
+        logo:         { type: varchar(255) }
+        url:          { type: varchar(255) }
+        position:     { type: varchar(255), required: true }
+        location:     { type: varchar(255), required: true }
+        description:  { type: longvarchar, required: true }
+        how_to_apply: { type: longvarchar, required: true }
+        token:        { type: varchar(255), required: true, index: unique }
+        is_public:    { type: boolean, required: true, default: 1 }
+        is_activated: { type: boolean, required: true, default: 0 }
+        email:        { type: varchar(255), required: true }
+        expires_at:   { type: timestamp, required: true }
+        created_at:   ~
+        updated_at:   ~
+
+      jobeet_affiliate:
+        id:           ~
+        url:          { type: varchar(255), required: true }
+        email:        { type: varchar(255), required: true, index: unique }
+        token:        { type: varchar(255), required: true }
+        is_active:    { type: boolean, required: true, default: 0 }
+        created_at:   ~
+
+      jobeet_category_affiliate:
+        category_id:  { type: integer, foreignTable: jobeet_category,
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
+        affiliate_id: { type: integer, foreignTable: jobeet_affiliate,
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
+
+>**TIP**
+>Si vous avez décidé de créer les tables en écrivant le code SQL, vous pouvez
+>générer le fichier de configuration `schema.yml` en exécutant la tâche
+>`propel:build-schema`.
+
+</propel>
+<doctrine>
+
+Comme la base de donnée n'existe pas encore et que nous voulons la garder
+agnostique dans Jobeet, créons la à la main en éditant le fichier vide
+`config/doctrine/schema.yml` :
+
+    [yml]
+    # config/doctrine/schema.yml
+    ---
+    JobeetCategory:
+      actAs:
+        Timestampable: ~
+      columns:
+        name:
+          type: string(255)
+          notnull:  true
+
+    JobeetJob:
+      actAs:
+        Timestampable: ~
+      columns:
+        category_id:
+          type: integer
+          notnull:  true
+        type:
+          type: string(255)
+        company:
+          type: string(255)
+          notnull:  true
+        logo:
+          type: string(255)
+        url:
+          type: string(255)
+        position:
+          type: string(255)
+          notnull:  true
+        location:
+          type: string(255)
+          notnull:  true
+        description:
+          type: string(4000)
+          notnull:  true
+        how_to_apply:
+          type: string(4000)
+          notnull:  true
+        token:
+          type: string(255)
+          notnull:  true
+          unique: true
+        is_public:
+          type: boolean
+          notnull:  true
+          default:  1
+        is_activated:
+          type: boolean
+          notnull:  true
+          default:  0
+        email:
+          type: string(255)
+          notnull:  true
+        expires_at:
+          type: timestamp
+          notnull:  true
+      relations:
+        JobeetCategory:
+          local:  category_id
+          foreign:  id
+        Affiliates:
+          class:  JobeetAffiliate
+          local:  category_id
+          foreign:  affiliate_id
+          refClass: JobeetCategoryAffiliate
+          foreignAlias: Affiliates
+
+    JobeetAffiliate:
+      actAs:
+        Timestampable: ~
+      columns:
+        url:
+          type: string(255)
+          notnull:  true
+        email:
+          type: string(255)
+          notnull:  true
+          unique: true
+        token:
+          type: string(255)
+          notnull:  true
+        is_active:
+          type: boolean
+          notnull:  true
+          default:  0
+
+    JobeetCategoryAffiliate:
+      columns:
+        category_id:
+          type: integer
+          primary:  true
+        affiliate_id:
+          type: integer
+          primary:  true
+      relations:
+        JobeetCategory:
+          onDelete: CASCADE
+          local:  category_id
+          foreign:  id
+        JobeetAffiliate:
+          onDelete: CASCADE
+          local:  affiliate_id
+          foreign:  id
+
+>**TIP**
+>Si vous avez décidé de créer les tables en écrivant le code SQL, vous pouvez
+>générer le fichier de configuration `schema.yml` en exécutant la tâche
+>`doctrine:build-schema`.
+
+</doctrine>
+
+
+Le schéma est une traduction du diagramme de relation des entités au format
+YAML.
+
+>**SIDEBAR**
+>Le format YAML
+>
+>D'après le site officiel de [YAML](http://yaml.org/), YAML est "un standard de
+>sérialisation des données 'amis des humains' pour tout les langages de
+>programmation.
+>
+>D'un autre point de vue, YAML est un langage simple pour décrire les données (
+>caractères, entiers, dates, tableaux, et les chaînes )
+>
+>In YAML, structure is shown through indentation, sequence items are denoted by
+>a dash, and key/value pairs within a map are separated by a colon.
+>
+>YAML propose également une syntaxe plus courte pour décrire la structure, où
+>les tableaux sont entre `[]` et les séquences entre `{}`.
+>
+>Si vous n'êtes pas familier avec YAML, c'est le moment de vous y mettre car
+>symfony l'utilise largement dans ces fichiers de configuration.
+
+Le fichier `schema.yml` contient la description de l'ensemble des tables et de
+leurs colonnes. Chaque colonne est décrite avec les informations suivantes :
+
+<propel>
+  * `type`: Le type de colonne (`boolean`, `tinyint`, `smallint`, `integer`,
+            `bigint`, `double`, `float`, `real`, `decimal`, `char`,
+            `varchar(size)`, `longvarchar`, `date`, `time`, `timestamp`,
+            `blob`, and `clob`)
+  * `required`: Définir à `true` si vous voulez que la colonne soit requise.
+  * `index`: Définir à `true` si vous voulez créer un index sur la colonne ou à
+            `unique` si vous voulez un index unique.
+
+Pour les colonnes définies avec `~` (`id`, `created_at`, and `updated_at`),
+symfony crée automatique la meilleure configuration ( une clé primaire pour `id`
+et un timestamp pour created_at` et `updated_at`).
+
+>**NOTE**
+>L'attribut `OnDelete` définit un comportement `ON DELETE` sur les clés
+>étrangères et Propel supporte  les valeurs `CASCADE`, `SETNULL`, and
+>`RESTRICT`. 
+>Par exemple, lorsque un enregistrement de la table `jobeet_job` est supprimé,
+>tout les enregistrements correspondant dans la table
+>`jobeet_category_affiliate` seront automatiquement effacés soit par la base de
+>données soit par Propel si le moteur de base de données ne supporte pas cette
+>fonctionnalité.
+</propel>
+<doctrine>
+  * `type`: Le type de colonne (`boolean`, `integer`, `float`, `decimal`,
+            `string`, `array`, `object`, `blob`, `clob`, `timestamp`,
+            `time`, `date`, `enum`, `gzip`)
+  * `notnull`: Définir à `true` si vous voulez que la colonne soit requise.
+  * `unique`: Définir à `true` si vous voulez créer un index unique sur la
+              colonne.
+
+>**NOTE**
+>L'attribut `OnDelete` définit un comportement `ON DELETE` sur les clés
+>étrangères et Doctrine supporte  les valeurs `CASCADE`, `SETNULL`, and
+>`RESTRICT`. 
+>Par exemple, lorsque un enregistrement de la table `jobeet_job` est supprimé,
+>tout les enregistrements correspondant dans la table
+>`jobeet_category_affiliate` seront automatiquement effacés par la base de
+>données.
+</doctrine>
+
+La Base de Données
+------------------
+
+Le framework symfony supporte toutes les bases de données compatibles avec PDO
+(MySQL, PostgreSQL, SQLite, Oracle, MSSQL, ...). PDO est une couche
+d'abstraction de base de données fournit par PHP.
+
+Utilisons MySQL pour ce tutoriel :
+
+    $ mysqladmin -uroot -pmYsEcret create jobeet
+
+>**Note**
+>Vous êtes libre de choisir un autre moteur de base de données. Il ne sera pas
+>difficile d'adapter le code que nous allons écrire car nous utilisons un ORM
+>qui écrira le code SQL pour nous.
+
+Nous devons indiquer à symfony la base de données que nous utilisons pour le
+projet Jobeet :
+
+<propel>
+    $ php symfony configure:database "mysql:host=localhost;dbname=jobeet" root mYsEcret
+</propel>
+<doctrine>
+    $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=jobeet" root mYsEcret
+</doctrine>
+
+La tâche `configure:database` demande trois arguments : le [DSN
+PDO](http://www.php.net/manual/en/pdo.drivers.php), le nom d'utilisateur et le
+mot de passe pour accéder à la base de données. Si vous n'utilisez pas de mot de
+passe sur votre serveur de développement, n'utilisez pas le troisième argument.
+
+>**NOTE**
+>La tâche `configure:database` écrit les configurations de la base de données
+>dans le fichier `config/databases.yml`. Au lieu d'utiliser la tâche vous pouvez
+>éditer ce fichier à la main.
+
+L'ORM
+------
+
+Grâce à la description de la base de données dans le fichier `schema.yml`, nous
+pouvons utiliser les tâches intégrées de l'ORM pour générer les déclarations SQL
+nécessaires pour créer des tables :
+
+    $ php symfony propel:build-sql
+
+La tâche `propel:build-sql` génère le déclarations SQL dans le répertoire
+`data/sql`, optimisées pour le moteur de base de données que nous avons
+configuré :
+
+    [sql]
+    # snippet from data/sql/lib.model.schema.sql
+    CREATE TABLE `jobeet_category`
+    (
+      `id` INTEGER  NOT NULL AUTO_INCREMENT,
+      `name` VARCHAR(255)  NOT NULL,
+      PRIMARY KEY (`id`)
+    )Type=InnoDB;
+
+Pour maintenant créer les tables dans la base de données, vous devez exécuter la
+tâche `propel:insert-sql` :
+
+    $ php symfony propel:insert-sql
+
+<propel>
+Comme la tâche supprime les tables déjà présentes avant de les créer à nouveau,
+vous devez confirmer l'opération. Vous pouvez également utiliser l'option
+`--no-confirmation` pour outre passer la confirmation, ce qui est pratique
+lorsque l'on veut exécuter la tâche à partir d'une ligne de commande
+non-iteractive :
+
+    $ php symfony propel:insert-sql --no-confirmation
+</propel>
+
+>**TIP**
+>Comme n'importe quel outil en ligne de commande les tâches symfony peuvent
+>avoir des arguments et des options. Chaque tâche est fournit avec des messages
+>d'aide qui peuvent être affichés en exécutant la tâche `help` :
+>
+>     $ php symfony help propel:insert-sql
+>
+>Le message d'aide liste tous les arguments et options possibles, vous donne les
+>valeurs par défaut pour chacun d'entre eux, et vous montre des exemples utiles.
+
+L'ORM génère également les classes PHP qui font la correspondance entre les
+enregistrements des tables et les objets :
+
+      $ php symfony propel:build-model
+
+La tâche `propel:build-model` génère les fichiers PHP qui seront utilisés pour
+interagir avec la base de données dans le répertoire `lib/model`.
+
+<propel>
+En navigant parmi les fichiers générés, vous avez probablement remarqué que
+Propel génère quatre classes par table. Pour la table `jobeet_job` :
+
+  * `JobeetJob`: Un objet de cette classe représente un seul enregistrement dans
+                 la table `jobeet_job`. Par défaut cette classe est vide.
+  * `BaseJobeetJob`: C'est la classe parente de `JobeetJob`. Chaque fois que
+                     vous exécutez `propel:build-model`, la classe est récrite.
+                     Toutes les évolutions doivent être faites dans la classe
+                     `JobeetJob`.
+  * `JobeetJobPeer`: Cette classe définit les méthodes statiques qui retournent
+                     un ensemble d'objet `JobeetJob`. Cette classe est vide par
+                     défaut.
+  * `BaseJobeetJobPeer`: C'est la classe parente à `JobeetJobPeer`. Chaque fois que
+                         vous exécutez `propel:build-model`, la classe est récrite.
+                         Toutes les évolutions doivent être faites dans la
+                         classe `JobeetJobPeer`.
+</propel>
+<doctrine>
+En navigant parmi les fichiers générés, vous avez probablement remarqué que
+Doctrine génère trois classes par table. Pour la table `jobeet_job` :
+
+  * `JobeetJob`: Un objet de cette classe représente un seul enregistrement dans
+                 la table `jobeet_job`. Par défaut cette classe est vide.
+  * `BaseJobeetJob`: C'est la classe parente de `JobeetJob`. Chaque fois que
+                     vous exécutez `propel:build-model`, la classe est récrite.
+                     Toutes les évolutions doivent être faites dans la classe
+                     `JobeetJob`.
+ * `JobeetJobTable`:  Cette classe définit les méthodes qui retournent
+                      un ensemble d'objet `JobeetJob`. Cette classe est vide par
+                      défaut.
+</doctrine>
+Les valeurs des colonnes d'un enregistrement peuvent être manipulées par l'objet
+en utilisant un accesseur (accessors `get*()` méthode) ou un mutateur (mutators
+`set*()` méthode):
+
+    [php]
+    $job = new JobeetJob();
+    $job->setPosition('Web developer');
+    $job->save();
+
+    echo $job->getPosition();
+
+    $job->delete();
+
+Vous pouvez également définir les clés étrangères en liant les objets entre eux
+:
+
+    [php]
+    $category = new JobeetCategory();
+    $category->setName('Programming');
+
+    $job = new JobeetJob();
+    $job->setCategory($category);
+
+La tâche `propel:build-all` est un raccourci pour exécuter les tâches que nous
+avons vu dans cette section et d'autres. Donc, exécutez cette tâche maintenant
+pour générer les formulaires et les validateurs du modèle des classes de Jobeet:
+
+    $ php symfony propel:build-all
+
+Vous verrez les validateurs en action à la fin de ce jour et les formulaires
+seront expliqués en détails le dixième jour.
+
+>**TIP**
+>La tâche `propel:build-all-load` est un raccourci pour la tâche
+>`propel:build-all` suivie de la tâche `propel:data-load`.
+
+Comme nous le verrons un peu plus tard, symfony charge automatiquement les
+classes PHP pour vous, ce qui signifie que vous n'avez jamais besoin d'utiliser
+`require` dans votre code. C'est une des nombreuses choses que symfony
+automatise pour les développeurs mais il y a une contre partie :
+Chaque fois que vous ajoutez une classe vous devez effacer le cache. Comme la
+tâche `propel:build-model` a créée de nouvelles classes, effaçons la cache :
+
+    $ php symfony cache:clear
+
+>**TIP**
+>Une tâche symfony est composée d'un espace de nom et d'un nom de tâche. Chaque
+>tâche a un raccourci avec le moins d'ambiguïté avec les autres tâches. La
+>commande suivante est équivalente à `cache:clear`:
+>
+>     $ php symfony cc
+
+Les Données Initiales
+---------------------
+
+Les tables ont été créée dans la base de données mais elles sont vides.
+Pour chaque application web il y a trois types de données :
+
+  * **Les données initiales**: Les données initiales sont nécessaires pour que
+                               l'application fonctionne. Par exemple, Jobeet a
+                               besoin de catégories, sinon personne ne pourra
+                               soumettre un poste. Nous avons également besoin
+                               d'un administrateur capable de s'authentifier au
+                               backend.
+
+  * **Les données de test**: Les données de test sont nécessaires pour tester
+                             l'application. Comme développeur vous allez écrire
+                             des tests pour être certain que Jobeet se comporte
+                             comme décrit dans les histoires utilisateur. Le
+                             meilleur moyen est d'écrire des tests automatiques.
+                             Donc à chaque fois que vous faites des tests, vous
+                             avez besoin d'une base de données propre avec des
+                             données actualisées.
+
+  * **Les données utilisateur**: Les données utilisateur sont créées par les
+                                 utilisateurs pendant la vie normale de
+                                 l'application.
+
+Chaque fois que symfony crée des tables dans la base de données les données sont
+perdues. Pour envoyer des données initiales à la base nous pouvons écrire un
+script PHP, ou exécuter du code SQL avec le programme `mysql`. Mais comme le
+besoin est commun, il y a une meilleure méthode avec symfony : créez un fichier
+YAML dans le répertoire `data/fixtures/` et utilisez la tâche `propel:data-load`
+pour les envoyer dans la base de données :
+
+<propel>
+    [yml]
+    # data/fixtures/010_categories.yml
+    JobeetCategory:
+      design:        { name: Design }
+      programming:   { name: Programming }
+      manager:       { name: Manager }
+      administrator: { name: Administrator }
+
+    # data/fixtures/020_jobs.yml
+    JobeetJob:
+      job_sensio_labs:
+        category_id:  programming
+        type:         full-time
+        company:      Sensio Labs
+        logo:         sensio_labs.png
+        url:          http://www.sensiolabs.com/
+        position:     Web Developer
+        location:     Paris, France
+        description:  |
+          You've already developed websites with symfony and you want to work
+          with Open-Source technologies. You have a minimum of 3 years
+          experience in web development with PHP or Java and you wish to
+          participate to development of Web 2.0 sites using the best
+          frameworks available.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_sensio_labs
+        email:        job@example.com
+        expires_at:   2010-10-10
+
+      job_extreme_sensio:
+        category_id:  design
+        type:         part-time
+        company:      Extreme Sensio
+        logo:         extreme_sensio.png
+        url:          http://www.extreme-sensio.com/
+        position:     Web Designer
+        location:     Paris, France
+        description:  |
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+          enim ad minim veniam, quis nostrud exercitation ullamco laboris
+          nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+          in reprehenderit in.
+
+          Voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+          Excepteur sint occaecat cupidatat non proident, sunt in culpa
+          qui officia deserunt mollit anim id est laborum.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_extreme_sensio
+        email:        job@example.com
+        expires_at:   2010-10-10
+</propel>
+<doctrine>
+    [yml]
+    # data/fixtures/categories.yml
+    JobeetCategory:
+      design:
+        name: Design
+      programming:
+        name: Programming
+      manager:
+        name: Manager
+      administrator:
+        name: Administrator
+
+    # data/fixtures/jobs.yml
+    JobeetJob:
+      job_sensio_labs:
+        JobeetCategory: programming
+        type:         full-time
+        company:      Sensio Labs
+        logo:         /uploads/jobs/sensio_labs.png
+        url:          http://www.sensiolabs.com/
+        position:     Web Developer
+        location:     Paris, France
+        description:  |
+          You've already developed websites with symfony and you want to work
+          with Open-Source technologies. You have a minimum of 3 years
+          experience in web development with PHP or Java and you wish to
+          participate to development of Web 2.0 sites using the best
+          frameworks available.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_sensio_labs
+        email:        job@example.com
+        expires_at:   '2008-10-10'
+
+      job_extreme_sensio:
+        JobeetCategory:  design
+        type:         part-time
+        company:      Extreme Sensio
+        logo:         /uploads/jobs/extreme_sensio.png
+        url:          http://www.extreme-sensio.com/
+        position:     Web Designer
+        location:     Paris, France
+        description:  |
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+          enim ad minim veniam, quis nostrud exercitation ullamco laboris
+          nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+          in reprehenderit in.
+
+          Voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+          Excepteur sint occaecat cupidatat non proident, sunt in culpa
+          qui officia deserunt mollit anim id est laborum.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_extreme_sensio
+        email:        job@example.com
+        expires_at:   '2008-10-10'
+</doctrine>
+
+Un fichier de jeu de données tests est écrit en YAML. Il utilise le modèle des
+objets avec un nom unique pour chaque enregistrement. Ce nom est utile pour lier
+les objets relationnels entre eux sans à avoir à définir une clé primaire (qui
+sont souvent des champs auto-incrémenté et ne peuvent être définis).
+Par exemple le poste `job_sensio_labs` utilise la catégorie `programming`, ce
+qui correspond à la catégorie 'Programming' .
+
+Un fichier de jeu de données peut contenir des objets d'un ou plusieurs modèles.
+
+<propel>
+>**TIP**
+>Remarquez le nombre qui préfixe le nom du fichier. C'est un moyen simple de
+>contrôler l'ordre de chargement des données. Plus tard si nous avons besoin
+>d'insérer un nouveau jeu, ce sera plus facile car nous avons des numéros libres
+>entre ceux existant.
+</propel>
+
+Dans un fichier de jeu de données vous n'avez pas besoin de définir toutes les
+valeurs de colonnes. Dans ce cas symfony va utiliser la valeur par défaut
+indiquée dans le schéma de la base de données.  Et comme symfony utilise un
+##ORM## pour charger les données en base, tous les comportements à la création
+(comme pour `created_at` ou `updated_at`) ou les comportements que vous aurez
+ajoutés au modèle, sont activés.
+
+Charger les données initiales dans la base de données est aussi simple que
+d'exécuter la tâche :
+
+    $ php symfony propel:data-load
+
+Le voir en action dans le navigateur
+------------------------------------
+
+Nous avons beaucoup utilisé l'interface de ligne de commande mais ce n'est pas
+vraiment excitant, surtout pour un projet web. Nous avons maintenant tout ce
+qu'il nous faut pour créer des pages web qui vont interagir avec la base de
+données.
+
+Voyons comment afficher la liste des postes, comment éditer un poste existant,
+et comment l'effacer. Comme nous l'avons expliqué le premier jour, un projet
+symfony est fait d'application. Chacune d'entre elles est faite de **module**.
+Un module contient un jeu de code PHP qui représente une fonctionnalité de
+l'application ( le module de l'API par exemple ) ou un jeu de manipulation sur
+le modèle objet que peut faire un utilisateur ( le module des postes par exemple
+).
+
+Symfony est capable de générer automatiquement pour un modèle un module qui
+fournit des fonctionalités basiques :
+
+    $ php symfony propel:generate-module --with-show --non-verbose-templates frontend job JobeetJob
+
+La tâche `propel:generate-module` génère un module `job` dans l'application
+`frontend` sur le modèle de `JobeetJob`. Comme pour la plupart des tâches
+symfony des répertoires et des fichiers ont été créés pour vous dans le
+répertoire `apps/frontend/modules/job` :
+
+ | Directory  | Description
+ | ---------- | --------------------
+ | actions/   | Les actions du module
+ | templates/ | Les gabarits du module
+
+Le fichier `actions/actions.class.php` définit toutes les actions disponibles
+pour le module `job` :
+
+ | Action name  | Description
+ | ------------ | -------------------------------------------------------
+ | index        | Affiche les enregistrements de la table
+ | show         | Affiche les champs d'un enregistrement donné
+ | new          | Affiche un formulaire pour créer un nouvel enregistrement
+ | create       | Créer un nouvel enregistrement 
+ | edit         | Affiche un formulaire pour éditer un enregistrement  
+ | update       | Mise à jour d'un enregistrement avec les données soumises
+ | delete       | Efface un enregistrement donné.
+
+Vous pouvez tester dès maintenant le module job dans un navigateur :
+
+     http://jobeet.localhost/frontend_dev.php/job
+
+![Job module](http://www.symfony-project.org/images/jobeet/1_2/03/job.png)
+
+<propel>
+Si vous essayez d'éditer un poste, vous aurez un exception parce que symfony a
+besoin d'une représentation textuelle d'une catégorie. Une représentation d'un
+objet PHP peut être définit avec la méthode magique __toString(). La
+représentation textuelle d'un enregistrement de catégorie doit être définit dans
+la classe `JobeetCategory` :
+
+    [php]
+    // lib/model/JobeetCategory.php
+    class JobeetCategory extends BaseJobeetCategory
+    {
+      public function __toString()
+      {
+        return $this->getName();
+      }
+    }
+
+Maintenant chaque fois que symfony a besoin d'un représentation d'une catégorie,
+la méthode magique __toString() est appelée est retourne le nom de la catégorie.
+Comme nous aurons besoin d'une représentation de toutes les classes du modèle à
+un moment ou un autre, définissons une méthode __toString() dans chaque classe
+du modèle.
+</propel>
+<doctrine>
+Si vous essayez d'éditer un poste, vous serez averti que le champ id de la table
+catégorie est une liste déroulante de tous les noms de catégorie. Les valeurs
+de chaque option proviennent de la méthode __toString(). Doctrine va essayer et
+fournir une méthode de base __toString en cherchant une colonne nommée  `title`,
+`name`, `subject`, etc. Si vous voulez quelque chose de personnaliser vous devez
+ajouter votre propre méthode __toString() comme ci-dessous.
+</doctrine>
+
+    [php]
+    // lib/model/JobeetJob.php
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function __toString()
+      {
+        return sprintf('%s at %s (%s)', $this->getPosition(), $this->getCompany(), $this->getLocation());
+      }
+    }
+
+    // lib/model/JobeetAffiliate.php
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function __toString()
+      {
+        return $this->getUrl();
+      }
+    }
+
+Vous pouvez créer et éditer des postes. Essayez de laisser un champ requis vide
+ou de saisir une date invalide. C'est bien, symfony a créée des règles de
+validation basique en introspectant le schéma de la base de données.
+
+![validation](http://www.symfony-project.org/images/jobeet/1_2/03/validation.png)
+
+A demain
+---------
+
+C'est tout pour aujourd'hui. Je vous avez prévenu à l'introduction. Aujourd'hui,
+nous avons à peine écrit du code PHP mais nous avons un module qui fonctionne
+sur le modèle `job`, prêt à être modifié et personnalisé. Rappelez-vous, pas de
+code PHP signifie pas de bogues.
+
+S'il vous reste de l'énergie, soyez libre de lire le code généré pour le module
+ou pour le modèle et essayez de comprendre comment il fonctionne. Si vous n'y
+arrivez pas, ne vous inquiétez pas et dormez bien, car demain nous allons parlé
+d'un des paradigmes les plus utilisés dans les framework web, le [MVC design
+pattern](http://en.wikipedia.org/wiki/Model-view-controller).
+
+Le code écrit aujourd'hui est disponible sur le dépôt SVN de Jobeet avec le tag
+`release_day_03` (`http://svn.jobeet.org/tags/release_day_03/`).
+
+__ORM__
