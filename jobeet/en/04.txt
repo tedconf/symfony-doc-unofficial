@@ -472,10 +472,18 @@ It retrieves all the jobs from the database:
       // ...
     }
 
+<propel>
 Let's have a closer look at the code: the `executeIndex()` method (the
 Controller) calls the Model `JobeetJobPeer` to retrieve all the jobs
-(`new Criteria()`). It returns an array of `Job` objects that are assigned to
+(`new Criteria()`). It returns an array of `JobeetJob` objects that are assigned to
 the `jobeet_job_list` object property.
+</propel>
+<doctrine>
+Let's have a closer look at the code: the `executeIndex()` method (the
+Controller) calls the Table `JobeetJob` to create a query to retrieve all the 
+jobs. It returns a `Doctrine_Collection` of `JobeetJob` objects that are assigned to
+the `jobeet_job_list` object property.
+</doctrine>
 
 All such object properties are then automatically passed to the template (the
 View). To pass data from the Controller to the View, just create a new
@@ -725,7 +733,12 @@ method of the `job` module:
     {
       public function executeShow(sfWebRequest $request)
       {
-        $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+<propel>
+      $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+      $this->job = Doctrine::getTable('JobeetJob')->find($request->getParameter('id'));
+</doctrine>
         $this->forward404Unless($this->job);
       }
 
