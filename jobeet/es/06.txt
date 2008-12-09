@@ -1,0 +1,488 @@
+﻿Día 6: Más acerca del Modelo
+===========================
+
+Anteriormente en Jobeet
+-----------------------
+
+Ayer fue un gran día. Aprendiste como crear URLs amigables y como usar el framework Symfony para automatizar un montón de cosas por ti.
+
+Hoy, mejoraremos el sitio web Jobeet afinando el código aquí y allá.
+En el proceso, aprenderás más acerca de todas las características que hemos introducido esta semana.
+
+El Objeto Criteria de Propel
+----------------------------
+
+De los requisitos del día 2:
+
+  "Cuando un usuario llega al sitio de Jobeet, verá una lista de los puestos de trabajos activos."
+
+Pero hasta ahora, todos los puestos de trabajo serán mostrados, sea que estén activos o no:
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeIndex(sfWebRequest $request)
+      {
+<propel>
+        $this->jobs = JobeetJobPeer::doSelect(new Criteria());
+</propel>
+<doctrine>
+        $this->jobs = Doctrine::getTable('JobeetJob')
+          ->createQuery('a')
+          ->execute();
+</doctrine>
+      }
+
+      // ...
+    }
+
+Un puesto de trabajo activo es uno que fue envíado hace menos de 30 días. El método `doSelect()` acepta un objeto `Criteria` que describe la solicitud a efectuar contra la base de datos. En el código anterior, un `Criteria` vacío es pasado, lo que significa que todos los registros son obtenidos de la base de datos.
+
+Cambiemos a que solo selecione los puestos activos:
+
+    [php]
+    public function executeIndex(sfWebRequest $request)
+    {
+<propel>
+      $criteria = new Criteria();
+      $criteria->add(JobeetJobPeer::CREATED_AT, time() - 86400 * 30, Criteria::GREATER_THAN);
+
+      $this->jobs = JobeetJobPeer::doSelect($criteria);
+</propel>
+<doctrine>
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('created_at > ?', time() - )
+</doctrine>
+    }
+
+<propel>
+El método `Criteria::add()` añade una cláusula `WHERE` para generar el SQL. Aquí, restringimos el criterio para solo seleccionar puestos de trabajo que no sean mas viejos a 30 días.
+Este método tiene un montón de diferentes operadores de comparación; aquí están los mas comunes:
+
+  * `Criteria::EQUAL`
+  * `Criteria::NOT_EQUAL`
+  * `Criteria::GREATER_THAN`, `Criteria::GREATER_EQUAL`
+  * `Criteria::LESS_THAN`, `Criteria::LESS_EQUAL`
+  * `Criteria::LIKE`, `Criteria::NOT_LIKE`
+  * `Criteria::CUSTOM`
+  * `Criteria::IN`, `Criteria::NOT_IN`
+  * `Criteria::ISNULL`, `Criteria::ISNOTNULL`
+  * `Criteria::CURRENT_DATE`, `Criteria::CURRENT_TIME`,
+    `Criteria::CURRENT_TIMESTAMP`
+</propel>
+
+Depurando por ##ORM## el SQL generado
+-------------------------------------
+
+Como no escribiste ninguna sentencia SQL a mano, el ##ORM## cuidará de las diferencias que hay entre los motores de base de datos y generará las sentencias SQL optimizadas para el motor de la base de datos que elejíste el día 3. Pero algunas veces, es de gran ayuda para ver el SQL generado por el ##ORM##; por ejemplo, para depurar un `Criteria` que no funciona como esperamos. En el entorno `dev`, symfony registra esas consultas (junto a otras muchas más) en el directorio `log/`. Hay un archivo log para cada combinacion de aplicación y entorno. El archivo que estámos buscando es `frontend_dev.log`:
+
+    # log/frontend_dev.log
+    Dec 6 15:47:12 symfony [debug] {sfPropelLogger} exec: SET NAMES 'utf8'
+    Dec 6 15:47:12 symfony [debug] {sfPropelLogger} prepare: SELECT
+    âž¥ jobeet_job.ID, jobeet_job.CATEGORY_ID, jobeet_job.TYPE,
+    âž¥ jobeet_job.COMPANY, jobeet_job.LOGO, jobeet_job.URL, jobeet_job.POSITION,
+    âž¥ jobeet_job.LOCATION, jobeet_job.DESCRIPTION, jobeet_job.HOW_TO_APPLY,
+    âž¥ jobeet_job.TOKEN, jobeet_job.IS_PUBLIC, jobeet_job.CREATED_AT,
+    âž¥ jobeet_job.UPDATED_AT FROM `jobeet_job` WHERE jobeet_job.CREATED_AT>:p1
+    Dec 6 15:47:12 symfony [debug] {sfPropelLogger} Binding '2008-11-06 15:47:12'
+    âž¥ at position :p1 w/ PDO type PDO::PARAM_STR
+
+Puedes er por ti mismo que Propel a generado una claúsula WHERE para la columna `created_at` (`WHERE jobeet_job.CREATED_AT > :p1`).
+
+>**NOTA**
+>La cadena `:p1` en la consulta indica que Propel genera una sentencia
+>preparada. El valor actual de `:p1` ('2008-11-06 15:47:12' en el ejemplo
+>anterior) es pasado durante la ejecución de la consulta y escapado apropiadamente
+>por el motor de la base de datos engine. El uso de sentencias preparadas dramaticamente reduce 
+> tu exposición a las [inyecciones SQL](http://en.wikipedia.org/wiki/Sql_injection) attacks.
+
+Esto esta bueno, pero es bastante molesto tener que cambiar del navegador , al IDE, y el archivo log cada vez que necesitas probar un cambio. Gracias a la barra web de depuración de symfony, toda la información que necesitas esta también disponible dentro de la comodidad de tu navegador:
+
+![SQL statements in the web debug toolbar](http://www.symfony-project.org/images/jobeet/1_2/06/web_debug_sql.png)
+
+Serialización de Objectos
+-------------------------
+
+Aún si el código anterior funciona, esta no es la forma de hacerlo. Como nuestro requisitos del día 2 establecen:
+
+  "Un usuario puede regresar para re-activar o extender la validez de un puesto de trabajo por 30 días más..."
+
+Esto no es posible con el código anterior, ya que el valor de `created_at` no debería cambiar una vez que el registro es creado.
+
+Si recuerdas el esquema de la base de datos, teníamos una columna `expires_at`. Normalmente este valor esta siempre vacío. Cuando un puesto de trbajo es creado, éste debe ser establecido a 30 días despues de día de hoy. Para hacer algo antes que un objeto Propel sea serializado en la base de datos, puedes sobreescribir el método `save()`:
+
+    [php]
+    // lib/model/JobeetJob.php
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function save(PropelPDO $con = null)
+      {
+        if ($this->isNew() && !$this->getExpiresAt())
+        {
+          $now = $this->getCreatedAt() ? $this->getCreatedAt('U') : time();
+          $this->setExpiresAt($now + 86400 * 30);
+        }
+
+        return parent::save($con);
+      }
+
+      // ...
+    }
+
+El método `isNew()` devuelve `true` cuando el objeto no ha sido serializado
+aún en la base de datos, y `false` de lo contratio.
+
+Vamos a cambiar la acción para usar la columna `expires_at`:
+
+    [php]
+    public function executeIndex(sfWebRequest $request)
+    {
+      $criteria = new Criteria();
+      $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+
+      $this->jobs = JobeetJobPeer::doSelect($criteria);
+    }
+
+Restringimos el criterio para solo seleccionar los puestos de trabajo con un día `expires_at` en
+el futuro.
+
+
+Con Datos
+---------
+
+Actualizando la página de inicio de Jobeet en tu navegador vemos que no cambiamos ningún puesto de trabajo en la base de datos que habíamos dejado hace unos pocos días atrás. Vamos a cambiar el archivo fixtures para agregar un puesto de trabajo que ya haya expirado:
+
+    [yml]
+    # data/fixtures/020_jobs.yml
+    JobeetJob:
+      # other jobs
+
+      expired_job:
+        category_id:  programming
+        company:      Sensio Labs
+        position:     Web Developer
+        location:     Paris, France
+        description:  Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+        how_to_apply: Send your resume to lorem.ipsum [at] dolor.sit
+        is_public:    true
+        is_activated: true
+        created_at:   2005-12-01
+        token:        job_expired
+        email:        job@example.com
+
+Aún cuando la columna `created_at` automaticamente es rellenada por Propel, puedes sobreescribirla. Recargando los datos y actualizan tu navegador para asegurarte que los vijos puestos de trabajo no se muestran:
+
+    $ php symfony propel:data-load
+
+Configuración Personalizada
+---------------------------
+
+En el método `JobeetJob::save()`, hemos tenido que hardcodear el número de días para que los puestos de trabajo se conviertan en inactivos. Podría mejorarse haciendo que los 30 días sean configurables. El framework Symfony trae incluído un archivo de configuración para la configuración específica de una aplicación, el archivo `app.yml`. Este archivo de formato YAML puede contener cualquier configurción de desees:
+
+    [yml]
+    # apps/frontend/config/app.yml
+    all:
+      active_days: 30
+
+En la aplicación, esas configuraciones esta disponibles a través del la clase global `sfConfig`:
+
+    [php]
+    sfConfig::get('app_active_days')
+
+El parámetro tiene un prefijo `app_` porque la clase `sfConfig` también da acceso a la configuración de symfony como veremos más tarde.
+
+Vamos a actualizar el código para tomar esta nueva configuración en cuenta:
+
+    [php]
+    public function save(PropelPDO $con = null)
+    {
+      if ($this->isNew() && !$this->getExpiresAt())
+      {
+        $now = $this->getCreatedAt() ? $this->getCreatedAt('U') : time();
+        $this->setExpiresAt($now + 86400 * sfConfig::get('app_active_days'));
+      }
+
+      return parent::save($con);
+    }
+
+El archivo de configuración `app.yml` e una gran forma de centralizar configuraciones globales para tu aplicación.
+
+Refactorizando
+--------------
+
+Todo el código escrito funciona bien, pero aún no esta del todo bien. 
+¿Puedes ver el problema?
+
+El código `Criteria` no pertenece a la acción, sino a la capa del Modelo. Como el código devuelve puestos de trabajo, vamos a crear un método en la clase `JobeetJobPeer`:
+
+    [php]
+    // lib/model/JobeetJobPeer.php
+    class JobeetJobPeer extends BaseJobeetJobPeer
+    {
+      static public function getActiveJobs()
+      {
+        $criteria = new Criteria();
+        $criteria->add(self::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+
+        return self::doSelect($criteria);
+      }
+    }
+
+Date cuenta que el método es `static`. El código de la acción ahora puede usar este nuevo método:
+
+    [php]
+    public function executeIndex(sfWebRequest $request)
+    {
+      $this->jobs = JobeetJobPeer::getActiveJobs();
+    }
+
+Esta refactorización tiene varios beneficios sobre el anterior código:
+
+ * La lógica para obtener los puestos de trabajo activos está ahora en el modelo, donde pertenerce
+ * El código en el controlador es mucho mas legible
+ * El método `getActiveJobs()` es re-usable (por ejemplo en otra acción)
+ * El código del modelo ahora puede ser probado con pruebas unitarias
+
+Vamos a ordenar los puestos de trabajo por la columna `expires_at`:
+
+    [php]
+    static public function getActiveJobs()
+    {
+      $criteria = new Criteria();
+      $criteria->add(self::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+      $criteria->addDescendingOrderByColumn(self::EXPIRES_AT);
+
+      return self::doSelect($criteria);
+    }
+
+El método `addDescendingOrderByColumn()` añade una claúsula `ORDER BY` al SQL generado  (`addAscendingOrderByColumn()` también existe).
+
+
+Categorías en la página de Inicio
+---------------------------------
+
+De los requisitos del día 2:
+
+  "Los puestos de trabajo son ordenados por categoría y entonces por la fecha de publicación (los nuevos primeros)."
+
+Hasta ahora, no teníamos la categoría en cuenta. De los requisitos, la página de inicio debe mostrar los puestos de trabajo por categoría. Primero, necesitamos obtener todas las categorías con al menos un puesto de trabajo activo. Abre la clase `JobeetCategoryPeer`y agregale el método `getWithJobs()`:
+
+    [php]
+    // lib/model/JobeetCategoryPeer.php
+    class JobeetCategoryPeer extends BaseJobeetCategoryPeer
+    {
+      static public function getWithJobs()
+      {
+        $criteria = new Criteria();
+        $criteria->addJoin(self::ID, JobeetJobPeer::CATEGORY_ID);
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->setDistinct();
+
+        return self::doSelect($criteria);
+      }
+    }
+
+El método `Criteria::addJoin()` añade una cláusula `JOIN` para generar el SQL.
+Por defecto, la condición join es añadida para la cláusula `WHERE`. Puedes también cambiar el operador join agregando un tercer argumento (`Criteria::LEFT_JOIN`,
+`Criteria::RIGHT_JOIN`, y `Criteria::INNER_JOIN`).
+
+Cambia la acción `index` adecuadamente:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeIndex(sfWebRequest $request)
+    {
+      $this->categories = JobeetCategoryPeer::getWithJobs();
+    }
+
+En la plantilla, necesitamos iterar a través de todas las categorías y mostrar los puestos de trabajo activos:
+
+    [php]
+    // apps/frontend/modules/job/indexSuccess.php
+    <?php use_stylesheet('jobs.css') ?>
+
+    <div id="jobs">
+      <?php foreach ($categories as $category): ?>
+        <div class="category_<?php echo Jobeet::slugify($category->getName()) ?>">
+          <div class="category">
+            <div class="feed">
+              <a href="">RSS feed</a>
+            </div>
+            <h1><?php echo $category ?></h1>
+          </div>
+
+          <table class="jobs">
+            <?php foreach ($category->getActiveJobs() as $i => $job): ?>
+              <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
+                <td><?php echo $job->getLocation() ?></td>
+                <td><?php echo link_to($job->getPosition(), 'job_show_user', $job) ?></td>
+                <td><?php echo $job->getCompany() ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </table>
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+>**NOTA**
+>Para mostrar el nomre de la categoría en la plantilla, usamos `echo $category`.
+>¿Te suena raro? `$category` es un objeto, ¿Cómo puede `echo` mágicamente
+>mostrar el nombre de la categoría? La respuesta fue dada durante el día 3 cuando teníamos 
+>que definir el método mágico `__toString()` para todas las clasese del modelo.
+
+Para que funcione, necesitamos agregar el método `getActiveJobs()` a la clase `JobeetCategory`:
+
+    [php]
+    // lib/model/JobeetCategory.php
+    public function getActiveJobs()
+    {
+      $criteria = new Criteria();
+      $criteria->add(JobeetJobPeer::CATEGORY_ID, $this->getId());
+
+      return JobeetJobPeer::getActiveJobs($criteria);
+    }
+
+En la función `add()`, hemos omitido el tercer argumento `Criteria::EQUAL`
+por ser el valor por defecto.
+
+Cuando llamamos al `JobeetJobPeer::getActiveJobs()`, necesitamos pasar el actual objeto `Criteria`. Por eso, el `getActiveJobs()` necesita para combinarse con su propio objeto 
+criteria. Como `Criteria` es un objeto, esto es bastante simple:
+
+    [php]
+    // lib/model/JobeetJobPeer.php
+    static public function getActiveJobs(Criteria $criteria = null)
+    {
+      if (is_null($criteria))
+      {
+        $criteria = new Criteria();
+      }
+
+      $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+      $criteria->addDescendingOrderByColumn(self::EXPIRES_AT);
+
+      return self::doSelect($criteria);
+    }
+
+
+Limitar los Resultados
+----------------------
+
+Aún queda un requisito por implementar para la lista de puestos de trabajo de la página de inicio:
+
+  "Por cada categoría, la lista solo muestra los primeros 10 puestos de trabajo y un enlace que permite listar todos los puestos de una categoría dada."
+
+Es tán simple de agregar al método `getActiveJobs()`:
+
+    [php]
+    // lib/model/JobeetCategory.php
+    public function getActiveJobs($max = 10)
+    {
+      $critaria = new Criteria();
+      $criteria->add(JobeetJobPeer::CATEGORY_ID, $this->getId());
+      $criteria->setLimit($max);
+
+      return JobeetJobPeer::getActiveJobs($criteria);
+    }
+
+La apropiada claúsula `LIMIT` es ahora hardcodeada dentro del Modelo, pero es mejor que este valor sea configurable. Cambia la plantilla para pasar el número máximo de puestos de trabajo establecido en `app.yml`:
+
+    [php]
+    <?php foreach ($category->getActiveJobs(sfConfig::get('app_max_jobs_on_homepage')) as $i => $job): ?>
+
+y agrega esta nueva configuración en `app.yml`:
+
+    [yml]
+    all:
+      active_days:          30
+      max_jobs_on_homepage: 10
+
+Datos Dinámicos
+---------------
+
+A menos que bajes el `max_jobs_on_homepage`, no verás ninguna diferencia. Necesitamos agregar un paquete de puestos de trabajo a los archivos fixtures de datos. Por eso, puedes copiar y pegar uno existente, diez, o veinte veces a mano... pero hay una mejor manera.
+La duplicación esta mal, aún es archivos fixture.
+
+¡Symfony al rescate! Los archivos YAML en symfony pueden tener código PHP que será evaluado justo antes de ser analizado. Edita el archivo fixtures 
+`020_jobs.yml` y añade el siguiente código al final:
+
+    [php]
+    JobeetJob:
+    # Starts at the beginning of the line (no whitespace before)
+    <?php for ($i = 100; $i <= 130; $i++): ?>
+      job_<?php echo $i ?>:
+        category_id:  programming
+        company:      Company <?php echo $i."\n" ?>
+        position:     Web Developer
+        location:     Paris, France
+        description:  Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+        how_to_apply: |
+          Send your resume to lorem.ipsum [at] company_<?php echo $i ?>.sit
+        is_public:    true
+        is_activated: true
+        token:        job_<?php echo $i."\n" ?>
+        email:        job@example.com
+
+    <?php endfor; ?>
+
+BeTen cuidado, al analizar YAML no olvides ninguna indentación.
+Manten en mente los siguientes simples tips cuando añadas código PHP a un archivo YAML 
+
+ * La declaración `<?php ?>` debe siempre empezar la linea o ser incrustada en un valor.
+ * Si una declaración `<?php ?>` finaliza una linea, necesitarás explícitamente agregar una nueva linea ("\n").
+
+Asegurar la Página
+------------------
+
+Cuando un puesto de trabajo expira, aun sabiendo la URL, no debería ser posible acceder a él nunca más. Prueba con la URL para el puesto de trabajo expirado (reemplaza el `id` con el actual `id` en tu base de datos):
+
+    /frontend_dev.php/job/sensio-labs/paris-france/4/web-developer-expired
+
+En lugar de mostrar la información, necesitarás redirigir al usuario a una página 404. Perp, ¿Cómo puedo hacer esto cuando la info es cargada automaticamente vía la ruta?
+
+Por defecto, el `sfPropelRoute` usa el método estandar `doSelectOne()` para obtener el objeto, pero puedes cambiar esto dandole una opción `method_for_criteria` en la configuracíon de la ruta:
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options:
+        model: JobeetJob
+        type:  object
+        method_for_criteria: doSelectActive
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+
+El método `doSelectActive()` recibirá el objeto `Criteria` ya listo por parte de la ruta:
+
+    [php]
+    // lib/model/JobeetJobPeer.php
+    static public function doSelectActive(Criteria $criteria)
+    {
+      $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+
+      return self::doSelectOne($criteria);
+    }
+
+Ahora, si tratas de ontener un puesto de trabajo expirado, serás enviadoa una página 404.
+
+Enlazar a la Página de la Categoría
+-----------------------------------
+
+Ahora, vamos a agregar un enlace a la página de la categorías en la página de inicio y crear dicha página.
+
+Pero, aguarda un minuto. Es Sábado, la hora no terminó aun y ya hemos trabajado mucho. Por eso, ¡estás libre y con suficiente conocimientos para hacer esto por tí mismo.! Vamos hacer el ejecicio. Revisa mañana nuestra implementción.
+
+
+Nos vemos Mañana
+----------------
+
+Para trabajar sobre una implementación en tu proyecto local. Por favor, usa la [API documentation](http://www.symfony-project.org/api/1_2/) y toda la [documentation](http://www.symfony-project.org/doc/1_2/) disponible en el sitio web de Symfony para ayudarte. Nos veremos tra vez mañana con nuestra implementación.
+
+¡Suerte!
+
+As always, you can checkout the source code of Jobeet as of today:
+
+    http://svn.jobeet.org/tags/release_day_06/
