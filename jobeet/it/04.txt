@@ -23,6 +23,7 @@ framework.
 Per prima cosa sostituite la definizione della tabella `jobeet_job_affiliate`
 con quella della tabella `jobeet_category_affiliate`:
 
+<propel>
     [yml]
     // config/schema.yml
     jobeet_category_affiliate:
@@ -32,6 +33,28 @@ con quella della tabella `jobeet_category_affiliate`:
       affiliate_id: { type: integer, foreignTable: jobeet_affiliate,
         ➥ foreignReference: id, required: true, primaryKey: true,
         ➥ onDelete: cascade }
+</propel>
+<doctrine>
+    [yml]
+    // config/doctrine/schema.yml
+    JobeetCategoryAffiliate:
+      columns:
+        category_id:
+          type: integer
+          primary:  true
+        affiliate_id:
+          type: integer
+          primary:  true
+      relations:
+        JobeetCategory:
+          onDelete: CASCADE
+          local:  category_id
+          foreign:  id
+        JobeetAffiliate:
+          onDelete: CASCADE
+          local:  affiliate_id
+          foreign:  id
+</doctrine>
 
 Rigenerate le classi del modello, rigenerate l'SQL per la creazione delle
 tabelle ed inserite i dati delle fixtures:
@@ -40,6 +63,7 @@ tabelle ed inserite i dati delle fixtures:
 
 Rimuoviamo i file che non sono più necessari:
 
+<propel>
   * lib/filter/base/BaseJobeetJobAffiliateFormFilter.class.php
   * lib/filter/JobeetJobAffiliateFormFilter.class.php
   * lib/form/base/BaseJobeetJobAffiliateForm.class.php
@@ -49,6 +73,16 @@ Rimuoviamo i file che non sono più necessari:
   * lib/model/map/JobeetJobAffiliateMapBuilder.php
   * lib/model/om/BaseJobeetJobAffiliate.php
   * lib/model/om/BaseJobeetJobAffiliatePeer.php
+</propel>
+<doctrine>
+  * lib/filter/doctrine/base/BaseJobeetJobAffiliateFormFilter.class.php
+  * lib/filter/doctrine/JobeetJobAffiliateFormFilter.class.php
+  * lib/form/doctrine/base/BaseJobeetJobAffiliateForm.class.php
+  * lib/form/doctrine/JobeetJobAffiliateForm.class.php
+  * lib/model/doctrine/JobeetJobAffiliate.php
+  * lib/model/doctrine/JobeetJobAffiliateTable.php
+  * lib/model/doctrine/base/BaseJobeetJobAffiliate.php
+</doctrine>
 
 Pulizia della cache di symfony per rendere effettive le modifiche:
 
@@ -65,7 +99,7 @@ Precedentemente su Jobeet
 Ieri abbiamo analizzato come symfony possa semplificare il management
 del database astraendo le differenze tra i vari motori dei database e convertendo
 gli elementi dello schema relazionale in classi object oriented. Abbiamo inoltre
-giocato con Propel per descrivere lo schema del database, creare le tabelle e 
+giocato con ##ORM## per descrivere lo schema del database, creare le tabelle e 
 popolare il database con alcuni dati iniziali.
 
 Oggi andremo a personalizzare il modulo `job` creato ieri. Il modulo `job`
@@ -427,18 +461,33 @@ L'azione recupera tutti i lavori dal database:
     {
       public function executeIndex(sfWebRequest $request)
       {
+<propel>
         $this->jobeet_job_list = JobeetJobPeer::doSelect(new Criteria());
+</propel>
+<doctrine>
+        $this->jobeet_job_list = Doctrine::getTable('JobeetJob')
+          ->createQuery('a')
+          ->execute();
+</doctrine>
       }
 
       // ...
     }
 
-Diamo uno sguardo da vicino al codice: il metodo `executeIndex()` (il Controller)
-chiama il Model `JobeetJobPeer` per recuperare tutti i lavori (`new Criteria()`).
-Esso ritorna un array di oggetti `Job` che sono assegnati alla proprietà `jobeet_job_list`.
-
-Ognuna di queste proprietà è automaticamente passata al template (la vista). Per
-passare dati dal controller alla vista, semplicemente crea una nuova proprietà:
+<propel>
+Diamo uno sguardo da vicino al codice: il metodo `executeIndex()` (il Controllore)
+chiama il Modello `JobeetJobPeer` per recuperare tutti i lavori (`new Criteria()`).
+Esso restituisce un array di oggetti `JobeetJob` che sono assegnati alla
+proprietà `jobeet_job_list`.
+</propel>
+<doctrine>
+Diamo uno sguardo da vicino al codice: il metodo `executeIndex()` (il Controllore)
+chiama il Modello `JobeetJob` per creare una query per recuperare tutti i
+lavori. Esso restituisce un `Doctrine_Collection` di oggetti `JobeetJob` che
+sono assegnati alla proprietà `jobeet_job_list`.
+</doctrine>
+Ognuna di queste proprietà è automaticamente passata al template (la Vista). Per
+passare dati dal Controllore alla Vista, basta creare una nuova proprietà:
 
     [php]
     public function executeIndex(sfWebRequest $request)
@@ -558,7 +607,12 @@ e sostituiamo il suo contenuto con il codice seguente:
       <p class="how_to_apply"><?php echo $job->getHowToApply() ?></p>
 
       <div class="meta">
+<propel>
         <small>posted on <?php echo $job->getCreatedAt('m/d/Y') ?></small>
+</propel>
+<doctrine>
+        <small>posted on <?php echo date('m/d/Y', strtotime($job->getCreatedAt())) ?></small>
+</doctrine>
       </div>
 
       <div style="padding: 20px 0">
@@ -575,16 +629,23 @@ sono due occorrenze della variabile):
     // apps/frontend/jobeet/actions/actions.class.php
     public function executeShow(sfWebRequest $request)
     {
+<propel>
       $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+      $this->job = Doctrine::getTable('JobeetJob')->find($request->getParameter('id'));
+</doctrine>
       $this->forward404Unless($this->job);
     }
 
+<propel>
 Notate che alcuni metodi di Propel accettano dei parametri. Siccome abbiamo definito la
 colonna `created_at` come un timestamp, il metodo `getCreatedAt()` accetta uno schema di
 formattazione della data come primo parametro.
 
     [php]
     $job->getCreatedAt('m/d/Y');
+</propel>
 
 >**NOTE**
 >La descrizione del lavoro usa l'helper `simple_format_text()` per formattarsi come HTML,
@@ -670,24 +731,40 @@ del modulo `job`:
     {
       public function executeShow(sfWebRequest $request)
       {
-        $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+<propel>
+      $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+      $this->job = Doctrine::getTable('JobeetJob')->find($request->getParameter('id'));
+</doctrine>
         $this->forward404Unless($this->job);
       }
 
       // ...
     }
 
+<propel>
 Come nell'azione `index`, la classe `JobeetJobPeer` è usata per recuperare un
 lavoro, stavolta usando il metodo `retrieveByPk()`. Il parametro di questo metodo
 è l'identificatore univoco di un lavoro, la sua chiave primaria. La prossima sezione
 spiegherà perché l'istruzione `$request->getParameter('id')` restituisce la chiave
 primaria del lavoro.
+</propel>
+<doctrine>
+Come nell'azione `index`, la classe `JobeetJob` è usata per recuperare un
+lavoro, stavolta usando il metodo `find()`. Il parametro di questo metodo
+è l'identificatore univoco di un lavoro, la sua chiave primaria. La prossima sezione
+spiegherà perché l'istruzione `$request->getParameter('id')` restituisce la chiave
+primaria del lavoro.
+</doctrine>
 
+<propel>
 >**TIP**
 >Le classi del modello generate contengono molti metodi utili per interagire
 >con gli oggetti del progetto. Prendetevi un po' di tempo per analizzare il codice
 > che si trova nella cartella `lib/om/` e per scoprire la potenza nascosta
 >in queste classi.
+</propel>
 
 Se il lavoro non esiste nel database, vogliamo rimandare l'utente ad una pagina 404,
 che esattamente ciò che fa il metodo `forward404Unless()`. Questo accetta un
@@ -841,3 +918,5 @@ Fino ad allora, date pure un'occhiata al sorgente del tutorial di oggi
 (con il tag `release_day_4`) a:
 
     http://svn.jobeet.org/tags/release_day_4/
+
+__ORM__
