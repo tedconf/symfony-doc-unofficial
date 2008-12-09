@@ -1,0 +1,340 @@
+Giorno 5: Routing
+=================
+
+Prima di iniziare
+-----------------
+
+Ieri abbiamo lanciato il Jobeet design contest. Se volete partecipare abbiamo
+preparato un [archivio](http://www.symfony-project.org/images/jobeet/mockups.zip)
+con le pagine principali che andremo a sviluppare durante questo tutorial (
+l'archivio contiene i file HTML statici, i fogli di stile e le immagini). Visto 
+che il 21esimo giorno sarà dedicato al voto dovreste inviare a me 
+(fabien.potencier [.at.] symfony-project.org) i mockup con il vostro design
+prima di tale data. Buona fortuna!
+
+Precedentemente su Jobeet
+-------------------------
+
+Se avete portato a termine il giorno 4 dovreste avere preso confidenza con il 
+pattern MVC e dovrebbe sembrarvi un modo più naturali di scrivere codice. 
+Investite un po' di tempo in più per conoscerlo meglio e non tornerete più indietro.
+Parlando di cose pratiche ieri abbiamo personalizzato le pagine di Jobeet e
+allo stesso tempo abbiamo rivisto alcuni concetti di symfony come il layout, gli
+helper e gli slot.
+
+Oggi ci addentreremo nel magnifico mondo del symfony routing framework.ework.
+
+URL
+---
+
+Se cliccate su un'offerta di lavoro sulla homepage di Jobeet l'URL apparirà
+come il seguente: `/job/show/id/1`. Se avete già sviluppato altri siti in PHP 
+sarete abituati ad URL tipo `/job.php?id=1`. Come fa symfony a farli funzionare?
+Come fa symfony a decidere l'azione da chiamare basandosi su quest'URL?
+Perchè l'`id` dell'offerta di lavoro viene recuperata con  
+`$request->getParameter('id')`? Oggi risponderemo a tutte queste domande.
+
+Prima però parliamo un po' delle URL e di cosa siano esattamente. In un contesto 
+web un URL è l'identificatore univoco di una risorsa. Quando visitate un URL
+chiedete al browser di utilizzare una risorsa identificata da quell'URL.
+Perciò, siccome l'URL è l'interconnessione tra il sito web e l'utente, deve 
+comunicare significative informazioni riguardo alla risorsa che identifica. Ma 
+gli URL "tradizionali" non descrivono davvero una risorsa, essi mostrano la 
+struttura interna di un'applicazione. All'utente non interessa che il vostro
+sito sia realizzato in PHP o che una particolare offerta di lavoro abbia un certo
+identificatore sul database. Mostrare il funzionamento interno dell'applicazione
+è piuttosto dannoso in termini di sicurezza: cosa succederebbe se l'utente
+provasse ad accedere a risorse per cui non ha il permesso? Sicuramente lo 
+sviluppatore dovrebbe metterle in sicurezza in modo appropriato ma è sempre meglio
+nascondere informazioni sensibili.
+
+Gli URL sono molto importanti in symfony a tal punto da avere un intero framework
+dedicato alla loro gestione: il **routing** framework. Il routing si occupa della
+gestione degli URI interni e URL esterni. Quando arriva una richiesta il routing
+processa l'URL e lo converte in un URI interno.
+
+Avete già visto un URI interno della pagina di un'offerta di lavoro nel template
+`showSuccess.php`:
+
+    'job/show?id='.$job->getId()
+
+L'helper `url_for()` converte l'URI interno ad un vero e proprio URL:
+
+    /job/show/id/1
+
+L'URI interno è costituito da molte parti: `job` è il modulo, `show` è l'azione
+e la query string aggiunge i parametri da passare all'azione. Il pattern generico
+per un URI interno è il seguente:
+
+    MODULE/ACTION?key=value&key_1=value_1&...
+
+Visto che il routing di symfony è un processo a due vie si possono cambiare gli
+URL senza cambiarne l'implementazione tecnica. Questo è uno dei vantaggi principali
+del front-controller design pattern.
+
+Configurazione del routing
+--------------------------
+
+La mappatura tra gli URI interni e gli URL esterni è stabilito nel file di
+configurazione `routing.yml`:
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    homepage:
+      url:   /
+      param: { module: default, action: index }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
+
+Il file `routing.yml` descrive le rotte. Una rotta ha un nome (`homepage`), un
+pattern (`/:module/:action/*`) ed alcuni parametri (sotto la chiave `param`).
+
+Quando arriva una richiesta il routing cerca un pattern corrispondente per l'URL
+passato. La prima rotta corrispondente vince, perciò l'ordine nel file `routing.yml`
+è importante. Diamo uno sguardo ad alcuni esempi per comprendere meglio come
+funziona tutto questo.
+
+Quando richiedete l'homepage di Jobeet, che contiene il `/job` URL, la prima rotta
+corrispondente è la `default_index`. In un pattern una parola preceduta dai 
+due punti (`:`) è una variabile, quindi `/:module`significa: individua una `/`
+seguita da qualcosa. Nel nostro esempio la variabile `module` ha come valore 
+`job`. Questo valore può essere recuperato con `$request->getParameter('module')`.
+Questa rotta definisce inoltre un valore di default per la variabile `action`.
+Quindi, per tutti gli URL corrispondenti a questa rotta, la richiesta avrà
+anche un parametro `action` con `index` come valore.
+
+Se richiedete la pagina `/job/show/id/1` symfony identificherà la corrispondenza
+dell'ultimo pattern: `/:module/:action/*`. In un pattern l'asterisco (`*`) corrisponde
+ad un insieme di coppie variabile/valore separate da slash (`/`):
+
+  | Parametro richiesto | Valore |
+  | ------------------- | ------ |
+  | module              | job    |
+  | action              | show   |
+  | id                  | 1      |
+
+>**NOTA**
+>La viariabile `module` e `action` sono speciali visto che sono utilizzate da
+>symfony per determinare quale azione eseguire.
+
+L'URL `/job/show/id/1` può essere creato da un template utilizzando la seguente
+chiamata all'helper `url_for()`:
+
+    [php]
+    url_for('job/show?id='.$job->getId())
+
+Potete utilizzare anche il nome della rotta aggiungendo il prefisso `@`:
+
+    [php]
+    url_for('@default?id='.$job->getId())
+
+Le chiamate sono equivalenti ma l'ultima è più efficiente visto che il sistema
+di routing non deve analizzare tutte le rotte per trovare quella con la migliore
+corrispondenza ed è meno legata all'implementazione (i nomi del modulo e dell'
+azione non sono presenti nell'URI interno).
+
+
+------------------------------
+ TODO PARTE 2 DA INSERIRE QUI
+------------------------------
+
+
+Il routing nelle azioni e nei template
+--------------------------------------
+
+In un template, l'helper `url_for()` converte un URI interno in un URL esterno.
+Alcuni altri helper di symfony accettano anche un URI interno come parametro, come
+l'helper `link_to()`, che genera un tag `<a>`:
+
+    [php]
+    <?php echo link_to($job->getPosition(), 'job_show_user', $job) ?>
+
+Genera il seguente codice HTML:
+
+    [php]
+    <a href="/job/sensio-labs/paris-france/1/web-developer">Web Developer</a>
+
+Sia `url_for()` che `link_to()` possono generare anche URL assolute:
+
+    [php]
+    url_for('job_show_user', $job, true);
+
+    link_to($job->getPosition(), 'job_show_user', $job, true);
+
+Se si vuole generare un URL da un'azione, si può usare il metodo `generateUrl()`:
+
+    [php]
+    $this->redirect($this->generateUrl('job_show_user', $job));
+
+>**SIDEBAR**
+>La famiglia dei metodi "redirect"
+>
+>Ieri abbiamo parlato dei metodi "forward". Tali metodi redirigono la richiesta
+>corrente ad un'altra azione senza passare dal browser.
+>
+>I metodi "redirect" redirigono l'utente ad un altro URL. Come per i "forward", si
+>può usare il metodo `redirect()`, o i metodi scorciatoia `redirectIf()` e
+>`redirectUnless()`.
+
+Classi di raggruppamento delle rotte
+------------------------------------
+
+Per il modulo `job`, abbiamo già personalizzato la rotta dell'azione `show`,
+ma gli URL per gli altri metodi (`index`, `new`, `edit`, `create`, `update`,
+e `delete`) sono ancora gestiti dalla rotta `default`:
+
+    [yml]
+    default:
+      url: /:module/:action/*
+
+La rotta `default` è un ottimo modo per iniziare a scrivere codice senza definire
+troppe rotta. Ma siccome tale rotta agisce come "acchiappa-tutto", non può essere
+configurata per necessità specifiche.
+
+Siccome tutte le azioni `job` sono legate alla classe del modello `JobeetJob`,
+possiamo definire facilmente una rotta personalizzata `sfPropelRoute` per ciascuno,
+come abbiamo già fatto per l'azione `show`. Ma siccome il modulo `job` definisce
+le classiche sette azioni possibili per un modello, possiamo anche usare la classe
+[`sfPropelRouteCollection`](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection):
+
+    [yml]
+    // apps/frontend/config/routing.yml
+
+    # inserire questa definizione appena prima di job_show_user
+    job:
+      class:   sfPropelRouteCollection
+      options: { model: JobeetJob }
+
+La rotta `job` qui sopra è una scorciatoia che genera automaticamente le seguenti
+sette rotte `sfPropelRoute`:
+
+    [yml]
+    job:
+      url:     /job.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: list }
+      param:   { module: job, action: index, sf_format: html }
+      requirements: { sf_method: GET }
+
+    job_new:
+      url:     /job/new.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: new, sf_format: html }
+      requirements: { sf_method: GET }
+
+    job_create:
+      url:     /job.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: create, sf_format: html }
+      requirements: { sf_method: POST }
+
+    job_edit:
+      url:     /job/:id/edit.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: edit, sf_format: html }
+      requirements: { sf_method: GET }
+
+    job_update:
+      url:     /job/:id.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: update, sf_format: html }
+      requirements: { sf_method: PUT }
+
+    job_delete:
+      url:     /job/:id.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: delete, sf_format: html }
+      requirements: { sf_method: DELETE }
+
+    job_show:
+      url:     /job/:id.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show, sf_format: html }
+      requirements: { sf_method: GET }
+
+>**NOTE**
+>Alcune rotte generate da `sfPropelRouteCollection` hanno lo stesso URL. Il
+>routing è comunque in grado di usarle perché hanno differenti metodi HTTP
+>come richiesta.
+
+Le rotte `job_delete` e `job_update` richiedono metodi HTTP che non sono
+supportati dai browser (rispettivamente `DELETE` e `PUT`). Ma funzionano perché
+symfony li simula. Apriamo il template `_form.php` per vedere un esempio:
+
+    [php]
+    // apps/frontend/modules/job/templates/_form.php
+    <form action="..." ...>
+    <?php if (!$form->getObject()->isNew()): ?>
+      <input type="hidden" name="sf_method" value="PUT" />
+    <?php endif; ?>
+
+    <?php echo link_to(
+      'Delete',
+      'job/delete?id='.$form->getObject()->getId(),
+      array('method' => 'delete', 'confirm' => 'Are you sure?')
+    ) ?>
+
+Tutti gli helper di symfony possono essere istruiti per simulare qualsiasi
+metodo HTTP si vuole, passando il parametro speciale `sf_method`.
+
+>**NOTE**
+>symfony ha altri parametri speciali simili a `sf_method`, tutti che iniziano
+>col prefisso `sf_`. Nelle rotte generate viste sopra, se ne può vedere un altro:
+>`sf_format`, che sarà spiegato in un giorno successivo.
+
+Debug delle rotte
+-----------------
+
+Quando si usa un insieme di rotte, a volte è utile elencare le rotte generate.
+Il task `app:routes` mostra tutte le rotte per una data applicazione:
+
+    $ php symfony app:routes frontend
+
+Si possono ottenere anche molte informazioni di debug per una rotta passando il
+suo nome come parametro aggiuntivo:
+
+    $ php symfony app:routes frontend job_edit
+
+Rotte di default
+----------------
+
+È una buona pratica definire rotte per tutti i proprio URL. Se lo si fa, si possono
+rimuovere o commentare le rotte di default nel file di configurazione `routing.yml`:
+
+    [yml]
+    // apps/frontend/config/routing.yml
+    #default_index:
+    #  url:   /:module
+    #  param: { action: index }
+    #
+    #default:
+    #  url:   /:module/:action/*
+
+A domani
+--------
+
+Questo giorno è stato riempito di nuove informazioni. Abbiamo imparato come usare
+il framework del routing di syfmony e come disaccoppiare le nostre URL dall'
+implementazione tecnica.
+
+Nel tutorial di domani non introdurremo nuovi concetti, ma spenderemo un po' di
+tempo per approfondire quello che abbiamo visto finora.
+
+Il codice sorgente di Jobeet di oggi è disponibile nel repository SVN:
+
+    http://svn.jobeet.org/tags/release_day_05/
+
+__ORM__
+
+
