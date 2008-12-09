@@ -156,3 +156,201 @@ Modifichiamo l'action per utilizzare la colonna `expires_at`:
 
 Abbiamo ristretto il criterio per selezionare solamente le offerte di lavoro
 con la data `expires_at` nel futuro.
+
+
+
+================================
+
+TODO aggiungere SECONDA PARTE qui
+
+
+================================
+
+
+
+
+
+Limitare i risultati
+--------------------
+
+C'è ancora una richiesta da implementare per la lista dei lavori sulla homepage:
+
+  "Per ogni categoria, la lista mostra solo i primi 10 lavori ed un link
+  consente di elencare tutti i lavori per una data categoria."
+
+Questo è semplice quanto aggiungere il metodo `getActiveJobs()`:
+
+<propel>
+    [php]
+    // lib/model/JobeetCategory.php
+    public function getActiveJobs($max = 10)
+    {
+      $criteria = new Criteria();
+      $criteria->add(JobeetJobPeer::CATEGORY_ID, $this->getId());
+      $criteria->setLimit($max);
+
+      return JobeetJobPeer::getActiveJobs($criteria);
+    }
+</propel>
+<doctrine>
+    public function getActiveJobs($max = 10)
+    {
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('j.category_id = ?', $this->getId())
+        ->limit($max);
+
+      return Doctrine::getTable('JobeetJob')->getActiveJobs($q);
+    }
+</doctrine>
+
+L'appropriata clausola `LIMIT` è ora insita nel Modello, ma è meglio che tale
+valore sia configurabile. Cambiamo il template in modo che passi un numero
+massimo di lavori, impostato in `app.yml`:
+
+    [php]
+    <?php foreach ($category->getActiveJobs(sfConfig::get('app_max_jobs_on_homepage')) as $i => $job): ?>
+
+ed aggiungiamo una nuova impostazione in `app.yml`:
+
+    [yml]
+    all:
+      active_days:          30
+      max_jobs_on_homepage: 10
+
+Fixture dinamiche
+-----------------
+
+A meno che non si abbassi l'impostazione `max_jobs_on_homepage` ad uno, non si
+vedrà nessuna differenza. Abbiamo bisogno di aggiungere un sacco di lavori alle
+fixture. Si potrebbe copiare e incollare un lavoro esistente per dieci o venti
+volte a mano... ma c'è un modo migliore.
+La duplicazione è male, anche nei file fixture.
+
+symfony al salvataggio! I file YAML in symfony possono contenere codice PHP,
+che viene valutato appena prima di leggere il file. Modifichiamo il file fixture
+`020_jobs.yml` ed aggiungiamo alla fine il seguente codice:
+
+    [php]
+    JobeetJob:
+    # Inizia all'inizio della riga (senza spazi bianchi prima)
+    <?php for ($i = 100; $i <= 130; $i++): ?>
+      job_<?php echo $i ?>:
+<propel>
+        category_id:  programming
+</propel>
+<doctrine>
+        JobeetCategory: programming
+</doctrine>
+        company:      Company <?php echo $i."\n" ?>
+        position:     Web Developer
+        location:     Paris, France
+        description:  Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+        how_to_apply: |
+          Send your resume to lorem.ipsum [at] company_<?php echo $i ?>.sit
+        is_public:    true
+        is_activated: true
+        token:        job_<?php echo $i."\n" ?>
+        email:        job@example.com
+
+    <?php endfor; ?>
+
+State attenti, il parser YAML si arrabbierà se si fa confusione con l'
+indentazione. Tenete a mente i seguenti semplici consigli, quando
+aggiungete codice PHP ad un file YAML:
+
+ * Le istruzioni `<?php ?>` devono sempre iniziare la riga od essere compresi in
+   un valore.
+ * Se un'istruzione `<?php ?>` termina una riga, si deve esplicitamente mandare
+   in output un "a capo" ("\n").
+
+Rendere sicura la pagina del lavoro
+-----------------------------------
+
+Quando un lavoro scade, anche se si conosce l'URL, non deve essere possibile
+accedervi ancora. Proviamo l'URL per il lavoro scaduto (sostituire l'`id` con il
+vero valore di `id` contenuto nel proprio database):
+
+    /frontend_dev.php/job/sensio-labs/paris-france/4/web-developer-expired
+
+Invece di mostrare il lavoro, dobbiamo rimandare l'utente ad una pagina 404.
+Ma come possiamo farlo, visto che il lavoro è recuperato automaticamente
+dalla rotta?
+
+<propel>
+Di default, `sfPropelRoute` usa il metodo standard `doSelectOne()` per recuperare
+l'oggetto, ma si può cambiare questo comportamento fornendo un'opzione
+`method_for_criteria` nella configurazione della rotta:
+</propel>
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options:
+        model: JobeetJob
+        type:  object
+<propel>
+        method_for_criteria: doSelectActive
+</propel>
+<doctrine>
+        method: retrieveActiveJob
+</doctrine>
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+
+<propel>
+Il metodo `doSelectActive()` riceverà l'oggetto `Criteria` costruito dalla rotta:
+
+    [php]
+    // lib/model/JobeetJobPeer.php
+    static public function doSelectActive(Criteria $criteria)
+    {
+      $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+
+      return self::doSelectOne($criteria);
+    }
+</propel>
+<doctrine>
+Il metodo `doSelectActive()` riceverà l'oggetto `Doctrine_Query` costruito dalla rotta:
+
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    public function retrieveActiveJob(Doctrine_Query $q)
+    {
+      $q->andWhere('a.expires_at > ?', date('Y-m-d h:i:s', time()));
+
+      return $q->fetchOne();
+    }
+</doctrine>
+
+Se ora si prova ad ottenere un lavoro scaduto, si verrà rimandati ad una pagina 404.
+
+Link alla pagina della categoria
+--------------------------------
+
+Aggiungiamo ora un link alla pagina della cateogoria sulla homepage e creiamo la
+pagina della categoria.
+
+Ma aspettate un minuto. C'è ancora tempo e non abbiamo lavorato molto. Avete un
+sacco di tempo libero ed abbastanza conoscenze per implementare tutto questo da
+soli! Rendiamolo un esercitazione. Tornate domani a controllare l'implementazione.
+
+A domani
+--------
+
+Lavorate ad un'implementazione del vostro progetto Jobeet in locale. Abusate pure
+dellae [documentazione API](http://www.symfony-project.org/api/1_2/) online e di
+tutta la [documentazione](http://www.symfony-project.org/doc/1_2/) liberamente
+disponibile sul sito di symfony per aiutarvi. Ci vediamo domani con la nostra
+implementazione.
+
+Buona fortuna!
+
+Come sempre, si può fare un checkout del codice sorgente di Jobeet di oggi:
+
+    http://svn.jobeet.org/tags/release_day_06/
+
+__ORM__
