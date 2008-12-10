@@ -1,0 +1,798 @@
+Ngày 4: Controller và View
+==================================
+
+Tóm tắt
+--------------------
+
+Hôm qua, chúng ta đã khám phá cách quản lý database của symfony: trừu tượng sự
+khác nhau giữa các database engines, chuyển đổi cơ sở dữ liệu thành các lớp
+hướng đối tượng. Chúng ta cũng đã sử dụng ##ORM## để tạo database schema,
+tạo các bảng, và tạo sẵn một vài dữ liệu mẫu.
+
+Hôm nay, chúng ta sẽ bắt đầu chỉnh sửa module `job` đã tạo hôm qua.
+Module `job` đã có tất cả các mã nguồn cần thiết:
+
+ * Một trang list các công việc
+ * Một trang tạo công việc mới
+ * Một trang cập nhật công việc đã có
+ * Một trang xóa công việc
+
+Mặc dù mã nguồn đã có thể sử dụng, nhưng chúng ta cần sửa lại templates
+cho phù hợp.
+
+Kiến trúc MVC
+--------------------
+
+Nếu bạn đã từng phát triển một website bằng PHP mà không dùng framework,
+thường với mỗi trang HTML bạn sẽ dùng một file PHP. File PHP này sẽ chứa nhiều
+kiểu cấu trúc: các cấu hình khởi tạo và toàn cục, business logic liên quan đến
+yêu cầu của trang, lấy các dữ liệu từ database, và cuối cùng tạo mã HTML để
+hiển thị.
+
+Bạn có thể sử dụng một templating engine để tách phần logic và HTML.
+Tất nhiên, bạn có thể sử dụng một database abstraction layer để tách phần
+thao tác với model khỏi business logic. Nhưng thường bạn sẽ tạo ra rất nhiều
+code mà việc maintain trở thành cơn ác mộng. Có thể bạn sẽ làm rất nhanh,
+nhưng thật khó để thay đổi, nâng cấp, đặc biệt khi không có ai
+ngoại trừ bạn hiểu được cách nó làm việc.
+
+Có một giải pháp tuyệt vời để giải quyết những vấn đề này. Đối với việc
+phát triển web , giải pháp thường dùng là tổ chức code theo
+[**MVC design pattern**](http://en.wikipedia.org/wiki/Model-view-controller).
+Pattern này chia code thành **ba tầng**:
+
+  * **Model** bao gồm business logic (database nằm ở tầng này).
+    Bạn đã thấy rằng symfony chứa tất cả các class và file
+    liên quan đến Model trong thư mục `lib/model`.
+
+  * **View** là những gì tương tác với người dùng (template engine là một phần
+    của tầng này). Trong symfony, tầng View được tạo bởi PHP templates.
+    Các file này nằm trong các thư mục `templates` khác nhau mà chúng ta sẽ
+    thấy ở các phần sau trong ngày hôm nay.
+
+  * **Controller** thực hiện việc lấy dữ liệu từ Model và chuyển cho View
+    để hiển thị ở client. Khi chúng ta cài symfony trong ngày đầu tiên,
+    chúng ta đã thấy rằng mọi yêu cầu được điều khiển bởi file
+    front controllers (`index.php` và `frontend_dev.php`). Những file
+    front controllers này sẽ tìm **actions** thực hiện yêu cầu đó. Như chúng ta
+    thấy hôm qua, các actions được nhóm lại trong **modules**.
+
+![MVC](http://www.symfony-project.org/images/jobeet/1_2/04/mvc.png)
+
+Hôm nay, chúng ta sẽ dựa vào những nội dung trong ngày 2 để chỉnh sửa lại
+mã nguồn của trang chủ và trang chi tiết công việc đã được tạo sẵn.
+Đồng thời, chúng ta cũng chỉnh sửa rất nhiều file liên quan để làm rõ cấu trúc
+thư mục của symfony và cách phân chia code giữa các tầng.
+
+Layout
+----------
+
+Nếu để ý, bạn sẽ thấy rằng các trang có nhiều phần giống nhau.Bạn cũng
+hiểu rằng việc lặp lại code thật tệ, bất kể đó là code HTML hay PHP, do đó
+chúng ta cần tìm cách để giảm sự lặp lại này.
+
+Một cách giải quyết là tách các header và footer thành các file riêng và
+include chúng vào mỗi template:
+
+![Header and footer](http://www.symfony-project.org/images/jobeet/1_2/04/header_footer.png)
+
+Nhưng ở đây, file header và footer không chứa valid HTML. Cần có cách tốt
+hơn. Thay vì reinventing the wheel, chúng ta dùng một design pattern khác để giải quyết vấn đề này:
+[decorator design pattern](http://en.wikipedia.org/wiki/Decorator_pattern).
+Decorator design pattern giải quyết vấn đề theo cách khác: sau khi nội dung
+chính được tạo, ta sẽ dùng một global template để thêm các phần còn lại,
+global template trong symfony gọi là một **layout**:
+
+![Layout](http://www.symfony-project.org/images/jobeet/1_2/04/layout.png)
+
+Layout mặc định của một application là file `layout.php` nằm trong thư mục
+`apps/frontend/templates/`. Thư mục này chứa tất cả các global templates cho
+một application.
+
+Thay layout mặc định của symfony bằng đoạn code sau:
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+      <head>
+        <title>Jobeet - Your best job board</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <?php include_javascripts() ?>
+        <?php include_stylesheets() ?>
+      </head>
+      <body>
+        <div id="container">
+          <div id="header">
+            <div class="content">
+              <h1><a href="/job">
+                <img src="/images/jobeet.gif" alt="Jobeet Job Board" />
+              </a></h1>
+
+              <div id="sub_header">
+                <div class="post">
+                  <h2>Ask for people</h2>
+                  <div>
+                    <a href="/job/new">Post a Job</a>
+                  </div>
+                </div>
+
+                <div class="search">
+                  <h2>Ask for a job</h2>
+                  <form action="" method="get">
+                    <input type="text" name="keywords" id="search_keywords" />
+                    <input type="submit" value="search" />
+                    <div class="help">
+                      Enter some keywords (city, country, position, ...)
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="content">
+            <?php if ($sf_user->hasFlash('notice')): ?>
+              <div class="flash_notice"><?php echo $sf_user->getFlash('notice') ?></div>
+            <?php endif; ?>
+
+            <?php if ($sf_user->hasFlash('error')): ?>
+              <div class="flash_error"><?php echo $sf_user->getFlash('error') ?></div>
+            <?php endif; ?>
+
+            <div class="content">
+              <?php echo $sf_content ?>
+            </div>
+          </div>
+
+          <div id="footer">
+            <div class="content">
+              <span class="symfony">
+                <img src="/images/jobeet-mini.png" />
+                powered by <a href="http://www.symfony-project.org/">
+                <img src="/images/symfony.gif" alt="symfony framework" /></a>
+              </span>
+              <ul>
+                <li><a href="">About Jobeet</a></li>
+                <li class="feed"><a href="">Full RSS feed</a></li>
+                <li><a href="">Jobeet API</a></li>
+                <li class="last"><a href="">Affiliates</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+
+Một template trong symfony là một file PHP. Trong layout template, bạn sẽ thấy
+các PHP functions được gọi và tham chiếu đến các biến PHP.
+`$sf_content` là một biến thú vị: nó được tạo bởi framework và chứa code HTML
+tạo bởi một action.
+
+Nếu bạn truy cập module `job` (`http://jobeet.localhost/frontend_dev.php/job`),
+bạn sẽ thấy các actions bây giờ đều có layout.
+
+>**NOTE**
+>Trong layout, chúng ta có một *favicon*. Bạn có thể
+>[download the Jobeet one](http://www.symfony-project.org/images/jobeet/favicon.ico)
+>và đặt nó vào thư mục `web/`.
+
+Stylesheets, Images, và JavaScripts
+----------------------------------------
+
+Chúng ta sẽ tổ chức chọn "best design" vào ngày thứ 21, trong khi chờ đợi chúng
+ta sẽ dùng tạm một design đơn giản:
+[download các file ảnh](http://www.symfony-project.org/get/jobeet/images.zip)
+và giải nén vào thư mục `web/images/`;
+[download the stylesheet files](http://www.symfony-project.org/get/jobeet/css.zip)
+và giải nén vào thư mục `web/css/`.
+
+![The job module with a layout and assets](http://www.symfony-project.org/images/jobeet/1_2/04/job_layout_assets.png)
+
+>**TIP**
+>Lệnh `generate:project` tạo 3 thư mục mặc định: `web/images/` để chứa ảnh,
+>`web/css/` để chứa các file css, và `web/js/` chứa các file JavaScripts.
+>Tất nhiên, bạn cũng có thể để ở các thư mục khác trong thư mục `web/`
+
+Độc giả tinh ý có thể sẽ thấy rằng, mặc dù file `main.css` không được nhắc
+đến trong layout, nhưng nó vẫn được gọi khi tạo HTML. Sao lại có thể như vậy?
+
+File stylesheet được include bởi hàm `include_stylesheets()` ở thẻ `<head>`
+trong layout. Hàm `include_stylesheets()` chính là một **helper**. Một helper
+là một function, tạo bởi symfony, nhận tham số và trả về mã HTML. Các helper
+giúp giảm thời gian code, chúng đóng gói các đoạn mã hay sử dụng trong template
+Helper `include_stylesheets()` tạo thẻ `<link>` cho stylesheets.
+
+Nhưng làm thế nào để helper biết cần include file stylesheets nào?
+
+Tầng View có thể cấu hình bằng cách chỉnh sửa file `view.yml` của application.
+Đây là nội dung mặc định được tạo ra sau khi dùng lệnh `generate:app`:
+
+    [yml]
+    # apps/frontend/config/view.yml
+    default:
+      http_metas:
+        content-type: text/html
+
+      metas:
+        #title:        symfony project
+        #description:  symfony project
+        #keywords:     symfony, project
+        #language:     en
+        #robots:       index, follow
+
+      stylesheets:    [main.css]
+
+      javascripts:    []
+
+      has_layout:     on
+      layout:         layout
+
+File `view.yml` chứa cấu hình chung cho tất cả các templates của application.
+Ví dụ, phần `stylesheets` được xác định bởi một mảng các file stylesheet được
+include trong mọi trang của application (việc include được thực hiện bởi helper
+`include_stylesheets()` trong layout).
+
+>**NOTE**
+>Trong file `view.yml`, ta viết `main.css`, chứ không dùng `/css/main.css`.
+>Symfony sẽ tự động tìm file trong thư mục `/css/`.
+
+Nếu có nhiều file, symfony sẽ include chúng theo thứ tự như viết trong cấu hình:
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css]
+
+Bạn cũng có thể thay đổi attribute `media` và bỏ qua đuôi `.css`:
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css, print: { media: print }]
+
+Cấu hình này sẽ được render thành:
+
+    [php]
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/jobs.css" />
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/job.css" />
+    <link rel="stylesheet" type="text/css" media="print" href="/css/print.css" />
+
+>**TIP**
+>File `view.yml` cũng xác định layout sử dụng cho application.
+>Mặc định, tên của nó là `layout`, tức là file `layout.php`.
+>Bạn cũng có thể không dùng layout bằng cách chuyển giá trị của
+>`has_layout` thành `false`.
+
+Ta thấy rằng file `jobs.css` chỉ cần ở trang chủ và file `job.css` chỉ cần ở
+trang xem chi tiết công việc. Cấu hình của file `view.yml` có thể thay đổi lại
+trong từng module cụ thể. Do đó, file `view.yml` của application chỉ chứa file
+`main.css`:
+
+    [yml]
+    # apps/frontend/config/view.yml
+    stylesheets:    [main.css]
+
+Để cấu hình riêng cho module `job`, tạo file `view.yml` trong thư mục
+`apps/frontend/modules/job/config/`:
+
+    [yml]
+    # apps/frontend/modules/job/config/view.yml
+    indexSuccess:
+      stylesheets: [jobs.css]
+
+    showSuccess:
+      stylesheets: [job.css]
+
+Dưới mục `indexSuccess` và `showSuccess` (chúng là các template ứng với action
+`index` và `show` , sẽ được đề cập đến ở phần sau), bạn có thể chỉnh sửa lại
+các mục đã có trong phần `default` ở file `view.yml` của application.Các cấu hình này sẽ thay thế các cấu hình ở application có cùng nội dung.
+Bạn cũng có thể tạo một vài cấu hình cho toàn bộ action của module dưới mục
+`all`.
+
+>**SIDEBAR**
+>Nguyên tắc cấu hình trong symfony
+>
+>Có nhiều file cấu hình, các cấu hình giống nhau sẽ được xác định bởi các level
+>khác nhau:
+>
+>  * Cấu hình mặc định có giá trị trong toàn bộ framework
+>  * Cấu hình toàn cục cho project (trong thư mục `config/`)
+>  * Cấu hình cục bộ cho một application (trong thư mục `apps/APP/config/`)
+>  * Cấu hình cục bộ cho một module (trong thư mục
+>    `apps/APP/modules/MODULE/config/`)
+>
+>Khi chạy, hệ thống sẽ xác định cấu hình từ tất cả các file này và cache lại
+>để đảm bảo vấn đề performance.
+
+Khi một thứ có thể cấu hình dựa trên file cấu hình, nó cũng có thể cấu hình
+bằng code PHP. Thay vì tạo file `view.yml` cho module `job`, bạn có thể sử dụng helper `use_stylesheet()` để include file stylesheet trong một template:
+
+    [php]
+    <?php use_stylesheet('main.css') ?>
+
+Bạn cũng có thể sử dụng helper này trong layout để include một stylesheet
+chung cho application.
+
+Chọn cách làm nào là tùy sở thích của mỗi người. File `view.yml` cung cấp
+cấu hình cho các template, nhưng những cấu hình này là tĩnh. Còn khi sử dụng
+helper `use_stylesheet()` mọi thứ trở nên mềm dẻo hơn. Với Jobeet, chúng tôi sẽ
+sử dụng helper `use_stylesheet()`, vì thế bạn có thể xóa file `view.yml` và
+thêm lời gọi `use_stylesheet()` vào trong template `job`.
+
+>**NOTE**
+>Tương tự, cấu hình JavaScript nằm trong mục `javascripts` của file `view.yml`
+>và có thể dùng helper `use_javascript()` để gọi file JavaScript trong template.
+
+Trang chủ
+----------------
+
+Như đã thấy trong ngày 3, trang chủ chính là action `index` của module `job`.
+Action `index` là phần Controller của trang và liên kết với template,
+`indexSuccess.php`, là phần View:
+
+    apps/
+      frontend/
+        modules/
+          job/
+            actions/
+              actions.class.php
+            templates/
+              indexSuccess.php
+
+### Action
+
+Mỗi action được tạo bởi một phương thức của một lớp. Với trang chủ, đó là lớp
+`jobActions` (tên module + `Actions`) và phương thức `executeIndex()` (`execute` + tên action).
+Nó lấy tất cả các công việc từ database:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    class jobActions extends sfActions
+    {
+      public function executeIndex(sfWebRequest $request)
+      {
+<propel>
+        $this->jobeet_job_list = JobeetJobPeer::doSelect(new Criteria());
+</propel>
+<doctrine>
+        $this->jobeet_job_list = Doctrine::getTable('JobeetJob')
+          ->createQuery('a')
+          ->execute();
+</doctrine>
+      }
+
+      // ...
+    }
+
+<propel>
+Let's have a closer look at the code: the `executeIndex()` method (the
+Controller) calls the Model `JobeetJobPeer` to retrieve all the jobs
+(`new Criteria()`). It returns an array of `JobeetJob` objects that are assigned to
+the `jobeet_job_list` object property.
+</propel>
+<doctrine>
+Xem xét mã nguồn ta thấy: phương thức `executeIndex()` (Controller) gọi
+Table `JobeetJob` để tạo câu truy vấn nhận tất cả các công việc.
+Nó trả về một `Doctrine_Collection` của đối tượng `JobeetJob` và được gán cho đối tượng `jobeet_job_list`.
+</doctrine>
+
+Tất cả các đối tượng này được tự động chuyển cho template (View). Để chuyển dữ liệu từ Controller cho View, hãy sử dụng $this-> :
+
+    [php]
+    public function executeIndex(sfWebRequest $request)
+    {
+      $this->foo = 'bar';
+      $this->bar = array('bar', 'baz');
+    }
+
+Bây giờ, trong template ta có thể sử dụng các biến `$foo` và `$bar`.
+
+### Template
+
+Mặc định, template được đặt tên trùng với tên action kèm cụm `Success`, nhờ đó
+symfony có thể xác định action tương ứng.
+
+Template `indexSuccess.php` được sinh tự động gồm mã HTML theo cấu trúc table:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <h1>Job List</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Category</th>
+          <th>Type</th>
+    <!-- more columns here -->
+          <th>Created at</th>
+          <th>Updated at</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($jobeet_job_list as $jobeet_job): ?>
+        <tr>
+          <td>
+            <a href="<?php echo url_for('job/show?id='.$jobeet_job->getId()) ?>">
+              <?php echo $jobeet_job->getId() ?>
+            </a>
+          </td>
+          <td><?php echo $jobeet_job->getCategoryId() ?></td>
+          <td><?php echo $jobeet_job->getType() ?></td>
+    <!-- more columns here -->
+          <td><?php echo $jobeet_job->getCreatedAt() ?></td>
+          <td><?php echo $jobeet_job->getUpdatedAt() ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+
+    <a href="<?php echo url_for('job/new') ?>">New</a>
+
+Trong template code, `foreach` duyệt qua danh sách các `Job` objects
+(`$jobeet_job_list`), và với mỗi job, giá trị của từng cột được hiển thị.
+Ở đây, việc truy cập các giá trị của cột đơn giản là gọi một phương thức
+accessor có tên bắt đầu bằng `get` kèm theo tên cột viết hoa chữ cái đầu
+(ví dụ phương thức `getCreatedAt()` với cột `created_at`).
+(em toàn dùng kiểu: $jobeet_job->id, $jobeet_job->type, ... - người dịch :D)
+
+Ta chỉ cần hiển thị một vài cột:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <div id="jobs">
+      <table class="jobs">
+        <?php foreach ($jobeet_job_list as $i => $job): ?>
+          <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
+            <td><?php echo $job->getLocation() ?></td>
+            <td>
+              <a href="<?php echo url_for('job/show?id='.$job->getId()) ?>">
+                <?php echo $job->getPosition() ?>
+              </a>
+            </td>
+            <td><?php echo $job->getCompany() ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+    </div>
+
+![Homepage](http://www.symfony-project.org/images/jobeet/1_2/04/homepage.png)
+
+Hàm `url_for()` là một symfony helper sẽ được thảo luận vào ngày mai.
+
+Job Page Template
+---------------------
+
+Bây giờ hãy chỉnh sửa giao diện của trang chi tiết công việc.
+Mở file `showSuccess.php` và thay toàn bộ nội dung bằng đoạn code sau:
+
+    [php]
+    <?php use_stylesheet('job.css') ?>
+    <?php use_helper('Text') ?>
+
+    <div id="job">
+      <h1><?php echo $job->getCompany() ?></h1>
+      <h2><?php echo $job->getLocation() ?></h2>
+      <h3>
+        <?php echo $job->getPosition() ?>
+        <small> - <?php echo $job->getType() ?></small>
+      </h3>
+
+      <?php if ($job->getLogo()): ?>
+        <div class="logo">
+          <a href="<?php echo $job->getUrl() ?>">
+            <img src="<?php echo $job->getLogo() ?>"
+              alt="<?php echo $job->getCompany() ?> logo" />
+          </a>
+        </div>
+      <?php endif; ?>
+
+      <div class="description">
+        <?php echo simple_format_text($job->getDescription()) ?>
+      </div>
+
+      <h4>How to apply?</h4>
+
+      <p class="how_to_apply"><?php echo $job->getHowToApply() ?></p>
+
+      <div class="meta">
+<propel>
+        <small>posted on <?php echo $job->getCreatedAt('m/d/Y') ?></small>
+</propel>
+<doctrine>
+        <small>posted on <?php echo date('m/d/Y', strtotime($job->getCreatedAt())) ?></small>
+</doctrine>
+      </div>
+
+      <div style="padding: 20px 0">
+        <a href="<?php echo url_for('job/edit?id='.$job->getId()) ?>">Edit</a>
+      </div>
+    </div>
+
+Template sử dụng biến `$job` lấy từ action để hiển thị thông tin công việc.
+Do đó, chúng ta cần đổi tên biến từ `$jobeet_job` thành `$job` trong
+action `show`
+(có 2 chỗ cần sửa):
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeShow(sfWebRequest $request)
+    {
+<propel>
+      $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+      $this->job = Doctrine::getTable('JobeetJob')->find($request->getParameter('id'));
+</doctrine>
+      $this->forward404Unless($this->job);
+    }
+
+<propel>
+Notice that some Propel accessors take arguments. As we have defined the
+`created_at` column as a timestamp, the `getCreatedAt()` accessor takes a date
+formatting pattern as its first argument:
+
+    [php]
+    $job->getCreatedAt('m/d/Y');
+</propel>
+
+>**NOTE**
+>Phần mô tả công việc sửa dụng helper `simple_format_text()` để format nội dung,
+>bằng cách thay thế kí tự xuống dòng thành mã html `<br />`. Helper này nằm
+>trong nhóm helper `Text`, mặc định không được tự động load, do đó chúng ta cần
+>dùng helper `use_helper()` để load.
+
+Slots
+-----
+
+Hiện tại, tiêu đề của tất cả các trang được xác định trong thẻ `<title>` ở
+layout:
+
+    [php]
+    <title>Jobeet - Your best job board</title>
+
+Nhưng với trang chi tiết công việc, chúng ta cần cung cấp nhiều thông tin
+hữu ích hơn, như là tên công ty và vị trí tuyển dụng.
+
+Trong symfony, khi một vùng của layout depends phụ thuộc vào template,
+ta sử dụng slot:
+
+![Slots](http://www.symfony-project.org/images/jobeet/1_2/04/layout_slots.png)
+
+Thêm một slot vào layout cho phép title có thể tự động thay đổi:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <title><?php include_slot('title') ?></title>
+
+Mỗi slot được xác định bởi một tên (`title`) và được hiển thị qua helper
+`include_slot()`. Bây giờ, ở đầu template `showSuccess.php`, dùng helper
+`slot()` để xác định nội dung của slot:
+
+    [php]
+    // apps/frontend/modules/job/templates/showSuccess.php
+    <?php slot('title', sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition())) ?>
+
+Nếu tiêu đề phức tạp, ta có thể đặt trong block:
+
+    [php]
+    // apps/frontend/modules/job/templates/showSuccess.php
+    <?php slot('title') ?>
+      <?php echo sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()) ?>
+    <?php end_slot(); ?>
+
+Với một vài trang, như trang chủ, chúng ta cần một tiêu đề chung.
+Do đó, ta có thể sử dụng tiêu đề mặc định trong layout đến không có slot:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <title>
+      <?php if (!include_slot('title')): ?>
+        Jobeet - Your best job board
+      <?php endif; ?>
+    </title>
+
+Helper `include_slot()` trả về `true` nếu slot được xác định. Khi đó nội dung
+của slot trong template sẽ được sử dụng;ngược lại, giá trị mặc định sẽ được dùng
+
+>**TIP**
+>Chúng ta đã có một vài helper bắt đầu bằng `include_`. Chúng ta có thể thay
+>bằng `get_` để xem kết quả trả về của những helper này:
+>
+>     [php]
+>     <?php include_slot('title') ?>
+>     <?php echo get_slot('title') ?>
+>
+>     <?php include_stylesheets() ?>
+>     <?php echo get_stylesheets() ?>
+
+Job Page Action
+-------------------
+
+Trang chi tiết công việc được tạo ra bởi action `show`, xác định trong
+phương thức `executeShow()` của module `job`:
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+<propel>
+      $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+      $this->job = Doctrine::getTable('JobeetJob')->find($request->getParameter('id'));
+</doctrine>
+        $this->forward404Unless($this->job);
+      }
+
+      // ...
+    }
+
+<propel>
+As in the `index` action, the `JobeetJobPeer` class is used to retrieve a job,
+this time by using the `retrieveByPk()` method. The parameter of this method
+is the unique identifier of a job, its primary key. The next section will
+explain why the `$request->getParameter('id')` statement returns the job
+primary key.
+</propel>
+<doctrine>
+Như action `index`, lớp `JobeetJob` table được dùng để lấy thông tin của
+công việc, lần này là nhờ phương thức `find()`. Tham số của phương thức nào là
+primary key xác định duy nhất một công việc. Mục tiếp theo sẽ giải thích
+tại sao `$request->getParameter('id')` lại trả về primary key của job.
+</doctrine>
+
+<propel>
+>**TIP**
+>The generated model classes contain a lot of useful methods to interact with
+>the project objects. Take some time to browse the code located in the
+>`lib/om/` directory and discover all the power embedded in these classes.
+</propel>
+
+Nếu công việc không tồn tại trong database, chúng ta muốn chuyển người dùng tới
+trang 404, điều đó được thực hiện nhờ phương thức `forward404Unless()`.
+afterwards.
+
+Trang này hiển thị khác nhau trong môi trường `prod` và `dev`:
+
+![404 error in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/05/404_dev.png)
+
+![404 error in the prod environment](http://www.symfony-project.org/images/jobeet/1_2/05/404_prod.png)
+
+>**NOTE**
+>Trước khi chúng ta đưa Jobeet website lên chạy trên server, bạn sẽ học cách chỉnh sửa trang 404 mặc định.
+
+-
+
+>**SIDEBAR**
+>Các phương thức "forward"
+>
+>Phương thức `forward404Unless` tương đương với:
+>
+>     [php]
+>     $this->forward404If(!$this->job);
+>
+>và:
+>
+>     [php]
+>     if (!$this->job)
+>     {
+>       $this->forward404();
+>     }
+>
+>Phương thức `forward404()` là cách viết gọn của:
+>
+>     [php]
+>     $this->forward('default', '404');
+>
+>Phương thức `forward()` chuyển đến một action khác trong cùng application;
+>ở ví dụ này, là action `404` của module `default`.
+>Module `default` là module có sẵn trong symfony chứa các action mặc định để
+>render các trang 404, secure, và login.
+
+Request và Response
+----------------------------
+
+Khi bạn truy cập trang `/job` hoặc `/job/show/id/1` từ trình duyệt:
+trình duyệt gửi một **request** và server trả về một **response**.
+
+Chúng ta đã thấy rằng symfony đóng gói request trong đối tượng `sfWebRequest`
+(xem tham số truyền vào phương thức `executeShow()`). Và symfony là một
+framework hướng đối tượng, do đó response cũng là một đối tượng, của lớp
+`sfWebResponse`. Bạn có thể truy cập đối tượng response trong action
+bằng cách gọi `$this->getResponse()`.
+
+Những đối tượng này cung cấp nhiều phương thức tiện lợi để truy cập các
+thông tin từ PHP functions và PHP global variables.
+
+>**NOTE**
+>Tại sao symfony lại phải đóng gói các PHP function có sẵn?
+>Đầu tiên, là bởi vì các phương thức của symfony mạnh hơn các function PHP
+>tương ứng. Ngoài ra, khi bạn test một ứng dụng, việc giả lập các đối tượng
+>request và response đơn giản hơn hẳn việc dùng các global variables
+>hay làm việc với các PHP functions như `header()`.
+
+### Request
+
+Lớp `sfWebRequest` gồm `$_SERVER`, `$_COOKIE`, `$_GET`, `$_POST`,
+và `$_FILES` PHP global arrays:
+
+ Method name          | PHP equivalent
+ -------------------- | --------------------------------------------------
+ `getMethod()`        | `$_SERVER['REQUEST_METHOD']`
+ `getUri()`           | `$_SERVER['REQUEST_URI']`
+ `getReferer()`       | `$_SERVER['HTTP_REFERER']`
+ `getHost()`          | `$_SERVER['HTTP_HOST']`
+ `getLanguages()`     | `$_SERVER['HTTP_ACCEPT_LANGUAGE']`
+ `getCharsets()`      | `$_SERVER['HTTP_ACCEPT_CHARSET']`
+ `isXmlHttpRequest()` | `$_SERVER['X_REQUESTED_WITH'] == 'XMLHttpRequest'`
+ `getHttpHeader()`    | `$_SERVER`
+ `getCookie()`        | `$_COOKIE`
+ `isSecure()`         | `$_SERVER['HTTPS']`
+ `getFiles()`         | `$_FILES`
+ `getGetParameter()`  | `$_GET`
+ `getPostParameter()` | `$_POST`
+ `getUrlParameter()`  | `$_SERVER['PATH_INFO']`
+ `getRemoteAddress()` | `$_SERVER['REMOTE_ADDR']`
+
+Chúng ta có thể truy cập tham số qua phương thức `getParameter()`. Nó trả về
+giá trị của `$_GET` hoặc `$_POST` global variable, hoặc từ `PATH_INFO` variable.
+
+Nếu bạn muốn biết rõ request parameter là từ biến nào trong các biến trên,
+bạn có thể sử dụng `getGetParameter()`, `getPostParameter()`, getUrlParameter()`
+
+>**NOTE**
+>Khi bạn muốn hạn chế một action với một method xác định, ví dụ bạn muốn form
+>được submitt qua `POST`, bạn có thể dùng phương thức `isMethod()`:
+>`$this->forwardUnless($request->isMethod('POST'));`.
+
+### Response
+
+Lớp `sfWebResponse` chứa `header()` và `setrawcookie()` PHP
+methods:
+
+ Method name                   | PHP equivalent
+ ----------------------------- | ----------------
+ `setCookie()`                 | `setrawcookie()`
+ `setStatusCode()`             | `header()`
+ `setHttpHeader()`             | `header()`
+ `setContentType()`            | `header()`
+ `addVaryHttpHeader()`         | `header()`
+ `addCacheControlHttpHeader()` | `header()`
+
+Tất nhiên, lớp `sfWebResponse` cũng cung cấp phương thức để tạo nội dung của
+response (`setContent()`) và gửi response tới trình duyệt (`send()`).
+
+Ở trên, chúng ta đã biết cách quản lý stylesheets và JavaScripts từ file
+`view.yml` và templates. Ở đây, ta có thể dùng phương thức `addStylesheet()`
+và `addJavascript()` của đối tượng response.
+
+>**TIP**
+>Lớp [`sfAction`](http://www.symfony-project.org/api/1_2/sfAction),
+>[`sfRequest`](http://www.symfony-project.org/api/1_2/sfRequest), và
+>[`sfResponse`](http://www.symfony-project.org/api/1_2/sfResponse)
+>cung cấp rất nhiều phương thức hữu ích.
+>Bạn có thể vào [API documentation](http://www.symfony-project.org/api/1_2/)
+>để tra cứu tất cả các lớp của symfony.
+
+Hẹn gặp lại ngày mai
+----------------
+
+Hôm nay, chúng ta đã nói về một vài design patterns được sử dụng trong symfony.
+Cấu trúc thư mục của project đã trở nên dễ hiểu. Chúng ta đã có thể làm việc
+với templates bằng cách chỉnh sửa layout và file template. Chúng ta cũng đã dùng slots và actions.
+
+Nếu bạn muốn gửi một design cho **design day contest** (sẽ được bầu chọn vào
+ngày thứ 21), bạn có thể bắt đầu với template chúng tôi đã cung cấp hôm nay.
+
+Ngày mai, chúng ta sẽ tìm hiểu về helper `url_for()` chúng ta đã dùng hôm nay,
+và kết hợp với sub-framework routing.
+
+Bạn có thể truy cập mã nguồn của ngày hôm nay (tag
+`release_day_04`) tại:
+
+    http://svn.jobeet.org/tags/release_day_04/
+
+__ORM__
