@@ -1,9 +1,235 @@
 Giorno 7: Giocare con la pagina delle categorie
 ===============================================
 
-********************************
-TODO inserire qui la PRIMA PARTE
-********************************
+Precedentemente su Jobeet
+-------------------------
+
+Ieri avete ampliato le vostre conoscenze su symfony in diverse aree:
+##ORM##'s Criteria object, fixtures, routing, debugging e configurazioni
+personalizzate. Abbiamo finito con una piccola sfida per oggi.
+
+Spero abbiate lavorato sulla pagina delle categorie di Jobeet in modo che il
+tutorial di oggi abbia quanto più valore possibile per voi.
+
+Pronti? Parliamo di una possibile implementazione.
+
+La Category Route
+-----------------
+
+Prima di tutto abbiamo bisogno di aggiungere una rotta per definire un URL
+carino per la pagina delle categorie.
+Aggiungete questo all'inizio del file che si occupa del routing:
+
+    [yml]
+    // apps/frontend/config/routing.yml
+    category:
+      url:      /category/:slug
+      class:    sfPropelRoute
+      param:    { module: category, action: show }
+      options:  { model: JobeetCategory, type: object }
+
+>**SUGGERIMENTO**
+>Ogni volta che si parte ad implementare una nuova feature è buona norma
+>pensare prima all'argomento URL creando la rotta associata.
+
+Siccome `slug` non è una colonna della tabella `category` abbiamo bisogno
+di aggiungere un accesso virtuale a `JobeetCategory` per rendere la rotta
+funzionante:
+
+    [php]
+<propel>
+    // lib/model/JobeetCategory.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetCategory.class.php
+</doctrine>
+    public function getSlug()
+    {
+      return Jobeet::slugify($this->getName());
+    }
+
+IL Category Link
+----------------
+
+Ora editiamo il template `indexSuccess.php` del modulo `job` per aggiungere
+il link alla pagina delle categorie:
+
+    [php]
+    <!-- some HTML code -->
+
+            <h1><?php echo link_to($category, 'category', $category) ?></h1>
+
+    <!-- some HTML code -->
+
+          </table>
+
+          <?php if (($count = $category->countActiveJobs() -
+              ➥ sfConfig::get('app_max_jobs_on_homepage')) > 0): ?>
+            <div class="more_jobs">
+              and <?php echo link_to($count, 'category', $category) ?>
+              more...
+            </div>
+          <?php endif; ?>
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+Aggiungiamo il link solamente se ci sono più di 10 offerte di lavoro da 
+visualizzare per la categoria corrente. Il link contiene il numero di offerte
+non visualizzate. Per rendere il template funzionante abbiamo bisogno di 
+aggiungere il metodo `countActiveJobs()` a `JobeetCategory`:
+
+<propel>
+    [php]
+    // lib/model/JobeetCategory.php
+    public function countActiveJobs()
+    {
+      $criteria = new Criteria();
+      $criteria->add(JobeetJobPeer::CATEGORY_ID, $this->getId());
+
+      return JobeetJobPeer::countActiveJobs($criteria);
+    }
+
+Il metodo `countActiveJobs()` non esiste ancora in `JobeetJobPeer`:
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function countActiveJobs()
+    {
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('j.category_id = ?', $this->getId());
+
+      return Doctrine::getTable('JobeetJob')->countActiveJobs($q);
+    }
+
+Il metodo `countActiveJobs()` non esiste ancora in `JobeetJobTable`:
+</doctrine>
+
+<propel>
+    [php]
+    // lib/model/JobeetJobPeer.php
+    class JobeetJobPeer extends BaseJobeetJobPeer
+    {
+      static public function doSelectActive(Criteria $criteria)
+      {
+        return self::doSelectOne(self::addActiveJobsCriteria($criteria));
+      }
+
+      static public function getActiveJobs(Criteria $criteria = null)
+      {
+        return self::doSelect(self::addActiveJobsCriteria($criteria));
+      }
+
+      static public function countActiveJobs(Criteria $criteria = null)
+      {
+        return self::doCount(self::addActiveJobsCriteria($criteria));
+      }
+
+      static public function addActiveJobsCriteria(Criteria $criteria = null)
+      {
+        if (is_null($criteria))
+        {
+          $criteria = new Criteria();
+        }
+
+        $criteria->add(self::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->addDescendingOrderByColumn(self::CREATED_AT);
+
+        return $criteria;
+      }
+    }
+
+Come potete vedere abbiamo eseguito il refactoring di tutto il codice di 
+`JobeetJobPeer` per introdurre un nuovo metodo condiviso `addActiveJobsCriteria()`
+per rendere il codice più [DRY (Don't Repeat Yourself)](http://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      public function retrieveActiveJob(Doctrine_Query $q)
+      {
+        return $this->addActiveJobsQuery($q)->fetchOne();
+      }
+
+      public function getActiveJobs(Doctrine_Query $q = null)
+      {
+        return $this->addActiveJobsQuery($q)->execute();
+      }
+
+      public function countActiveJobs(Doctrine_Query $q = null)
+      {
+        return $this->addActiveJobsQuery($q)->count();
+      }
+
+      public function addActiveJobsQuery(Doctrine_Query $q = null)
+      {
+        if (is_null($q))
+        {
+          $q = Doctrine_Query::create()
+            ->from('JobeetJob j');
+        }
+
+        $alias = $q->getRootAlias();
+
+        $q->andWhere($alias . '.expires_at > ?', date('Y-m-d h:i:s', time()))
+          ->addOrderBy($alias . '.expires_at DESC');
+
+        return $q;
+      }
+    }
+
+Come potete vedere abbiamo eseguito il refactoring di tutto il codice di 
+`JobeetJobTable` per introdurre un nuovo metodo condiviso `addActiveJobsQuery()`
+per rendere il codice più [DRY (Don't Repeat Yourself)](http://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+</doctrine>
+
+>**SUGGERIMENTO**
+>La prima volta che una porzione di codice viene riutilizzate copiare il codice
+>può essere sufficiente. Ma se scoprite un nuovo modoper utilizzarlo è sempre
+>meglio eseguire il refactoring per tutti gli usi verso un metodo od una funzione
+>condivisa come abbiamo fatto qui.
+
+<propel>
+Nel metodo `countActiveJobs()`invece di usare `doSelect()` e poi contare il
+numero dei risultati abbiamo utilizzato il metodo `doCount()` che è più veloce.
+</propel>
+<doctrine>
+Nel metodo `countActiveJobs()`invece di usare `execute()` e poi contare il
+numero dei risultati abbiamo utilizzato il metodo `count()` che è più veloce.
+</doctrine>
+
+Abbiamo apportato modifiche a molti file solamente per una feature molto semplice.
+Ma ogni volta che abbiamo aggiunto del codice abbiamo provato a metterlo nello strato
+corretto dell'applicazione, abbiamo inoltre fatto in modo di creare codice riusabile.
+Durante questo processo abbiamo anche fatto il refactoring di parti di codice esistente.
+Questoè il workflow tipico quando si lavora su un progetto symfony.
+
+Creazione del modulo delle categorie
+------------------------------------
+
+E' il momento di creare il modulo `category`:
+
+    $ php symfony generate:module frontend category
+
+Se avete creato un modulo avrete probabilmente utilizzato il comando
+`propel:generate-module`. Questo va bene ma visto che il 90% del codice generato
+in questo caso non ci serve ho utilizzato il comando `generate:module`
+che crea un modulo vuoto.
+
+>**SUGGERIMENTO**
+>Perchè non aggiungere una `category` action al modulo `job`? Potremmo, ma 
+>visto che il soggetto principale della pagina delle categorie è la categoria
+>ci pare più naturale creare un modulo `category` dedicato a questo.
+
+Accedento alla pagina delle categorie la rotta `category` dovrà trovare la 
+categoria associata alla variabile `slug` presente nella richiesta. Ma siccome
+lo slug non è memorizzato nel database, e siccome non possiamo dedurre la 
+categoria dallo slug non c'è modo di individuare la categoria associata allo 
+slug.
 
 Aggiornare il database
 ----------------------
