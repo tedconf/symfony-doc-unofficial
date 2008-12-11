@@ -30,13 +30,13 @@ yêu cầu của trang, lấy các dữ liệu từ database, và cuối cùng t
 hiển thị.
 
 Bạn có thể sử dụng một templating engine để tách phần logic và HTML.
-Tất nhiên, bạn có thể sử dụng một database abstraction layer để tách phần
-thao tác với model khỏi business logic. Nhưng thường bạn sẽ tạo ra rất nhiều
-code mà việc maintain trở thành cơn ác mộng. Có thể bạn sẽ làm rất nhanh,
-nhưng thật khó để thay đổi, nâng cấp, đặc biệt khi không có ai
+Tất nhiên, bạn cũng có thể sử dụng một database abstraction layer để tách phần
+thao tác với model ra khỏi business logic. Nhưng thường bạn sẽ tạo ra rất nhiều
+code mà việc maintain trở thành cơn ác mộng. Có thể bạn sẽ xây dựng ứng dụng
+rất nhanh, nhưng thật khó để thay đổi, nâng cấp, đặc biệt khi không có ai
 ngoại trừ bạn hiểu được cách nó làm việc.
 
-Có một giải pháp tuyệt vời để giải quyết những vấn đề này. Đối với việc
+Có một giải pháp tuyệt vời để giải quyết những vấn đề trên. Đối với việc
 phát triển web , giải pháp thường dùng là tổ chức code theo
 [**MVC design pattern**](http://en.wikipedia.org/wiki/Model-view-controller).
 Pattern này chia code thành **ba tầng**:
@@ -54,13 +54,13 @@ Pattern này chia code thành **ba tầng**:
     để hiển thị ở client. Khi chúng ta cài symfony trong ngày đầu tiên,
     chúng ta đã thấy rằng mọi yêu cầu được điều khiển bởi file
     front controllers (`index.php` và `frontend_dev.php`). Những file
-    front controllers này sẽ tìm **actions** thực hiện yêu cầu đó. Như chúng ta
-    thấy hôm qua, các actions được nhóm lại trong **modules**.
+    front controllers này sẽ tìm **actions** tương ứng để thực hiện yêu cầu đó.
+    Như chúng ta thấy hôm qua, các action được nhóm lại trong **module**.
 
 ![MVC](http://www.symfony-project.org/images/jobeet/1_2/04/mvc.png)
 
 Hôm nay, chúng ta sẽ dựa vào những nội dung trong ngày 2 để chỉnh sửa lại
-mã nguồn của trang chủ và trang chi tiết công việc đã được tạo sẵn.
+mã nguồn đã có sẵn của trang chủ và trang chi tiết công việc.
 Đồng thời, chúng ta cũng chỉnh sửa rất nhiều file liên quan để làm rõ cấu trúc
 thư mục của symfony và cách phân chia code giữa các tầng.
 
@@ -79,7 +79,7 @@ include chúng vào mỗi template:
 Nhưng ở đây, file header và footer không chứa valid HTML. Cần có cách tốt
 hơn. Thay vì reinventing the wheel, chúng ta dùng một design pattern khác để giải quyết vấn đề này:
 [decorator design pattern](http://en.wikipedia.org/wiki/Decorator_pattern).
-Decorator design pattern giải quyết vấn đề theo cách khác: sau khi nội dung
+Decorator design pattern giải quyết vấn đề theo cách: sau khi nội dung
 chính được tạo, ta sẽ dùng một global template để thêm các phần còn lại,
 global template trong symfony gọi là một **layout**:
 
@@ -178,14 +178,14 @@ bạn sẽ thấy các actions bây giờ đều có layout.
 >[download the Jobeet one](http://www.symfony-project.org/images/jobeet/favicon.ico)
 >và đặt nó vào thư mục `web/`.
 
-Stylesheets, Images, và JavaScripts
+Stylesheets, Images và JavaScripts
 ----------------------------------------
 
 Chúng ta sẽ tổ chức chọn "best design" vào ngày thứ 21, trong khi chờ đợi chúng
 ta sẽ dùng tạm một design đơn giản:
 [download các file ảnh](http://www.symfony-project.org/get/jobeet/images.zip)
 và giải nén vào thư mục `web/images/`;
-[download the stylesheet files](http://www.symfony-project.org/get/jobeet/css.zip)
+[download các file stylesheet](http://www.symfony-project.org/get/jobeet/css.zip)
 và giải nén vào thư mục `web/css/`.
 
 ![The job module with a layout and assets](http://www.symfony-project.org/images/jobeet/1_2/04/job_layout_assets.png)
@@ -195,13 +195,13 @@ và giải nén vào thư mục `web/css/`.
 >`web/css/` để chứa các file css, và `web/js/` chứa các file JavaScripts.
 >Tất nhiên, bạn cũng có thể để ở các thư mục khác trong thư mục `web/`
 
-Độc giả tinh ý có thể sẽ thấy rằng, mặc dù file `main.css` không được nhắc
+Bạn đọc tinh ý có thể sẽ thấy rằng, mặc dù file `main.css` không được nhắc
 đến trong layout, nhưng nó vẫn được gọi khi tạo HTML. Sao lại có thể như vậy?
 
-File stylesheet được include bởi hàm `include_stylesheets()` ở thẻ `<head>`
+File stylesheet được include bởi hàm `include_stylesheets()` ở `<head>`
 trong layout. Hàm `include_stylesheets()` chính là một **helper**. Một helper
 là một function, tạo bởi symfony, nhận tham số và trả về mã HTML. Các helper
-giúp giảm thời gian code, chúng đóng gói các đoạn mã hay sử dụng trong template
+giúp giảm thời gian code, chúng đóng gói các đoạn mã thường dùng trong template.
 Helper `include_stylesheets()` tạo thẻ `<link>` cho stylesheets.
 
 Nhưng làm thế nào để helper biết cần include file stylesheets nào?
@@ -301,7 +301,7 @@ Bạn cũng có thể tạo một vài cấu hình cho toàn bộ action của m
 >    `apps/APP/modules/MODULE/config/`)
 >
 >Khi chạy, hệ thống sẽ xác định cấu hình từ tất cả các file này và cache lại
->để đảm bảo vấn đề performance.
+>để đảm bảo hiệu năng.
 
 Khi một thứ có thể cấu hình dựa trên file cấu hình, nó cũng có thể cấu hình
 bằng code PHP. Thay vì tạo file `view.yml` cho module `job`, bạn có thể sử dụng helper `use_stylesheet()` để include file stylesheet trong một template:
@@ -313,7 +313,7 @@ Bạn cũng có thể sử dụng helper này trong layout để include một s
 chung cho application.
 
 Chọn cách làm nào là tùy sở thích của mỗi người. File `view.yml` cung cấp
-cấu hình cho các template, nhưng những cấu hình này là tĩnh. Còn khi sử dụng
+cách cấu hình cố định cho các template. Còn khi sử dụng
 helper `use_stylesheet()` mọi thứ trở nên mềm dẻo hơn. Với Jobeet, chúng tôi sẽ
 sử dụng helper `use_stylesheet()`, vì thế bạn có thể xóa file `view.yml` và
 thêm lời gọi `use_stylesheet()` vào trong template `job`.
@@ -325,7 +325,7 @@ thêm lời gọi `use_stylesheet()` vào trong template `job`.
 Trang chủ
 ----------------
 
-Như đã thấy trong ngày 3, trang chủ chính là action `index` của module `job`.
+Trang chủ chính là action `index` của module `job`.
 Action `index` là phần Controller của trang và liên kết với template,
 `indexSuccess.php`, là phần View:
 
@@ -342,7 +342,7 @@ Action `index` là phần Controller của trang và liên kết với template,
 
 Mỗi action được tạo bởi một phương thức của một lớp. Với trang chủ, đó là lớp
 `jobActions` (tên module + `Actions`) và phương thức `executeIndex()` (`execute` + tên action).
-Nó lấy tất cả các công việc từ database:
+Nó thực hiện việc lấy tất cả các job từ database:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -371,11 +371,11 @@ the `jobeet_job_list` object property.
 </propel>
 <doctrine>
 Xem xét mã nguồn ta thấy: phương thức `executeIndex()` (Controller) gọi
-Table `JobeetJob` để tạo câu truy vấn nhận tất cả các công việc.
+Table `JobeetJob` để tạo câu truy vấn nhận tất cả các job.
 Nó trả về một `Doctrine_Collection` của đối tượng `JobeetJob` và được gán cho đối tượng `jobeet_job_list`.
 </doctrine>
 
-Tất cả các đối tượng này được tự động chuyển cho template (View). Để chuyển dữ liệu từ Controller cho View, hãy sử dụng $this-> :
+Tất cả các đối tượng này được tự động chuyển cho template (View). Để chuyển dữ liệu từ Controller cho View, hãy sử dụng `$this->` :
 
     [php]
     public function executeIndex(sfWebRequest $request)
@@ -428,12 +428,12 @@ Template `indexSuccess.php` được sinh tự động gồm mã HTML theo cấu
 
     <a href="<?php echo url_for('job/new') ?>">New</a>
 
-Trong template code, `foreach` duyệt qua danh sách các `Job` objects
+Trong template, `foreach` duyệt qua danh sách các `Job` objects
 (`$jobeet_job_list`), và với mỗi job, giá trị của từng cột được hiển thị.
 Ở đây, việc truy cập các giá trị của cột đơn giản là gọi một phương thức
 accessor có tên bắt đầu bằng `get` kèm theo tên cột viết hoa chữ cái đầu
 (ví dụ phương thức `getCreatedAt()` với cột `created_at`).
-(em toàn dùng kiểu: $jobeet_job->id, $jobeet_job->type, ... - người dịch :D)
+(đơn giản hơn có thể dùng: `$jobeet_job->id`, `$jobeet_job->type`, ... - người dịch :D)
 
 Ta chỉ cần hiển thị một vài cột:
 
@@ -459,7 +459,7 @@ Ta chỉ cần hiển thị một vài cột:
 
 ![Homepage](http://www.symfony-project.org/images/jobeet/1_2/04/homepage.png)
 
-Hàm `url_for()` là một symfony helper sẽ được thảo luận vào ngày mai.
+Hàm `url_for()` là một symfony helper sẽ được đề cập vào ngày mai.
 
 Job Page Template
 ---------------------
@@ -555,8 +555,7 @@ layout:
 Nhưng với trang chi tiết công việc, chúng ta cần cung cấp nhiều thông tin
 hữu ích hơn, như là tên công ty và vị trí tuyển dụng.
 
-Trong symfony, khi một vùng của layout depends phụ thuộc vào template,
-ta sử dụng slot:
+Trong symfony, khi một vùng của layout phụ thuộc vào template, ta sử dụng slot:
 
 ![Slots](http://www.symfony-project.org/images/jobeet/1_2/04/layout_slots.png)
 
@@ -582,8 +581,8 @@ Nếu tiêu đề phức tạp, ta có thể đặt trong block:
       <?php echo sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()) ?>
     <?php end_slot(); ?>
 
-Với một vài trang, như trang chủ, chúng ta cần một tiêu đề chung.
-Do đó, ta có thể sử dụng tiêu đề mặc định trong layout đến không có slot:
+Với một vài trang, như trang chủ, chúng ta cần một tiêu đề mặc định.
+Do đó, ta có thể sử dụng tiêu đề mặc định trong layout nếu không có slot:
 
     [php]
     // apps/frontend/templates/layout.php
@@ -653,7 +652,6 @@ tại sao `$request->getParameter('id')` lại trả về primary key của job.
 
 Nếu công việc không tồn tại trong database, chúng ta muốn chuyển người dùng tới
 trang 404, điều đó được thực hiện nhờ phương thức `forward404Unless()`.
-afterwards.
 
 Trang này hiển thị khác nhau trong môi trường `prod` và `dev`:
 
