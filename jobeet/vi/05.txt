@@ -43,7 +43,7 @@ chứa trong cơ sở dữ liệu ra sao.Việc lộ rõ cấu trúc bên trong 
 vấn đề về bảo mật: người dùng có thể đoán được  URL của các resources mà anh ta
 không được phép truy cập? Tất nhiên, lập trình viên phải bảo mật cho những khu vực này, nhưng tốt nhất là hãy ẩn đi các thông tin nhạy cảm.
 
-URLs trong symfony quan trọng đến mức chúng cho có một framework riêng để
+URLs trong symfony quan trọng đến mức chúng ta có một framework riêng để
 quản lý chúng: **routing** framework. Routing quản lý internal URIs và
 external URLs. Khi có một request đến, routing phân tích URL và chuyển thành
 internal URI.
@@ -62,8 +62,8 @@ internal URIs như sau:
 
     MODULE/ACTION?key=value&key_1=value_1&...
 
-As the symfony routing is a two-way process, you can change the URLs without
-changing the technical implementation. Đó là một trong những lợi ích của
+Trong symfony, routing được tách riêng ra, bạn có thể thay đổi URLs mà không
+ảnh hưởng đến việc xử lý bên trong. Đó là một trong những lợi ích của
 front-controller design pattern.
 
 Cấu hình Routing
@@ -109,7 +109,7 @@ biến/giá trị cách nhau bởi dấu (`/`):
   | id                | 1     |
 
 >**NOTE**
->`module` và `action` là các biến đặc biệt symfony dùng để xác định
+>`module` và `action` là các biến đặc biệt, symfony dùng để xác định
 >action được thực thị.
 
 URL `/job/show/id/1` có thể tạo từ template bằng helper `url_for()`:
@@ -129,7 +129,7 @@ dụng (không cần dùng tên module và action trong internal URI).
 Route Customizations
 --------------------
 
-Hiện tại, khi bạn truy cập URL `/` từ trình duyệt, bạn sẽ thấy trang chúc mừng
+Hiện tại, khi bạn truy cập URL `/` từ trình duyệt, bạn sẽ thấy trang chào mừng
 mặc định của symfony. Đó là vì URL này matches với route `homepage`.
 Ta cần thay đổi route này thành trang chủ của Jobeet: sửa giá trị biến `module`
 thành `job`:
@@ -160,7 +160,7 @@ Không cần xem chi tiết nội dung, chỉ cần nhìn URL bạn cũng có th
 >Nó cũng hữu dụng khi bạn copy và paste URL vào email hay optimize website
 >cho các search engines.
 
-Pattern sau match URL trên:
+Pattern dưới đây match với URL trên:
 
     /job/:company/:location/:id/:position
 
@@ -171,7 +171,7 @@ Sửa file `routing.yml` và thêm route `job` vào đầu file:
       url:   /job/:company/:location/:id/:position
       param: { module: job, action: show }
 
-Refresh lại trang chủ, link tới các jobs vẫn không thay đổi. Đó là bởi vì để tạo
+Refresh lại trang chủ, link tới các job vẫn không thay đổi. Đó là vì để tạo
 route, bạn cần cung cấp tất cả các biến cần thiết. Vì thế, `url_for()` trong
 `indexSuccess.php` cần sửa lại thành:
 
@@ -213,9 +213,11 @@ Route Class
 
 Mỗi route xác định trong file `routing.yml` được chuyển đổi thành một object
 của lớp [`sfRoute`](http://www.symfony-project.org/api/1_2/sfRoute). Có thể đổi
-lớp này bằng lớp khác xác định trong mục `class` của route. Ta đã biết rằng giao thứcbiết giao thức HTTP có vài "methods": `GET`, `POST`, `HEAD`, `DELETE`, và `PUT`. 3 cái đầu được hỗ trợ bởi tất cả các trình duyệt.
+lớp này bằng lớp khác xác định trong mục `class` của route. Ta đã biết rằng
+giao thức HTTP có vài "methods": `GET`, `POST`, `HEAD`, `DELETE`, và `PUT`.
+3 method đầu được hỗ trợ bởi tất cả các trình duyệt, trong khi 2 method sau thì không.
 
-Để hạn chế route chỉ match với một loại request methods nào đó, bạn có thể đổi
+Để route chỉ match với một loại request methods nào đó, bạn có thể đổi
 route class thành [`sfRequestRoute`](http://www.symfony-project.org/api/1_2/sfRequestRoute) và thêm một giá trị cho biến `sf_method` trong requirements:
 
     [yml]
