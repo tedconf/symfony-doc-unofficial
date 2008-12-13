@@ -1,0 +1,561 @@
+Ngày 7: Tiếp tục với trang Category
+=====================================
+
+Tóm tắt
+--------------------
+
+Hôm qua chúng ta đã mở rộng kiến thức về symfony trên nhiều mặt: đối tượng ##ORM##, fixtures, routing, debugging,và custom configuration. Và chúng ta đã kết thúc với một bài tập nhỏ cho ngày hôm nay.
+
+Tôi hi vọng bạn đã làm trang Jobeet category để hướng dẫn hôm nay trở nên hữu ích hơn.
+
+Bạn đã sẵn sàng chưa? Chúng ta sẽ tiếp tục bổ sung những thứ cần thiết.
+
+Category Route
+------------------
+
+Đầu tiên, chúng ta cần thêm một route để tạo URL dễ nhìn cho trang category.
+Thêm nó vàn đầu file routing:
+
+    [yml]
+    // apps/frontend/config/routing.yml
+    category:
+      url:      /category/:slug
+      class:    sfPropelRoute
+      param:    { module: category, action: show }
+      options:  { model: JobeetCategory, type: object }
+
+>**TIP**
+>Bất cứ khi nào bạn bắt đầu thêm một tính năng mới, bạn nên nghĩ đến
+>URL đầu tiên và tạo một route cho nó.
+
+`slug` không phải là một cột trong bảng `category`, chúng ta cần thêm một
+virtual accessor vào `JobeetCategory` để route có thể hoạt động:
+
+    [php]
+<propel>
+    // lib/model/JobeetCategory.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetCategory.class.php
+</doctrine>
+    public function getSlug()
+    {
+      return Jobeet::slugify($this->getName());
+    }
+
+Category Link
+-----------------
+
+Bây giờ, chỉnh sửa template `indexSuccess.php` của module `job` và thêm đường dẫn đến trang category:
+
+    [php]
+    <!-- some HTML code -->
+
+            <h1><?php echo link_to($category, 'category', $category) ?></h1>
+
+    <!-- some HTML code -->
+
+          </table>
+
+          <?php if (($count = $category->countActiveJobs() -
+              ➥ sfConfig::get('app_max_jobs_on_homepage')) > 0): ?>
+            <div class="more_jobs">
+              and <?php echo link_to($count, 'category', $category) ?>
+              more...
+            </div>
+          <?php endif; ?>
+        </div>
+      <?php endforeach; ?>
+    </div>
+
+Chúng ta chỉ thêm link nếu category đó có nhiều hơn 10 công việc. Để template chạy được, chúng ta cần thêm phương thức `countActiveJobs()` vào lớp `JobeetCategory`:
+
+<propel>
+    [php]
+    // lib/model/JobeetCategory.php
+    public function countActiveJobs()
+    {
+      $criteria = new Criteria();
+      $criteria->add(JobeetJobPeer::CATEGORY_ID, $this->getId());
+
+      return JobeetJobPeer::countActiveJobs($criteria);
+    }
+
+The `countActiveJobs()` method uses a `countActiveJobs()` method that does not
+exist yet in `JobeetJobPeer`:
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function countActiveJobs()
+    {
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('j.category_id = ?', $this->getId());
+
+      return Doctrine::getTable('JobeetJob')->countActiveJobs($q);
+    }
+
+Phương thức `countActiveJobs()` dùng một phương thức `countActiveJobs()` chưa có trong `JobeetJobTable`:
+</doctrine>
+
+<propel>
+    [php]
+    // lib/model/JobeetJobPeer.php
+    class JobeetJobPeer extends BaseJobeetJobPeer
+    {
+      static public function doSelectActive(Criteria $criteria)
+      {
+        return self::doSelectOne(self::addActiveJobsCriteria($criteria));
+      }
+
+      static public function getActiveJobs(Criteria $criteria = null)
+      {
+        return self::doSelect(self::addActiveJobsCriteria($criteria));
+      }
+
+      static public function countActiveJobs(Criteria $criteria = null)
+      {
+        return self::doCount(self::addActiveJobsCriteria($criteria));
+      }
+
+      static public function addActiveJobsCriteria(Criteria $criteria = null)
+      {
+        if (is_null($criteria))
+        {
+          $criteria = new Criteria();
+        }
+
+        $criteria->add(self::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->addDescendingOrderByColumn(self::CREATED_AT);
+
+        return $criteria;
+      }
+    }
+
+As you can see for yourself, we have refactored the whole code of
+`JobeetJobPeer` to introduce a new shared `addActiveJobsCriteria()` method to
+make the code more [DRY (Don't Repeat Yourself)](http://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      public function retrieveActiveJob(Doctrine_Query $q)
+      {
+        return $this->addActiveJobsQuery($q)->fetchOne();
+      }
+
+      public function getActiveJobs(Doctrine_Query $q = null)
+      {
+        return $this->addActiveJobsQuery($q)->execute();
+      }
+
+      public function countActiveJobs(Doctrine_Query $q = null)
+      {
+        return $this->addActiveJobsQuery($q)->count();
+      }
+
+      public function addActiveJobsQuery(Doctrine_Query $q = null)
+      {
+        if (is_null($q))
+        {
+          $q = Doctrine_Query::create()
+            ->from('JobeetJob j');
+        }
+
+        $alias = $q->getRootAlias();
+
+        $q->andWhere($alias . '.expires_at > ?', date('Y-m-d h:i:s', time()))
+          ->addOrderBy($alias . '.expires_at DESC');
+
+        return $q;
+      }
+    }
+
+Như bạn đã thấy, chúng ta đã refactor lại toàn bộ mã nguồn của `JobeetJobTable` và thêm một phương thức mới `addActiveJobsQuery()` để tránh việc lặp lại code ([DRY (Don't Repeat Yourself)](http://en.wikipedia.org/wiki/Don%27t_repeat_yourself)).
+</doctrine>
+
+>**TIP**
+>Khi code được sử dụng lại một lần, ta có thể chỉ cần copy lại code đó.
+>Nhưng nếu code được lặp lại nhiều lần, bạn cần refactor chúng để cùng
+>sử dụng một function hay method, như chúng ta đã làm ở trên.
+
+<propel>
+In the `countActiveJobs()` method, instead of using `doSelect()` and then
+count the number of results, we have used the much faster `doCount()` method.
+</propel>
+<doctrine>
+Trong phương thức `countActiveJobs()`, thay vì sử dụng `execute()` và đếm
+kết quả trả về, chúng ta sử dụng `count()`.
+</doctrine>
+
+Chúng ta đã sửa rất nhiều file cho một tính năng đơn giản!. Mỗi khi viết code
+chúng ta cần đặt chúng ở đúng layer của ứng dụng để code có thể dùng lại được.
+Trong quá trình đó, chúng ta cũng cần refactor lại những code đã có. Đó là tiến trình công việc đặc trưng khi chúng ta làm việc trong một dự án symfony.
+
+Tạo module Job Category
+----------------------------
+
+Bây giờ chúng ta cần tạo module `category`:
+
+    $ php symfony generate:module frontend category
+
+Bạn đã biết cách tạo module sử dụng lệnh `propel:generate-module`. Cách đó cũng
+tốt nhưng ở đây chúng ta sẽ không dùng 90% mã nguồn được tạo ra, lệnh `generate:module` sẽ tạo ra một module rỗng.
+
+>**TIP**
+>Tại sao không thêm một action `category` và module `job`? Chúng ta có thể
+>làm vậy, nhưng nội dung chính của trang category là về category, do đó ta nên
+>tạo một module riêng cho nó.
+
+Khi truy cập trang category, route `category` sẽ tìm category liên quan
+đến biến `slug`. Nhưng slug không được chứa trong database, và chúng ta cũng không thể suy ra tên của category từ slug, nên không có cách nào để tìm được
+category liên quan đến slug yêu cầu.
+(chỗ này tôi không nghĩ vậy: route ở đây truyền object category thì action sẽ luôn nhận được đầy đủ thông tin về categoty đó chứ liên quan gì đến cái `slug` đâu nhỉ, cái này chỉ là URL thôi mà? Còn lý do để cần có một cột `slug` trong bảng `category` theo em nghĩ là: mỗi lần tạo một category mới thì sẽ tạo luôn giá trị cho cột slug, do đó chỉ cần tạo một lần, sau đó truy cập để lấy ra, chứ không phải khi nào cần thì lại gọi phương thức để tạo từ tên của category - người dịch)
+
+Update the Database
+-------------------
+
+Chúng ta cần thêm cột `slug` cho bảng `category`:
+
+<propel>
+    [yml]
+    # config/schema.yml
+    propel:
+      jobeet_category:
+        id:           ~
+        name:         { type: varchar(255), required: true }
+        slug:         { type: varchar(255), required: true, index: unique }
+</propel>
+<doctrine>
+Cột `slug` được quản lý tự động bởi Doctrine behavior `Sluggable`.
+Chúng ta chỉ cần enable behavior này trong model `JobeetCategory` của
+chúng ta và nó sẽ làm mọi thứ cho bạn.
+
+    [yml]
+    # config/doctrine/schema.yml
+    JobeetCategory:
+      actAs:
+        Timestampable: ~
+        Sluggable:
+          fields: [name]
+      columns:
+        name:
+          type: string(255)
+          notnull:  true
+
+</doctrine>
+
+Bây giờ `slug` đã là một cột thực sự, bạn cần xóa phương thức `getSlug()` ở
+`JobeetCategory`.
+
+<propel>
+Each time the `category` name changes, we need to compute and change the
+`slug` as well. Let's override the `setName()` method:
+
+    [php]
+    // lib/model/JobeetCategory.php
+    public function setName($name)
+    {
+      parent::setName($name);
+
+      $this->setSlug(Jobeet::slugify($name));
+    }
+</propel>
+<doctrine>
+>**NOTE**
+>Giá trị của cột slug được tạo tự động mỗi khi bạn lưu một bản ghi.
+>Giá trị này được tạo từ giá trị của trường `name`.
+</doctrine>
+
+Dùng lệnh `propel:build-all-load` để sửa lại các bảng trong database,
+và phục hồi lại các dữ liệu từ file fixtures:
+
+    $ php symfony propel:build-all-load
+
+Bây giờ chúng ta đã có thể tạo phương thức `executeShow()`:
+
+    [php]
+    // apps/frontend/modules/category/actions/actions.class.php
+    class categoryActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+        $this->category = $this->getRoute()->getObject();
+      }
+    }
+
+Cuối cùng, tạo template `showSuccess.php`:
+
+    [php]
+    // apps/frontend/modules/category/template/showSuccess.php
+    <?php use_stylesheet('jobs.css') ?>
+
+    <?php slot('title', sprintf('Jobs in the %s category', $category->getName())) ?>
+
+    <div class="category">
+      <div class="feed">
+        <a href="">Feed</a>
+      </div>
+      <h1><?php echo $category ?></h1>
+    </div>
+
+    <table class="jobs">
+      <?php foreach ($category->getActiveJobs() as $i => $job): ?>
+        <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
+          <td class="location"><?php echo $job->getLocation() ?></td>
+          <td class="position"><?php echo link_to($job->getPosition(), 'job_show_user', $job) ?></td>
+          <td class="company"><?php echo $job->getCompany() ?></td>
+        </tr>
+      <?php endforeach; ?>
+    </table>
+
+Partials
+--------
+
+Bạn có thể nhận thấy rằng chúng ta đã copied and pasted nội dung trong tag
+`<table>` từ template `indexSuccess.php` ở trang chủ để hiển thị danh sách
+các công việc. Điều đó không được tốt lắm. Chúng ta sẽ học một thủ thuật mới để
+giải quyết vấn đề này. Khi bạn cần dùng lại một phần nào đó trong template, bạn
+cần tạo một **partial**. Một partial là một snippet của template có thể được dùng chung trong nhiều templates. Một partial là một file template bắt đầu bởi kí tự (`_`):
+
+    [php]
+    // apps/frontend/modules/job/templates/_list.php
+    <table class="jobs">
+      <?php foreach ($jobs as $i => $job): ?>
+        <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
+          <td class="location"><?php echo $job->getLocation() ?></td>
+          <td class="position"><?php echo link_to($job->getPosition(), 'job_show_user', $job) ?></td>
+          <td class="company"><?php echo $job->getCompany() ?></td>
+        </tr>
+      <?php endforeach; ?>
+    </table>
+
+Bạn có thể sử dụng một partial nhờ helper `include_partial()`:
+
+    [php]
+    <?php include_partial('job/list', array('jobs' => $jobs)) ?>
+
+Tham số đầu tiên của `include_partial()` là tên partial (tạo bởi tên của module
+, kí tự `/`, và tên của partial bỏ đi kí tự `_`). Tham số thứ 2 là mảng các biến
+truyền vào cho partial.
+
+>**NOTE**
+>Tại sao không sử dụng phương thức `include()` có sẵn trong PHP mà lại dùng
+>helper `include_partial()`? Sự khác biệt chính giữa hai cách này là hệ thống
+>cache hỗ trợ helper `include_partial()`.
+
+Thay thế đoạn code `<table>` HTML từ cả 2 templates bằng lời gọi tới 
+`include_partial()`:
+
+    [php]
+    // in apps/frontend/modules/job/templates/indexSuccess.php
+    <?php include_partial('job/list', array('jobs' => $category->getActiveJobs(sfConfig::get('app_max_jobs_on_homepage')))) ?>
+
+    // in apps/frontend/modules/category/templates/showSuccess.php
+    <?php include_partial('job/list', array('jobs' => $category->getActiveJobs())) ?>
+
+Phân trang
+---------------
+
+Yêu cầu trong ngày 2:
+
+  "Danh sách công việc được phân trang với 20 job mỗi trang."
+
+Để phân trang một list các ##ORM## object, symfony cung cấp lớp class:
+[`sfPropelPager`](http://www.symfony-project.org/api/1_2/sfPropelPager).
+Thay vì truyền các job objects cho template, ta truyền một pager:
+
+    [php]
+    // apps/frontend/job/modules/category/actions/actions.class.php
+    public function executeShow(sfWebRequest $request)
+    {
+      $this->category = $this->getRoute()->getObject();
+
+      $this->pager = new sfPropelPager(
+        'JobeetJob',
+        sfConfig::get('app_max_jobs_on_category')
+      );
+<propel>
+      $this->pager->setCriteria($this->category->getActiveJobsCriteria());
+</propel>
+<doctrine>
+      $this->pager->setQuery($this->category->getActiveJobsQuery());
+</doctrine>
+      $this->pager->setPage($request->getParameter('page', 1));
+      $this->pager->init();
+    }
+
+>**TIP**
+>Phương thức `getParameter()` nhận giá trị mặc định từ tham số thứ 2.
+>Trong action trên, nếu tham số `page` request không tồn tại, `getParameter()`
+>sẽ trả về giá trị `1`.
+
+Phương thức khởi tạo `sfPropelPager` nhận 2 tham số: model class và số lượng
+lớn nhất các đối tượng trả về ở một trang. Thêm giá trị này vào file cấu hình:
+
+    [yml]
+    # apps/frontend/config/app.yml
+    all:
+      active_days:          30
+      max_jobs_on_homepage: 10
+      max_jobs_on_category: 20
+
+<propel>
+The `sfPropelPager::setCriteria()` method takes a Criteria object to use when
+selecting the items from the database. Again, we do a bit of refactoring in
+the Model:
+</propel>
+<doctrine>
+Phương thức `sfDoctrinePager::setQuery()` dùng một đối tượng `Doctrine_Query`
+để lấy các đối tượng từ database. Một lần nữa, chúng ta cần refactoring một chút trong Model:
+</doctrine>
+
+<propel>
+    [php]
+    // lib/model/JobeetCategory.php
+    public function getActiveJobsCriteria()
+    {
+      $criteria = new Criteria();
+      $criteria->add(JobeetJobPeer::CATEGORY_ID, $this->getId());
+
+      return JobeetJobPeer::addActiveJobsCriteria($criteria);
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function getActiveJobsQuery()
+    {
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('j.category_id = ?', $this->getId());
+
+      return Doctrine::getTable('JobeetJob')->addActiveJobsQuery($q);
+    }
+</doctrine>
+
+<propel>
+Now that we have the `getActiveJobsCriteria()` method, we can refactor other
+`JobeetCategory` methods to use it:
+</propel>
+<doctrine>
+Bây giờ chúng ta đã có phương thức `getActiveJobsQuery()`, chúng ta cần
+refactor các phương thức khác trong `JobeetCategory`:
+</doctrine>
+
+<propel>
+    [php]
+    // lib/model/JobeetCategory.php
+    public function getActiveJobs($max = 10)
+    {
+      $criteria = $this->getActiveJobsCriteria();
+      $criteria->setLimit($max);
+
+      return JobeetJobPeer::doSelect($criteria);
+    }
+
+    public function countActiveJobs()
+    {
+      $criteria = $this->getActiveJobsCriteria();
+      $criteria->add(JobeetJobPeer::CATEGORY_ID, $this->getId());
+
+      return JobeetJobPeer::doCount($criteria);
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function getActiveJobs($max = 10)
+    {
+      $q = $this->getActiveJobsQuery()
+        ->limit($max);
+
+      return $q->execute();
+    }
+
+    public function countActiveJobs()
+    {
+      return $this->getActiveJobsQuery()->count();
+    }
+</doctrine>
+
+Cuối cùng, sửa lại template:
+
+    [php]
+    <!-- apps/frontend/modules/category/templates/showSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <div class="category">
+      <div class="feed">
+        <a href="">Feed</a>
+      </div>
+      <h1><?php echo $category ?></h1>
+    </div>
+
+    <?php include_partial('job/list', array('jobs' => $pager->getResults())) ?>
+
+    <?php if ($pager->haveToPaginate()): ?>
+      <div class="pagination">
+        <a href="<?php echo url_for('category', $category) ?>?page=1">
+          <img src="/images/first.png" alt="First page" />
+        </a>
+
+        <a href="<?php echo url_for('category', $category) ?>?page=<?php echo $pager->getPreviousPage() ?>">
+          <img src="/images/previous.png" alt="Previous page" title="Previous page" />
+        </a>
+
+        <?php foreach ($pager->getLinks() as $page): ?>
+          <?php if ($page == $pager->getPage()): ?>
+            <?php echo $page ?>
+          <?php else: ?>
+            <a href="<?php echo url_for('category', $category) ?>?page=<?php echo $page ?>"><?php echo $page ?></a>
+          <?php endif; ?>
+        <?php endforeach; ?>
+
+        <a href="<?php echo url_for('category', $category) ?>?page=<?php echo $pager->getNextPage() ?>">
+          <img src="/images/next.png" alt="Next page" title="Next page" />
+        </a>
+
+        <a href="<?php echo url_for('category', $category) ?>?page=<?php echo $pager->getLastPage() ?>">
+          <img src="/images/last.png" alt="Last page" title="Last page" />
+        </a>
+      </div>
+    <?php endif; ?>
+
+    <div class="pagination_desc">
+      <strong><?php echo $pager->getNbResults() ?></strong> jobs in this category
+
+      <?php if ($pager->haveToPaginate()): ?>
+        - page <strong><?php echo $pager->getPage() ?>/<?php echo $pager->getLastPage() ?></strong>
+      <?php endif; ?>
+    </div>
+
+Dưới đây là danh sách các phương thức `sfPropelPager` dùng trong template trên:
+
+  * `getResults()`: trả về mảng các đối tượng Propel cho trang hiện tại
+  * `getNbResults()`: trả về tổng số kết quả
+  * `haveToPaginate()`: trả về `true` nếu có nhiều hơn một trang
+  * `getLinks()`: trả về danh sách link đến các trang
+  * `getPage()`: trả về số của trang hiện tại
+  * `getPreviousPage()`: trả về số của trang trước
+  * `getNextPage()`: trả về số của trang tiếp
+  * `getLastPage()`: trả về số của trang cuối cùng
+
+Hẹn gặp lại ngày mai
+----------------
+
+Nếu bạn đã tự làm những công việc này ngày hôm qua và cảm thấy hôm nay bạn không học được nhiều thứ mới, điều đó có nghĩa là bạn đã quen dần với symfony.
+Quá trình thêm một tính năng mới vào một website symfony luôn được tiến hành
+qua các bước: tạo URLs, tạo một vài action, sửa lại model, và viết một vài
+template. Và nếu bạn tuân theo một vài good development practices, bạn sẽ trở thành một symfony master rất nhanh.
+
+Ngày mai chúng ta sẽ bắt đầu một tuần mới của Jobeet. Chúng ta sẽ nói về một chủ đề mới: tests.
+
+Subversion tag `release_day_07` chứa code đã update của ngày hôm nay:
+
+    http://svn.jobeet.org/tags/release_day_07/
+
+__ORM__
