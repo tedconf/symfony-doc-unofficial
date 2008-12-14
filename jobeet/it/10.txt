@@ -1,0 +1,278 @@
+Day 10: The Forms
+=================
+
+==============
+Parte 1
+==============
+
+### Il template del form
+
+Ora che la classe del form è stata personalizzata, abbiamo bisogno di
+visualizzarla. Il template per il form è lo stesso sia voi vogliate creare
+un nuovo lavoro, sia vogliate modificarlo. Infatti i template `newSuccess.php`,
+sia `editSuccess.php` sono abbastanza simili:
+
+    [php]
+    <!-- apps/frontend/job/templates/newSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
+
+    <h1>Post a Job</h1>
+
+    <?php include_partial('form', array('form' => $form)) ?>
+
+Il form stesso è visualizzato nel partial `_form`. Rimpiazza il contenuto generato
+nel partial `_form' con il codice seguente:
+
+    [php]
+    <!-- apps/frontend/job/templates/_form.php -->
+    <?php include_stylesheets_for_form($form) ?>
+    <?php include_javascripts_for_form($form) ?>
+
+    <?php echo form_tag_for($form, '@job') ?>
+      <table id="job_form">
+        <tfoot>
+          <tr>
+            <td colspan="2">
+              <input type="submit" value="Preview your job" />
+            </td>
+          </tr>
+        </tfoot>
+        <tbody>
+          <?php echo $form ?>
+        </tbody>
+      </table>
+    </form>
+
+Gli helper `include_javascripts_form_form()` e `include_stylesheets_for_form()`
+aggiungeranno le dipendenze JavaScript e CSS necessario per i widget.
+
+>**TIP**
+>Anche se il form per il lavoro non necessita di alcun file JavaScript o CSS, è
+>una buona bitudine mantenere questi helper "giusto nel caso". Potranno esserti
+>d'aiuto se in seguito deciderete di cambiare un widget con uno che necessita di
+>JavaScript o un foglio di stile specifico.
+
+L'helper `form_tag_for()` genera un tag `<form>` per il dato form e rotta
+e cambia il metodo HTTP a `POST` o `PUT` a seconda che il form l'oggetto sia
+nuovo o no. Inoltre si occupa di aggiungere l'attributo `multipart` se il form
+ha qualche tag `input` con `type="file"`.
+
+Infine, l'istruzione `<?php echo $form ?>` visualizza i widget del form.
+
+>**SIDEBAR**
+>Personalizzare l'aspetto di un Form
+>
+>Di default, l'istruzione `<?php echo $form ?>` visualizza i widget con righe
+>di una tabella.
+>
+>Spesso avrai bisogno di personalizzare il layout dei tuoi form. L'oggetto form
+>fornisce altri utili metodi per la personalizzazione:
+>
+> | Metodo                 | Descrizione
+> | ---------------------- | -------------------------------------------------
+> | `render()`             | Visualizza il form (equivalente a `echo $form`)
+> | `renderHiddenFields()` | Visualizza i campi nascosti
+> | `hasErrors()`          | Ritorna `true` se il form ha degli errori
+> | `hasGlobalErrors()`    | Ritorna `true` se il form ha degli errori globali
+> | `getGlobalErrors()`    | Ritorna l'array di errori globali
+> | `renderGlobalErrors()` | Visualizza gli errori globali
+>
+>Il form si comporta inoltre come un array di campi. Puoi accedere al campo
+>`company` con `$form['company']`. L'oggetto ritornato fornisce metodi per
+>visualizzare ogni elemento del campo:
+>
+> | Metodo          | Descrizione
+> | --------------- | ---------------------------------------
+> | `renderRow()`   | Visualizza la riga del form
+> | `render()`      | Visualizza il widget del campo
+> | `renderLabel()` | Visualizza la label del campo
+> | `renderError()` | Visualizza l'errore associato al campo (se presente)
+> | `renderHelp()`  | Visualizza il messaggio di aiuto associato al campo
+>
+>L'istruzione `echo $form` è equivalente a:
+>
+>     [php]
+>     <?php foreach ($form as $widget): ?>
+>       <?php echo $widget->renderRow() ?>
+>     <?php endforeach(); ?>
+
+### L'azione del form
+
+Abbiamo ora una classe per il form ed un template che lo visualizza. Ora è tempo
+per farlo funzionare con delle azioni.
+
+Il form del lavoro è gestito da cinque metodi del modulo `job`:
+
+  * **new**:         Visualizza un form bianco per creare un nuovo lavoro
+  * **edit**:        Visualizza un form per modificare un lavoro esistente
+  * **create**:      Creata un nuovo lavoro con i valori inseriti dall'utente
+  * **update**:      Aggiorna un lavoro esistente con i valori inseriti dall'utente
+  * **processForm**: Chiamato da `create` e `update`, processa il form (validazione,
+                     ripopolazione del form, e serializzazione dei dati per il database)
+
+Tutti i form hanno il seguente ciclo di vita:
+
+![Form flow](http://www.symfony-project.org/images/jobeet/1_2/10/form_flow.png)
+
+Abbiamo creato una collezione di rotte per ##ORM## 5 giorni fa per il modulo `job`,
+possiamo semplificare ora il codice per i metodi per la gestione del form:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeNew(sfWebRequest $request)
+    {
+      $this->form = new JobeetJobForm();
+    }
+
+    public function executeCreate(sfWebRequest $request)
+    {
+      $this->form = new JobeetJobForm();
+      $this->processForm($request, $this->form);
+      $this->setTemplate('new');
+    }
+
+    public function executeEdit(sfWebRequest $request)
+    {
+      $this->form = new JobeetJobForm($this->getRoute()->getObject());
+    }
+
+    public function executeUpdate(sfWebRequest $request)
+    {
+      $this->form = new JobeetJobForm($this->getRoute()->getObject());
+      $this->processForm($request, $this->form);
+      $this->setTemplate('edit');
+    }
+
+    protected function processForm(sfWebRequest $request, sfForm $form)
+    {
+      $form->bind(
+        $request->getParameter($form->getName()),
+        $request->getFiles($form->getName())
+      );
+
+      if ($form->isValid())
+      {
+        $job = $form->save();
+
+        $this->redirect($this->generateUrl('job_show', $job));
+      }
+    }
+
+Quando visualizzate la pagina `/job/new`, una nuova istanza è creata e passata
+al template (azione `new`).
+
+Quando l'utente invia un form(azione `create`), è riempito (metodo `bind()`)
+con i dati inseriti dall'utente e la validazione viene effettuata.
+
+Dopo che il form è stato riempito, è possibile controllare la sua validità
+utilizzando il metodo `isValid()`: se il form è valido (ritorna `true`),
+il lavoro è salvato nel database (`$form->save()`), e l'utente è reindirizzato
+alla pagina di anteprima; se non è validto, il template `newSuccess.php` è
+visualizzato ancora con i dati inseriti ed i messaggi d'errore.
+
+>**TIP**
+>Il metodo `setTemplate()` cambia il template utilizzato per una data azione.
+>Se il form inserito non è valido, i metodi `create` e `update` utilizzano
+>lo stesso template, dato che i template `new` and `edit` visualizzano il
+>form con i messaggi d'errore.
+
+La modifica di un lavoro esistente  è abbastanza simile. L'unica differenza tra
+le azioni `new` e `edit` è che l'oggetto da modificare è passato come argomento
+al costruttore del form. Questo oggetto sarà usato per i valori di default nei
+template (i valori di default sono un oggetto per i form ##ORM##, oppure un
+semplice array per i normali form).
+
+Puoi inoltre definire dei valori di default per il form di creazione. Un
+modo è quello di dichiarare questi valori nello schema del database.
+Un altro è quello di passare un pre-modificato oggetto `Job` al costruttore del form:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeNew(sfWebRequest $request)
+    {
+      $job = new JobeetJob();
+      $job->setType('full-time');
+
+      $this->form = new JobeetJobForm($job);
+    }
+
+>**NOTE**
+>Quando il form viene riempito, i valori di default sono rimpiazzati con quelli
+>inseriti dall'utente. I valori inseriti dall'utente saranno usati per la
+>ripopolazione del form quando sarà visualizzato di nuovo nel caso vi siano
+>errori di validazione.
+
+### Proteggere il Form del Lavoro con un Token
+
+Tutto funziona bene finora. Ma c'è un problema. Primo, il token del form
+dev'essere generato automaticamente quando un nuovo form è creato, dato che
+non vogliamo che l'utente abbia un unico token. Modifichiamo il metodo
+`save()` di `JobeetJob`:
+
+    [php]
+    // lib/model/JobeetJob.php
+    public function save(PropelPDO $con = null)
+    {
+      // ...
+
+      if (!$this->getToken())
+      {
+        $this->setToken(sha1($this->getEmail().rand(11111, 99999)));
+      }
+
+      return parent::save($con);
+    }
+
+Possiamo rimuovoere il campo `token` dal form:
+
+    [php]
+    // lib/form/JobeetJobForm.class.php
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['expires_at'], $this['is_activated'],
+          $this['token']
+        );
+
+        // ...
+      }
+
+      // ...
+    }
+
+Se vi ricordate il giorno 2, un lavoro può venir modificato solo se l'utente
+ha il token associato. Finora, è semplice modificare o eliminare un lavoro,
+semplicemente indovinando l'URL. Questo perché l'URL per la modifica è simile
+a `/job/ID/edit`, dove `ID` è la chiave primaria del lavoro.
+
+Di default, una rotta `sfPropelRouteConnection` genera URL con la chiave primaria,
+ma può venir cambiato con ogni colonna unica passando l'opzione `column`:
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    job:
+      class:        sfPropelRouteCollection
+      options:      { model: JobeetJob, column: token }
+      requirements: { token: \w+ }
+
+Ora, tutte le rotte, eccetto quella `job_show_user`, contengono quel token.
+Per esempio, la rotta per modifica un lavoro è ora:
+
+    http://jobeet.localhost/job/TOKEN/edit
+
+Avrai inoltre bisogno di cambiare il link "Edit" nel template `showSuccess`:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <a href="<?php echo url_for('job_edit', $job) ?>">Edit</a>
+
+>**NOTE**
+>Abbiamo inoltre cambiato i requisiti per la colonna `token`, dato che symfony
+>di default utilizza il requisito `\d+` per la chiave primaria.
+
+==============
+Parte 3
+==============
