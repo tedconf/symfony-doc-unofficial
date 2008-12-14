@@ -1,0 +1,253 @@
+Day 9: The Functional Tests
+===========================
+
+=======================
+Parte 1
+=======================
+
+Eseguire Test funzionali
+------------------------
+
+Come per i test unitari, eseguire test funzionali può essere fatto eseguendo
+il file di test direttamente
+
+    $ php test/functional/frontend/categoryActionsTest.php
+
+O utilizzando il task `test:functional`:
+
+    $ php symfony test:functional frontend categoryActions
+
+![Tests on the command line](http://www.symfony-project.org/images/jobeet/1_2/09/cli_tests.png)
+
+Dati da testare
+---------
+
+Come per i test unitari per ##ORM##, dobbiamo caricare i dati da testare
+ogni volta che eseguiamo un test funzionale. Possiamo riutilizzare il
+codice scritto ieri:
+
+    [php]
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+<propel>
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+    Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+Caricare dati in un test funzionale è più facile rispetto ad un test unitario
+in quanto il database è già stato inizializzato dallo script di bootstrap.
+
+Come per i test unitari, non copieremo questo pezzo di codice in ogni file di
+test, ma creeremo piuttosto una nostra classe che eredita da `sfTestFunctional`:
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function loadData()
+      {
+<propel>
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+        Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+        return $this;
+      }
+    }
+
+Scrivere Test Funzionali
+------------------------
+
+Scrivere test funzionali è come eseguire uno scenario in un browser. Abbiamo
+già descritto tutti gli scenari che abbiamo bisogno di testare nel giorno 2.
+
+Per prima cosa, testiamo l'homepage modificando il file `jobActionsTest.php`.
+Rimpiazziamo il codice esistente con il seguente:
+
+### I lavori scaduti non sono listati
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'index')->
+      end()->
+      with('response')->begin()->
+        info('  1.1 - Expired jobs are not listed')->
+        checkElement('.jobs td.position:contains("expired")', false)->
+      end()
+    ;
+
+Come con `lime`, un messaggio d'informazione può venir inserito chiamando
+il metodo `info()` per rendere l'output più leggibile. Per l'esclusione di
+lavori scaduti dall'homepage, controlliamo che il selettore CSS
+`.jobs td.position:contains("expired")` non trovi corrispondenze
+in nessun posto dell'HTML generato (ricordate che nei file con le fixtures,
+i lavori scaduti che abbiamo contengono "expired" nella posizione).
+
+>**TIP**
+>Il metodo `checkElement()` è capace di interpretare la maggioranza dei selettori
+>CSS3 validi.
+
+### Solo n lavori sono listati per una categoria
+
+Aggiungi il seguente codice alla fine del file di test:
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $max = sfConfig::get('app_max_jobs_on_homepage');
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info(sprintf('  1.2 - Only %s jobs are listed for a category', $max))->
+      with('response')->
+        checkElement('.category_programming tr', $max)
+    ;
+
+Il metodo `checkElement()` può inoltre controllare che un selettore abbia n corrispondenze.
+
+### Una categoria ha un link alla pagina della categoria solo se ha troppi lavori
+
+    [php]
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.3 - A category has a link to the category page only if too many jobs')->
+      with('response')->begin()->
+        checkElement('.category_design .more_jobs', false)->
+        checkElement('.category_programming .more_jobs')->
+      end()
+    ;
+
+Qui, dobbiamo controlalre che non ci sia il link "more jobs"  per la categoria
+design (`.category_design .more_jobs` non esista), e che ci sia il link
+"more jobs" per la categoria programming (`.category_programming .more_jobs`
+esista).
+
+### I lavori sono ordinati cronologicamente
+
+    [php]
+<propel>
+    // most recent job in the programming category
+    $criteria = new Criteria();
+    $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+    $category = JobeetCategoryPeer::doSelectOne($criteria);
+
+    $criteria = new Criteria();
+    $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+    $criteria->add(JobeetJobPeer::CATEGORY_ID, $category->getId());
+    $criteria->addDescendingOrderByColumn(JobeetJobPeer::CREATED_AT);
+
+    $job = JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+    $q = Doctrine_Query::create()
+      ->select('j.*')
+      ->from('JobeetJob j')
+      ->leftJoin('j.JobeetCategory c')
+      ->where('c.slug = ?', 'programming')
+      ->andWhere('j.expires_at > ?', date('Y-m-d', time()))
+      ->orderBy('j.created_at DESC');
+
+    $job = $q->fetchOne();
+</doctrine>
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.4 - Jobs are sorted by date')->
+      with('response')->begin()->
+        checkElement('.category_programming tr:last:contains("102")')->
+        checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]', $job->getId()))->
+      end()
+    ;
+
+Per testare se i lavori sono ordinati cronologicamente, controlliamo che l'ultimo
+lavoro nell'homepage contenga `102` nella compagnia. Ma testare il primo lavoro
+nella lista programming è più impegnativo, dato che i primi due lavori hanno
+esattamente la stessa posizione, compagnia e locazione. Per cui abbiamo bisogno
+di controllare che l'URL contenga la corretta chiave primaria. Dato che la chiave
+primaria può cambiare tra le varie esecuzioni, abbiamo bisogno che delll'oggetto
+##ORM## dal database innanzitutto.
+
+Anche se il test funziona così com'è, dobbiamo eseguire un leggero refactoring,
+dato che ottenere il primo lavoro della categoria programming può venir riutilizzato
+da qualche altra parte nei test. Non sposteremo il codice nel modello dato che
+è specifico per il test. Al contrario, lo sposteremo all'interno della classe
+`JobeetTestFunctional` che abbiamo creato in precedenza. Questa classe si comporta
+come una classe per il test specifica per Jobeet:
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function getMostRecentProgrammingJob()
+      {
+<propel>
+        // most recent job in the programming category
+        $criteria = new Criteria();
+        $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+        $category = JobeetCategoryPeer::doSelectOne($criteria);
+
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->addDescendingOrderByColumn(JobeetJobPeer::CREATED_AT);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->select('j.*')
+          ->from('JobeetJob j')
+          ->leftJoin('j.JobeetCategory c')
+          ->where('c.slug = ?', 'programming')
+          ->andWhere('j.expires_at > ?', date('Y-m-d', time()))
+          ->orderBy('j.created_at DESC');
+
+        return $q->fetchOne();
+</doctrine>
+      }
+
+      // ...
+    }
+
+### Ogni lavoro nella homepage è cliccabile
+
+    [php]
+    $browser->info('2 - The job page')->
+      get('/')->
+
+      info('  2.1 - Each job on the homepage is clickable')->
+      click('Web Developer', array('position' => 1))->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'show')->
+        isParameter('company_slug', 'sensio-labs')->
+        isParameter('location_slug', 'paris-france')->
+        isParameter('position_slug', 'web-developer')->
+        isParameter('id', $browser->getMostRecentProgrammingJob()->getId())->
+      end()
+    ;
+
+Per testare il link al lavoro nella homepage, simuliamo il click nel testo
+"Web Developer". Dato che questo testo è presente più volte nella stessa
+pagina, abbiamo chiesto esplicitamente al browser di cliccare il primo
+(`array('position' => 1)`).
+
+Ogni parametro di richiesta è cosi testato per assicurare che il routing ha
+fatto il suo lavoro correttamente.
+
+=======================
+Parte 3
+=======================
