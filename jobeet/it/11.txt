@@ -4,7 +4,7 @@ Giorno 11: Testare i Form
 Precedentemente su Jobeet
 -------------------------
 
-Ieri abbiamo creato il nostro primo form con symfony. GLi utenti possono ora 
+Ieri abbiamo creato il nostro primo form con symfony. Gli utenti possono ora 
 inserire una nuova offerta di lavoro si Jobeet, però abbiamo finito il
 tempo a disposizione prima che potessimo aggiungere alcuni test.
 
@@ -179,5 +179,232 @@ nel database corrispondano al criterio passato come argomento.
 
 Il criterio può essere un array di valori come qui sopra o un'istanza di 
 `Criteria` per query più complesse. Potete verificare l'esistenza di oggetti 
-corrispondenti al criterio con un Boolean come terzo argomento (il default è `true`)
+corrispondenti al criterio con un booleano come terzo argomento (il default è `true`)
 o il numero di oggetti corrispondenti passando un intero.
+
+
+
+
+
+
+
+
+
+
+
+
+Sicurezza nei form
+------------------
+
+### Magia nella serializzazione dei form!
+
+I form propel sono molto facili da usare, perché automatizzano un sacco
+di lavoro. Per esempio, serializzare un form nel database è facile
+quanto richiamare `$form->save()`. Come funziona?
+
+Di base, il metodo `save()` fa i seguenti passi:
+
+ * Inizia una transazione (perché i form annidati di Propel sono tutti salvati
+   in un colpo solo)
+ * Processa i valori inviati (richiamando il metodo `updateCOLUMNColumn()`, se
+   esiste)
+ * Richiama il metodo `fromArray()` dell'oggetto Propel per aggiornare i valori
+   delle colonne
+ * Salva l'oggetto nel database
+ * Esegue il commit della transazione
+
+### Feature di sicurezza incluse
+
+Il metodo `fromArray()` accetta un array di valori ed aggiorna i valori delle
+colonne corrispondenti. Questo rappresenta un problema di sicurezza? Che succede
+se qualcuno prova ad inviare un valore per una colonna per cui non ha
+l'autorizzazione? Per esempio, si può forzare la colonna `token`?
+
+Scriviamo un test per simulare l'inserimento di un lavoro con un campo `token`:
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->
+      get('/job/new')->
+      click('Preview your job', array('job' => array(
+        'token' => 'fake_token',
+      )))->
+
+      with('form')->begin()->
+        hasErrors(8)->
+        hasGlobalError('extra_fields')->
+      end()
+    ;
+
+Quando si invia il form, si deve ricevere un errore globale `extra_fields`.
+Questo perché per default i form non consentono campi ulteriori tra i
+valori inviati. Anche per questo tutti i campi del form devono avere
+un validatore associato. 
+
+>**TIP**
+>Si possono inviare campi addizionali comodamente dal browser, usando
+>strumenti come Web Developer Toolbar per Firefox.
+
+Si può aggirare questa misura di sicurezza impostando l'opzione
+`allow_extra_fields` a `true`:
+
+    [php]
+    class MyForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->validatorSchema->setOption('allow_extra_fields', true);
+      }
+    }
+
+Il test ora deve passare, ma il valore `token` è stato filtrato ed
+escluso dai valori. Quindi non si è ancora in grado di aggirare
+la misura di sicurezza. Ma se si vuole veramente il valore, basta
+impostare l'opzione `filter_extra_fields` a `false`:
+
+    [php]
+    $this->validatorSchema->setOption('filter_extra_fields', false);
+
+>**NOTE**
+>I test scritti in questa sezione hanno solo scopo dimostrativo. Possono essere
+>rimossi dal progetto Jobeet, perché non servono a validare feature di
+>symfony.
+
+### Protezione da XSS e da CSRF
+
+Durante il giorno 1, abbiamo creato l'applicazione `frontend` col seguente
+comando:
+
+    $ php symfony generate:app --escaping-strategy=on --csrf-secret=Unique$ecret frontend
+
+L'opzione `--escaping-strategy` abilita la protezione da XSS. Vuol dire
+che tutte le variabili usate nel template subiscono un escaping di
+deafult. Se si prova ad inviare la descrizione di un lavoro con alcuni tag
+HTML dentro, si noterà che quando symfony mostra la pagina del lavoro,
+i tag HTML della descrizione non sono interpretati, ma mostrate come
+testo semplice. 
+
+L'opzione `--csrf-secret` abilita la protezione da CSRF. Quando si fornisce
+questa opzionoe, tutti i form includono un campo nascosto `_csrf_token`.
+
+>**TIP**
+>La strategia di escaping ed il segreto CSRF possono essere cambiati in
+>qualsiasi momento modificando il file di configurazione
+>`apps/frontend/config/settings.yml`. Come per il file `databases.yml`,
+>le impostazioni sono configurabili per ambiente:
+>
+>     [yml]
+>     all:
+>       .settings:
+>         # Form security secret (CSRF protection)
+>         csrf_secret: Unique$ecret
+>
+>         # Output escaping settings
+>         escaping_strategy: on
+>         escaping_method:   ESC_SPECIALCHARS
+
+Task di manutenzione
+--------------------
+
+Anche se symfony è un framework per il web, possiede uno strumento
+a linea di comando. L'abbiamo già usato per creare la struttura di
+cartelle di default del progetto e dell'applicazione, ma anche per 
+generare vari file del modello. Aggiungere un nuovo task è molto
+semplice, perché gli strumenti usati da symfony sono
+pacchettizzati in un framework.
+
+Quando un utente crea un lavoro, deve attivarlo per metterlo online.
+Ma se non lo fa, il database si riempirà di lavori inutili. Creiamo
+un task che rimuove i lavori inutili. Questo task dovrà girare
+regolarmente in un cron job.
+
+    [php]
+    // lib/task/JobeetCleanupTask.class.php
+    class JobeetCleanupTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->addOptions(array(
+          new sfCommandOption('env', null, sfCommandOption::PARAMETER_REQUIRED, 'The environement', 'prod'),
+          new sfCommandOption('days', null, sfCommandOption::PARAMETER_REQUIRED, '', 90),
+        ));
+
+        $this->namespace = 'jobeet';
+        $this->name = 'cleanup';
+        $this->briefDescription = 'Cleanup Jobeet database';
+
+        $this->detailedDescription = <<<EOF
+    The [jobeet:cleanup|INFO] task cleans up the Jobeet database:
+
+      [./symfony jobeet:cleanup --env=prod --days=90|INFO]
+    EOF;
+      }
+
+      protected function execute($arguments = array(), $options = array())
+      {
+        $databaseManager = new sfDatabaseManager($this->configuration);
+
+        $nb = JobeetJobPeer::cleanup($options['days']);
+
+        $this->logSection('propel', sprintf('Removed %d stale jobs', $nb));
+      }
+    }
+
+La configurazione del task viene fatta nel metodo `configure()`. Ogni task
+devono avere un nome univoco (`namespace`:`name`), e possono avere
+parametri ed opzioni.
+
+>**TIP**
+>Consultate i task predefiniti di symfony (`lib/task/`) per ulteriori
+>esempi di utilizzo.
+
+Il task `jobeet:cleanup` definisce due opzioni: `--env` e `--days`, con
+alcuni default sensibili.
+
+Eseguire il task è simile ad eseguire ogni altro task predefinito di symfony:
+
+    $ php symfony jobeet:cleanup --days=10 --env=dev
+
+Come sempre, il codice pulito per il database è stato fattorizzato nella
+classe `JobeetJobPeer`:
+
+    [php]
+    // lib/model/JobeetJobPeer.php
+    static public function cleanup($days)
+    {
+      $criteria = new Criteria();
+      $criteria->add(self::IS_ACTIVATED, false);
+      $criteria->add(self::CREATED_AT, time() - 86400 * $days, Criteria::LESS_THAN);
+
+      return self::doDelete($criteria);
+    }
+
+Il metodo `doDelete()` rimuove dal database le righe che corrispondono all'
+oggetto `Criteria` dato. Può anche accettare un array di chiavi primarie.
+
+>**NOTE**
+>I task di symfony si comportano bene con i loro ambienti, perché restituiscono
+>un valore in accordo al successo del task. Puoi forzare un valore di ritorno
+>restituendo un intero esplicitamente alla fine del task.
+
+A domani
+--------
+
+I test sono nel cuore della filosofia e degli strumenti di symfony. Oggi
+abbiamo imparato ancora come padroneggiare gli strumenti di symfony per
+rendere il processo di sviluppo più facile, più veloce, e soprattutto
+più sicuro.
+
+Il framework dei form di symfony fornisce molto più che semplici
+widget e validatori: dà un modo semplice per testare i form ed
+assicura che i form siano sicuri di default.
+
+Il nostro tour delle grandi feature di symfony non finisce oggi. Domani
+creeremo l'applicazione di backend per Jobeet. Creare un'interfaccia
+di backend è un must per la maggior parte dei progetti web, e Jobeet
+non fa differenza. Ma come potremo essere in grado di sviluppare
+una simile interfaccia in solo un'ora? Semplice, useremo il
+framework di generazione dell'amministrazione di symfony. Fino ad
+allora, statemi bene.
