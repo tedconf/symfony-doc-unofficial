@@ -1,4 +1,4 @@
-Day 9: The Functional Tests
+Giorno 9: I test funzionali
 ===========================
 
 =======================
@@ -248,6 +248,221 @@ pagina, abbiamo chiesto esplicitamente al browser di cliccare il primo
 Ogni parametro di richiesta è cosi testato per assicurare che il routing ha
 fatto il suo lavoro correttamente.
 
-=======================
-Parte 3
-=======================
+Imparare per esempi
+-------------------
+
+In questa sezione abbiamo fornito tutto il codice necessario per testare le
+pagine dei lavori e delle categorie. Leggete attentamente il codice, perché
+potreste imparare alcuni interessanti nuovi trucchi.
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function loadData()
+      {
+<propel>
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+        Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+        return $this;
+      }
+
+      public function getMostRecentProgrammingJob()
+      {
+<propel>
+        // lavori più recenti nella categoria programming
+        $criteria = new Criteria();
+        $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+        $category = JobeetCategoryPeer::doSelectOne($criteria);
+
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->addDescendingOrderByColumn(JobeetJobPeer::CREATED_AT);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->select('j.*')
+          ->from('JobeetJob j')
+          ->leftJoin('j.JobeetCategory c')
+          ->where('c.slug = ?', 'programming')
+          ->andWhere('j.expires_at > ?', date('Y-m-d', time()))
+          ->orderBy('j.created_at DESC');
+
+        return $q->fetchOne();
+</doctrine>
+      }
+
+      public function getExpiredJob()
+      {
+<propel>
+        // expired job
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::LESS_THAN);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j')
+          ->where('j.expires_at < ?', date('Y-m-d', time()));
+
+        return $q->fetchOne();
+</doctrine>
+      }
+    }
+
+    // test/functional/frontend/jobActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'index')->
+      end()->
+      with('response')->begin()->
+        info('  1.1 - Expired jobs are not listed')->
+        checkElement('.jobs td.position:contains("expired")', false)->
+
+        info(sprintf('  1.2 - Only %s jobs are listed for a category', sfConfig::get('app_max_jobs_on_homepage')))->
+        checkElement('.category_programming tr', sfConfig::get('app_max_jobs_on_homepage'))->
+
+        info('  1.3 - A category has a link to the category page only if too many jobs')->
+        checkElement('.category_design .more_jobs', false)->
+        checkElement('.category_programming .more_jobs')->
+
+        info('  1.4 - Jobs are sorted by date')->
+        checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]', $browser->getMostRecentProgrammingJob()->getId()))->
+        checkElement('.category_programming tr:last:contains("102")')->
+      end()
+    ;
+
+    $browser->info('2 - The job page')->
+      info('  2.1 - Each job on the homepage is clickable and give detailed information')->
+      click('Web Developer', array('position' => 1))->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'show')->
+        isParameter('company_slug', 'sensio-labs')->
+        isParameter('location_slug', 'paris-france')->
+        isParameter('position_slug', 'web-developer')->
+        isParameter('id', $browser->getMostRecentProgrammingJob()->getId())->
+      end()->
+
+      info('  2.2 - A non-existent job forwards the user to a 404')->
+      get('/job/foo-inc/milano-italy/0/painter')->
+      with('response')->isStatusCode(404)->
+
+      info('  2.3 - An expired job page forwards the user to a 404')->
+      get(sprintf('/job/sensio-labs/paris-france/%d/web-developer', $browser->getExpiredJob()->getId()))->
+      with('response')->isStatusCode(404)
+    ;
+
+    // test/functional/frontend/categoryActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->info('1 - The category page')->
+      info('  1.1 - Categories on homepage are clickable')->
+      get('/')->
+      click('Programming')->
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'show')->
+        isParameter('slug', 'programming')->
+      end()->
+
+      info(sprintf('  1.2 - Categories with more than %s jobs also have a "more" link', sfConfig::get('app_max_jobs_on_homepage')))->
+      get('/')->
+      click('22')->
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'show')->
+        isParameter('slug', 'programming')->
+      end()->
+
+      info(sprintf('  1.3 - Only %s jobs are listed', sfConfig::get('app_max_jobs_on_category')))->
+      with('response')->checkElement('.jobs tr', sfConfig::get('app_max_jobs_on_category'))->
+
+      info('  1.4 - The job listed is paginated')->
+      with('response')->begin()->
+        checkElement('.pagination_desc', '/32 jobs/')->
+        checkElement('.pagination_desc', '#page 1/2#')->
+      end()->
+
+      click('2')->
+      with('request')->begin()->
+        isParameter('page', 2)->
+      end()->
+      with('response')->checkElement('.pagination_desc', '#page 2/2#')
+    ;
+
+Debug dei test funzionali
+-------------------------
+
+A volte un test funzionale fallisce. Siccome symfony simula un browser senza
+interfaccia grafica, può essere difficile diagnosticare il problema.
+Fortunatamente, symfony fornisce il metodo `debug()` per mostrare gli header
+e i contenuti della risposta:
+
+    [php]
+    $browser->with('response')->debug();
+
+Il metodo `debug()` può essere inserito ovunque un un blocco di test `response`
+e fermerà l'esecuzione dello script.
+
+Imbrigliare i test funzionali
+-----------------------------
+
+Il task `test:functional` può essere anche usato per lanciare tutti i test
+funzionali per un'applicazione:
+
+    $ php symfony test:functional frontend
+
+Il task mostra una riga per ogni file di test:
+
+![Functional tests harness](http://www.symfony-project.org/images/jobeet/1_2/09/test_harness.png)
+
+Imbrigliare i test
+------------------
+
+Come ci si poteva aspettare, c'è anche un task per lanciare tutti i test di
+un progetto (unitari e funzionali):
+
+    $ php symfony test:all
+
+![Tests harness](http://www.symfony-project.org/images/jobeet/1_2/09/tests_harness.png)
+
+A domani
+--------
+
+Concludiamo il nostro tour degli strumenti di test di symfony. Non avete più
+scuse per non testare le vostre applicazioni! Con il framework lime e con il
+framework dei test, symfony fornisce strumenti potenti per aiutarvi a scrivere
+test con poco sforzo.
+
+Abbiamo solo scalfito la superfici dei test funzionali. D'ora in poi, ogni volta
+che implementeremo una feature, scriveremo anche dei test, per imparare di più
+sul framework dei test.
+
+Il framework dei test non sostituisce strumenti come
+"[Selenium](http://selenium.seleniumhq.org/)". Selenium gira direttamente nel
+browser per automatizzare i test, su diverse piattaforme e diversi browser, ed
+è quindi in grado di testare i JavaScript dell'applicazione.
+
+Tornate domani, perché parleremo di un'altra grande feature di symfony: il
+framework dei form.
+
+__ORM__
