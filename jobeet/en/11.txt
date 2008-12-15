@@ -149,24 +149,35 @@ to the `show` page:
 The `isRedirected()` tests if the page has been redirected and the
 `followRedirect()` method follows the redirect.
 
-The Propel Tester
+The ##ORM## Tester
 -----------------
 
 Eventually, we want to test that the job has been created in the database and
 check that the `is_activated` column is set to `false` as the user has not
 published it yet.
 
-This can be done quite easily by using yet another tester, the **Propel
-tester**. As the Propel tester is not registered by default, let's add it now:
+This can be done quite easily by using yet another tester, the **##ORM##
+tester**. As the ##ORM## tester is not registered by default, let's add it now:
 
+<propel>
     [php]
     $browser->setTester('propel', 'sfTesterPropel');
+</propel>
+<doctrine>
+    [php]
+    $browser->setTester('doctrine', 'sfTesterDoctrine');
+</doctrine>
 
-The Propel tester provides the `check()` method to check that one or more
+The ##ORM## tester provides the `check()` method to check that one or more
 objects in the database matches the criteria passed as an argument.
 
     [php]
+<propel>
     with('propel')->begin()->
+</propel>
+<doctrine>
+    with('doctrine')->begin()->
+</doctrine>
       check('JobeetJob', array(
         'location'     => 'Atlanta, USA',
         'is_activated' => false,
@@ -174,10 +185,18 @@ objects in the database matches the criteria passed as an argument.
       ))->
     end()
 
+<propel>
 The criteria can be an array of values like above, or a `Criteria` instance
 for more complex queries. You can test the existence of objects matching the
 criteria with a Boolean as the third argument (the default is `true`), or the
 number of matching objects by passing an integer.
+</propel>
+<doctrine>
+The criteria can be an array of values like above, or a `Doctrine_Query` 
+instance for more complex queries. You can test the existence of objects
+matching the criteria with a Boolean as the third argument (the default is
+`true`), or the number of matching objects by passing an integer.
+</doctrine>
 
 Testing for Errors
 ------------------
@@ -198,7 +217,7 @@ a test to check the behavior when we submit non-valid data:
       )))->
 
       with('form')->begin()->
-        hasErrors(4)->
+        hasErrors(3)->
         isError('description', 'required')->
         isError('how_to_apply', 'required')->
         isError('email', 'invalid')->
@@ -263,7 +282,12 @@ Testing the "Publish" link is now more simple:
       createJob(array('position' => 'FOO1'))->
       click('Publish', array(), array('method' => 'put', '_with_csrf' => true))->
 
+<propel>
       with('propel')->begin()->
+</propel>
+<doctrine>
+      with('doctrine')->begin()->
+</doctrine>
         check('JobeetJob', array(
           'position'     => 'FOO1',
           'is_activated' => true,
@@ -286,7 +310,12 @@ Testing the "Delete" link is quite similar:
       createJob(array('position' => 'FOO2'))->
       click('Delete', array(), array('method' => 'delete', '_with_csrf' => true))->
 
+<propel>
       with('propel')->begin()->
+</propel>
+<doctrine>
+      with('doctrine')->begin()->
+</doctrine>
         check('JobeetJob', array(
           'position' => 'FOO2',
         ), false)->
@@ -333,6 +362,7 @@ a job given its position value:
         return $this;
       }
 
+<propel>
       public function getJobByPosition($position)
       {
         $criteria = new Criteria();
@@ -340,7 +370,17 @@ a job given its position value:
 
         return JobeetJobPeer::doSelectOne($criteria);
       }
+</propel>
+<doctrine>
+      public function getJobByPosition($position)
+      {
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j')
+          ->where('j.position = ?', $position);
 
+        return $q->fetchOne();
+      }
+</doctrine>
       // ...
     }
 
@@ -425,7 +465,12 @@ Then, create the `extend` action:
       $job = $this->getRoute()->getObject();
       $this->forward404Unless($job->extend());
 
+<propel>
       $this->getUser()->setFlash('notice', sprintf('Your job validity has been extend until %s.', $job->getExpiresAt('m/d/Y')));
+</propel>
+<doctrine>
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extend until %s.', date('m/d/Y', strtotime($job->getExpiresAt()))));
+</doctrine>
 
       $this->redirect($this->generateUrl('job_show_user', $job));
     }
@@ -433,6 +478,7 @@ Then, create the `extend` action:
 As expected by the action, the `extend()` method of `JobeetJob` returns `true`
 if the job has been extended or `false` otherwise:
 
+<propel>
     [php]
     // lib/model/JobeetJob.php
     class JobeetJob extends BaseJobeetJob
@@ -451,6 +497,29 @@ if the job has been extended or `false` otherwise:
 
       // ...
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJob.class.php
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function extend()
+      {
+        if (!$this->expiresSoon())
+        {
+          return false;
+        }
+
+        $this->setExpiresAt(date('Y-m-d', time() + 86400 * sfConfig::get('app_active_days')));
+
+        $this->save();
+
+        return true;
+      }
+
+      // ...
+    }
+</doctrine>
 
 Eventually, add a test scenario:
 
@@ -468,7 +537,12 @@ Eventually, add a test scenario:
     ;
 
     $job = $browser->getJobByPosition('FOO5');
+<propel>
     $job->setExpiresAt(time());
+</propel>
+<doctrine>
+    $job->setExpiresAt(date('Y-m-d'));
+</doctrine>
     $job->save();
 
     $browser->
@@ -476,11 +550,20 @@ Eventually, add a test scenario:
       with('response')->isRedirected()
     ;
 
+<propel>
     $job->reload();
     $browser->test()->is(
       $job->getExpiresAt('y/m/d'),
       date('y/m/d', time() + 86400 * sfConfig::get('app_active_days'))
     );
+</propel>
+<doctrine>
+    $job->refresh();
+    $browser->test()->is(
+      date('y/m/d', strtotime($job->getExpiresAt())),
+      date('y/m/d', time() + 86400 * sfConfig::get('app_active_days'))
+    );
+</doctrine>
 
 This test scenario introduces a few new things:
 
@@ -496,17 +579,17 @@ Forms Security
 
 ### Form Serialization Magic!
 
-Propel forms are very easy to use as they automate a lot of work. For
+##ORM## forms are very easy to use as they automate a lot of work. For
 instance, serializing a form to the database is as simple as a call to
 `$form->save()`. How does it work?
 
 Basically, the `save()` method does the following steps:
 
- * Begin a transaction (because nested Propel forms are all saved in one fell
+ * Begin a transaction (because nested ##ORM## forms are all saved in one fell
    swoop)
  * Process the submitted values (by calling `updateCOLUMNColumn()` methods if
    they exist)
- * Call Propel object `fromArray()` method to update the column values
+ * Call ##ORM## object `fromArray()` method to update the column values
  * Save the object to the database
  * Commit the transaction
 
@@ -619,6 +702,9 @@ jobs from the database. This task will have to be run regularly in a cron job.
       protected function configure()
       {
         $this->addOptions(array(
+<doctrine>
+          new sfCommandOption('application', null, sfCommandOption::PARAMETER_REQUIRED, 'The application', 'frontend'),
+</doctrine>
           new sfCommandOption('env', null, sfCommandOption::PARAMETER_REQUIRED, 'The environement', 'prod'),
           new sfCommandOption('days', null, sfCommandOption::PARAMETER_REQUIRED, '', 90),
         ));
@@ -638,9 +724,14 @@ jobs from the database. This task will have to be run regularly in a cron job.
       {
         $databaseManager = new sfDatabaseManager($this->configuration);
 
+<propel>
         $nb = JobeetJobPeer::cleanup($options['days']);
-
         $this->logSection('propel', sprintf('Removed %d stale jobs', $nb));
+</propel>
+<doctrine>
+        $nb = Doctrine::getTable('JobeetJob')->cleanup($options['days']);
+        $this->logSection('doctrine', sprintf('Removed %d stale jobs', $nb));
+</doctrine>
       }
     }
 
@@ -661,6 +752,7 @@ Running the task is similar to running any other symfony built-in task:
 As always, the database cleanup code has been factored out in the
 `JobeetJobPeer` class:
 
+<propel>
     [php]
     // lib/model/JobeetJobPeer.php
     static public function cleanup($days)
@@ -674,6 +766,20 @@ As always, the database cleanup code has been factored out in the
 
 The `doDelete()` method removes database records matching the given `Criteria`
 object. It can also takes an array of primary keys.
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    public function cleanup($days)
+    {
+      $q = $this->createQuery('a')
+        ->delete()
+        ->andWhere('a.is_activated = ?', 0)
+        ->andWhere('a.created_at < ?', date('Y-m-d', time() - 86400 * $days));
+
+      return $q->execute();
+    }
+</doctrine>
 
 >**NOTE**
 >The symfony tasks behave nicely with their environment as they return a
@@ -696,3 +802,5 @@ the backend application for Jobeet. Creating a backend interface is a must for
 most web projects, and Jobeet is no different. But how will we be able to
 develop such an interface in just one hour? Simple, we will use the symfony
 admin generator framework. Until then, take care.
+
+__ORM__

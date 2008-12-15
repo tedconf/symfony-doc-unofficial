@@ -518,10 +518,19 @@ method:
       {
         $ids = $request->getParameter('ids');
 
+<propel>
         $criteria = new Criteria();
         $criteria->add('jobeet_job.ID', $ids, Criteria::IN);
 
         foreach (JobeetJobPeer::doSelect($criteria) as $job)
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j')
+          ->whereIn('j.id', $ids);
+
+        foreach ($q->execute() as $job)
+</doctrine>
         {
           $job->extend(true);
           $job->save();
@@ -539,7 +548,12 @@ argument to bypass some checks done in the method. We need to update the
 `extend()` method to take this new argument into account:
 
     [php]
+<propel>
     // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
     class JobeetJob extends BaseJobeetJob
     {
       public function extend($force = false)
@@ -549,7 +563,12 @@ argument to bypass some checks done in the method. We need to update the
           return false;
         }
 
+<propel>
         $this->setExpiresAt(time() + 86400 * sfConfig::get('app_active_days'));
+</propel>
+<doctrine>
+        $this->setExpiresAt(date('Y-m-d', time() + 86400 * sfConfig::get('app_active_days')));
+</doctrine>
         $this->save();
 
         return true;
@@ -650,8 +669,14 @@ The `listDeleteNeverActivated` action is quite straightforward:
       // ...
     }
 
+<propel>
 We have reused the `JobeetJobPeer::cleanup()` method defined yesterday. That's
 another great example of the reusability provided by the MVC pattern.
+</propel>
+<doctrine>
+We have reused the `JobeetJobTable::cleanup()` method defined yesterday. That's
+another great example of the reusability provided by the MVC pattern.
+</doctrine>
 
 >**NOTE**
 >You can also change the action to execute by passing an `action` parameter:
@@ -669,7 +694,10 @@ shown by the web debug toolbar.
 ![Number of requests before](http://www.symfony-project.org/images/jobeet/1_2/12/web_debug_before.png)
 
 If you click on that number, you will see that most requests are to retrieve
-the category name for each job. To reduce the number of requests, we can
+the category name for each job.
+
+<propel>
+To reduce the number of requests, we can
 change the default method used to get the jobs by using the `peer_method`
 option:
 
@@ -681,6 +709,25 @@ option:
 The `doSelectJoinJobeetCategory()` method adds a join between the `job` and
 the `category` tables and automatically creates the category object related to
 each job.
+</propel>
+<doctrine>
+To reduce the number of requests, we can override the `getPager()` method to 
+alter the query and add a join between the `job` and `category` tables.
+
+    [php]
+    protected function getPager()
+    {
+      $q = $this->buildQuery();
+      $q->leftJoin($q->getRootAlias() . '.JobeetCategory c');
+
+      $pager = $this->configuration->getPager('JobeetJob');
+      $pager->setQuery($q);
+      $pager->setPage($this->getPage());
+      $pager->init();
+
+      return $pager;
+    }
+</doctrine>
 
 The number of requests is now down to three:
 
@@ -853,10 +900,15 @@ its features and rendering:
 >has a class depending on the field type like `sf_admin_text` or
 >`sf_admin_boolean`.
 
-The `edit_mode` option uses the `sfPropel::isNew()` method. It returns `true`
-if the model object of the form is new, and `false` otherwise. This is of
-great help when you need to have different widgets or validators depending on
-the status of the embedded object.
+<propel>
+The `edit_mode` option uses the `sfPropel::isNew()` method.
+</propel>
+<doctrine>
+The `edit_mode` option uses the `sfDoctrineRecord::isNew()` method.
+</doctrine>
+
+It returns `true` if the model object of the form is new, and `false` otherwise.
+This is of great help when you need to have different widgets or validators depending on the status of the embedded object.
 
 Filters Configuration
 ---------------------
@@ -991,7 +1043,9 @@ The final configuration for the Jobeet admin is as follows:
           _delete:    ~
         actions:
           deleteNeverActivated: { label: Delete never activated jobs }
+<propel>
         peer_method:  doSelectJoinJobeetCategory
+</propel>
       filter:
         display: [category_id, company, position, description, is_activated, is_public, email, expires_at]
       form:
@@ -1047,3 +1101,5 @@ code. Not too bad for so many features!
 Tomorrow, we will see how to secure the backend application with a username
 and a password. This will also be the occasion to talk about the symfony user
 class.
+
+__ORM__
