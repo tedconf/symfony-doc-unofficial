@@ -11,7 +11,7 @@ The Form Framework
 ------------------
 
 Any website has forms; from the simple contact form to the complex ones with
-tens of fields. Writing forms is also one of the most complex and tedious task
+lots of fields. Writing forms is also one of the most complex and tedious task
 for a web developer: you need to write the HTML form, implement validation
 rules for each field, process the values to store them in a database, display
 error messages, repopulate fields in case of errors, and much more...
@@ -79,8 +79,8 @@ option is `true`. So, the validation definition for `email` is equivalent to
 >     $this->mergeForm(new AnotherForm());
 >     $this->embedForm('name', new AnotherForm());
 
-Propel Forms
-------------
+##ORM## Forms
+-------------
 
 Most of the time, a form has to be serialized to the database. As symfony
 already knows everything about your database model, it can automatically
@@ -96,6 +96,7 @@ directory. The organization of these generated files is similar to that of
 `JobeetJob` has `JobeetJobForm`), which is empty by default as it inherits
 from a base class:
 
+<propel>
     [php]
     // lib/form/JobeetJobForm.class.php
     class JobeetJobForm extends BaseJobeetJobForm
@@ -104,11 +105,29 @@ from a base class:
       {
       }
     }
+</propel>
+<doctrine>
+  [php]
+  // lib/form/doctrine/JobeetJobForm.class.php
+  class JobeetJobForm extends BaseJobeetJobForm
+  {
+    public function configure()
+    {
+    }
+  }
+</doctrine>
 
+<propel>
 >**TIP**
 >By browsing the generated files under the `lib/form/base/` sub-directory, you
 >will see a lot of great usage examples of symfony built-in widgets and
 >validators.
+</propel>
+<doctrine>
+>**TIP**
+>By browsing the generated files under the `lib/form/doctrine/base/` >sub-directory, you will see a lot of great usage examples of symfony built-in
+>widgets and validators.
+</doctrine>
 
 ### Customizing the Job Form
 
@@ -122,7 +141,7 @@ directly in your browser:
     <!-- apps/frontend/templates/layout.php -->
     <a href="<?php echo url_for('@job_new') ?>">Post a Job</a>
 
-By default, a Propel form displays fields for all the table columns. But for
+By default, a ##ORM## form displays fields for all the table columns. But for
 the job form, some of them must not be editable by the end user. Removing
 fields from a form is as simple as unsetting them:
 
@@ -158,6 +177,7 @@ Let's change the default `sfValidatorString` to a `sfValidatorEmail`:
 Even if the `type` column is also a `varchar` in the schema, we want its value
 to be restricted to a list of choices: full time, part time, or freelance.
 
+<propel>
 First, let's define the possible values in `JobeetJobPeer`:
 
     [php]
@@ -172,12 +192,39 @@ First, let's define the possible values in `JobeetJobPeer`:
 
       // ...
     }
+</propel>
+<doctrine>
+First, let's define the possible values in `JobeetJobTable`:
+
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      static public $types = array(
+        'full-time' => 'Full time',
+        'part-time' => 'Part time',
+        'freelance' => 'Freelance',
+      );
+
+      public function getTypes()
+      {
+        return self::$types;
+      }
+
+      // ...
+    }
+</doctrine>
 
 Then, use `sfWidgetFormChoice` for the `type` widget:
 
     [php]
     $this->widgetSchema['type'] = new sfWidgetFormChoice(array(
+<propel>
       'choices'  => JobeetJobPeer::$types,
+</propel>
+<doctrine>
+      'choices'  => Doctrine::getTable('JobeetJob')->getTypes(),
+</doctrine>
       'expanded' => true,
     ));
 
@@ -199,10 +246,18 @@ bypass the widget choices by using tools like [curl](http://curl.haxx.se/) or
 the [Firefox Web Developer Toolbar](http://chrispederick.com/work/web-developer/).
 Let's change the validator to restrict the possible choices:
 
+<propel>
     [php]
     $this->validatorSchema['type'] = new sfValidatorChoice(array(
       'choices' => array_keys(JobeetJobPeer::$types),
     ));
+</propel>
+<doctrine>
+    [php]
+    $this->validatorSchema['type'] = new sfValidatorChoice(array(
+      'choices' => array_keys(Doctrine::getTable('JobeetJob')->getTypes()),
+    ));
+</doctrine>
 
 As the `logo` column will store the filename of the logo associated with the
 job, we need to change the widget to a file input tag:
@@ -411,7 +466,7 @@ All forms have the following life-cycle:
 
 ![Form flow](http://www.symfony-project.org/images/jobeet/1_2/10/form_flow.png)
 
-As we have created a Propel route collection 5 days ago for the `job` module,
+As we have created a ##ORM## route collection 5 days ago for the `job` module,
 we can simplify the code for the form management methods:
 
     [php]
@@ -477,7 +532,7 @@ The modification of an existing job is quite similar. The only difference
 between the `new` and the `edit` action is that the job object to be modified
 is passed as the first argument of the form constructor. This object will be
 used for default widget values in the template (default values are an object
-for Propel forms, but a plain array for simple forms).
+for ##ORM## forms, but a plain array for simple forms).
 
 You can also define default values for the creation form. One way is to
 declare the values in the database schema. Another one is to pass a
@@ -505,8 +560,14 @@ must be generated automatically when a new job is created, as we don't want
 the user to provide a unique token. Update the `save()` method of `JobeetJob`:
 
     [php]
+<propel>
     // lib/model/JobeetJob.php
     public function save(PropelPDO $con = null)
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+    public function save(Doctrine_Connection $conn = null)
+</doctrine>
     {
       // ...
 
@@ -521,7 +582,12 @@ the user to provide a unique token. Update the `save()` method of `JobeetJob`:
 We can remove the `token` field from the form:
 
     [php]
+<propel>
     // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
     class JobeetJobForm extends BaseJobeetJobForm
     {
       public function configure()
@@ -629,10 +695,21 @@ To make the template more readable, we have added a bunch of shortcut methods
 in the `JobeetJob` class:
 
     [php]
+<propel>
     // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
     public function getTypeName()
     {
+<propel>
       return $this->getType() ? JobeetJobPeer::$types[$this->getType()] : '';
+</propel>
+<doctrine>
+      $types = Doctrine::getTable('JobeetJob')->getTypes();
+      return $this->getType() ? $types[$this->getType()] : '';
+</doctrine>
     }
 
     public function isExpired()
@@ -716,6 +793,7 @@ must not be accessible by their URL. As we have created an
 `addActiveJobsCriteria()` method to restrict a `Criteria` to active jobs, we
 can just edit it and add the new requirements at the end:
 
+<propel>
     [php]
     // lib/model/JobeetJobPeer.php
     static public function addActiveJobsCriteria(Criteria $criteria = null)
@@ -726,6 +804,19 @@ can just edit it and add the new requirements at the end:
 
       return $criteria;
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    public function addActiveJobsQuery(Doctrine_Query $q = null)
+    {
+      // ...
+
+      $q->andWhere($alias . '.is_activated = ?', 1);
+
+      return $q;
+    }
+</doctrine>
 
 That's all. You can test it now in your browser. All non-activated jobs
 have disappeared from the homepage; even if you know their URLs, they are
@@ -741,6 +832,7 @@ add the new requirement.
 >`addActiveJobsCriteria()` method. So, we need to edit it and add the new
 >requirement:
 >
+<propel>
 >     [php]
 >     class JobeetCategoryPeer extends BaseJobeetCategoryPeer
 >     {
@@ -752,6 +844,20 @@ add the new requirement.
 >
 >         return $criteria;
 >       }
+</propel>
+<doctrine>
+>     [php]
+>     class JobeetCategoryTable extends Doctrine_Table
+>     {
+>       public function getWithJobs()
+>       {
+>         // ...
+>
+>         $q->andWhere('j.is_activated = ?', 1);
+>
+>         return $q;
+>       }
+</doctrine>
 
 See you Tomorrow
 ----------------
@@ -763,3 +869,5 @@ I know that some of you noticed that we forgot something today... We have not
 implemented any test for the new features. Because writing tests is an
 important part of developing an application, this is the first thing we will
 do tomorrow.
+
+__ORM__
