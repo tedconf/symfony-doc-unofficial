@@ -1,9 +1,306 @@
-Day 10: The Forms
-=================
+Giorno 10: Form
+===============
 
-==============
-Parte 1
-==============
+Precedentemente su Jobeet
+-------------------------
+
+La seconda settimana di Jobeet si è conclusa con l'inizio di una panoramica e 
+l'introduzione del symfony test framework. Continueremo oggi con il form framework.
+
+Il Form Framework
+-----------------
+
+Ogni sito web ha dei form; dal semplice contact form a quelli più completti con
+decine di campi. Scrivere form è uno dei compiti più complessi e noiosi per uno
+sviluppatore web: deve scrivere il form HTML, implementare le regole per la 
+validazione di ogni campo, processare i valori per salvarli nel database, visualizzare
+i messaggi d'errore, ripopolare i campi in caso di errori e molto altro...
+
+Invece di reinventare la ruota più e più volte symfony mette a disposizione un
+framework per una semplice gestione dei form. Il form framework è costituito da
+tre parti:
+
+  * **validation**: Il sub-framework per la validazione offre diverse classi
+                    per la validazione dell'input (integer, string, email, ...)
+  * **widgets**:    Il widget sub-framework offre le classi per l'output dell'HTML
+                    dei campi (input, textarea, select, ...)
+  * **forms**:      Le classi dei form rappresentano i form costituiti da
+                    widget e validatori ed offrono i metodi per aiutare nella
+                    gestione dei form. Ogni campo di un form ha il suo validatore
+                    ed il suo widget.
+
+Form
+----
+
+Un form in symfony è una classe costituita da campi. Ogni campo ha un nome, un
+validatore ed un widget. Un semplice `ContactForm` può essere definito con la seguente
+classe:
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'email'   => new sfWidgetFormInput(),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+
+        $this->setValidators(array(
+          'email'   => new sfValidatorEmail(),
+          'message' => new sfValidatorString(array('max_length' => 255)),
+        ));
+      }
+    }
+
+I campi del form vengono configurati nel metodo `configure()` utilizzando i 
+metodi `setValidators()` e `setWidgets()`.
+
+>**SUGGERIMENTO**
+>Il form framework viene distribuito assieme a molti
+>[widgets](http://www.symfony-project.org/api/1_2/widget) e
+>[validatori](http://www.symfony-project.org/api/1_2/validator). Le API
+>li descrivono in modo piuttosto completo con tutte le opzioni, gli errori e i 
+>messaggi d'errore di default.
+
+I nomi delle classi dei widget e dei validatori sono autoesplicativi: il campo
+`email` verrà tradotto in un `<input>` tag HTML (`sfWidgetFormInput`) e
+validato come un indirizzo email (`sfValidatorEmail`). Il campo `message` genererà
+un tag di tipo `<textarea>` (`sfWidgetFormTextarea`) e dovrà essere una stringa
+di non più di 255 caratteri (`sfValidatorString`).
+
+Di default tutti i campi sono obbligatori visto che il valore impostato per l'
+opzione `required` è impostata a `true`. Quindi la definizione della validazione
+per `email` è equivalente a `new sfValidatorEmail(array('required' => true))`.
+
+>**SUGGERIMENTO**
+>Potete fondere un form in un altro usanto il metodo `mergeForm()` o incorporarne
+>uno usando il metodo `embedForm()`:
+>
+>     [php]
+>     $this->mergeForm(new AnotherForm());
+>     $this->embedForm('name', new AnotherForm());
+
+Propel Form
+-----------
+
+La maggior parte delle volte un form deve essere serializzato per il database.
+Siccome symfony conosce già tutto riguardo al modello del database può generare
+in modo automatico dei form basati su queste informazioni. Infatti quando
+avete lanciato il task `propel:build-all` durante il giorno 3 symfony ha chiamato
+automaticamente anche il task `propel:build-forms`:
+
+    $ php symfony propel:build-forms
+
+Il task `propel:build-forms` genera le classi dei form nella directory `lib/form/`.
+L'organizzazione di questi file generati è simile a quella di `lib/model`. Ogni
+classe del modello ha una relativa classe per un form (per esempio `JobeetJob` 
+ha `JobeetJobForm`) che è vuota di default visto che eredita la struttura dalla
+classe base dei form:
+
+    [php]
+    // lib/form/JobeetJobForm.class.php
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+      }
+    }
+
+>**SUGGERIMENTO**
+>Curiosando all'interno dei file generati nella sotto-directory `lib/form/base/`
+>potrete vedere molti esempi di utilizzo di widget e validatori inclusi in symfony.
+
+### Personalizzare il Job Form
+
+Il job form è un esempio perfetto per imparare a personalizzare i form. Vediamo
+come personalizzarlo passo a passo.
+
+Come prima cosa cambiamo il link "Post a Job" nel layout per avere la possibilità
+di verificare i cambiamenti direttamente nel vostro browser:
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <a href="<?php echo url_for('@job_new') ?>">Post a Job</a>
+
+Un Propel form visualizza di default i campi per tutte le colonne di una tabella.
+Ma per il job form alcune di esse non devono essere modificabili dall'utente finale.
+Rimuovere i campi da un form è semplice quanto disabilitarli:
+
+    [php]
+    // lib/form/JobeetJobForm.class.php
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['expires_at'], $this['is_activated']
+        );
+      }
+    }
+
+Disabilitare un campo significa che sia il widget che il validatore sono rimossi.
+
+La configurazione del form deve alle volte essere più precisa di quanto possa
+apparire dall'analisi dello schema del database. Per esempio la colonna `email`
+è `varchar` nello schema ma noi abbiamo bisogno di validare questa colonna come
+un'email. Cambiamo quindi `sfValidatorString` con un `sfValidatorEmail`:
+
+    [php]
+    // lib/form/JobeetJobForm.class.php
+    public function configure()
+    {
+      // ...
+
+      $this->validatorSchema['email'] = new sfValidatorEmail();
+    }
+
+Anche se la colonna `type` è di tipo `varchar` nello schema vogliamo che il suo
+valore sia limitato ad una lista di opzioni: full time, part time, or freelance.
+
+Per prima cosa definiamo i possibili valori in `JobeetJobPeer`:
+
+    [php]
+    // lib/model/JobeetJobPeer.php
+    class JobeetJobPeer extends BaseJobeetJobPeer
+    {
+      static public $types = array(
+        'full-time' => 'Full time',
+        'part-time' => 'Part time',
+        'freelance' => 'Freelance',
+      );
+
+      // ...
+    }
+
+Poi usiamo `sfWidgetFormChoice` per il widget della colonna `type`:
+
+    [php]
+    $this->widgetSchema['type'] = new sfWidgetFormChoice(array(
+      'choices'  => JobeetJobPeer::$types,
+      'expanded' => true,
+    ));
+
+`sfWidgetFormChoice` rappresenta un widget per la selezione che può essere
+creato da un widget diverso in accordo ad alcune opzioni di configurazione 
+(`expanded` e `multiple`):
+
+ * Dropdown list (`<select>`): `array('multiple' => false, 'expanded' => false)`
+ * Dropdown box (`<select multiple="multiple">`): `array('multiple' => true, 'expanded' => false)`
+ * List of radio buttons: `array('multiple' => false, 'expanded' => true)`
+ * List of checkboxes: `array('multiple' => true, 'expanded' => true)`
+
+>**NOTA**
+>Se volete che una voce dell'elenco dei radio button sia selezionata di default
+>(`full-time` per esempio) potete cambiare il valore di default nello schema
+> del database.
+
+Anche se pensate che nessuno possa inviare un valore non valido un hacker potrebbe
+bypassare facilmente le opzioni del widget usando tool come [curl](http://curl.haxx.se/) 
+o la [Firefox Web Developer Toolbar](http://chrispederick.com/work/web-developer/).
+Cambiamo il validatore per restringere le possibilità di scelta:
+
+    [php]
+    $this->validatorSchema['type'] = new sfValidatorChoice(array(
+      'choices' => array_keys(JobeetJobPeer::$types),
+    ));
+
+Siccome la colonna `logo` dovrà memorizzare il nome del file del logo associato
+all'offerta di lavoro, abbiamo bisogno di cambiare il widget per l'input di un
+file:
+
+    [php]
+    $this->widgetSchema['logo'] = new sfWidgetFormInputFile(array(
+      'label' => 'Company logo',
+    ));
+
+Per ogni campo symfony genera automaticamente un'etichetta (che verrà usata per
+generare il tag `<label>`). Questa può essere cambiata con l'opzione `label`.
+
+Potete anche cambiare le etichette con il metodo `setLabels()` del widget array:
+
+    [php]
+    $this->widgetSchema->setLabels(array(
+      'category_id'    => 'Category',
+      'is_public'      => 'Public?',
+      'how_to_apply'   => 'How to apply?',
+    ));
+
+Abbiamo anche bisogno di cambiare il validatore di default:
+
+    [php]
+    $this->validatorSchema['logo'] = new sfValidatorFile(array(
+      'required'   => false,
+      'path'       => sfConfig::get('sf_upload_dir').'/jobs',
+      'mime_types' => 'web_images',
+    ));
+
+`sfValidatorFile` è piuttosto interessante visto che si occupa di parecchie cose:
+
+ * Validazione del formato dell'immagine caricata in un formato web (`mime_types`)
+ * Rinomina il file in qualcosa di unico
+ * Memorizza il file nel `path` stabilito
+ * Aggiorna la colonna `logo` con il nome generato
+
+>**NOTA**
+>Avete bisogno di creare la directory dei loghi (`web/uploads/jobs`) e verificare
+>che essa sia scrivibile dal web server.
+
+Visto che il validatore salverà il path relativo all'immagine nel database, cambiamo
+il path utilizzato nel template `showSuccess`:
+
+    [php]
+    // apps/frontend/modules/job/template/showSuccess.php
+    <img src="/uploads/jobs/<?php echo $job->getLogo() ?>" alt="<?php echo $job->getCompany() ?> logo" />
+
+>**SUGGERIMENTO**
+>Se in un form esiste il metodo `generateLogoFilename()` verrà chiamato dal 
+>validatore ed il risultato sovrascriverà il filename di default del `logo`.
+>Al metodo viene passato l'oggetto `sfValidatedFile` come argomento.
+
+Come già potete sovrascrivere l'etichetta generata per ogni campo, potete anche
+definire un messaggio d'aiuto. Aggiungiamone uno per la colonna `is_public`
+per spiegare meglio il suo significato:
+
+    [php]
+    $this->widgetSchema->setHelp('is_public', 'Whether the job can also be published on affiliate websites or not.');
+
+La versione finale della classe `JobeetJobForm` sarà come la seguente:
+
+    [php]
+    // lib/form/JobeetJobForm.class.php
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['expires_at'], $this['is_activated']
+        );
+
+        $this->validatorSchema['email'] = new sfValidatorEmail();
+
+        $this->widgetSchema['type'] = new sfWidgetFormChoice(array(
+          'choices' => JobeetJobPeer::$types,
+          'expanded' => true,
+        ));
+        $this->validatorSchema['type'] = new sfValidatorChoice(array(
+          'choices' => array_keys(JobeetJobPeer::$types),
+        ));
+
+        $this->widgetSchema['logo'] = new sfWidgetFormInputFile(array(
+          'label' => 'Company logo',
+        ));
+        $this->validatorSchema['logo'] = new sfValidatorFile(array(
+          'required'   => false,
+          'path'       => sfConfig::get('sf_upload_dir').'/jobs',
+          'mime_types' => 'web_images',
+        ));
+
+        $this->widgetSchema->setHelp('is_public', 'Whether the job can also be published on affiliate websites or not.');
+      }
+    }
 
 ### Il template del form
 
