@@ -5,10 +5,10 @@ Precedentemente su Jobeet
 -------------------------
 
 La seconda settimana di Jobeet si è conclusa con l'inizio di una panoramica e 
-l'introduzione del symfony test framework. Continueremo oggi con il form framework.
+l'introduzione del symfony test framework. Continueremo oggi con il framework dei form.
 
-Il Form Framework
------------------
+Il Framework dei form
+---------------------
 
 Ogni sito web ha dei form; dal semplice form di contatto a quelli più completi con
 decine di campi. Scrivere form è uno dei compiti più complessi e noiosi per uno
@@ -17,7 +17,7 @@ validazione di ogni campo, processare i valori per salvarli nel database, visual
 i messaggi d'errore, ripopolare i campi in caso di errori e molto altro...
 
 Invece di reinventare la ruota più e più volte symfony mette a disposizione un
-framework per una semplice gestione dei form. Il form framework è costituito da
+framework per una semplice gestione dei form. Il framework dei form è costituito da
 tre parti:
 
   * **validation**: Il sub-framework per la validazione offre diverse classi
@@ -56,7 +56,7 @@ classe:
 I campi del form vengono configurati nel metodo `configure()` utilizzando i 
 metodi `setValidators()` e `setWidgets()`.
 
->**SUGGERIMENTO**
+>**TIP**
 >Il form framework viene distribuito assieme a molti
 >[widgets](http://www.symfony-project.org/api/1_2/widget) e
 >[validatori](http://www.symfony-project.org/api/1_2/validator). Le API
@@ -73,7 +73,7 @@ Di default tutti i campi sono obbligatori visto che il valore impostato per l'
 opzione `required` è impostata a `true`. Quindi la definizione della validazione
 per `email` è equivalente a `new sfValidatorEmail(array('required' => true))`.
 
->**SUGGERIMENTO**
+>**TIP**
 >Potete fondere un form in un altro usando il metodo `mergeForm()` o incorporarne
 >uno usando il metodo `embedForm()`:
 >
@@ -81,8 +81,8 @@ per `email` è equivalente a `new sfValidatorEmail(array('required' => true))`.
 >     $this->mergeForm(new AnotherForm());
 >     $this->embedForm('name', new AnotherForm());
 
-Propel Form
------------
+Form ##ORM##
+------------
 
 La maggior parte delle volte un form deve essere serializzato per il database.
 Siccome symfony conosce già tutto riguardo al modello del database può generare
@@ -99,36 +99,52 @@ ha `JobeetJobForm`) che è vuota di default visto che eredita la struttura dalla
 classe base dei form:
 
     [php]
+<propel>
     // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
     class JobeetJobForm extends BaseJobeetJobForm
     {
       public function configure()
       {
       }
     }
+</propel>
 
->**SUGGERIMENTO**
+<propel>
+>**TIP**
 >Curiosando all'interno dei file generati nella sotto-directory `lib/form/base/`
 >potrete vedere molti esempi di utilizzo di widget e validatori inclusi in symfony.
+<doctrine>
+>**TIP**
+>Curiosando all'interno dei file generati nella sotto-directory `lib/form/doctrine/base/`
+>potrete vedere molti esempi di utilizzo di widget e validatori inclusi in symfony.
+</doctrine>
 
-### Personalizzare il Job Form
+### Personalizzare il Form per il lavoro
 
-Il job form è un esempio perfetto per imparare a personalizzare i form. Vediamo
+Il form per il lavoro è un esempio perfetto per imparare a personalizzare i form. Vediamo
 come personalizzarlo passo a passo.
 
 Come prima cosa cambiamo il link "Post a Job" nel layout per avere la possibilità
-di verificare i cambiamenti direttamente nel vostro browser:
+di verificare i cambiamenti direttamente nel browser:
 
     [php]
     <!-- apps/frontend/templates/layout.php -->
     <a href="<?php echo url_for('@job_new') ?>">Post a Job</a>
 
-Un Propel form visualizza di default i campi per tutte le colonne di una tabella.
+Un form ##ORM## visualizza di default i campi per tutte le colonne di una tabella.
 Ma per il job form alcune di esse non devono essere modificabili dall'utente finale.
 Rimuovere i campi da un form è semplice quanto disabilitarli:
 
     [php]
+<propel>
     // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
     class JobeetJobForm extends BaseJobeetJobForm
     {
       public function configure()
@@ -148,7 +164,12 @@ apparire dall'analisi dello schema del database. Per esempio la colonna `email`
 un'email. Cambiamo quindi `sfValidatorString` con un `sfValidatorEmail`:
 
     [php]
+<propel>
     // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
     public function configure()
     {
       // ...
@@ -156,9 +177,10 @@ un'email. Cambiamo quindi `sfValidatorString` con un `sfValidatorEmail`:
       $this->validatorSchema['email'] = new sfValidatorEmail();
     }
 
-Anche se la colonna `type` è di tipo `varchar` nello schema vogliamo che il suo
+Anche se la colonna `type` è di tipo `varchar` nello schema, vogliamo che il suo
 valore sia limitato ad una lista di opzioni: full time, part time, o freelance.
 
+<propel>
 Per prima cosa definiamo i possibili valori in `JobeetJobPeer`:
 
     [php]
@@ -173,12 +195,39 @@ Per prima cosa definiamo i possibili valori in `JobeetJobPeer`:
 
       // ...
     }
+</propel>
+<doctrine>
+Per prima cosa definiamo i possibili valori in `JobeetJobTable`:
+
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      static public $types = array(
+        'full-time' => 'Full time',
+        'part-time' => 'Part time',
+        'freelance' => 'Freelance',
+      );
+
+      public function getTypes()
+      {
+        return self::$types;
+      }
+
+      // ...
+    }
+</doctrine>
 
 Poi usiamo `sfWidgetFormChoice` per il widget della colonna `type`:
 
     [php]
     $this->widgetSchema['type'] = new sfWidgetFormChoice(array(
+<propel>
       'choices'  => JobeetJobPeer::$types,
+</propel>
+<doctrine>
+      'choices'  => Doctrine::getTable('JobeetJob')->getTypes(),
+</doctrine>
       'expanded' => true,
     ));
 
@@ -191,7 +240,7 @@ creato da un widget diverso in accordo ad alcune opzioni di configurazione
  * List of radio buttons: `array('multiple' => false, 'expanded' => true)`
  * List of checkboxes: `array('multiple' => true, 'expanded' => true)`
 
->**NOTA**
+>**NOTE**
 >Se volete che una voce dell'elenco dei radio button sia selezionata di default
 >(`full-time` per esempio) potete cambiare il valore di default nello schema
 > del database.
@@ -201,10 +250,18 @@ bypassare facilmente le opzioni del widget usando tool come [curl](http://curl.h
 o la [Firefox Web Developer Toolbar](http://chrispederick.com/work/web-developer/).
 Cambiamo il validatore per restringere le possibilità di scelta:
 
+<propel>
     [php]
     $this->validatorSchema['type'] = new sfValidatorChoice(array(
       'choices' => array_keys(JobeetJobPeer::$types),
     ));
+</propel>
+<doctrine>
+    [php]
+    $this->validatorSchema['type'] = new sfValidatorChoice(array(
+      'choices' => array_keys(Doctrine::getTable('JobeetJob')->getTypes()),
+    ));
+</doctrine>
 
 Siccome la colonna `logo` dovrà memorizzare il nome del file del logo associato
 all'offerta di lavoro, abbiamo bisogno di cambiare il widget per l'input di un
@@ -218,7 +275,7 @@ file:
 Per ogni campo symfony genera automaticamente un'etichetta (che verrà usata per
 generare il tag `<label>`). Questa può essere cambiata con l'opzione `label`.
 
-Potete anche cambiare le etichette con il metodo `setLabels()` del widget array:
+Si possono cambiare le etichette anche con il metodo `setLabels()` del widget array:
 
     [php]
     $this->widgetSchema->setLabels(array(
@@ -243,7 +300,7 @@ Abbiamo anche bisogno di cambiare il validatore di default:
  * Memorizza il file nel `path` stabilito
  * Aggiorna la colonna `logo` con il nome generato
 
->**NOTA**
+>**NOTE**
 >Avete bisogno di creare la directory dei loghi (`web/uploads/jobs`) e verificare
 >che essa sia scrivibile dal web server.
 
@@ -254,7 +311,7 @@ cambiamo il percorso utilizzato nel template `showSuccess`:
     // apps/frontend/modules/job/template/showSuccess.php
     <img src="/uploads/jobs/<?php echo $job->getLogo() ?>" alt="<?php echo $job->getCompany() ?> logo" />
 
->**SUGGERIMENTO**
+>**TIP**
 >Se in un form esiste il metodo `generateLogoFilename()` verrà chiamato dal 
 >validatore ed il risultato sovrascriverà il nome file di default del `logo`.
 >Al metodo viene passato l'oggetto `sfValidatedFile` come argomento.
@@ -269,7 +326,12 @@ per spiegare meglio il suo significato:
 La versione finale della classe `JobeetJobForm` sarà come la seguente:
 
     [php]
+<propel>
     // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
     class JobeetJobForm extends BaseJobeetJobForm
     {
       public function configure()
@@ -341,16 +403,16 @@ nel partial `_form' con il codice seguente:
     </form>
 
 Gli helper `include_javascripts_form_form()` e `include_stylesheets_for_form()`
-aggiungeranno le dipendenze JavaScript e CSS necessario per i widget.
+aggiungeranno le dipendenze JavaScript e CSS necessarie per i widget.
 
 >**TIP**
 >Anche se il form per il lavoro non necessita di alcun file JavaScript o CSS, è
->una buona abitudine mantenere questi helper "giusto nel caso". Potranno esserti
+>una buona abitudine mantenere questi helper "giusto nel caso". Potranno essere
 >d'aiuto se in seguito deciderete di cambiare un widget con uno che necessita di
->JavaScript o un foglio di stile specifico.
+>JavaScript o di un foglio di stile specifico.
 
-L'helper `form_tag_for()` genera un tag `<form>` per il dato form e rotta
-e cambia il metodo HTTP a `POST` o `PUT` a seconda che il form l'oggetto sia
+L'helper `form_tag_for()` genera un tag `<form>` per il form e la  rotta dati
+e cambia il metodo HTTP a `POST` o `PUT` a seconda che l'oggetto sia
 nuovo o no. Inoltre si occupa di aggiungere l'attributo `multipart` se il form
 ha qualche tag `input` con `type="file"`.
 
@@ -375,7 +437,7 @@ Infine, l'istruzione `<?php echo $form ?>` visualizza i widget del form.
 > | `renderGlobalErrors()` | Visualizza gli errori globali
 >
 >Il form si comporta inoltre come un array di campi. Puoi accedere al campo
->`company` con `$form['company']`. L'oggetto ritornato fornisce metodi per
+>`company` con `$form['company']`. L'oggetto restituito fornisce metodi per
 >visualizzare ogni elemento del campo:
 >
 > | Metodo          | Descrizione
@@ -411,7 +473,7 @@ Tutti i form hanno il seguente ciclo di vita:
 
 ![Form flow](http://www.symfony-project.org/images/jobeet/1_2/10/form_flow.png)
 
-Abbiamo creato una collezione di rotte per ##ORM## 5 giorni fa per il modulo `job`,
+Abbiamo creato un insieme di rotte per ##ORM## 5 giorni fa per il modulo `job`,
 possiamo semplificare ora il codice per i metodi per la gestione del form:
 
     [php]
@@ -507,8 +569,14 @@ non vogliamo che l'utente abbia un unico token. Modifichiamo il metodo
 `save()` di `JobeetJob`:
 
     [php]
+<propel>
     // lib/model/JobeetJob.php
     public function save(PropelPDO $con = null)
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+    public function save(Doctrine_Connection $conn = null)
+</doctrine>
     {
       // ...
 
@@ -520,10 +588,15 @@ non vogliamo che l'utente abbia un unico token. Modifichiamo il metodo
       return parent::save($con);
     }
 
-Possiamo rimuovoere il campo `token` dal form:
+Possiamo rimuovere il campo `token` dal form:
 
     [php]
+<propel>
     // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
     class JobeetJobForm extends BaseJobeetJobForm
     {
       public function configure()
@@ -560,7 +633,7 @@ Per esempio, la rotta per modifica un lavoro è ora:
 
     http://jobeet.localhost/job/TOKEN/edit
 
-Avrai inoltre bisogno di cambiare il link "Edit" nel template `showSuccess`:
+Iinoltre sarà necessario cambiare il link "Edit" nel template `showSuccess`:
 
     [php]
     <!-- apps/frontend/modules/job/templates/showSuccess.php -->
@@ -570,6 +643,249 @@ Avrai inoltre bisogno di cambiare il link "Edit" nel template `showSuccess`:
 >Abbiamo inoltre cambiato i requisiti per la colonna `token`, dato che symfony
 >di default utilizza il requisito `\d+` per la chiave primaria.
 
-==============
-Parte 3
-==============
+
+La pagina di anteprima
+----------------------
+
+La pagina di anteprima è la stessa che mostra la pagina del lavoro. Grazie al
+routing, se l'utente arriva con il token giusto, sarà accessibile nel
+parametro di richiesta `token`.
+
+Se l'utente arriva con un URL con token, aggiungeremo una barra di amministrazione
+in cima. All'inizio del template `showSuccess`, aggiungiamo un partial per
+contenere la barra di amministrazione e rimuoviamo il link `edit` in fondo:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <?php if ($sf_request->getParameter('token') == $job->getToken()): ?>
+      <?php include_partial('job/admin', array('job' => $job)) ?>
+    <?php endif; ?>
+
+Quindi, creiamo il partial `_admin`:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/_admin.php -->
+    <div id="job_actions">
+      <h3>Admin</h3>
+      <ul>
+        <?php if (!$job->getIsActivated()): ?>
+          <li><?php echo link_to('Edit', 'job_edit', $job) ?></li>
+          <li><?php echo link_to('Publish', 'job_edit', $job) ?></li>
+        <?php endif; ?>
+        <li><?php echo link_to('Delete', 'job_delete', $job, array('method' => 'delete', 'confirm' => 'Are you sure?')) ?></li>
+        <?php if ($job->getIsActivated()): ?>
+          <li<?php $job->expiresSoon() and print ' class=" expires_soon"' ?>>
+            <?php if ($job->isExpired()): ?>
+              Expired
+            <?php else: ?>
+              Expires in <strong><?php echo $job->getDaysBeforeExpires() ?></strong> days
+            <?php endif; ?>
+
+            <?php if ($job->expiresSoon()): ?>
+             - <a href="">Extend</a> for another <?php echo sfConfig::get('app_active_days') ?> days
+            <?php endif; ?>
+          </li>
+        <?php else: ?>
+          <li>
+            [Bookmark this <?php echo link_to('URL', 'job_show', $job, true) ?> to manage this job in the future.]
+          </li>
+        <?php endif; ?>
+      </ul>
+    </div>
+
+C'è molto codice, ma la maggior parte è facile da capire. La barra di
+amministrazione è diversa, a seconda dello stato del lavoro:
+
+![Not activated job](http://www.symfony-project.org/images/jobeet/1_2/10/not_activated.png)
+
+![Activated job](http://www.symfony-project.org/images/jobeet/1_2/10/activated.png)
+
+Per rendere il template più leggibile, abbiamo aggiunto un sacco di metodi
+scorciatoia alla classe `JobeetJob`:
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    public function getTypeName()
+    {
+<propel>
+      return $this->getType() ? JobeetJobPeer::$types[$this->getType()] : '';
+</propel>
+<doctrine>
+      $types = Doctrine::getTable('JobeetJob')->getTypes();
+      return $this->getType() ? $types[$this->getType()] : '';
+</doctrine>
+    }
+
+    public function isExpired()
+    {
+      return $this->getDaysBeforeExpires() < 0;
+    }
+
+    public function expiresSoon()
+    {
+      return $this->getDaysBeforeExpires() < 5;
+    }
+
+    public function getDaysBeforeExpires()
+    {
+      return floor(($this->getExpiresAt('U') - time()) / 86400);
+    }
+
+Attivazione e pubblicazione di un lavoro
+----------------------------------------
+
+Nella sezione precedente, c'è un link per pubblicare il lavoro. Il link
+deve essere cambiato per puntare ad una nuova azione `publish`.
+Invece di creare una nuova rotta, possiamo semplicemente configurare la
+rotta `job` esistente:
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    job:
+      class:   sfPropelRouteCollection
+      options:
+        model:          JobeetJob
+        column:         token
+        object_actions: { publish: put }
+      requirements:
+        token: \w+
+
+`object_actions` accetta un array di azioni addizionali per l'oggetto dato.
+Ora possiamo cambiare il link "Publish":
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/_admin.php -->
+    <li>
+      <?php echo link_to('Publish', 'job_publish', $job, array('method' => 'put')) ?>
+    </li>
+
+L'ultimo passo è creare l'azione `publish`:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executePublish(sfWebRequest $request)
+    {
+      $request->checkCSRFProtection();
+
+      $job = $this->getRoute()->getObject();
+      $job->publish();
+
+      $this->getUser()->setFlash('notice', sprintf('Your job is now online for %s days.', sfConfig::get('app_active_days')));
+
+      $this->redirect($this->generateUrl('job_show_user', $job));
+    }
+
+Siccome abbiamo abilitato la protezione da CSRF, l'helper `link_to()` include
+un token CSRF nel link, e il metodo `checkCSRFProtection()` dell'oggetto richiesta
+verifica la sua validità durante l'invio.
+
+Il metodo `executePublish()` usa un nuovo metodo `publish()`, che può essere
+definito come segue:
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    public function publish()
+    {
+      $this->setIsActivated(true);
+      $this->save();
+    }
+
+Ora si può testare la nuova feature di pubblicazione nel browser.
+
+Ma c'è ancora qualcosa da sistemare. I lavori non attivati non devono
+essere accessibili, il che vuol dire che non devono essere mostrati
+nella homepage di Jobeet e che non devono essere accessibili dai
+loro URL. Poiché abbiamo creato un metodo `addActiveJobsCriteria()`
+per restringere un `Criteria` ai lavori attivi, dobbiamo solo
+modificarlo ed aggiungere i nuovi requisiti alla fine:
+
+<propel>
+    [php]
+    // lib/model/JobeetJobPeer.php
+    static public function addActiveJobsCriteria(Criteria $criteria = null)
+    {
+      // ...
+
+      $criteria->add(self::IS_ACTIVATED, true);
+
+      return $criteria;
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    public function addActiveJobsQuery(Doctrine_Query $q = null)
+    {
+      // ...
+
+      $q->andWhere($alias . '.is_activated = ?', 1);
+
+      return $q;
+    }
+</doctrine>
+
+Ecco fatto. Ora si può testare nel browser. Tutti i lavori non
+attivati sono scomparsi dalla homepage; anche se si conoscono i loro
+URL, non sono più accessibili. Tuttavia sono accessibili se si
+conosce l'URL con token del lavoro. In questo caso, viene mostrata
+l'anteprima del lavoro, con la barra di amministrazione.
+
+Questo è uno dei grandi vantaggi del pattern MVC e della
+rifattorizzazione che abbiamo eseguito strada facendo. È bastato un
+piccolo cambiamento nel metodo per aggiungere il nuovo requisito.
+
+>**NOTE**
+>Quando abbiamo creato il metodo `getWithJobs()`, abbiamo scordato di
+>usare il metodo `addActiveJobsCriteria()`. Quindi, dobbiamo modificarlo
+>ed aggiungere il nuovo requisito:
+>
+<propel>
+>     [php]
+>     class JobeetCategoryPeer extends BaseJobeetCategoryPeer
+>     {
+>       static public function getWithJobs()
+>       {
+>         // ...
+>
+>         $criteria->add(JobeetJobPeer::IS_ACTIVATED, true);
+>
+>         return $criteria;
+>       }
+</propel>
+<doctrine>
+>     [php]
+>     class JobeetCategoryTable extends Doctrine_Table
+>     {
+>       public function getWithJobs()
+>       {
+>         // ...
+>
+>         $q->andWhere('j.is_activated = ?', 1);
+>
+>         return $q;
+>       }
+</doctrine>
+
+A domani
+--------
+
+Il tutorial di oggi era pieno di nuove informazioni, ma spero che ora
+abbiate una comprensione migliore del framework dei form di symfony.
+
+So che alcuni di voi si sono accorti che abbiamo dimenticato qualcosa oggi...
+Non abbiamo implementato i test per le nuove feature. Siccome la scrittura
+dei test è una parte importante dello sviluppo, questa è la prima cosa
+che faremo domani.
+
+__ORM__
+
