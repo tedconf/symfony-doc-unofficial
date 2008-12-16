@@ -1,6 +1,31 @@
 Day 16: Web Services
 ====================
 
+<doctrine>
+Before we start
+---------------
+
+On day six when we defined the route for viewing jobs named `job_show_user` in
+`apps/frontend/config/routing.yml` we had a slight mistake in the definition.
+The route should be the following:
+
+    [yml]
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfDoctrineRoute
+      options:
+        model: JobeetJob
+        type:  object
+        method_for_query: retrieveActiveJob
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+
+Notice the change from using `method` to `method_for_query`. This was a small 
+bug in symfony and a mistake in the tutorial so you will need to upgrade your
+project.
+</doctrine>
+
 Previously on Jobeet
 --------------------
 
@@ -33,17 +58,33 @@ Let's create a new fixture file for the affiliates:
         email:     fabien.potencier@example.com
         is_active: true
         token:     sensio_labs
+<propel>
         jobeet_category_affiliates: [programming]
+</propel>
+<doctrine>
+        JobeetCategories: [programming]
+</doctrine>
 
       symfony:
         url:       http://www.symfony-project.org/
         email:     fabien.potencier@example.org
         is_active: false
         token:     symfony
+<propel>
         jobeet_category_affiliates: [design, programming]
+</propel>
+<doctrine>
+        JobeetCategories: [design, programming]
+</doctrine>
 
+<propel>
 Creating records for the middle table of a many-to-many relationship is as
 simple as defining an array with a key of the middle table name plus an `s`.
+</propel>
+<doctrine>
+Creating records for many-to-many relationships is as simple as defining an
+array with the key which is the name of the relationship.
+</doctrine>
 The content of the array is the object names as defined in the fixture files.
 You can link objects from different files, but the names must be defined
 first.
@@ -51,6 +92,7 @@ first.
 In the fixture file, the tokens are hardcoded to simplify the testing, but
 when an actual user applies for an account, the token will need to be generated:
 
+<propel>
     [php]
     // lib/model/JobeetAffiliate.php
     class JobeetAffiliate extends BaseJobeetAffiliate
@@ -67,6 +109,25 @@ when an actual user applies for an account, the token will need to be generated:
 
       // ...
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/JobeetAffiliate.php
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function preValidate($event)
+      {
+        $object = $event->getInvoker();
+
+        if (!$object->getToken())
+        {
+          $object->setToken(sha1($object->getEmail().rand(11111, 99999)));
+        }
+      }
+
+      // ...
+    }
+</doctrine>
 
 You can now reload the data:
 
@@ -92,6 +153,7 @@ values are `xml`, `json`, or `yaml`.
 The `getForToken()` will be called when the action retrieves the
 collection of objects related to the route:
 
+<propel>
     [php]
     // lib/model/JobeetJobPeer.php
     class JobeetJobPeer extends BaseJobeetJobPeer
@@ -109,12 +171,33 @@ collection of objects related to the route:
 
       // ...
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      public function getForToken(array $parameters)
+      {
+        $affiliate = Doctrine::getTable('JobeetAffiliate')->findOneByToken($parameters['token']);
+        if (!$affiliate || !$affiliate->getIsActive())
+        {
+          throw new sfError404Exception(sprintf('Affiliate with token "%s" does not exist or is not activated.', $parameters['token']));
+        }
+
+        return $affiliate->getActiveJobs();
+      }
+
+      // ...
+    }
+</doctrine>
 
 If the token does not exist in the database, we throw a `sfError404Exception`
 exception. This exception class is then automatically converted to a `404`
 response. This is the simplest way to generate a `404` page from a model
 class.
 
+<propel>
 The `getForToken()` method uses two new methods we will create now.
 
 First, the `getByToken()` method must be created to get an affiliate given its
@@ -135,6 +218,13 @@ token:
 
 Then, the `getActiveJobs()` method returns the list of currently active jobs:
 
+</propel>
+<doctrine>
+The `getForToken()` method uses one new method named `getActiveJobs()` and
+returns the list of currently active jobs:
+</doctrine>
+
+<propel>
     [php]
     // lib/model/JobeetAffiliate.php
     class JobeetAffiliate extends BaseJobeetAffiliate
@@ -157,6 +247,29 @@ Then, the `getActiveJobs()` method returns the list of currently active jobs:
 
       // ...
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetAffiliate.class.php
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function getActiveJobs()
+      {
+        $q = Doctrine_Query::create()
+          ->select('j.*')
+          ->from('JobeetJob j')
+          ->leftJoin('j.JobeetCategory c')
+          ->leftJoin('c.JobeetAffiliates a')
+          ->where('a.id = ?', $this->getId());
+
+        $q = Doctrine::getTable('JobeetJob')->addActiveJobsQuery($q);
+
+        return $q->execute();
+      }
+
+      // ...
+    }
+</doctrine>
 
 The last step is to create the `api` action and templates. Bootstrap the
 module with the `generate:module` task:
@@ -184,7 +297,12 @@ the logic to process the values has been factored out in the
 `JobeetJob::asArray()` method:
 
     [php]
+<propel>
     // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
     class JobeetJob extends BaseJobeetJob
     {
       public function asArray($host)
@@ -199,7 +317,12 @@ the logic to process the values has been factored out in the
           'location'     => $this->getLocation(),
           'description'  => $this->getDescription(),
           'how_to_apply' => $this->getHowToApply(),
+<propel>
           'expires_at'   => $this->getCreatedAt('c'),
+</propel>
+<doctrine>
+          'expires_at'   => $this->getCreatedAt(),
+</doctrine>
         );
       }
 
@@ -397,7 +520,7 @@ You guess it. The route is the first thing we create:
         actions: [new, create]
         object_actions: { wait: GET }
 
-It is a classic Propel collection route with a new configuration option:
+It is a classic ##ORM## collection route with a new configuration option:
 `actions`. As we don't need all the seven default actions defined by the
 route, the `actions` option instructs the route to only match for the `new`
 and `create` actions. The additional `wait` route will be used to give the
@@ -490,12 +613,21 @@ away. Open the `JobeetAffiliateForm` file to customize the form:
     {
       public function configure()
       {
+<propel>
         unset($this['is_active'], $this['token'], $this['created_at']);
-
         $this->widgetSchema['jobeet_category_affiliate_list']->setOption('expanded', true);
         $this->widgetSchema['jobeet_category_affiliate_list']->setLabel('Categories');
 
         $this->validatorSchema['jobeet_category_affiliate_list']->setOption('required', true);
+</propel>
+<doctrine>
+        unset($this['is_active'], $this['token'], $this['created_at'], $this['updated_at']);
+
+        $this->widgetSchema['jobeet_categories_list']->setOption('expanded', true);
+        $this->widgetSchema['jobeet_categories_list']->setLabel('Categories');
+
+        $this->validatorSchema['jobeet_categories_list']->setOption('required', true);
+</doctrine>
 
         $this->widgetSchema['url']->setLabel('Your website URL');
         $this->widgetSchema['url']->setAttribute('size', 50);
@@ -534,7 +666,12 @@ The last step is to write some functional tests for the new feature:
       click('Submit', array('jobeet_affiliate' => array(
         'url'                            => 'http://www.example.com/',
         'email'                          => 'foo@example.com',
+<propel>
         'jobeet_category_affiliate_list' => array($browser->getProgrammingCategory()->getId()),
+</propel>
+<doctrine>
+        'jobeet_categories_list'         => array(Doctrine::getTable('JobeetCategory')->findOneBySlug('programming')->getId()),
+</doctrine>
       )))->
       isRedirected()->
       followRedirect()->
@@ -547,9 +684,15 @@ The last step is to write some functional tests for the new feature:
         'url'   => 'http://www.example.com/',
         'email' => 'foo@example.com',
       )))->
+<propel>
       with('form')->isError('jobeet_category_affiliate_list')
+</propel>
+<doctrine>
+      with('form')->isError('jobeet_categories_list')
+</doctrine>
     ;
 
+<propel>
 To simulate selecting checkboxes, pass an array of identifiers to check. To
 simplify the task, a new `getProgrammingCategory()` method has been created
 in the `JobeetTestFunctional` class:
@@ -584,6 +727,7 @@ in `JobeetCategoryPeer`:
     }
 
 Then, replace the two occurrences of this code in `JobeetTestFunctional`.
+</propel>
 
 The Affiliate Backend
 ---------------------
@@ -593,17 +737,23 @@ activated by the administrator:
 
     $ php symfony propel:generate-admin backend JobeetAffiliate --module=affiliate
 
-To access the newly created module, add a link in the main menu with the number of
-affiliate that need to be activated:
+To access the newly created module, add a link in the main menu with the number 
+of affiliate that need to be activated:
 
     [php]
     <!-- apps/backend/templates/layout.php -->
     <li>
       <a href="<?php echo url_for('@jobeet_affiliate') ?>">
+<propel>
         Affiliates - <strong><?php echo JobeetAffiliatePeer::countToBeActivated() ?></strong>
+</propel>
+<doctrine>
+        Affiliates - <strong><?php echo Doctrine::getTable('JobeetAffiliate')->countToBeActivated() ?></strong>
+</doctrine>
       </a>
     </li>
 
+<propel>
     // lib/model/JobeetAffiliatePeer.php
     class JobeetAffiliatePeer extends BaseJobeetAffiliatePeer
     {
@@ -614,6 +764,19 @@ affiliate that need to be activated:
 
         return self::doCount($criteria);
       }
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetAffiliateTable.class.php
+    class JobeetAffiliateTable extends Doctrine_Table
+    {
+      public function countToBeActivated()
+      {
+        $q = $this->createQuery('a')
+          ->where('a.is_active = ?', 0);
+
+        return $q->count();
+      }
+</doctrine>
 
 As the only action needed in the backend is to activate or deactivate
 accounts, change the default generator `config` section to simplify the
@@ -674,7 +837,16 @@ The only other code to write is for the `activate`, `deactivate` actions:
 
       public function executeBatchActivate(sfWebRequest $request)
       {
+<propel>
         $affiliates = JobeetAffiliatePeer::retrieveByPks($request->getParameter('ids'));
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetAffiliate a')
+          ->whereIn('a.id', $request->getParameter('ids'));
+
+        $affiliates = $q->execute();
+</doctrine>
 
         foreach ($affiliates as $affiliate)
         {
@@ -686,7 +858,16 @@ The only other code to write is for the `activate`, `deactivate` actions:
 
       public function executeBatchDeactivate(sfWebRequest $request)
       {
+<propel>
         $affiliates = JobeetAffiliatePeer::retrieveByPks($request->getParameter('ids'));
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetAffiliate a')
+          ->whereIn('a.id', $request->getParameter('ids'));
+
+        $affiliates = $q->execute();
+</doctrine>
 
         foreach ($affiliates as $affiliate)
         {
@@ -697,7 +878,12 @@ The only other code to write is for the `activate`, `deactivate` actions:
       }
     }
 
+<propel>
     // lib/model/JobeetAffiliate.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetAffiliate.class.php
+</doctrine>
     class JobeetAffiliate extends BaseJobeetAffiliate
     {
       public function activate()
@@ -846,3 +1032,5 @@ tonight.
 
 Tomorrow, we will implement the last missing feature of the Jobeet website,
 the search engine.
+
+__ORM__
