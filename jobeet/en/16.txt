@@ -4,8 +4,8 @@ Day 16: Web Services
 Previously on Jobeet
 --------------------
 
-With the addition of feeds on Jobeet, job seekers can be informed of new job
-posts in real-time.
+With the addition of feeds on Jobeet, job seekers can now be informed of new
+job posts in real-time.
 
 On the other side of the fence, when you post a job, you will want to have the
 greatest exposure possible. If your job is syndicated on a lot of small
@@ -23,7 +23,7 @@ As per day 2 requirements:
 
 ### The Fixtures
 
-Let's create a new fixture files for the affiliates:
+Let's create a new fixture file for the affiliates:
 
     [yml]
     // data/fixtures/030_affiliates.yml
@@ -49,7 +49,7 @@ You can link objects from different files, but the names must be defined
 first.
 
 In the fixture file, the tokens are hardcoded to simplify the testing, but
-when a user will apply for an account, the token will need to be generated:
+when an actual user applies for an account, the token will need to be generated:
 
     [php]
     // lib/model/JobeetAffiliate.php
@@ -89,7 +89,7 @@ As always, when you create a new resource, it's a good habit to define the URL f
 For this route, the special `sf_format` variable ends the URL and the valid
 values are `xml`, `json`, or `yaml`.
 
-The `getForToken()` will be called when the action will retrieve the
+The `getForToken()` will be called when the action retrieves the
 collection of objects related to the route:
 
     [php]
@@ -112,9 +112,10 @@ collection of objects related to the route:
 
 If the token does not exist in the database, we throw a `sfError404Exception`
 exception. This exception class is then automatically converted to a `404`
-response. It is a simple way to generate a `404` page from a model class.
+response. This is the simplest way to generate a `404` page from a model
+class.
 
-The `getForToken()` method uses two new method we will create now.
+The `getForToken()` method uses two new methods we will create now.
 
 First, the `getByToken()` method must be created to get an affiliate given its
 token:
@@ -132,7 +133,7 @@ token:
       }
     }
 
-Then, the `getActiveJobs()` method returns the list of current active jobs:
+Then, the `getActiveJobs()` method returns the list of currently active jobs:
 
     [php]
     // lib/model/JobeetAffiliate.php
@@ -357,12 +358,12 @@ the `test/fixtures/` directory and replace the content of the auto-generated
       with('request')->isFormat('xml')->
       with('response')->checkElement('job', 33)->
 
-      info('3 - The web service support the JSON format')->
+      info('3 - The web service supports the JSON format')->
       get('/api/sensio_labs/jobs.json')->
       with('request')->isFormat('json')->
       with('response')->contains('"category": "Programming"')->
 
-      info('4 - The web service support the YAML format')->
+      info('4 - The web service supports the YAML format')->
       get('/api/sensio_labs/jobs.yaml')->
       with('response')->begin()->
         isHeader('content-type', 'text/yaml; charset=utf-8')->
@@ -385,7 +386,7 @@ process of adding a new feature to an application.
 
 ### Routing
 
-You guess it. The route is the first thing to create:
+You guess it. The route is the first thing we create:
 
     [yml]
     // apps/frontend/config/routing.yml
@@ -413,7 +414,7 @@ The classic second step is to generate a module:
 The `propel:generate-module` task generate the classic seven actions and their
 corresponding templates. In the `templates/` directory, remove all the files
 but the `_form.php` and `newSuccess.php` ones. And for the files we keep,
-replace their content with the following one:
+replace their content with the following:
 
     [php]
     <!-- apps/frontend/modules/affiliate/templates/newSuccess.php -->
@@ -463,8 +464,8 @@ Last, change the link in the footer to point to the `affiliate` module:
 ### Actions
 
 Here again, as we will only use the creation form, open the
-`actions.class.php` file and remove all actions but the `executeNew()`,
-`executeCreate()`, and `processForm()` ones.
+`actions.class.php` file and remove all methods but `executeNew()`,
+`executeCreate()`, and `processForm()`.
 
 For the `processForm()` action, change the redirect URL to the `wait` action:
 
@@ -479,18 +480,6 @@ The `wait` action is simple as we don't need to pass anything to the template:
     public function executeWait()
     {
     }
-
-The `waitSuccess` template is also quite straightforward:
-
-    [php]
-    // apps/frontend/modules/affiliate/templates/waitSuccess.php
-    <h1>Your affiliate account has been created</h1>
-
-    <div style="padding: 20px">
-      Thank you! 
-      You will receive an email with your affiliate token
-      as soon as your account will be activated.
-    </div>
 
 The affiliate cannot choose its token, nor can he activates his account right
 away. Open the `JobeetAffiliateForm` file to customize the form:
@@ -737,7 +726,7 @@ Whenever an affiliate account is activated by the administrator, an email
 should be sent to the affiliate to confirm his subscription and give him his
 token.
 
-PHP have a lot of good library to send emails like
+PHP has a number of good library to send emails like
 [SwiftMailer](http://www.swiftmailer.org/),
 [Zend_Mail](http://framework.zend.com/), and
 [ezcMail](http://ezcomponents.org/docs/tutorials/Mail). As we will use some
@@ -855,5 +844,5 @@ If you remember requirements from day 2:
 The implementation of this feature is so easy that we will let you do it
 tonight.
 
-Tomorrow, we will implement the latest missing feature of the Jobeet website,
+Tomorrow, we will implement the last missing feature of the Jobeet website,
 the search engine.
