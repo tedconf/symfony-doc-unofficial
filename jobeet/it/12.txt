@@ -1,0 +1,206 @@
+
+
+### `object_actions`
+
+Nella lista, c'è una colonna in più per le azioni che possono essere
+eseguite su un singolo oggetto. Rimuoviamole per il modulo `category`,
+perché abbiamo già un link sul nome della categoria per modificarla, e non
+ci serve cancellarne una direttamente dalla lista:
+
+    [yml]
+    config:
+      list:
+        object_actions: {}
+
+Per il modulo `job`, teniamo le azioni esistenti ed aggiungiamo una nuova
+azione `extend`, simile a quella che abbiamo aggiunto come azione di batch:
+
+    [yml]
+    config:
+      list:
+        object_actions:
+          extend:     ~
+          _edit:      ~
+          _delete:    ~
+
+Come per le azioni di batch, le azioni `_delete` e `_edit` sono quelle definite
+nel framework. Dobbiamo definire l'azione `listExtend()` per far funzionare
+il link `extend`:
+
+    [php]
+    // apps/backend/modules/job/actions/actions.class.php
+    class jobActions extends autoJobActions
+    {
+      public function executeListExtend(sfWebRequest $request)
+      {
+        $job = $this->getRoute()->getObject();
+        $job->extend(true);
+        $job->save();
+
+        $this->getUser()->setFlash('notice', 'The selected jobs have been extended successfully.');
+
+        $this->redirect('@jobeet_job');
+      }
+
+      // ...
+    }
+
+![Custom object action](http://www.symfony-project.org/images/jobeet/1_2/12/custom_object_actions.png)
+
+### `actions`
+
+Abbiamo già visto come collegare un'azione ad una lista di oggetti o ad
+un singolo oggetto. L'opzione `actions` definisce delle azioni che non
+interessano nessun oggetto, come la crezione di un oggetto nuovo. Rimuoviamo
+l'azione `new` ed aggiungiamo una nuova azione che cancelli tutti i lavori
+che non sono stati attivati dal relativo utente per oltre 60 giorni:
+
+    [yml]
+    list:
+      config:
+        actions:
+          deleteNeverActivated: { label: Delete never activated jobs }
+
+Ogni azione può essere personalizzata definendo un array di parametri.
+L'azione `listDeleteNeverActivated` è auto-esplicativa:
+
+    [php]
+    // apps/backend/modules/job/actions/actions.class.php
+    class jobActions extends autoJobActions
+    {
+      public function executeListDeleteNeverActivated(sfWebRequest $request)
+      {
+<propel>
+        $nb = JobeetJobPeer::cleanup(60);
+</propel>
+<doctrine>
+        $nb = Doctrine::getTable('JobeetJob')->cleanup(60);
+</doctrine>
+
+        if ($nb)
+        {
+          $this->getUser()->setFlash('notice', sprintf('%d never activated jobs have been deleted successfully.', $nb));
+        }
+        else
+        {
+          $this->getUser()->setFlash('notice', 'No job to delete.');
+        }
+
+        $this->redirect('@jobeet_job');
+      }
+
+      // ...
+    }
+
+<propel>
+Abbiamo riutilizzato il metodo `JobeetJobPeer::cleanup()` definito ieri.
+Questo è un altro grande esempio della riusabilità fornita dal pattern MVC.
+</propel>
+<doctrine>
+Abbiamo riutilizzato il metodo `JobeetJobTable::cleanup()` definito ieri.
+Questo è un altro grande esempio della riusabilità fornita dal pattern MVC.
+</doctrine>
+
+>**NOTE**
+>Si può anche cambiare l'azione da eseguire passando un parametro `action`:
+>
+>     [yml]
+>     deleteNeverActivated: { label: Delete never activated jobs, action: foo }
+
+![Actions](http://www.symfony-project.org/images/jobeet/1_2/12/actions.png)
+
+### `peer_method`
+
+Il numero di richieste al database necessarie per mostrare la pagina della
+lista dei lavori è 13, come mostrato dalla web debug toolbar.
+
+![Number of requests before](http://www.symfony-project.org/images/jobeet/1_2/12/web_debug_before.png)
+
+Se si clicca sul numero, si vedrà che la maggior parte delle richieste
+è per recuperare il nome della categoria per ogni lavoro.
+
+<propel>
+Per ridurre il numero di richieste, possiamo cambiare il metodo di default
+usato per recuperare i lavori, usando l'opzione `peer_method`:
+
+    [yml]
+    config:
+      list:
+        peer_method: doSelectJoinJobeetCategory
+
+Il metodo `doSelectJoinJobeetCategory()` aggiunge una join tra le tabelle
+`job` e `category` e crea automaticamente l'oggetto categoria associato ad
+ogni lavoro.
+</propel>
+<doctrine>
+Per ridurre il numero di richieste, possiamo ridefinire il meteodo
+`getPager()` per modificare la query ed aggiungere una join tra le tabelle
+`job` e `category`.
+
+    [php]
+    protected function getPager()
+    {
+      $q = $this->buildQuery();
+      $q->leftJoin($q->getRootAlias() . '.JobeetCategory c');
+
+      $pager = $this->configuration->getPager('JobeetJob');
+      $pager->setQuery($q);
+      $pager->setPage($this->getPage());
+      $pager->init();
+
+      return $pager;
+    }
+</doctrine>
+
+Il numero di richieste ora è ridotto a tre:
+
+![Number of requests after](http://www.symfony-project.org/images/jobeet/1_2/12/web_debug_after.png)
+
+Configurazione delle viste del form
+-----------------------------------
+
+La configurazione delle viste del form si eseguie in tre sezioni: `form`, `edit`, e
+`new`. Hanno tutte la stessa capacità di configuraizone, e la sezione `form`
+esiste solo come ripiego per le sezioni `edit` e `new`.
+
+### `display`
+
+Come per la lista, si può cambiare l'ordine dei campi mostrati, con l'opzione
+`display`. Ma siccome il form mostrato è definito da una classe, non provate
+a rimuovere un campo, perché potrebbe portare ad errori di validazione inattesi.
+
+L'opzione `display` per le viste del form può anche essere usata per raggruppare
+i campi:
+
+    [yml]
+    config:
+      form:
+        display:
+          Content: [category_id, type, company, logo, url, position,
+            ➥ location, description, how_to_apply, is_public, email]
+          Admin:   [_token, is_activated, expires_at]
+
+La configurazione qui sopra definisce due gruppi (`Content` e `Admin`), ciascuno
+dei quali contiene un sottoinsieme dei campi del form.
+
+![Fields grouping](http://www.symfony-project.org/images/jobeet/1_2/12/fields_grouping.png)
+
+L'admin generator ha un supporto incluso per le relazioni molti a molti. Nel form
+della categoria, si ha un input per il nome, uno per lo slug, ed un menù a
+tendina per gli affiliati correlati. Siccome non ha senso modificare tale
+relazione in questa pagina, rimuoviamolo:
+
+    [php]
+<propel>
+    // lib/model/JobeetCategoryForm.class.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetCategoryForm.class.php
+</doctrine>
+    class JobeetCategoryForm extends BaseJobeetCategoryForm
+    {
+      public function configure()
+      {
+        unset($this['jobeet_category_affiliate_list']);
+      }
+    }
