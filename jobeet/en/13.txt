@@ -41,7 +41,12 @@ A flash is set by using the `setFlash()` method of `sfUser`:
       $job = $this->getRoute()->getObject();
       $this->forward404Unless($job->extend());
 
+<propel>
       $this->getUser()->setFlash('notice', sprintf('Your job validity has been extend until %s.', $job->getExpiresAt('m/d/Y')));
+</propel>
+<doctrine>
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extend until %s.', date('m/d/Y', strtotime($job->getExpiresAt()))));
+</doctrine>
 
       $this->redirect($this->generateUrl('job_show_user', $job));
     }
@@ -199,18 +204,38 @@ The layout uses a new `getJobHistory()` method to retrieve the current job histo
     // apps/frontend/lib/myUser.class.php
     class myUser extends sfBasicSecurityUser
     {
+<propel>
       public function getJobHistory()
       {
         $ids = $this->getAttribute('job_history', array());
 
         return JobeetJobPeer::retrieveByPKs($ids);
       }
+</propel>
+<doctrine>
+      public function getJobHistory()
+      {
+        $ids = $this->getAttribute('job_history', array());
+
+        if (!empty($ids))
+        {
+          return Doctrine::getTable('JobeetJob')
+            ->createQuery('a')
+            ->whereIn('a.id', $ids)
+            ->execute();
+        } else {
+          return array();
+        }
+      }
+</doctrine>
 
       // ...
     }
 
+<propel>
 The `getJobHistory()` method uses the Propel `retrieveByPKs()` method to
 retrieve several `JobeetJob` objects in one call.
+</propel>
 
 To make it look better, add the following code at the end of the `main.css`
 stylesheet:
@@ -409,11 +434,19 @@ One of the great strengths of the symfony framework is the
 coming days, it is very easy to create a plugin. It is also quite powerful, as
 a plugin can contain anything from configuration to modules and assets.
 
+<propel>
 Today, we will install
 [`sfGuardPlugin`](http://www.symfony-project.org/plugins/sfGuardPlugin) to
 secure the backend application:
 
     $ php symfony plugin:install sfGuardPlugin
+</propel>
+<doctrine>
+Today, we will install
+[`sfDoctrineGuardPlugin`](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin) to secure the backend application
+
+    $ php symfony plugin:install sfDoctrineGuardPlugin
+</doctrine>
 
 The `plugin:install` task installs a plugin by name. All plugins are
 stored under the `plugins/` directory and each one has its own directory named
@@ -424,7 +457,10 @@ after the plugin name.
 
 When you install a plugin with the `plugin:install` task, symfony installs
 the latest stable version of it. To install a specific version of a plugin,
-pass the `--release` option. The
+pass the `--release` option.
+
+<propel>
+The
 [plugin page](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_all_releases)
 lists all available version grouped by symfony version.
 
@@ -433,6 +469,19 @@ As a plugin is self-contained into a directory, you can also
 from the symfony website and unarchive it, or alternatively make an
 `svn:externals` link to its
 [Subversion repository](http://svn.symfony-project.com/plugins/sfGuardPlugin).
+</propel>
+<doctrine>
+The
+[plugin page](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_all_releases)
+lists all available version grouped by symfony version.
+
+As a plugin is self-contained into a directory, you can also
+[download the package](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_installation)
+from the symfony website and unarchive it, or alternatively make an
+`svn:externals` link to its
+[Subversion repository](http://svn.symfony-project.com/plugins/sfDoctrineGuardPlugin).
+
+</doctrine>
 
 Backend Security
 ----------------
@@ -441,24 +490,40 @@ Each plugin has a
 [README](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_readme)
 file that explains how to configure it.
 
-Let's see how to configure `sfGuardPlugin`. As the plugin provides several new
+Let's see how to configure the new plugin. As the plugin provides several new
 model classes to manage users, groups, and permissions, you need to rebuild
 your model:
 
+<propel>
     $ php symfony propel:build-all-load
+</propel>
+<doctrine>
+    $ php symfony doctrine:build-all-reload
+</doctrine>
 
 >**TIP**
+<propel>
 >Remember that the `propel:build-all-load` task removes all existing tables
+</propel>
+<doctrine>
+>Remember that the `doctrine:build-all-reload` task removes all existing tables
+</doctrine>
 >before re-creating them. To avoid this, you can build the models, forms, and
 >filters, and then, create the new tables by executing the generated SQL
->statements stored in `data/sql/plugins.sfGuardAuth.lib.model.schema.sql`.
+>statements stored in `data/sql`.
 
 As always, when new classes are created, you need to clear the symfony cache:
 
     $ php symfony cc
 
+<propel>
 As `sfGuardPlugin` adds several methods to the user class, you need to change
 the base class of `myUser` to `sfGuardSecurityUser`:
+</propel>
+<doctrine>
+As `sfDoctrineGuardPlugin` adds several methods to the user class, you need to
+change the base class of `myUser` to `sfGuardSecurityUser`:
+</doctrine>
 
     [php]
     // apps/backend/lib/myUser.class.php
@@ -466,7 +531,12 @@ the base class of `myUser` to `sfGuardSecurityUser`:
     {
     }
 
+<propel>
 `sfGuardPlugin` provides a default action to authenticate users:
+</propel>
+<doctrine>
+`sfDoctrineGuardPlugin` provides a default action to authenticate users:
+</doctrine>
 
     [yml]
     // apps/backend/config/settings.yml
@@ -597,3 +667,5 @@ administrator users for free, thanks to the modules provided by the plugin.
 
 Tomorrow will be the last day of the second week of the Jobeet tutorial, and
 we will try to make it useful again.
+
+__ORM__

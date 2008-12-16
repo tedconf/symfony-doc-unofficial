@@ -154,16 +154,29 @@ Let's update the Atom template header:
     <subtitle>Latest Jobs</subtitle>
     <link href="<?php echo url_for('@job?sf_format=atom', true) ?>" rel="self"/>
     <link href="<?php echo url_for('@homepage', true) ?>"/>
+<propel>
     <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', JobeetJobPeer::getLatestPost()->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+    <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime(Doctrine::getTable('JobeetJob')->getLatestPost()->getCreatedAt())) ?></updated>
+</doctrine>
     <author>
       <name>Jobeet</name>
     </author>
     <id><?php echo sha1(url_for('@job?sf_format=atom', true)) ?></id>
 
+<propel>
 Notice the usage of `U` as an argument to `getCreatedAt()` to get the date as
 a timestamp. To get the date of the latest post, create the `getLatestPost()`
 method:
+</propel>
+<doctrine>
+Notice the usage of the `strtotime()` function to get the `created_at` date as a
+timestamp. To get the date of the latest post, create the `getLatestPost()`
+method:
+</doctrine>
 
+<propel>
     [php]
     // lib/model/JobeetJobPeer.php
     class JobeetJobPeer extends BaseJobeetJobPeer
@@ -178,11 +191,30 @@ method:
 
       // ...
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      public function getLatestPost()
+      {
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j');
+        $this->addActiveJobsCriteria($q);
+
+        return $q->fetchOne();
+      }
+
+      // ...
+    }
+</doctrine>
 
 The feed entries can be generated with the following code:
 
     [php]
     <!-- apps/frontend/modules/job/templates/indexSuccess.atom.php -->
+    <?php use_helper('Text') ?>
     <?php foreach ($categories as $category): ?>
       <?php foreach ($category->getActiveJobs(sfConfig::get('app_max_jobs_on_homepage')) as $job): ?>
         <entry>
@@ -191,7 +223,12 @@ The feed entries can be generated with the following code:
           </title>
           <link href="<?php echo url_for('job_show_user', $job, true) ?>" />
           <id><?php echo sha1($job->getId()) ?></id>
+<propel>
           <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', $job->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+          <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime($job->getCreatedAt())) ?></updated>
+</doctrine>
           <summary type="xhtml">
            <div xmlns="http://www.w3.org/1999/xhtml">
              <?php if ($job->getLogo()): ?>
@@ -277,7 +314,12 @@ partials are format specific:
         <title><?php echo $job->getPosition() ?> (<?php echo $job->getLocation() ?>)</title>
         <link href="<?php echo url_for('job_show_user', $job, true) ?>" />
         <id><?php echo sha1($job->getId()) ?></id>
-        <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', $job->getCreatedAt('U')) ?></updated>
+<propel>
+          <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', $job->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+          <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime($job->getCreatedAt())) ?></updated>
+</doctrine>
         <summary type="xhtml">
          <div xmlns="http://www.w3.org/1999/xhtml">
            <?php if ($job->getLogo()): ?>
@@ -313,7 +355,12 @@ You can use the `_list.atom.php` partial to simplify the job feed template:
       <subtitle>Latest Jobs</subtitle>
       <link href="<?php echo url_for('@job?sf_format=atom', true) ?>" rel="self"/>
       <link href="<?php echo url_for('@homepage', true) ?>"/>
+<propel>
       <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', JobeetJobPeer::getLatestPost()->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+      <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime(Doctrine::getTable('JobeetJob')->getLatestPost()->getCreatedAt())) ?></updated>
+</doctrine>
       <author>
         <name>Jobeet</name>
       </author>
@@ -334,7 +381,12 @@ Eventually, create the `showSuccess.atom.php` template:
       <subtitle>Latest Jobs</subtitle>
       <link href="<?php echo url_for('category', array('sf_subject' => $category, 'sf_format' => 'atom'), true) ?>" rel="self" />
       <link href="<?php echo url_for('category', array('sf_subject' => $category), true) ?>" />
+<propel>
       <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', $category->getLatestPost()->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+      <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime($category->getLatestPost()->getCreatedAt())) ?></updated>
+</doctrine>
       <author>
         <name>Jobeet</name>
       </author>
@@ -346,7 +398,12 @@ Eventually, create the `showSuccess.atom.php` template:
 As for the main job feed, we need the date of the latest job for a category:
 
     [php]
+<propel>
     // lib/model/JobeetCategory.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetCategory.class.php
+</doctrine>
     class JobeetCategory extends BaseJobeetCategory
     {
       public function getLatestPost()
@@ -369,3 +426,5 @@ to your websites without effort.
 
 Today, we have enhanced the job seeker experience. Tomorrow, we will see
 how to provide greater exposure to the job posters by providing a Web Service.
+
+__ORM__
