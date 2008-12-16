@@ -1,0 +1,569 @@
+Ngày 9: Functional Tests
+===========================
+
+Tóm tắt
+--------------------
+
+Hôm qua, chúng ta đã dùng thư viện lime có sẵn trong symfony để tiến hành unit test
+cho các lớp của Jobeet.
+
+Hôm nay, chúng ta sẽ viết functional tests cho các tính năng chúng ta đã xây dựng trong
+module `job` và `category`.
+
+Functional Tests
+----------------
+
+Functional tests là công cụ tốt để test toàn bộ ứng dụng của bạn:
+từ request của trình duyệt đến response trả về bởi server. Nó test mọi tầng của một ứng dụng:
+routing, model, actions, và templates. Việc này cũng tương tự như những gì bạn thường làm: 
+mỗi khi bạn tạo mới hay chỉnh sửa một action, bạn cần chạy ở trình duyệt và kiểm tra xem mọi thứ
+có hoạt động đúng bằng cách click vào từng link và kiểm tra kết quả trả về. Nói cách khác, 
+bạn thực thi một kịch bản tương ứng với use case bạn đã thực hiện.
+
+Công việc này thật là nhàm chán và sẽ không kiểm soát được hết các lỗi. Mỗi khi bạn thay đổi một vài thứ trong mã nguồn, bạn phải thực thi qua tất cả các bước của kịch bản để chắc rằng chương trình hoạt động đúng. Điên mất :)). Functional tests trong symfony cung cấp một cách đơn giản để tự động mô phỏng lại các bước trong kịch bản. Giống unit tests, nó giúp code của bạn trở nên đúng đắn hơn.
+
+Lớp `sfBrowser`
+---------------------
+
+Trong symfony, functional tests được chạy thông qua một trình duyệt đặc biệt, implemented từ lớp [`sfBrowser`](http://www.symfony-project.org/api/1_2/sfBrowser). Nó hoạt động như một trình duyệt thực hiện ứng dụng của bạn và kết nối trực tiếp đến nó, không cần một web server. Nó cho phép bạn truy cập tất cả các symfony objects trước và sau mỗi request, giúp bạn xem xét và kiểm tra nó.
+
+`sfBrowser` cung cấp các phương thức giúp nó hoạt động tương tự như một trình duyệt đơn giản:
+
+ | Method       | Mô tả
+ | ------------ | -------------------------------------------------
+ | `get()`      | Gets a URL
+ | `post()`     | Posts to a URL
+ | `call()`     | Calls a URL (used for `PUT` and `DELETE` methods)
+ | `back()`     | Goes back one page in the history
+ | `forward()`  | Goes forward one page in the history
+ | `reload()`   | Reloads the current page
+ | `click()`    | Clicks on a link or a button
+ | `select()`   | selects a radiobutton or checkbox
+ | `deselect()` | deselects a radiobutton or checkbox
+ | `restart()`  | Restarts the browser
+
+Dưới đây là một vài ví dụ về các phương thức của `sfBrowser`:
+
+    [php]
+    $browser = new sfBrowser();
+
+    $browser->
+      get('/')->
+      click('Design')->
+      get('/category/programming?page=2')->
+      get('/category/programming', array('page' => 2))->
+      post('search', array('keywords' => 'php'))
+    ;
+
+`sfBrowser` cũng có một vài phương thức để cấu hình cho browser behavior:
+
+ | Method             | Description
+ | ------------------ | -------------------------------------------------
+ | `setHttpHeader()`  | Sets an HTTP header
+ | `setAuth()`        | Sets the basic authentication credentials
+ | `setCookie()`      | Set a cookie
+ | `removeCookie()`   | Removes a cookie
+ | `clearCookie()`    | Clears all current cookies
+ | `followRedirect()` | Follows a redirect
+
+Lớp `sfTestFunctional`
+----------------------------
+
+Chúng ta đã có một trình duyệt, nhưng chúng ta cần có cách để có thể xem xét được các symfony objects
+thể có thể thực hiện đưọc viêc test. Điều này có thể thực hiện đưọc với lime và một vài phuơng thức của `sfBrowser`
+như `getResponse()` và `getRequest()`, nhưng symfony cung cấp một cách tốt hơn.
+
+Các phuơng thức test đưọc cung cấp bởi một lớp khác,
+[`sfTestFunctional`](http://www.symfony-project.org/api/1_2/sfTestFunctional)
+nó dùng một `sfBrowser` instance trong phương thức khởi tạo. Lớp `sfTestFunctional`
+chuyển việc test cho các đối tưọng **tester**. Có nhiều tester đưọc xây dựng sẵn trong symfony, và bạn cũng có thể tự tạo ra chúng.
+
+Như chúng ta đã thấy hôm qua, functional tests được chứa trong thư mục `test/functional`. Với Jobeet, tests nằm trong thư mục con `test/functional/frontend` ứng với application tương ứng. Thư mục này đã có 2 files:
+`categoryActionsTest.php`, và `jobActionsTest.php` đưọc tạo tự động khi chúng ta tạo các module tuơng ứng:
+
+    [php]
+    // test/functional/frontend/categoryActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new sfTestFunctional(new sfBrowser());
+
+    $browser->
+      get('/category/index')->
+
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'index')->
+      end()->
+
+      with('response')->begin()->
+        isStatusCode(200)->
+        checkElement('body', '!/This is a temporary page/')->
+      end()
+    ;
+
+Khi mới nhìn, bạn có thể không quen với cách viết này. Đó là bởi vì
+các phưong thức của `sfBrowser` và `sfTestFunctional` luôn trả về `$this` để enable
+một [fluent interface](http://en.wikipedia.org/wiki/Fluent_interface). Nó cho phép bạn xâu chuỗi các phuơng thức cần gọi để dễ đọc hơn.
+
+Tests đưọc chạy trong một khối tester. Một tester block context bắt đầu bởi `with('TESTER NAME')->begin()` và kết thúc bằng `end()`:
+
+    [php]
+    $browser->
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'index')->
+      end()
+    ;
+
+Code tests yêu cầu tham số `module` là `category` và `action` là `index`.
+
+>**TIP**
+>Khi chỉ cần gọi một test method ở một tester, bạn không cần tạo một block: `with('request')->isParameter('module', 'category')`.
+
+### Request Tester
+
+**Request tester** cung cấp các phương thức tester để introspect và test đối tượng `sfWebRequest`:
+
+ | Method             | Mô tả
+ | ------------------ | ------------------------------------------------
+ | `isParameter()`    | Checks a request parameter value
+ | `isFormat()`       | Checks the format of a request
+ | `isMethod()`       | Checks the method
+ | `hasCookie()`      | Checks whether the request has a cookie with the
+ |                    | given name
+ | `isCookie()`       | Checks the value of a cookie
+
+### Response Tester
+
+Lớp **response tester** cung cấp các phuơng thức tester đối với các đối tưọng `sfWebResponse` :
+
+ | Method             | Mô tả
+ | ------------------ | -----------------------------------------------------
+ | `checkElement()`   | Checks if a response CSS selector match some criteria
+ | `isHeader()`       | Checks the value of a header
+ | `isStatusCode()`   | Checks the response status code
+ | `isRedirected()`   | Checks if the current response is a redirect
+
+>**NOTE**
+>Chúng ta sẽ đề cập đển các lớp [testers](http://www.symfony-project.org/api/1_2/test)
+>khác trong những ngày tiếp theo (cho forms, user, cache, ...).
+
+Chạy Functional Tests
+------------------------
+
+Như unit tests, chúng ta có thể thực thi functional tests bằng cách chạy trực tiếp file:
+
+    $ php test/functional/frontend/categoryActionsTest.php
+
+Hay qua lệnh `test:functional`:
+
+    $ php symfony test:functional frontend categoryActions
+
+![Tests on the command line](http://www.symfony-project.org/images/jobeet/1_2/09/cli_tests.png)
+
+Dữ liệu Test
+-------------
+
+Tương tự như ##ORM## unit tests, chúng ta cần phải load dữ liệu test mõi khi chúng ta chạy functional test. Chúng ta có thể dùng lại mã nguồn đã viết hôm qua:
+
+    [php]
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+<propel>
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+    Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+Load dữ liệu trong một functional test đơn giản hơn unit tests một chút do database đã được khởi tạo bởi bootstrapping script.
+
+Như với unit tests, chúng ta không muốn copy&paste lại đoạn code này với mỗi file test, chúng ta tạo một functional trong lớp thừa kế từ lớp `sfTestFunctional`:
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function loadData()
+      {
+<propel>
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+        Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+        return $this;
+      }
+    }
+
+Viết Functional Tests
+------------------------
+
+Viết functional tests chính là thực hiện các bước trong kịch bản ở một trình duyệt. Chúng ta đã có tất cả các kịch bản cần thiết đưọc mô tả trong ngày 2.
+
+Đầu tiên, chúng ta test trang chủ bằng cách sửa lại file test `jobActionsTest.php`. Thay code bởi đoạn sau:
+
+### Không hiển thị các công việc hết hạn
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'index')->
+      end()->
+      with('response')->begin()->
+        info('  1.1 - Expired jobs are not listed')->
+        checkElement('.jobs td.position:contains("expired")', false)->
+      end()
+    ;
+
+Tưong tự như `lime`, một thông điệp có thể được chèn vào bằng cách gọi phuơng thức `info()` để giúp kết quả hiển thị dễ đọc hơn. Để kiểm tra các công việc hết hạn ở trang chủ có đưọc hiển thị không, chúng ta kiểm tra xem CSS selector
+`.jobs td.position:contains("expired")` có match trong nội dung HTML trả về không (nhớ rằng trong file fixture, chỉ các công việc hết hạn mới chứa cụm "expired" trong truờng position).
+
+>**TIP**
+>Phuơng thức `checkElement()` có thể hiểu đưọc hầu hết các valid CSS3 selectors.
+
+### Chỉ hiển thị n công việc cho mỗi category
+
+Thêm đoạn code sau vào cuối file test:
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $max = sfConfig::get('app_max_jobs_on_homepage');
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info(sprintf('  1.2 - Only %s jobs are listed for a category', $max))->
+      with('response')->
+        checkElement('.category_programming tr', $max)
+    ;
+
+Phương thức `checkElement()` cũng có thể kiểm tra xem một CSS selector có đưọc match n lần.
+
+### Một category có link đến trang category chỉ khi nó có nhiều công việc
+
+    [php]
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.3 - A category has a link to the category page only if too many jobs')->
+      with('response')->begin()->
+        checkElement('.category_design .more_jobs', false)->
+        checkElement('.category_programming .more_jobs')->
+      end()
+    ;
+
+Ở đây, chúng ta kiểm tra rằng khôn có link "more jobs" ở category design
+(`.category_design .more_jobs` không tồn tại), và có một link "more
+jobs" ở category programming (`.category_programming .more_jobs` tồn tại).
+
+### Jobs đưọc sắp xếp theo ngày tháng
+
+    [php]
+<propel>
+    // most recent job in the programming category
+    $criteria = new Criteria();
+    $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+    $category = JobeetCategoryPeer::doSelectOne($criteria);
+
+    $criteria = new Criteria();
+    $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+    $criteria->add(JobeetJobPeer::CATEGORY_ID, $category->getId());
+    $criteria->addDescendingOrderByColumn(JobeetJobPeer::CREATED_AT);
+
+    $job = JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+    $q = Doctrine_Query::create()
+      ->select('j.*')
+      ->from('JobeetJob j')
+      ->leftJoin('j.JobeetCategory c')
+      ->where('c.slug = ?', 'programming')
+      ->andWhere('j.expires_at > ?', date('Y-m-d', time()))
+      ->orderBy('j.created_at DESC');
+
+    $job = $q->fetchOne();
+</doctrine>
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.4 - Jobs are sorted by date')->
+      with('response')->begin()->
+        checkElement('.category_programming tr:last:contains("102")')->
+        checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]', $job->getId()))->
+      end()
+    ;
+
+Để kiểm tra xem các công việc có đưọc sắp xếp theo ngày tháng hay không, chúng ta kiểm tra công việc cuối trong danh sách ở trang chủ có chứa cụm `102` ở trưòng company không. Test công việc đầu tiên trong danh sách programming đòi hỏi một chút khéo léo do cả 2 công việc đầu tiên đều có thông tin hiển thị như nhau: position, company, và location. Vì thế chúng ta cần kiểm tra xem URL có chứa primary key mà chúng ta mong đợi không. Do primary key có thể thay đổi mỗi lần chạy, nên chúng ta cần lấy ##ORM## object đầu tiên trong database.
+
+Mặc dù test hoạt động đúng, nhưng chúng ta cần refactor lại một chút, giúp cho công việc đầu tiên của category có thể dùng lại đưọc trong test của chúng ta. Chúng ta sẽ không chuyển code tới tầng Model để code test được rành mạch.
+Thay vào đó, chúng ta sẽ chuyển code tới lớp `JobeetTestFunctional` chúng ta sẽ tạo ngay sau đây. Lớp này thực hiện như một Domain Specific functional tester class cho Jobeet:
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function getMostRecentProgrammingJob()
+      {
+<propel>
+        // most recent job in the programming category
+        $criteria = new Criteria();
+        $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+        $category = JobeetCategoryPeer::doSelectOne($criteria);
+
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->addDescendingOrderByColumn(JobeetJobPeer::CREATED_AT);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->select('j.*')
+          ->from('JobeetJob j')
+          ->leftJoin('j.JobeetCategory c')
+          ->where('c.slug = ?', 'programming')
+          ->andWhere('j.expires_at > ?', date('Y-m-d', time()))
+          ->orderBy('j.created_at DESC');
+
+        return $q->fetchOne();
+</doctrine>
+      }
+
+      // ...
+    }
+
+### Mỗi công việc ở trang chủ đều có thể click được
+
+    [php]
+    $browser->info('2 - The job page')->
+      get('/')->
+
+      info('  2.1 - Each job on the homepage is clickable')->
+      click('Web Developer', array('position' => 1))->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'show')->
+        isParameter('company_slug', 'sensio-labs')->
+        isParameter('location_slug', 'paris-france')->
+        isParameter('position_slug', 'web-developer')->
+        isParameter('id', $browser->getMostRecentProgrammingJob()->getId())->
+      end()
+    ;
+
+Để test các job link ở trang chủ, chúng tôi giả lập một click vào đoạn text "Web Developer". Có thể có nhiều đoạn này trên trang web, chúng ta click vào cái đầu tiên (`array('position' => 1)`).
+
+Mỗi request parameter sau đó đưọc test để chắc rằng routing đã lấy đúng công việc.
+
+Học qua ví dụ
+--------------------
+
+Trong mục này, chúng tôi sẽ cung cấp tất cả code cần thiết để test trang job và category. Hãy đọc kĩ những đoạn code này và bạn sẽ học được nhiều thủ thuật mới:
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function loadData()
+      {
+<propel>
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+        Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+        return $this;
+      }
+
+      public function getMostRecentProgrammingJob()
+      {
+<propel>
+        // most recent job in the programming category
+        $criteria = new Criteria();
+        $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+        $category = JobeetCategoryPeer::doSelectOne($criteria);
+
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->addDescendingOrderByColumn(JobeetJobPeer::CREATED_AT);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->select('j.*')
+          ->from('JobeetJob j')
+          ->leftJoin('j.JobeetCategory c')
+          ->where('c.slug = ?', 'programming')
+          ->andWhere('j.expires_at > ?', date('Y-m-d', time()))
+          ->orderBy('j.created_at DESC');
+
+        return $q->fetchOne();
+</doctrine>
+      }
+
+      public function getExpiredJob()
+      {
+<propel>
+        // expired job
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::LESS_THAN);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j')
+          ->where('j.expires_at < ?', date('Y-m-d', time()));
+
+        return $q->fetchOne();
+</doctrine>
+      }
+    }
+
+    // test/functional/frontend/jobActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'index')->
+      end()->
+      with('response')->begin()->
+        info('  1.1 - Expired jobs are not listed')->
+        checkElement('.jobs td.position:contains("expired")', false)->
+
+        info(sprintf('  1.2 - Only %s jobs are listed for a category', sfConfig::get('app_max_jobs_on_homepage')))->
+        checkElement('.category_programming tr', sfConfig::get('app_max_jobs_on_homepage'))->
+
+        info('  1.3 - A category has a link to the category page only if too many jobs')->
+        checkElement('.category_design .more_jobs', false)->
+        checkElement('.category_programming .more_jobs')->
+
+        info('  1.4 - Jobs are sorted by date')->
+        checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]', $browser->getMostRecentProgrammingJob()->getId()))->
+        checkElement('.category_programming tr:last:contains("102")')->
+      end()
+    ;
+
+    $browser->info('2 - The job page')->
+      info('  2.1 - Each job on the homepage is clickable and give detailed information')->
+      click('Web Developer', array('position' => 1))->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'show')->
+        isParameter('company_slug', 'sensio-labs')->
+        isParameter('location_slug', 'paris-france')->
+        isParameter('position_slug', 'web-developer')->
+        isParameter('id', $browser->getMostRecentProgrammingJob()->getId())->
+      end()->
+
+      info('  2.2 - A non-existent job forwards the user to a 404')->
+      get('/job/foo-inc/milano-italy/0/painter')->
+      with('response')->isStatusCode(404)->
+
+      info('  2.3 - An expired job page forwards the user to a 404')->
+      get(sprintf('/job/sensio-labs/paris-france/%d/web-developer', $browser->getExpiredJob()->getId()))->
+      with('response')->isStatusCode(404)
+    ;
+
+    // test/functional/frontend/categoryActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->info('1 - The category page')->
+      info('  1.1 - Categories on homepage are clickable')->
+      get('/')->
+      click('Programming')->
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'show')->
+        isParameter('slug', 'programming')->
+      end()->
+
+      info(sprintf('  1.2 - Categories with more than %s jobs also have a "more" link', sfConfig::get('app_max_jobs_on_homepage')))->
+      get('/')->
+      click('22')->
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'show')->
+        isParameter('slug', 'programming')->
+      end()->
+
+      info(sprintf('  1.3 - Only %s jobs are listed', sfConfig::get('app_max_jobs_on_category')))->
+      with('response')->checkElement('.jobs tr', sfConfig::get('app_max_jobs_on_category'))->
+
+      info('  1.4 - The job listed is paginated')->
+      with('response')->begin()->
+        checkElement('.pagination_desc', '/32 jobs/')->
+        checkElement('.pagination_desc', '#page 1/2#')->
+      end()->
+
+      click('2')->
+      with('request')->begin()->
+        isParameter('page', 2)->
+      end()->
+      with('response')->checkElement('.pagination_desc', '#page 2/2#')
+    ;
+
+Debugging Functional Tests
+--------------------------
+
+Đôi khi một functional test fails. Do symfony giả lập một trình duyệt không có giao diện đồ họa, nên thật khó để tìm ra nguyên nhân. May mắn thay, symfony cung cấp phuơng thức `debug()` để hiển thị response header và content:
+
+    [php]
+    $browser->with('response')->debug();
+
+Có thể thêm phuơng thức `debug()` vào bất kì đâu trong một `response` tester block và tạm dừng thực thi script.
+
+Functional Tests Harness
+------------------------
+
+Lệnh `test:functional` có thể dùng để chạy tất cả các functional tests cho một application:
+
+    $ php symfony test:functional frontend
+
+Lệnh này hiển thị kết quả của mỗi test trên một dòng:
+
+![Functional tests harness](http://www.symfony-project.org/images/jobeet/1_2/09/test_harness.png)
+
+Tests Harness
+-------------
+
+Như bạn mong đợi, cũng có lệnh để thực thi tất cả các test cho một project
+(unit và functional):
+
+    $ php symfony test:all
+
+![Tests harness](http://www.symfony-project.org/images/jobeet/1_2/09/tests_harness.png)
+
+Hẹn gặp lại ngày mai
+--------------------
+
+Chúng ta đã tìm hiểu về các công cụ test trong symfony. Bạn không còn lý do gì để không test cho ứng dụng của bạn! Với lime framework và functional test framework, symfony cung cấp những công cụ mạnh mẽ để giúp bạn viết test ít tốn công sức nhất.
+
+Chúng ta đã hiểu về functional tests. Từ nay, mỗi khi chúng ta tạo một tính năng mới, chúng ta cần viết tests để học nhiều hơn về test framework.
+
+Functional test framework không thể thay thế đưọc những công cụ như
+"[Selenium](http://selenium.seleniumhq.org/)". Selenium chạy trực tiếp trong trình duyệt và tự động test trên nhiều platform và browser khác nhau, và nó cũng có thể test JavaScript trong ứng dụng của bạn.
+
+Hãy quay lại vào ngày mai, và chúng ta sẽ nói về một tính năng thú vị khác trong symfony: form framework.
+
+__ORM__
