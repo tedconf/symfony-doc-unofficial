@@ -691,7 +691,12 @@ another great example of the reusability provided by the MVC pattern.
 
 ![Actions](http://www.symfony-project.org/images/jobeet/1_2/12/actions.png)
 
+<propel>
 ### `peer_method`
+</propel>
+<doctrine>
+### `table_method`
+</doctrine>
 
 The number of database requests needed to display the job list page is 13, as
 shown by the web debug toolbar.
@@ -702,13 +707,18 @@ If you click on that number, you will see that most requests are to retrieve
 the category name for each job.
 
 <propel>
-To reduce the number of requests, we can
-change the default method used to get the jobs by using the `peer_method`
-option:
+To reduce the number of requests, we can change the default method used to get
+<propel>
+the jobs by using the `peer_method` option:
+</propel>
+<doctrine>
+the jobs by using the `table_method` option:
+</doctrine>
 
     [yml]
     config:
       list:
+<propel>
         peer_method: doSelectJoinJobeetCategory
 
 The `doSelectJoinJobeetCategory()` method adds a join between the `job` and
@@ -716,22 +726,27 @@ the `category` tables and automatically creates the category object related to
 each job.
 </propel>
 <doctrine>
-To reduce the number of requests, we can override the `getPager()` method to 
-alter the query and add a join between the `job` and `category` tables.
+        table_method: retrieveBackendJobList
+
+Now you must create the `retrieveBackendJobList` method in `JobeetJobTable` 
+located in `lib/model/doctrine/JobeetJobTable.class.php`.
 
     [php]
-    protected function getPager()
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
     {
-      $q = $this->buildQuery();
-      $q->leftJoin($q->getRootAlias() . '.JobeetCategory c');
+      public function retrieveBackendJobList()
+      {
+        $q = $this->createQuery('a')
+          ->leftJoin('a.JobeetCategory c');
+        return $q;
+      }
 
-      $pager = $this->configuration->getPager('JobeetJob');
-      $pager->setQuery($q);
-      $pager->setPage($this->getPage());
-      $pager->init();
+      // ...
 
-      return $pager;
-    }
+The `retrieveBackendJobList()` method adds a join between the `job` and
+the `category` tables and automatically creates the category object related to
+each job.
 </doctrine>
 
 The number of requests is now down to three:
@@ -1071,6 +1086,9 @@ The final configuration for the Jobeet admin is as follows:
 <propel>
         peer_method:  doSelectJoinJobeetCategory
 </propel>
+<doctrine>
+        table_method: retrieveBackendJobList
+</doctrine>
       filter:
         display: [category_id, company, position, description, is_activated, is_public, email, expires_at]
       form:
