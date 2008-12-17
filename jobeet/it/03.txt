@@ -15,7 +15,7 @@ codice PHP.
 Il modello relazionale
 ----------------------
 
-Le user stories che abbiamo scritto ieri descrivono le entità principali
+Le user story che abbiamo scritto ieri descrivono le entità principali
 del nostro progetto: annunci di lavoro, affiliati, categorie. Di seguito 
 abbiamo il corrispondente diagramma entità-relazioni:
 
@@ -33,7 +33,7 @@ Lo Schema
 Per memorizzare gli annunci di lavoro, gli affiliati e le categorie abbiamo ovviamente
 bisogno di un database relazionale.
 
-Dato che symfony è un framework Object-Oriented ci farebbe piacere manipolare
+Dato che symfony è un framework orientato agli oggetti, ci farebbe piacere manipolare
 oggetti il più possibile. Per esempio invece che scrivere query SQL per ottenere
 record dal database preferiamo utilizzare gli oggetti.
 
@@ -55,7 +55,7 @@ descrittivo: analizzando un database esistente o creandone uno a mano.
 >Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php)).
 
 Siccome il database non esiste ancora e non vogliamo prendere decisioni su 
-di esso (come realizzarlo), creeremo lo schema a mano editando un file vuoto
+di esso (come realizzarlo), creeremo lo schema a mano modificando un file vuoto
 `config/schema.yml`:
 
     [yml]
@@ -103,7 +103,7 @@ di esso (come realizzarlo), creeremo lo schema a mano editando un file vuoto
 </propel>
 <doctrine>
 Siccome il database non esiste ancora e non vogliamo prendere decisioni su 
-di esso (come realizzarlo), creeremo lo schema a mano editando un file vuoto
+di esso (come realizzarlo), creeremo lo schema a mano modificando un file vuoto
 `config/schema.yml`:
 
     [yml]
@@ -318,11 +318,21 @@ Grazie alla descrizione del database nel file `schema.yml`, possiamo usare
 alcuni dei task integrati di ##ORM## per generare l'SQL necessario alla creazione
 delle tabelle.
 
+<doctrine>
+Prima, per poter generare l'SQL, si deve costruire il modello partendo dai
+file dello schema.
+
+    $ php symfony doctrine:build-model
+
+Ora che i modelli sono presenti, si può generare ed inserire l'SQL.
+</doctrine>
+
     $ php symfony propel:build-sql
 
 Il task `propel:build-sql` genera le istruzioni SQL della directory `data/sql`,
 ottimizzato per il database che abbiamo scelto.
 
+<propel>
     [sql]
     # snippet from data/sql/lib.model.schema.sql
     CREATE TABLE `jobeet_category`
@@ -331,8 +341,17 @@ ottimizzato per il database che abbiamo scelto.
       `name` VARCHAR(255)  NOT NULL,
       PRIMARY KEY (`id`)
     )Type=InnoDB;
+</propel>
+<doctrine>
+    [sql]
+    # snippet from data/sql/schema.sql
+    CREATE TABLE jobeet_category (id BIGINT AUTO_INCREMENT, name VARCHAR(255)
+    NOT NULL COMMENT 'test', created_at DATETIME, updated_at DATETIME, slug
+    VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), PRIMARY KEY(id))
+    ENGINE = INNODB;
+</doctrine>
 
-Per creare le tabelle nel database, devi eseguire il task `propel:insert-sql`:
+Per creare le tabelle nel database, si deve eseguire il task `propel:insert-sql`:
 
     $ php symfony propel:insert-sql
 
@@ -455,15 +474,15 @@ Per ogni web application, ci sono tre tipi da dati:
   * **Dati iniziali**: I dati iniziali sono necessari dall'applicazione per
                        funzionare. Per esempio, Jobeet necessita di alcune
                        categorie iniziali. Altrimenti nessuno sarebbe capace di
-                       postare un annuncio. Abbiamo inoltre bisogno di un utente
+                       inserire un annuncio. Abbiamo inoltre bisogno di un utente
                        amministratore, per eseguire il login al backend.
 
   * **Dati per il test**: I dati per il test sono necessari alle applicazioni
-                          per venire testate. Come sviluppatore, scriverai dei
-                          test per assicurarti che Jobeet si comporti come
+                          per venire testate. Come sviluppatore, si scriveranno dei
+                          test per assicurarsi che Jobeet si comporti come
                           descritto nelle previsioni, ed il modo migliore è
                           scrivere dei test automatizzati. Così, ogni volta che
-                          eseguirai un test, avrai bisogno di un database pulito
+                          eseguiremo un test, avremo bisogno di un database pulito
                           con dei dati da testare.
 
   * **Dati degli utenti**: I dati degli utenti sono i dati creati dagli utenti
@@ -609,7 +628,7 @@ Un file fixture può contenere oggetti provenienti da diversi modelli.
 
 <propel>
 >**TIP**
->Nota i numeri che precedono i nomi dei file. Questo è un modo semplice per controllare
+>Notate i numeri che precedono i nomi dei file. Questo è un modo semplice per controllare
 >l'ordine del caricamento dei dati. Più avanti nel progetto, se avremo bisogno di inserire
 >nuovi file fixture, sarà facile perché avremo alcuni numeri liberi tra quelli
 >esistenti.
@@ -729,10 +748,9 @@ metodo `__toString()`, come sotto.
       }
     }
 
-Ora puoi creare e modificare i lavori. Prova a lasciare un campo richiesto in bianco, o
-prova ad immettere una data non valida. Tutto bene, symfony ha creato delle regole di
+Ora potete creare e modificare i lavori. Provate a lasciare un campo richiesto in bianco, o
+ad immettere una data non valida. Tutto bene, symfony ha creato delle regole di
 validazione di base, partendo dallo schema del database.
-
 
 ![validation](http://www.symfony-project.org/images/jobeet/1_2/03/validation.png)
 
@@ -743,8 +761,8 @@ Per oggi è tutto. Siete stati avvertiti nell'introduzione. Oggi abbiamo scritto
 codice PHP, ma abbiamo un modulo web funzionante per il modello `job`, pronto per essere
 aggiustato e personalizzato. Ricorda, niente codice PHP significa anche niente bug!
 
-Se vi è rimasta un po' di energia, puoi anche leggere il codice generato per il modulo e
-per il modello, e provare a capire come funziona. Altrimenti, non preoccupati e dormi
+Se vi è rimasta un po' di energia, potete anche leggere il codice generato per il modulo e
+per il modello, e provare a capire come funziona. Altrimenti, non preoccupatevi e dormite
 bene, perché domani parleremo di uno dei paradigmi più usati nei framework per il web, il
 [design pattern MVC](http://it.wikipedia.org/wiki/Model-view-controller).
 

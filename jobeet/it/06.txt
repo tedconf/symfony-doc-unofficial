@@ -21,7 +21,7 @@ L'oggetto Query di Doctrine
 
 Dai requisiti del giorno 2:
 
-  "Quando un utente arriva sul sito web di Jobeet vede una lista di offert di 
+  "Quando un utente arriva sul sito web di Jobeet vede una lista di offerte di 
   lavoro attive."
 
 Ma al momento tutti le offerte di lavoro sono visualizzate, indipendentemente dal
@@ -45,10 +45,18 @@ fatto che siano attive o meno:
       // ...
     }
 
+<propel>
 Un'offerta di lavoro attiva è un'offerta pubblicata da meno di 30 giorni. Il 
 metodo `doSelect()` utilizza un oggetto di tipo `Criteria` che descrive la 
-richiesta da fare al database. Nel codice seguente viene passato un `Criteria`
+richiesta da fare al database. Nel codice precedente viene passato un `Criteria`
 vuoto, questo significa che tutti i record vengono recuperati dal database.
+</propel>
+<doctrine>
+Un'offerta di lavoro attiva è un'offerta pubblicata da meno di 30 giorni. Il 
+metodo `Doctrine_Query::execute()` farà una richiesta al database.
+Nel codice precedente non abbiamo specificato nessuna condizione di "where",
+questo significa che tutti i record vengono recuperati dal database.
+</doctrine>
 
 Modifichiamolo per ottenere solamente le offerte attive:
 
@@ -169,8 +177,8 @@ non andrebbe cambiato una volta che il record viene creato.
 Se ricordate lo schema del database abbiamo una colonna `expires_at`. Attualmente
 questo valore è sempre vuoto. Quando un'offerta di lavoro viene creata il valore
 va impostato a 30 giorni successivi alla data corrente. Per fare qualcosa prima 
-che un oggetto di tipo ##ORM## venga serializzato sul database potete fare l'override
-del metodo `save()`:
+che un oggetto di tipo ##ORM## venga serializzato sul database, si può
+sovrascrivere il metodo `save()`:
 
 <propel>
     [php]
@@ -235,7 +243,6 @@ Modifichiamo l'action per utilizzare la colonna `expires_at`:
 
 Abbiamo ristretto il criterio per selezionare solamente le offerte di lavoro
 con la data `expires_at` nel futuro.
-
 
 Ancora sulle Fixture
 --------------------
@@ -747,7 +754,7 @@ l'oggetto, ma si può cambiare questo comportamento fornendo un'opzione
         method_for_criteria: doSelectActive
 </propel>
 <doctrine>
-        method: retrieveActiveJob
+        method_for_query: retrieveActiveJob
 </doctrine>
       param:   { module: job, action: show }
       requirements:
