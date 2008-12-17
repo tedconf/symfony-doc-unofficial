@@ -362,11 +362,21 @@ Thanks to the database description from the `schema.yml` file, we can use some
 ##ORM## built-in tasks to generate the SQL statements needed to create the
 database tables:
 
+<doctrine>
+First in order to generate the SQL you must build your models from your schema 
+files.
+
+    $ php symfony doctrine:build-model
+
+Now that your models are present you can generate and insert the sql.
+</doctrine>
+
     $ php symfony propel:build-sql
 
 The `propel:build-sql` task generates SQL statements in the `data/sql`
 directory, optimized for the database engine we have configured:
 
+<propel>
     [sql]
     # snippet from data/sql/lib.model.schema.sql
     CREATE TABLE `jobeet_category`
@@ -375,6 +385,15 @@ directory, optimized for the database engine we have configured:
       `name` VARCHAR(255)  NOT NULL,
       PRIMARY KEY (`id`)
     )Type=InnoDB;
+</propel>
+<doctrine>
+    [sql]
+    # snippet from data/sql/schema.sql
+    CREATE TABLE jobeet_category (id BIGINT AUTO_INCREMENT, name VARCHAR(255)
+    NOT NULL COMMENT 'test', created_at DATETIME, updated_at DATETIME, slug
+    VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), PRIMARY KEY(id))
+    ENGINE = INNODB;
+</doctrine>
 
 To actually create the tables in the database, you need to run the
 `propel:insert-sql` task:
