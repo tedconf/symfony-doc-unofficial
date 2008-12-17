@@ -261,6 +261,7 @@ two updates in a transaction and rollback in case of an error:
 We also need to override the `delete()` method to remove the entry of the
 deleted job from the index:
 
+<propel>
     [php]
     // lib/model/JobeetJob.php
     public function delete(PropelPDO $con = null)
@@ -274,6 +275,22 @@ deleted job from the index:
 
       return parent::delete($con);
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJob.class.php
+    public function delete(Doctrine_Connection $conn = null)
+    {
+      $index = $this->getTable()->getLuceneIndex();
+
+      if ($hit = $index->find('pk:'.$this->getId()))
+      {
+        $index->delete($hit->id);
+      }
+
+      return parent::delete($conn);
+    }
+</doctrine>
 
 <propel>
 ### Mass delete
