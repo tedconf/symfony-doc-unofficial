@@ -277,9 +277,300 @@ Comq vedremo oggi personalizzare i moduli generati dall'admin generator
 >di sviluppo. In quello di produzione avrete bisogno di ripulire la cache manualmente
 >con il task `cache:clear`.
 
-==========================================
-SECONDA PARTE
-==========================================
+Configurazione del Backend
+---------------------
+
+Un modulo di amministrazione può venir personalizzato modificando la valore di
+`config` del file `generator.yml`. La configurazione è organizzata in sette sezioni:
+
+  * `actions`: La configurazione di default per le azioni trovate nella lista e nei form
+  * `fields`:  La configurazione di default per i campi
+  * `list`:    Configurazione per la lista
+  * `filter`:  Configurazione per i filtri
+  * `form`:    Configurazione per il form new/edit
+  * `edit`:    Configurazioni specifiche per la pagina di modifica
+  * `new`:     Configurazioni specifiche per la pagina di creazione
+
+Iniziamo la personalizzazione.
+
+Configurazione del titolo
+-------------------
+
+I titolo delle sezioni `list`, `edit`, e `new` del modulo `category` possono venir
+personalizzati definendo l'opzione `title`:
+
+    [yml]
+    config:
+      actions: ~
+      fields:  ~
+      list:
+        title: Category Management
+      filter:  ~
+      form:    ~
+      edit:
+        title: Editing Category "%%name%%" (#%%id%%)
+      new:
+        title: New Category
+
+Il `title` per la sezione `edit` contiene valori dinamici: tutte le stringhe
+racchiuse tra `%%` sono rimpiazzate dai valori delle colonne dell'oggetto corrispondenti.
+
+![Titles](http://www.symfony-project.org/images/jobeet/1_2/12/title.png)
+
+La configurazione per il modulo `job` è simile:
+
+    [yml]
+    config:
+      actions: ~
+      fields:  ~
+      list:
+        title: Job Management
+      filter:  ~
+      form:    ~
+      edit:
+        title: Editing Job "%%company%% is looking for a %%position%% (#%%id%%)"
+      new:
+        title: Job Creation
+
+Configurazione Campi
+--------------------
+
+Le viste sono composte da campi. Un campo può essere una colonna di un modello,
+o un campo personalizzato come vedremo in seguito.
+
+La configurazione dei campi di default può essere personalizzata nella sezione `fields`:
+
+    [yml]
+    config:
+      fields:
+        is_activated: { label: Activated?, help: Whether the user has activated the job, or not }
+        is_public:    { label: Public? }
+
+La sezione `fields` sovrascrive la configurazione dei campi per tutte le viste,
+ciò significa che la `label` per il campo `is_activated` sarà cambianto per le
+viste `list`, `edit` e `new`.
+
+La configurazione dell'admin generator è basata su un principio di configurazione
+a cascata. Per esempio, se vuoi cambiare una label solo per la vista `list`,
+definisci un'opzione `fields` sotto la sezione `list`:
+
+    [yml]
+    config:
+      list:
+        fields:
+          is_public:    { label: "Public? (label for the list)" }
+
+Ogni configurazione definita sotto la sezione `fields` principale può venir
+sovrascritta da delle configurazioni specifiche per ogni vista. Le regole di
+sovrascritture sono le seguenti:
+
+ * `new` e `edit` ereditano da `form` che eredita da `fields`
+ * `list` eredita da `fields`
+ * `filter` eredita da `fields`
+
+>**NOTE**
+>Per le sezioni del form (`form`, `edit` e `new`), le opzioni `label` e `help`
+>sovrascrivono quelle definite nelle classi dei form.
+
+
+Configurazione della lista
+-----------------------
+
+### `display`
+
+Di default, le colonne della vista della lista sono tutte le colonne del model.
+L'opzione `display` sovrascrive quella di default definendo le colonne da visualizzare:
+
+    [yml]
+    config:
+      list:
+        title:   Category Management
+        display: [=name, slug]
+
+Il segno `=` prima della colonna `name` è una convenzione per convertire la strina
+in un link.
+
+![Table list](http://www.symfony-project.org/images/jobeet/1_2/12/list_columns.png)
+
+Facciamo lo stesso per rendere il modulo `job` più leggibile:
+
+    [yml]
+    config:
+      list:
+        title:   Job Management
+        display: [company, position, location, url, is_activated, email]
+
+### `layout`
+
+La lista può venir visualizzata da differenti layout. Di default, il layout è
+`tabular`, ciò significa che il valore di ogni colonna è nella corrispondente
+colonna della tabella. Ma per il modulo `job`, sarebbe meglio usare il layout
+`stacked`, che è l'altro layout built-in:
+
+    [yml]
+    config:
+      list:
+        title:   Job Management
+        layout:  stacked
+        display: [company, position, location, url, is_activated, email]
+        params:  |
+          %%is_activated%% <small>%%category_id%%</small> - %%company%%
+           (<em>%%email%%</em>) is looking for a %%=position%% (%%location%%)
+
+Nel layout `stacked`, ogni oggetto è rappresentato da una singola stringa, che
+è definita dall'opzione `params`.
+
+>**NOTE**
+>L'opzione `displat` è ancora necessaria dato che definisce le colonne che saranno
+>ordinabili nella vista.
+
+### Colonne "Virtuali"
+
+Con questa configurazione, il segmento `%%category_id%%` sarà rimpiazzato dalla
+chiave primaria della categoria. Ma sarebbe molto più significativo visualizzare
+il nome della categoria.
+
+Utilizzando la notazione `%%`, la variabile non deve necessariamente corrispondere
+ad una colonna dello schema del database. L'admin generator ha semplicemente bisogno
+di trovare il relativo getter nella classe modello.
+
+Per visualizzare il nome della categoria, possiamo definire il metodo `getCategoryName()`
+nel modello `JobeetJob` e rimpiazzare `%%category_id%%` con `%%category_name%%`.
+
+Ma la classe `JobeetJob` ha già il metodo `getJobeetCategory()` che ritorna il
+relativo oggetto delle categoria. E se usate `%%jobeet_category%%`, funzionerà
+dato che la classe `JobeetCategory` ha il metodo magico `__toString()`, che converte
+l'oggetto in una stringa.
+
+    [yml]
+    %%is_activated%% <small>%%jobeet_category%%</small> - %%company%%
+     (<em>%%email%%</em>) is looking for a %%=position%% (%%location%%)
+
+![Stacked layout](http://www.symfony-project.org/images/jobeet/1_2/12/stacked_layout.png)
+
+### `sort`
+
+Come amministratore, sarai probabilemente più interessato nel vedere gli ultimi
+lavori inseriti. Puoi configurare l'ordinamento di default con l'opzione `sort`:
+
+    [yml]
+    config:
+      list:
+        sort: [expires_at, desc]
+
+### `max_per_page`
+
+Di default, la lista è paginata ed ogni pagina contiene 20 oggetti. Questo
+può venir modificato con l'opzione `max_per_page`:
+
+    [yml]
+    config:
+      list:
+        max_per_page: 10
+
+![Max per page](http://www.symfony-project.org/images/jobeet/1_2/12/max_per_page.png)
+
+### `batch_actions`
+
+Su una lista, un'azione può venir eseguita su alcuni oggetti. Queste azioni batch
+non sono necessarie per il modulo `category`, così rimuoviamole:
+
+    [yml]
+    config:
+      list:
+        batch_actions: {}
+
+![Remove the batch actions](http://www.symfony-project.org/images/jobeet/1_2/12/no_batch_actions.png)
+
+L'opzione `batch_actions` definisce la lista di azioni batch. Un array vuoto
+rimuoverà questa opzione.
+
+Di default, ogni modulo ha un'azione `delete` definita da framework, ma per il
+modulo `job`, pretendiamo di avere un modo di estendere la validità di alcuni
+lavori per altri 30 giorni:
+
+    [yml]
+    config:
+      list:
+        batch_actions:
+          _delete:    ~
+          extend:     ~
+
+Tutte le azioni inizianti con `_` sono azioni built-in fornite dal framework. Se
+aggiorni la pagina del tuo browser, e selezioni l'azione extend, symfony genererà
+un'eccezione dicendo di creare il metodo `executeBatchExtend()`:
+
+    [php]
+    // apps/backend/modules/job/actions/actions.class.php
+    class jobActions extends autoJobActions
+    {
+      public function executeBatchExtend(sfWebRequest $request)
+      {
+        $ids = $request->getParameter('ids');
+
+<propel>
+        $criteria = new Criteria();
+        $criteria->add('jobeet_job.ID', $ids, Criteria::IN);
+
+        foreach (JobeetJobPeer::doSelect($criteria) as $job)
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j')
+          ->whereIn('j.id', $ids);
+
+        foreach ($q->execute() as $job)
+</doctrine>
+        {
+          $job->extend(true);
+          $job->save();
+        }
+
+        $this->getUser()->setFlash('notice', 'The selected jobs have been extended successfully.');
+
+        $this->redirect('@jobeet_job');
+      }
+    }
+
+La chiave primaria selezionata sarà immagazzinata nel parametro `ids`. Per ogni
+lavoro selezionato, il metodo `JobettJob::extend()` sarà chiamato con un argomento
+extra per bypassare alcuni controlli nel metodo. Abbiamo bisogni di aggiornare il
+metodo `extend()` per utilizzare questo nuovo parametro:
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function extend($force = false)
+      {
+        if (!$force && !$this->expiresSoon())
+        {
+          return false;
+        }
+
+<propel>
+        $this->setExpiresAt(time() + 86400 * sfConfig::get('app_active_days'));
+</propel>
+<doctrine>
+        $this->setExpiresAt(date('Y-m-d', time() + 86400 * sfConfig::get('app_active_days')));
+</doctrine>
+        $this->save();
+
+        return true;
+      }
+
+      // ...
+    }
+
+Dopo che tutti i lavori saranno stati estesi, l'utente sarà reindirizzato
+all'homepage del modulo `job`.
+
+![Custom batch actions](http://www.symfony-project.org/images/jobeet/1_2/12/custom_batch_actions.png)
 
 ### `object_actions`
 
