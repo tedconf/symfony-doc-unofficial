@@ -486,6 +486,348 @@ relazione in questa pagina, rimuoviamolo:
       }
     }
 
-==========================================
-ULTIMA PARTE
-==========================================
+### Colonne "Virtual"
+
+Il campo `_token` inizia con un' underscore (`_`). Questo significa che
+il rendering per questo campo è gestito da un custom partial chiamato
+`_token.php`:
+
+    [php]
+    // apps/backend/modules/job/templates/_token.php
+    <div class="sf_admin_form_row">
+      <label>Token</label>
+      <?php echo $form->getObject()->getToken() ?>
+    </div>
+
+Nel partial, hai acceduto al form corrente (`$form`) i cui oggetti relativi 
+sono accessibili tramite il metodo `getObject()`.
+
+>**NOTE**
+>E' possibile delegare il rendering di un componente prefissando al nome
+>del campo una tilde (`~`).
+
+### `class`
+
+Dato che il form sarà utilizzato dagli amministratori, abbiamo visualizzato più 
+informazioni rispetto al form dei lavori utilizzato dagli utenti.
+Ma per il momento alcuni di questi non appaiono nel forma dato che sono stati 
+rimossi dalla classe `JobeetJobForm`.
+
+Per avere dei form differenti per il frontend e il backend, dobbiamo creare due
+classi form differenti. Creiamo la classe `BackendJobeetJobForm` che estende la
+classe `JobeetJobForm`. Dato che non vogliamo avere gli stessi campi nascosti, 
+dobbiamo effettuare un refactor della classe `JobeetJobForm` per muovere la dichiarazione
+di `unset()` in un metodo di cui faremo l'override in `BackendJobeetJobForm`
+
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+        $this->removeFields();
+
+        $this->validatorSchema['email'] = new sfValidatorEmail();
+
+        // ...
+      }
+
+      protected function removeFields()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['expires_at'], $this['token'],
+          $this['is_activated']
+        );
+      }
+    }
+
+<propel>
+    // lib/form/BackendJobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/BackendJobeetJobForm.class.php
+</doctrine>
+    class BackendJobeetJobForm extends JobeetJobForm
+    {
+      public function configure()
+      {
+        parent::configure();
+      }
+
+      protected function removeFields()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['token']
+        );
+      }
+    }
+
+La classe form di default usata dall'admin generator può essere sovrascritta
+settando l'opzione `class`:
+
+    [yml]
+    config:
+      form:
+        class: BackendJobeetJobForm
+
+Il form `edit` ha ancora qualche piccola seccatura. Il logo caricato non appare da 
+nessuna parte e non è possibile rimuoverlo.
+Il widget `sfWidgetFormInputFileEditable` aggiunge la possibilità di editare un 
+semplice widget per l'upload di file:
+
+    [php]
+<propel>
+    // lib/form/BackendJobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/BackendJobeetJobForm.class.php
+</doctrine>
+    class BackendJobeetJobForm extends JobeetJobForm
+    {
+      public function configure()
+      {
+        parent::configure();
+
+        $this->widgetSchema['logo'] = new sfWidgetFormInputFileEditable(array(
+          'label'     => 'Company logo',
+          'file_src'  => '/uploads/jobs/'.$this->getObject()->getLogo(),
+          'is_image'  => true,
+          'edit_mode' => !$this->isNew(),
+          'template'  => '<div>%file%<br />%input%<br />%delete% %delete_label%</div>',
+        ));
+      }
+
+      // ...
+    }
+
+Il widget `sfWidgetFormInputFileEditable` accetta diverse opzioni per modificare
+le sue caratteristiche e il suo rendering:
+
+  * `file_src`:    Il percorso web ai file caricati
+  * `is_image`:    Se `true`, il file verrà renderizzato come un'immagine
+  * `edit_mode`:   Se il form è in edit mode o no
+  * `with_delete`: Se visualizzare il checkbox per la cancellazione
+  * `template`:    Il template da usare per il visualizzare del widget
+
+![File upload](http://www.symfony-project.org/images/jobeet/1_2/12/file_upload.png)
+
+>**TIP**
+>L'aspetto dell' admin generator può essere modificato veramente facilmente dato che
+>il template generato contiene molti attributi `class` e `id`. Per esempio,
+>il campo del logo può esser modificato utilizzando la classe `sf_admin_form_field_logo`.
+>Ogni campo ha una classe che dipende dal tipo di campo come `sf_admin_text` o
+>`sf_admin_boolean`.
+
+<propel>
+L'opzione `edit_mode` utilizza il metodo `sfPropel::isNew()`.
+</propel>
+<doctrine>
+L'opzione `edit_mode` utilizza il metodo `sfDoctrineRecord::isNew()`.
+</doctrine>
+
+Il metodo ritorna `true` se il model object del form è nuovo, `false` altrimenti.
+Questo è un grosso aiuto quando si ha la necessità di avere widget o validatori differenti che dipendono dallo 
+stato degli oggetti inclusi.
+
+Configurazione dei filtri
+---------------------
+
+Configurare i filtri è praticamente indenti a configurare le viste per i form.
+Come dato di fatto i filtri sono esattamente dei form. E come per i form, le relative
+classi sono state generate dal task `propel:build-all`. 
+I filtri possono essere rigenerati con il task `propel:build-filters`.
+
+Le classi dei filtri per i form sono posizionati nella directory `lib/filter` e
+ad ogni classe del modello è associata un classe filtro per il form 
+(`JobeetJobFormFilter` per `JobeetJobForm`).
+
+Rimuoviamoli completamente per il modulo `category`:
+
+    [yml]
+    config:
+      filter:
+        class: false
+
+Per il modulo `job`, rimuoviamone alcuni:
+
+    [yml]
+    filter:
+      display: [category_id, company, position, description, is_activated,
+       ‚û• is_public, email, expires_at]
+
+Dato che i filtri sono sempre opzionali non c'è nessuna necessità di sovrascrivere
+le classi dei filtri per i form per configurare quali campi devono essere visualizzati.
+
+![Filters](http://www.symfony-project.org/images/jobeet/1_2/12/filters.png)
+
+Personalizzazione delle azioni
+---------------------
+
+Quando la configurazione non è sufficiente, è possibile aggiungere nuovi metodi
+alle classi delle azioni come abbiamo visto con le caratteristiche estese, ma è
+anche possibile sovrascrivere i metodi generati:
+
+
+ | Method                 | Description
+ | ---------------------- | -------------------------------------
+ | `executeIndex()`       | `list` view action
+ | `executeFilter()`      | Aggiorna i filtri
+ | `executeNew()`         | `new` view action
+ | `executeCreate()`      | Crea un nuovo lavoro
+ | `executeEdit()`        | `edit` view action
+ | `executeUpdate()`      | Aggiorna un lavoro
+ | `executeDelete()`      | Cancella un lavoro
+ | `executeBatch()`       | Esegue un'azione batch
+ | `executeBatchDelete()` | Esegue l'azione batch `_delete`
+ | `processForm()`        | Processa il form Job
+ | `getFilters()`         | Ritorna i filtri correnti
+ | `setFilters()`         | Imposta i filtri
+ | `getPager()`           | Ritorna la lista dei pager
+ | `getPage()`            | Ritorna la pagina dei pager
+ | `setPage()`            | Imposta la pagina dei pager
+ | `buildCriteria()`      | Costruisce i `Criteria` per la lista
+ | `addSortCriteria()`    | Aggiunge i `Criteria` di ordinamento per la lista
+ | `getSort()`            | Ritorna la colonna di ordinamento corrente
+ | `setSort()`            | Imposta la colonna di ordinamento corrent
+
+Come ogni metodo generato eseguono solo una cosa, ed è semplice cambiane un 
+comportamento senza dover copiare e incollare troppo codice.
+
+Personalizzazione dei Templates
+-----------------------
+
+Abbiamo visto come sia possibile personalizzare i template generati grazie
+agli attributi `class` e `id` aggiunti nel codice HTML dall'admin generator.
+
+Come per le classi, è anche possibile sovrascrivere i template originali.
+Dato che i template sono semplici file PHP e non classi PHP, un template può
+essere sovrascritto creando nel modulo un template con lo stesso nome 
+(per esempio nella directory `apps/backend/modules/job/templates/` per il
+modulo di amministrazione `job`):
+
+ | Template                     | Description
+ | ---------------------------- | -------------------------------------
+ | `_assets.php`                | Renderizza i CSS e JS da usare per i template
+ | `_filters.php`               | Renderizza i filter box
+ | `_filters_field.php`         | Renderizza un singolo filtro del campo
+ | `_flashes.php`               | Renderizza i messaggi flash
+ | `_form.php`                  | Visualizza il form
+ | `_form_actions.php`          | Visualizza le azioni dei form
+ | `_form_field.php`            | Visualizza un singolo campo del form
+ | `_form_fieldset.php`         | Visualizza un fieldset di un form
+ | `_form_footer.php`           | Visualizza il footer del form
+ | `_form_header.php`           | Visualizza il header del form
+ | `_list.php`                  | Visualizza la lista
+ | `_list_actions.php`          | Visualizza le azioni della lista
+ | `_list_batch_actions.php`    | Visualizza le azioni batch della lista
+ | `_list_field_boolean.php`    | Visualizza un singolo campo booleano nella lista
+ | `_list_footer.php`           | Visualizza il footer della lista
+ | `_list_header.php`           | Visualizza il header della lista
+ | `_list_td_actions.php`       | Visualizza le azioni dell'oggeto per una riga
+ | `_list_td_batch_actions.php` | Visualizza i checkbox per una riga
+ | `_list_td_stacked.php`       | Visualizza il layout impilato per una riga
+ | `_list_td_tabular.php`       | Visualizza un singolo campo per la lista
+ | `_list_th_stacked.php`       | Visualizza il nome della singola colonna per l'header
+ | `_list_th_tabular.php`       | Visualizza il nome della singola colonna per l'header
+ | `_pagination.php`            | Visualizza la paginazione della lista
+ | `editSuccess.php`            | Visualizza la `edit` view
+ | `indexSuccess.php`           | Visualizza la `list` view
+ | `newSuccess.php`             | Visualizza la `new` view
+
+Configurazioni finali
+-------------------
+
+Le configurazioni finali per l'admin di jobeet sono le seguenti:
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      actions: ~
+      fields:
+        is_activated: { label: Activated?, help: Whether the user has activated the job, or not }
+        is_public:    { label: Public? }
+      list:
+        title:         Job Management
+        layout:        stacked
+        display:       [company, position, location, url, is_activated, email]
+        params:  |
+          %%is_activated%% <small>%%jobeet_category%%</small> - %%company%%
+           (<em>%%email%%</em>) is looking for a %%=position%% (%%location%%)
+        max_per_page:  10
+        sort:          [expires_at, desc]
+        batch_actions:
+          _delete:    ~
+          extend:     ~
+        object_actions:
+          extend:     ~
+          _edit:      ~
+          _delete:    ~
+        actions:
+          deleteNeverActivated: { label: Delete never activated jobs }
+<propel>
+        peer_method:  doSelectJoinJobeetCategory
+</propel>
+      filter:
+        display: [category_id, company, position, description, is_activated, is_public, email, expires_at]
+      form:
+        class:     BackendJobeetJobForm
+        display:
+          Content: [category_id, type, company, logo, url, position, location, description, how_to_apply, is_public, email]
+          Admin:   [_token, is_activated, expires_at]
+      edit:
+        title: Editing Job "%%company%% is looking for a %%position%% (#%%id%%)"
+      new:
+        title: Job Creation
+
+    # apps/backend/modules/category/config/generator.yml
+    config:
+      actions: ~
+      fields:  ~
+      list:
+        title:   Category Management
+        display: [=name, slug]
+        batch_actions: {}
+        object_actions: {}
+      filter:
+        class: false
+      form:
+        actions:
+          _delete: ~
+          _list:   ~
+          _save:   ~
+      edit:
+        title: Editing Category "%%name%%" (#%%id%%)
+      new:
+        title: New Category
+
+Con solo questi due file di configurazione,in una manciata di minuti abbiamo 
+sviluppato un'ottimo interfacia di backend per Jobeet.
+
+>**TIP**
+>Già sai che quando qualcosa è configurabile da un file YAML, c'è anche la 
+>possibilità di usare del semplice codice PHP. Per l'admin generator puoi editare
+>il file `apps/backend/modules/job/lib/jobGeneratorConfiguration.class.php`. 
+>Questo file ti da le stesse opzioni del file YAML ma con un'interfaccia PHP. 
+>Per imparare i nomi dei metodi, dai un'occhio alle classi base generate in
+>`cache/backend/dev/modules/autoJob/lib/BaseJobGeneratorConfiguration.class.php`.
+
+
+A domani
+----------------
+
+In solo un'ora, abbiamo costruito un'interfaccia per il backend del progetto 
+Jobeet perfettamente funzionante. E per di più abbiamo scritto meno di 50
+line di codice PHP. Non male per così tante features!
+
+Domani, vedremo come mettere al sicuro il backend proteggendolo con un'username
+e una password. Sarà anche l'occasione per parlare della  classe symfony per gli utenti.
+
+__ORM__
