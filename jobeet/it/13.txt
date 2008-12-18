@@ -5,7 +5,7 @@ Precedentemente su Jobeet
 -------------------------
 
 La giornata di ieri è stata archiviata con un sacco di informazioni. Con
-pochissime line di codice PHP l'admin generator di symfony permette allo
+pochissime linee di codice PHP l'admin generator di symfony permette allo
 sviluppatore di creare interfacce di backend in pochi minuti.
 
 Oggi scopriremo come symfony gestisce i dati persistenti tra le richieste
@@ -24,8 +24,8 @@ Flash utente
 
 Abbiamo già visto l'oggetto utente in azione con i flash. Un flash è un 
 messaggio salvato nella sessione dell'utente che viene cancellato automaticamente
-dopo la prima richiesta successiva. E' molto comodo quando avete bisogno
-di mostrare un messaggio all'utente dopo un redirect. L'admin generatore
+dopo la prima richiesta successiva. È molto comodo quando avete bisogno
+di mostrare un messaggio all'utente dopo un redirect. L'admin generator
 fa un largo uso di messaggi flash per dare feedback all'utente ogni
 qual volta un'offerta di lavoro viene salvata, cancellata o rinnovata.
 
@@ -56,7 +56,7 @@ Il primo argomento è l'identificatore del flash mentre il secondo è il
 messaggio da mostrare. Potete definire tutti i flash che volete ma `notice`
 e `error` sono due dei più comuni (sono usati dall'admin generator).
 
-E' lasciato allo sviluppatore includere i messaggi flash nei template. Per
+È lasciato allo sviluppatore includere i messaggi flash nei template. Per
 Jobeet vengono visualizzati dal `layout.php`:
 
     [php]
@@ -78,7 +78,7 @@ Nei template la sessione utente è accessibile dalla variabile speciale `sf_user
 Attributi utente
 ----------------
 
-Sfortunatamente le user stories di Jobeet non richiedono che qualcosa possa
+Sfortunatamente le user story di Jobeet non richiedono che qualcosa possa
 essere incluso nella sessione utente. Quindi aggiungiamo un nuovo requisito:
 per rendere più semplice la navigazione le ultime tre offerte visualizzate
 dall'utente dovranno essere mostrate nel menù con i link per tornare 
@@ -111,7 +111,7 @@ salvato nella sessione:
 
 >**NOTE**
 >Avremmo potuto salvare gli oggetti `JobeetJob` direttamente nella sessione.
->Vi scoraggiamo fortemente di agire in questo modo perchè le variabili di sessione
+>Vi scoraggiamo fortemente di agire in questo modo perché le variabili di sessione
 >vengono serializzate tra le richieste. Quando la sessione viene caricata
 >gli oggetti `JobeetJob` vengono de-serializzati e possono presentare dati 
 >incoerenti se nel frattempo sono stati modificati o cancellati.
@@ -133,3 +133,214 @@ l'identificatore passato non è ancora stato definito.
 >     {
 >       $value = array();
 >     }
+
+
+***********************
+QUI VA LA SECONDA PARTE
+***********************
+
+
+Sicurezza dell'applicazione
+---------------------------
+
+### Autenticazione
+
+Come molte altre feature di symfony, la sicurezza è gestita da un file YAML,
+`security.yml`. Ad esempio, si può trovare la configurazione di default per
+l'applicazione di backend nella cartella `config/`:
+
+    [yml]
+    // apps/backend/config/security.yml
+    default:
+      is_secure: off
+
+Se si cambia la voce `is_secure` a `on`, l'intera applicazione di backend
+richiederà l'autenticazione dell'utente.
+
+![Login](http://www.symfony-project.org/images/jobeet/1_2/13/login.png)
+
+>**TIP**
+>In un file YAML, un booleano può essere espresso con la stringa  `true` e
+>`false`, oppure con `on` e `off`.
+
+Se si dà un'occhiata ai log nella web debug toolbar, si noterà che il metodo
+`executeLogin()` della classe `defaultActions` è richiamato ad ogni pagina
+in cui si tenta di accedere.
+
+![Web debug](http://www.symfony-project.org/images/jobeet/1_2/13/web_debug.png)
+
+Quando un utente non autenticato prova ad accedere ad una azione messa in
+sicurezza, symfony rimanda la richiesta all'azione `login` configurata in
+`settings.yml`:
+
+    [yml]
+    all:
+      .actions:
+        login_module: default
+        login_action: login
+
+>**NOTE**
+>Non è possibile mettere in sicurezza l'azione di login. Questo per evitare
+>una ricorsione.
+
+>**TIP**
+>Come abbiamo visto durante il giorno 5, lo stesso file di configurazione può
+>essere definito in diversi posti. Questo è anche il caso di `security.yml`.
+>Per mettere in sicurezza (o togliere) una singola azione o un intero modulo,
+>basta creare un file `security.yml` nella cartella `config/` del modulo:
+>
+>     [yml]
+>     index:
+>       is_secure: off
+>     all:
+>       is_secure: on
+
+Di default, la classe `myUser` estende
+[`sfBasicSecurityUser`](http://www.symfony-project.org/api/1_2/sfBasicSecurityUser),
+e non `sfUser`. `sfBasicSecurityUser` fornisce metodi addizionali per gestire
+l'autenticazione e l'autorizzazione degli utenti.
+
+Per gestire l'autenticazione degli utenti, usare i metodi `isAuthenticated()` e
+`setAuthenticated()`:
+
+    [php]
+    if (!$this->getUser()->isAuthenticated())
+    {
+      $this->getUser()->setAuthenticated(true);
+    }
+
+### Autorizzatione
+
+Quando un utente è autenticato, l'accesso ad alcune azioni può essere
+ulteriormente ristretto definendo delle **credenziali**. Un utente deve
+avere le credenziali richieste per accedere alla pagina:
+
+    [yml]
+    default:
+      is_secure:   off
+      credentials: admin
+
+Il sistema di credenziali di symfony è molto semplice e potente. Una credenziale
+può rappresentare qualsiasi cosa si abbia bisogno di descrivere nel modello
+di sicurezza dell'applicazione (come  gruppi o permessi).
+
+>**SIDEBAR**
+>Credenziali complesse
+>
+>La voce `credentials` di `security.yml` supporta operazioni booleane per
+>descrivere requisiti di credenziali complesse.
+>
+>Se un utente deve avere le credenziali A **e** B, includi le credenziali tra
+>parentesi quadre:
+>
+>     [yml]
+>     index:
+>       credentials: [A, B]
+>
+>Se un utente deve avere le credenziali A **o** B, includi le credenziali tra
+>doppie parentesi quadre:
+>
+>     [yml]
+>     index:
+>       credentials: [[A, B]]
+>
+>Si possono anche mescolare le parentesi quadre per descrivere ogni tipo
+>di espressione booleana con qualsiasi numero di credenziali.
+
+Per gestire le credenziali degli utenti, `sfBasicSecurityUser` fornisce diversi
+metodi:
+
+    [php]
+    // Aggiunge una o più credenziali
+    $user->addCredential('foo');
+    $user->addCredentials('foo', 'bar');
+
+    // Verifica se l'utente ha una credenziale
+    echo $user->hasCredential('foo');                      =>   true
+
+    // CVerifica se l'utente ha entrambe le credenziali
+    echo $user->hasCredential(array('foo', 'bar'));        =>   true
+
+    // Verifica se l'utente ha una delle credenziali
+    echo $user->hasCredential(array('foo', 'bar'), false); =>   true
+
+    // Rimuove una credenziale
+    $user->removeCredential('foo');
+    echo $user->hasCredential('foo');                      =>   false
+
+    // Rimuove tutte le credenziali (utile per il logout)
+    $user->clearCredentials();
+    echo $user->hasCredential('bar');                      =>   false
+
+Per il backend di Jobeet, non ci servono credenziali, perché abbiamo un solo
+profilo: l'amministratore,
+
+Plugin
+------
+
+Siccome non ci piace reinventare la ruota, non vogliamo sviluppare un'azione
+di login da zero. Invece, installeremo un **plugin di symfony**.
+
+Una delle grandi forze del framework symfony è l'
+[ecostistema di plugin](http://www.symfony-project.org/plugins/). Come vedremo
+nei prossimi giorni, è molto semplice creare un plugin. È anche molto potente,
+perché un plugin può contenere ogni cosa, dalla configurazioni ai moduli, agli
+asset.
+
+<propel>
+Oggi installeremo
+[`sfGuardPlugin`](http://www.symfony-project.org/plugins/sfGuardPlugin) per
+rendere sicura l'applicazione di backend:
+
+    $ php symfony plugin:install sfGuardPlugin
+</propel>
+<doctrine>
+Oggi installeremo
+[`sfDoctrineGuardPlugin`](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin)
+per rendere sicura l'applicazione di backend:
+
+    $ php symfony plugin:install sfDoctrineGuardPlugin
+</doctrine>
+
+Il task `plugin:install` installa un plugin in base al nome. Tutti i plugin sono
+memorizzati sotto la cartella `plugins/` ed ognuno ha la sua cartella, che prende
+il nome dal plugin stesso.
+
+>**NOTE**
+>Per poter usare il task `plugin:install` occorre avere PEAR installato.
+
+Quando si installa un plugin con il task `plugin:install`, symfony installa
+l'ultima versione stabile. Per installare una versione specifica di un plugin,
+usare l'opzione `--release`.
+
+<propel>
+La 
+[pagina dei plugin](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_all_releases)
+elenca tutte le versioni disponibili, raggruppate per versione di symfony.
+
+Essendo un plugin contenuto in una cartella, si può anche
+[scaricare il pacchetto](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_installation)
+dal sito di symfony ed estrarlo, oppure creare un collegamento `svn:externals` al
+suo [repository di Subversion](http://svn.symfony-project.com/plugins/sfGuardPlugin).
+</propel>
+<doctrine>
+La 
+[pagina dei plugin](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_all_releases)
+elenca tutte le versioni disponibili, raggruppate per versione di symfony.
+
+Essendo un plugin contenuto in una cartella, si può anche
+[scaricare il pacchetto](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_installation)
+dal sito di symfony ed estrarlo, oppure creare un collegamento `svn:externals` al
+suo [repository di Subversion](http://svn.symfony-project.com/plugins/sfDoctrineGuardPlugin).
+</doctrine>
+
+
+
+
+*******************************
+QUI VA LA QUARTA E ULTIMA PARTE
+*******************************
+
+
+
+
