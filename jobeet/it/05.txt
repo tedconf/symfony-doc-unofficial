@@ -118,7 +118,7 @@ ad un insieme di coppie variabile/valore separate da slash (`/`):
   | action              | show   |
   | id                  | 1      |
 
->**NOTA**
+>**NOTE**
 >La viariabile `module` e `action` sono speciali visto che sono utilizzate da
 >symfony per determinare quale azione eseguire.
 
@@ -139,9 +139,284 @@ corrispondenza ed è meno legata all'implementazione (i nomi del modulo e dell'
 azione non sono presenti nell'URI interno).
 
 
-------------------------------
- TODO PARTE 2 DA INSERIRE QUI
-------------------------------
+Personalizzazioni delle rotte
+-----------------------------
+
+Per ora, quando si richiede l'URL `/` nel browser, si ottiene la pagina
+predefinita di congratulazioni di symfony. Questo perché l'URL corrisponde
+alla rotta `homepage`. Ma ha senso cambiarla per renderla l'homepage di
+Jobeet. Per fare la modifica, cambiamo la variabile `module` della rotta
+`homepage` in `job`:
+
+    [php]
+    # apps/frontend/config/routing.yml
+    homepage:
+      url:   /
+      param: { module: job, action: index }
+
+Possiamo ora cambiare il link del logo di Jobeet nel layout per fargli usaer
+la rotta `homepage`:
+
+    [php]
+    <h1>
+      <a href="<?php echo url_for('@homepage') ?>">
+        <img src="/images/jobeet.gif" alt="Jobeet Job Board" />
+      </a>
+    </h1>
+
+È stato facile! Per qualcosa di un po' più complesso, cambiamo l'URL della
+pagina dei lavori in qualcosa di più sensato:
+
+    /job/sensio-labs/paris-france/1/web-developer
+
+Senza sapere niente su Jobeet, e senza guardare la pagina, si può capire
+dall'URL che Sensio Labs sta cercando uno sviluppatore web per lavorare
+a Parigi, in Francia.
+
+>**NOTE**
+>Gli URL carini sono importanti, perché portano informazioni all'utente. È anche
+>utile quando si copiano e incollano gli URL in una email o per ottimizzare il
+>sito per i motori di ricerca.
+
+Il seguente schema corrisponde a questo URL:
+
+    /job/:company/:location/:id/:position
+
+Modifichiamo il file `routing.yml`  e la rotta `job` all'inizio del file:
+
+    [yml]
+    job:
+      url:   /job/:company/:location/:id/:position
+      param: { module: job, action: show }
+
+Se si aggiorna l'homepage di Jobeet, i link ai lavori non sono cambiati. Questo
+perché per rigenerare una rotta, bisogna passare le variabili richieste. Quindi
+occorre cambiare la chiamata a `url_for()` in `indexSuccess.php`:
+
+    [php]
+    url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().
+      '&location='.$job->getLocation().'&position='.$job->getPosition())
+
+Un URI interno può anche essere espresso come array:
+
+    [php]
+    url_for(array(
+      'module'   => 'job',
+      'action'   => 'show',
+      'id'       => $job->getId(),
+      'company'  => $job->getCompany(),
+      'location' => $job->getLocation(),
+      'position' => $job->getPosition(),
+    ))
+
+Requisiti
+---------
+
+Durante il primo giorno di tutorial, abbiamo parlato della validazione e
+della gestione degli errori per buone ragioni. Il sistema delle rotte ha
+una capacità di validazione intrinseca. Ogni schema di variabili può
+essere validato da un'espressione regolare definita usando la voce
+`requirements` nella definizione della rotta:
+
+    [yml]
+    job:
+      url:   /job/:company/:location/:id/:position
+      param: { module: job, action: show }
+      requirements:
+        id: \d+
+
+La voce `requirements` forza `id` ad essere un valore numerico. Altrimenti,
+la rotta non corrisponderà.
+
+Classi di rotte
+---------------
+
+Ogni rotta definita in `routing.yml` viene internamente convertita in un oggetto
+della classe [`sfRoute`](http://www.symfony-project.org/api/1_2/sfRoute). Questa
+classe può essere cambiata definendo una voce `class` nella definizione della
+rotta. Se siete familiari col protocollo HTTP, forse saprete che definisce
+diversi "metodi", come `GET`, `POST`, `HEAD`, `DELETE`, e `PUT`. I primi tre
+sono supportati da tutti i browser, mentre gli altri due no.
+
+Per restringere una rotta a corrispondere solo ad alcuni metodi di richiesta,
+si può cambiare la classe della rotta in
+[`sfRequestRoute`](http://www.symfony-project.org/api/1_2/sfRequestRoute) ed
+aggiungere un requisito per la variabile virtuale `sf_method`:
+
+    [yml]
+    job:
+      url:   /job/:company/:location/:id/:position
+      class: sfRequestRoute
+      param: { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [GET]
+
+>**NOTE**
+>Richiedere ad una rotta di corrispondere solo ad alcuni metodi HTTP equivale
+>ad usare `sfWebRequest::isMethod()` nell'azione.
+
+Classi di oggetti rotta
+-----------------------
+
+Il nuovo URI interno per un lavoro è un po' lungo e difficile da scrivere,
+ma come abbiamo appena imparato nella sezione precedente, la classe della
+rotta può essere cambiata. Per la rotta `job`, è meglio usare
+[`sfPropelRoute`](http://www.symfony-project.org/api/1_2/sfPropelRoute),
+essendo la classe ottimizzata per rotte che rappresentano oggetti ##ORM##
+o insiemi di oggetti ##ORM##:
+
+    [yml]
+    job_show_user:
+      url:     /job/:company/:location/:id/:position
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [GET]
+
+La voce `options` personalizza il comportamento della rotta. Qui, l'opzione
+`model` definisce la classe del modello di ##ORM## (`JobeetJob`) relativa
+alla rotta, e l'opzione `type` impone che questa rotta sia legata ad un
+oggetto (si puà anche usare `list` se una rotta rappresenta un insieme
+di oggetti).
+
+La rotta `job_show_user` ora sa della sua relazione con `JobeetJob` e
+quindi possiamo semplificare la chiamata a `url_for()`:
+
+    [php]
+    url_for(array('sf_route' => 'job_show_user', 'sf_subject' => $job))
+
+or:
+
+    [php]
+    url_for('job_show_user', $job)
+
+>**NOTE**
+>Il primo esempio è migliore quando si devono passare più argomenti
+>oltre all'oggetto.
+
+Questo funziona perché tutte le variabili nella rotta hanno un corrispondente
+metodo di accesso nella classe `JobeetJob` (ad esempio, la variabile di rotta
+`company` è sostituita con il valore di`getCompany()`).
+
+Guardando gli URL generati, non sono proprio come li avremmo voluti:
+
+    http://jobeet.localhost/frontend_dev.php/job/Sensio+Labs/Paris%2C+France/1/Web+Developer
+
+Dobbiamo applicare uno "slug" ai valori delle colonne, sostituendo tutti i
+caratteri non ASCII con un `-`. Apriamo il file `JobeetJob` e aggiungiamo i
+seguenti metodi alla classe:
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    public function getCompanySlug()
+    {
+      return Jobeet::slugify($this->getCompany());
+    }
+
+    public function getPositionSlug()
+    {
+      return Jobeet::slugify($this->getPosition());
+    }
+
+    public function getLocationSlug()
+    {
+      return Jobeet::slugify($this->getLocation());
+    }
+
+Quindi, creiamo il file `lib/Jobeet.class.php` e vi inseriamo il metodo
+`slugify`:
+
+    [php]
+    // lib/Jobeet.class.php
+    class Jobeet
+    {
+      static public function slugify($text)
+      {
+        // replace all non letters or digits by -
+        $text = preg_replace('/\W+/', '-', $text);
+
+        // trim and lowercase
+        $text = strtolower(trim($text, '-'));
+
+        return $text;
+      }
+    }
+
+Abbiamo definito tre metodi di accesso "virtuali": `getCompanySlug()`,
+`getPositionSlug()`, e `getLocationSlug()`. Essi restituiscono i valori
+delle rispettive colonne, dopo aver applicato il metodo `slugify()`.
+Ora possiamo sostituire i veri nomi delle colonne con i loro
+corrispettivi virtuali nella rotta `job_show_user`:
+
+    [yml]
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [GET]
+
+Prima di aggiornare l'homepage di Jobeet, occorre pulire la cache, perché
+abbiamo aggiunto una nuova classe (`Jobeet`):
+
+    $ php symfony cc
+
+Ora abbiamo gli URL che ci aspettavamo:
+
+    http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/4/web-developer
+
+Ma siamo solo a metà strada. La rotta può generare un URL basato su un
+oggetto, ma può anche trovare l'oggetto relativo ad un URL dato. L'oggetto
+relativo può essere recuperato col metodo `getObject()` dell'oggetto rotta.
+Quando una richiesta in arrivo viene esaminata, il routing memorizza
+la rotta corrispondente in modo che possa essere usata nelle azioni.
+Quindi, si può cambiare il metodo `executeShow()`:
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+        $this->job = $this->getRoute()->getObject();
+        $this->forward404Unless($this->getRoute()->getObject());
+      }
+
+      // ...
+    }
+
+Se si prova a recuperare un lavoro per una `id` sconosciuta, si otterrà
+una pagina di errore 404, ma il messaggio di errore è cambiato:
+
+![404 con sfPropelRoute](http://www.symfony-project.org/images/jobeet/1_2/05/404_propel_route.png)
+
+Questo perché l'errore 404 è stato lanciato automaticamente dal metodo
+`getRoute()`. Quindi possiamo semplificare ulteriormente il metodo
+`executeShow`:
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+        $this->job = $this->getRoute()->getObject();
+      }
+
+      // ...
+    }
+
+>**TIP**
+>Se non si vuole che la rotta generi un errore 404, si può impostare l'opzione
+>di routing `allow_empty` a `true`.
 
 
 Il routing nelle azioni e nei template
