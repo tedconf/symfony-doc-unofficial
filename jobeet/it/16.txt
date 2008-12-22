@@ -2,9 +2,229 @@ Giorno 16: Web Service
 ======================
 
 *************************************
-QUI VANNO LA PRIMA E LA SECONDA PARTE
+QUI VA LA PRIMA PARTE
 *************************************
 
+### L'azione
+
+Tutti i formati condivideranno la stessa azione `list`:
+
+    [php]
+    // apps/frontend/modules/api/actions/actions.class.php
+    public function executeList(sfWebRequest $request)
+    {
+      $this->jobs = array();
+      foreach ($this->getRoute()->getObjects() as $job)
+      {
+        $this->jobs[$this->generateUrl('job_show_user', $job, true)] = $job->asArray($request->getHost());
+      }
+    }
+Al posto di passare un array di oggetti di tipo `JobeetJon` ai template, passiamo
+un array di stringhe. Dato che abbiamo tre diversi template per la stessa azione,
+la logica di processare i valori è stata spostata fuori nel metodo `JobeetJob::asArray()`:
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function asArray($host)
+      {
+        return array(
+          'category'     => $this->getJobeetCategory()->getName(),
+          'type'         => $this->getType(),
+          'company'      => $this->getCompany(),
+          'logo'         => $this->getLogo() ? 'http://'.$host.'/uploads/jobs/'.$this->getLogo() : null,
+          'url'          => $this->getUrl(),
+          'position'     => $this->getPosition(),
+          'location'     => $this->getLocation(),
+          'description'  => $this->getDescription(),
+          'how_to_apply' => $this->getHowToApply(),
+<propel>
+          'expires_at'   => $this->getCreatedAt('c'),
+</propel>
+<doctrine>
+          'expires_at'   => $this->getCreatedAt(),
+</doctrine>
+        );
+      }
+
+### Il formato `xml`
+
+Supportare il formato `xml` è semplice come creare un template:
+
+    [php]
+    <!-- apps/frontend/modules/api/templates/listSuccess.xml.php -->
+    <?xml version="1.0" encoding="utf-8"?>
+    <jobs>
+    <?php foreach ($jobs as $url => $job): ?>
+      <job url="<?php echo $url ?>">
+    <?php foreach ($job as $key => $value): ?>
+        <<?php echo $key ?>><?php echo $value ?></<?php echo $key ?>>
+    <?php endforeach; ?>
+      </job>
+    <?php endforeach; ?>
+    </jobs>
+
+### Il formato `json`
+
+Il supporto al [formato JSON](http://json.org) è simile:
+
+    [php]
+    <!-- apps/frontend/modules/api/templates/listSuccess.json.php -->
+    [
+    <?php $nb = count($jobs); $i = 0; foreach ($jobs as $url => $job): ++$i ?>
+    {
+      "url": "<?php echo $url ?>",
+    <?php $nb1 = count($job); $j = 0; foreach ($job as $key => $value): ++$j ?>
+      "<?php echo $key ?>": <?php echo json_encode($value).($nb1 == $j ? '' : ',') ?>
+
+    <?php endforeach; ?>
+    }<?php echo $nb == $i ? '' : ',' ?>
+
+    <?php endforeach; ?>
+    ]
+
+### Il formato `yaml`
+
+Per i formati built-in, symfony fornisce una configurazione nel background, come
+cambiare il content type, o disabilitare il layout.
+
+Dato che il formato YAML non è nella lista del formati built-in di richiesta, il
+content type della risposta può venir cambiato ed il layout disabilitato nell'azione:
+
+    [php]
+    class apiActions extends sfActions
+    {
+      public function executeList(sfWebRequest $request)
+      {
+        $this->jobs = array();
+        foreach ($this->getRoute()->getObjects() as $job)
+        {
+          $this->jobs[$this->generateUrl('job_show_user', $job, true)] = $job->asArray($request->getHost());
+        }
+
+        switch ($request->getRequestFormat())
+        {
+          case 'yaml':
+            $this->setLayout(false);
+            $this->getResponse()->setContentType('text/yaml');
+            break;
+        }
+      }
+    }
+
+Nell'azione, il metodo `setLayout()` cambia il layout di default o lo disabilita
+quando viene impostato a `false`.
+
+Il template per YAML è il seguente:
+
+    [php]
+    <!-- apps/frontend/modules/api/templates/listSuccess.yaml.php -->
+    <?php foreach ($jobs as $url => $job): ?>
+    -
+      url: <?php echo $url ?>
+
+    <?php foreach ($job as $key => $value): ?>
+      <?php echo $key ?>: <?php echo sfYaml::dump($value) ?>
+
+    <?php endforeach; ?>
+    <?php endforeach; ?>
+
+Se cercate di chiamare il web service con un token non valido, riceverete una pagina
+404 in XML per il formato XML, e una pagina 404 JSON per il formato JSON. Ma per
+il formato YAML, symfony non sa cosa visualizzare.
+
+Quando create un formato, una pagina d'errore personalizzata dev'essere creata.
+Il template sarà usato per le pagine 404, e tutte le altre eccezioni.
+
+Dato che le eccezioni dovrebbero essere differenti negli ambienti di produzione
+e di sviluppo, due file sono necessari (`config/error/exception.yaml.php` per il
+debug, e `config/error/error.yaml.php` per la produzione):
+
+    [php]
+    // config/error/exception.yaml.php
+    <?php echo sfYaml::dump(array(
+      'error'       => array(
+        'code'      => $code,
+        'message'   => $message,
+        'debug'     => array(
+          'name'    => $name,
+          'message' => $message,
+          'traces'  => $traces,
+        ),
+    )), 4) ?>
+
+    // config/error/error.yaml.php
+    <?php echo sfYaml::dump(array(
+      'error'       => array(
+        'code'      => $code,
+        'message'   => $message,
+    ))) ?>
+
+Prima di provare, dovere creare un layout per il formato YAML:
+
+    [php]
+    // apps/frontend/templates/layout.yaml.php
+    <?php echo $sf_content ?>
+
+![404](http://www.symfony-project.org/images/jobeet/1_2/16/404.png)
+
+>**TIP**
+>Sovrascrivere i template dell'errore 404 e delle eccezioni è semplice come creare
+>un file nella directory `config/error/`.
+
+Test per i Web Service
+-----------------
+
+Per testare il web service, copiate le fixture degli affiliati da `data/fixtures/`
+a `text/fixtures/`, e rimpiazzate il contenuto del file auto generata
+`apiActionsTest.php` con il seguente:
+
+    [php]
+    // test/functional/frontend/apiActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->
+      info('1 - Web service security')->
+
+      info('  1.1 - A token is needed to access the service')->
+      get('/api/foo/jobs.xml')->
+      with('response')->isStatusCode(404)->
+
+      info('  1.2 - An inactive account cannot access the web service')->
+      get('/api/symfony/jobs.xml')->
+      with('response')->isStatusCode(404)->
+
+      info('2 - The jobs returned are limited to the categories configured for the affiliate')->
+      get('/api/sensio_labs/jobs.xml')->
+      with('request')->isFormat('xml')->
+      with('response')->checkElement('job', 33)->
+
+      info('3 - The web service supports the JSON format')->
+      get('/api/sensio_labs/jobs.json')->
+      with('request')->isFormat('json')->
+      with('response')->contains('"category": "Programming"')->
+
+      info('4 - The web service supports the YAML format')->
+      get('/api/sensio_labs/jobs.yaml')->
+      with('response')->begin()->
+        isHeader('content-type', 'text/yaml; charset=utf-8')->
+        contains('category: Programming')->
+      end()
+    ;
+
+In questo test, noterete due nuovi metodi:
+
+  * `isFormat()`: Testa il formato della richiesta
+  * `contains()`: Per i formati non-HTML, controlla se la risposta contiene l'estratto dal testo aspettato
 
 Il form di richiesta di affiliazione
 ------------------------------------
