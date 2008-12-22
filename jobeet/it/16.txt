@@ -1,0 +1,246 @@
+Giorno 16: Web Service
+======================
+
+*************************************
+QUI VANNO LA PRIMA E LA SECONDA PARTE
+*************************************
+
+
+Il form di richiesta di affiliazione
+------------------------------------
+
+Ora che il web service è pronto da usare, creiamo il form per creare
+gli account degli affiliati. Descriveremo ancora il classico
+processo di aggiunta di una nuova feature all'applicazione.
+
+### Rotte
+
+Avete indovinato. La rotta è la prima cosa che creiamo:
+
+    [yml]
+    // apps/frontend/config/routing.yml
+    affiliate:
+      class:   sfPropelRouteCollection
+      options:
+        model: JobeetAffiliate
+        actions: [new, create]
+        object_actions: { wait: GET }
+
+È un classico insiemre di rotte ##ORM## con una nuova opzione di
+configurazione: `actions`. Poiché non abbiamo bisogno di tutte e
+sette le azioni definite dalla rotta, l'opzione `actions` dice
+alla rotta di far corrispondere solo le azioni `new` e `create`.
+La rotta aggiuntiva `wait` sarà usata per dare al novello
+affiliato un po' di feedback sul suo account.
+
+### Inizio
+
+Il classico secondo passo è generare un modulo:
+
+    $ php symfony propel:generate-module frontend affiliate JobeetAffiliate --non-verbose-templates
+
+### Template
+
+Il task `propel:generate-module` genera le classiche sette azioni ed i loro
+template corrispondenti. Nella cartella `templates/`, cancelliamo tutti i
+file tranne `_form.php` e `newSuccess.php`. E per i file che manteniamo,
+sostituiamo il contenuto con il seguente:
+
+    [php]
+    <!-- apps/frontend/modules/affiliate/templates/newSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
+
+    <h1>Become an Affiliate</h1>
+
+    <?php include_partial('form', array('form' => $form)) ?>
+
+    <!-- apps/frontend/modules/affiliate/templates/_form.php -->
+    <?php include_stylesheets_for_form($form) ?>
+    <?php include_javascripts_for_form($form) ?>
+
+    <?php echo form_tag_for($form, 'affiliate') ?>
+      <table id="job_form">
+        <tfoot>
+          <tr>
+            <td colspan="2">
+              <input type="submit" value="Submit" />
+            </td>
+          </tr>
+        </tfoot>
+        <tbody>
+          <?php echo $form ?>
+        </tbody>
+      </table>
+    </form>
+
+Creiamo il template `waitSuccess.php`:
+
+    [php]
+    <!-- apps/frontend/modules/affiliate/templates/waitSuccess.php -->
+    <h1>Your affiliate account has been created</h1>
+
+    <div style="padding: 20px">
+      Thank you! 
+      You will receive an email with your affiliate token
+      as soon as your account will be activated.
+    </div>
+
+Infine, cambiamo il link nel footer per puntare al modulo `affiliate`:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <li class="last"><a href="<?php echo url_for('@affiliate_new') ?>">Become an affiliate</a></li>
+
+### Azioni
+
+Di nuovo, siccome useremo solo il form di creazione, apriamo il file
+`actions.class.php` e rimuoviamo tutti i metodi tranne `executeNew()`,
+`executeCreate()`, e `processForm()`.
+
+Per l'azione `processForm()`, cambiamo l'URL di redirezione all'aizone `wait`:
+
+    [php]
+    // apps/frontend/modules/affiliate/actions/actions.class.php
+    $this->redirect($this->generateUrl('affiliate_wait', $jobeet_affiliate));
+
+L'azione `wait` è semplice, perché non vogliamo passare nulla al template:
+
+    [php]
+    // apps/frontend/modules/affiliate/actions/actions.class.php
+    public function executeWait()
+    {
+    }
+
+L'affiliato non può scegliere il suo token, né può attivare il suo account.
+Apriamo il file `JobeetAffiliateForm` per personalizzare il form:
+
+    [php]
+    // lib/form/JobeetAffiliateForm.class.php
+    class JobeetAffiliateForm extends BaseJobeetAffiliateForm
+    {
+      public function configure()
+      {
+<propel>
+        unset($this['is_active'], $this['token'], $this['created_at']);
+        $this->widgetSchema['jobeet_category_affiliate_list']->setOption('expanded', true);
+        $this->widgetSchema['jobeet_category_affiliate_list']->setLabel('Categories');
+
+        $this->validatorSchema['jobeet_category_affiliate_list']->setOption('required', true);
+</propel>
+<doctrine>
+        unset($this['is_active'], $this['token'], $this['created_at'], $this['updated_at']);
+
+        $this->widgetSchema['jobeet_categories_list']->setOption('expanded', true);
+        $this->widgetSchema['jobeet_categories_list']->setLabel('Categories');
+
+        $this->validatorSchema['jobeet_categories_list']->setOption('required', true);
+</doctrine>
+
+        $this->widgetSchema['url']->setLabel('Your website URL');
+        $this->widgetSchema['url']->setAttribute('size', 50);
+
+        $this->widgetSchema['email']->setAttribute('size', 50);
+
+        $this->validatorSchema['email'] = new sfValidatorEmail(array('required' => true));
+      }
+    }
+
+Il framework dei form supporta le relazioni molti-a-molti, come ogni altra
+colonna. Per default, una relazione del genere è visualizzata come un menù
+a tendina, grazie al widget `sfWidgetFormChoice`. Come abbiamo visto nel giorno
+10, abbiamo modificato la visualizzazione usando l'opzione `expanded`.
+Le email e gli URL tendono ad essere un po' più lunghi della dimensione
+predefinita di un tag input, ma gli attributi HTML possono essere impostati
+usando il metodo `setAttribute()`.
+
+![Form affiliati](http://www.symfony-project.org/images/jobeet/1_2/16/affiliate_form.png)
+
+### Test
+
+L'ultimo passo è scrivere alcuni test funzionali per la nuova feature:
+
+    [php]
+    // test/functional/frontend/affiliateActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->
+      info('1 - An affiliate can create an account')->
+
+      get('/affiliate/new')->
+      click('Submit', array('jobeet_affiliate' => array(
+        'url'                            => 'http://www.example.com/',
+        'email'                          => 'foo@example.com',
+<propel>
+        'jobeet_category_affiliate_list' => array($browser->getProgrammingCategory()->getId()),
+</propel>
+<doctrine>
+        'jobeet_categories_list'         => array(Doctrine::getTable('JobeetCategory')->findOneBySlug('programming')->getId()),
+</doctrine>
+      )))->
+      isRedirected()->
+      followRedirect()->
+      with('response')->checkElement('#content h1', 'Your affiliate account has been created')->
+
+      info('2 - An affiliate must at leat select one category')->
+
+      get('/affiliate/new')->
+      click('Submit', array('jobeet_affiliate' => array(
+        'url'   => 'http://www.example.com/',
+        'email' => 'foo@example.com',
+      )))->
+<propel>
+      with('form')->isError('jobeet_category_affiliate_list')
+</propel>
+<doctrine>
+      with('form')->isError('jobeet_categories_list')
+</doctrine>
+    ;
+
+<propel>
+Per simulare la selezione dei checkbox, passiamo un array di identificatori
+da spuntare. Per semplificare il compito, un nuovo metodo
+`getProgrammingCategory()` è stato creato nella classe
+`JobeetTestFunctional`:
+
+    [php]
+    // lib/model/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function getProgrammingCategory()
+      {
+        $criteria = new Criteria();
+        $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+
+        return JobeetCategoryPeer::doSelectOne($criteria);
+      }
+
+      // ...
+    }
+
+Ma siccome abbiamo già questo codice nel metodo `getMostRecentProgrammingJob()`,
+è ora di rifattorizzare il codice e creare un metodo `getForSlug()` in
+`JobeetCategoryPeer`:
+
+    [php]
+    // lib/model/JobeetCategoryPeer.php
+    static public function getForSlug($slug)
+    {
+      $criteria = new Criteria();
+      $criteria->add(self::SLUG, $slug);
+
+      return self::doSelectOne($criteria);
+    }
+
+Quindi, sostituiamo le due occorrenze di questo codice in `JobeetTestFunctional`.
+</propel>
+
+
+*******************************
+QUI VA LA QUARTA E ULTIMA PARTE
+*******************************
+
+
+__ORM__
