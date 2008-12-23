@@ -41,8 +41,14 @@ developer or a company. They are not publicly available.
 ### Public Plugins
 
 Public plugins are available for the community to download and install. During
+<propel>
 this tutorial, we have used a couple of public plugins: `sfGuardPlugin` and
 `sfFormExtraPlugin`.
+</propel>
+<doctrine>
+this tutorial, we have used a couple of public plugins: `sfDoctrineGuardPlugin`
+and `sfFormExtraPlugin`.
+</doctrine>
 
 They are exactly the same as private plugins. The only difference is that
 anybody can install them for their projects. You will learn later on how to
@@ -98,10 +104,20 @@ Bootstrapping a plugin is as simple as creating a new directory under
 
 ### The Model
 
+<propel>
 First, move the `config/schema.yml` file to `plugins/sfJobeetPlugin/config/`:
+</propel>
+<doctrine>
+First, move the `config/doctrine/schema.yml` file to `plugins/sfJobeetPlugin/config/`:
+</doctrine>
 
     $ mkdir plugins/sfJobeetPlugin/config/
+<propel>
     $ mv config/schema.yml plugins/sfJobeetPlugin/config/schema.yml
+</propel>
+<doctrine>
+    $ mv config/doctrine/schema.yml plugins/sfJobeetPlugin/config/doctrine/schema.yml
+</doctrine>
 
 >**NOTE**
 >All commands are for Unix like environments. If you use Windows, you can drag
@@ -116,6 +132,85 @@ Move model, form, and filter files to `plugins/sfJobeetPlugin/lib/`:
     $ mv lib/form/ plugins/sfJobeetPlugin/lib/
     $ mv lib/filter/ plugins/sfJobeetPlugin/lib/
 
+<doctrine>
+After you move the models, forms and filters the classes must be renamed, made
+abstract and prefixed with the word `Plugin`.
+
+Here is an example where we move the `JobeetAffiliate` and 
+`JobeetAffiliateTable` classes.
+
+    $ mv plugins/sfJobeetPlugin/lib/model/doctrine/JobeetAffiliate.class.php plugins/sfJobeetPlugin/lib/model/doctrine/PluginJobeetAffiliate.class.php
+
+And the code should be updated:
+
+    [php]
+    abstract class PluginJobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function preValidate($event)
+      {
+        $object = $event->getInvoker();
+
+        if (!$object->getToken())
+        {
+          $object->setToken(sha1($object->getEmail().rand(11111, 99999)));
+        }
+      }
+
+      // ...
+    }
+
+Now lets move the `JobeetAffiliateTable` class:
+
+    $ mv plugins/sfJobeetPlugin/lib/model/doctrine/JobeetAffiliateTable.class.php plugins/sfJobeetPlugin/lib/model/doctrine/PluginJobeetAffiliateTable.class.php
+
+The class definition should now look like the following:
+
+    [php]
+    class PluginJobeetAffiliateTable extends Doctrine_Table
+    {
+      // ...
+    }
+
+Now do the same thing for the forms and filter classes. Rename them to include a 
+prefix with the word `Plugin`.
+
+Make sure to remove the `base` directory in `plugins/sfJobeetPlugin/lib/*/doctrine` for `form`,
+`filter`, and `model` directories.
+
+Example:
+
+    $ rm -rf plugins/sfJobeetPlugin/lib/form/doctrine/base
+    $ rm -rf plugins/sfJobeetPlugin/lib/filter/doctrine/base
+    $ rm -rf plugins/sfJobeetPlugin/lib/model/doctrine/base
+
+Once you have moved, renamed and removed some forms, filters and model classes run the 
+tasks to build the re-build all the classes.
+
+    $ php symfony doctrine:build-forms
+    $ php symfony doctrine:build-filters
+    $ php symfony doctrine:build-models
+
+Now you will notice some new directories created to hold the models created from
+the schema included with the `sfJobeetPlugin` at `lib/model/doctrine/sfJobeetPlugin`.
+
+This directory contains the top level models and the base classes generated from
+the schema. For example the model `JobeetJob` now has this class structure.
+
+| Class Name            | Extends                    | Path                        | Description                 |
+|-----------------------|----------------------------|-----------------------------|-----------------------------|
+| JobeetJob             | PluginJobeetJob            | lib/model/doctrine/sfJobeetPlugin/JobeetJob.class.php | Top level class where all project model functionality can be placed. This is where you can add and override functionality that comes with the plugin models. |
+| PluginJobeetJob       | BaseJobeetJob              | plugins/sfJobeetPlugin/lib/model/doctrine/PluginJobeetJob.class.php | This class contains all the plugin specific functionality. You can override functionality in this class and the base by modifying the `JobeetJob` class. |
+| BaseJobeetJob         | sfDoctrineRecord           | lib/model/doctrine/sfJobeetPlugin/base/BaseJobeetJob.class.php | Base class that is generated from the yaml schema file each time you run `doctrine:build-models`. |
+| JobeetJobTable        | PluginJobeetJobTable       | lib/model/doctrine/sfJobeetPlugin/JobeetJobTable.class.php | Same as the `JobeetJob` class except this is the instance of `Doctrine_Table` that will be returned when you call `Doctrine::getTable('JobeetJob')`. |
+| PluginJobeetJobTable  | Doctrine_Table             | lib/model/doctrine/sfJobeetPlugin/JobeetJobTable.class.php | This class contains all the plugin specific functionality for the instance of `Doctrine_Table` that will be returned when you call `Doctrine::getTable('JobeetJob')`.
+
+With this generated structure you have the ability to customize the models of a
+plugin by editing the top level `JobeetJob` class. You can customize the schema
+and add columns, add relationships by overriding the `setTableDefinition()` and
+`setUp()` methods.
+</doctrine>
+
+<propel>
 If you were to run the `propel:build-model` task now, symfony would still
 generate the files under `lib/model/`, which is not what we want. The Propel
 output directory can be configured by adding a `package` option. Open the
@@ -148,6 +243,17 @@ As these files are global for a project, remove them from the plugin:
 
     $ rm plugins/sfJobeetPlugin/lib/form/BaseFormPropel.class.php
     $ rm plugins/sfJobeetPlugin/lib/filter/BaseFormFilterPropel.class.php
+</propel>
+<doctrine>
+We need to make sure our plugin doesn't have the base classes for all Doctrine
+forms. These files are global for a project and will be re-generated with the 
+`doctrine:build-forms` and `doctrine:build-filters`.
+
+Remove the files from the plugin:
+
+    $ rm plugins/sfJobeetPlugin/lib/form/doctrine/BaseFormDoctrine.class.php
+    $ rm plugins/sfJobeetPlugin/lib/filter/doctrine/BaseFormFilterDoctrine.class.php
+</doctrine>
 
 >**NOTE**
 >If you use symfony 1.2.0 or 1.2.1, the filter base form file is in the
@@ -216,7 +322,12 @@ Update the `search` and `delete` actions:
           return $this->forward('sfJobeetJob', 'index');
         }
 
+<propel>
         $this->jobs = JobeetJobPeer::getForLuceneQuery($query);
+</propel>
+<doctrine>
+        $this->jobs = Doctrine::getTable('JobeetJob')->getForLuceneQuery($query);
+</doctrine>
 
         if ($request->isXmlHttpRequest())
         {
@@ -293,7 +404,12 @@ Eventually, modify the `routing.yml` file to take these changes into account:
     job_show_user:
       url:     /:sf_culture/job/:company_slug/:location_slug/:id/:position_slug
       class:   sfPropelRoute
+<propel>
       options: { model: JobeetJob, type: object, method_for_criteria: doSelectActive }
+</propel>
+<doctrine>
+      options: { model: JobeetJob, type: object, method_for_query: retrieveActiveJob }
+</doctrine>
       param:   { module: sfJobeetJob, action: show }
       requirements:
         id:        \d+
@@ -481,7 +597,22 @@ Remove all methods from the `myUser` class and create the `JobeetUser` class:
 
       static public function getJobHistory(sfUser $user)
       {
+<propel>
         return JobeetJobPeer::retrieveByPks($user->getAttribute('job_history', array()));
+</propel>
+<doctrine>
+        $ids = $this->getAttribute('job_history', array());
+
+        if (!empty($ids))
+        {
+          return Doctrine::getTable('JobeetJob')
+            ->createQuery('a')
+            ->whereIn('a.id', $ids)
+            ->execute();
+        } else {
+          return array();
+        }
+</doctrine>
       }
 
       static public function resetJobHistory(sfUser $user)
@@ -750,3 +881,5 @@ and images) to fabien.potencier [.at.] symfony-project.com no later than
 tonight.
 
 Good luck!
+
+__ORM__
