@@ -1,9 +1,306 @@
 Giorno 16: Web Service
 ======================
 
-*************************************
-QUI VA LA PRIMA PARTE
-*************************************
+<doctrine>
+Prima di iniziare
+---------------
+
+Nel giorno sei abbiamo definito la rotta per vedere i lavori, chiamata
+`job_show_user` in `apps/frontend/config/routing.yml`, abbiamo fatto un piccolo
+errore nella definizione.
+La rotta dovrebbe essere la seguente.
+
+    [yml]
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfDoctrineRoute
+      options:
+        model: JobeetJob
+        type:  object
+        method_for_query: retrieveActiveJob
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+
+Notare la modifica tra usare `method` e `method_for_query`. Era un piccolo
+bug in symfony ed un errore nel tutorial, quindi è necessario aggiornare
+il progetto.
+
+Occorre anche una piccola modifica allo schema `JobAffiliate`, per includere
+una relazione molti-a-molti con `JobeetCategory`. Lo schema completo è
+nel giorno tre, le cose da aggiungere sono qui di seguito.
+
+    [yml]
+    JobeetAffiliate:
+      # ...
+      relations:
+        JobeetCategories:
+          class: JobeetCategory
+          refClass: JobeetCategoryAffiliate
+          local: affiliate_id
+          foreign: category_id
+          foreignAlias: JobeetAffiliates
+
+Assicuratevi di ricostruire il modello dopo aver fatto le modifiche:
+
+    $ php symfony doctrine:build-model
+</doctrine>
+
+Precedentemente su Jobeet
+-------------------------
+
+Con l'aggiunta dei feed su Jobeet, chi è in cerca di lavoro sarà informato
+sulle nuove offerte di lavoro in tempo reale.
+Dall'altra parte, quando si inserisce un lavoro, si vorrà avere la
+maggiore esposizione possibile. Se il proprio lavoro viene inviato
+tramite feed a molti piccoli siti, si avranno maggiori opportunità
+di trovare la persona giusto. Questo è il potere della
+[coda lunga](http://it.wikipedia.org/wiki/Coda_lunga).
+Gli affiliati potranno pubblicare gli ultimi lavori inseriti nei loro
+siti, grazie ai web service che svilupperemo oggi.
+
+Affiliati
+----------
+
+Dai requisiti del giorno 2:
+
+  "Storia F7: un affiliato recupera l'attuale lista di inserzioni attive"
+
+### Le fixture
+
+Creiamo un nuovo file di fixture per gli affiliati:
+
+    [yml]
+    // data/fixtures/030_affiliates.yml
+    JobeetAffiliate:
+      sensio_labs:
+        url:       http://www.sensio-labs.com/
+        email:     fabien.potencier@example.com
+        is_active: true
+        token:     sensio_labs
+<propel>
+        jobeet_category_affiliates: [programming]
+</propel>
+<doctrine>
+        JobeetCategories: [programming]
+</doctrine>
+
+      symfony:
+        url:       http://www.symfony-project.org/
+        email:     fabien.potencier@example.org
+        is_active: false
+        token:     symfony
+<propel>
+        jobeet_category_affiliates: [design, programming]
+</propel>
+<doctrine>
+        JobeetCategories: [design, programming]
+</doctrine>
+
+<propel>
+Creare le righe per una tabella di collegamento di una relazione
+molti-a-molti è facile come definire un array con chiave il nome
+della tabella più una `s`.
+</propel>
+<doctrine>
+Creare le righe per una tabella di collegamento di una relazione
+molti-a-molti è facile come definire un array con chiave il nome
+della relazione.
+</doctrine>
+Il contenuto dell'array è costituito dai nomi degli oggetti, come
+definiti nei file delle fixture. Si possono collegare oggetti di
+file differenti, ma i nomi devono essere definiti in anticipo.
+
+Nel file delle fixture, i token sono fissi per semplificare i test,
+ma quando un vero utente richiede un account, il token dovrà
+essere generato:
+
+<propel>
+    [php]
+    // lib/model/JobeetAffiliate.php
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function save(PropelPDO $con = null)
+      {
+        if (!$this->getToken())
+        {
+          $this->setToken(sha1($this->getEmail().rand(11111, 99999)));
+        }
+
+        return parent::save($con);
+      }
+
+      // ...
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/JobeetAffiliate.php
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function preValidate($event)
+      {
+        $object = $event->getInvoker();
+
+        if (!$object->getToken())
+        {
+          $object->setToken(sha1($object->getEmail().rand(11111, 99999)));
+        }
+      }
+
+      // ...
+    }
+</doctrine>
+
+Ora si possono ricaricare i dati:
+
+    $ php symfony propel:data-load
+
+### Il web service dei lavori
+
+Come sempre, quando si crea una nuova risorsa, è una buona abitudine definire
+prima l'URL:
+
+    [yml]
+    // apps/frontend/config/routing.yml
+    api_jobs:
+      url:     /api/:token/jobs.:sf_format
+      class:   sfPropelRoute
+      param:   { module: api, action: list }
+      options: { model: JobeetJob, type: list, method: getForToken }
+      requirements:
+        sf_format: (?:xml|json|yaml)
+
+Per questa rotta, la variabile speciale `sf_format` conlude l'URL, i suoi
+valori validi sono `xml`, `json`, o `yaml`.
+
+Il metodo `getForToken()` sarà chiamato quando l'azione recupera l'insieme
+di oggetti legati alla rotta:
+
+<propel>
+    [php]
+    // lib/model/JobeetJobPeer.php
+    class JobeetJobPeer extends BaseJobeetJobPeer
+    {
+      static public function getForToken(array $parameters)
+      {
+        $affiliate = JobeetAffiliatePeer::getByToken($parameters['token']);
+        if (!$affiliate || !$affiliate->getIsActive())
+        {
+          throw new sfError404Exception(sprintf('Affiliate with token "%s" does not exist or is not activated.', $parameters['token']));
+        }
+
+        return $affiliate->getActiveJobs();
+      }
+
+      // ...
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      public function getForToken(array $parameters)
+      {
+        $affiliate = Doctrine::getTable('JobeetAffiliate')->findOneByToken($parameters['token']);
+        if (!$affiliate || !$affiliate->getIsActive())
+        {
+          throw new sfError404Exception(sprintf('Affiliate with token "%s" does not exist or is not activated.', $parameters['token']));
+        }
+
+        return $affiliate->getActiveJobs();
+      }
+
+      // ...
+    }
+</doctrine>
+
+Se il token non esiste nel database, sarà sollevata un'eccezione
+`sfError404Exception`. Questa classe di eccezioni è quindi automaticamente
+convertita in una risposta `404`. Questo è il modo più semplice per
+generare una pagina `404` da una classe del modello.
+
+<propel>
+Il metodo `getForToken()` usa due nuovi metodi, che ora creeremo.
+
+Primo, il metodo `getByToken()` serve per ottenere un affiliato dal suo
+token:
+
+    [php]
+    // lib/model/JobeetAffiliatePeer.php
+    class JobeetAffiliatePeer extends BaseJobeetAffiliatePeer
+    {
+      static public function getByToken($token)
+      {
+        $criteria = new Criteria();
+        $criteria->add(self::TOKEN, $token);
+
+        return self::doSelectOne($criteria);
+      }
+    }
+
+Poi, il metodo `getActiveJobs()` restituisce la lista dei lavori attualmente
+attivi:
+
+</propel>
+<doctrine>
+Il metodo `getForToken()` usa un nuovo metodo chiamato `getActiveJobs()` e
+restituisce la lista dei lavori attualmente attivi:
+</doctrine>
+
+<propel>
+    [php]
+    // lib/model/JobeetAffiliate.php
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function getActiveJobs()
+      {
+        $cas = $this->getJobeetCategoryAffiliates();
+        $categories = array();
+        foreach ($cas as $ca)
+        {
+          $categories[] = $ca->getCategoryId();
+        }
+
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::CATEGORY_ID, $categories, Criteria::IN);
+        JobeetJobPeer::addActiveJobsCriteria($criteria);
+
+        return JobeetJobPeer::doSelect($criteria);
+      }
+
+      // ...
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetAffiliate.class.php
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function getActiveJobs()
+      {
+        $q = Doctrine_Query::create()
+          ->select('j.*')
+          ->from('JobeetJob j')
+          ->leftJoin('j.JobeetCategory c')
+          ->leftJoin('c.JobeetAffiliates a')
+          ->where('a.id = ?', $this->getId());
+
+        $q = Doctrine::getTable('JobeetJob')->addActiveJobsQuery($q);
+
+        return $q->execute();
+      }
+
+      // ...
+    }
+</doctrine>
+
+L'ultimo passo è quello di creare l'azione `api` ed i template.
+Inizializziamo il modulo con il task `generate:module`:
+
+    $ php symfony generate:module frontend api
+
 
 ### L'azione
 
@@ -458,9 +755,310 @@ Quindi, sostituiamo le due occorrenze di questo codice in `JobeetTestFunctional`
 </propel>
 
 
-*******************************
-QUI VA LA QUARTA E ULTIMA PARTE
-*******************************
+La gestione degli affiliati
+---------------------------
 
+Per il backend, va creato un modulo `affiliate` per consentire agli
+amministratori di attivare gli affiliati:
+
+    $ php symfony propel:generate-admin backend JobeetAffiliate --module=affiliate
+
+Per accedere al modulo appena creato, aggiungiamo un link nel menù principale
+col numero di affiliati che devono essere attivati:
+
+    [php]
+    <!-- apps/backend/templates/layout.php -->
+    <li>
+      <a href="<?php echo url_for('@jobeet_affiliate') ?>">
+<propel>
+        Affiliates - <strong><?php echo JobeetAffiliatePeer::countToBeActivated() ?></strong>
+</propel>
+<doctrine>
+        Affiliates - <strong><?php echo Doctrine::getTable('JobeetAffiliate')->countToBeActivated() ?></strong>
+</doctrine>
+      </a>
+    </li>
+
+<propel>
+    // lib/model/JobeetAffiliatePeer.php
+    class JobeetAffiliatePeer extends BaseJobeetAffiliatePeer
+    {
+      static public function countToBeActivated()
+      {
+        $criteria = new Criteria();
+        $criteria->add(self::IS_ACTIVE, 0);
+
+        return self::doCount($criteria);
+      }
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetAffiliateTable.class.php
+    class JobeetAffiliateTable extends Doctrine_Table
+    {
+      public function countToBeActivated()
+      {
+        $q = $this->createQuery('a')
+          ->where('a.is_active = ?', 0);
+
+        return $q->count();
+      }
+</doctrine>
+
+Poiché l'unica azione necessaria nel backend è l'attivazione o la
+disattivazione degli account, cambiamo la sezione `config` del
+generatore, per semplificare un po' l'interfaccia, ed aggiungiamo
+un link per attivare gli account direttamente dalla lista:
+
+    [yml]
+    # apps/backend/modules/affiliate/config/generator.yml
+    config:
+      fields:
+        is_active: { label: Active? }
+      list:
+        title:   Affiliate Management
+        display: [is_active, url, email, token]
+        sort:    [is_active]
+        object_actions:
+          activate:   ~
+          deactivate: ~
+        batch_actions:
+          activate:   ~
+          deactivate: ~
+        actions: {}
+      filter:
+        display: [url, email, is_active]
+
+Per rendere gli amministratori più produttivi, cambiamo i filtri di
+default per mostrare solo gli affiliati che devono essere attivati:
+
+    [php]
+    // apps/backend/modules/affiliate/lib/affiliateGeneratorConfiguration.class.php
+    class affiliateGeneratorConfiguration extends BaseAffiliateGeneratorConfiguration
+    {
+      public function getFilterDefaults()
+      {
+        return array('is_active' => '0');
+      }
+    }
+
+Il solo codice da scrivere è per le azioni `activate` e `deactivate`:
+
+    [php]
+    // apps/backend/modules/affiliate/actions/actions.class.php
+    class affiliateActions extends autoAffiliateActions
+    {
+      public function executeListActivate()
+      {
+        $this->getRoute()->getObject()->activate();
+
+        $this->redirect('@jobeet_affiliate');
+      }
+
+      public function executeListDeactivate()
+      {
+        $this->getRoute()->getObject()->deactivate();
+
+        $this->redirect('@jobeet_affiliate');
+      }
+
+      public function executeBatchActivate(sfWebRequest $request)
+      {
+<propel>
+        $affiliates = JobeetAffiliatePeer::retrieveByPks($request->getParameter('ids'));
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetAffiliate a')
+          ->whereIn('a.id', $request->getParameter('ids'));
+
+        $affiliates = $q->execute();
+</doctrine>
+
+        foreach ($affiliates as $affiliate)
+        {
+          $affiliate->activate();
+        }
+
+        $this->redirect('@jobeet_affiliate');
+      }
+
+      public function executeBatchDeactivate(sfWebRequest $request)
+      {
+<propel>
+        $affiliates = JobeetAffiliatePeer::retrieveByPks($request->getParameter('ids'));
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetAffiliate a')
+          ->whereIn('a.id', $request->getParameter('ids'));
+
+        $affiliates = $q->execute();
+</doctrine>
+
+        foreach ($affiliates as $affiliate)
+        {
+          $affiliate->deactivate();
+        }
+
+        $this->redirect('@jobeet_affiliate');
+      }
+    }
+
+<propel>
+    // lib/model/JobeetAffiliate.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetAffiliate.class.php
+</doctrine>
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function activate()
+      {
+        $this->setIsActive(true);
+
+        return $this->save();
+      }
+
+      public function deactivate()
+      {
+        $this->setIsActive(false);
+
+        return $this->save();
+      }
+
+      // ...
+    }
+
+![Backend affiliati](http://www.symfony-project.org/images/jobeet/1_2/16/backend.png)
+
+Inviare email
+-------------
+
+Ogni volta che l'account di un affiliato viene attivato da un amministratore,
+un'email deve essere inviata per confermare la sottoscrizione e fornire
+il token.
+
+PHP ha diverse buone librerie per l'invio di email, come
+[SwiftMailer](http://www.swiftmailer.org/),
+[Zend_Mail](http://framework.zend.com/), e
+[ezcMail](http://ezcomponents.org/docs/tutorials/Mail). Poiché useremo
+alcune altre librerie di Zend Framework nel futuro, scegliamo `Zend_Mail`
+per inviare le nostre email.
+
+### Installare e configurare Zend Framework
+
+La libreria Zend Mail è parte di Zend Framework. Siccome non vogliamo
+l'intero Zend Framework, installeremo solo le parti necessarie nella
+cartella `lib/vendor/`, insieme a symfony stesso.
+
+Innanzitutto, scarichiamo
+[Zend Framework](http://framework.zend.com/download/overview) e
+scompattiamo i file nella cartella `lib/vendor/Zend/`. Si può
+ripulire la cartella cancellando tutto tranne i seguenti file e cartelle:
+
+  * `Exception.php`
+  * `Loader/`
+  * `Loader.php`
+  * `Mail/`
+  * `Mail.php`
+  * `Mime/`
+  * `Mime.php`
+  * `Search/`
+
+>**NOTE**
+>La cartella `Search/` non serve per l'invio di email, ma sarà usata per
+>il tutorial di domani.
+
+Quindi, aggiungia il seguente codice alla classe `ProjectConfiguration`,
+per fornire un modo semplice per registrare l'autoloader di Zend:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      static protected $zendLoaded = false;
+
+      static public function registerZend()
+      {
+        if (self::$zendLoaded)
+        {
+          return;
+        }
+
+        set_include_path(sfConfig::get('sf_lib_dir').'/vendor/'.get_include_path());
+        require_once sfConfig::get('sf_lib_dir').'/vendor/Zend/Loader.php';
+        Zend_Loader::registerAutoload();
+        self::$zendLoaded = true;
+      }
+
+      // ...
+    }
+
+### Inviare le email
+
+Modifichiamo l'azione `activate`:
+
+    [php]
+    // apps/backend/modules/affiliate/actions/actions.class.php
+    class affiliateActions extends autoAffiliateActions
+    {
+      public function executeListActivate()
+      {
+        $affiliate = $this->getRoute()->getObject();
+        $affiliate->activate();
+
+        // send an email to the affiliate
+        ProjectConfiguration::registerZend();
+        $mail = new Zend_Mail();
+        $mail->setBodyText(<<<EOF
+    Your Jobeet affiliate account has been activated.
+
+    Your token is {$affiliate->getToken()}.
+
+    The Jobeet Bot.
+    EOF
+    );
+        $mail->setFrom('jobeet@example.com', 'Jobeet Bot');
+        $mail->addTo($affiliate->getEmail());
+        $mail->setSubject('Jobeet affiliate token');
+        $mail->send();
+
+        $this->redirect('@jobeet_affiliate');
+      }
+
+      // ...
+    }
+
+Per far funzionare il codice, occorre cambiare `jobeet@example.com` in un
+indirizzo email esistente.
+
+>**NOTE**
+>Un tutorial completo sulla libreria `Zend_Mail` è disponibile sul
+>[sito di Zend Framework](http://framework.zend.com/manual/en/zend.mail.html).
+
+A domani
+--------
+
+Grazie all'architettura REST di symfony, è molto semplice implementare
+dei web service per i propri progetti. Sebbene oggi abbiamo scritto del
+codice per un web service in sola lettura, avete abbastanza
+conoscenze su symfony da poter implementare un web service in
+lettura-scrittura.
+
+L'implementazione del form di creazione degli account per gli affiliati
+nel frontend e della sua controparte in backend è stata molto
+facile, perché ora avete familiarità col processo di aggiunta di nuove
+feature al vostro progetto.
+
+Se ricordate i requisiti dal giorno 2:
+
+  "L'affiliato può inoltre limitare il numero di lavori da restituire e raffinare
+  la propria richiesta specificando una categoria."
+
+L'implementazione di questa feature è così facile che ve la lasceremo fare
+stasera.
+
+Domani implementeremo l'ultima feature mancante del sito Jobeet, il motore
+di ricerca. 
 
 __ORM__
