@@ -1,0 +1,633 @@
+Ngày 13: User
+================
+
+Tóm tắt
+--------------------
+
+Ngày hôm qua chúng ta đã học rất nhiều thứ. Với rất ít dòng code PHP,
+symfony admin generator cho phép lập trình viên tạo một backend
+interfaces trong vài phút.
+
+Hôm nay, chúng ta sẽ khám phá cách symfony quản lý các persistent data giữa các HTTP
+requests. Như bạn đã biết, giao thức HTTP là stateless, có nghĩa là mỗi
+request không phụ thuộc vào request trước hay hiện tại. Các website ngày nay cần có cách để
+lưu lại các dữ liệu giữa các request để nâng cao khả năng tương tác với user.
+
+Một user session có thể xác định thông qua cookie. Trong symfony, lập trình viên
+không cần trực tiếp quản lý session, mà có thể sử dụng đối tượng `sfUser`.
+
+User Flashes
+------------
+
+Ở admin, chúng ta đã dùng đối tượng user với flash. Một flash là một thông điệp nhanh
+được chứa trong user session, sẽ được tự động xóa đi ở request tiếp theo. Nó rất hữu ích khi
+bạn muốn hiển thị một thông điệp tới người dùng sau khi redirect. Admin generator sử dụng
+flash rất nhiều để hiển thị phản hồi tới người dùng mỗi khi công việc được lưu, xóa, hay gia hạn.
+
+![Flashes](http://www.symfony-project.org/images/jobeet/1_2/13/flashes.png)
+
+Một flash được set thông qua phương thức `setFlash()` của lớp `sfUser`:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeExtend(sfWebRequest $request)
+    {
+      $request->checkCSRFProtection();
+
+      $job = $this->getRoute()->getObject();
+      $this->forward404Unless($job->extend());
+
+<propel>
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extend until %s.', $job->getExpiresAt('m/d/Y')));
+</propel>
+<doctrine>
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extend until %s.', date('m/d/Y', strtotime($job->getExpiresAt()))));
+</doctrine>
+
+      $this->redirect($this->generateUrl('job_show_user', $job));
+    }
+
+Tham số đầu tiên xác định kiểu flash và tham số thứ 2 là nội dung thông báo.
+Bạn cũng có thể dùng bất kì kiểu flash nào, nhưng `notice` và `error` là 2 loại phổ biến (chúng được sử dụng bởi admin generator).
+
+Ta sẽ thêm một flash message vào templates. Với Jobeet, chúng ta thêm vào `layout.php`:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <?php if ($sf_user->hasFlash('notice')): ?>
+      <div class="flash_notice"><?php echo $sf_user->getFlash('notice') ?></div>
+    <?php endif; ?>
+
+    <?php if ($sf_user->hasFlash('error')): ?>
+      <div class="flash_error"><?php echo $sf_user->getFlash('error') ?></div>
+    <?php endif; ?>
+
+Trong template, ta dùng biến `sf_user` để truy cập.
+
+>**NOTE**
+>Một vài đối tượng của symfony có thể truy cập từ template, không cần
+>thông qua action: `sf_request`, `sf_user`, và `sf_response`.
+
+User Attributes
+---------------
+
+Trong kịch bản ở ngày 2 chúng ta đã quên không có yêu cầu chứa một số thứ trong
+user session. Ta sẽ thêm một yêu cầu mới: để dễ dàng xem các công việc, 3 công việc mới được
+xem bởi người dùng sẽ được hiển thị trên menu với link đến trang công việc đó.
+
+Khi người dùng xem một công việc, job object hiện tại cần được thêm vào danh sách công việc
+đã xem và chứa trong session:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+        $this->job = $this->getRoute()->getObject();
+
+        // fetch jobs already stored in the job history
+        $jobs = $this->getUser()->getAttribute('job_history', array());
+
+        // add the current job at the beginning of the array
+        array_unshift($jobs, $job->getId());
+
+        // store the new job history back into the session
+        $this->getUser()->setAttribute('job_history', $jobs);
+      }
+
+      // ...
+    }
+
+>**NOTE**
+>Chúng ta hoàn toàn có thể chứa trực tiếp `JobeetJob` trong session.
+>Nhưng điều này là không nên bởi nếu đối tượng đã bị thay đổi thì thông tin
+>chứa trong session sẽ không còn giá trị.
+
+### `getAttribute()`, `setAttribute()`
+
+Phương thức `sfUser::getAttribute()` lấy các giá trị từ user session. Ngược lại, phương thức
+`setAttribute()` chứa các biến PHP vào session.
+
+Phương thức `getAttribute()` cũng có một optional chứa giá trị mặc định nếu không lấy được giá trị trong session.
+
+>**NOTE**
+>Giá trị mặc định tạo bởi phương thức `getAttribute()` tương đương với:
+>
+>     [php]
+>     if (!$value = $this->getAttribute('job_history'))
+>     {
+>       $value = array();
+>     }
+
+### Lớp `myUser`
+
+Để thuận tiện cho việc tổ chức code, hãy chuyển code vào lớp `myUser` class.
+Lớp `myUser` override lớp mặc định
+[`sfUser`](http://www.symfony-project.org/api/1_2/sfUser) với các
+behavior riêng cho ứng dụng:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+        $this->job = $this->getRoute()->getObject();
+
+        $this->getUser()->addJobToHistory($this->job);
+      }
+
+      // ...
+    }
+
+    // apps/frontend/lib/myUser.class.php
+    class myUser extends sfBasicSecurityUser
+    {
+      public function addJobToHistory(JobeetJob $job)
+      {
+        $ids = $this->getAttribute('job_history', array());
+
+        if (!in_array($job->getId(), $ids))
+        {
+          array_unshift($ids, $job->getId());
+
+          $this->setAttribute('job_history', array_slice($ids, 0, 3));
+        }
+      }
+    }
+
+Code đã được sửa lại một chút cho hợp với yêu cầu:
+
+  * `!in_array($job->getId(), $ids)`: một công việc không thể được chứa 2 lần
+
+  * `array_slice($ids, 0, 3)`: chỉ chứa 3 công việc được xem gần nhất
+
+Trong, thêm đoạn code sau vào trước đoạn biến `$sf_content`:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <div id="job_history">
+      Recent viewed jobs:
+      <ul>
+        <?php foreach ($sf_user->getJobHistory() as $job): ?>
+          <li>
+            <?php echo link_to($job->getPosition().' - '.$job->getCompany(), 'job_show_user', $job) ?>
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
+
+    <div class="content">
+      <?php echo $sf_content ?>
+    </div>
+
+Layout sử dụng một phương thức mới `getJobHistory()` để nhận các job history hiện tại:
+
+    [php]
+    // apps/frontend/lib/myUser.class.php
+    class myUser extends sfBasicSecurityUser
+    {
+<propel>
+      public function getJobHistory()
+      {
+        $ids = $this->getAttribute('job_history', array());
+
+        return JobeetJobPeer::retrieveByPKs($ids);
+      }
+</propel>
+<doctrine>
+      public function getJobHistory()
+      {
+        $ids = $this->getAttribute('job_history', array());
+
+        if (!empty($ids))
+        {
+          return Doctrine::getTable('JobeetJob')
+            ->createQuery('a')
+            ->whereIn('a.id', $ids)
+            ->execute();
+        } else {
+          return array();
+        }
+      }
+</doctrine>
+
+      // ...
+    }
+
+<propel>
+The `getJobHistory()` method uses the Propel `retrieveByPKs()` method to
+retrieve several `JobeetJob` objects in one call.
+</propel>
+
+Để giao diện dễ nhìn chút, chúng ta cần thêm một vài css vào cuối file `main.css`:
+
+    [css]
+    /* web/css/main.css */
+    #job_history
+    {
+      padding: 7px;
+      background: #eee;
+      font-size: 80%;
+    }
+
+    #job_history ul
+    {
+      display: inline;
+    }
+
+    #job_history li
+    {
+      margin-right: 10px;
+      display: inline;
+    }
+
+![Job history](http://www.symfony-project.org/images/jobeet/1_2/13/job_history.png)
+
+### `sfParameterHolder`
+
+Để hoàn thiện job history API, ta cần thêm một phương thức để xóa history:
+
+    [php]
+    // apps/frontend/lib/myUser.class.php
+    class myUser extends sfBasicSecurityUser
+    {
+      public function resetJobHistory()
+      {
+        $this->getAttributeHolder()->remove('job_history');
+      }
+
+      // ...
+    }
+
+User attributes được quả lý bởi một object của lớp `sfParameterHolder`. Phương thức
+`getAttribute()` và `setAttribute()` là cách viết tắt của
+`getParameterHolder()->get()` và `getParameterHolder()->set()`. Do phương thức
+`remove()` không có cách viết khác nào trong `sfUser`, nên chúng ta cần dùng trực tiếp đối tượng holder.
+
+>**NOTE**
+>Lớp[`sfParameterHolder`](http://www.symfony-project.org/api/1_2/sfParameterHolder)
+>cũng được sử dụng bởi `sfRequest` để chứa các parameter.
+
+Bảo mật ứng dụng
+--------------------
+
+### Xác thực người dùng
+
+Giống như nhiều tính năng khác trong symfony, vấn đề xác thực cũng được quản lý bởi file YAML
+`security.yml`. Bạn có thể thấy cấu hình mặc định cho backend application trong thư mục `config/`:
+
+    [yml]
+    // apps/backend/config/security.yml
+    default:
+      is_secure: off
+
+Nếu bạn chuyển `is_secure` thành `on`, toàn bộ backend application
+sẽ yêu cầu user phải đăng nhập để sử dụng.
+
+![Login](http://www.symfony-project.org/images/jobeet/1_2/13/login.png)
+
+>**TIP**
+>Trong file YAML, môt giá trị boolean xác định bằng chuỗi `true` và
+>`false`, hoặc `on` và `off`.
+
+If you have a look at the logs in the web debug toolbar, you will notice that
+the `executeLogin()` method of the `defaultActions` class is called for every
+page you try to access.
+
+![Web debug](http://www.symfony-project.org/images/jobeet/1_2/13/web_debug.png)
+
+Khi người dùng chưa đăng nhập truy cập vào một trang yêu cầu đăng nhập, symfony
+sẽ chuyển người dùng sang trang `login` được xác định trong `settings.yml`:
+
+    [yml]
+    all:
+      .actions:
+        login_module: default
+        login_action: login
+
+>**NOTE**
+>Không được thiết lập secure cho action login để tránh vấn đề đệ quy.
+
+-
+
+>**TIP**
+>Như chúng ta đã biết trong ngày 4, các file cấu hình giống nhau có thể để ở nhiều nơi.
+>File `security.yml` cũng vậy. Để secure hay un-secure cho một action hay toàn bộ
+>module, hãy tạo file `security.yml` trong thư mục `config/`
+>của module đó:
+>
+>     [yml]
+>     index:
+>       is_secure: off
+>     all:
+>       is_secure: on
+
+Mặc định, lớp `myUser` kế thừa từ
+[`sfBasicSecurityUser`](http://www.symfony-project.org/api/1_2/sfBasicSecurityUser),
+chứ không phải từ `sfUser`. `sfBasicSecurityUser` cung cấp thêm các phương thức để quản lý
+user authentication và authorization.
+
+Để quản lý user authentication, sử dụng phương thức `isAuthenticated()` và
+`setAuthenticated()`:
+
+    [php]
+    if (!$this->getUser()->isAuthenticated())
+    {
+      $this->getUser()->setAuthenticated(true);
+    }
+
+### Phân quyền
+
+Khi một user đã đăng nhập, việc truy cập một số action có thể bị hạn chế hay không tùy theo
+**quyền hạn** của họ. User cần có quyền hạn để truy cập một trang:
+
+    [yml]
+    default:
+      is_secure:   off
+      credentials: admin
+
+Hệ thống phân quyền của symfony đơn giản và mạnh mẽ. Bạn có thể xác định quyền truy cập bất kì phần nào của ứng dụng.
+
+>**SIDEBAR**
+>Phân quyền phức tạp
+>
+>Mục `credentials` trong `security.yml` hỗ trợ toán tử Boolean operations để
+>mô tả các yêu cầu phân quyền phức tạp.
+>
+>Nếu một user cần phải có cả quyền A **và** B, đưa các quyền hạn này vào trong
+>dấu ngoặc vuông:
+>
+>     [yml]
+>     index:
+>       credentials: [A, B]
+>
+>Nếu một user cần có quyền A **hoặc** B, ta dùng 2 dấu ngoặc vuông:
+>
+>     [yml]
+>     index:
+>       credentials: [[A, B]]
+>
+>Bạn có thể sử dụng nhiều dấu ngoặc để mô tả bất kì biểu thức Boolean
+>nào với bất kì kiểu phân quyền nào.
+
+Để quản lý user credentials, `sfBasicSecurityUser` cung cấp vài phương thức:
+
+    [php]
+    // Add one or more credentials
+    $user->addCredential('foo');
+    $user->addCredentials('foo', 'bar');
+
+    // Check if the user has a credential
+    echo $user->hasCredential('foo');                      =>   true
+
+    // Check if the user has both credentials
+    echo $user->hasCredential(array('foo', 'bar'));        =>   true
+
+    // Check if the user has one of the credentials
+    echo $user->hasCredential(array('foo', 'bar'), false); =>   true
+
+    // Remove a credential
+    $user->removeCredential('foo');
+    echo $user->hasCredential('foo');                      =>   false
+
+    // Remove all credentials (useful in the logout process)
+    $user->clearCredentials();
+    echo $user->hasCredential('bar');                      =>   false
+
+Với Jobeet backend, chúng ta không sử dụng bất kì credential nào do chúng ta chỉ có một
+profile: administrator.
+
+Plugins
+-------
+
+Chúng ta không nên làm lại cái bánh xe, chúng ta sẽ không phát triển action login action từ đầu. Thay vào đó, chúng ta sẽ cài đặt một **symfony plugin**.
+
+Một trong những điểm mạnh của symfony framework là
+[hệ thống plugin](http://www.symfony-project.org/plugins/). Như chúng ta sẽ thấy trong vài ngày sau, tạo plugin là một việc dễ dàng. Nó thực sự mạnh mẽ, do một
+plugin có thể chứa bất cứ thứ gì từ cấu hình đến các module và các asset.
+
+<propel>
+Hôm nay, chúng ta sẽ cài đặt
+[`sfGuardPlugin`](http://www.symfony-project.org/plugins/sfGuardPlugin)
+để secure cho backend application:
+
+    $ php symfony plugin:install sfGuardPlugin
+</propel>
+<doctrine>
+Hôm nay, chúng ta sẽ cài đặt
+[`sfDoctrineGuardPlugin`](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin)
+để secure cho backend application:
+
+    $ php symfony plugin:install sfDoctrineGuardPlugin
+</doctrine>
+
+Lệnh `plugin:install` cài đặt một plugin thông qua tên của nó. Tất cả các plugin đều nằm trong
+thư mục `plugins/` và mỗi plugin là một thư mục có tên là tên plugin.
+
+>**NOTE**
+>Bạn cần cài PEAR để có thể chạy lệnh `plugin:install`.
+
+Khi bạn cài một plugin sử dụng lệnh `plugin:install`, symfony sẽ cài bản mới nhất
+của plugin đó. Để cài cụ thể một phiên bản nào đó,
+hãy cung cấp phiên bản thông qua option `--release`.
+
+<propel>
+The
+[plugin page](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_all_releases)
+lists all available version grouped by symfony version.
+
+As a plugin is self-contained into a directory, you can also
+[download the package](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_installation)
+from the symfony website and unarchive it, or alternatively make an
+`svn:externals` link to its
+[Subversion repository](http://svn.symfony-project.com/plugins/sfGuardPlugin).
+</propel>
+<doctrine>
+[Trang plugin](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_all_releases)
+liệt kê tất cả các phiên bản được nhóm theo version của symfony.
+
+Do một plugin được chứa trong một thư mục, bạn cũng có thể
+[download the package](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_installation)
+từ symfony website và giải nén nó, hoặc dùng
+`svn:externals` link tới
+[Subversion repository](http://svn.symfony-project.com/plugins/sfDoctrineGuardPlugin).
+
+</doctrine>
+
+Backend Security
+----------------
+
+Mỗi plugin có một file
+[README](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_readme)
+miêu tả cách cấu hình cho plugin đó.
+
+Hãy xem cách cấu hình cho plugin vừa cài. Do plugin cần vài
+model class mới để quản lý users, groups, và permissions, bạn cần rebuild
+model:
+
+    $ php symfony propel:build-all-load
+
+>**TIP**
+>Lệnh `doctrine:build-all-reload` sẽ xóa tất cả các bảng đã có
+>trước khi tạo lại chúng. Để tránh điều này, bạn có thể build models, forms, và
+>filters, sau đó, tạo thêm các bảng mới bằng cách thực thi câu SQL sinh ra
+>trong `data/sql`.
+
+Đồng thời, khi các lớp mới được tạo, bạn cần xóa cache:
+
+    $ php symfony cc
+
+<propel>
+Do `sfGuardPlugin` thêm một vài phương thức cho lớp user, nên bạn cần đổi lớp cha của `myUser` thành `sfGuardSecurityUser`:
+</propel>
+<doctrine>
+Do `sfDoctrineGuardPlugin` thêm một vài phương thức cho lớp user, nên bạn cần đổi lớp cha của `myUser` thành `sfGuardSecurityUser`:
+</doctrine>
+
+    [php]
+    // apps/backend/lib/myUser.class.php
+    class myUser extends sfGuardSecurityUser
+    {
+    }
+
+<propel>
+`sfGuardPlugin` cung cấp một action mặc định để authenticate users:
+</propel>
+<doctrine>
+`sfDoctrineGuardPlugin` cung cấp một action mặc định để authenticate users:
+</doctrine>
+
+    [yml]
+    // apps/backend/config/settings.yml
+    all:
+      .settings:
+        enabled_modules: [default, sfGuardAuth]
+
+        # ...
+
+      .actions:
+        login_module:    sfGuardAuth
+        login_action:    signin
+
+        # ...
+
+Do plugin có thể được sử dụng ở tất cả các application của project, nên bạn cần chỉ rõ
+những module nào bạn muốn sử dụng thông qua setting `enabled_modules`.
+
+![sfGuardPlugin login](http://www.symfony-project.org/images/jobeet/1_2/13/sf_guard_login.png)
+
+Cuối cùng tạo một tài khoản administrator:
+
+    $ php symfony guard:create-user fabien $ecretPa$$
+    $ php symfony guard:promote fabien
+
+>**TIP**
+>Plugin này cung cấp các lệnh để quản lý users, groups, và permissions
+>từ dòng lệnh. Dùng lệnh `list` để xem danh sách tất cả các lệnh của namespace
+>`guard`:
+>
+>     $ php symfony list guard
+
+Khi user không được authenticate, ta cần ẩn đi menu bar:
+
+    [php]
+    // apps/backend/templates/layout.php
+    <?php if ($sf_user->isAuthenticated()): ?>
+      <div id="menu">
+        <ul>
+          <li><?php echo link_to('Jobs', '@jobeet_job') ?></li>
+          <li><?php echo link_to('Categories', '@jobeet_category') ?></li>
+        </ul>
+      </div>
+    <?php endif; ?>
+
+Khi user được authenticate, chúng ta cần thêm 1 link để logout vào menu:
+
+    [php]
+    // apps/backend/templates/layout.php
+    <li><?php echo link_to('Logout', '@sf_guard_signout') ?></li>
+
+>**TIP**
+>Để xem tất cả các routes, sử dụng lệnh `app:routes`.
+
+Để Jobeet backend thuận tiện hơn, ta cần một module để quản lý các
+administrator user. May thay, plugin đã cung cấp sẵn cho ta một module như vậy. Đó là
+module `sfGuardAuth`, và bạn cần enable nó trong `settings.yml`:
+
+    [yml]
+    // apps/backend/config/settings.yml
+    all:
+      .settings:
+        enabled_modules: [default, sfGuardAuth, sfGuardUser]
+
+Thêm link vào menu:
+
+    [php]
+    // apps/backend/templates/layout.php
+    <li><?php echo link_to('Users', '@sf_guard_user') ?></li>
+
+![Backend menu](http://www.symfony-project.org/images/jobeet/1_2/13/menu.png)
+
+Chúng ta đã làm xong!
+
+User Testing
+------------
+
+Hướng dẫn ngày hôm nay chưa kết thúc do chúng ta chưa có user testing.
+Do symfony browser có thể giả lập cookies, nên việc test user behaviors thực sự đơn giản bằng
+cách sử dụng tester có sẵn
+[`sfTesterUser`](http://symfony-project.org/api/1_2/sfTesterUser).
+
+Thêm functional tests cho tính năng menu chúng ta đã tạo hôm nay.
+Thêm đoạn code sau vào cuối functional tests của module `job`:
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->
+      info('4 - User job history')->
+
+      loadData()->
+      restart()->
+
+      info('  4.1 - When the user access a job, it is added to its history')->
+      get('/')->
+      click('Web Developer', array('position' => 1))->
+      get('/')->
+      with('user')->begin()->
+        isAttribute('job_history', array($browser->getMostRecentProgrammingJob()->getId()))->
+      end()->
+
+      info('  4.2 - A job is not added twice in the history')->
+      click('Web Developer', array('position' => 1))->
+      get('/')->
+      with('user')->begin()->
+        isAttribute('job_history', array($browser->getMostRecentProgrammingJob()->getId()))->
+      end()
+    ;
+
+Để thuận tiện cho việc test, đầu tiên chúng ta cần nạp lại fixtures data và restart trình duyệt để bắt đầu với một session mới.
+
+Phương thức `isAttribute()` kiểm tra user attribute.
+
+>**NOTE**
+>`sfTesterUser` tester cũng cung cấp phương thức `isAuthenticated()` và
+>`hasCredential()` để test user authentication và autorizations.
+
+Hẹn gặp lại ngày mai
+--------------------
+
+Lớp symfony user là cách tốt để trừu tượng hóa việc quản lý PHP session.
+Cùng với hệ thống plugin tuyệt vời của symfony và plugin
+<propel>
+`sfGuardPlugin`
+</propel>
+<doctrine>
+`sfDoctrineGuardPlugin`
+</doctrine>
+, chúng ta có thể bảo mật cho Jobeet backend trong vài phút. Và chúng ta cũng có thể quản lý các tài khoản administrator, nhờ module cung cấp bởi plugin.
+
+Ngày mai là ngày cuối cùng của tuần 2, và chúng ta hi vọng sẽ thu được nhiều điều bổ ích.
+
+__ORM__
