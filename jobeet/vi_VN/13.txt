@@ -71,9 +71,9 @@ Trong template, ta dùng biến `sf_user` để truy cập.
 User Attributes
 ---------------
 
-Trong kịch bản ở ngày 2 chúng ta đã quên không có yêu cầu chứa một số thứ trong
-user session. Ta sẽ thêm một yêu cầu mới: để dễ dàng xem các công việc, 3 công việc mới được
-xem bởi người dùng sẽ được hiển thị trên menu với link đến trang công việc đó.
+Trong ngày 2 chúng ta đã quên không có yêu cầu chứa một số thứ trong user session.
+Ta sẽ thêm một yêu cầu mới: để dễ dàng xem các công việc, 3 công việc người dùng xem lần cuối
+sẽ được hiển thị trên menu với link đến trang công việc đó.
 
 Khi người dùng xem một công việc, job object hiện tại cần được thêm vào danh sách công việc
 đã xem và chứa trong session:
@@ -100,8 +100,8 @@ Khi người dùng xem một công việc, job object hiện tại cần đượ
     }
 
 >**NOTE**
->Chúng ta hoàn toàn có thể chứa trực tiếp `JobeetJob` trong session.
->Nhưng điều này là không nên bởi nếu đối tượng đã bị thay đổi thì thông tin
+>Chúng ta hoàn toàn có thể chứa trực tiếp đối tượng `JobeetJob` trong session.
+>Nhưng điều này là không nên bởi nếu đối tượng bị thay đổi thì thông tin
 >chứa trong session sẽ không còn giá trị.
 
 ### `getAttribute()`, `setAttribute()`
@@ -163,7 +163,7 @@ Code đã được sửa lại một chút cho hợp với yêu cầu:
 
   * `array_slice($ids, 0, 3)`: chỉ chứa 3 công việc được xem gần nhất
 
-Trong, thêm đoạn code sau vào trước đoạn biến `$sf_content`:
+Trong layout, thêm đoạn code sau vào trước đoạn biến `$sf_content`:
 
     [php]
     // apps/frontend/templates/layout.php
@@ -261,7 +261,7 @@ retrieve several `JobeetJob` objects in one call.
       // ...
     }
 
-User attributes được quả lý bởi một object của lớp `sfParameterHolder`. Phương thức
+User attributes được quản lý bởi một object của lớp `sfParameterHolder`. Phương thức
 `getAttribute()` và `setAttribute()` là cách viết tắt của
 `getParameterHolder()->get()` và `getParameterHolder()->set()`. Do phương thức
 `remove()` không có cách viết khác nào trong `sfUser`, nên chúng ta cần dùng trực tiếp đối tượng holder.
@@ -292,9 +292,9 @@ sẽ yêu cầu user phải đăng nhập để sử dụng.
 >Trong file YAML, môt giá trị boolean xác định bằng chuỗi `true` và
 >`false`, hoặc `on` và `off`.
 
-If you have a look at the logs in the web debug toolbar, you will notice that
-the `executeLogin()` method of the `defaultActions` class is called for every
-page you try to access.
+Nếu bạn xem nội dung log ở web debug toolbar, bạn sẽ thấy rằng phương thức
+`executeLogin()` của lớp `defaultActions` được gọi mỗi khi bạn truy cập vào trang yêu cầu
+đăng nhập.
 
 ![Web debug](http://www.symfony-project.org/images/jobeet/1_2/13/web_debug.png)
 
@@ -308,7 +308,7 @@ sẽ chuyển người dùng sang trang `login` được xác định trong `set
         login_action: login
 
 >**NOTE**
->Không được thiết lập secure cho action login để tránh vấn đề đệ quy.
+>Không được thiết lập secure cho action login để tránh đệ quy.
 
 -
 
@@ -348,15 +348,15 @@ Khi một user đã đăng nhập, việc truy cập một số action có thể
       is_secure:   off
       credentials: admin
 
-Hệ thống phân quyền của symfony đơn giản và mạnh mẽ. Bạn có thể xác định quyền truy cập bất kì phần nào của ứng dụng.
+Hệ thống phân quyền của symfony đơn giản mà mạnh mẽ. Bạn có thể xác định quyền truy cập bất kì phần nào của ứng dụng.
 
 >**SIDEBAR**
 >Phân quyền phức tạp
 >
->Mục `credentials` trong `security.yml` hỗ trợ toán tử Boolean operations để
+>Mục `credentials` trong `security.yml` hỗ trợ toán tử Boolean để
 >mô tả các yêu cầu phân quyền phức tạp.
 >
->Nếu một user cần phải có cả quyền A **và** B, đưa các quyền hạn này vào trong
+>Nếu một user cần phải có cả quyền A **và** B, ta sử dụng
 >dấu ngoặc vuông:
 >
 >     [yml]
@@ -402,7 +402,7 @@ profile: administrator.
 Plugins
 -------
 
-Chúng ta không nên làm lại cái bánh xe, chúng ta sẽ không phát triển action login action từ đầu. Thay vào đó, chúng ta sẽ cài đặt một **symfony plugin**.
+Chúng ta không nên làm lại cái bánh xe, chúng ta sẽ không phát triển action login từ đầu. Thay vào đó, chúng ta sẽ cài đặt một **symfony plugin**.
 
 Một trong những điểm mạnh của symfony framework là
 [hệ thống plugin](http://www.symfony-project.org/plugins/). Như chúng ta sẽ thấy trong vài ngày sau, tạo plugin là một việc dễ dàng. Nó thực sự mạnh mẽ, do một
@@ -449,7 +449,7 @@ from the symfony website and unarchive it, or alternatively make an
 liệt kê tất cả các phiên bản được nhóm theo version của symfony.
 
 Do một plugin được chứa trong một thư mục, bạn cũng có thể
-[download the package](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_installation)
+[download package](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_installation)
 từ symfony website và giải nén nó, hoặc dùng
 `svn:externals` link tới
 [Subversion repository](http://svn.symfony-project.com/plugins/sfDoctrineGuardPlugin).
@@ -543,7 +543,7 @@ Khi user không được authenticate, ta cần ẩn đi menu bar:
       </div>
     <?php endif; ?>
 
-Khi user được authenticate, chúng ta cần thêm 1 link để logout vào menu:
+Khi user được authenticate, chúng ta cần thêm 1 link để logout:
 
     [php]
     // apps/backend/templates/layout.php
@@ -575,7 +575,7 @@ Chúng ta đã làm xong!
 User Testing
 ------------
 
-Hướng dẫn ngày hôm nay chưa kết thúc do chúng ta chưa có user testing.
+Hướng dẫn ngày hôm nay chưa kết thúc, chúng ta chưa có user testing!.
 Do symfony browser có thể giả lập cookies, nên việc test user behaviors thực sự đơn giản bằng
 cách sử dụng tester có sẵn
 [`sfTesterUser`](http://symfony-project.org/api/1_2/sfTesterUser).
