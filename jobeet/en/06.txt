@@ -32,10 +32,10 @@ But as of now, all jobs are displayed, whether they are active or not:
       public function executeIndex(sfWebRequest $request)
       {
 <propel>
-        $this->jobs = JobeetJobPeer::doSelect(new Criteria());
+        $this->jobeet_job_list = JobeetJobPeer::doSelect(new Criteria());
 </propel>
 <doctrine>
-        $this->jobs = Doctrine::getTable('JobeetJob')
+        $this->jobeet_job_list = Doctrine::getTable('JobeetJob')
           ->createQuery('a')
           ->execute();
 </doctrine>
@@ -66,14 +66,14 @@ Let's change it to only select active jobs:
       $criteria = new Criteria();
       $criteria->add(JobeetJobPeer::CREATED_AT, time() - 86400 * 30, Criteria::GREATER_THAN);
 
-      $this->jobs = JobeetJobPeer::doSelect($criteria);
+      $this->jobeet_job_list = JobeetJobPeer::doSelect($criteria);
 </propel>
 <doctrine>
       $q = Doctrine_Query::create()
         ->from('JobeetJob j')
         ->where('j.created_at > ?', date('Y-m-d h:i:s', time() - 86400 * 30));
 
-      $this->jobs = $q->execute();
+      $this->jobeet_job_list = $q->execute();
 </doctrine>
     }
 
@@ -227,14 +227,14 @@ Let's change the action to use the `expires_at` column:
       $criteria = new Criteria();
       $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
 
-      $this->jobs = JobeetJobPeer::doSelect($criteria);
+      $this->jobeet_job_list = JobeetJobPeer::doSelect($criteria);
 </propel>
 <doctrine>
       $q = Doctrine_Query::create()
         ->from('JobeetJob j')
         ->where('j.expires_at > ?', date('Y-m-d h:i:s', time()));
 
-      $this->jobs = $q->execute();
+      $this->jobeet_job_list = $q->execute();
 </doctrine>
     }
 
@@ -400,10 +400,10 @@ Now the action code can use this new method to retrieve the active jobs.
     public function executeIndex(sfWebRequest $request)
     {
 <propel>
-      $this->jobs = JobeetJobPeer::getActiveJobs();
+      $this->jobeet_job_list = JobeetJobPeer::getActiveJobs();
 </propel>
 <doctrine>
-      $this->jobs = Doctrine::getTable('JobeetJob')->getActiveJobs();
+      $this->jobeet_job_list = Doctrine::getTable('JobeetJob')->getActiveJobs();
 </doctrine>
     }
 
