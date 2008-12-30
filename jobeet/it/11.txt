@@ -89,7 +89,7 @@ dati validi al form:
       click('Preview your job', array('job' => array(
         'company'      => 'Sensio Labs',
         'url'          => 'http://www.sensio.com/',
-        'logo'         => sfConfig::get('sf_uploads_dir').'/jobs/sensio-labs.gif',
+        'logo'         => sfConfig::get('sf_upload_dir').'/jobs/sensio-labs.gif',
         'position'     => 'Developer',
         'location'     => 'Atlanta, USA',
         'description'  => 'You will work with symfony to develop websites for our customers.',
@@ -151,15 +151,15 @@ alla pagina `show`:
 `isRedirected()` verifica se la pagina è stata redirezionata ed il metodo
 `followRedirect()` segue il redirect.
 
-Il Propel Tester
-----------------
+Il Tester ##ORM##
+-----------------
 
 Alla fine vorremo verificare che l'offerta di lavoro sia stata creata sul database
-e verificare che la colonna `is_activated` sia impostata sul valore `false`
+e verificare che la colonna `is_activated` sia impostata sul valore `false`,
 visto che l'utente non l'ha ancora pubblicata.
 
-Questo può essere fatto facilmente utilizzando un altro tester, il **Propel
-tester**. Visto che il Propel tester non è inserito di default aggiungiamolo
+Questo può essere fatto facilmente utilizzando un altro tester, il **tester
+##ORM##**. Visto che il tester ##ORM## non è inserito di default, aggiungiamolo
 ora:
 
     [php]
@@ -183,15 +183,390 @@ corrispondenti al criterio con un booleano come terzo argomento (il default è `
 o il numero di oggetti corrispondenti passando un intero.
 
 
+Testare gli errori
+------------------
 
+Il form per creare i lavori funziona come ci aspettavamo, quando inviamo
+valori validi. Aggiungiamo un test per verificare il comportamento in caso
+di invio di dati non validi.
 
+    [php]
+    $browser->
+      info('  3.2 - Submit a Job with invalid values')->
 
+      get('/job/new')->
+      click('Preview your job', array('job' => array(
+        'company'      => 'Sensio Labs',
+        'position'     => 'Developer',
+        'location'     => 'Atlanta, USA',
+        'email'        => 'not.an.email',
+      )))->
 
+      with('form')->begin()->
+        hasErrors(3)->
+        isError('description', 'required')->
+        isError('how_to_apply', 'required')->
+        isError('email', 'invalid')->
+      end()
+    ;
 
+Il metodo `hasErrors()` può testare il numero di errori, se si passa un
+intero. Il metodo `isError()` testa il codice di errore per un dato campo.
 
+>**TIP**
+>Nei test che abbiamo scritto per l'invio di dati non validi, non abbiamo
+>ri-testato l'intero form da capo. Abbiamo solo aggiunto dei test per
+>le cose specifiche.
 
+Si possono anche testare le parti di HTML generato, per verificare che
+contengano i messaggi di errore, ma non è necessario nel nostro caso, perché
+non abbiamo un layout personalizzato per il form.
 
+Ora, dobbiamo testare la barra di amministrazione che si trova nella pagina
+di anteprima del lavoro. Quando un lavoro non è stato ancora attivato, lo
+si può modificare, cancellare, o pubblicare. Per testare questi link,
+avremo bisogno di creare un lavoro. Ma è un sacco di copia e incolla.
+Siccome non ci va di sprecare tempo, aggiungiamo un metodo creatore di
+lavori nella classe `JobeetTestFunctional`:
 
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function createJob($values = array())
+      {
+        return $this->
+          get('/job/new')->
+          click('Preview your job', array('job' => array_merge(array(
+            'company'      => 'Sensio Labs',
+            'url'          => 'http://www.sensio.com/',
+            'position'     => 'Developer',
+            'location'     => 'Atlanta, USA',
+            'description'  => 'You will work with symfony to develop websites for our customers.',
+            'how_to_apply' => 'Send me an email',
+            'email'        => 'for.a.job@example.com',
+            'is_public'    => false,
+          ), $values)))->
+          followRedirect()
+        ;
+      }
+
+      // ...
+    }
+
+Il metodo `createJob()` crea un lavoro, segue la redirezione e restituisce il
+browser per non interrompere l'interfaccia fluente. Si può anche passare
+un array di valori che saranno mescolati con quelli predefiniti.
+
+Forzare il metodo HTTP di un link
+---------------------------------
+
+Testare il link "Publish" or è più facile:
+
+    [php]
+    $browser->info('  3.3 - On the preview page, you can publish the job')->
+      createJob(array('position' => 'FOO1'))->
+      click('Publish', array(), array('method' => 'put', '_with_csrf' => true))->
+
+<propel>
+      with('propel')->begin()->
+</propel>
+<doctrine>
+      with('doctrine')->begin()->
+</doctrine>
+        check('JobeetJob', array(
+          'position'     => 'FOO1',
+          'is_activated' => true,
+        ))->
+      end()
+    ;
+
+Se ricordate il giorno 10, il link "Publish" è stato configurato per essere
+richiamato col metodo HTTP `PUT`. Siccome i browser non capiscono le richieste
+`PUT`, l'helper `link_to()` converte il link in un form con un po' di
+JavaScript. Siccome il browser dei test non esegue JavaScript, abbiamo
+bisogno di forzare il metodo `PUT` passando una terza opzione al metodo
+`click()`. Inoltre, l'helper `link_to()` include anche un token CSRF, visto
+che abbiamo abilitato la protezione da CSRF nel giorno 1; l'opzione
+`_with_csrf` simula questo token.
+
+Il test del link "Delete" è molto simile:
+
+    [php]
+    $browser->info('  3.4 - On the preview page, you can delete the job')->
+      createJob(array('position' => 'FOO2'))->
+      click('Delete', array(), array('method' => 'delete', '_with_csrf' => true))->
+
+<propel>
+      with('propel')->begin()->
+</propel>
+<doctrine>
+      with('doctrine')->begin()->
+</doctrine>
+        check('JobeetJob', array(
+          'position' => 'FOO2',
+        ), false)->
+      end()
+    ;
+
+Test come guardia
+-----------------
+
+Quando un lavoro è pubblicato, non può più essere modificato. Anche se
+il link "Edit" non si vede più nella pagina di anteprima, aggiungiamo
+alcuni test per questo requisito.
+
+Prima aggiungiamo un altro parametro al metodo `createJob()`, per
+consentire la pubblicazione automatica del lavoro, e creiamo un metodo
+`getJobByPosition()` che restituisca un lavoro, dato il suo valore
+di posizione:
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function createJob($values = array(), $publish = false)
+      {
+        $this->
+          get('/job/new')->
+          click('Preview your job', array('job' => array_merge(array(
+            'company'      => 'Sensio Labs',
+            'url'          => 'http://www.sensio.com/',
+            'position'     => 'Developer',
+            'location'     => 'Atlanta, USA',
+            'description'  => 'You will work with symfony to develop websites for our customers.',
+            'how_to_apply' => 'Send me an email',
+            'email'        => 'for.a.job@example.com',
+            'is_public'    => false,
+          ), $values)))->
+          followRedirect()
+        ;
+
+        if ($publish)
+        {
+          $this->click('Publish', array(), array('method' => 'put', '_with_csrf' => true));
+        }
+
+        return $this;
+      }
+
+<propel>
+      public function getJobByPosition($position)
+      {
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::POSITION, $position);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+      }
+</propel>
+<doctrine>
+      public function getJobByPosition($position)
+      {
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j')
+          ->where('j.position = ?', $position);
+
+        return $q->fetchOne();
+      }
+</doctrine>
+      // ...
+    }
+
+Se un lavoro è pubblicato, la pagina di modifica deve restituire un
+codice di errore 404:
+
+    [php]
+    $browser->info('  3.5 - When a job is published, it cannot be edited anymore')->
+      createJob(array('position' => 'FOO3'), true)->
+      get(sprintf('/job/%s/edit', $browser->getJobByPosition('FOO3')->getToken()))->
+
+      with('response')->begin()->
+        isStatusCode(404)->
+      end()
+    ;
+
+Ma se si eseguono i test, non si avrà il risultato atteso, perché ieri
+abbiamo dimenticato di implementare questa misura di sicurezza.
+Scrivere i test è anche un bel modo di scoprire bug, perché occorre
+pensare a tutti i casi limite.
+
+Risolvere il bug è molto semplice, basta rimandare ad una pagina 404
+se il lavoro è attivato:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeEdit(sfWebRequest $request)
+    {
+      $jobeet_job = $this->getRoute()->getObject();
+      $this->form = new JobeetJobForm($jobeet_job);
+
+      $this->forward404If($jobeet_job->getIsActivated());
+    }
+
+La soluzione è banale, ma siamo sicuri che tutto il resto funzioni
+ancora come ci aspettiamo? Si può aprire il browser ed iniziare
+a testare tutte le possibili combinazioni di accesso alla pagina
+di modifica. Ma c'è un modo più semplice: eseguire tutti i
+test; se è stata introdotta una regressione, symfony lo
+dirà.
+
+Ritorno al futuro in un test
+----------------------------
+
+Quando un lavoro sta scadendo in meno di cinque giorni, o se è
+già scaduto, l'utente può estenderne la validità per altri 30
+giorni dalla data attuale.
+
+Testare questo requisito in un browser non è facile, perché la
+data è impostata automaticamente, quando il lavoro è creato, a
+30 giorni nel futuro. Quindi, quando si prende la pagina del
+lavoro, il per estendere il lavoro non è presente. Certo,
+si può modificare a mano la data di scadenza nel database, o
+modificare il template per mostrare sempre il link, ma è
+noioso ed esposto ad errori. Come forse avete indovinato,
+scrivere qualche test ci aiuterà ancora una volta.
+
+Come sempre, prima dobbiamo aggiungere una nuova rotta per il
+metodo `extend`:
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    job:
+      class:   sfPropelRouteCollection
+      options:
+        model:          JobeetJob
+        column:         token
+        object_actions: { publish: PUT, extend: PUT }
+      requirements:
+        token: \w+
+
+Poi aggiorniamo il link "Extend" nel partial `_admin`:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/_admin.php -->
+    <?php if ($job->expiresSoon()): ?>
+     - <?php echo link_to('Extend', 'job_extend', $job, array('method' => 'put')) ?> for another <?php echo sfConfig::get('app_active_days') ?> days
+    <?php endif; ?>
+
+Quindi creiamo l'azione `extend`:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeExtend(sfWebRequest $request)
+    {
+      $request->checkCSRFProtection();
+
+      $job = $this->getRoute()->getObject();
+      $this->forward404Unless($job->extend());
+
+<propel>
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extend until %s.', $job->getExpiresAt('m/d/Y')));
+</propel>
+<doctrine>
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extend until %s.', date('m/d/Y', strtotime($job->getExpiresAt()))));
+</doctrine>
+
+      $this->redirect($this->generateUrl('job_show_user', $job));
+    }
+
+Come ci si potrebbe aspettare dall'azione, il metodo `extend()` di
+`JobeetJob` restituisce `true` se il lavoro è stato esteso, `false`
+altrimenti:
+
+<propel>
+    [php]
+    // lib/model/JobeetJob.php
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function extend()
+      {
+        if (!$this->expiresSoon())
+        {
+          return false;
+        }
+
+        $this->setExpiresAt(time() + 86400 * sfConfig::get('app_active_days'));
+
+        return $this->save();
+      }
+
+      // ...
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJob.class.php
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function extend()
+      {
+        if (!$this->expiresSoon())
+        {
+          return false;
+        }
+
+        $this->setExpiresAt(date('Y-m-d', time() + 86400 * sfConfig::get('app_active_days')));
+
+        $this->save();
+
+        return true;
+      }
+
+      // ...
+    }
+</doctrine>
+
+Infine, aggiungiamo uno scenario di test:
+
+    [php]
+    $browser->info('  3.6 - A job validity cannot be extended before the job expires soon')->
+      createJob(array('position' => 'FOO4'), true)->
+      call(sprintf('/job/%s/extend', $browser->getJobByPosition('FOO4')->getToken()), 'put', array('_with_csrf' => true))->
+      with('response')->begin()->
+        isStatusCode(404)->
+      end()
+    ;
+
+    $browser->info('  3.7 - A job validity can be extended when the job expires soon')->
+      createJob(array('position' => 'FOO5'), true)
+    ;
+
+    $job = $browser->getJobByPosition('FOO5');
+<propel>
+    $job->setExpiresAt(time());
+</propel>
+<doctrine>
+    $job->setExpiresAt(date('Y-m-d'));
+</doctrine>
+    $job->save();
+
+    $browser->
+      call(sprintf('/job/%s/extend', $job->getToken()), 'put', array('_with_csrf' => true))->
+      with('response')->isRedirected()
+    ;
+
+<propel>
+    $job->reload();
+    $browser->test()->is(
+      $job->getExpiresAt('y/m/d'),
+      date('y/m/d', time() + 86400 * sfConfig::get('app_active_days'))
+    );
+</propel>
+<doctrine>
+    $job->refresh();
+    $browser->test()->is(
+      date('y/m/d', strtotime($job->getExpiresAt())),
+      date('y/m/d', time() + 86400 * sfConfig::get('app_active_days'))
+    );
+</doctrine>
+
+Questo scenario di test introduce alcune nuove cose:
+
+ * Il metodo `call()` recupera un URL con un metodo diverso da `GET` o `POST`
+ * Dopo che il lavoro è stato aggiornato dall'azione, occorre ricaricare
+   l'oggetto locale con `$job->reload()`
+ * Alla fine, usiamo l'oggetto `lime` direttamente per testare la nuova data
+   di scadenza.
 
 Sicurezza nei form
 ------------------
