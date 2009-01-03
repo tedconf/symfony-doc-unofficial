@@ -276,16 +276,15 @@ File `schema.yml` chứa thông tin về tất cả các bảng và cột tươn
   * `index`: `true` nếu bạn muốn index cho cột
              `unique` nếu bạn muốn unique index cho cột.
 
-For columns set to `~` (`id`, `created_at`, and `updated_at`), symfony will
-guess the best configuration (primary key for `id` and timestamp for
-`created_at` and `updated_at`).
+Với những cột được set `~` (`id`, `created_at`, và `updated_at`), symfony sẽ tự cấu hình phù hợp
+(khóa chính với `id` và timestamp với `created_at` và `updated_at`).
 
 >**NOTE**
->The `onDelete` attribute defines the `ON DELETE` behavior of foreign keys,
->and Propel supports `CASCADE`, `SETNULL`, and `RESTRICT`. For instance, when
->a `job` record is deleted, all the `jobeet_category_affiliate` related
->records will be automatically deleted by the database or by Propel if the
->underlying engine does not support this functionality.
+>Thuộc tính `onDelete` xác định ứng xử khi `ON DELETE` của khóa ngoài,
+>và Propel hỗ trợ `CASCADE`, `SETNULL`, và `RESTRICT`. Ví dụ, khi
+>một `job` record bị xóa, tất cả các `jobeet_category_affiliate`
+>record liên quan sẽ tự động được xóa theo bởi database hoặc bởi Propel nếu
+>underlying engine không hỗ trợ chức năng này.
 </propel>
 <doctrine>
   * `type`: kiểu dữ liệu của cột (`boolean`, `integer`, `float`, `decimal`,
@@ -357,10 +356,9 @@ Lệnh `propel:build-sql` sinh ra các câu lệnh SQL nằm trong thư mục `d
     $ php symfony propel:insert-sql
 
 <propel>
-As the task drops the current tables before re-creating them, you are
-required to confirm the operation. You can also add the `--no-confirmation`
-option to bypass the question, which is useful if you want to run the task
-from within a non-interactive batch:
+Do lệnh này sẽ xóa các bảng hiện tại trước khi tạo bảng mới, nên bạn được yêu cầu xác nhận
+hành động này. Bạn có thể thêm option `--no-confirmation`
+để bỏ qua việc xác nhận, việc này sẽ hữu ích khi bạn cần chạy lệnh một cách tự động:
 
     $ php symfony propel:insert-sql --no-confirmation
 </propel>
@@ -382,22 +380,21 @@ Lệnh `propel:build-model` tạo các file PHP trong thư mục `lib/model`
 dùng để tương tác với database.
 
 <propel>
-By browsing the generated files, you have probably noticed that Propel
-generates four classes per table. For the `jobeet_job` table:
+Khi vào thư mục này, bạn có thể thấy rằng Propel
+tạo 4 class cho một table. Ví dụ với bảng `jobeet_job`:
 
-  * `JobeetJob`: An object of this class represents a single record of the
-                 `jobeet_job` table. The class is empty by default.
-  * `BaseJobeetJob`: The parent class of `JobeetJob`. Each time you run
-                     `propel:build-model`, this class is overridden, so all
-                     customizations must be done in the `JobeetJob` class.
+  * `JobeetJob`: mỗi object của class này tương đương với một record của bảng
+                 `jobeet_job`. Ban đầu, class chưa có gì.
+  * `BaseJobeetJob`: Lớp cha của `JobeetJob`. Mỗi khi bạn chạy lệnh
+                     `propel:build-model`, lớp này sẽ bị thay đổi, vì thế các thao tác
+                     bạn phải để trong lớp `JobeetJob`.
 
-  * `JobeetJobPeer`: The class defines static methods that mostly return
-                     collections of `JobeetJob` objects. The class is empty by
-                     default.
-  * `BaseJobeetJobPeer`: The parent class of `JobeetJobPeer`. Each time you
-                         run `propel:build-model`, this class is overridden,
-                         so all customizations must be done in the
-                         `JobeetJobPeer` class.
+  * `JobeetJobPeer`: Lớp này chứa các static methods trả về tập các
+                     `JobeetJob` object. Ban đầu, class chưa có gì.
+  * `BaseJobeetJobPeer`: Lớp cha của `JobeetJobPeer`. Mỗi khi bạn chạy lệnh
+                         `propel:build-model`, lớp này sẽ bị thay thế,
+                         vì thế mọi chỉnh sửa cần để trong lớp
+                         `JobeetJobPeer`.
 </propel>
 <doctrine>
 Khi vào thư mục này, bạn có thể thấy rằng Doctrine tạo 3 classes cho 1 table. Ví dụ, với bảng `jobeet_job`:
@@ -618,10 +615,9 @@ Một file fixture có thể chứa object của 1 hoặc vài model.
 
 <propel>
 >**TIP**
->Notice the numbers prefixing the filenames. This is a simple way to control
->the order of data loading. Later in the project, if we need to insert some
->new fixture file, it will be easy as we have some free numbers between
->existing ones.
+>Chú ý đến số đằng trước ở tên file. Đó là một cách đơn giản để điều khiển
+>thứ tự nạp dữ liệu. Sau này, nếu bạn cần thêm một vài dữ liệu mới,
+>bạn sẽ dễ dàng thêm một số mới vào giữa những số đã có.
 </propel>
 <doctrine>
 >**NOTE**
@@ -683,10 +679,10 @@ Bây giờ bạn có thể test module job trên trình duyệt:
 ![Job module](http://www.symfony-project.org/images/jobeet/1_2/03/job.png)
 
 <propel>
-If you try to edit a job, you will have an exception because symfony needs a
-text representation of a category. A PHP object representation can be defined
-with the PHP `__toString()` magic method. The text representation of a category
-record should be defined in the `JobeetCategory` model class:
+Nếu bạn thử sửa một công việc, bạn sẽ nhận được một exception vì symfony cần một
+đoạn text để mô tả mỗi category. Việc mô tả một PHP object có thể được xác định thông qua
+magic method `__toString()`. Đoạn text mô tả một category
+record được xác định trong `JobeetCategory` model class:
 
     [php]
     // lib/model/JobeetCategory.php
@@ -698,13 +694,13 @@ record should be defined in the `JobeetCategory` model class:
       }
     }
 
-Now each time symfony needs a text representation of a category, it calls the
-`__toString()` method which returns the category name. As we will need a text
-representation of all model classes at one point or another, let's define
-a `__toString()` method for every model class:
+Bây giờ, mỗi khi symfony cần một đoạn text để mô tả một category, nó có thể gọi phương thức
+`__toString()` trả về tên của category. Do chúng ta sẽ cần một đoạn text
+để mô tả tất cả các model class, nên hãy viết các phương thức
+`__toString()` cho các model class còn lại:
 </propel>
 <doctrine>
-Nếu bạn thử sửa thôn tin của một công việc, bạn có thể thấy rằng Category id
+Nếu bạn thử sửa thông tin của một công việc, bạn có thể thấy rằng Category id
 hiện ra danh sách tên các category. Các tên này được trả về bởi phương thức
 `__toString()`. 
 Doctrine cung cấp sẵn phương thức `__toString()` trả về tên của cột: `title`,
