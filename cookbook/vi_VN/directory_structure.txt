@@ -1,0 +1,37 @@
+Thay đổi cấu trúc thư mục mặc định
+==================================
+
+Một trong những lợi ích của việc sử dụng một framework là nó đem lại cấu trúc nhất quán cho các project của bạn. Tất cả các project đều có cùng một coding standard, và cùng một cấu trúc thư mục như nhau. Cấu trúc này cho phép vài lập trình viên cùng phát triển một project ở cùng một thời điểm. Nó cũng thuận tiện cho việc bảo trì ứng dụng. Khi bạn được yêu cầu bảo trì một dự án symfony mà bạn không phải là người phát triển từ đầu, bạn luôn biết rõ cấu trúc các file và nhanh chóng tiếp cận được với dự án để bắt đầu chỉnh sửa.
+
+Nhưng đôi khi, bạn cần thay đổi cấu trúc thư mục mặc định của symfony. Ta sẽ xem xét vấn đề này qua 2 ví dụ khác nhau.
+
+Đầu tiên, khi symfony project bạn đưa lên một shared host với thư mục web root là`public_html`. Bằng cách sửa class `ProjectConfiguration`, bạn có thể dễ dàng thay đổi thư mục web root mặc định từ `web` thành `public_html`:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setWebDir($this->getRootDir().'/../public_html');
+      }
+    }
+
+Xét một ví dụ khác. Project symfony của bạn bây giờ được đưa lên host của một công ty rất lớn với những quy định bảo mật rất chặt chẽ. Họ chỉ cho phép ứng dụng của bạn được ghi lên những thư mục được chỉ định sẵn (như `/tmp` chẳng hạn). Do symfony chỉ ghi lên 2 thư mục (`cache`, và `log`), nên ta chỉ cần cập nhật lại class `ProjectConfiguration` để chuyển những thư mục này vào trong thư mục `/tmp`:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setCacheDir('/tmp/myproject/cache');
+        $this->setLogDir('/tmp/myproject/log');
+      }
+    }
+
+Phương thức `setCacheDir()` không chỉ đổi đường dẫn `sf_cache_dir` mà còn đổi tất cả các thư mục cache liên quan: `sf_app_base_cache_dir`, `sf_app_cache_dir`, `sf_template_cache_dir`, `sf_i18n_cache_dir`, `sf_config_cache_dir`, `sf_test_cache_dir`, và `sf_module_cache_dir`.
+
+Do tất cả các lớp cấu hình đều được sử dụng bởi symfony CLI, nên tất cả các chỉnh sửa trên đều có thể được thực hiện thông qua các lệnh có sẵn trong symfony.
+
+Nhờ có những lớp cấu hình mới trong symfony 1.1, việc cấu hình framework giờ đây trở nên thật dễ dàng.
