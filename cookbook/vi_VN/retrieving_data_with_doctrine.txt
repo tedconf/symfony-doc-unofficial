@@ -1,0 +1,515 @@
+Dùng Doctrine để lấy dữ liệu
+===================
+
+File Schema & Data Fixture
+---------------------------
+
+Đầu tiên chúng ta cần tạo một schema và một vài data fixture để test các câu truy vấn.
+
+Schema File
+-----------
+
+    [yml]
+    User:
+      actAs: [Timestampable]
+      columns:
+        username:
+          type: string(255)
+        password:
+          type: string(255)
+        last_login:
+          type: timestamp
+      relations:
+        Friends:
+          class: User
+          refClass: UserFriend
+          local: user_id1
+          foreign: user_id2
+        Groups:
+          class: Group
+          refClass: UserGroup
+          foreignAlias: Users
+        Permissions:
+          class: Permission
+          refClass: UserPermission
+          foreignAlias: Users
+
+    Group:
+      tableName: groups
+      columns:
+        name: string(255)
+      relations:
+        Permissions:
+          class: Permission
+          refClass: GroupPermission
+          foreignAlias: Groups
+
+    Permission:
+      columns:
+        name: string(255)
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(55)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          onDelete: CASCADE
+
+    Profile:
+      columns:
+        user_id: integer
+        first_name: string(255)
+        last_name: string(255)
+        email_address: string(255)
+      relations:
+        User:
+          foreignType: one
+          onDelete: CASCADE
+
+    UserFriend:
+      columns:
+        user_id1:
+          type: integer
+          primary: true
+        user_id2:
+          type: integer
+          primary: true
+      relations:
+        User1:
+          class: User
+          local: user_id1
+          foreignAlias: UserFriends
+          onDelete: CASCADE
+        User2:
+          class: User
+          local: user_id2
+          foreignAlias: UserFriends
+          onDelete: CASCADE
+
+    UserGroup:
+      columns:
+        user_id:
+          type: integer
+          primary: true
+        group_id:
+          type: integer
+          primary: true
+      relations:
+        User:
+          foreignAlias: UserGroups
+          onDelete: CASCADE
+        Group:
+          foreignAlias: UserGroups
+          onDelete: CASCADE
+
+    UserPermission:
+      columns:
+        user_id:
+          type: integer
+          primary: true
+        permission_id:
+          type: integer
+          primary: true
+      relations:
+        User:
+          foreignAlias: UserPermissions
+          onDelete: CASCADE
+        Permission:
+          foreignAlias: UserPermissions
+          onDelete: CASCADE
+
+    GroupPermission:
+      columns:
+        group_id:
+          type: integer
+          primary: true
+        permission_id:
+          type: integer
+          primary: true
+      relations:
+        Group:
+          foreignAlias: GroupPermissions
+          onDelete: CASCADE
+        Permission:
+          foreignAlias: GroupPermissions
+          onDelete: CASCADE
+
+    BlogPost:
+      actAs:
+        Timestampable:
+        Sluggable:
+          fields: [title]
+      columns:
+        user_id: integer
+        title: string(255)
+        body: clob
+      relations:
+        Author:
+          class: User
+          foreignAlias: BlogPosts
+          onDelete: CASCADE
+        Tags:
+          class: Tag
+          refClass: BlogPostTag
+          foreignAlias: BlogPosts
+        Comments:
+          class: Comment
+          refClass: BlogPostComment
+          foreignAlias: BlogPosts
+
+    Tag:
+      columns:
+        name: string(255)
+
+    Comment:
+      columns:
+        title: string(255)
+        body: clob
+
+    Page:
+      actAs:
+        Timestampable:
+        Sluggable:
+          fields: [title]
+      columns:
+        title: string(255)
+        body: clob
+
+    BlogPostTag:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          foreignAlias: BlogPostTags
+          onDelete: CASCADE
+        Tag:
+          foreignAlias: BlogPostTags
+          onDelete: CASCADE
+
+    BlogPostComment:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        comment_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          foreignAlias: BlogPostComments
+          onDelete: CASCADE
+        Comment:
+          foreignAlias: BlogPostComments
+          onDelete: CASCADE
+
+Data Fixtures
+-------------
+
+    [yml]
+    User:
+      jwage:
+        username: jwage
+        password: changeme
+        Profile:
+          first_name: Jonathan
+          last_name: Wage
+          email_address: jonwage@gmail.com
+        Groups: [Administrator]
+        Friends: [fabpot, joeblow]
+        Phonenumbers:
+          Phonenumber_1:
+            phonenumber: 6155139185
+      fabpot:
+        username: fabpot
+        password: changeme
+        Profile:
+          first_name: Fabien
+          last_name: Potencier
+          email_address: fabien.potencier@symfony-project.com
+        Groups: [ContentEditor]
+        Friends: [jwage]
+      joeblow:
+        username: joeblow
+        password: changeme
+        Profile:
+          first_name: Joe
+          last_name: Blow
+          email_address: jowblow@gmail.com
+        Groups: [Registered]
+        Friends: [jwage, fabpot]
+
+    Group:
+      Administrator:
+        name: Administrator
+        Permissions: [EditPages, EditBlog, EditUsers, EditPages, Frontend]
+      Blogger:
+        name: Blogger
+        Permissions: [EditBlog, Frontend]
+      Moderator:
+        name: Moderator
+        Permissions: [EditUsers, EditComments, Frontend]
+      ContentEditor:
+        name: Content Editor
+        Permissions: [EditPages, EditBlog, Frontend]
+      Registered:
+        name: Registered
+        Permissions: [Frontend]
+
+    Permission:
+      EditPages:
+        name: Edit Pages
+      EditBlog:
+        name: Edit Blog
+      EditUsers:
+        name: Edit Users
+      EditPages:
+        name: Edit Pages
+      EditComments:
+        name: Edit Comments
+      Frontend:
+        name: Frontend
+
+    BlogPost:
+      BlogPost_1:
+        Author: jwage
+        title: Sample Blog Post
+        body: This is a sample blog post
+        Tags: [symfony, doctrine, php, mvc]
+        Comments:
+          Comment_1:
+            title: This is a bad blog post
+            body: Yes this is indeed a horrible blog post
+          Comment_2:
+            title: I think this is awesome
+            body: This is an awesome blog post, what are you talking about?!?!?!
+
+    Tag:
+      symfony:
+        name: symfony
+      php:
+        name: PHP
+      doctrine:
+        name: Doctrine
+      mvc:
+        name: MVC
+
+    Page:
+      home:
+        title: Home
+        body: This is the content of the home page
+      about:
+        title: About
+        body: This is the content of the about page
+      faq:
+        title: F.A.Q.
+        body: This is the content of the frequently asked questions page
+
+Câu truy vấn Select
+==============
+
+DBMS Function
+--------------
+
+Đầu tiên, chúng ta nói về cách sử dụng các DBMS function trong câu truy vấn. Ví dụ, bạn muốn lấy tất cả các blog post cùng với số comment tương ứng.
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->select('p.*, COUNT(c.id) as num_comments')
+      ->from('BlogPost p')
+      ->leftJoin('p.Comments c')
+      ->groupBy('p.id');
+    $results = $q->execute();
+    echo $results[0]['num_comments'];
+
+Bạn có thể phối hợp các function và viết chúng thành chuỗi dài bao nhiêu tùy ý.
+
+Join nhiều bảng
+--------------
+
+Với Doctrine, việc nhận dữ liệu từ nhiều bảng trở nên dễ dàng. Trong ví dụ này, chúng ta có thể nhận tất cả các permission của một user, và tất cả các permission của group của anh ta.
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Permissions p')
+      ->leftJoin('u.Groups g')
+      ->leftJoin('g.Permissions p2')
+      ->where('u.id = ?', 1);
+    $user = $q->fetchOne();
+
+Bây giờ chúng ta có thể tạo một `Doctrine_Collection` để kết hợp tất cả các Permission của user.
+
+    [php]
+    $permissions = new Doctrine_Collection('Permission');
+    foreach ($user['Groups'] as $group)
+    {
+      foreach ($group['Permissions'] as $permission)
+      {
+        $permissions[] = $permission;
+      }
+    }
+    foreach ($user['Permissions'] as $permission)
+    {
+      $permissions[] = $permission;
+    }
+
+Trong một ứng dụng blog, chúng ta thường xuyên phải lấy một `BlogPost` cùng với `Author`, `Comments` và các `Tags` của nó trong một câu truy vấn. Với Doctrine việc này thật dễ dàng như tôi đã làm ở trên.
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('BlogPost p')
+      ->leftJoin('p.Author a')
+      ->leftJoin('p.Comments c')
+      ->leftJoin('p.Tags t')
+      ->where('p.id = ?', 1);
+
+Sub-Query
+-----------
+
+Trong ví dụ về `Permission` ở trên, chúng ta cũng có thể lấy `Doctrine_Collection` các `Permission` trực tiếp từ Doctrine bằng cách sử dụng sub-query.
+
+    [php]
+    $userId = 1;
+    $q = Doctrine_Query::create()
+      ->from('Permission p');
+
+    $q2 = $q->createSubquery()
+      ->select('p2.permission_id')
+      ->from('UserPermission p2')
+      ->where('p2.user_id = ?');
+
+    $q3 = $q->createSubquery()
+      ->select('p3.id')
+      ->from('Permission p3')
+      ->leftJoin('p3.GroupPermissions gp')
+      ->leftJoin('gp.Group g')
+      ->leftJoin('g.Users u')
+      ->where('u.id = ?');
+
+    $q->where('p.id IN (' . $q2->getDql() . ')')
+      ->orWhere('p.id IN (' . $q3->getDql() . ')');
+
+    $permissions = $q->execute(array($userId, $userId));
+
+Cách dùng Left Join ngắn gọn
+---------------------------
+
+Một trong những tiện lợi của Doctrine là khả năng join theo một cấu trúc ngắn gọn. Điều này giúp giảm số dòng code trong một câu truy vấn. Bạn chỉ cần thêm các bảng cần join vào trong `from()` và chúng sẽ tự động được join sử dụng `leftJoin()`.
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u, u.Profile p, u.Groups g');
+
+Code trên tương đương với:
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Profile p')
+      ->leftJoin('u.Groups g');
+
+Câu truy vấn Delete & Update
+=======================
+
+`Doctrine_Query` thực hiện truy vấn `UPDATE` và `DELETE` thông qua function `update()` và `delete()` . Sau đây là một số ví dụ.
+
+Delete Query
+------------
+
+Trong ví dụ này chúng ta sẽ xóa một user dựa vào username của anh ta.
+
+    [php]
+    Doctrine_Query::create()
+      ->delete()
+      ->from('User u')
+      ->where('u.username = ?', 'jwage')
+      ->execute();
+
+Update Query
+------------
+
+Trong câu truy vấn này chúng ta sẽ update password của một user.
+
+    [php]
+    Doctrine_Query::create()
+      ->update('User u')
+      ->set('u.password', '?', 'newpassword')
+      ->where('u.username = ?', 'jwage')
+      ->execute();
+
+Function `set()` nhận 3 tham số. Tham số đầu tiên là tên của field bạn muốn set, tham số thứ 2 là phần được cung cấp bởi PDO untouched và tham số thứ 3 là parameter/value.
+
+Trong ví dụ sau chúng ta sẽ tạo giá trị cho một timestamp field nhờ một dbms functions. Chúng ta không dùng tham số thứ 3 vì chúng ta muốn `NOW()` được cung cấp bởi PDO un-touched.
+
+    [php]
+    Doctrine_Query::create()
+      ->update('User u')
+      ->set('u.last_login', 'NOW()')
+      ->where('u.username = ?', 'jwage')
+      ->execute();
+
+Lợi ích của việc sử dụng DQL update và delete là bạn chỉ cần sử dụng một câu truy vấn để thực hiện điều mình muốn. Nếu bạn sử dụng object thì đầu tiên bạn phải lấy object đó, sau đó mới thực hiện updated hoặc deleted nghĩa là bạn phải dùng 2 câu truy vấn.
+
+Tự viết DQL
+-----------
+
+Nếu bạn quen với việc viết SQL chúng tôi cũng cung cấp một cách để thực hiện. Bạn có thể tự viết câu truy vấn DQL và parse chúng cho một `Doctrine_Query`.
+
+    [php]
+    $dql = "FROM User u, u.Phonenumbers p";
+    $q = Doctrine_Query::create()->parseQuery($dql);
+
+Hoặc thực thi chúng bằng cách sử dụng phương thức `query()` của `Doctrine_Query`.
+
+    [php]
+    $dql = "FROM User u, u.Phonenumbers p";
+    $q = Doctrine_Query::create()->query($dql);
+
+Executing Query
+=================
+
+Trong những ví dụ ở trên chúng tôi đã giới thiệu cho bạn cách tạo ra các câu truy vấn, nhưng thực thi chúng như thế nào? Doctrine hỗ trợ một vài cách để thực thi câu truy vấn và một vài cách để nhận kết quả. Bạn có thể nhận kết quả dạng object, php array (nhanh hơn sử dụng object) hoặc bỏ qua hydration process.
+
+Array Hydration
+---------------
+
+Đây là ví dụ về cách execute array hydration.
+
+    [php]
+    $results = $q->execute($params, Doctrine::HYDRATE_ARRAY);
+
+tương đương với việc dùng phương thức `fetchArray()`.
+
+    [php]
+    $results = $q->fetchArray($params);
+
+Record Hydration
+----------------
+
+    [php]
+    $results = $q->execute($params, Doctrine::HYDRATE_RECORD);
+
+Record hydration là mặc định do đó bạn có thể bỏ qua tham số thứ 2.
+
+No Hydration
+------------
+
+Chúng ta có thể bỏ qua hydration process và trả về kết quả như PDO. Nó chỉ hữu ích trong một vài trường hợp, như khi bạn chỉ có một row và một column dữ liệu. Dữ liệu được trả về dạng array với key là số do đó nó không tiện lợi trong đa số trường hợp.
+
+    [php]
+    $results = $q->execute($params, Doctrine::HYDRATE_NONE);
+
+Lấy một Record
+-------------------
+
+Bạn có thể sử dụng phương thức `fetchOne()` để tự động giới hạn số kết quả trả về là một.
+
+    [php]
+    $result = $q->fetchOne($params, Doctrine::HYDRATE_ARRAY);
