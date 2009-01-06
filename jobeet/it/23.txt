@@ -74,9 +74,233 @@ il gestore dei pacchetti nativo.
 >[configurare APC](http://www.php.net/manual/it/apc.configuration.php).
 
 
+Le librerie di symfony
+----------------------
 
-********* TODO DA COMPLETARE ********************
+### Includere symfony
 
+Uno dei grandi punti di forza di symfony è che il progetto è auto-contenuto.
+Tutti i file necessari al progetto sono sotto la cartella principale del
+progetto. E si può spostare il progetto in un'altra cartella senza
+cambiare nulla all'interno del progetto stesso, perché symfony usa solo
+percorsi relativi. Ciò vuol dire che la cartella sui server di
+produzione non deve essere la stessa della propria macchina di
+sviluppo.
 
+Il solo percorso assoulto che si può eventualmente trovare è nel file
+`config/ProjectConfiguration.class.php`; ma ce ne siamo occupati durante
+il giorno 1. Verifichiamo che contenga veramente un percorso relativo
+all'autoloader principale di symfony:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    require_once dirname(__FILE__).'/../lib/vendor/symfony/lib/autoload/sfCoreAutoload.class.php';
+
+### Aggiornare symfony
+
+Anche se tutto è auto-contenuto in una singola cartella, aggiornare symfony
+ad una nuova versione è ugualmente facilissimo.
+
+Si potrebbe voler aggiornare symfony all'ultima versione minore di tempo
+in tempo, perché ci sono continuamente bug risolti ed eventualmente
+questioni di sicurezza. La buona notizia è che tutte le versioni di
+symfony sono mantenute per almeno un anno e che durante il periodo
+di manutenzione non vengono mai aggiunte nuove feature, nemmeno le
+più piccole. Quindi è sempre rapido e sicuro aggiornare da una
+versione minore ad un'altra.
+
+Aggiornare symfony è semplice come cambiare il contenuto della
+cartella `lib/vendor/symfony/`. Se symfony è già stato installato
+da un archivio, cancellare i file attuali e sostituirli con quelli nuovi.
+
+Se si usa Subversion per il progetto, si può anche collegare il progetto
+all'ultimo tag di symfony 1.2:
+
+    $ svn propedit svn:externals lib/vendor/
+      # symfony http://svn.symfony-project.com/tags/RELEASE_1_2_1/
+
+Aggiornare symfony è allora semplice come cambiare il tag dell'ultima
+versione di symfony.
+
+Si può anche usare il branch 1.2 per avere gli aggiornamenti in
+tempo reale:
+
+    $ svn propedit svn:externals lib/vendor/
+      # symfony http://svn.symfony-project.com/branches/1.2/
+
+Ora, ogni volta che si fa un `svn up`, si avrà l'ultima versione di
+symfony 1.2.
+
+Quando si aggiorna ad una nuova versione, si consiglia di pulire sempre
+la cache, specialmente nell'ambiente di produzione:
+
+    $ php symfony cc
+
+>**TIP**
+>Se si ha anche un accesso FTP al server di produzione, si può simulare
+>un `symfony cc` semplicemente cancellando tutti i file e le cartelle
+>sotto la cartella `cache/`.
+
+Si può anche testare una nuova versione di symfony senza sostituire
+quella esistente. Se si vuole solo testare una nuova versione, e si
+vuole poter tornare indietro facilmente, installare symfony in un'altra
+cartella (ad esempio `lib/vendor/symfony_test`), cambiare il percorso
+nella classe `ProjectConfiguration`, pulire la cache, e il gioco è
+fatto. Tornare indietro è facile come cancellare la cartella e
+ricambiare il percorso in `ProjectConfiguration`.
+
+Messa a punto della configurazione
+----------------------------------
+
+### Configurazione del database
+
+La maggior parte delle volte, il database di produzione ha delle
+credenziali diverse rispetto a quello locale. Grazie agli ambienti
+di symfony, è molto facile avere una configurazione diversa
+per il database di produzione:
+
+    $ php symfony configure:database "mysql:host=localhost;dbname=prod_dbname" prod_user prod_pass
+
+Si può anche modificare direttamente il file di configurazione `databases.yml`.
+
+### Risorse
+
+Siccome Jobeet usa dei plugin che includono delle risorse, symfony crea un
+link simbolico relativo nella cartella `web/`. Il task `plugin:publish-assets`
+rigenera o crea tali link, se si installa il plugin senza usare il task
+`plugin:install`:
+
+    $ php symfony plugin:publish-assets
+
+### Personalizzare le pagine di errore
+
+Prima di andare in produzione, è meglio personalizzare le pagine
+predefinite di symfony, come la pagina "Page Not Found" o la pagina
+dell'eccezione.
+
+Abbiamo già configurato la pagina di errore per il formato `YAML` durante
+il giorno 16, creando dei file `error.yaml.php` e `exception.yaml.php` nella
+cartella `config/error/`. Il file `error.yaml.php` è usato da symfony
+per l'ambiente `prod`, mentre `exception.yaml.php` è usato nell'ambiente
+`dev`.
+
+Quindi, per personalizzare la pagina predefinita dell'eccezione per il
+formato HTML, creiamo due file: `config/error/error.html.php` e
+`config/error/exception.html.php`.
+
+La pagina `404` (pagina non trovata) può essere personalizzata cambiando le
+impostazioni `error_404_module` e `error_404_action`:
+
+    [yml]
+    # apps/frontend/config/settings.yml
+    all:
+      .actions:
+        error_404_module: default
+        error_404_action: error404
+
+Personalizzare la struttura delle cartelle
+------------------------------------------
+
+Per strutturare meglio e per standardizzare il codice, symfony ha una
+struttura predefinita di cartelle, con nomi predefiniti. Ma a volte non
+si ha altra scelta che cambiare la struttura, a causa di alcune
+costrizioni esterne.
+
+Si possono configurare i nomi delle cartelle nella classe
+`config/ProjectConfiguration.class.php`.
+
+### La cartella radice del web
+
+Su alcuni host web, non si può modificare il nome della cartella radice
+del web. Ipotizziamo che sul vostro host web sia chiamata `public_html/`
+invece di `web/`:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setWebDir($this->getRootDir().'/public_html');
+      }
+    }
+
+Il metodo `setWebDir()` accetta il percorso assoluto della cartella radice
+del web. Se inoltre si sposta questa cartella altrove, non dimenticate di
+modificare gli script dei fronto controller per verificare che il percorso
+del file `ProjectConfiguration` sia ancora valido:
+
+    [php]
+    require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
+
+### Le cartelle Cache e Log
+
+Il framework symfony scrive solo in due sotto-cartelle: `cache/` and `log/`.
+Per motivi di sicurezza, alcuni host web non impostano i permessi di
+scrittura per la cartella principale. In questo caso, si possono spostare
+queste cartelle da qualche altra parte:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setCacheDir('/tmp/symfony_cache');
+        $this->setLogDir('/tmp/symfony_logs');
+      }
+    }
+
+Come per il metodo `setWebDir()`, `setCacheDir()` e `setLogDir()` accettano
+un percorso assoluto rispettivamente alle cartelle `cache` e `log`.
+
+I factory
+---------
+
+Durante il tutorial Jobeet, abbiamo parlato degli oggetti principali di
+symfony, come `sfUser`, `sfRequest`, `sfResponse`, `sfI18N`,
+`sfRouting`, eccetera. Questi oggetti sono automaticamente creati,
+configurati e gestiti dal framework symfony. Sono sempre accessibili
+dall'oggetto `sfContext`, e come molte altre cose nel framework, sono
+configurabili tramite un file di configurazione: `factories.yml`.
+Questo file è configurabile per ambiente.
+
+Quando `sfContext` inizializza i factory principali, esso legge il file
+`factories.yml` per i nomi delle classi (`class`) ed i parametri
+(`param`) da passare al costruttore:
+
+    [yml]
+    response:
+      class: sfWebResponse
+      param:
+        send_http_headers: false
+
+Nel codice precedente, per creare un factory per la risposta, symfony
+instanzia un oggetto `sfWebResponse` e passa l'opzione `send_http_headers`
+come parametro.
+
+La possibilità di personalizzare i factory vuol dire che si può usare
+una classe personalizzata per gli oggetti principali di symfony, al
+posto di quelli predefiniti. Si può anche cambiare il comportamento
+standard di tali classi, cambiando i parametri da inviare loro.
+
+Diamo uno sguardo ad alcune classiche personalizzazione che vorreste
+fare.
+
+### Nome del cookie
+
+Per gestire la sessione, symfony usa un cookie. Questo cookie ha come
+nome predefinito `symfony`, il quale può essere cambiato in `factories.yml`.
+Sotto la chiave `all`, aggiungere la seguente configurazione per
+cambiare il nome del cookie in `jobeet`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    storage:
+      class: sfSessionStorage
+      param:
+        session_name: jobeet
+
+(DA FINIRE)
 
 __ORM__
