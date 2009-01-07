@@ -1,0 +1,298 @@
+Quản lý giỏ hàng với plugin sfShoppingCart
+===========================================
+
+Tổng quan
+----------
+
+Symfony cung cấp một plugin để quản lý giỏ hàng trong một website thương mại điện tử. Việc thêm một item, thay đổi số lượng và hiển thị nội dung của giỏ hàng trở nên đơn giản.
+
+Cài đặt
+-------
+
+Class shopping cart mặc định không có trong symfony, mà được đóng gói trong plugin `sfShoppingCart`. Symfony plugins được cài đặt thông qua PEAR (tìm hiểu thêm về plugins trong [Chương 17](http://www.symfony-project.org/book/1_1/17-Extending-Symfony#Plug-Ins)). 
+
+Việc cài đặt plugin `sfShoppingCart` rất đơn giản, được mô tả chi tiết ở [plugin page](http://www.symfony-project.org/plugins/sfShoppingCartPlugin/1_2_0?tab=plugin_installation). Bạn chỉ cần gõ lệnh sau:
+
+    $ symfony plugin:install sfShoppingCartPlugin
+
+Sau đó xóa cache để các class của plugin được tự động load:
+
+    $ symfony cc
+
+Khởi tạo
+--------
+
+Class `sfShoppingCart` có mục đích quản lý giỏ hàng. Nó có thể chứa bất kì loại đối tượng nào.
+
+Trong khi khởi tạo bạn có thể khai báo phần trăm thuế được sử dụng:
+
+    [php]
+    $my_shopping_cart = new sfShoppingCart(sfConfig::get('app_cart_tax'));
+
+Trong ví dụ này, phần trăm thuế được để trong file cấu hình `app.yml` để dễ thay đổi:
+
+    all:
+      cart:
+        tax:  19.6
+
+Tạo một giỏ hàng
+----------------
+
+Bạn có thể dễ dàng tạo một đối tượng `sfShoppingCart` trong action sử dụng phương thức khởi tạo `new`. Tuy nhiên, nó sẽ không liên quan đến user nếu nó không liên kết với một user session. Cách đơn giản nhất để lưu những lựa chọn của user vào một giỏ hàng là tạo một [composition][1] của một đối tượng `sfShoppingCart` vào trong class `sfUser`. Để thực hiện điều nay, ta thêm một phương thức vào class `myproject/apps/myapp/lib/myUser.php`:
+
+    [php]
+    class myUser extends sfUser
+    {
+      public function getShoppingCart()
+      {
+        if (!$this->hasAttribute('shopping_cart'))
+        {
+          $this->setAttribute('shopping_cart', new sfShoppingCart(sfConfig::get('app_cart_tax')));
+        }
+
+        return $this->getAttribute('shopping_cart');
+      }
+
+      // ...
+    }
+
+Phương thức `$user->getShoppingCart()` sẽ tạo một giỏ hàng mới nếu user chưa có giỏ hàng nào.
+
+>**Note**: nếu bạn muốn tìm hiểu nhiều hơn về cách override class mặc định `sfUser` thông qua class `myUser`, bạn có thể đọc mục **factories** trong [Chương 17](http://www.symfony-project.org/book/1_1/17-Extending-Symfony#Factories).
+
+Thêm, sửa, xóa Item
+-------------------
+
+Giỏ hàng có thể chứa rất nhiều các object của các class khác nhau. Mỗi item chứa trong giỏ hàng là một instance của class `sfShoppingCartItem`.
+
+Class `sfShoppingCart` có phương thức `addItem()` và `deleteItem()`. Bạn có thể thêm hay xóa bất kì loại object nào, tham số của các phương thức này là các item. 
+
+Để sửa số lượng của một item, đầu tiên lấy object `sfShoppingCartItem` của item đó (dựa vào phương thức`getItems()` của object `sfShoppingCart`) và gọi phương thức `setQuantity()`.
+
+### Module shoppingcart
+
+Dưới đây là một module quản lý giỏ hàng trong đó mỗi object của class 'Product' (mô tả sản phẩm) được thêm, sửa hoặc xóa thông quan action 'add', 'update' và 'delete':
+
+    [php]
+    class shoppingcartActions extends sfActions
+    {
+      // ...
+
+      public function executeIndex()
+      {
+        $this->shopping_cart = $shopping_cart;
+        $this->items = $shopping_cart->getItems();
+
+        // ...
+      }
+
+      public function executeAdd($request)
+      {
+        // ...
+
+        if ($request->hasParameter('id'))
+        {
+          $product = ProductPeer::retrieveByPk($request->getParameter('id'));
+          $item = new sfShoppingCartItem('Product', $request->getParameter('id'));
+          $item->setQuantity(1);
+          $item->setPrice($product->getPrice());
+          $shopping_cart = $this->getUser()->getShoppingCart();
+          $shopping_cart->addItem($item);
+        }
+
+        // ...
+      }
+
+      public function executeUpdate($request)
+      {
+        $shopping_cart = $this->getUser()->getShoppingCart();
+        foreach ($shopping_cart->getItems() as $item)
+        {
+          if ($request->hasParameter('quantity_'.$item->getId()))
+          {
+            $item->setQuantity($request->getParameter('quantity_'.$item->getId()));
+          }
+        }
+
+        // ...
+      }
+
+      public function executeDelete($request)
+      {
+        if ($request->hasParameter('id'))
+        {
+          $shopping_cart = $this->getUser()->getShoppingCart();
+          $shopping_cart->deleteItem('Product', $requets->getParameter('id'));
+        }
+
+        // ...
+      }
+
+      ...
+    }
+
+### Thêm một item
+
+Hãy phân tích đoạn code trên.
+
+Để thêm một item vào giỏ hàng, bạn sử dụng phương thức `addItem()`, cung cấp cho nó object `sfShoppingCartItem`. Object này chứa object class và id duy nhất của item được thêm vào, số lượng và giá của item. Nó cho phép giỏ hàng chứa object của bất kì class nào. Ví dụ, bạn có thể có mộ giỏ hàng chứa sách và đĩa CD.
+
+Giá của item được lưu để tránh sự khác nhau về giá khi thanh toán trong trường hợp giá của sản phẩm được thay đổi sau đó bởi người quản lý. Việc này cũng cho phép chiết khấu giá tùy theo số lượng hàng được mua:
+
+    [php]
+    if ($quantity > 10)
+    {
+      $item->setPrice($product->getPrice() * 0.8);
+    }
+    else
+    {
+      $item->setPrice($product->getPrice());
+    }
+
+Vấn đề là bạn sẽ mất giá gốc khi bạn thực hiện việc giảm giá theo cách này. Đó là lý do tại sao object `sfShoppingCartItem` có phương thức `setDiscount()` để chứa phần trăm giảm giá:
+
+    [php]
+    if ($quantity > 10)
+    {
+      $item->setPrice($product->getPrice());
+      $item->setDiscount(20);
+    }
+    else
+    {
+      $item->setPrice($product->getPrice());
+    }
+
+### Sửa một item
+
+Để sửa số lượng của một item, sử dụng phương thức `setQuantity()` của object `sfShoppingCartItem`. Để xóa một item, bạn có thể dùng phương thức `deleteItem()` hoặc sửa số lượng thành 0 : `setQuantity(0)`.
+
+Nếu user thêm item đã có, giỏ hàng sẽ tăng số lượng của item đó mà không tạo item mới:
+
+    [php]
+    $item = new sfShoppingCartItem('Product', $request->getParameter('id'));
+    $item->setQuantity(1);
+    $item->setPrice($product->getPrice());
+    $shopping_cart = $this->getUser()->getShoppingCart();
+    $shopping_cart->addItem($item);
+    $shopping_cart->addItem($item);
+
+    // tương đương với
+
+    $item = new sfShoppingCartItem('Product', $request->getParameter('id'));
+    $item->setQuantity(2);
+    $item->setPrice($product->getPrice());
+    $shopping_cart = $this->getUser()->getShoppingCart();
+    $shopping_cart->addItem($item);
+    
+Cuối cùng, bạn có thể thắc mắc tạo sao action `update` sử dụng tham số kiểu 'quantity_2313=4' thay vì 'id=2313&quantity=4'. Dùng cách này cho phép cập nhật số lượng của nhiều item một lúc.
+
+### Xóa nội dung giỏ hàng
+
+Để reset một giỏ hàng, đơn giản sử dụng phương thức `clear()` của instance `sfShoppingCart`.
+
+    [php]
+    $this->getUser()->getShoppingCart()->clear();
+
+Hiển thị giỏ hàng trong Template
+---------------------------------------
+
+Action `shoppingcart/index` hiển thị nội dung của giỏ hàng.
+
+### Lấy nội dung của giỏ hàng
+
+3 phương thức của object `sfShoppingCart` giúp bạn lấy nội dung của giỏ hàng:
+
+* `->getItems()`: mảng tất cả các `sfShoppingCartItem` object trong giỏ hàng
+* `->getItem($class_name, $object_id)`: một `sfShoppingCartItem` object cụ thể
+* `->getTotal()`: giá tiền của giỏ hàng (tổng của quantity*price của mỗi item)
+
+Các item của giỏ hàng cũng có một [parameter holder](http://www.symfony-project.org/book/1_1/02-Exploring-Symfony-s-Code#Parameter%20Holders). Do đó bạn có thể thêm bất kì thông tin nào vào item.
+
+For instance, in a website that sells auto parts, the `sfShoppingCartItem` objects need to store the objects added, but also the vehicle for which the part was bought. This can be simply done by adding:
+
+    [php]
+    $item->setParameter('vehicle', $vehicle_id);
+
+>**Note**: bạn có thể dùng phương thức `getObjects()` thay cho `getItems()`. Phương thức này nằm trong [Propel][2] data access layer. Việc sử dụng Propel là không bắt buộc, do đó bạn có thể dùng nó hoặc không. Tìm hiểu thêm về data access layer ở [Chương 8](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer).
+
+### Cung cấp dữ liệu cho template
+
+Để hiển thị nội dung của giỏ hàng, action `index` tạo sẵn một vài biến để sử dụng trong template:
+
+    [php]
+    // ...
+
+    $this->shopping_cart = $shopping_cart;
+    $this->items = $shopping_cart->getItems();
+
+Dưới đây là ví dụ một template `indexSuccess.php` đơn giản, hiển thị thông tin về tất cả các item trong giỏ hàng:
+
+    [php]
+    <?php if ($shopping_cart->isEmpty()): ?>
+
+      Your shopping cart is empty.
+
+    <?php else: ?>
+
+      <?php foreach ($items as $item): ?>
+        <?php $object = call_user_func(array($item->getClass().'Peer', 'retrieveByPK'), $item->getId()) ?> 
+        <?php echo $object->getLabel() ?><br />
+        <?php echo $item->getQuantity() ?><br />
+        <?php echo currency_format($item->getPrice(), 'EUR' ) ?> 
+        <?php if ($item->getDiscount()): >
+           (- <?php echo $item->getDiscount() ?> %)
+        <?php endif; ?><br />
+      <?php endforeach; ?>
+
+      Total : <?php echo currency_format($shopping_cart->getTotal(), 'EUR' ) ?><br />
+
+    <?php endif; ?>
+
+Chú ý rằng ví dụ này sử dụng Propel data access layer. Bạn có thể dựa vào đó để sử dụng cho các data access layer khác.
+
+Có sử dụng thuế hay không?
+--------------------------
+
+Mặc định tất cả các thao tác (thêm `$shopping_cart->addItem()`, truy cập`$item->getPrice()` và `$shopping_cart->getTotal()` đều sử dụng giá **không tính thuế**. 
+
+Để lấy tổng giá có thuế, chúng ta sử dụng:
+
+    [php]
+    $total_with_taxes = $shopping_cart->getTotalWithTaxes()
+
+Nếu bạn có dùng thuế, object `sfShoppingCart` có thể được khởi tạo để sử dụng các phương thức `add` và `get` có tính thuế trong giá:
+
+    [php]
+    class myUser extends sfUser
+    {
+      public function getShoppingCart()
+      {
+        if (!$this->hasAttribute('shopping_cart'))
+        {
+          $this->setAttribute('shopping_cart', new sfShoppingCart(sfConfig::get('app_cart_tax')));
+        }
+        $this->getAttribute('shopping_cart')->setUnitPriceWithTaxes(sfConfig::get('app_cart_withtaxes'));
+
+        return $this->getAttribute('shopping_cart');
+      }
+
+      // ...
+    }
+
+Nếu `sfConfig::get('app_cart_withtaxes')` là `true`, phương thức `$shopping_cart->addItem()` và `$item->getPrice()` sẽ sử dụng giá có tính thuế. Các phương thức `getTotal()` và `getTotalWithTaxes()` vẫn cho đúng kết quả.
+
+Một lần nữa, ta đưa cấu hình về thuế vào trong file cấu hình (đó là một thói quen tốt): đó là lý do tại sao ví dụ trên sử dụng `sfConfig::get('app_cart_withtaxes')` thay vì dùng `true`. File `myproject/apps/myapp/config/app.yml`:
+
+    [yml]
+    all:
+      cart:
+        tax:       19.6
+        withtaxes: true
+
+Nếu bạn không biết cách tính thuế có thể sử dụng shopping cart:
+
+    [php]
+    $uses_tax = $shopping_cart->getUnitPriceWithTaxes();
+
+[1]: http://en.wikipedia.org/wiki/Object_composition  "Object composition definition at Wikipedia"
+[2]: http://propel.phpdb.org/trac/                    "Propel"
