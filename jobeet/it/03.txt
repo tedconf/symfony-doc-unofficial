@@ -12,6 +12,41 @@ della nostra applicazione. Siccome symfony fa il grosso del lavoro per noi
 avremo un modulo completamente funzionante scrivendo solo poche righe di
 codice PHP.
 
+<doctrine>
+Abilitare sfDoctrinePlugin
+--------------------------
+
+Se state leggendo questa parte, avete deciso di completare il tutorial
+Jobeet con l'ORM Doctrine al posto di Propel. Questo è semplice, poiché
+tutto quello che occorre inizialmente è abilitare `sfDoctrinePlugin` e
+disabilitare `sf#PropelPlugin`. Si può fare con il seguente codice
+in `config/ProjectConfiguration.class.php`.
+
+    [php]
+    public function setup()
+    {
+      $this->enablePlugins(array('sfDoctrinePlugin'));
+      $this->disablePlugins(array('sf#PropelPlugin'));
+    }
+
+Se si preferisce mantenere tutti i plugin abilitati, si può fare così:
+
+    [php]
+    public function setup()
+    {
+      $this->enableAllPluginsExcept(array('sf#PropelPlugin', 'sfCompat10Plugin'));
+    }
+
+>**CAUTION**
+>Dopo questo cambiamenti, si avrà un errore, finché non si configurerà il file
+>`config/databases.yml`, in un passo successivo, per usare `sfDoctrineDatabase`.
+
+Dopo questi cambiamenti, assicurarsi di pulire la cache.
+
+    $ php symfony cc
+
+</doctrine>
+
 Il modello relazionale
 ----------------------
 
@@ -415,6 +450,8 @@ classi per ogni tabella. Per la tabella `jobeet_job`:
                      è vuota di default.
 </doctrine>
 
+-
+
 I valori delle colonne di un record possono venire manipolati tramite un oggetto
 model, utilizzando dei getter (metodi `get*()`) e dei setter (metodi `set*()`):
 
@@ -427,7 +464,7 @@ model, utilizzando dei getter (metodi `get*()`) e dei setter (metodi `set*()`):
 
     $job->delete();
 
-Puoi inoltre definire foreign keys direttamente collegando oggetti tra loro:
+Puoi inoltre definire chiavi esterne direttamente collegando oggetti tra loro:
 
     [php]
     $category = new JobeetCategory();

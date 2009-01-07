@@ -301,6 +301,188 @@ cambiare il nome del cookie in `jobeet`:
       param:
         session_name: jobeet
 
-(DA FINIRE)
+### Memorizzazione della sessione
+
+La classe di memorizzazione predefinita della sessione è `sfSessionStorage`.
+Essa usa il filesystem per memorizzare le informazioni sulla sessione. Se si
+hanno molti server web, probabilmente si vorranno memorizzare le sessioni in
+un posto unico, come una tabella di database:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    storage:
+      class: sfPDOSessionStorage
+      param:
+        session_name: jobeet
+        db_table:     session
+        database:     propel
+        db_id_col:    id
+        db_data_col:  data
+        db_time_col:  time
+
+### Scadenza della sessione
+
+Per default, la sessione dell'utente scade dopo `1800` secondi. Si può cambiare
+modificando la voce `user`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    user:
+      class: myUser
+      param:
+        timeout: 1800
+
+### Log
+
+Per default, non ci sono log nell'ambiente `prod`, essendo il nome della
+classe `sfNoLogger`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    prod:
+      logger:
+        class:   sfNoLogger
+        param:
+          level:   err
+          loggers: ~
+
+Si può ad esempio abilitare il log su filesystem cambiando il nome della
+classe in `sfFileLogger`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    logger:
+      class: sfFileLogger
+      param:
+        level: error
+        file:  %SF_LOG_DIR%/%SF_APP%_%SF_ENVIRONMENT%.log
+
+>**NOTE**
+>Nel file di configurazione `factories.yml`, le stringhe `%XXX%` sono
+>sostituite con i loro corrispettivi valori dall'oggetto `sfConfig`.
+>Quindi, `%SF_APP%` in un file di configurazione è equivalente a
+>`sfConfig::get('sf_app')` nel codice PHP. Questa notazione può anche
+>essere usata nei file di configurazione `app.yml`. È molto utile quando
+>ci si deve riferire ad un percorso in un file di configurazione senza
+>usare il nome del percorso (`SF_ROOT_DIR`, `SF_WEB_DIR`, ...).
+
+Rilascio
+--------
+
+### Cosa rilasciare?
+
+Al rilascio del sito Jobeet su un server di produzione, occorre stare
+attenti a non rilasciare file non necessarie o sovrascrivere file
+caricati dagli utenti, come ad esempio i loghi delle compagnie.
+
+In un progetto symfony, ci sono tre cartelle da escludere dai
+trasferimenti: `cache/`, `log/`, e `web/uploads/`. Tutto il resto
+può essere trasferito così com'è.
+
+Per motivi di sicurezza, si potrebbero non voler trasferire i
+front controller che non siano di produzione, come gli script
+`frontend_dev.php` e `frontend_cache.php`.
+
+### Strategie di rilascio
+
+In questa sezione, ipotizzeremo che si abbia un pieno controllo sui
+server di produzione. Se si dispone solamente di un accesso FTP,
+l'unica possibile soluzione di rilascio è il trasferimento di
+tutti i file ogni volta che si rilascia.
+
+Il modo più semplice di rilasciare il sito è quello di usare il
+task `project:deploy`. Esso utilizza `SSH` e `rsync` per collegarsi
+e trasferire i file da un computer ad un altro.
+
+I server per il task `project:deploy` possono essere configurati nel
+file di configurazione `config/properties.ini`:
+
+    [ini]
+    # config/properties.ini
+    [production]
+      host=www.symfony-project.com
+      port=22
+      user=jobeet
+      dir=/var/www/jobeet/
+      type=rsync
+      pass=
+
+Per rilasciare su un server `production` appena configurato, usare
+il task `project:deploy`:
+
+    $ php symfony project:deploy production
+
+Se si esegue questo comando, symfony simulerà solamente il trasferimento.
+Per rilasciare veramente il sito, aggiungere l'opzione `--go`:
+
+    $ php symfony project:deploy production --go
+
+>**NOTE**
+>Anche se è possibile fornire la password di SSH nel file `properties.ini`,
+>è meglio configurare il server con una chiave SSH per consentire
+>connessioni senza password.
+
+Per default, symfony non trasferirà le cartelle di cui abbiamo parlato nella
+sezione precedente, né gli script dei front controller di `dev`. Questo
+perché il task `project:deploy` esclude i file e le cartelle configurate
+nel file `config/rsync_exclude.txt`:
+
+    # config/rsync_exclude.txt
+    .svn
+    /web/uploads/*
+    /cache/*
+    /log/*
+    /web/*_dev.php
+
+Per Jobeet, occorre aggiungere il file `frontend_cache.php`:
+
+    # config/rsync_exclude.txt
+    .svn
+    /web/uploads/*
+    /cache/*
+    /log/*
+    /web/*_dev.php
+    /web/frontend_cache.php
+
+>**TIP**
+>Si può anche creare un file `config/rsync_include.txt` per forzare
+>il trasferimento di alcune cartelle.
+
+Anche se il task `project:deploy` è molto flessibile, si potrebbe
+volerlo personalizzare ulteriormente. Siccome il rilascio varia molto
+a seconda della configurazione e della topologia dei server, non
+esitate ad estendere il task predefinito.
+
+Ogni volta che si rilascia un sito in produzione, non dimenticare di
+pulire la cache, almeno quella di configurazione, sul server di
+produzione:
+
+    $ php symfony cc --type=config
+
+Se alcune rotte sono state cambiate, si dovrà pulire anche la
+cache del routing:
+
+    $ php symfony cc --type=routing
+
+>**NOTE**
+>La pulizia selettiva della cache consente di mantenere alcune parti
+>di cache, come quelle dei template.
+
+A domani
+--------
+
+Il rilascio di un progetto è l'ultima parte del ciclo di vita dello
+sviluppo con symfony. Non vuol dire che abbiamo finito. Al contrario.
+Un sito è qualcosa che ha una vita sua. Probabilmente si dovranno
+risolvere dei bug e magari aggiungere nuove feature nel tempo.
+Ma grazie alla struttura di symfony ed agli strumenti a vostra
+disposizione, l'aggiornamento del vostro sito sarà facile, veloce
+e sicuro.
+
+Domani è l'ultimo giorno del tutorial Jobeet. Sarà tempo di fare
+un passo indietro e riguardare quello che avete imparato durante
+i ventitré giorni di Jobeet.
+
+Non mancante l'ultima puntata di Jobeet.
 
 __ORM__
