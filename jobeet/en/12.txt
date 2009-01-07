@@ -1054,72 +1054,96 @@ The final configuration for the Jobeet admin is as follows:
 
     [yml]
     # apps/backend/modules/job/config/generator.yml
-    config:
-      actions: ~
-      fields:
-        is_activated: { label: Activated?, help: Whether the user has activated the job, or not }
-        is_public:    { label: Public? }
-      list:
-        title:         Job Management
-        layout:        stacked
-        display:       [company, position, location, url, is_activated, email]
-        params:  |
+    generator:
+      class: sfPropelGenerator
+      param:
+        model_class:           JobeetJob
+        theme:                 admin
+        non_verbose_templates: true
+        with_show:             false
+        singular:              ~
+        plural:                ~
+        route_prefix:          jobeet_job
+        with_propel_route:     1
+
+        config:
+          actions: ~
+          fields:
+            is_activated: { label: Activated?, help: Whether the user has activated the job, or not }
+            is_public:    { label: Public? }
+          list:
+            title:         Job Management
+            layout:        stacked
+            display:       [company, position, location, url, is_activated, email]
+            params:  |
 <propel>
-          %%is_activated%% <small>%%jobeet_category%%</small> - %%company%%
+              %%is_activated%% <small>%%jobeet_category%%</small> - %%company%%
 </propel>
 <doctrine>
-          %%is_activated%% <small>%%JobeetCategory%%</small> - %%company%%
+              %%is_activated%% <small>%%JobeetCategory%%</small> - %%company%%
 </doctrine>
-           (<em>%%email%%</em>) is looking for a %%=position%% (%%location%%)
-        max_per_page:  10
-        sort:          [expires_at, desc]
-        batch_actions:
-          _delete:    ~
-          extend:     ~
-        object_actions:
-          extend:     ~
-          _edit:      ~
-          _delete:    ~
-        actions:
-          deleteNeverActivated: { label: Delete never activated jobs }
+               (<em>%%email%%</em>) is looking for a %%=position%% (%%location%%)
+            max_per_page:  10
+            sort:          [expires_at, desc]
+            batch_actions:
+              _delete:    ~
+              extend:     ~
+            object_actions:
+              extend:     ~
+              _edit:      ~
+              _delete:    ~
+            actions:
+              deleteNeverActivated: { label: Delete never activated jobs }
 <propel>
-        peer_method:  doSelectJoinJobeetCategory
+            peer_method:  doSelectJoinJobeetCategory
 </propel>
 <doctrine>
-        table_method: retrieveBackendJobList
+            table_method: retrieveBackendJobList
 </doctrine>
-      filter:
-        display: [category_id, company, position, description, is_activated, is_public, email, expires_at]
-      form:
-        class:     BackendJobeetJobForm
-        display:
-          Content: [category_id, type, company, logo, url, position, location, description, how_to_apply, is_public, email]
-          Admin:   [_token, is_activated, expires_at]
-      edit:
-        title: Editing Job "%%company%% is looking for a %%position%% (#%%id%%)"
-      new:
-        title: Job Creation
+          filter:
+            display: [category_id, company, position, description, is_activated, is_public, email, expires_at]
+          form:
+            class:     BackendJobeetJobForm
+            display:
+              Content: [category_id, type, company, logo, url, position, location, description, how_to_apply, is_public, email]
+              Admin:   [_token, is_activated, expires_at]
+          edit:
+            title: Editing Job "%%company%% is looking for a %%position%% (#%%id%%)"
+          new:
+            title: Job Creation
 
     # apps/backend/modules/category/config/generator.yml
-    config:
-      actions: ~
-      fields:  ~
-      list:
-        title:   Category Management
-        display: [=name, slug]
-        batch_actions: {}
-        object_actions: {}
-      filter:
-        class: false
-      form:
-        actions:
-          _delete: ~
-          _list:   ~
-          _save:   ~
-      edit:
-        title: Editing Category "%%name%%" (#%%id%%)
-      new:
-        title: New Category
+    generator:
+      class: sfPropelGenerator
+      param:
+        model_class:           JobeetJob
+        theme:                 admin
+        non_verbose_templates: true
+        with_show:             false
+        singular:              ~
+        plural:                ~
+        route_prefix:          jobeet_job
+        with_propel_route:     1
+
+        config:
+          actions: ~
+          fields:  ~
+          list:
+            title:   Category Management
+            display: [=name, slug]
+            batch_actions: {}
+            object_actions: {}
+          filter:
+            class: false
+          form:
+            actions:
+              _delete: ~
+              _list:   ~
+              _save:   ~
+          edit:
+            title: Editing Category "%%name%%" (#%%id%%)
+          new:
+            title: New Category
 
 With just these two configuration files, we have developed a great backend
 interface for Jobeet in a matter of minutes.
