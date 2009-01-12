@@ -271,16 +271,17 @@ Now, create the frontend application by running the `generate:app` task:
     $ php symfony generate:app --escaping-strategy=on --csrf-secret=UniqueSecret frontend
 
 >**TIP**
->As the symfony file is executable, Unix users can replace all occurrences
->of 'php symfony' by './symfony' from now on.
+>Because the symfony shortcut file is executable, Unix users can replace all
+>occurrences of '`php symfony`' by '`./symfony`' from now on.
 >
->On Windows you can copy the 'symfony.bat' file to your project and use
->'symfony' instead of 'php symfony':
+>On Windows you can copy the '`symfony.bat`' file to your project and use
+>'`symfony`' instead of '`php symfony`':
 >
 >     c:\> copy lib\vendor\symfony\data\bin\symfony.bat .
 
-Once again, the `generate:app` task creates the default directory structure
-needed for an application under the `apps/frontend` directory:
+Based on the application name given as an *argument*, the `generate:app` task
+creates the default directory structure needed for the application under the
+`apps/frontend` directory:
 
  | Directory    | Description
  | ------------ | -------------------------------------
@@ -294,7 +295,7 @@ needed for an application under the `apps/frontend` directory:
 >explicitly said otherwise.
 
 When calling the `generate:app` task, we have also passed two security related
-options:
+*options*:
 
   * `--escaping-strategy`: Enables output escaping to prevent XSS attacks
   * `--csrf-secret`: Enables session tokens in forms to prevent CSRF attacks
@@ -342,37 +343,41 @@ do we have two front controllers as we have only defined one application?
 
 Both files point to the same application but for different environments.
 When you develop an application, except if you develop directly on the
-production server, you need several environments:
+production server, you need several **environments**:
 
   * The **development environment**: This is the environment used by **web
-    developers** to add new features, fix bugs, ...
+    developers** when they work on the application to add new features, fix
+    bugs, ...
   * The **test environment**: This environment is used to automatically test
     the application.
   * The **staging environment**: This environment is used by the **customer**
     to test the application and report bugs or missing features.
-  * The **production environment**: This is the environment an **end user**
-    interacts with.
+  * The **production environment**: This is the environment **end users**
+    interact with.
 
-What makes an environment unique? In the development environment, the
-application needs to log all the details of a request to ease the debugging,
-it must display exception in the browser, but the cache system must be
-disabled as all changes made to the code must be taken into account right
-away. So, the development environment must be optimized for the developer:
+What makes an environment unique? In the development environment for instance,
+the application needs to log all the details of a request to ease the
+debugging, but the cache system must be disabled as all changes made to the code
+must be taken into account right away. So, the development environment must be
+optimized for the developer. The best example is certainly when an exception
+occurs. To help the developer debug the issue faster, symfony displays the
+exception with all the information it has about the current request right into
+the browser:
 
 ![An exception in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/01/exception_dev.png)
 
-But on the production environment, the application must display customized
-error messages instead of raw exceptions, and of course, the cache layer must
-be activated. So, the production environment must be optimized for performance
+But on the production environment, the cache layer must be activated and of
+course, the application must display customized error messages instead of raw
+exceptions. So, the production environment must be optimized for performance
 and the user experience.
 
 ![An exception in the prod environment](http://www.symfony-project.org/images/jobeet/1_2/01/exception_prod.png)
 
-A symfony environment is a unique set of configuration settings and symfony
-comes bundled with three of them: `dev`, `test`, and `prod`.
+A symfony environment is a unique set of configuration settings. The symfony
+framework comes bundled with three of them: `dev`, `test`, and `prod`.
 
-If you open the front controller files, you will see that the only difference
-is the environment setting:
+If you open the front controller files, you will see that their content is
+the same except for the environment setting:
 
     [php]
     // web/index.php
@@ -398,7 +403,9 @@ web server, you can already access the project in a web browser.
 
 Of course, as there is no configuration, if it is very fast to set up, but try
 to access the `config/databases.yml` file in your browser to understand the
-bad consequences of such a laziness attitude.
+bad consequences of such a laziness attitude. If the user knows that your
+website is developed with symfony, he will have access to a lot of sensible
+files.
 
 **Never ever use this setup on a production server** and read the next section
 to learn how to configure your web server properly.
@@ -407,15 +414,15 @@ Web Server Setup: The secure Way
 --------------------------------
 
 A good web practice is to put under the web root directory only the files
-that need to be accessed by a web browser like stylesheets, JavaScripts, or
-images. And by default, we recommend to store these files under the `web`
+that need to be accessed by a web browser like stylesheets, JavaScripts, and
+images. And by default, we recommend to store these files under the `web/`
 sub-directory of a symfony project.
 
 If you have a look at this directory, you will find some sub-directories for
-web assets and the two front controller files. The front controllers are the
-only PHP files that need to be under the web root directory. All other PHP
-files can be hidden from the browser, which is a good idea as far as security
-is concerned.
+web assets (css/ and images/) and the two front controller files. The front
+controllers are the only PHP files that need to be under the web root
+directory. All other PHP files can be hidden from the browser, which is a good
+idea as far as security is concerned.
 
 ### Web Server Configuration
 
@@ -453,7 +460,7 @@ configuration at the end:
 >
 >     Alias /sf "c:\development\sfprojects\jobeet\lib\vendor\symfony\data\web\sf"
 >
-> `/home/sfprojects/jobeet/web` should be replaced with:
+>And `/home/sfprojects/jobeet/web` should be replaced with:
 >
 >     c:\development\sfprojects\jobeet\web
 
@@ -462,7 +469,7 @@ the Jobeet website will be accessible at the following URL:
 
     http://localhost:8080/
 
-You can change `8080` by any number but prefer numbers greater than 1024 as
+You can change `8080` by any number but prefer numbers greater than `1024` as
 they do not require administrator rights.
 
 >**SIDEBAR**
@@ -479,9 +486,10 @@ they do not require administrator rights.
 >       <!-- same configuration as before -->
 >     </VirtualHost>
 >
->The domain name `jobeet.localhost` has to be declared locally. If you run a
->Linux system, it has to be done in the `/etc/hosts` file. If you run Windows
->XP, this file is located in the `C:\WINDOWS\system32\drivers\etc\` directory.
+>The domain name `jobeet.localhost` used in the Apache configuration has to be
+>declared locally. If you run a Linux system, it has to be done in the
+>`/etc/hosts` file. If you run Windows XP, this file is located in the
+>`C:\WINDOWS\system32\drivers\etc\` directory.
 >
 >Add in the following line:
 >
@@ -497,7 +505,8 @@ chose in the previous section.
 ![Congratulations](http://www.symfony-project.org/images/jobeet/1_2/01/congratulations.png)
 
 >**Note**: If you have the Apache `mod_rewrite` module installed, you can
->remove the /index.php/ part of all the URLs.
+>remove the `index.php/` part of the URL. This is possible thanks to the
+>rewriting rules configured in the `web/.htaccess` file.
 
 You should also try to access the application in the development environment.
 Type in the following URL:
@@ -508,6 +517,12 @@ The web debug toolbar should show on the top right corner, including small
 icons proving that your `sf/` alias configuration is correct.
 
 ![web debug toolbar](http://www.symfony-project.org/images/jobeet/1_2/01/web_debug_toolbar.png)
+
+The web debug toolbar is present on all pages in the development environment
+and gives you access to a lot of information by clicking on the different
+tabs: the current application configuration, the logs for the current request,
+the SQL statements executed on the database engine, memory information, and
+time information.
 
 >**Note**
 >The setup is a little different if you want to run symfony on an IIS server in
@@ -530,12 +545,13 @@ In this section, we will describe how to use
 source code control tool, it must be quite easy to adapt what we describe for
 Subversion.
 
-We assume you have already access to a Subversion server.
+We assume you have already access to a Subversion server and can access it via
+HTTP.
 
 >**TIP**
->If you don't have a Subversion server at your disposal, you can create one
->for free on [Google Code](http://code.google.com/hosting/) or just type
->"free subversion repository" in Google to have a lot more options.
+>If you don't have a Subversion server at your disposal, you can create a
+>repository for free on [Google Code](http://code.google.com/hosting/) or
+>just type "free subversion repository" in Google to have a lot more options.
 
 First, create a repository for the `jobeet` project on the repository server:
 
@@ -552,21 +568,19 @@ Then, remove the content of the `cache/` and `log/` directories as we don't
 want to put them into the repository.
 
     $ cd /home/sfprojects/jobeet
-    $ rm -rf cache/*
-    $ rm -rf log/*
+    $ rm -rf cache/* log/*
 
 Now, make sure to set the write permissions on the cache and logs directories
 to the appropriate levels so that your web server can write to them:
 
-    $ chmod 777 cache
-    $ chmod 777 log
+    $ chmod 777 cache/ log/
 
 Next, do the first import:
 
     $ svn import -m "made the initial import" .
     ➥ http://svn.example.com/jobeet/trunk
 
-As we will never want to commit files located in the `cache/` and `/log`
+As we will never want to commit files located in the `cache/` and `log/`
 directories, you need to specify an ignore list:
 
     $ svn propedit svn:ignore cache
@@ -601,8 +615,8 @@ Well, time is over for today! Even if we have not yet started talking about
 symfony, we have setup a solid development environment, we have talked about web
 development best practices, and we are ready to start coding.
 
-Tomorrow, we will reveal what the application will do and start diving
-into symfony.
+Tomorrow, we will reveal what the application will do and talk about the
+requirements we need to implement during the tutorial.
 
 >**Note**
 >Each day is tagged in the Jobeet SVN repository (`http://svn.jobeet.org/`).
