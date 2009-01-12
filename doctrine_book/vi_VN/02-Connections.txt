@@ -1,0 +1,259 @@
+Chương 2 - Connections
+=======================
+
+## Giới thiệu
+
+Trong chương này chúng ta sẽ đề cập đến vài vấn đề về Doctrine connections, cách cấu hình cho multiple connections, kết nối với models, và cách tạo và xóa database.
+
+File cấu hình mặc định `config/databases.yml` thường như sau.
+
+    all:
+      propel:
+        class:      sfPropelDatabase
+        param:
+          dsn:      mysql:host=localhost;dbname=dbname
+          username: user
+
+Chỉ có một sự khác nhau giữa Propel và Doctrine là ta dùng class `sfDoctrineDatabase` thay cho `sfPropelDatabase` và tên connection là doctrine thay vì propel. Cả Doctrine và Propel đều dùng PHP Data Objects (PDO) cho tầng database abstraction.
+
+>**NOTE**
+>Trong khi Propel yêu cầu ít nhất phải có một connection có tên `propel`, Doctrine không bắt buộc rằng tên connection phải là `doctrine` do đó bạn có thể đặt là gì tùy thích.
+
+Bạn có thể cấu hình connections trong `config/databases.yml` từ dòng lệnh với `configure:database` .
+
+    $ ./symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=dbname" user secret
+
+Bạn sẽ thấy một connection mới được tạo ra:
+
+    doctrine:
+      class: sfDoctrineDatabase
+      param:
+        dsn: 'mysql:host=localhost;dbname=dbname'
+        username: user
+        password: secret
+
+>**NOTE**
+>Bạn cần xóa bỏ tất cả những thứ liên quan đến propel trong `config/databases.yml` nếu bạn đã disable sfPropelPlugin.
+
+## Các Driver hỗ trợ
+
+Doctrine hỗ trợ tất cả các driver có hỗ trợ PDO. PHP phải được biên dịch với cả PDO và PDO_* driver bạn muốn dùng. Dưới đây là danh sách các databases PDO .
+
+| Tên               | Mô tả                                                |
+|-------------------|------------------------------------------------------|
+| MS SQL Server     | Microsoft SQL Server and Sybase Functions (PDO_DBLIB)|
+| Firebird/Interbase| Firebird/Interbase Functions (PDO_FIREBIRD)          |
+| IBM               | IBM Functions (PDO_IBM)                              |
+| Informix          | Informix Functions (PDO_INFORMIX)                    |
+| MySQL             | MySQL Functions (PDO_MYSQL)                          |
+| Oracle            | Oracle Functions (PDO_OCI)                           |
+| ODBC and DB2      | ODBC and DB2 Functions (PDO_ODBC)                    |
+| PostgreSQL        | PostgreSQL Functions (PDO_PGSQL)                     |
+| SQLite            | SQLite Functions (PDO_SQLITE)                        |
+
+>**NOTE**
+>Bạn có thể tìm hiểu thêm về PDO tại [http://www.php.net/pdo](http://www.php.net/pdo).
+
+## Data Source Name(DSN)
+
+Doctrine cung cấp 2 cách đề khai báo thông tin về DSN. Bạn có thể viết theo Doctrine style DSN hoặc dùng theo cách viết của PDO.
+
+### Doctrine Style
+
+Doctrine có cấu trúc DSN dựa trên PEAR MDB2.
+
+    all:
+      doctrine:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          driver://username:password@host/database_name
+
+### PDO Style
+
+Bạn có thể khai báo thông tin về DSN theo cấu trúc PDO style.
+
+    all:
+      doctrine:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          driver:dbname=database_name;host=localhost
+          username:     username
+          password:     password
+
+>**TIP**
+>Dùng cấu trúc PDO style thường mềm dẻo hơn và có thể cung cấp các thông tin non standard về connection của bạn với PDO. Ví dụ, khi cần chỉ ra một non standard về đường dẫn unix_socket hoặc cổng (port) dùng để connect, khi đó cấu trúc theo kiểu của PDO dễ viết hơn. Lệnh `configure:database` chỉ tạo ra thông tin theo cấu trúc PDO style.
+
+## Import from Database
+
+Doctrine có thể tạo ra file schema `config/doctrine/schema.yml` từ một database có sẵn. Hãy cấu hình Doctrine connection tới database bạn muốn import và chạy lệnh sau.
+
+    $ ./symfony doctrine:build-schema
+    >> doctrine  generating yaml schema from database
+
+>**NOTE**
+>Có một cách khá tiện lợi là chuyển từ Propel schema sang Doctrine. Tạo  database sử dụng propel, sau đó dùng lệnh để chuyển schema sang Doctrine.
+
+Bây giờ file `config/doctrine/schema.yml` đã chứa thông tin về database theo cấu trúc yaml. Trong ví dụ này chúng ta có một bảng user.
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+Bảng trên sẽ tạo ra file yaml schema tương ứng trong `config/doctrine/schema.yml`
+
+    [yml]
+    User:
+      tableName: user
+      columns:
+        id:
+          type: integer(8)
+          primary: true
+          autoincrement: true
+        username: string(255)
+        password: string(255)
+
+## Multiple Connections
+
+Doctrine hỗ trợ multiple connections. Bạn có thể dễ dàng xác định models kết nối nhờ đó câu truy vấn có thể thực hiện trên kết nối phù hợp. Đầu tiên, chúng ta cần thêm multiple connections với lệnh như sau `configure:database`.
+
+    $ ./symfony configure:database --name=master --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" user secret
+    $ ./symfony configure:database --name=client --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" user secret
+
+File `config/databases.yml` trở thành.
+
+    all:
+      master:
+        class: sfDoctrineDatabase
+        param:
+          dsn: 'mysql:host=localhost;dbname=master'
+          username: user
+          password: secret
+      client:
+        class: sfDoctrineDatabase
+        param:
+          dsn: 'mysql:host=localhost;dbname=client'
+          username: user
+          password: secret
+
+Bây giờ chúng ta có một `Client` model và chúng ta muốn sử dụng master database. Bạn có thể thực hiện điều này đơn giản bằng cách xác định model như bên dưới. YAML code trong file `config/doctrine/schema.yml`
+
+    Client:
+      connection: master
+      columns:
+        name: string(255)
+        username: string(255)
+        password: string(255)
+
+Bây giờ mỗi `Client` có thể có `Stores` được lưu trong các cơ sở dữ liệu riêng biệt ở `Clients`.
+
+    Store:
+      connection: client
+      attributes:
+        export: tables
+      columns:
+        name: string(255)
+        description: string(500)
+        client_id: integer
+      relations:
+        Client:
+         foreignAlias: Stores
+
+>**Note**
+>Bởi vì các bảng nằm trong các cơ sở dữ liệu riêng biệt nên dữ liệu chỉ có thể load lazy. Doctrine hiện tại không hỗ trợ câu sql để joining các bảng ở các cơ sở dữ liệu khác nhau. Also, notice the export attribute being set to tables. This tells Doctrine to only export the create table statement and not any foreign key constraints.
+
+## Connection Attributes
+
+sfDoctrinePlugin allows you to specify connection attributes directly in the `config/databases.yml` file like the following.
+
+      doctrine:
+        class: sfDoctrineDatabase
+        param:
+          dsn: 'mysql:host=localhost;dbname=dbname'
+          username: user
+          password: secret
+          attributes:
+            use_dql_callbacks: true
+
+The attributes you specify here will be set on the `Doctrine_Connection` instances when the connection is created.
+
+>**NOTE**
+>Attributes in Doctrine are for configuring and controlling features. You can read more about attributes in the [Doctrine documentation](http://www.doctrine-project.com/documentation/manual/1_0?chapter=configuration).
+
+## Build Everything
+
+Now that we have our connections and schema defined we can build everything with the following command.
+
+    $ ./symfony doctrine:build-all-reload
+                                                       
+      This command will remove all data in your database.  
+      Are you sure you want to proceed? (y/N)              
+                                                       
+    y
+    >> doctrine  dropping databases
+    >> doctrine  creating databases
+    >> doctrine  generating model classes
+    >> doctrine  generating sql for models
+    >> doctrine  generating form classes
+    >> doctrine  generating filter form classes
+    >> doctrine  created tables successfully
+    >> doctrine  loading data fixtures from "/Us...ymfony12doctrine/data/fixtures"
+
+Running the above commands is equal to running the following commands separately.
+
+    $ ./symfony doctrine:drop-db
+                                                       
+      This command will remove all data in your database.  
+      Are you sure you want to proceed? (y/N)              
+                                                       
+    y
+    >> doctrine  dropping databases
+    $ ./symfony doctrine:build-db
+    >> doctrine  creating databases
+    $ ./symfony doctrine:build-model
+    >> doctrine  generating model classes
+    $ ./symfony doctrine:build-sql
+    >> doctrine  generating sql for models
+    $ ./symfony doctrine:build-form
+    >> doctrine  generating form classes
+    $ ./symfony doctrine:build-filters
+    >> doctrine  generating filter form classes
+    $ ./symfony doctrine:insert-sql
+    >> doctrine  created tables successfully
+    $ ./symfony doctrine:data-load
+    >> doctrine  loading data fixtures from "/Us...ymfony12doctrine/data/fixtures"
+
+>**Note**
+>You can take a look at the models which were generated from your YAML schema files in lib/model/doctrine and lib/model/doctrine/base. The files in the generated folder are re-written each time you build your models whereas the ones below the base directory are not. You may customize your models by editing the classes in lib/model/doctrine.
+
+Đây là nội dung của `lib/model/doctrine/base/BaseClient.class.php`.
+
+    [php]
+    <?php
+    // Connection Component Binding
+    Doctrine_Manager::getInstance()->bindComponent('Client', 'master');
+
+    /**
+     * This class has been auto-generated by the Doctrine ORM Framework
+     */
+    abstract class BaseClient extends sfDoctrineRecord
+    {
+      public function setTableDefinition()
+      {
+        $this->setTableName('client');
+        $this->hasColumn('name', 'string', 255, array('type' => 'string', 'length' => '255'));
+        $this->hasColumn('username', 'string', 255, array('type' => 'string', 'length' => '255'));
+        $this->hasColumn('password', 'string', 255, array('type' => 'string', 'length' => '255'));
+      }
+
+      public function setUp()
+      {
+        $this->hasMany('Store as Stores', array('local' => 'id',
+                                                'foreign' => 'client_id'));
+      }
+    }
+
+>**TIP**
+>Trong thực tế lệnh `./symfony doctrine:build-all-reload-test-all` hay được sử dụng tỏng quá trình phát triển. Nó sẽ tạo lại toàn bộ cho môi trường của bạn và chạy đầy đủ bộ test. Đây là lệnh nên chạy trước khi commit mã nguồn mới để đảm bảo không có regression mới nào xảy ra.
+
+-
+
+>**TIP**
+>Bạn có thể tìm hiểu thêm về connections trong Doctrine Manual [ở đây](http://www.doctrine-project.org/documentation/manual/1_0/en/connection-management).
