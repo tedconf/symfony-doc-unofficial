@@ -1,9 +1,6 @@
 Giorno 11: Testare i Form
 =========================
 
-Precedentemente su Jobeet
--------------------------
-
 Ieri abbiamo creato il nostro primo form con symfony. Gli utenti possono ora 
 inserire una nuova offerta di lavoro si Jobeet, però abbiamo finito il
 tempo a disposizione prima che potessimo aggiungere alcuni test.
@@ -52,11 +49,11 @@ offerta:
 Abbiamo già usato il metodo `click()` per simulare i click sui link. Lo stesso
 metodo `click()` può essere usato per inviare un form. Per un form potete passare
 i valori da inviare per ogni campo come secondo argomento di un metodo. Come 
-un vero broswer l'oggetto browser si occuperà del merge dei valori di default
+un vero browser l'oggetto browser si occuperà del merge dei valori di default
 con i valori inviati dal form.
 
 Ma per inviare i valori dei campi abbiamo bisogno di conoscere i loro nomi. Se
-aprite il codice sorgente oppure utilizzare la Firefox Web Developer Toolbar con 
+aprite il codice sorgente, oppure utilizzate la Web Developer Toolbar di Firefox con 
 la funzione "Forms > Display Form Details" potrete vedere che il nome del campo
 `company` è `jobeet_job[company]`.
 
@@ -122,7 +119,7 @@ Il form che abbiamo inviato dovrebbe essere valido. Potete testarlo usando il
     end()->
 
 Il form tester ha diversi metodi per testare lo stato corrente di un form, come
-gli per gli errori.
+per gli errori.
 
 Se fate un errore nel test, ed il test non passa, potete usare lo statement
 `with('response')->debug()` visto durante il giorno 9. Ma dovrete scavare nell'HTML
@@ -162,10 +159,16 @@ Questo può essere fatto facilmente utilizzando un altro tester, il **tester
 ##ORM##**. Visto che il tester ##ORM## non è inserito di default, aggiungiamolo
 ora:
 
+<propel>
     [php]
     $browser->setTester('propel', 'sfTesterPropel');
+</propel>
+<doctrine>
+    [php]
+    $browser->setTester('doctrine', 'sfTesterDoctrine');
+</doctrine>
 
-Il Propel tester offre il metodo `check()` per verificare che uno o più oggetti
+Il tester ##ORM## offre il metodo `check()` per verificare che uno o più oggetti
 nel database corrispondano al criterio passato come argomento.
 
     [php]
@@ -261,7 +264,7 @@ un array di valori che saranno mescolati con quelli predefiniti.
 Forzare il metodo HTTP di un link
 ---------------------------------
 
-Testare il link "Publish" or è più facile:
+Testare il link "Publish" ora è più facile:
 
     [php]
     $browser->info('  3.3 - On the preview page, you can publish the job')->
@@ -420,7 +423,7 @@ giorni dalla data attuale.
 Testare questo requisito in un browser non è facile, perché la
 data è impostata automaticamente, quando il lavoro è creato, a
 30 giorni nel futuro. Quindi, quando si prende la pagina del
-lavoro, il per estendere il lavoro non è presente. Certo,
+lavoro, il link per estendere il lavoro non è presente. Certo,
 si può modificare a mano la data di scadenza nel database, o
 modificare il template per mostrare sempre il link, ma è
 noioso ed esposto ad errori. Come forse avete indovinato,
@@ -573,13 +576,13 @@ Sicurezza nei form
 
 ### Magia nella serializzazione dei form!
 
-I form propel sono molto facili da usare, perché automatizzano un sacco
+I form ##ORM## sono molto facili da usare, perché automatizzano un sacco
 di lavoro. Per esempio, serializzare un form nel database è facile
 quanto richiamare `$form->save()`. Come funziona?
 
 Di base, il metodo `save()` fa i seguenti passi:
 
- * Inizia una transazione (perché i form annidati di Propel sono tutti salvati
+ * Inizia una transazione (perché i form annidati di ##ORM## sono tutti salvati
    in un colpo solo)
  * Processa i valori inviati (richiamando il metodo `updateCOLUMNColumn()`, se
    esiste)
@@ -658,11 +661,11 @@ L'opzione `--escaping-strategy` abilita la protezione da XSS. Vuol dire
 che tutte le variabili usate nel template subiscono un escaping di
 deafult. Se si prova ad inviare la descrizione di un lavoro con alcuni tag
 HTML dentro, si noterà che quando symfony mostra la pagina del lavoro,
-i tag HTML della descrizione non sono interpretati, ma mostrate come
+i tag HTML della descrizione non sono interpretati, ma mostrati come
 testo semplice. 
 
 L'opzione `--csrf-secret` abilita la protezione da CSRF. Quando si fornisce
-questa opzionoe, tutti i form includono un campo nascosto `_csrf_token`.
+questa opzione, tutti i form includono un campo nascosto `_csrf_token`.
 
 >**TIP**
 >La strategia di escaping ed il segreto CSRF possono essere cambiati in
@@ -728,7 +731,7 @@ regolarmente in un cron job.
     }
 
 La configurazione del task viene fatta nel metodo `configure()`. Ogni task
-devono avere un nome univoco (`namespace`:`name`), e possono avere
+deve avere un nome univoco (`namespace`:`name`), e può avere
 parametri ed opzioni.
 
 >**TIP**
