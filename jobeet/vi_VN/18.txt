@@ -1,0 +1,267 @@
+Ngày 18: AJAX
+============
+
+Hôm qua, chúng ta xây dựng một search engine cho Jobeet sử dụng thư viện Zend Lucene.
+
+Ngày hôm nay, để nâng cao tính tương tác của search engine, chúng ta sẽ sử dụng những lợi ích của
+[AJAX](http://en.wikipedia.org/wiki/AJAX) trong search engine.
+
+Do form có thể làm việc có hoặc không có JavaScript, nên tính năng live search sẽ được xây dựng sử dụng
+[unobtrusive JavaScript](http://en.wikipedia.org/wiki/Unobtrusive_JavaScript).
+Sử dụng unobtrusive JavaScript cũng cho phép phân tách tốt hơn nội dung trong client code giữa HTML, CSS, và JavaScript behaviors.
+
+Cài đặt jQuery
+-------------
+
+Thay vì làm lại cái bánh xe và đau đầu vì sự khác nhau giữa các trình duyệt,
+chúng ta sẽ sử dụng thư viện JavaScript [jQuery](http://jquery.com/). Symfony
+framework là độc lập và có thể làm việc với bất kì thư viện JavaScript nào.
+
+Vào trang [jQuery](http://jquery.com/), download phiên bản mới nhất,
+và chuyển file `.js` vào thư mục `web/js/`.
+
+Including jQuery
+----------------
+
+Do chúng ta cần jQuery ở tất cả các trang, nên ta sửa lại layout để include nó vào trong
+`<head>`. Chú ý răng phương thức `use_javascript()` cần được dùng trước khi
+`include_javascripts()` được gọi:
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+
+      <?php use_javascript('jquery-1.2.6.min.js') ?>
+      <?php include_javascripts() ?>
+    </head>
+
+Chúng ta có thể include file jQuery trực tiếp với tag `<script>`, nhưng
+sử dụng helper `use_javascript()` sẽ đảm bảo rằng file JavaScript không được
+include 2 lần.
+
+Thêm Behavior
+--------------
+
+Xây dựng một live search có nghĩa là mỗi khi người dùng gõ một kí tự vào
+search box, một lời gọi tớ server cần được trigger; sau đó server sẽ
+trả về các thông tin cần thiết để cập nhật vùng được chọn trên trang mà không cần
+refresh lại toàn bộ trang.
+
+Thay vì thêm một behavior với `on*()` HTML attributes, nguyên tắc cơ bản của
+jQuery là thêm một behaviors vào DOM sau khi toàn bộ trang được
+load. Theo cách này, nếu bạn không cho phép JavaScript trong trình duyệt,
+không có behavior nào được register, và form sẽ làm việc như trước đây.
+
+Đầu tiên xác định sự kiện khi người dùng gõ một kí tự và search box:
+
+    [js]
+    $('#search_keywords').keyup(function(key) {
+      if (this.value.length >= 3 || this.value == '')
+      {
+        // do something
+      }
+    });
+
+>**NOTE**
+>Đừng thêm code ngay bây giờ, do chúng ta sẽ chỉnh sửa nó khá nhiều.
+>JavaScript code hoàn chỉnh sẽ được thêm vào layout ở mục sau.
+
+Mỗi khi người dùng gõ một kí tự, jQuery thực thi anonymous function xác định trong code ở trên, nhưng chỉ khi người dùng gõ nhiều hơn 3 kí tự hoặc nếu anh ta xóa mọi thứ trong ô nhập.
+
+Tạo một AJAX gọi tới server đơn giản là sử dụng phương thức `load()` trên DOM element:
+
+    [php]
+    $('#search_keywords').keyup(function(key) {
+      if (this.value.length >= 3 || this.value == '')
+      {
+        $('#jobs').load(
+          '<?php echo url_for('@job_search') ?>', { query: this.value + '*' } }
+        );
+      }
+    });
+
+Lời gọi AJAX sẽ vẫn được thực thi bởi action đó. Sự thay đổi trong action sẽ được tiến hành ở mục sau.
+
+Đầu tiên, ta cần bỏ nút search néu JavaScript được enable:
+
+    [php]
+    $('.search input[type="submit"]').hide();
+
+User Feedback
+-------------
+
+Mỗi khi bạn thực hiện một lời gọi AJAX call, trang sẽ không được cập nhật ngay lập tức. Trình duyệt sẽ đợi server trả lời rồi mới cập nhật lại trang. Trong thời gian đó, bạn cần cung cấp một visual feedback cho người dùng để thông báo cho anh ta biết là quá trình đang được thực hiện.
+
+Thông thường sẽ hiển thị một loader icon trong một lời gọi AJAX. Thêm vào
+layout một loader image và mặc định để ẩn:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <div class="search">
+      <h2>Ask for a job</h2>
+      <form action="<?php echo url_for('@job_search') ?>" method="get">
+        <input type="text" name="query" value="<?php echo $sf_request->getParameter('query') ?>" id="search_keywords" />
+        <input type="submit" value="search" />
+        <img id="loader" src="/images/loader.gif" style="vertical-align: middle; display: none" />
+        <div class="help">
+          Enter some keywords (city, country, position, ...)
+        </div>
+      </form>
+    </div>
+
+Bạn có thể download loader image trong
+[kho chứa ngày hôm nay](http://svn.jobeet.org/tags/release_day_18/web/images/loader.gif).
+
+>**NOTE**
+>Loader được chỉnh sửa để phù hợp với giao diện hiện tại của Jobeet. Nếu bạn muốn tự tạo cho riêng mình,
+>bạn có  thể tìm nhiều dịch vụ online miễn phí như
+>http://www.ajaxload.info/.
+
+Bây giờ bạn đã có tất cả những thứ cần thiết để làm cho HTML hoạt động, mở file layout
+và thêm đoạn code JavaScript sau vào cuối của mục`<head>`:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <script type="text/javascript">
+      $(document).ready(function() {
+        $('.search input[type="submit"]').hide();
+
+        $('#search_keywords').keyup(function(key) {
+          if (this.value.length >= 3 || this.value == '')
+          {
+            $('#loader').show();
+            $('#jobs').load(
+              '<?php echo url_for('@job_search') ?>',
+              { query: this.value + '*' },
+              function() { $('#loader').hide(); }
+            );
+          }
+        });
+      });
+    </script>
+
+AJAX in an Action
+-----------------
+
+Nếu JavaScript được enable, jQuery sẽ theo theo dõi tất cả các từ nhập vào trong search
+box, và gọi `search` action. Nếu không, `search` action đó
+cũng sẽ được gọi khi người dùng submit form bằng cách ấn phím "enter" hoặc click vào nút "search".
+
+Vì thế, bây giờ `search` action cần biết lời gọi là tạo bởi AJAX hay không.
+Mỗi khi một request được tạo bởi một AJAX call, phương thức `isXmlHttpRequest()` của
+request object trả về `true`.
+
+>**NOTE**
+>Phương thức `isXmlHttpRequest()` hoạt động với tất cả các thư viện JavaScript phổ biến như
+>Prototype, Mootools, hay jQuery.
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeSearch(sfWebRequest $request)
+    {
+      if (!$query = $request->getParameter('query'))
+      {
+        return $this->forward('job', 'index');
+      }
+
+<propel>
+      $this->jobs = JobeetJobPeer::getForLuceneQuery($query);
+</propel>
+<doctrine>
+      $this->jobs = Doctrine::getTable('JobeetJob')->getForLuceneQuery($query);
+</doctrine>
+
+      if ($request->isXmlHttpRequest())
+      {
+        return $this->renderPartial('job/list', array('jobs' => $this->jobs));
+      }
+    }
+
+jQuery không load lại trang mà chỉ thay thế DOM element `#jobs` bằng nội dung trả về, nội dung này sẽ không sử dụng layout. Do trường hợp này là phổ biến, nên mặc định layout sẽ được disable với một AJAX request.
+
+Thêm vào đó, thay vì trả về toàn bộ template, chúng ta chỉ trả về nội dung của `job/list` partial. Phương thức `renderPartial()` được sử dụng trong action trả về partial thay vì toàn bộ template.
+
+Nếu người dùng xóa tất cả các kí tự trong search box, hoặc không có kết quả, chúng ta cần hiển thị một thông báo thay vì hiển thị một nội dung rỗng. Chúng ta sẽ sử dụng phương thức `renderText()` để render một chuỗi đơn giản:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeSearch(sfWebRequest $request)
+    {
+      if (!$query = $request->getParameter('query'))
+      {
+        return $this->forward('job', 'index');
+      }
+
+<propel>
+      $this->jobs = JobeetJobPeer::getForLuceneQuery($query);
+</propel>
+<doctrine>
+      $this->jobs = Doctrine::getTable('JobeetJob')->getForLuceneQuery($query);
+</doctrine>
+
+      if ($request->isXmlHttpRequest())
+      {
+        if ('*' == $query || !$this->jobs)
+        {
+          return $this->renderText('No results.');
+        }
+        else
+        {
+          return $this->renderPartial('job/list', array('jobs' => $this->jobs));
+        }
+      }
+    }
+
+>**TIP**
+>You can also return a component by using the `renderComponent()` method.
+
+JavaScript as an Action
+-----------------------
+
+Đặt JavaScript trong trong thẻ `<head>` tag giúp Jobeet search engine trở nên thân thiện hơn, nhưng ta có tốt hơn ta nên tạo một file để chứa nó. Nhưng do phần lớn JavaScripts tạo lời gọi AJAX đều cần một vài
+URLs, chúng cần sử dụng `url_for()` helper, nhờ đó mà chúng động hơn.
+
+JavaScript là một định dạng không phải HTML, và như đã biết trong những ngày trước,
+symfony giúp cho việc quản lý các định dạng khác trở nên dễ dang. Do file JavaScript sẽ
+chứa toàn bộ behavior của trang, bạn có thể sử dụng URL của trang cho file JavaScript, nhưng kết thúc với `.js`. Ví dụ, nếu bạn muốn tạo một file cho search engine behavior, bạn có thể sửa lại `job_search` route như sau:
+
+    [yml]
+    job_search:
+      url:   /search.:sf_format
+      param: { module: job, action: search, sf_format: html }
+      requirements:
+        sf_format: (?:html|js)
+
+>**NOTE**
+>Do URLs trên website là cố định, file JavaScript file phần lớn là tĩnh,
+>và không thay đổi trong toàn bộ thời gian. Nó thích hợp cho việc cache, như chúng ta sẽ thấy trong những
+>ngày sau.
+
+Testing AJAX
+------------
+
+Do symfony browser không thể giả lập JavaScript, bạn cần giúp nó khi kiểm tra AJAX calls. Có nghĩa là bạn cần tự thêm header mà jQuery và tất cả các thư viện JavaScript khác sẽ gửi với request:
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->setHttpHeader('X_REQUESTED_WITH', 'XMLHttpRequest');
+    $browser->
+      info('5 - Live search')->
+
+      get('/search?query=sens*')->
+      with('response')->begin()->
+        checkElement('table tr', 3)->
+      end()
+    ;
+
+Phương thức `setHttpHeader()` thiết lập một HTTP header cho request tiếp theo của trình duyệt.
+
+Hẹn gặp lại ngày mai
+-------------------
+
+Hôm qua, chúng ta đã sử dụng thư viện Zend Lucene để xây dựng search engine.
+Hôm nay, chúng ta đã sử dụng jQuery để làm cho nó thân thiện hơn. Symfony framework
+cung cấp tất cả các công cụ cơ bản để xây dựng ứng dụng MVC một các dễ dang, và nó cũng dễ dang kết hợp với các thành phần khác. Do đó, hãy sử dụng công cụ tốt nhất cho công việc của bạn.
+
+Ngày mai, chúng ta sẽ nói về việc internationalize Jobeet website.
+
+__ORM__
