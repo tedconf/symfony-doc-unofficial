@@ -99,7 +99,7 @@ agnostic, let's create the schema file by hand by editing the empty
     propel:
       jobeet_category:
         id:           ~
-        name:         { type: varchar(255), required: true }
+        name:         { type: varchar(255), required: true, index: unique }
 
       jobeet_job:
         id:           ~
@@ -152,6 +152,7 @@ agnostic, let's create the schema file by hand by editing the empty
         name:
           type: string(255)
           notnull:  true
+          unique: true
 
     JobeetJob:
       actAs:
@@ -253,7 +254,9 @@ agnostic, let's create the schema file by hand by editing the empty
 >**TIP**
 >If you have decided to create the tables by writing SQL statements, you can
 >generate the corresponding `schema.yml` configuration file by running the
->`propel:build-schema` task.
+>`propel:build-schema` task:
+>
+>     $ php symfony propel:build-schema
 
 The schema is the direct translation of the entity relationship diagram in
 the YAML format.
@@ -280,12 +283,14 @@ Each column is described with the following information:
 
 <propel>
   * `type`: The column type (`boolean`, `tinyint`, `smallint`, `integer`,
-            `bigint`, `double`, `float`, `real`, `decimal`, `char`,
-            `varchar(size)`, `longvarchar`, `date`, `time`, `timestamp`,
-            `blob`, and `clob`)
+    `bigint`, `double`, `float`, `real`, `decimal`, `char`, `varchar(size)`,
+    `longvarchar`, `date`, `time`, `timestamp`, `blob`, and `clob`)
   * `required`: Set it to `true` if you want the column to be required
   * `index`: Set it to `true` if you want to create an index for the column or
-            to `unique` if you want a unique index to be created on the column.
+    to `unique` if you want a unique index to be created on the column.
+  * `primaryKey`: Define a column as the primary key for the table.
+  * `foreignTable`, `foreignReference`: Define a column to be a foreign key to
+    another table.
 
 For columns set to `~` (`id`, `created_at`, and `updated_at`), symfony will
 guess the best configuration (primary key for `id` and timestamp for
@@ -316,8 +321,8 @@ The Database
 ------------
 
 The symfony framework supports all PDO-supported databases (MySQL, PostgreSQL,
-SQLite, Oracle, MSSQL, ...). PDO is the database abstraction layer bundled
-with PHP.
+SQLite, Oracle, MSSQL, ...). [PDO](http://www.php.net/PDO) is the database
+abstraction layer bundled with PHP.
 
 Let's use MySQL for this tutorial:
 
@@ -344,8 +349,8 @@ We need to tell symfony to use this database for the Jobeet project:
 
 The `configure:database` task takes three arguments: the
 [PDO DSN](http://www.php.net/manual/en/pdo.drivers.php), the username, and
-the password to access the database. If you don't have any password on your
-development server, just omit the third argument.
+the password to access the database. If you don't need a password to access
+your database on the development server, just omit the third argument.
 
 >**NOTE**
 >The `configure:database` task stores the database configuration into the
@@ -360,17 +365,17 @@ Thanks to the database description from the `schema.yml` file, we can use some
 database tables:
 
 <doctrine>
-First in order to generate the SQL you must build your models from your schema 
+First in order to generate the SQL you must build your models from your schema
 files.
 
     $ php symfony doctrine:build-model
 
-Now that your models are present you can generate and insert the sql.
+Now that your models are present you can generate and insert the SQL.
 </doctrine>
 
     $ php symfony propel:build-sql
 
-The `propel:build-sql` task generates SQL statements in the `data/sql`
+The `propel:build-sql` task generates SQL statements in the `data/sql/`
 directory, optimized for the database engine we have configured:
 
 <propel>
@@ -378,9 +383,10 @@ directory, optimized for the database engine we have configured:
     # snippet from data/sql/lib.model.schema.sql
     CREATE TABLE `jobeet_category`
     (
-      `id` INTEGER  NOT NULL AUTO_INCREMENT,
-      `name` VARCHAR(255)  NOT NULL,
-      PRIMARY KEY (`id`)
+            `id` INTEGER  NOT NULL AUTO_INCREMENT,
+            `name` VARCHAR(255)  NOT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `jobeet_category_U_1` (`name`)
     )Type=InnoDB;
 </propel>
 <doctrine>
@@ -420,22 +426,22 @@ The ORM also generates PHP classes that map table records to objects:
 
     $ php symfony propel:build-model
 
-The `propel:build-model` task generates PHP files in the `lib/model` directory
-that can be used to interact with the database.
+The `propel:build-model` task generates PHP files in the `lib/model/`
+directory that can be used to interact with the database.
 
 <propel>
 By browsing the generated files, you have probably noticed that Propel
 generates four classes per table. For the `jobeet_job` table:
 
-  * `JobeetJob`: An object of this class represents a single record of the
+  * `JobeetJob`: An object of this class **represents a single record** of the
                  `jobeet_job` table. The class is empty by default.
   * `BaseJobeetJob`: The parent class of `JobeetJob`. Each time you run
                      `propel:build-model`, this class is overridden, so all
                      customizations must be done in the `JobeetJob` class.
 
-  * `JobeetJobPeer`: The class defines static methods that mostly return
-                     collections of `JobeetJob` objects. The class is empty by
-                     default.
+  * `JobeetJobPeer`: The class defines static methods that mostly **return
+                     collections** of `JobeetJob` objects. The class is empty
+                     by default.
   * `BaseJobeetJobPeer`: The parent class of `JobeetJobPeer`. Each time you
                          run `propel:build-model`, this class is overridden,
                          so all customizations must be done in the
@@ -483,14 +489,10 @@ The `propel:build-all` task is a shortcut for the tasks we have run in this
 section and some more. So, run this task now to generate forms and validators
 for the Jobeet model classes:
 
-    $ php symfony propel:build-all
+    $ php symfony propel:build-all --no-confirmation
 
 You will see validators in action at the end of the day and forms will be
 explained in great details on day 10.
-
->**TIP**
->The `propel:build-all-load` task is a shortcut for the `propel:build-all` task
->followed by the `propel:data-load` task.
 
 As you will see later on, symfony autoloads PHP classes for you, which means
 that you never need to use a `require` in your code. It is one of the numerous
@@ -535,10 +537,13 @@ For any web application, there are three types of data:
                    of the application.
 
 Each time symfony creates the tables in the database, all the data are lost.
-To populate the database with the initial data we could create a PHP script,
-or execute some SQL with the `mysql` program. But as the need is quite common,
-there is a better way with symfony: create YAML files in the `data/fixtures/`
-directory and use the `propel:data-load` task to load them into the database:
+To populate the database with some initial data, we could create a PHP script,
+or execute some SQL statements with the `mysql` program. But as the need is
+quite common, there is a better way with symfony: create YAML files in the
+`data/fixtures/` directory and use the `propel:data-load` task to load them
+into the database.
+
+First, create the following fixture files:
 
 <propel>
     [yml]
@@ -664,12 +669,14 @@ directory and use the `propel:data-load` task to load them into the database:
 </doctrine>
 
 A fixtures file is written in YAML, and defines model objects, labelled with a
-unique name. This label is of great use to link related objects without having
-to define primary keys (which are often auto-incremented and cannot be set).
-For instance, the `job_sensio_labs` job category is `programming`, which is
-the label given to the 'Programming' category.
+unique name (for instance, we have defined two jobs labelled `job_sensio_labs`
+and `job_extreme_sensio`). This label is of great use to link related objects
+without having to define primary keys (which are often auto-incremented and
+cannot be set). For instance, the `job_sensio_labs` job category is
+`programming`, which is the label given to the 'Programming' category.
 
-A fixture file can contain object from one or several models.
+Although a fixture file can contain objects from one or several models, we
+have decided to create one file per model for the Jobeet fixtures.
 
 <propel>
 >**TIP**
@@ -689,13 +696,18 @@ A fixture file can contain object from one or several models.
 In a fixture file, you don't need to define all columns values. If not,
 symfony will use the default value defined in the database schema. And as
 symfony uses ##ORM## to load the data into the database, all the built-in
-behaviors (like setting the `created_at` or `updated_at` columns), or the
-custom behaviors you might have added to the model classes are activated.
+behaviors (like automatically setting the `created_at` or `updated_at`
+columns) and the custom behaviors you might have added to the model classes
+are activated.
 
 Loading the initial data into the database is as simple as running the
 `propel:data-load` task:
 
     $ php symfony propel:data-load
+
+>**TIP**
+>The `propel:build-all-load` task is a shortcut for the `propel:build-all` task
+>followed by the `propel:data-load` task.
 
 See it in Action in the Browser
 -------------------------------
@@ -706,10 +718,10 @@ pages that interact with the database.
 
 Let's see how to display the list of jobs, how to edit an existing job, and
 how to delete a job. As explained during day 1, a symfony project is made of
-applications. Each application is made of **modules**. A module is a
-self-contained set of PHP code that represents a feature of the application
-(the API module for example), or a set of manipulations the user can do on a
-model object (a job module for example).
+applications. Each application is further divided into **modules**. A module
+is a self-contained set of PHP code that represents a feature of the
+application (the API module for example), or a set of manipulations the user
+can do on a model object (a job module for example).
 
 Symfony is able to automatically generate a module for a given model that
 provides basic manipulation features:
@@ -719,7 +731,7 @@ provides basic manipulation features:
 The `propel:generate-module` generates a `job` module in the `frontend`
 application for the `JobeetJob` model. As with most symfony tasks,
 some files and directories have been created for you under the
-`apps/frontend/modules/job` directory:
+`apps/frontend/modules/job/` directory:
 
  | Directory    | Description
  | ------------ | --------------------
@@ -732,7 +744,7 @@ the `job` module:
  | Action name    | Description
  | -------------- | -------------------------------------------------------
  | `index`        | Displays the records of the table
- | `show`         | Displays the fields of a given record
+ | `show`         | Displays the fields and their values for a given record
  | `new`          | Displays a form to create a new record
  | `create`       | Creates a new record
  | `edit`         | Displays a form to edit an existing record
