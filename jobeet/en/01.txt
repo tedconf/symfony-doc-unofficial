@@ -172,6 +172,7 @@ freshly created `lib/vendor` directory and un-archive it:
     $ cd lib/vendor
     $ tar zxpf symfony-1.2.2.tgz
     $ mv symfony-1.2.2 symfony
+    $ rm symfony-1.2.2.tgz
 
 Under Windows unzipping the zip file can be done with the explorer. After you
 renamed the directory to `symfony`, there should be a directory named
@@ -189,7 +190,9 @@ If there is a problem, the output will give you hints on how to fix it. You
 should also execute the checker from a browser as PHP configuration can be
 different. Copy the file somewhere under the web server root directory and
 access the file. Don't forget to remove the file from the web root directory
-afterwards.
+afterwards:
+
+    $ rm web/check_configuration.php
 
 ![Configuration check](http://www.symfony-project.org/images/jobeet/1_2/01/configuration_check.png)
 
@@ -564,10 +567,14 @@ On your machine, create the basic directory structure:
     ➥ http://svn.example.com/jobeet/tags
     ➥ http://svn.example.com/jobeet/branches
 
+And checkout the empty `trunk/` directory:
+
+    $ cd /home/sfprojects/jobeet
+    $ svn co http://svn.example.com/jobeet/trunk/ .
+
 Then, remove the content of the `cache/` and `log/` directories as we don't
 want to put them into the repository.
 
-    $ cd /home/sfprojects/jobeet
     $ rm -rf cache/* log/*
 
 Now, make sure to set the write permissions on the cache and logs directories
@@ -575,10 +582,9 @@ to the appropriate levels so that your web server can write to them:
 
     $ chmod 777 cache/ log/
 
-Next, do the first import:
+Now, import all the files and directories:
 
-    $ svn import -m "made the initial import" .
-    ➥ http://svn.example.com/jobeet/trunk
+    $ svn add *
 
 As we will never want to commit files located in the `cache/` and `log/`
 directories, you need to specify an ignore list:
@@ -602,7 +608,8 @@ And enter:
 
 Finally, commit these changes to the repository:
 
-    $ svn commit -m "added cache/ and log/ content in the ignore list"
+    $ svn import -m "made the initial import" .
+      ➥ http://svn.example.com/jobeet/trunk
 
 >**Tip**
 >Windows users can use the great [TortoiseSVN](http://tortoisesvn.tigris.org/)
