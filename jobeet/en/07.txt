@@ -17,7 +17,7 @@ First, we need to add a route to define a pretty URL for the category page.
 Add it at the beginning of the routing file:
 
     [yml]
-    // apps/frontend/config/routing.yml
+    # apps/frontend/config/routing.yml
     category:
       url:      /category/:slug
       class:    sfPropelRoute
@@ -26,10 +26,14 @@ Add it at the beginning of the routing file:
 
 >**TIP**
 >Whenever you start implementing a new feature, it is a good practice to first
->think about the URL and create the associated route.
+>think about the URL and create the associated route. And it is mandatory if
+>you removed the default routing rules.
 
-As `slug` is not a column of the `category` table, we need to add a virtual
-accessor in `JobeetCategory` to make the route works:
+A route can use any column from its related object as a parameter. It can also
+use any other value if there is a related accessor defined in the object
+class. Because the `slug` parameter has no corresponding column in the
+`category` table, we need to add a virtual accessor in `JobeetCategory` to
+make the route works:
 
     [php]
 <propel>
@@ -86,7 +90,8 @@ template to work, we need to add the `countActiveJobs()` method to
     }
 
 The `countActiveJobs()` method uses a `countActiveJobs()` method that does not
-exist yet in `JobeetJobPeer`:
+exist yet in `JobeetJobPeer`. Replace the content of the `JobeetJobPeer.php`
+file with the following code:
 </propel>
 <doctrine>
     [php]
@@ -101,7 +106,8 @@ exist yet in `JobeetJobPeer`:
     }
 
 The `countActiveJobs()` method uses a `countActiveJobs()` method that does not
-exist yet in `JobeetJobTable`:
+exist yet in `JobeetJobTable`. Replace the content of the `JobeetJobTable.php`
+file with the following code:
 </doctrine>
 
 <propel>
@@ -109,11 +115,6 @@ exist yet in `JobeetJobTable`:
     // lib/model/JobeetJobPeer.php
     class JobeetJobPeer extends BaseJobeetJobPeer
     {
-      static public function doSelectActive(Criteria $criteria)
-      {
-        return self::doSelectOne(self::addActiveJobsCriteria($criteria));
-      }
-
       static public function getActiveJobs(Criteria $criteria = null)
       {
         return self::doSelect(self::addActiveJobsCriteria($criteria));
@@ -135,6 +136,11 @@ exist yet in `JobeetJobTable`:
         $criteria->addDescendingOrderByColumn(self::CREATED_AT);
 
         return $criteria;
+      }
+
+      static public function doSelectActive(Criteria $criteria)
+      {
+        return self::doSelectOne(self::addActiveJobsCriteria($criteria));
       }
     }
 
@@ -203,6 +209,8 @@ have added some code, we have tried to put it in the right layer of the
 application and we have also tried to make the code reusable. In the process,
 we have also refactored some existing code. That's a typical workflow when
 working on a symfony project.
+
+![Homepage](http://www.symfony-project.org/images/jobeet/1_2/07/homepage.png)
 
 Job Category Module Creation
 ----------------------------
@@ -284,9 +292,10 @@ Each time the `category` name changes, we need to compute and change the
 Use the `propel:build-all-load` task to update the database tables, and
 repopulate the database with our fixtures:
 
-    $ php symfony propel:build-all-load
+    $ php symfony propel:build-all-load --no-confirmation
 
-We have now everything in place to create the `executeShow()` method:
+We have now everything in place to create the `executeShow()` method. Replace
+the content of the `category` actions file with the following code:
 
     [php]
     // apps/frontend/modules/category/actions/actions.class.php
@@ -298,6 +307,11 @@ We have now everything in place to create the `executeShow()` method:
         $this->jobs = $this->category->getActiveJobs();
       }
     }
+
+>**NOTE**
+>Because we have removed the generated `executeIndex()` method, you can also
+>remove the automatically generated `indexSuccess.php` template
+>(`apps/frontend/modules/category/templates/indexSuccess.php`).
 
 The last step is to create the `showSuccess.php` template:
 
@@ -332,7 +346,9 @@ jobs from the job `indexSuccess.php` template. That's bad. Time to learn a new
 trick. When you need to reuse some portion of a template, you need to create a
 **partial**. A partial is a snippet of template code that can be shared among
 several templates. A partial is just another template that starts with an
-underscore (`_`):
+underscore (`_`).
+
+Create the `_list.php` file:
 
     [php]
     // apps/frontend/modules/job/templates/_list.php
@@ -377,9 +393,10 @@ From day 2 requirements:
 
   "The list is paginated with 20 jobs per page."
 
-To paginate a list of ##ORM## object, symfony provides a dedicated class:
+To paginate a list of ##ORM## objects, symfony provides a dedicated class:
 [`sfPropelPager`](http://www.symfony-project.org/api/1_2/sfPropelPager).
-Instead of passing the job objects to the template, we pass a pager:
+In the `category` action, instead of passing the job objects to the
+`showSuccess` template, we pass a pager:
 
     [php]
     // apps/frontend/modules/category/actions/actions.class.php
@@ -402,9 +419,9 @@ Instead of passing the job objects to the template, we pass a pager:
     }
 
 >**TIP**
->The `getParameter()` method takes a default value as a second argument. In
->the action above, if the `page` request parameter does not exist, then
->`getParameter()` will return `1`.
+>The `sfRequest::getParameter()` method takes a default value as a second
+>argument. In the action above, if the `page` request parameter does not
+>exist, then `getParameter()` will return `1`.
 
 The `sfPropelPager` constructor takes a model class and the maximum number of
 items to return per page. Add the latter value to your configuration file:
@@ -417,15 +434,15 @@ items to return per page. Add the latter value to your configuration file:
       max_jobs_on_category: 20
 
 <propel>
-The `sfPropelPager::setCriteria()` method takes a Criteria object to use when
-selecting the items from the database. Again, we do a bit of refactoring in
-the Model:
+The `sfPropelPager::setCriteria()` method takes a `Criteria` object to use
+when selecting the items from the database.
 </propel>
 <doctrine>
 The `sfDoctrinePager::setQuery()` method takes a `Doctrine_Query` object to use when
-selecting the items from the database. Again, we do a bit of refactoring in
-the Model:
+selecting the items from the database.
 </doctrine>
+
+Add the `getActiveJobsCriteria()` method:
 
 <propel>
     [php]
@@ -452,12 +469,12 @@ the Model:
 </doctrine>
 
 <propel>
-Now that we have the `getActiveJobsCriteria()` method, we can refactor other
-`JobeetCategory` methods to use it:
+Now that we have defined the `getActiveJobsCriteria()` method, we can refactor
+other `JobeetCategory` methods to use it:
 </propel>
 <doctrine>
-Now that we have the `getActiveJobsQuery()` method, we can refactor other
-`JobeetCategory` methods to use it:
+Now that we have defined the `getActiveJobsQuery()` method, we can refactor
+other `JobeetCategory` methods to use it:
 </doctrine>
 
 <propel>
@@ -559,6 +576,8 @@ Most of this code deals with the links to other pages. Here are the list of
   * `getPreviousPage()`: Returns the previous page number
   * `getNextPage()`: Returns the next page number
   * `getLastPage()`: Returns the last page number
+
+![Pagination](http://www.symfony-project.org/images/jobeet/1_2/07/pagination.png)
 
 See you Tomorrow
 ----------------
