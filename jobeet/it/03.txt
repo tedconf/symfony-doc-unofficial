@@ -10,8 +10,8 @@ avremo un modulo completamente funzionante scrivendo solo poche righe di
 codice PHP.
 
 <doctrine>
-Abilitare sfDoctrinePlugin
---------------------------
+Abilitare `sfDoctrinePlugin`
+----------------------------
 
 Se state leggendo questa parte, avete deciso di completare il tutorial
 Jobeet con l'ORM Doctrine al posto di Propel. Questo è semplice, poiché
@@ -41,6 +41,13 @@ Se si preferisce mantenere tutti i plugin abilitati, si può fare così:
 Dopo questi cambiamenti, assicurarsi di pulire la cache.
 
     $ php symfony cc
+
+Come vedremo più avanti in questo tutorial, ogni plugin può includere
+delle risorse (immagini, fogli di stile, ecc.). Quando si installa o si
+abilita un nuovo plugin, occorre installare tali risorse tramite il
+task `plugin:install-assets`:
+
+    $ php symfony plugin:publish-assets
 
 </doctrine>
 
@@ -95,7 +102,7 @@ di esso (come realizzarlo), creeremo lo schema a mano modificando un file vuoto
     propel:
       jobeet_category:
         id:           ~
-        name:         { type: varchar(255), required: true }
+        name:         { type: varchar(255), required: true, index: unique }
 
       jobeet_job:
         id:           ~
@@ -148,6 +155,7 @@ di esso (come realizzarlo), creeremo lo schema a mano modificando un file vuoto
         name:
           type: string(255)
           notnull:  true
+          unique: true
 
     JobeetJob:
       actAs:
@@ -276,12 +284,14 @@ colonne. Ogni colonna è descritta con le seguenti informazioni:
 
 <propel>
   * `type`: Il tipo della colonna (`boolean`, `tinyint`, `smallint`, `integer`,
-            `bigint`, `double`, `float`, `real`, `decimal`, `char`,
-            `varchar(size)`, `longvarchar`, `date`, `time`, `timestamp`,
-            `blob`, and `clob`)
+    `bigint`, `double`, `float`, `real`, `decimal`, `char`, `varchar(size)`,
+     `longvarchar`, `date`, `time`, `timestamp`, `blob`, e `clob`)
   * `required`: Impostarlo a `true` se la colonna è obbligatoria (not null)
-  * `index`: Impostarlo a `true` se volete creare un indice per quella colonna o
-            a `unique` se volete un indice con vincolo di unicità per quella colonna.
+  * `index`: Impostarlo a `true` se volete creare un indice per la colonna o
+     a `unique` se volete una chiave univoca per la colonna.
+  * `primaryKey`: Definisce una colonna come chiave primaria per la tabella.
+  * `foreignTable`, `foreignReference`: Definisce una colonna come chiave
+     esterna verso un'altra tabella.
 
 Per le colonne impostate a `~` (`id`, `created_at`, e `updated_at`) symfony 
 deciderà la migliore configurazione (chiave primaria per `id` e timestamp per
@@ -290,8 +300,8 @@ deciderà la migliore configurazione (chiave primaria per `id` e timestamp per
 >**NOTE**
 >L'attributo `onDelete` definisce il comportamento `ON DELETE` delle chiavi esterne,
 >Propel supporta `CASCADE`, `SETNULL` e `RESTRICT`. Per esempio quando un 
->record `job` viene eliminato tutti i record `jobeet_category_affiliate`
->associati verranno automaticamente eliminati dal database o da Propel se 
+>record `job` viene eliminato, tutti i record `jobeet_category_affiliate`
+>associati verranno automaticamente eliminati dal database, o da Propel se 
 >il sottostante engine non dovesse supportare tale funzionalità.
 </propel>
 <doctrine>
@@ -311,8 +321,9 @@ deciderà la migliore configurazione (chiave primaria per `id` e timestamp per
 Il Database
 ------------
 
-Symfony supporta tutti i database supportati da PDO (MySQL, PostgreSQL, SQLite,
-Oracle, MSSQL...). PDO è l'abstraction layer incluso di default in PHP.
+Il framework symfony supporta tutti i database supportati da PDO
+(MySQL, PostgreSQL, SQLite, Oracle, MSSQL, ...). PDO è il livello di
+astrazione per database incluso di default in PHP.
 
 
 Per questo tutorial useremo MySQL.
@@ -320,7 +331,7 @@ Per questo tutorial useremo MySQL.
     $ mysqladmin -uroot -pmYsEcret create jobeet
 
 >**NOTE**
->Sentiti libero di utilizzare un altro database engine se vuoi.
+>Sentitevi liberi di utilizzare un altro database enginem se volete.
 >Non sarà difficile adattare il codice che scriveremo, dato che l'ORM scriverà
 >il codice SQL al nostro posto.
 
@@ -333,14 +344,15 @@ Dobbiamo dire a symfony di usare questo database per Jobeet:
     $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=jobeet" root mYsEcret
 </doctrine>
 
-Il task `configure:database` accetta tre argomenti: il
-[PDO DSN](http://www.php.net/manual/en/pdo.drivers.php), l'username e la
-password per accedere al database. Se non utilizzi alcuna password nel tuo
-server di sviluppo, semplicemente ometti il terzo parametro.
+Il task `configure:database` accetta tre parametri: il
+[PDO DSN](http://www.php.net/manual/en/pdo.drivers.php), lo username e la
+password per accedere al database. Se non si ha bisogno di password 
+per accedere al database nel server di sviluppo, basta
+omettere il terzo parametro.
 
 >**NOTE**
 >Il task `configure:database` salva la configurazione all'interno del file
->config/databases.yml. Al posto di usare questo task, puoi modificare questo
+>config/databases.yml. Al posto di usare questo task, si può modificare questo
 >file a mano.
 
 L'ORM
@@ -361,8 +373,8 @@ Ora che i modelli sono presenti, si può generare ed inserire l'SQL.
 
     $ php symfony propel:build-sql
 
-Il task `propel:build-sql` genera le istruzioni SQL della directory `data/sql`,
-ottimizzato per il database che abbiamo scelto.
+Il task `propel:build-sql` genera le istruzioni SQL nella cartella `data/sql`,
+ottimizzate per il database che abbiamo configurato.
 
 <propel>
     [sql]
@@ -371,7 +383,8 @@ ottimizzato per il database che abbiamo scelto.
     (
       `id` INTEGER  NOT NULL AUTO_INCREMENT,
       `name` VARCHAR(255)  NOT NULL,
-      PRIMARY KEY (`id`)
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `jobeet_category_U_1` (`name`)
     )Type=InnoDB;
 </propel>
 <doctrine>
@@ -411,46 +424,45 @@ di oggetti.
 
     $ php symfony propel:build-model
 
-Il task `propel:build-model` genera i file PHP all'interno della directory
+Il task `propel:build-model` genera i file PHP all'interno della cartella
 `lib/model`, che può essere utilizzata per interagire con il database.
 
 <propel>
 Curiosando tra i file generati, probabilmente noterai che Propel genera quattro
 classi per ogni tabella. Per la tabella `jobeet_job`:
 
-  * `JobeetJob`: Un oggetto di questa classe rappresenta un singolo record della
-                 tabella `jobeet_job`. La classe è vuota di default.
-  * `BaseJobeetJob`: La classe estesa da `JobeetJob`. Ogni volta che esegui
-                     `propel:build-model`, questa classe è sovrascritta, per cui
-                     le personalizzazione dovranno venir eseguite nella classe
-                     `JobeetJob`.
-  * `JobeetJobPeer`: La classe definisce i metodi statici che restituiscono
-                     insiemi di oggetti del tipo `JobeetJob`. Questa classe
-                     è vuota di default.
-  * `BaseJobeetJobPeer`: La classe estesa da `JobeetJobPeer`. Ogni volta che
-                         esegui `propel:build-model`, questa classe è
-                         sovrascritta, per cui le personalizzazioni dovranno
-                         venir eseguite nella classe `JobeetJobPeer`.
+  * `JobeetJob`: Un oggetto di questa classe **rappresenta un singolo record**
+     della tabella `jobeet_job`. La classe è vuota di default.
+  * `BaseJobeetJob`: La classe estesa da `JobeetJob`. Ogni volta che si esegue
+     `propel:build-model`, questa classe è sovrascritta, per cui
+     le personalizzazione dovranno essere eseguite nella classe
+     `JobeetJob`.
+  * `JobeetJobPeer`: La classe definisce metodi statici che **restituiscono
+     di solito insiemi di oggetti `JobeetJob`**. Questa classe è
+     vuota di default.
+  * `BaseJobeetJobPeer`: La classe estesa da `JobeetJobPeer`. Ogni volta
+     che si esegue `propel:build-model`, questa classe è sovrascritta,
+     per cui le personalizzazioni dovranno essere eseguite nella
+     classe `JobeetJobPeer`.
 </propel>
 <doctrine>
-Curiosando tra i file generati, probabilmente noterai che Doctrine genera tre
+Curiosando tra i file generati, probabilmente noterete che Doctrine genera tre
 classi per ogni tabella. Per la tabella `jobeet_job`:
 
   * `JobeetJob`: Un oggetto di questa classe rappresenta un singolo record della
-                 tabella `jobeet_job`. La classe è vuota di default.
-  * `BaseJobeetJob`: La classe estesa da `JobeetJob`. Ogni volta che esegui
-                     `propel:build-model`, questa classe è sovrascritta, per cui
-                     le personalizzazione dovranno venir eseguite nella classe
-                     `JobeetJob`.
-  * `JobeetJobTable`: La classe definisce i metodi che restituiscono
-                     insiemi di oggetti del tipo `JobeetJob`. Questa classe
-                     è vuota di default.
+     tabella `jobeet_job`. La classe è vuota di default.
+  * `BaseJobeetJob`: La classe estesa da `JobeetJob`. Ogni volta che si esegue
+     `propel:build-model`, questa classe è sovrascritta, per cui
+     le personalizzazione dovranno essere eseguite nella classe
+     `JobeetJob`.
+  * `JobeetJobTable`: La classe definisce i metodi che di solito restituiscono
+     insiemi di oggetti `JobeetJob`. Questa classe è vuota di default.
 </doctrine>
 
 -
 
-I valori delle colonne di un record possono venire manipolati tramite un oggetto
-model, utilizzando dei getter (metodi `get*()`) e dei setter (metodi `set*()`):
+I valori delle colonne di un record possono essere manipolati tramite un oggetto
+del modello, utilizzando dei getter (metodi `get*()`) e dei setter (metodi `set*()`):
 
     [php]
     $job = new JobeetJob();
@@ -461,7 +473,7 @@ model, utilizzando dei getter (metodi `get*()`) e dei setter (metodi `set*()`):
 
     $job->delete();
 
-Puoi inoltre definire chiavi esterne direttamente collegando oggetti tra loro:
+Si possono inoltre definire chiavi esterne direttamente collegando oggetti tra loro:
 
     [php]
     $category = new JobeetCategory();
@@ -471,20 +483,20 @@ Puoi inoltre definire chiavi esterne direttamente collegando oggetti tra loro:
     $job->setCategory($category);
 
 Il task `propel:build-all` è una scorciatoia per i task che abbiamo eseguito in
-questa sezione più alcuni altri. Per cui esegui questo task per generare form e
+questa sezione più alcuni altri. Per cui eseguite questo task per generare form e
 validatori per le classi model di Jobeet.
 
-    $ php symfony propel:build-all
+    $ php symfony propel:build-all --no-confirmation
 
-Vedrai validatori in azione alla fine della giornata, mentre i form verranno
+Vedremo i validatori in azione alla fine della giornata, mentre i form verranno
 discussi nel dettaglio nel giorno 10.
 
 >**TIP**
 >Il task `propel:build-all-load` è una scorciatoia per il task
 >`propel:build-all` seguito dal task `propel:data-load`.
 
-Come vedrai in seguito, symfony carica automaticamente le classi per te, ciò
-significa che non avrai mai bisogno di usare un `require` nel tuo codice. È una
+Come vedremp in seguito, symfony carica automaticamente le classi per noi, ciò
+significa che non si avrà mai bisogno di usare un `require` nel codice. È una
 delle numerose funzionalità che symfony automatizza per lo sviluppatore, ma
 purtroppo questo implica il dover svuotare la cache ogni volta si aggiunge una
 nuova classe. Dato che `propel:build-model` ha creato molte nuove classi,
@@ -532,8 +544,10 @@ Ogni volta che symfony crea le tabelle nel database, tutti i dati saranno
 eliminati. Per popolare un database con i dati iniziali, dovrebbe create uno
 script PHP o eseguire delle query con il programma `mysql`. Ma dato che questo
 è un bisogno abbastanza comune, in symfony c'è un modo migliore per farlo:
-creare dei file YAML nella directory `data/fixtures/` ed usare il task
+creare dei file YAML nella cartella `data/fixtures/` ed usare il task
 `propel:data-load` per caricarli nel database.
+
+Prima, creiamo i seguenti file di fixture:
 
 <propel>
     [yml]
@@ -658,13 +672,18 @@ creare dei file YAML nella directory `data/fixtures/` ed usare il task
         expires_at:   '2008-10-10'
 </doctrine>
 
-Un file fixture è scritto in YAML e definisce gli oggetti del modello, etichettati con un
-nome univoco. Questa etichetta è molto utile per collegare gli oggetti correlati senza
-dover definire delle chiavi primarie (che sono spesso degli auto-increment e quindi non
-possono essere impostate). Per esempio, la categoria `job_sensio_labs` è `programming`,
-che è l'etichetta assegnata alla categoria 'Programming'.
+Un file fixture è scritto in YAML e definisce gli oggetti del modello,
+etichettati con un nome univoco (ad esempio, abbiamo definito due lavori
+etichettati come `job_sensio_labs` e `job_extreme_sensio`). Questa
+etichetta è molto utile per collegare gli oggetti correlati senza
+dover definire delle chiavi primarie (che sono spesso degli
+auto-increment e quindi non possono essere impostate). Per esempio,
+la categoria `job_sensio_labs` è `programming`, che è l'etichetta
+assegnata alla categoria 'Programming'.
 
-Un file fixture può contenere oggetti provenienti da diversi modelli.
+Sebbene un file fixture possa contenere oggetti provenienti da diversi
+modelli, abbiamo deciso di creare un solo file per ogni modello
+di Jobeet.
 
 <propel>
 >**TIP**
@@ -681,16 +700,21 @@ Un file fixture può contenere oggetti provenienti da diversi modelli.
 >chiavi esterne siano impostate correttamente.
 </doctrine>
 
-In un file fixture, non hai bisogno di definire tutti i valori delle colonne. Se non lo
-fai, symfony userà i valori di default definiti nello schema del database. E siccome
-symfony usa ##ORM## per caricare i dati nel database, tutti i comportamenti predefiniti
-(come impostare le colonne `created_at` o `updated_at`), o i comportamenti personalizzati
-che potresti aver aggiunto alle classi del modello saranno attivati.
+In un file fixture, non si ha bisogno di definire tutti i valori delle colonne.
+Se non lo si fa, symfony userà i valori di default definiti nello schema del
+database. E siccome symfony usa ##ORM## per caricare i dati nel database,
+tutti i comportamenti predefiniti (come impostare automaticamente le
+colonne `created_at` o `updated_at`), ed i comportamenti personalizzati che
+potreste aver aggiunto alle classi del modello saranno attivati.
 
 Caricare i dati iniziali nel database è facile come eseguire il task:
 `propel:data-load`:
 
     $ php symfony propel:data-load
+
+>**TIP**
+>Il task `propel:build-all-load` è una scorciatoria per il task
+>`propel:build-all` seguito dal task `propel:data-load`.
 
 Vediamolo in azione nel browser
 -------------------------------
@@ -699,12 +723,13 @@ Abbiamo usato molto la linea di comando ma questo non è molto eccitante, specia
 per un progetto web. Ora abbiamo tutto ciò che ci serve per creare pagine web che
 interagiscano col database.
 
-Vediamo come mostrare una lista di lavori, come modificare un lavoro esistente, e com
-cancellare un lavoro. Come spiegato nel giorno 1, un progetto symfony è composto da
-applicazioni. Ciascuna applicazione è composta da **moduli**. Un modulo è un insieme
-autonomo di codice PHP che rappresenta una feature dell'applicazione (ad esempio il
-modulo delle API), o un insieme di manipolazioni che l'utente può fare su un oggetto del
-modello (ad esempio il modulo `job`).
+Vediamo come mostrare una lista di lavori, come modificare un lavoro esistente,
+e come cancellare un lavoro. Come spiegato nel giorno 1, un progetto
+symfony è composto da applicazioni. Ciascuna applicazione è ulteriormente
+suddivisa in **moduli**. Un modulo è un insieme autonomo di codice PHP
+che rappresenta una feature dell'applicazione (ad esempio il modulo
+delle API), o un insieme di manipolazioni che l'utente può fare su un
+oggetto del modello (ad esempio il modulo `job`).
 
 Symfony è in grado di generare automaticamente per un modello dato un modulo che fornisce
 delle feature basilari di manipolazione:
@@ -713,7 +738,7 @@ delle feature basilari di manipolazione:
 
 Il comando `propel:generate-module` genera un modulo `job` nell'applicazione `frontend`
 per il modello `JobeetJob`. Come per molti task di symfony, alcuni file e cartelle sono
-stati creati per te sotto la cartella `apps/frontend/modules/job`:
+stati creati per voi sotto la cartella `apps/frontend/modules/job/`:
 
  | Cartella   | Descrizione
  | ---------- | --------------------
@@ -726,7 +751,7 @@ Il file `actions/actions.class.php` definisce tutte le azioni disponibili per il
  | Nome azione  | Descrizione
  | ------------ | -------------------------------------------------------
  | index        | Mostra le righe della tabella
- | show         | Mostra i campi di una data riga
+ | show         | Mostra i campi ed i loro valori per una data riga
  | new          | Mostra una form per creare una nuova riga
  | create       | Crea una nuova riga
  | edit         | Mostra una form per modificare una riga esistente
@@ -737,7 +762,7 @@ Ora puoi provare il modulo `job` in un browser:
 
      http://jobeet.localhost/frontend_dev.php/job
 
-![Job module](http://www.symfony-project.org/images/jobeet/1_2/03/job.png)
+![Modulo Job](http://www.symfony-project.org/images/jobeet/1_2/03/job.png)
 
 <propel>
 Se si prova a modificare un lavoro, si avrà un'eccezione, perché symfony ha bisogno di una
@@ -792,7 +817,7 @@ Ora potete creare e modificare i lavori. Provate a lasciare un campo richiesto i
 ad immettere una data non valida. Tutto bene, symfony ha creato delle regole di
 validazione di base, partendo dallo schema del database.
 
-![validation](http://www.symfony-project.org/images/jobeet/1_2/03/validation.png)
+![Validazione](http://www.symfony-project.org/images/jobeet/1_2/03/validation.png)
 
 A domani
 --------
@@ -806,7 +831,9 @@ per il modello, e provare a capire come funziona. Altrimenti, non preoccupatevi 
 bene, perché domani parleremo di uno dei paradigmi più usati nei framework per il web, il
 [design pattern MVC](http://it.wikipedia.org/wiki/Model-view-controller).
 
-Il codice scritto oggi è stato reso pubblico sul repository SVN di Jobeet sotto il tag
-`release_day_03` tag (`http://svn.jobeet.org/tags/release_day_03/`).
+Come per gli altri giorni, il codice di oggi è disponibile sul
+repository SVN di Jobeet. Basta fare il checkout del tag `release_day_03`:
+
+    $ svn co http://svn.jobeet.org/tags/release_day_03/ jobeet/
 
 __ORM__
