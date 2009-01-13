@@ -140,6 +140,7 @@ We can now change the link of the Jobeet logo in the layout to use the
 `homepage` route:
 
     [php]
+    <!-- apps/frontend/templates/layout.php -->
     <h1>
       <a href="<?php echo url_for('@homepage') ?>">
         <img src="/images/jobeet.gif" alt="Jobeet Job Board" />
@@ -168,7 +169,7 @@ Edit the `routing.yml` file and add the `job` route at the beginning of the
 file:
 
     [yml]
-    job:
+    job_show_user:
       url:   /job/:company/:location/:id/:position
       param: { module: job, action: show }
 
@@ -201,7 +202,7 @@ feature. Each pattern variable can be validated by a regular expression
 defined using the `requirements` entry of a route definition:
 
     [yml]
-    job:
+    job_show_user:
       url:   /job/:company/:location/:id/:position
       param: { module: job, action: show }
       requirements:
@@ -226,7 +227,7 @@ the route class to
 add a requirement for the virtual `sf_method` variable:
 
     [yml]
-    job:
+    job_show_user:
       url:   /job/:company/:location/:id/:position
       class: sfRequestRoute
       param: { module: job, action: show }
@@ -235,15 +236,18 @@ add a requirement for the virtual `sf_method` variable:
         sf_method: [GET]
 
 >**NOTE**
->Requiring a route to only match for some HTTP methods is equivalent to using
->`sfWebRequest::isMethod()` in your actions.
+>Requiring a route to only match for some HTTP methods is not totally
+>equivalent to using `sfWebRequest::isMethod()` in your actions. That's
+>because the routing will continue to look for a matching route if the
+>method does not match the expected one.
 
 Object Route Class
 ------------------
 
-The new internal URI for a job is quite long and tedious to write, but as we
-have just learned in the previous section, the route class can be changed. For
-the `job` route, it is better to use
+The new internal URI for a job is quite long and tedious to write
+(`url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().'&location='.$job->getLocation().'&position='.$job->getPosition())`),
+but as we have just learned in the previous section, the route class can be
+changed. For the `job` route, it is better to use
 [`sfPropelRoute`](http://www.symfony-project.org/api/1_2/sfPropelRoute) as the
 class is optimized for routes that represent ##ORM## objects or collections of
 ##ORM## objects:
@@ -269,13 +273,13 @@ we can simplify the `url_for()` call to:
     [php]
     url_for(array('sf_route' => 'job_show_user', 'sf_subject' => $job))
 
-or:
+or just:
 
     [php]
     url_for('job_show_user', $job)
 
 >**NOTE**
->The first example is better when you need to pass more arguments than just
+>The first example is useful when you need to pass more arguments than just
 >the object.
 
 It works because all variables in the route have a corresponding accessor in
@@ -354,14 +358,14 @@ added a new class (`Jobeet`):
 
 You will now have the expected URLs:
 
-    http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/4/web-developer
+    http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/1/web-developer
 
 But that's only half the story. The route is able to generate a URL based on an
 object, but it is also able to find the object related to a given URL. The
 related object can be retrieved with the `getObject()` method of the route
 object. When parsing an incoming request, the routing stores the matching
-route object for you to use in the actions. So, you can change the
-`executeShow()` method to use this method:
+route object for you to use in the actions. So, change the `executeShow()`
+method to use the route object to retrieve the `Jobeet` object:
 
     [php]
     class jobActions extends sfActions
@@ -369,7 +373,6 @@ route object for you to use in the actions. So, you can change the
       public function executeShow(sfWebRequest $request)
       {
         $this->job = $this->getRoute()->getObject();
-        $this->forward404Unless($this->getRoute()->getObject());
       }
 
       // ...
@@ -397,6 +400,12 @@ That's because the 404 error has been thrown for you automatically by the
 >**TIP**
 >If you don't want the route to generate a 404 error, you can set the
 >`allow_empty` routing option to `true`.
+
+-
+
+>**NOTE**
+>The related object of a route is lazy loaded. It is only retrieved from the
+>database if you call the `getRoute()` method.
 
 Routing in Actions and Templates
 --------------------------------
@@ -457,15 +466,34 @@ define a custom `sfPropelRoute` route for each as we have already done for the
 `show` action. But as the `job` module defines the classic seven actions
 possible for a model, we can also use the
 [`sfPropelRouteCollection`](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection)
-class:
+class. Open the `routing.yml` file and modify it to read as follows:
 
     [yml]
     // apps/frontend/config/routing.yml
-
-    # put this definition just before the job_show_user one
     job:
       class:   sfPropelRouteCollection
       options: { model: JobeetJob }
+
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [GET]
+
+    # default rules
+    homepage:
+      url:   /
+      param: { module: job, action: index }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
 
 The `job` route above is really just a shortcut that automatically generate
 the following seven `sfPropelRoute` routes:
@@ -566,9 +594,10 @@ name as an additional argument:
 Default Routes
 --------------
 
-It is a good practice to define routes for all your URLs. If you do so, go
-ahead and remove or comment the default routes from the `routing.yml`
-configuration file:
+It is a good practice to define routes for all your URLs. As the `job` route
+defines all the routes needed to describe the Jobeet application, go ahead and
+remove or comment the default routes from the `routing.yml` configuration
+file:
 
     [yml]
     // apps/frontend/config/routing.yml
@@ -578,6 +607,8 @@ configuration file:
     #
     #default:
     #  url:   /:module/:action/*
+
+The Jobeet application must still work as before.
 
 See you Tomorrow
 ----------------
