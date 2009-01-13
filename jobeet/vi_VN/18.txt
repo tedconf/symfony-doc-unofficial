@@ -3,28 +3,28 @@ Ngày 18: AJAX
 
 Hôm qua, chúng ta xây dựng một search engine cho Jobeet sử dụng thư viện Zend Lucene.
 
-Ngày hôm nay, để nâng cao tính tương tác của search engine, chúng ta sẽ sử dụng những lợi ích của
+Ngày hôm nay, để nâng cao tính tương tác của search engine, chúng ta sẽ sử dụng
 [AJAX](http://en.wikipedia.org/wiki/AJAX) trong search engine.
 
-Do form có thể làm việc có hoặc không có JavaScript, nên tính năng live search sẽ được xây dựng sử dụng
+Do form có thể làm việc dù có JavaScript hay không, nên tính năng live search sẽ được xây dựng sử dụng
 [unobtrusive JavaScript](http://en.wikipedia.org/wiki/Unobtrusive_JavaScript).
-Sử dụng unobtrusive JavaScript cũng cho phép phân tách tốt hơn nội dung trong client code giữa HTML, CSS, và JavaScript behaviors.
+Sử dụng unobtrusive JavaScript cũng cho phép phân tách code tốt hơn giữa HTML, CSS, và JavaScript behaviors.
 
 Cài đặt jQuery
 -------------
 
 Thay vì làm lại cái bánh xe và đau đầu vì sự khác nhau giữa các trình duyệt,
-chúng ta sẽ sử dụng thư viện JavaScript [jQuery](http://jquery.com/). Symfony
-framework là độc lập và có thể làm việc với bất kì thư viện JavaScript nào.
+chúng ta sẽ sử dụng thư viện JavaScript [jQuery](http://jquery.com/). Framework symfony
+là độc lập và có thể làm việc với bất kì thư viện JavaScript nào.
 
 Vào trang [jQuery](http://jquery.com/), download phiên bản mới nhất,
-và chuyển file `.js` vào thư mục `web/js/`.
+và copy file `.js` vào thư mục `web/js/`.
 
 Including jQuery
 ----------------
 
-Do chúng ta cần jQuery ở tất cả các trang, nên ta sửa lại layout để include nó vào trong
-`<head>`. Chú ý răng phương thức `use_javascript()` cần được dùng trước khi
+Do chúng ta cần jQuery ở tất cả các trang, nên ta thêm vào layout để include nó vào trong
+`<head>`. Chú ý rằng phương thức `use_javascript()` cần được dùng trước khi
 `include_javascripts()` được gọi:
 
     [php]
@@ -42,16 +42,16 @@ Thêm Behavior
 --------------
 
 Xây dựng một live search có nghĩa là mỗi khi người dùng gõ một kí tự vào
-search box, một lời gọi tớ server cần được trigger; sau đó server sẽ
+search box, một lời gọi tớ server sẽ được trigger; sau đó server sẽ
 trả về các thông tin cần thiết để cập nhật vùng được chọn trên trang mà không cần
 refresh lại toàn bộ trang.
 
 Thay vì thêm một behavior với `on*()` HTML attributes, nguyên tắc cơ bản của
 jQuery là thêm một behaviors vào DOM sau khi toàn bộ trang được
 load. Theo cách này, nếu bạn không cho phép JavaScript trong trình duyệt,
-không có behavior nào được register, và form sẽ làm việc như trước đây.
+không có behavior nào được register,, khi đó form sẽ làm việc như trước đây.
 
-Đầu tiên xác định sự kiện khi người dùng gõ một kí tự và search box:
+Đầu tiên xác định sự kiện khi người dùng gõ một kí tự vào search box:
 
     [js]
     $('#search_keywords').keyup(function(key) {
@@ -81,7 +81,7 @@ Tạo một AJAX gọi tới server đơn giản là sử dụng phương thức
 
 Lời gọi AJAX sẽ vẫn được thực thi bởi action đó. Sự thay đổi trong action sẽ được tiến hành ở mục sau.
 
-Đầu tiên, ta cần bỏ nút search néu JavaScript được enable:
+Đầu tiên, ta cần bỏ nút search nếu JavaScript được enable:
 
     [php]
     $('.search input[type="submit"]').hide();
@@ -89,7 +89,7 @@ Lời gọi AJAX sẽ vẫn được thực thi bởi action đó. Sự thay đ�
 User Feedback
 -------------
 
-Mỗi khi bạn thực hiện một lời gọi AJAX call, trang sẽ không được cập nhật ngay lập tức. Trình duyệt sẽ đợi server trả lời rồi mới cập nhật lại trang. Trong thời gian đó, bạn cần cung cấp một visual feedback cho người dùng để thông báo cho anh ta biết là quá trình đang được thực hiện.
+Mỗi khi có một lời gọi AJAX, trang sẽ không được cập nhật ngay lập tức. Trình duyệt sẽ đợi server trả lời rồi mới cập nhật lại trang. Trong thời gian đó, bạn cần cung cấp một visual feedback cho người dùng để thông báo cho anh ta biết là quá trình đang được thực hiện.
 
 Thông thường sẽ hiển thị một loader icon trong một lời gọi AJAX. Thêm vào
 layout một loader image và mặc định để ẩn:
@@ -212,16 +212,16 @@ Nếu người dùng xóa tất cả các kí tự trong search box, hoặc khô
     }
 
 >**TIP**
->You can also return a component by using the `renderComponent()` method.
+>Bạn cũng có thể trả về một component bằng cách sử dụng phương thức `renderComponent()`.
 
 JavaScript as an Action
 -----------------------
 
-Đặt JavaScript trong trong thẻ `<head>` tag giúp Jobeet search engine trở nên thân thiện hơn, nhưng ta có tốt hơn ta nên tạo một file để chứa nó. Nhưng do phần lớn JavaScripts tạo lời gọi AJAX đều cần một vài
+Đặt JavaScript trong trong thẻ `<head>` ở layout giúp Jobeet search engine trở nên thân thiện hơn, nhưng tốt hơn ta nên tạo một file để chứa nó. Nhưng do phần lớn JavaScripts tạo lời gọi AJAX đều cần một vài
 URLs, chúng cần sử dụng `url_for()` helper, nhờ đó mà chúng động hơn.
 
 JavaScript là một định dạng không phải HTML, và như đã biết trong những ngày trước,
-symfony giúp cho việc quản lý các định dạng khác trở nên dễ dang. Do file JavaScript sẽ
+symfony có thể quản lý các định dạng khác một cách dễ dàng. Do file JavaScript sẽ
 chứa toàn bộ behavior của trang, bạn có thể sử dụng URL của trang cho file JavaScript, nhưng kết thúc với `.js`. Ví dụ, nếu bạn muốn tạo một file cho search engine behavior, bạn có thể sửa lại `job_search` route như sau:
 
     [yml]
@@ -232,14 +232,14 @@ chứa toàn bộ behavior của trang, bạn có thể sử dụng URL của tr
         sf_format: (?:html|js)
 
 >**NOTE**
->Do URLs trên website là cố định, file JavaScript file phần lớn là tĩnh,
->và không thay đổi trong toàn bộ thời gian. Nó thích hợp cho việc cache, như chúng ta sẽ thấy trong những
+>Do URLs trên website là cố định, file JavaScript phần lớn là tĩnh,
+>không thay đổi trong phần lớn thời gian. Nó thích hợp cho việc cache, như chúng ta sẽ thấy trong những
 >ngày sau.
 
 Testing AJAX
 ------------
 
-Do symfony browser không thể giả lập JavaScript, bạn cần giúp nó khi kiểm tra AJAX calls. Có nghĩa là bạn cần tự thêm header mà jQuery và tất cả các thư viện JavaScript khác sẽ gửi với request:
+Do symfony browser không thể giả lập JavaScript, bạn cần giúp nó trong quá trình test AJAX call. Có nghĩa là bạn cần tự thêm header mà jQuery và tất cả các thư viện JavaScript khác sẽ gửi với request:
 
     [php]
     // test/functional/frontend/jobActionsTest.php
@@ -259,8 +259,8 @@ Hẹn gặp lại ngày mai
 -------------------
 
 Hôm qua, chúng ta đã sử dụng thư viện Zend Lucene để xây dựng search engine.
-Hôm nay, chúng ta đã sử dụng jQuery để làm cho nó thân thiện hơn. Symfony framework
-cung cấp tất cả các công cụ cơ bản để xây dựng ứng dụng MVC một các dễ dang, và nó cũng dễ dang kết hợp với các thành phần khác. Do đó, hãy sử dụng công cụ tốt nhất cho công việc của bạn.
+Hôm nay, chúng ta đã dùng jQuery để làm cho nó thân thiện hơn. Symfony framework
+cung cấp tất cả các công cụ cơ bản để xây dựng ứng dụng MVC một các dễ dàng, và nó cũng dễ dàng kết hợp với các thành phần khác. Do đó, hãy sử dụng công cụ tốt nhất cho công việc của bạn.
 
 Ngày mai, chúng ta sẽ nói về việc internationalize Jobeet website.
 
