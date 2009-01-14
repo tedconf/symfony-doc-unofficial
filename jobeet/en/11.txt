@@ -96,19 +96,18 @@ and pass valid values to the form:
         'how_to_apply' => 'Send me an email',
         'email'        => 'for.a.job@example.com',
         'is_public'    => false,
-      )))
+      )))->
+
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'create')->
+      end()->
     ;
 
-The form must be submitted to the `create` action:
-
-    [php]
-    with('request')->begin()->
-      isParameter('module', 'job')->
-      isParameter('action', 'create')->
-    end()->
-
-The browser also simulates file uploads by passing the absolute path to the
+The browser also simulates file uploads if you pass the absolute path to the
 file to upload.
+
+After submitting the form, we checked that the executed action is `create`.
 
 The Form Tester
 ---------------
@@ -127,8 +126,8 @@ errors.
 If you make a mistake in the test, and the test does not pass, you can use the
 `with('response')->debug()` statement we have seen during day 9. But you will
 have to dig into the generated HTML to check for error messages. That's not
-really convenient. So, the form tester also provides a `debug()` method that
-output the form status and all error messages associated with it:
+really convenient. The form tester also provides a `debug()` method that
+outputs the form status and all error messages associated with it:
 
     [php]
     with('form')->debug()
@@ -150,6 +149,10 @@ to the `show` page:
 
 The `isRedirected()` tests if the page has been redirected and the
 `followRedirect()` method follows the redirect.
+
+>**NOTE**
+>The browser class does not follow redirects automatically as you might want
+>to introspect objects before the redirection.
 
 The ##ORM## Tester
 -----------------
@@ -357,7 +360,10 @@ a job given its position value:
 
         if ($publish)
         {
-          $this->click('Publish', array(), array('method' => 'put', '_with_csrf' => true));
+          $this->
+            click('Publish', array(), array('method' => 'put', '_with_csrf' => true))->
+            followRedirect()
+          ;
         }
 
         return $this;
@@ -382,6 +388,7 @@ a job given its position value:
         return $q->fetchOne();
       }
 </doctrine>
+
       // ...
     }
 
@@ -408,10 +415,10 @@ job is activated:
     // apps/frontend/modules/job/actions/actions.class.php
     public function executeEdit(sfWebRequest $request)
     {
-      $jobeet_job = $this->getRoute()->getObject();
-      $this->form = new JobeetJobForm($jobeet_job);
+      $job = $this->getRoute()->getObject();
+      $this->forward404If($job->getIsActivated());
 
-      $this->forward404If($jobeet_job->getIsActivated());
+      $this->form = new JobeetJobForm($job);
     }
 
 The fix is trivial, but are you sure that everything else still works as
@@ -447,7 +454,7 @@ As always, we need to add a new route for the `extend` method first:
       requirements:
         token: \w+
 
-Then, update "Extend" link in the `_admin` partial:
+Then, update the "Extend" link code in the `_admin` partial:
 
     [php]
     <!-- apps/frontend/modules/job/templates/_admin.php -->
@@ -582,9 +589,10 @@ Forms Security
 
 ##ORM## forms are very easy to use as they automate a lot of work. For
 instance, serializing a form to the database is as simple as a call to
-`$form->save()`. How does it work?
+`$form->save()`.
 
-Basically, the `save()` method does the following steps:
+But how does it work? Basically, the `save()` method follows the following
+steps:
 
  * Begin a transaction (because nested ##ORM## forms are all saved in one fell
    swoop)
@@ -612,7 +620,7 @@ Let's write a test to simulate a job submission with a `token` field:
       )))->
 
       with('form')->begin()->
-        hasErrors(8)->
+        hasErrors(7)->
         hasGlobalError('extra_fields')->
       end()
     ;
