@@ -18,7 +18,7 @@ carino per la pagina delle categorie.
 Aggiungete questo all'inizio del file che si occupa del routing:
 
     [yml]
-    // apps/frontend/config/routing.yml
+    # apps/frontend/config/routing.yml
     category:
       url:      /category/:slug
       class:    sfPropelRoute
@@ -27,11 +27,15 @@ Aggiungete questo all'inizio del file che si occupa del routing:
 
 >**TIP**
 >Ogni volta che si parte ad implementare una nuova feature è buona norma
->pensare prima all'argomento URL creando la rotta associata.
+>pensare prima all'argomento URL creando la rotta associata. Ed è
+>obbligatorio se avete rimosso le regole predefinite di routing.
 
-Siccome `slug` non è una colonna della tabella `category`, abbiamo bisogno
-di aggiungere un accesso virtuale a `JobeetCategory` per rendere la rotta
-funzionante:
+Una rotta può usare una qualsiasi colonna del suo oggetto correlato
+come parametro. Può anche usare un altro valore, se c'è un metodo
+di accesso collegato definito nella classe dell'oggetto. Siccome
+`slug` non ha una colonna corrispondente nella tabella `category`,
+abbiamo bisogno di aggiungere un accesso virtuale a
+`JobeetCategory` per rendere la rotta funzionante:
 
     [php]
 <propel>
@@ -87,7 +91,10 @@ aggiungere il metodo `countActiveJobs()` a `JobeetCategory`:
       return JobeetJobPeer::countActiveJobs($criteria);
     }
 
-Il metodo `countActiveJobs()` non esiste ancora in `JobeetJobPeer`:
+Il metodo `countActiveJobs()` usa un metodo `countActiveJobs()`
+che non esiste ancora in `JobeetJobPeer`:
+sostituiamo il contenuto del file `JobeetJobPeer.php` con il
+codice seguente:
 </propel>
 <doctrine>
     [php]
@@ -101,7 +108,8 @@ Il metodo `countActiveJobs()` non esiste ancora in `JobeetJobPeer`:
       return Doctrine::getTable('JobeetJob')->countActiveJobs($q);
     }
 
-Il metodo `countActiveJobs()` non esiste ancora in `JobeetJobTable`:
+Il metodo `countActiveJobs()` usa un metodo `countActiveJobs()`
+che non esiste ancora in `JobeetJobTable`. 
 </doctrine>
 
 <propel>
@@ -109,11 +117,6 @@ Il metodo `countActiveJobs()` non esiste ancora in `JobeetJobTable`:
     // lib/model/JobeetJobPeer.php
     class JobeetJobPeer extends BaseJobeetJobPeer
     {
-      static public function doSelectActive(Criteria $criteria)
-      {
-        return self::doSelectOne(self::addActiveJobsCriteria($criteria));
-      }
-
       static public function getActiveJobs(Criteria $criteria = null)
       {
         return self::doSelect(self::addActiveJobsCriteria($criteria));
@@ -135,6 +138,11 @@ Il metodo `countActiveJobs()` non esiste ancora in `JobeetJobTable`:
         $criteria->addDescendingOrderByColumn(self::CREATED_AT);
 
         return $criteria;
+      }
+      
+      static public function doSelectActive(Criteria $criteria)
+      {
+        return self::doSelectOne(self::addActiveJobsCriteria($criteria));
       }
     }
 
@@ -200,10 +208,12 @@ numero dei risultati abbiamo utilizzato il metodo `count()` che è più veloce.
 </doctrine>
 
 Abbiamo apportato modifiche a molti file solamente per una feature molto semplice.
-Ma ogni volta che abbiamo aggiunto del codice abbiamo provato a metterlo nello strato
+Ma ogni volta che abbiamo aggiunto del codice, abbiamo provato a metterlo nello strato
 corretto dell'applicazione, abbiamo inoltre fatto in modo di creare codice riusabile.
-Durante questo processo abbiamo anche fatto il refactoring di parti di codice esistente.
-Questo è il workflow tipico quando si lavora su un progetto symfony.
+Durante questo processo abbiamo anche fatto la refattorizzazione di parti di codice esistente.
+Questo è il flusso tipico quando si lavora su un progetto symfony.
+
+![Homepage](http://www.symfony-project.org/images/jobeet/1_2/07/homepage.png)
 
 Creazione del modulo delle categorie
 ------------------------------------
@@ -213,16 +223,16 @@ Creazione del modulo delle categorie
     $ php symfony generate:module frontend category
 
 Se avete creato un modulo avrete probabilmente utilizzato il comando
-`propel:generate-module`. Questo va bene ma visto che il 90% del codice generato
-in questo caso non ci serve ho utilizzato il comando `generate:module`
+`propel:generate-module`. Questo va bene, ma visto che il 90% del codice generato
+in questo caso non ci serve, ho utilizzato il comando `generate:module`
 che crea un modulo vuoto.
 
 >**TIP**
 >Perché non aggiungere una `category` action al modulo `job`? Potremmo, ma 
->visto che il soggetto principale della pagina delle categorie è la categoria
->ci pare più naturale creare un modulo `category` dedicato a questo.
+>visto che il soggetto principale della pagina delle categorie è una categoria,
+>sembra più naturale creare un modulo `category` dedicato a questo.
 
-Accedendo alla pagina delle categorie la rotta `category` dovrà trovare la 
+Accedendo alla pagina delle categorie, la rotta `category` dovrà trovare la 
 categoria associata alla variabile `slug` presente nella richiesta. Ma siccome
 lo slug non è memorizzato nel database, e siccome non possiamo dedurre la 
 categoria dallo slug non c'è modo di individuare la categoria associata allo 
@@ -287,9 +297,11 @@ L'impostazione della colonna `slug` viene preso in considerazione automaticament
 usiamo il task `propel:build-all-load` per aggiornare le tabelle del database,
 e ripopoliamo il database con le nostre fixture:
 
-    $ php symfony propel:build-all-load
+    $ php symfony propel:build-all-loadd --no-confirmation
 
-Ora è tutto pronto per creare il metodo `executeShow()`:
+Ora è tutto pronto per creare il metodo `executeShow()`. Sostituiamo
+il contenuto del file delle azioni `category` actions con
+il codice seguente:
 
     [php]
     // apps/frontend/modules/category/actions/actions.class.php
@@ -301,6 +313,12 @@ Ora è tutto pronto per creare il metodo `executeShow()`:
         $this->jobs = $this->category->getActiveJobs();
       }
     }
+
+>**NOTE**
+>Siccome abbiamo rimosso il metodo generato `executeIndex()`, possiamo
+>rimuovere anche il template generato automaticamente
+>`indexSuccess.php`
+>(`apps/frontend/modules/category/templates/indexSuccess.php`).
 
 L'ultimo passo è creare il template `showSuccess.php`:
 
@@ -334,6 +352,8 @@ Notate che abbiamo copiato e incollato il tag `<table>` per creare una lista di
 lavori per il template `indexSuccess.php`. Non va bene. È ora di imparare a
 riutilizzare alcune porzioni del codice dei template che possono essere condivise.
 Un partial è semplicemente un altro template che inizia con un trattino basso (`_`):
+
+Creaiamo il file `_list.php`:
 
     [php]
     // apps/frontend/modules/job/templates/_list.php
@@ -378,9 +398,10 @@ Dai requisiti del giorno 2:
 
   "La lista è impaginata con 20 lavori per pagina."
 
-Per impaginare una lista di un oggetto ##ORM##, symfony fornisce una classe
+Per impaginare una lista di oggetti ##ORM##, symfony fornisce una classe
 dedicata:[`sfPropelPager`](http://www.symfony-project.org/api/1_2/sfPropelPager).
-Invece di passare gli oggetti dei lavori al template, si passa un paginatore:
+Nell'azione `category`, invece di passare gli oggetti dei lavori al
+template, si passa un paginatore:
 
     [php]
     // apps/frontend/job/modules/category/actions/actions.class.php
@@ -403,9 +424,9 @@ Invece di passare gli oggetti dei lavori al template, si passa un paginatore:
     }
 
 >**TIP**
->Il metodo `getParameter()` ha un valore di default nel secondo parametro. Nell'
->azione vista sopra, il parametro della richiesta `page` non esiste, quindi
->`getParameter()` restituirà `1`.
+>Il metodo `sfRequest::getParameter()` ha un valore di default nel
+>secondo parametro. Nell'azione vista sopra, il parametro della
+>richiesta `page` non esiste, quindi `getParameter()` restituirà `1`.
 
 Il costruttore di `sfPropelPager` prende una classe di modello ed il numero
 massimo di unità da restituire per ogni pagina. Aggiungiamo il secondo valore
@@ -420,14 +441,14 @@ al file di configurazione:
 
 <propel>
 Il metodo `sfPropelPager::setCriteria()` accetta un oggetto `Criteria` da
-usare quando seleziona le unità dal database. Di nuovo, facciamo un po' di
-rifattorizzazione nel Modello:
+usare quando seleziona le unità dal database.
 </propel>
 <doctrine>
 Il metodo `sfDoctrinePager::setQuery()` accetta un oggetto `Doctrine_Query`
-da usare quando seleziona le unità dal database. Di nuovo, facciamo un po' di
-rifattorizzazione nel Modello:
+da usare quando seleziona le unità dal database.
 </doctrine>
+
+Aggiungiamo il metodo `getActiveJobsCriteria()`:
 
 <propel>
     [php]
@@ -454,14 +475,13 @@ rifattorizzazione nel Modello:
 </doctrine>
 
 <propel>
-Ora che abbiamo il metodo `getActiveJobsCriteria()`, possiamo rifattorizzare
-gli altri metodi `JobeetCategory` per utilizzarlo:
+Ora che abbiamo definito il metodo `getActiveJobsCriteria()`,
+possiamo rifattorizzare gli altri metodi `JobeetCategory` per utilizzarlo:
 </propel>
 <doctrine>
-Ora che abbiamo il metodo `getActiveJobsQuery()`, possiamo rifattorizzare
-gli altri metodi `JobeetCategory` per utilizzarlo:
+Ora che abbiamo definito il metodo `getActiveJobsQuery()`, possiamo
+rifattorizzare gli altri metodi `JobeetCategory` per utilizzarlo:
 </doctrine>
-
 <propel>
     [php]
     // lib/model/JobeetCategory.php
@@ -561,6 +581,8 @@ una lista di metodi `sfPropelPager` usati in questo template:
   * `getPreviousPage()`: Restituisce il numero della pagina precedente
   * `getNextPage()`: Restituisce il numero della pagina successiva
   * `getLastPage()`: Restituisce il numero dell'ultima pagina
+
+![Paginazione](http://www.symfony-project.org/images/jobeet/1_2/07/pagination.png)
 
 A domani
 --------

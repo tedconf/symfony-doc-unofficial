@@ -171,7 +171,7 @@ Il seguente schema corrisponde a questo URL:
 Modifichiamo il file `routing.yml`  e la rotta `job` all'inizio del file:
 
     [yml]
-    job:
+    job_show_user:
       url:   /job/:company/:location/:id/:position
       param: { module: job, action: show }
 
@@ -205,7 +205,7 @@ essere validato da un'espressione regolare definita usando la voce
 `requirements` nella definizione della rotta:
 
     [yml]
-    job:
+    job_show_user:
       url:   /job/:company/:location/:id/:position
       param: { module: job, action: show }
       requirements:
@@ -230,7 +230,7 @@ si può cambiare la classe della rotta in
 aggiungere un requisito per la variabile virtuale `sf_method`:
 
     [yml]
-    job:
+    job_show_user:
       url:   /job/:company/:location/:id/:position
       class: sfRequestRoute
       param: { module: job, action: show }
@@ -239,13 +239,16 @@ aggiungere un requisito per la variabile virtuale `sf_method`:
         sf_method: [GET]
 
 >**NOTE**
->Richiedere ad una rotta di corrispondere solo ad alcuni metodi HTTP equivale
->ad usare `sfWebRequest::isMethod()` nell'azione.
+>Richiedere ad una rotta di corrispondere solo ad alcuni metodi HTTP non
+>è esattamente equivalente ad usare `sfWebRequest::isMethod()` nell'azione.
+>Questo perché il routing continuerà a cercare una rotta corrispondente
+>se il metodo non corrisponde a quello atteso.
 
 Classi di oggetti rotta
 -----------------------
 
-Il nuovo URI interno per un lavoro è un po' lungo e difficile da scrivere,
+Il nuovo URI interno per un lavoro è un po' lungo e difficile da scrivere
+(`url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().'&location='.$job->getLocation().'&position='.$job->getPosition())`),
 ma come abbiamo appena imparato nella sezione precedente, la classe della
 rotta può essere cambiata. Per la rotta `job`, è meglio usare
 [`sfPropelRoute`](http://www.symfony-project.org/api/1_2/sfPropelRoute),
@@ -274,13 +277,13 @@ quindi possiamo semplificare la chiamata a `url_for()`:
     [php]
     url_for(array('sf_route' => 'job_show_user', 'sf_subject' => $job))
 
-oppure:
+oppure solo:
 
     [php]
     url_for('job_show_user', $job)
 
 >**NOTE**
->Il primo esempio è migliore quando si devono passare più argomenti
+>Il primo esempio è utile quando si devono passare più argomenti
 >oltre all'oggetto.
 
 Questo funziona perché tutte le variabili nella rotta hanno un corrispondente
@@ -359,14 +362,15 @@ abbiamo aggiunto una nuova classe (`Jobeet`):
 
 Ora abbiamo gli URL che ci aspettavamo:
 
-    http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/4/web-developer
+    http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/1/web-developer
 
 Ma siamo solo a metà strada. La rotta può generare un URL basato su un
 oggetto, ma può anche trovare l'oggetto relativo ad un URL dato. L'oggetto
 relativo può essere recuperato col metodo `getObject()` dell'oggetto rotta.
 Quando una richiesta in arrivo viene esaminata, il routing memorizza
 la rotta corrispondente in modo che possa essere usata nelle azioni.
-Quindi, si può cambiare il metodo `executeShow()`:
+Quindi, cambiamo il metodo `executeShow()` per usare l'oggetto rotta per
+recuperare l'oggetto `Jobeet`:
 
     [php]
     class jobActions extends sfActions
@@ -404,6 +408,11 @@ Questo perché l'errore 404 è stato lanciato automaticamente dal metodo
 >Se non si vuole che la rotta generi un errore 404, si può impostare l'opzione
 >di routing `allow_empty` a `true`.
 
+-
+
+>**NOTE**
+>L'oggetto collegato ad una rotta è caricato in modo pigro. Viene
+>recuperato dal database solo se si richiama il metodo `getRoute()`.
 
 Il routing nelle azioni e nei template
 --------------------------------------
@@ -461,15 +470,36 @@ Siccome tutte le azioni `job` sono legate alla classe del modello `JobeetJob`,
 possiamo definire facilmente una rotta personalizzata `sfPropelRoute` per ciascuno,
 come abbiamo già fatto per l'azione `show`. Ma siccome il modulo `job` definisce
 le classiche sette azioni possibili per un modello, possiamo anche usare la classe
-[`sfPropelRouteCollection`](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection):
+[`sfPropelRouteCollection`](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection).
+Apriamo il file `routing.yml` e modifichiamolo come segue:
 
     [yml]
     // apps/frontend/config/routing.yml
 
-    # inserire questa definizione appena prima di job_show_user
     job:
       class:   sfPropelRouteCollection
       options: { model: JobeetJob }
+
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [GET]
+
+    # default rules
+    homepage:
+      url:   /
+      param: { module: job, action: index }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
 
 La rotta `job` qui sopra è una scorciatoia che genera automaticamente le seguenti
 sette rotte `sfPropelRoute`:
@@ -570,8 +600,10 @@ suo nome come parametro aggiuntivo:
 Rotte di default
 ----------------
 
-È una buona pratica definire rotte per tutti i proprio URL. Se lo si fa, si possono
-rimuovere o commentare le rotte di default nel file di configurazione `routing.yml`:
+È una buona pratica definire rotte per tutti i proprio URL.
+Siccome la rotta `job` definisce tutte le rotte necessarie per
+descrivere l'applicazione Jobeet, si possono rimuovere o
+commentare le rotte di default nel file di configurazione `routing.yml`:
 
     [yml]
     // apps/frontend/config/routing.yml
@@ -581,6 +613,8 @@ rimuovere o commentare le rotte di default nel file di configurazione `routing.y
     #
     #default:
     #  url:   /:module/:action/*
+
+L'applicazione Jobeet deve funzionare come prima.
 
 A domani
 --------
