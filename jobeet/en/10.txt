@@ -89,7 +89,7 @@ generate forms based on this information. In fact, when you launched the
 
 The `propel:build-forms` task generates form classes in the `lib/form/`
 directory. The organization of these generated files is similar to that of
-`lib/model`. Each model class has a related form class (for instance
+`lib/model/`. Each model class has a related form class (for instance
 `JobeetJob` has `JobeetJobForm`), which is empty by default as it inherits
 from a base class:
 
@@ -298,7 +298,7 @@ We also need to change the default validator:
  * Updates the `logo` column with the generated name
 
 >**NOTE**
->You need to create the logo directory (`web/uploads/jobs`) and check that it
+>You need to create the logo directory (`web/uploads/jobs/`) and check that it
 >is writable by the web server.
 
 As the validator will save the relative path in the database, change the path
@@ -320,7 +320,7 @@ significance:
     [php]
     $this->widgetSchema->setHelp('is_public', 'Whether the job can also be published on affiliate websites or not.');
 
-The final `JobeetJobForm` class read as follow:
+The final `JobeetJobForm` class reads as follows:
 
     [php]
 <propel>
@@ -361,6 +361,13 @@ The final `JobeetJobForm` class read as follow:
         $this->widgetSchema['logo'] = new sfWidgetFormInputFile(array(
           'label' => 'Company logo',
         ));
+
+        $this->widgetSchema->setLabels(array(
+          'category_id'    => 'Category',
+          'is_public'      => 'Public?',
+          'how_to_apply'   => 'How to apply?',
+        ));
+
         $this->validatorSchema['logo'] = new sfValidatorFile(array(
           'required'   => false,
           'path'       => sfConfig::get('sf_upload_dir').'/jobs',
@@ -368,12 +375,6 @@ The final `JobeetJobForm` class read as follow:
         ));
 
         $this->widgetSchema->setHelp('is_public', 'Whether the job can also be published on affiliate websites or not.');
-
-        $this->widgetSchema->setLabels(array(
-          'category_id'    => 'Category',
-          'is_public'      => 'Public?',
-          'how_to_apply'   => 'How to apply?',
-        ));
       }
     }
 
@@ -391,6 +392,10 @@ templates are quite similar:
     <h1>Post a Job</h1>
 
     <?php include_partial('form', array('form' => $form)) ?>
+
+>**NOTE**
+>If you have not added the `job` stylesheet yet, it is time to do so in both
+>templates (`<?php use_stylesheet('job.css') ?>`).
 
 The form itself is rendered in the `_form` partial. Replace the content of the
 generated `_form` partial with the following code:
@@ -517,6 +522,17 @@ we can simplify the code for the form management methods:
       $this->setTemplate('edit');
     }
 
+    public function executeDelete(sfWebRequest $request)
+    {
+      $request->checkCSRFProtection();
+
+      $job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+      $this->forward404Unless($job, sprintf('Object jobeet_job does not exist (%s).', $request->getParameter('id')));
+      $job->delete();
+
+      $this->redirect('job/index');
+    }
+
     protected function processForm(sfWebRequest $request, sfForm $form)
     {
       $form->bind(
@@ -535,14 +551,14 @@ we can simplify the code for the form management methods:
 When you browse to the `/job/new` page, a new form instance is created and
 passed to the template (`new` action).
 
-When the user submits the form (`create` action), it is bound (`bind()`
+When the user submits the form (`create` action), the form is bound (`bind()`
 method) with the user submitted values and the validation is triggered.
 
 Once the form is bound, it is possible to check its validity using the
 `isValid()` method: If the form is valid (returns `true`), the job is saved
 to the database (`$form->save()`), and the user is redirected to the job
 preview page; if not, the `newSuccess.php` template is displayed again with the
-user submitted values and error messages.
+user submitted values and the associated error messages.
 
 >**TIP**
 >The `setTemplate()` method changes the template used for a given action. If
@@ -558,7 +574,10 @@ for ##ORM## forms, but a plain array for simple forms).
 
 You can also define default values for the creation form. One way is to
 declare the values in the database schema. Another one is to pass a
-pre-modified `Job` object to the form constructor:
+pre-modified `Job` object to the form constructor.
+
+Change the `executeNew()` method to define `full-time` as the default value
+for the `type` column:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -577,9 +596,12 @@ pre-modified `Job` object to the form constructor:
 
 ### Protecting the Job Form with a Token
 
-Everything must work fine by now. But there is a problem. First, the job token
-must be generated automatically when a new job is created, as we don't want
-the user to provide a unique token. Update the `save()` method of `JobeetJob`:
+Everything must work fine by now. As of now, the user must enter the token
+for the job. But the job token must be generated automatically when a new job
+is created, as we don't want to rely on the user to provide a unique token.
+
+Update the `save()` method of `JobeetJob` to add the logic that generates the
+token before a new job is saved:
 
     [php]
 <propel>
@@ -601,7 +623,7 @@ the user to provide a unique token. Update the `save()` method of `JobeetJob`:
       return parent::save($con);
     }
 
-We can remove the `token` field from the form:
+You can now remove the `token` field from the form:
 
     [php]
 <propel>
@@ -642,8 +664,11 @@ option:
       options:      { model: JobeetJob, column: token }
       requirements: { token: \w+ }
 
-Now, all routes, except the `job_show_user` one, embed the token. For
-instance, the route to edit a job is now:
+Notice that we have also changed the `token` parameter requirement to match
+any string as the symfony default requirements is `\d+` for the unique key.
+
+Now, all routes related to the jobs, except the `job_show_user` one, embed the
+token. For instance, the route to edit a job is now of the following pattern:
 
     http://jobeet.localhost/job/TOKEN/edit
 
@@ -652,10 +677,6 @@ You will also need to change the "Edit" link in the `showSuccess` template:
     [php]
     <!-- apps/frontend/modules/job/templates/showSuccess.php -->
     <a href="<?php echo url_for('job_edit', $job) ?>">Edit</a>
-
->**NOTE**
->We have also changed the requirements for the `token` column as the symfony
->default requirements is `\d+` for the primary key.
 
 The Preview Page
 ----------------
@@ -706,12 +727,7 @@ Then, create the `_admin` partial:
       </ul>
     </div>
 
-There is a lot of code, but most of the code is simple to understand. The
-admin bar is different, depending on the job status:
-
-![Not activated job](http://www.symfony-project.org/images/jobeet/1_2/10/not_activated.png)
-
-![Activated job](http://www.symfony-project.org/images/jobeet/1_2/10/activated.png)
+There is a lot of code, but most of the code is simple to understand.
 
 To make the template more readable, we have added a bunch of shortcut methods
 in the `JobeetJob` class:
@@ -753,6 +769,15 @@ in the `JobeetJob` class:
       return floor((strtotime($this->getExpiresAt()) - time()) / 86400);
 </doctrine>
     }
+
+The admin bar displays the different actions depending on the job status:
+
+![Not activated job](http://www.symfony-project.org/images/jobeet/1_2/10/not_activated.png)
+
+![Activated job](http://www.symfony-project.org/images/jobeet/1_2/10/activated.png)
+
+>**NOTE**
+>You will be able to see the "activated" bar after the next section.
 
 Job Activation and Publication
 ------------------------------
@@ -797,9 +822,13 @@ The last step is to create the `publish` action:
       $this->redirect($this->generateUrl('job_show_user', $job));
     }
 
-As we have enabled the CSRF protection, the `link_to()` helper embeds a CSRF
-token in the link and the `checkCSRFProtection()` method of the request object
-checks the validity of it on submision.
+The astute reader will have noticed that the "Publish" link is submitted with
+the HTTP put method. To simulate the put method, the link is automatically
+converted to a form when you click on it.
+
+And because we have enabled the CSRF protection, the `link_to()` helper embeds
+a CSRF token in the link and the `checkCSRFProtection()` method of the request
+object checks the validity of it on submision.
 
 The `executePublish()` method uses a new `publish()` method that can be
 defined as follows:
