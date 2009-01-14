@@ -26,6 +26,12 @@ to easily describe scenarios. Each scenario can then be played automatically ove
 and over again by simulating the experience a user has in a browser. Like unit
 tests, they give you the confidence to code in peace.
 
+>**NOTE**
+>The functional test framework does not replace tools like
+>"[Selenium](http://selenium.seleniumhq.org/)". Selenium runs directly in the
+>browser to automate testing across many platforms and browsers and as such,
+>it is able to test your application's JavaScript.
+
 The `sfBrowser` class
 ---------------------
 
@@ -91,9 +97,9 @@ class delegates the tests to **tester** objects. Several testers are bundled
 with symfony, and you can also create your own.
 
 As we saw yesterday, functional tests are stored under the
-`test/functional` directory. For Jobeet, tests are to be found in the
-`test/functional/frontend` sub-directory as each application has its own
-subdirectory. This directory already contains 2 files:
+`test/functional/` directory. For Jobeet, tests are to be found in the
+`test/functional/frontend/` sub-directory as each application has its own
+subdirectory. This directory already contains two files:
 `categoryActionsTest.php`, and `jobActionsTest.php` as all tasks that generate
 a module automatically create a basic functional test file:
 
@@ -118,9 +124,27 @@ a module automatically create a basic functional test file:
     ;
 
 At first, the script above may look a bit strange to you. That's because
-methods of `sfBrowser` and `sfTestFunctional` always return `$this` to enable
-a [fluent interface](http://en.wikipedia.org/wiki/Fluent_interface). It allows
-you to chain the method calls for better readability.
+methods of `sfBrowser` and `sfTestFunctional` implements a
+[fluent interface](http://en.wikipedia.org/wiki/Fluent_interface) by always
+returning `$this`. It allows you to chain the method calls for better
+readability. The above snippet is equivalent to:
+
+    [php]
+    // test/functional/frontend/categoryActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new sfTestFunctional(new sfBrowser());
+
+    $browser->get('/category/index');
+    $browser->with('request')->begin();
+    $browser->isParameter('module', 'category');
+    $browser->isParameter('action', 'index');
+    $browser->end();
+
+    $browser->with('response')->begin();
+    $browser->isStatusCode(200);
+    $browser->checkElement('body', '!/This is a temporary page/');
+    $browser->end();
 
 Tests are run within a tester block context. A tester block context begins
 with `with('TESTER NAME')->begin()` and ends with `end()`:
@@ -222,6 +246,7 @@ file, but we will rather create our own functional class that inherits from
 <doctrine>
         Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
 </doctrine>
+
         return $this;
       }
     }
@@ -257,11 +282,13 @@ test file. Replace the code with the following one:
     ;
 
 As with `lime`, an informational message can be inserted by calling the
-`info()` method to make the output more readable. To the exclusion of expired
-jobs from the homepage, we check that the CSS selector
+`info()` method to make the output more readable. To verify the exclusion of
+expired jobs from the homepage, we check that the CSS selector
 `.jobs td.position:contains("expired")` does not match anywhere in the
 response HTML content (remember that in the fixture files, the only expired
-job we have contains "expired" in the position).
+job we have contains "expired" in the position). When the second argument of
+the `checkElement()` method is a Boolean, the method tests the existence of
+nodes that match the CSS selector.
 
 >**TIP**
 >The `checkElement()` method is able to interpret most valid CSS3 selectors.
@@ -281,11 +308,13 @@ Add the following code at the end of the test file:
         checkElement('.category_programming tr', $max)
     ;
 
-The `checkElement()` method can also check that a CSS selector matches n times.
+The `checkElement()` method can also check that a CSS selector matches 'n'
+nodes in the document by passing an integer as its second argument.
 
 ### A category has a link to the category page only if too many jobs
 
     [php]
+    // test/functional/frontend/jobActionsTest.php
     $browser->info('1 - The homepage')->
       get('/')->
       info('  1.3 - A category has a link to the category page only if too many jobs')->
@@ -295,10 +324,10 @@ The `checkElement()` method can also check that a CSS selector matches n times.
       end()
     ;
 
-Here, we check that there is no "more jobs" link for the design category
-(`.category_design .more_jobs` does not exist), and that there is a "more
-jobs" link for the programming category (`.category_programming .more_jobs`
-does exist).
+In these tests, we check that there is no "more jobs" link for the design
+category (`.category_design .more_jobs` does not exist), and that there is a
+"more jobs" link for the programming category (`.category_programming
+.more_jobs` does exist).
 
 ### Jobs are sorted by date
 
@@ -332,17 +361,14 @@ does exist).
       get('/')->
       info('  1.4 - Jobs are sorted by date')->
       with('response')->begin()->
-        checkElement('.category_programming tr:last:contains("102")')->
         checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]', $job->getId()))->
       end()
     ;
 
-To test if jobs are actually sorted by date, we check that the last job listed
-on the homepage contains `102` in the company. But testing the first job on
-the programming list is trickier as the the first two jobs have the exact same
-position, company, and location. So, we need to check that the URL contains
-the expected primary key. As the primary key can change between runs, we need
-to get the ##ORM## object from the database first.
+To test if jobs are actually sorted by date, we need to check that the first
+job listed on the homepage is the one we expect. This can be done by checking
+that the URL contains the expected primary key. As the primary key can change
+between runs, we need to get the ##ORM## object from the database first.
 
 Even if the test works as is, we need to refactor the code a bit, as getting
 the first job of the programming category can be reused elsewhere in our
@@ -385,13 +411,25 @@ for Jobeet:
       // ...
     }
 
+You can now replace the previous test code by the following one:
+
+    // test/functional/frontend/jobActionsTest.php
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.4 - Jobs are sorted by date')->
+      with('response')->begin()->
+        checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]',
+          $browser->getMostRecentProgrammingJob()->getId()))->
+      end()
+    ;
+
 ### Each job on the homepage is clickable
 
     [php]
     $browser->info('2 - The job page')->
       get('/')->
 
-      info('  2.1 - Each job on the homepage is clickable')->
+      info('  2.1 - Each job on the homepage is clickable and give detailed information')->
       click('Web Developer', array(), array('position' => 1))->
       with('request')->begin()->
         isParameter('module', 'job')->
@@ -493,17 +531,30 @@ category pages. Read the code carefully as you may learn some new neat tricks:
       with('response')->begin()->
         info('  1.1 - Expired jobs are not listed')->
         checkElement('.jobs td.position:contains("expired")', false)->
+      end()
+    ;
 
-        info(sprintf('  1.2 - Only %s jobs are listed for a category', sfConfig::get('app_max_jobs_on_homepage')))->
-        checkElement('.category_programming tr', sfConfig::get('app_max_jobs_on_homepage'))->
+    $max = sfConfig::get('app_max_jobs_on_homepage');
 
-        info('  1.3 - A category has a link to the category page only if too many jobs')->
+    $browser->info('1 - The homepage')->
+      info(sprintf('  1.2 - Only %s jobs are listed for a category', $max))->
+      with('response')->
+        checkElement('.category_programming tr', $max)
+    ;
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.3 - A category has a link to the category page only if too many jobs')->
+      with('response')->begin()->
         checkElement('.category_design .more_jobs', false)->
         checkElement('.category_programming .more_jobs')->
+      end()
+    ;
 
-        info('  1.4 - Jobs are sorted by date')->
+    $browser->info('1 - The homepage')->
+      info('  1.4 - Jobs are sorted by date')->
+      with('response')->begin()->
         checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]', $browser->getMostRecentProgrammingJob()->getId()))->
-        checkElement('.category_programming tr:last:contains("102")')->
       end()
     ;
 
@@ -616,11 +667,6 @@ tests with little effort.
 We have just scratched the surface of functional tests. From now on, each
 time we implement a feature, we will also write tests to learn more
 features of the test framework.
-
-The functional test framework does not replace tools like
-"[Selenium](http://selenium.seleniumhq.org/)". Selenium runs directly in the
-browser to automate testing across many platforms and browsers and as such,
-it is able to test your application's JavaScript.
 
 Tomorrow, we will talk about yet another great feature of symfony: the form
 framework.
