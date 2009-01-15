@@ -4,16 +4,16 @@ Day 19: Internationalization and Localization
 Yesterday, we finished the search engine feature by making it more fun with
 the addition of some AJAX goodness.
 
-Today, we will talk about Jobeet internationalization (or i18n) and
-localization (or l10n).
+Today, we will talk about Jobeet **internationalization** (or i18n) and
+**localization** (or l10n).
 
 From [Wikipedia](http://en.wikipedia.org/wiki/Internationalization):
 
->Internationalization is the process of designing a software application so
->that it can be adapted to various languages and regions without engineering
->changes.
+>**Internationalization** is the process of designing a software application
+>so that it can be adapted to various languages and regions without
+>engineering changes.
 >
->Localization is the process of adapting software for a specific region or
+>**Localization** is the process of adapting software for a specific region or
 >language by adding locale-specific components and translating text.
 
 As always, the symfony framework has not reinvented the wheel and its i18n and
@@ -106,9 +106,9 @@ routes, add `/:sf_culture` to the front of the `url`. For collection routes, add
     affiliate:
       class: sfPropelRouteCollection
       options:
-        model:          JobeetJob
+        model:          JobeetAffiliate
         actions:        [new, create]
-        object_actions: { wait: GET }
+        object_actions: { wait: get }
         prefix_path:    /:sf_culture/affiliate
 
     category:
@@ -120,17 +120,15 @@ routes, add `/:sf_culture` to the front of the `url`. For collection routes, add
         sf_format: (?:html|atom)
 
     job_search:
-      url:   /:sf_culture/search.:sf_format
-      param: { module: job, action: search, sf_format: html }
-      requirements:
-        sf_format: (?:html|js)
+      url:   /:sf_culture/search
+      param: { module: job, action: search }
 
     job:
       class: sfPropelRouteCollection
       options:
         model:          JobeetJob
         column:         token
-        object_actions: { publish: PUT, extend: PUT }
+        object_actions: { publish: put, extend: put }
         prefix_path:    /:sf_culture/job
       requirements:
         token: \w+
@@ -139,15 +137,21 @@ routes, add `/:sf_culture` to the front of the `url`. For collection routes, add
       url:     /:sf_culture/job/:company_slug/:location_slug/:id/:position_slug
       class:   sfPropelRoute
 <propel>
-      options: { model: JobeetJob, type: object, method_for_criteria: doSelectActive }
+      options:
+        model: JobeetJob
+        type: object
+        method_for_criteria: doSelectActive
 </propel>
 <doctrine>
-      options: { model: JobeetJob, type: object, method_for_query: retrieveActiveJob }
+      options:
+        model: JobeetJob
+        type: object
+        method_for_query: retrieveActiveJob
 </doctrine>
       param:   { module: job, action: show }
       requirements:
         id:        \d+
-        sf_method: GET
+        sf_method: get
 
 When the `sf_culture` variable is used in a route, symfony will automatically
 use its value to change the culture of the user.
@@ -297,9 +301,9 @@ And clear the cache as the plugin defines new classes:
 
 >**NOTE**
 >The `sfFormExtraPlugin` contains widgets that require external dependencies
->like JavaScript libraries. You will find a widget for rich date selector, one
->for a WYSIWYG editor, and much more. Take the time to read the documentation
->as you will find a lot of useful stuff.
+>like JavaScript libraries. You will find a widget for rich date selectors,
+>one for a WYSIWYG editor, and much more. Take the time to read the
+>documentation as you will find a lot of useful stuff.
 
 The `sfFormExtraPlugin` plugin provides a `sfFormLanguage` form to manage the
 language selection. Adding the language form can be done in the layout like
@@ -354,8 +358,9 @@ actually change the user language:
 
     $ php symfony generate:module frontend language
 
-Components are to be defined in the `actions/components.class.php` file. Create
-this file now:
+Components are to be defined in the `actions/components.class.php` file.
+
+Create this file now:
 
     [php]
     // apps/frontend/modules/language/actions/components.class.php
@@ -489,7 +494,7 @@ Here is how to use the `__()` helper for the Jobeet footer:
             <a href=""><?php echo __('About Jobeet') ?></a>
           </li>
           <li class="feed">
-            <?php echo link_to(__('Feed'), '@job?sf_format=atom') ?>
+            <?php echo link_to(__('Full feed'), '@job?sf_format=atom') ?>
           </li>
           <li>
             <a href=""><?php echo __('Jobeet API') ?></a>
@@ -707,7 +712,7 @@ Translating the string is similar to other message strings:
     [xml]
     <trans-unit id="6">
       <source>[0]No job in this category|[1]One job in this category|(1,+Inf]%count% jobs in this category</source>
-      <target>[0]Aucune annonce dans cette categorie|[1]Une annonce dans cette categorie|(1,+Inf]%count% annonces dans cette categorie</target>
+      <target>[0]Aucune annonce dans cette catégorie|[1]Une annonce dans cette catégorie|(1,+Inf]%count% annonces dans cette catégorie</target>
     </trans-unit>
 
 Now that you know how to internationalize all kind of strings, take the time
@@ -774,9 +779,9 @@ And update the fixtures for categories:
       manager_fr:       { id: manager, culture: fr, name: Manager }
       administrator_fr: { id: administrator, culture: fr, name: Administrateur }
 
-Rebuild the model to create the `i18n` class stubs:
+Rebuild the model to create the `i18n` stub classes:
 
-    $ php symfony propel:build-all-load --no-confirmation
+    $ php symfony propel:build-all --no-confirmation
     $ php symfony cc
 
 As the `name` and `slug` columns have been moved to the i18n table, move the
@@ -883,14 +888,14 @@ english slug in the `JobeetCategoryTranslation` table.
 
 Rebuild the model:
 
-    $ php symfony propel:build-all-reload --no-confirmation
+    $ php symfony propel:build-all --no-confirmation
     $ php symfony cc
 
 </doctrine>
 
 >**TIP**
 <propel>
->As the `propel:build-all-load` removes all tables and data from the database,
+>As the `propel:build-all` removes all tables and data from the database,
 </propel>
 <doctrine>
 >As the `doctrine:build-all-reload` removes all tables and data from the database,
@@ -1013,6 +1018,9 @@ the `findOneBySlugAndCulture()` method.
     }
 </doctrine>
 
+    // ...
+  }
+
 Then, use the `method` option to tell the `category` route to use the
 `doSelectForSlug()` method to retrieve the object:
 
@@ -1025,6 +1033,11 @@ Then, use the `method` option to tell the `category` route to use the
       options: { model: JobeetCategory, type: object, method: doSelectForSlug }
       requirements:
         sf_format: (?:html|atom)
+
+We need to reload the fixtures to regenerate the proper slugs for the
+categories:
+
+    $ php symfony propel:data-load
 
 Now the `category` route is internationalized and the URL for a category
 embeds the translated category slug:
