@@ -50,8 +50,8 @@ A flash is set by using the `setFlash()` method of `sfUser`:
 
 The first argument is the identifier of the flash and the second one is the
 message to display. You can define whatever flashes you want, but `notice`
-and `error` are two of the more common ones (they are used by the admin
-generator).
+and `error` are two of the more common ones (they are used extensively by the
+admin generator).
 
 It is up to the developer to include the flash message in
 the templates. For Jobeet, they are output by the `layout.php`:
@@ -234,29 +234,6 @@ The `getJobHistory()` method uses the Propel `retrieveByPKs()` method to
 retrieve several `JobeetJob` objects in one call.
 </propel>
 
-To make it look better, add the following code at the end of the `main.css`
-stylesheet:
-
-    [css]
-    /* web/css/main.css */
-    #job_history
-    {
-      padding: 7px;
-      background: #eee;
-      font-size: 80%;
-    }
-
-    #job_history ul
-    {
-      display: inline;
-    }
-
-    #job_history li
-    {
-      margin-right: 10px;
-      display: inline;
-    }
-
 ![Job history](http://www.symfony-project.org/images/jobeet/1_2/13/job_history.png)
 
 ### `sfParameterHolder`
@@ -324,7 +301,7 @@ forwards the request to the `login` action configured in `settings.yml`:
         login_action: login
 
 >**NOTE**
->It is not possible to secure the login action. This is to avoid recursion.
+>It is not possible to secure the login action to avoid infinite recursion.
 
 -
 
@@ -492,7 +469,7 @@ model classes to manage users, groups, and permissions, you need to rebuild
 your model:
 
 <propel>
-    $ php symfony propel:build-all-load
+    $ php symfony propel:build-all-load --no-confirmation
 </propel>
 <doctrine>
     $ php symfony doctrine:build-all-reload
@@ -507,7 +484,7 @@ your model:
 </doctrine>
 >before re-creating them. To avoid this, you can build the models, forms, and
 >filters, and then, create the new tables by executing the generated SQL
->statements stored in `data/sql`.
+>statements stored in `data/sql/`.
 
 As always, when new classes are created, you need to clear the symfony cache:
 
@@ -529,11 +506,16 @@ change the base class of `myUser` to `sfGuardSecurityUser`:
     }
 
 <propel>
-`sfGuardPlugin` provides a default action to authenticate users:
+`sfGuardPlugin` provides a `signin` action in the `sfGuardAuth` module to
+authenticate users.
 </propel>
 <doctrine>
-`sfDoctrineGuardPlugin` provides a default action to authenticate users:
+`sfDoctrineGuardPlugin` provides a `signin` action in the `sfGuardAuth` module
+to authenticate users.
 </doctrine>
+
+Edit the `settings.yml` file to change the default action used for the login
+page:
 
     [yml]
     // apps/backend/config/settings.yml
@@ -550,14 +532,14 @@ change the base class of `myUser` to `sfGuardSecurityUser`:
         # ...
 
 As plugins are shared amongst all applications of a project, you need to
-explicitly enable the modules you want to use with the `enabled_modules`
-setting.
+explicitly enable the modules you want to use by adding them in the
+`enabled_modules` setting.
 
 ![sfGuardPlugin login](http://www.symfony-project.org/images/jobeet/1_2/13/sf_guard_login.png)
 
 The last step is to create an administrator user:
 
-    $ php symfony guard:create-user fabien $ecretPa$$
+    $ php symfony guard:create-user fabien SecretPass
     $ php symfony guard:promote fabien
 
 >**TIP**
@@ -580,7 +562,7 @@ When the user if not authenticated, we need to hide the menu bar:
       </div>
     <?php endif; ?>
 
-When the user is authenticated, we need to add a logout link in the menu:
+And when the user is authenticated, we need to add a logout link in the menu:
 
     [php]
     // apps/backend/templates/layout.php
