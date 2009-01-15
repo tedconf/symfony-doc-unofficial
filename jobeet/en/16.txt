@@ -47,7 +47,7 @@ Be sure to rebuild your model after making the change:
 </doctrine>
 
 With the addition of feeds on Jobeet, job seekers can now be informed of new
-job posts in real-time.
+jobs in real-time.
 
 On the other side of the fence, when you post a job, you will want to have the
 greatest exposure possible. If your job is syndicated on a lot of small
@@ -167,8 +167,9 @@ As always, when you create a new resource, it's a good habit to define the URL f
 For this route, the special `sf_format` variable ends the URL and the valid
 values are `xml`, `json`, or `yaml`.
 
-The `getForToken()` will be called when the action retrieves the
-collection of objects related to the route:
+The `getForToken()` method is called when the action retrieves the collection
+of objects related to the route. As we need to check that the affiliate is
+activated, we need to override the default behavior of the route:
 
 <propel>
     [php]
@@ -233,7 +234,8 @@ token:
       }
     }
 
-Then, the `getActiveJobs()` method returns the list of currently active jobs:
+Then, the `getActiveJobs()` method returns the list of currently active jobs
+for the categories selected by the affiliate:
 
 </propel>
 <doctrine>
@@ -293,9 +295,13 @@ module with the `generate:module` task:
 
     $ php symfony generate:module frontend api
 
+>**NOTE**
+>As we won't use the default `index` action, you can remove it from the
+>action class, and remove the associated template `indexSucess.php`.
+
 ### The Action
 
-All formats will share the same `list` action:
+All formats share the same `list` action:
 
     [php]
     // apps/frontend/modules/api/actions/actions.class.php
@@ -342,6 +348,9 @@ the logic to process the values has been factored out in the
 </doctrine>
         );
       }
+
+      // ...
+    }
 
 ### The `xml` Format
 
@@ -496,7 +505,7 @@ the `test/fixtures/` directory and replace the content of the auto-generated
       info('2 - The jobs returned are limited to the categories configured for the affiliate')->
       get('/api/sensio_labs/jobs.xml')->
       with('request')->isFormat('xml')->
-      with('response')->checkElement('job', 33)->
+      with('response')->checkElement('job', 32)->
 
       info('3 - The web service supports the JSON format')->
       get('/api/sensio_labs/jobs.json')->
@@ -535,7 +544,7 @@ You guess it. The route is the first thing we create:
       options:
         model: JobeetAffiliate
         actions: [new, create]
-        object_actions: { wait: GET }
+        object_actions: { wait: get }
 
 It is a classic ##ORM## collection route with a new configuration option:
 `actions`. As we don't need all the seven default actions defined by the
@@ -590,7 +599,7 @@ Create the `waitSuccess.php` template:
     <h1>Your affiliate account has been created</h1>
 
     <div style="padding: 20px">
-      Thank you! 
+      Thank you!
       You will receive an email with your affiliate token
       as soon as your account will be activated.
     </div>
@@ -599,7 +608,9 @@ Last, change the link in the footer to point to the `affiliate` module:
 
     [php]
     // apps/frontend/templates/layout.php
-    <li class="last"><a href="<?php echo url_for('@affiliate_new') ?>">Become an affiliate</a></li>
+    <li class="last">
+      <a href="<?php echo url_for('@affiliate_new') ?>">Become an affiliate</a>
+    </li>
 
 ### Actions
 
@@ -667,7 +678,9 @@ tag, default HTML attributes can be set by using the `setAttribute()` method.
 
 ### Tests
 
-The last step is to write some functional tests for the new feature:
+The last step is to write some functional tests for the new feature.
+
+Replace the generated tests for the `affiliate` module by the following code:
 
     [php]
     // test/functional/frontend/affiliateActionsTest.php
@@ -794,6 +807,10 @@ of affiliate that need to be activated:
         return $q->count();
       }
 </doctrine>
+
+      // ...
+
+    }
 
 As the only action needed in the backend is to activate or deactivate
 accounts, change the default generator `config` section to simplify the
@@ -987,7 +1004,8 @@ simple way to register the Zend autoloader:
 
 ### Sending Emails
 
-Edit the `activate` action:
+Edit the `activate` action to send an email when the administrator validates
+an affiliate:
 
     [php]
     // apps/backend/modules/affiliate/actions/actions.class.php
