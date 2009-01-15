@@ -53,7 +53,7 @@ publish and host a public plugin on the symfony website.
 
 ### A Different Way to Organize Code
 
-There is one more way to think about and use plugins. Forget about
+There is one more way to think about plugins and how to use them. Forget about
 re-usability and sharing. Plugins can be used as a different way to organize
 your code. Instead of organizing the files by layers: all models in the
 `lib/model/` directory, templates in the `templates/` directory, ...; the
@@ -233,7 +233,7 @@ output directory can be configured by adding a `package` option. Open the
       _attributes:      { package: plugins.sfJobeetPlugin.lib.model }
 
 Now symfony will generate its files under the
-`plugins/sfJobeetPlugin/lib/model` directory. The form and filter builders
+`plugins/sfJobeetPlugin/lib/model/` directory. The form and filter builders
 also take this configuration into account when they generate files.
 
 The `propel:build-sql` task generates a SQL file to create tables. As the
@@ -289,13 +289,11 @@ check that everything still works fine:
 
 ### The Controllers and the Views
 
-The next logical step is to move the modules to the plugin:
+The next logical step is to move the modules to the plugin. To avoid module
+name collisions, it is always a good habit to prefix plugin module names with
+the plugin name:
 
-    $ mv apps/frontend/modules plugins/sfJobeetPlugin/
-
-To avoid module name collisions, it is always a good habit to prefix plugin
-module names with the plugin name:
-
+    $ mkdir plugins/sfJobeetPlugin/modules/
     $ mv apps/frontend/modules/affiliate plugins/sfJobeetPlugin/modules/sfJobeetAffiliate
     $ mv apps/frontend/modules/api plugins/sfJobeetPlugin/modules/sfJobeetApi
     $ mv apps/frontend/modules/category plugins/sfJobeetPlugin/modules/sfJobeetCategory
@@ -303,19 +301,17 @@ module names with the plugin name:
     $ mv apps/frontend/modules/language plugins/sfJobeetPlugin/modules/sfJobeetLanguage
 
 For each module, you also need to change the class name in all
-`actions.class.php` and `components.class.php` files.
+`actions.class.php` and `components.class.php` files (for instance, the
+`affiliateActions` class needs to be renamed to `sfJobeetAffiliateActions`).
 
 The `include_partial()` and `include_component()` calls must also be changed
 in the following templates:
 
-  * `sfJobeetAffiliate/templates/newSuccess.php`
   * `sfJobeetAffiliate/templates/_form.php` (change `affiliate` to `sfJobeetAffiliate`)
   * `sfJobeetCategory/templates/showSuccess.atom.php`
   * `sfJobeetCategory/templates/showSuccess.php`
-  * `sfJobeetJob/templates/editSuccess.php`
   * `sfJobeetJob/templates/indexSuccess.atom.php`
   * `sfJobeetJob/templates/indexSuccess.php`
-  * `sfJobeetJob/templates/newSuccess.php`
   * `sfJobeetJob/templates/searchSuccess.php`
   * `sfJobeetJob/templates/showSuccess.php`
   * `apps/frontend/templates/layout.php`
@@ -378,6 +374,8 @@ Eventually, modify the `routing.yml` file to take these changes into account:
         object_actions: { wait: GET }
         prefix_path:    /:sf_culture/affiliate
         module:         sfJobeetAffiliate
+      requirements:
+        sf_culture: (?:fr|en)
 
     api_jobs:
       url:     /api/:token/jobs.:sf_format
@@ -394,12 +392,13 @@ Eventually, modify the `routing.yml` file to take these changes into account:
       options: { model: JobeetCategory, type: object, method: doSelectForSlug }
       requirements:
         sf_format: (?:html|atom)
+        sf_culture: (?:fr|en)
 
     job_search:
-      url:   /:sf_culture/search.:sf_format
-      param: { module: sfJobeetJob, action: search, sf_format: html }
+      url:   /:sf_culture/search
+      param: { module: sfJobeetJob, action: search }
       requirements:
-        sf_format: (?:html|js)
+        sf_culture: (?:fr|en)
 
     job:
       class:   sfPropelRouteCollection
@@ -411,20 +410,28 @@ Eventually, modify the `routing.yml` file to take these changes into account:
         module:         sfJobeetJob
       requirements:
         token: \w+
+        sf_culture: (?:fr|en)
 
     job_show_user:
       url:     /:sf_culture/job/:company_slug/:location_slug/:id/:position_slug
       class:   sfPropelRoute
 <propel>
-      options: { model: JobeetJob, type: object, method_for_criteria: doSelectActive }
+      options:
+        model: JobeetJob
+        type: object
+        method_for_criteria: doSelectActive
 </propel>
 <doctrine>
-      options: { model: JobeetJob, type: object, method_for_query: retrieveActiveJob }
+      options:
+        model: JobeetJob
+        type: object
+        method_for_query: retrieveActiveJob
 </doctrine>
       param:   { module: sfJobeetJob, action: show }
       requirements:
         id:        \d+
         sf_method: GET
+        sf_culture: (?:fr|en)
 
     change_language:
       url:   /change_language
@@ -548,10 +555,11 @@ plugin configuration class:
       }
     }
 
-Event notifications are managed by the event dispatcher object
-([`sfEventDispatcher`](http://www.symfony-project.org/api/1_2/sfEventDispatcher)).
-Registering a listener is as simple as calling `connect()`. The `connect()`
-method connects an event name to a PHP callable.
+Event notifications are managed by
+[`sfEventDispatcher`](http://www.symfony-project.org/api/1_2/sfEventDispatcher),
+the event dispatcher object. Registering a listener is as simple as calling
+the `connect()` method. The `connect()` method connects an event name to a PHP
+callable.
 
 >**NOTE**
 >A [PHP callable](http://www.php.net/manual/en/function.is-callable.php) is a
