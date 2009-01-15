@@ -42,12 +42,18 @@ We could have included the jQuery file directly with a `<script>` tag, but
 using the `use_javascript()` helper ensures that the same JavaScript file
 won't be included twice.
 
+>**NOTE**
+>For
+>[performance reasons](http://developer.yahoo.com/performance/rules.html#js_bottom),
+>you might also want to move the `include_javascripts()` helper call just
+>before the ending `</body>` tag.
+
 Adding Behaviors
 ----------------
 
 Implementing a live search means that each time the user types a letter in the
 search box, a call to the server need to be triggered; the server will then
-return the needed information to update select regions of the page without
+return the needed information to update some regions of the page without
 refreshing the whole page.
 
 Instead of adding the behavior with an `on*()` HTML attributes, the main
@@ -57,8 +63,9 @@ no behavior is registered, and the form still works as before.
 
 The first step is to intercept whenever a user types a key in the search box:
 
-    [js]
-    $('#search_keywords').keyup(function(key) {
+    [php]
+    $('#search_keywords').keyup(function(key)
+    {
       if (this.value.length >= 3 || this.value == '')
       {
         // do something
@@ -77,11 +84,12 @@ Making an AJAX call to the server is as simple as using the `load()` method on
 the DOM element:
 
     [php]
-    $('#search_keywords').keyup(function(key) {
+    $('#search_keywords').keyup(function(key)
+    {
       if (this.value.length >= 3 || this.value == '')
       {
         $('#jobs').load(
-          '<?php echo url_for('@job_search') ?>', { query: this.value + '*' } }
+          $(this).parents('form').attr('action'), { query: this.value + '*' } }
         );
       }
     });
@@ -89,7 +97,8 @@ the DOM element:
 To manage the AJAX call, the same action as the "normal" one is called. The needed
 changes in the action will be done in the next section.
 
-But first, let's remove the search button if JavaScript is enabled:
+Last but not least, if JavaScript is enabled, we will want to remove the
+search button:
 
     [php]
     $('.search input[type="submit"]').hide();
@@ -106,7 +115,7 @@ A convention is to display a loader icon during the AJAX call. Update the
 layout to add the loader image and hide it by default:
 
     [php]
-    // apps/frontend/templates/layout.php
+    <!-- apps/frontend/templates/layout.php -->
     <div class="search">
       <h2>Ask for a job</h2>
       <form action="<?php echo url_for('@job_search') ?>" method="get">
@@ -119,36 +128,60 @@ layout to add the loader image and hide it by default:
       </form>
     </div>
 
-You can download the loader image in
-[today's repository](http://svn.jobeet.org/tags/release_day_18/web/images/loader.gif).
-
 >**NOTE**
->The loader is optimized for the current layout of Jobeet. If you want to
->create your own, you will find a lot of free online services like
+>The default loader is optimized for the current layout of Jobeet. If you want
+>to create your own, you will find a lot of free online services like
 >http://www.ajaxload.info/.
 
-Now that you have all the pieces needed to make the HTML work, open the layout
-file and add the following JavaScript code at the end of the `<head>` section:
+Now that you have all the pieces needed to make the HTML work, create a
+`search.js` file that contains the JavaScript we have written so far:
 
     [php]
-    // apps/frontend/templates/layout.php
-    <script type="text/javascript">
-      $(document).ready(function() {
-        $('.search input[type="submit"]').hide();
+    # web/js/search.js
+    $(document).ready(function()
+    {
+      $('.search input[type="submit"]').hide();
 
-        $('#search_keywords').keyup(function(key) {
-          if (this.value.length >= 3 || this.value == '')
-          {
-            $('#loader').show();
-            $('#jobs').load(
-              '<?php echo url_for('@job_search') ?>',
-              { query: this.value + '*' },
-              function() { $('#loader').hide(); }
-            );
-          }
-        });
+      $('#search_keywords').keyup(function(key)
+      {
+        if (this.value.length >= 3 || this.value == '')
+        {
+          $('#loader').show();
+          $('#jobs').load(
+            $(this).parents('form').attr('action'),
+            { query: this.value + '*' },
+            function() { $('#loader').hide(); }
+          );
+        }
       });
-    </script>
+    });
+
+You also need to update the layout to include this new file:
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <?php use_javascript('search.js') ?>
+
+>**SIDEBAR**
+>JavaScript as an Action
+>
+>Although the JavaScript we have written for the search engine is static,
+>sometimes, you need to call some PHP code (to use the `url_for()` helper
+>for instance).
+>
+>JavaScript is just another format like HTML, and as seen some days ago,
+>symfony makes format management quite easy. As the JavaScript file will
+>contain behavior for a page, you can even have the same URL as the page for
+>the JavaScript file, but ending with `.js`. For instance, if you want to
+>create a file for the search engine behavior, you can modify the `job_search`
+>route as follows and create a `searchSuccess.js.php` template:
+>
+>    [yml]
+>    job_search:
+>      url:   /search.:sf_format
+>      param: { module: job, action: search, sf_format: html }
+>      requirements:
+>        sf_format: (?:html|js)
 
 AJAX in an Action
 -----------------
@@ -231,35 +264,8 @@ the `renderText()` method to render a simple test string:
     }
 
 >**TIP**
->You can also return a component by using the `renderComponent()` method.
-
-JavaScript as an Action
------------------------
-
-Although putting the JavaScript directly into the `<head>` tag makes perfect
-sense for the Jobeet search engine, it is sometimes better to create a
-dedicated file. But as the most JavaScripts that make AJAX calls need some
-URLs, they need to use the `url_for()` helper, and therefore should be
-dynamic.
-
-JavaScript is just another format like HTML, and as seen some days ago,
-symfony makes format management quite easy. As the JavaScript file will
-contain behavior for a page, you can even have the same URL as the page for
-the JavaScript file, but ending with `.js`. For instance, if you want to
-create a file for the search engine behavior, you can modify the `job_search`
-route as follows:
-
-    [yml]
-    job_search:
-      url:   /search.:sf_format
-      param: { module: job, action: search, sf_format: html }
-      requirements:
-        sf_format: (?:html|js)
-
->**NOTE**
->As the URLs on a website are stable, the JavaScript files are mostly static,
->and don't change over time. This is a perfect candidate for caching, as we
->will see in a coming day.
+>You can also return a component in an action by using the `renderComponent()`
+>method.
 
 Testing AJAX
 ------------
