@@ -60,31 +60,14 @@ Zend Lucene provides two methods to retrieve an index depending whether one
 already exists or not. Let's create a helper method in the `JobeetJobPeer`
 class that returns an existing index or creates a new one for us:
 
+    [php]
 <propel>
     [php]
     // lib/model/JobeetJobPeer.php
-    static public function getLuceneIndex()
-    {
-      ProjectConfiguration::registerZend();
-
-      if (file_exists($index = self::getLuceneIndexFile()))
-      {
-        return Zend_Search_Lucene::open($index);
-      }
-      else
-      {
-        return Zend_Search_Lucene::create($index);
-      }
-    }
-
-    static public function getLuceneIndexFile()
-    {
-      return sfConfig::get('sf_data_dir').'/job.'.sfConfig::get('sf_environment').'.index';
-    }
 </propel>
 <doctrine>
-    [php]
     // lib/model/doctrine/JobeetJobTable.class.php
+</doctrine>
     public function getLuceneIndex()
     {
       ProjectConfiguration::registerZend();
@@ -103,12 +86,10 @@ class that returns an existing index or creates a new one for us:
     {
       return sfConfig::get('sf_data_dir').'/job.'.sfConfig::get('sf_environment').'.index';
     }
-</doctrine>
-
-Each time a job is created, updated, or deleted, the index must be updated too.
 
 ### The `save()` method
 
+Each time a job is created, updated, or deleted, the index must be updated.
 Edit `JobeetJob` to update the index whenever a job is serialized to the
 database:
 
@@ -325,13 +306,20 @@ them:
     $ php symfony propel:data-load --env=dev
 
 The task is run with the `--env` option as the index is environment dependent
-and the default environment for task is `cli`.
+and the default environment for tasks is `cli`.
 
 >**TIP**
 >For Unix-like users: as the index is modified from the command line and also
 >from the web, you must change the index directory permissions accordingly
 >depending on your configuration: check that both the command line user you
 >use and the web server user can write to the index directory.
+
+-
+
+>**NOTE**
+>You might have some warnings about the `ZipArchive` class if you don't have
+>the `zip` extension compiled in your PHP. It's a known bug of the
+>`Zend_Loader` class.
 
 Implementing the search in the frontend is a piece of cake. First, create a
 route:
@@ -433,7 +421,7 @@ To make it work, update the layout:
     // apps/frontend/templates/layout.php
     <h2>Ask for a job</h2>
     <form action="<?php echo url_for('@job_search') ?>" method="get">
-      <input type="text" name="query" value="<?php echo isset($query) ? $query : '' ?>" id="search_keywords" />
+      <input type="text" name="query" value="<?php echo $sf_request->getParameter('query') ?>" id="search_keywords" />
       <input type="submit" value="search" />
       <div class="help">
         Enter some keywords (city, country, position, ...)
@@ -454,7 +442,7 @@ obviously won't test the Zend Lucene library itself, but its integration with
 the `JobeetJob` class.
 
 Add the following tests at the end of the `JobeetJobTest.php` file and don't
-forget to update the number of tests at the beginning of the file:
+forget to update the number of tests at the beginning of the file to `7`:
 
     [php]
     // test/unit/model/JobeetJobTest.php
