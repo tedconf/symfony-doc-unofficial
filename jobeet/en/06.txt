@@ -342,7 +342,8 @@ Let's update the code to take this new setting into account:
       if ($this->isNew() && !$this->getExpiresAt())
       {
         $now = $this->getCreatedAt() ? $this->getCreatedAt('U') : time();
-        $this->setExpiresAt($now + 86400 * sfConfig::get('app_active_days'));
+        $this->setExpiresAt($now + 86400 *
+         ➥ sfConfig::get('app_active_days'));
       }
 
       return parent::save($con);
@@ -394,7 +395,8 @@ the `JobeetJobTable` class and create a `getActiveJobs()` method:
       static public function getActiveJobs()
       {
         $criteria = new Criteria();
-        $criteria->add(self::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->add(self::EXPIRES_AT, time(),
+          ➥ Criteria::GREATER_THAN);
 
         return self::doSelect($criteria);
       }
@@ -558,9 +560,15 @@ active jobs:
           <table class="jobs">
             <?php foreach ($category->getActiveJobs() as $i => $job): ?>
               <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
-                <td class="location"><?php echo $job->getLocation() ?></td>
-                <td class="position"><?php echo link_to($job->getPosition(), 'job_show_user', $job) ?></td>
-                <td class="company"><?php echo $job->getCompany() ?></td>
+                <td class="location">
+                  <?php echo $job->getLocation() ?>
+                </td>
+                <td class="position">
+                  <?php echo link_to($job->getPosition(), 'job_show_user', $job) ?>
+                </td>
+                <td class="company">
+                  <?php echo $job->getCompany() ?>
+                </td>
               </tr>
             <?php endforeach; ?>
           </table>
@@ -612,7 +620,8 @@ criteria. As the `Criteria` is an object, this is quite simple:
         $criteria = new Criteria();
       }
 
-      $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+      $criteria->add(JobeetJobPeer::EXPIRES_AT, time(),
+       ➥ Criteria::GREATER_THAN);
       $criteria->addDescendingOrderByColumn(self::EXPIRES_AT);
 
       return self::doSelect($criteria);
@@ -824,7 +833,8 @@ route:
     {
       static public function doSelectActive(Criteria $criteria)
       {
-        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(),
+         ➥ Criteria::GREATER_THAN);
 
         return self::doSelectOne($criteria);
       }
