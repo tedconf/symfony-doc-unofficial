@@ -1,0 +1,376 @@
+Ngày 23: Deployment
+===================
+
+Với cấu hình cho hệ thống cache ngày hôm qua, Jobeet website đã sẵn sàng để đưa lên production servers.
+
+Trong 22 ngày qua, chúng ta đã phát triển Jobeet trên môi trường development, và thường là trên máy cá nhân của bạn; trừ khi bạn phát triển trực tiếp trên production server. Bây giờ là lúc để chuyển the website lên production server.
+
+Hôm nay, chúng ta sẽ xem phải làm những việc gì trước khi trở thành sản phẩm, những cách
+deploy bạn có thể sử dụng, và những công cụ cần thiết để có thể deployment thành công.
+
+Chuẩn bị Production Server
+-------------------------------
+
+Trước khi deploying dự án thành production, chúng ta cần chắc rằng production
+server được cấu hình đúng. Bạn có thể đọc lại ngày 1, chúng ta đã nói về cách cấu hình web server.
+
+Trong mục này, chúng tôi mặc định rằng bạn đã cài web server, database server, và PHP 5.2.4 trở lên.
+
+>**NOTE**
+>Nếu bạn không có một SSH để truy cập web server, bỏ qua các phần mà bạn
+>phải truy cập sử dụng dòng lệnh.
+
+### Cấu hình Server
+
+Đầu tiên, bạn cần kiểm tra rằng PHP được cài đặt với tất cả các extensions cần thiết và được cấu hình đúng. Trong ngày 1, chúng ta đã sử dụng script `check_configuration.php` của symfony để kiểm tra. Do chúng ta sẽ không cài symfony trên production server, nên ta cần download file này trực tiếp từ symfony website:
+
+    http://trac.symfony-project.org/browser/branches/1.2/data/bin/check_configuration.php?format=raw
+
+Copy file vào thư mục web root, chạy nó trên trình duyệt **và** từ dòng lệnh:
+
+    $ php check_configuration.php
+
+Sửa các lỗi mà script tìm thấy và lặp lại quá trình cho đến khi mọi thứ đều ổn ở **cả hai** môi trường.
+
+### PHP Accelerator
+
+Với production server, bạn sẽ muốn hiệu năng tốt nhất có thể.
+Cài đặt một [PHP accelerator](http://en.wikipedia.org/wiki/PHP_accelerator)
+sẽ giúp cải thiện tốc độ mà không tốn kém tiền bạc.
+
+>**NOTE**
+>Wikipedia: PHP accelerator làm việc bằng cách cache bytecode đã được biên dịch của
+>PHP scripts để tránh việc phân tích và dịch lại mã nguồn mỗi khi có một request.
+
+[APC](http://www.php.net/apc) được sử dụng phổ biến, và cài đặt đơn giản:
+
+    $ pecl install APC
+
+Tùy vào hệ điều hành của bạn, bạn có thể sử dụng công cụ quản lý gói sẵn có để cài đặt.
+
+>**NOTE**
+>Dành chút thời gian để đọc về cách
+>[cấu hình APC](http://www.php.net/manual/en/apc.configuration.php).
+
+Thư viện symfony
+-----------------
+
+### Embedding symfony
+
+Một trong những điểm mạnh của symfony là tất cả những file cần thiết để project hoạt động có thể đóng gói trong một thư mục. Và bạn có thể copy thư mục này đi bất kì đâu mà không cần phải sửa lại gì trong project do symfony sử dụng đường dẫn tương đối.
+
+Hãy kiểm tra lại đường dẫn đến symfony core autoloader trong file
+`config/ProjectConfiguration.class.php` :
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    require_once dirname(__FILE__).'/../lib/vendor/symfony/lib/autoload/sfCoreAutoload.class.php';
+
+### Upgrading symfony
+
+Mọi thứ được chứa trong một thư mục duy nhât, và việc cập nhật symfony
+lên một phiên bản mới trở nên đơn giản.
+
+Bạn sẽ muốn cập nhật phiên bản của symfony thường xuyên, do chúng tôi sẽ sửa các lỗi phát sinh và các vấn đề bảo mật nếu có. Tin tốt là tất cả các phiên bản của symfony được bảo trì ít nhất một năm và trong suốt quá trình bảo trì, chúng tôi sẽ không thêm tính năng mới cho phiên bản đó. Vì vậy, cách đơn giản, an toàn và bảo mật là nâng cấp lên phiên bản mới.
+
+Cập nhật symfony đơn giản là thay thế nội dung thư mục `lib/vendor/symfony/`. Nếu bạn cài đặt symfony bằng file nén, hãy xóa tất cả các file hiện tại và thay bằng các file mới vừa tải về.
+
+Nếu bạn sử dụng Subversion cho dự án của mình, bạn có thể liên kết dự án của bạn với tag symfony 1.2 phiên bản mới nhất:
+
+    $ svn propedit svn:externals lib/vendor/
+      # symfony http://svn.symfony-project.com/tags/RELEASE_1_2_1/
+
+Cập nhật symfony đơn giản là thay đổi tag tới phiên bản symfony mới nhất.
+
+Bạn cũng có thể sử dụng branch 1.2 để được fixe trong thời gian thực:
+
+    $ svn propedit svn:externals lib/vendor/
+      # symfony http://svn.symfony-project.com/branches/1.2/
+
+Bây giờ, mỗi khi bạn thực hiện lệnh `svn up`, bạn sẽ nhận được phiên bản mới nhất của symfony 1.2.
+
+Khi cập nhật lên một phiên bản mới, bạn nên xóa cache,
+đặc biệt trong môi trường production:
+
+    $ php symfony cc
+
+>**TIP**
+>Nếu bạn có thể truy cập FTP tới production server, bạn có thể thay thế việc thực hiện lệnh
+>`symfony cc` bằng cách xóa tất cả các file trong thư mục
+>`cache/`.
+
+Bạn cũng có thể test phiên bản mới của symfony mà không cần thay thế phiên bản có sẵn. Nếu bạn muốn test một phiên bản mới, và có thể quay trở lại dùng phiên bản cũ, hãy cài symfony trong một thư mục khác (ví dụ `lib/vendor/symfony_test`), thay đổi đường dẫn trong class `ProjectConfiguration`, xóa cache, và mọi thứ đã hoạt động. Bạn có thể quay lại dùng phiên bản cũ bằng cách sửa lại đường dẫn trong file `ProjectConfiguration`.
+
+Chỉnh sửa cấu hình
+-------------------
+
+### Cấu hình cơ sở dữ liệu
+
+Trong nhiều trường hợp, production database có sự phân quyền khác với ở local. Nhờ có symfony environments, cấu hình cho production database trở nên đơn giản:
+
+    $ php symfony configure:database "mysql:host=localhost;dbname=prod_dbname" prod_user prod_pass
+
+Bạn cũng có thể sửa trực tiếp file cấu hìnhYou can also edit the `databases.yml`.
+
+### Assets
+
+Do Jobeet sử dụng plugins có sẵn các asset, nên symfony tạo đường dẫn tương đối đến thư mục `web/`. Lệnh `plugin:publish-assets` sẽ tạo lại hoặc tạo mới chúng nếu bạn cài đặt plugins không dùng lệnh `plugin:install`:
+
+    $ php symfony plugin:publish-assets
+
+### Chỉnh sửa trang thông báo lỗi
+
+Trước khi trở thành sản phần, bạn nên chỉnh sửa lại các trang mặc định của symfony,
+như trang "Page Not Found", hay các trang exception mặc định.
+
+Chúng ta đã cấu hình trang thông báo lỗi cho `YAML` format trong ngày 16,
+bằng cách tạo file `error.yaml.php` và `exception.yaml.php` trong thư mục `config/error/` . File `error.yaml.php` được symfony sử dụng trong môi trường `prod`, trong khi file `exception.yaml.php` được sử dụng trong môi trường `dev`.
+
+Vì thế, để chỉnh sửa trang exception mặc định cho HTML format, ta cần tạo 2 file: `config/error/error.html.php` và `config/error/exception.html.php`.
+
+Trang `404` (page not found) có thể được chỉnh sửa bằng cách thay đổi thiết lập
+`error_404_module` và `error_404_action`:
+
+    [yml]
+    # apps/frontend/config/settings.yml
+    all:
+      .actions:
+        error_404_module: default
+        error_404_action: error404
+
+Chỉnh sửa cấu trúc thư mục
+--------------------------
+
+Để cấu trúc tốt hơn và chuẩn hóa code của bạn, symfony cung cấp một thư mục mặc định với các tên được xác định trước. Nhưng đôi khi, bạn cần phải thay đổi cấu trúc thư mục do yêu cầu bắt buộc từ bên ngoài.
+
+Cấu hình thư mục có thể thực hiện trong class `config/ProjectConfiguration.class.php`.
+
+### Thư mục Web Root
+
+Trong một số web hosts, bạn không thể thay đổi tên thư mục web root. Bạn có thể sửa lại cấu hình để symfony biết tên thư mục là `public_html/` thay vì `web/`:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setWebDir($this->getRootDir().'/public_html');
+      }
+    }
+
+Phương thức `setWebDir()` nhận một đường dẫn tuyệt đối đến thư mục web root.
+Nếu bạn di chuyển thư mục này đi nơi khác, đừng quên sửa controller scripts để kiểm tra rằng đường dẫn file `ProjectConfiguration` vẫn đúng:
+
+    [php]
+    require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
+
+### Thư mục Cache và Log
+
+Symfony framework chỉ ghi vào 2 thư mục: `cache/` và `log/`. Vì lý do bảo mật, một số web hosts không cho phép ghi vào thư mục chính. Trong trường hợp này, bạn có thể chuyển những thư mục này vào một nơi nào đó của file hệ thống:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setCacheDir('/tmp/symfony_cache');
+        $this->setLogDir('/tmp/symfony_logs');
+      }
+    }
+
+Như phương thức `setWebDir()`, phương thức `setCacheDir()` và `setLogDir()` nhận tham số là đường dẫn tuyệt đối đến thư mục `cache/` và `log/`.
+
+Factories
+---------
+
+Trong suốt Jobeet tutorial, chúng ta đã nói về các đối tượng cơ bản trong symfony như
+`sfUser`, `sfRequest`, `sfResponse`, `sfI18N`, `sfRouting`, ... Những đối tượng này được tự động tạo, cấu hình, và quản lý bởi symfony framework. Chúng cũng có thể được truy cập thông qua `sfContext` object, và như nhiều thứ khác trong framework, chúng được cấu hình dựa trên file cấu hình: `factories.yml`. File này được cấu hình theo môi trường.
+
+Khi `sfContext` khởi tạo core factories, nó đọc file `factories.yml` để lấy các tên class (`class`) và tham số (`param`) cung cấp cho quá trình khởi tạo:
+
+    [yml]
+    response:
+      class: sfWebResponse
+      param:
+        send_http_headers: false
+
+Trong snippet trước, để tạo response factory, symfony khởi tạo một đối tượng
+`sfWebResponse` và cung cấp option `send_http_headers` như là một parameter.
+
+Khả năng chỉnh sửa factories có nghĩa là bạn có thể sử dụng các class đã chỉnh sửa cho symfony core objects thay vì các class mặc định. Bạn cũng có thể thay đổi behavior mặc định của những class này bằng cách thay đổi tham số gửi cho chúng.
+
+Hãy xem một vài chỉnh sửa có bản có thể bạn muốn thực hiện.
+
+### Tên Cookie
+
+Để điều khiển user session, symfony sử dụng một cookie. Cookie này có tên mặc định là
+`symfony`, nó có thể đổi trong file `factories.yml`. Dưới key `all`, thêm cấu hình sau để đổi tên cookie thành `jobeet`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    storage:
+      class: sfSessionStorage
+      param:
+        session_name: jobeet
+
+### Nơi chứa Session
+
+Session storage class mặc định là `sfSessionStorage`. Nó sử dụng file hệ thống để chứa thông tin
+session. Nếu bạn có vài web servers, bạn có thể muốn chứa sessions ở nơi khác, như bảng trong cơ sở dữ liệu:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    storage:
+      class: sfPDOSessionStorage
+      param:
+        session_name: jobeet
+        db_table:     session
+        database:     propel
+        db_id_col:    id
+        db_data_col:  data
+        db_time_col:  time
+
+### Session Timeout
+
+Mặc định, user session timeout nếu quá `1800` giây. Bạn có thể thay đổi bằng cách chỉnh sửa mục `user`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    user:
+      class: myUser
+      param:
+        timeout: 1800
+
+### Log
+
+Mặc định, không có log trong môi trường `prod` bởi vì tên logger class là `sfNoLogger`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    prod:
+      logger:
+        class:   sfNoLogger
+        param:
+          level:   err
+          loggers: ~
+
+Bạn có thể enable log trên file hệ thống bằng cách đổi tên logger class thành `sfFileLogger`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    logger:
+      class: sfFileLogger
+      param:
+        level: error
+        file:  %SF_LOG_DIR%/%SF_APP%_%SF_ENVIRONMENT%.log
+
+>**NOTE**
+>Tỏng file cấu hình `factories.yml`, chuỗi `%XXX%` được thay thế bằng
+>giá trị tương ứng từ đối tượng `sfConfig`. Do đó, `%SF_APP%` trong
+>file cấu hình tương đương với `sfConfig::get('sf_app')` trong PHP code.
+>Chú ý này cũng có thể sử dụng trong file cấu hình `app.yml`. Nó có thể
+>hữu ích khi bạn cần thay thế một đường dẫn trong file cấu hình
+>mà không thể xác định rõ ràng (`SF_ROOT_DIR`, `SF_WEB_DIR`, ...).
+
+Deploy
+------
+
+### Deploy những gì?
+
+Khi deploy Jobeet website lên production server, chúng ta cần cẩn thận không
+deploy những file không cần thiết hay override các file do người dùng đưa lên, như
+logo công ty.
+
+Trong một symfony project, có 3 thư mục được loại trừ khi di chuyển: `cache/`, `log/`, và `web/uploads/`.
+
+Vì lý do bảo mật, bạn có thể không muốn đưa lên "non-production"
+front controllers, như `frontend_dev.php` và `frontend_cache.php` scripts.
+
+### Deploying Strategies
+
+Trong mục này, chúng tôi giả sử rằng bạn có toàn quyền quản lý production
+server(s). Nếu bạn chỉ có quyền truy cập server thông qua tài khoản FTP, thì chỉ có một giải pháp
+deployment là đưa tất cả các file lên mỗi khi bạn deploy.
+
+Cách đơn giản nhất để deploy website của bạn là sử dụng lệnh có sẵn `project:deploy`. Nó sử dụng `SSH` và `rsync` để kết nối và chuyển những file từ máy tính đến nơi khác.
+
+Servers trong lệnh `project:deploy` được cấu hình trong file cấu hình
+`config/properties.ini`:
+
+    [ini]
+    # config/properties.ini
+    [production]
+      host=www.jobeet.org
+      port=22
+      user=jobeet
+      dir=/var/www/jobeet/
+      type=rsync
+      pass=
+
+Để deploy cho `production` server vừa mới cấu hình, sử dụng lệnh `project:deploy`:
+
+    $ php symfony project:deploy production
+
+>**NOTE**
+>Trước khi chạy lệnh `project:deploy` lần đầu, bạn cần kết nối
+>tới server để thêm key trong hosts file đã biết.
+
+Nếu bạn chạy lệnh trên, symfony sẽ chỉ giả lập việc vận chuyển. Để thực sự
+deploy website, thêm option `--go`:
+
+    $ php symfony project:deploy production --go
+
+>**NOTE**
+>Mặc dù bạn có thể cung cấp SSH password trong file `properties.ini`, nhưng
+>tốt hơn nên cấu hình server của bạn với một SSH key để cho phép kết nối không
+>dùng password.
+
+Mặc định, symfony sẽ không chuyển các thư mục chúng ta đã nói phần trước, và không chuyển `dev` front controller script. Đó là do lệnh `project:deploy` loại trừ những files và thư mục được cấu hình trong file `config/rsync_exclude.txt`:
+
+    # config/rsync_exclude.txt
+    .svn
+    /web/uploads/*
+    /cache/*
+    /log/*
+    /web/*_dev.php
+
+Với Jobeet, chúng ta cần thêm file `frontend_cache.php`:
+
+    # config/rsync_exclude.txt
+    .svn
+    /web/uploads/*
+    /cache/*
+    /log/*
+    /web/*_dev.php
+    /web/frontend_cache.php
+
+>**TIP**
+>Bạn cũng có thể tạo file `config/rsync_include.txt` để bắt buộc việc chuyển file hoặc thư mục
+>nào đó.
+
+Mặc dù lệnh `project:deploy` rất uyển chuyển, nhưng có thể bạn vẫn muốn sửa nó. Do deploy có thể khác nhau tùy vào cấu hình của server và topology, nên bạn có thể cần extend task mặc định.
+
+Mỗi khi bạn deploy một website thành production, đừng quên xóa
+cache cấu hình trên production server:
+
+    $ php symfony cc --type=config
+
+Nếu bạn sửa một vài route, bạn cần xóa cache routing:
+
+    $ php symfony cc --type=routing
+
+>**NOTE**
+>Xóa phần cache được chọn cho phép giữ lại các phần cache khác, như là
+>template cache.
+
+Hẹn gặp lại ngày mai
+--------------------
+
+Deploy một dự án là bước cuối cùng trong vòng đời phát triển của một dự án symfony. Điều đó không có nghĩa là bạn đã xong. Bạn sẽ còn phải sửa lỗi và muốn thêm tính năng mới. Nhờ cấu trúc của
+symfony, việc nâng cấp website của bạn trở nên đơn giản, nhanh chóng và an toàn.
+
+Ngày mai là ngày cuối cùng của Jobeet tutorial. Đó là thời gian để nhìn lại những gì chúng ta đã học được trong suốt 23 ngày qua.
+
+__ORM__
