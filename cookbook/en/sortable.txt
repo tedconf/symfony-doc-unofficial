@@ -66,7 +66,7 @@ These methods will be of great use for both sorting interfaces. If you need more
 There are two more method that needs to be added to the `lib/model/Item.php` class. They won't be needed here, but you will probably need them in a real world application, where you will also add and delete items to your table:
 
     [php]
-    public function save($con = null)
+    public function save(PropelPDO $con = null)
     {
       // New records need to be initialized with rank = maxRank +1
       if(!$this->getId())
@@ -74,7 +74,7 @@ There are two more method that needs to be added to the `lib/model/Item.php` cla
         $con = Propel::getConnection(ItemPeer::DATABASE_NAME);
         try
         {
-          $con->begin();
+          $con->beginTransaction();
        
           $this->setRank(ItemPeer::getMaxRank()+1);
           parent::save();
@@ -93,12 +93,12 @@ There are two more method that needs to be added to the `lib/model/Item.php` cla
       }
     } 
   
-    public function delete($con = null)
+    public function delete(PropelPDO $con = null)
     {  
       $con = Propel::getConnection(PagePeer::DATABASE_NAME);
       try
       {
-        $con->begin();
+        $con->beginTransaction();
   
         // decrease all the ranks of the page records of the same category with higher rank 
         $sql = 'UPDATE '.ItemPeer::TABLE_NAME.' SET '.ItemPeer::RANK.' = '.ItemPeer::RANK.' - 1 WHERE '.ItemPeer::RANK.' > '.$this->getRank();
@@ -176,7 +176,7 @@ The two actions have a very similar logic, and if you want to keep [D.R.Y.](http
       $con = Propel::getConnection(ItemPeer::DATABASE_NAME);
       try
       {
-        $con->begin();
+        $con->beginTransaction();
 
         $rank = $this->getRank();  
         $this->setRank($item->getRank());
@@ -287,7 +287,7 @@ The ability to reorder the whole list is part of the model, that's why it is imp
       $con = Propel::getConnection(self::DATABASE_NAME);
       try 
       {
-        $con->begin();
+        $con->beginTransaction();
 
         foreach ($order as $rank => $id) 
         {
