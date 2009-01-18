@@ -1,17 +1,17 @@
 Comment paginer une liste
-======================
+=========================
 
 Apperçu général
---------
+---------------
 
 Symfony fournit un composant de pagination : l'objet `sfPropelPager`. Il est capable de séparer une liste de résultats issue d'un objet `Criteria` en un groupe de page à afficher, proposant les résultat par l'intermédiaire de méthodes.
 
 L'objet `sfPropelPager`
---------------------------
+-----------------------
 
-La classe `sfPropelPager` utilise la couche d'abstraction de Propel, décrite au chapitre [Modèle](http://www.symfony-project.com/book/1_2/08-Inside-the-Model-Layer).
+La classe `sfPropelPager` utilise la couche d'abstraction de Propel, décrite au chapitre [Modèle](http://www.symfony-project.com/book/1_3/08-Inside-the-Model-Layer).
 
-The chapitre couvrira l'utilisation des méthodes de `sfPropelPager` à travers un example simple : Afficher une liste d'articles par bloc de 10. On suppose que l'objet `Article` a bien les méthodes d'accès `getPublished()`, `getTitle()`, `getOverview()` et `getContent()`.
+Le chapitre couvrira l'utilisation des méthodes de `sfPropelPager` à travers un example simple : Afficher une liste d'articles par bloc de 10. On suppose que l'objet `Article` a bien les méthodes d'accès `getPublished()`, `getTitle()`, `getOverview()` et `getContent()`.
 
 Si vous ne voulez que les résultats non-paginés d'une requête générée par Criteria selectionnant que les articles publiés, vous utilisez quelque chose du genre :
 
@@ -31,7 +31,7 @@ Si vous ne voulez que les résultats non-paginés d'une requête générée par 
 
 La variable `$articles`, disponible dans le template, contiendrait alors un tablea contenant tous les objets résultant de la requête. 
 
-Afin d'optenir unen liste paginée, une approche quelque peu différente est nécéssaire. En effet, les résultats doivent être stocké non plus dans un tablea, mais dans un objet `sfPropelPager`.
+Afin d'optenir unen liste paginée, une approche quelque peu différente est nécéssaire. En effet, les résultats doivent être stockés non plus dans un tableau, mais dans un objet `sfPropelPager`.
 
     [php]
     class articleActions extends sfActions
@@ -75,7 +75,7 @@ Pour afficher les articles dans une page demandée, utilisez la méthode `getRes
     <?php endforeach ?>
 
 Naviguer de pages en pages
------------------------
+--------------------------
 
 Grâce à la méthode `haveToPaginate()`, l'objet de pagination sait si le nombre de résultats est supérieur au maximum affichable.
 
@@ -106,9 +106,9 @@ Une fois l'article affiché, un curseur est nécéssaire afin d'autoriser la nav
 Naviguer entre les objets
 -------------------------
 
-Navigure page par page dans une liste est simple, mais l'utilisateur voudrait surement ne pas avoir à retourner dans la liste pour naviguer objet par objet. L'attribut `curseur` de l'objet `sfPropelPager` peut garder un indice de l'objet courant.
+Naviguer page par page dans une liste est simple, mais l'utilisateur voudrait sûrement ne pas avoir à retourner dans la liste pour naviguer objet par objet. L'attribut `curseur` de l'objet `sfPropelPager` peut garder un indice de l'objet courant.
 
-Cela permet un parcours article par article dans le template `readSuccess.php`. Modifions d'abbord un peu de code dans le template `listSuccess.php`:
+Cela permet un parcours article par article dans le template `readSuccess.php`. Modifions d'abord un peu de code dans le template `listSuccess.php`:
 
     [php]
     <?php $cursor = $pager->getFirstIndice(); foreach ($pager->getResults() as $article): ?>
@@ -182,7 +182,7 @@ Voici une suggestion pour le template `readSuccess.php`:
     &gt; <?php echo link_to_if($next_article, $next_article->getTitle(), 'article/read?id='.$next_article->getId()) ?>
 
 Changer l'order du tri
------------------------
+----------------------
 
 Comme l'objet `sfPropelPager` est basé sur un objet `Criteria`, on peut facilement changer l'ordre du tri en appliquant un tri au critère avant de l'assigner à l'objet de pagination.
 
@@ -219,7 +219,7 @@ Ajoutez le code suivant au template `listSuccess.php`:
     Sort by : <?php echo link_to('Title', 'article/list?sort=title') ?> - <?php echo link_to('Id', 'article/list?sort=Id') ?>
 
 Modifier le nombre de résultats par page
----------------------------------------
+----------------------------------------
 
 La méthode `setMaxPerPage($max)` modifie le nombre de résultats affichable dans une page, sans recharger le paginateur (pas besoin de rapeller la méthode `init()`). Si le paramètre fourni est `0`, le paginateur affichera tous les résultats dans la même page.
 
@@ -249,7 +249,7 @@ Vous pouvez donc ajouter au template `listSuccess.php` le code suivant:
     Display : <?php echo link_to('10', 'article/list?maxperpage=10') ?> - <?php echo link_to('20', 'article/list?maxperpage=20') ?> results per page
 
 Changer la méthode de sélection
---------------------------
+-------------------------------
 
 Si vous avez besoin d'optimiser la performance d'une action basée sur `sfPropelPager`, vous aurez surement besoin d'utiliser une méthode `doSelectJoinXXX()` au lieu d'un simple `doSelect()`. Cela peut être facilement fait grâce à la méthode `setPeerMethod()` de l'objet `sfPropelPager`.
 
@@ -262,9 +262,9 @@ Notez que le paginateur éxécute réellement la requête `doSelect()` à l'affi
     $pager->setPeerCountMethod('doCountJoinUser');
 
 Stocker des informations supplémentaires dans le paginateur
------------------------------------------
+-----------------------------------------------------------
 
-Vous aurez sans doutes besoin de garder un certain context dans l'objet de pagination. Pour ce besoin, la classe `sfPropelPager` peut gérer des *paramètres* de manière habituelle:
+Vous aurez sans doute besoin de garder un certain context dans l'objet de pagination. Pour ce besoin, la classe `sfPropelPager` peut gérer des *paramètres* de manière habituelle:
 
     [php]
     $pager->setParameter('foo', 'bar');
@@ -279,4 +279,4 @@ Vous aurez sans doutes besoin de garder un certain context dans l'objet de pagin
 
 Ces paramètres ne sont jamais utilisé directement par le paginateur.
 
-Pour plus d'informations sur les paramètres, référez vous au [Chapitre 2](http://www.symfony-project.com/book/1_2/02-Exploring-Symfony-s-Code#Parameter%20Holders).
+Pour plus d'informations sur les paramètres, référez vous au [Chapitre 2](http://www.symfony-project.com/book/1_1/02-Exploring-Symfony-s-Code#Parameter%20Holders).
