@@ -334,8 +334,14 @@ change anything for the current user. In such a case, no CSRF protection is
 needed, and we can remove the CSRF token altogether:
 
     [php]
-    // plugins/sfJobeetJob/lib/form/JobeetJobForm.class.php
+<propel>
+    // plugins/sfJobeetPlugin/lib/form/JobeetJobForm.class.php
     class JobeetJobForm extends BaseJobeetJobForm
+</propel>
+<doctrine>
+    // plugins/sfJobeetPlugin/lib/form/doctrine/PluginJobeetJobForm.class.php
+    abstract PluginJobeetJobForm extends BaseJobeetJobForm
+</doctrine>
     {
 <propel>
       public function __construct(BaseObject $object = null, $options = array(), $CSRFSecret = null)
@@ -484,7 +490,12 @@ Let's test the job creation page:
       get('/fr/')->
       with('view_cache')->isCached(true, false)->
 
+<propel>
       createJob(array('category_id' => $browser->getProgrammingCategory()->getId()), true)->
+</propel>
+<doctrine>
+      createJob(array('category_id' => Doctrine::getTable('CategoryTranslation')->findOneBySlug('programming')->getId()), true)->
+</doctrine>
 
       get('/fr/')->
       with('view_cache')->isCached(true, false)->
