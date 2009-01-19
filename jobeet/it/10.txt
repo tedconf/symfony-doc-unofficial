@@ -514,8 +514,7 @@ possiamo semplificare il codice per i metodi di gestione del form:
     {
       $request->checkCSRFProtection();
 
-      $job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
-      $this->forward404Unless($job, sprintf('Object jobeet_job does not exist (%s).', $request->getParameter('id')));
+      $job = $this->getRoute()->getObject();
       $job->delete();
 
       $this->redirect('job/index');
@@ -611,7 +610,12 @@ sia salvato:
         $this->setToken(sha1($this->getEmail().rand(11111, 99999)));
       }
 
+<propel>
       return parent::save($con);
+</propel>
+<doctrine>
+      return parent::save($conn);
+</doctrine>
     }
 
 Possiamo ora rimuovere il campo `token` dal form:

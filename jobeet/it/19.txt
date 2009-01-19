@@ -4,8 +4,8 @@ Giorno 19: Internazionalizzazione e Localizzazione
 Ieri abbiamo finito il motore di ricerca, rendendolo più divertente
 con l'aggiunta di alcune buone cose in AJAX.
 
-Oggi parleremo di internazionalizzazione (abbreviata in i18n) e di
-localizzazione (abbreviata in l10n) per Jobeet.
+Oggi parleremo di **internazionalizzazione** (abbreviata in i18n) e di
+**localizzazione** (abbreviata in l10n) per Jobeet.
 
 Da [Wikipedia](http://it.wikipedia.org/wiki/Internazionalizzazione_e_localizzazione):
 
@@ -105,9 +105,9 @@ all'inizio di `url`. Per le rotte di insieme, aggiungiamo un'opzione
     affiliate:
       class: sfPropelRouteCollection
       options:
-        model:          JobeetJob
+        model:          JobeetAffiliate
         actions:        [new, create]
-        object_actions: { wait: GET }
+        object_actions: { wait: get }
         prefix_path:    /:sf_culture/affiliate
 
     category:
@@ -119,17 +119,15 @@ all'inizio di `url`. Per le rotte di insieme, aggiungiamo un'opzione
         sf_format: (?:html|atom)
 
     job_search:
-      url:   /:sf_culture/search.:sf_format
-      param: { module: job, action: search, sf_format: html }
-      requirements:
-        sf_format: (?:html|js)
+      url:   /:sf_culture/search
+      param: { module: job, action: search }
 
     job:
       class: sfPropelRouteCollection
       options:
         model:          JobeetJob
         column:         token
-        object_actions: { publish: PUT, extend: PUT }
+        object_actions: { publish: put, extend: put }
         prefix_path:    /:sf_culture/job
       requirements:
         token: \w+
@@ -138,15 +136,21 @@ all'inizio di `url`. Per le rotte di insieme, aggiungiamo un'opzione
       url:     /:sf_culture/job/:company_slug/:location_slug/:id/:position_slug
       class:   sfPropelRoute
 <propel>
-      options: { model: JobeetJob, type: object, method_for_criteria: doSelectActive }
+      options:
+        model: JobeetJob
+        type: object
+        method_for_criteria: doSelectActive
 </propel>
 <doctrine>
-      options: { model: JobeetJob, type: object, method_for_query: retrieveActiveJob }
+      options:
+        model: JobeetJob
+        type: object
+        method_for_query: retrieveActiveJob
 </doctrine>
       param:   { module: job, action: show }
       requirements:
         id:        \d+
-        sf_method: GET
+        sf_method: get
 
 Quando la variabile `sf_culture` è usata in una rotta, symfony userà
 automaticamente il suo valore per cambiare la cultura dell'utente.
@@ -362,7 +366,8 @@ cambierà realmente la lingua dell'utente:
     $ php symfony generate:module frontend language
 
 I component vanno definiti nel file `actions/components.class.php`.
-Creaiamo ora questo file:
+
+Creiamo ora questo file:
 
     [php]
     // apps/frontend/modules/language/actions/components.class.php
@@ -499,7 +504,7 @@ Ecco come usare l'helper `__()` per il fotter di Jobeet:
             <a href=""><?php echo __('About Jobeet') ?></a>
           </li>
           <li class="feed">
-            <?php echo link_to(__('Feed'), '@job?sf_format=atom') ?>
+            <?php echo link_to(__('Full feed'), '@job?sf_format=atom') ?>
           </li>
           <li>
             <a href=""><?php echo __('Jobeet API') ?></a>
@@ -725,7 +730,7 @@ La traduzione della stringa è simile a quella di altre stringhe:
     [xml]
     <trans-unit id="6">
       <source>[0]No job in this category|[1]One job in this category|(1,+Inf]%count% jobs in this category</source>
-      <target>[0]Aucune annonce dans cette categorie|[1]Une annonce dans cette categorie|(1,+Inf]%count% annonces dans cette categorie</target>
+      <target>[0]Aucune annonce dans cette catégorie|[1]Une annonce dans cette catégorie|(1,+Inf]%count% annonces dans cette catégorie</target>
     </trans-unit>
 
 Ora che sapete come internazionalizzare ogni tipo di stringa, aggiungete
@@ -766,8 +771,10 @@ Aggiorniamo di conseguenza il file `schema.yml`:
       id:           ~
 
     jobeet_category_i18n:
-      id:           { type: integer, required: true, primaryKey: true, foreignTable: jobeet_category, foreignReference: id }
-      culture:      { isCulture: true, type: varchar, size: 7, required: true, primaryKey: true }
+      id:           { type: integer, required: true, primaryKey: true, 
+      ➥ foreignTable: jobeet_category, foreignReference: id }
+      culture:      { isCulture: true, type: varchar, size: 7,
+      ➥ required: true, primaryKey: true }
       name:         { type: varchar(255), required: true }
       slug:         { type: varchar(255), required: true }
 
@@ -904,18 +911,18 @@ in base allo slug inglese nella tabella `JobeetCategoryTranslation`.
 
 Ricostruiamo il modello:
 
-    $ php symfony propel:build-all-reload --no-confirmation
+    $ php symfony propel:build-all --no-confirmation
     $ php symfony cc
 
 </doctrine>
 
 >**TIP**
 <propel>
->Siccome `propel:build-all-load` rimuove tutte le tabelle e i dati dal
+>Siccome `propel:build-all` rimuove tutte le tabelle e i dati dal
 >database,
 </propel>
 <doctrine>
->Siccome `doctrine:build-all-reload` rimuove tutte le tabelle e i dati dal
+>Siccome `doctrine:build-all` rimuove tutte le tabelle e i dati dal
 >database,
 </doctrine>
 >non dimenticare di ricreare un utente per accedere al backend con il
@@ -1007,6 +1014,9 @@ che si occuperà di recuperare l'oggetto:
 
         return self::doSelectOne($criteria);
       }
+      
+      // ...
+    }
 </propel>
 <doctrine>
 Avendo già sovrascritto `findOneBySlug()`, rifattorizziamo ancora un po', in
@@ -1048,6 +1058,11 @@ usare il metodo `doSelectForSlug()` per recuperare l'oggetto:
       options: { model: JobeetCategory, type: object, method: doSelectForSlug }
       requirements:
         sf_format: (?:html|atom)
+
+Occorre ricaricare le fixture per rigenerare gli slug corretti per le
+categorie:
+
+    $ php symfony propel:data-load
 
 Ora la rotta `category` è internazionalizzata e l'URL per una categoria
 include lo slug tradotto della categoria:

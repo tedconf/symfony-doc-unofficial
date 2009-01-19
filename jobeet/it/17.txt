@@ -59,9 +59,13 @@ Zend Lucene fornisce due metodi per recuperare un indice dipendentemente dalla s
 esistenza. Creiamo un helper nella classe `JobeetJobPeer` che ritorna un indice
 esistente o ne crea uno nuovo per noi:
 
-<propel>
     [php]
+<propel>
     // lib/model/JobeetJobPeer.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJobTable.class.php
+</doctrine>
     static public function getLuceneIndex()
     {
       ProjectConfiguration::registerZend();
@@ -80,36 +84,13 @@ esistente o ne crea uno nuovo per noi:
     {
       return sfConfig::get('sf_data_dir').'/job.'.sfConfig::get('sf_environment').'.index';
     }
-</propel>
-<doctrine>
-    [php]
-    // lib/model/doctrine/JobeetJobTable.class.php
-    public function getLuceneIndex()
-    {
-      ProjectConfiguration::registerZend();
-
-      if (file_exists($index = $this->getLuceneIndexFile()))
-      {
-        return Zend_Search_Lucene::open($index);
-      }
-      else
-      {
-        return Zend_Search_Lucene::create($index);
-      }
-    }
-
-    public function getLuceneIndexFile()
-    {
-      return sfConfig::get('sf_data_dir').'/job.'.sfConfig::get('sf_environment').'.index';
-    }
-</doctrine>
-
-Ogni volta che un lavoro è creato, aggiornato o cancellato, anche l'indice deve
-venire aggiornato.
 
 ### Il metodo `save()`
 
-Modifca `JobeetJob` per modficare l'indice quando un lavoro è salvato nel database:
+Ogni volta che un lavoro è creato, aggiornato o cancellato, anche l'indice deve
+essere aggiornato.
+
+Modifichiamo `JobeetJob` per aggiornare l'indice quando un lavoro è salvato nel database:
 
 <propel>
     [php]
@@ -535,12 +516,14 @@ con queste nuove caratteristiche:
       $this->logSection('lucene', 'Cleaned up and optimized the job index');
 
       // Remove stale jobs
+<propel>
       $nb = JobeetJobPeer::cleanup($options['days']);
 
-<propel>
       $this->logSection('propel', sprintf('Removed %d stale jobs', $nb));
 </propel>
 <doctrine>
+      $nb = Doctrine::getTable('JobeetJob')->cleanup($options['days']);
+
       $this->logSection('doctrine', sprintf('Removed %d stale jobs', $nb));
 </doctrine>
     }

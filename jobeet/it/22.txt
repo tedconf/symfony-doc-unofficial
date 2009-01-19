@@ -1,15 +1,13 @@
 Giorno 22: La Cache
 ===================
 
-Il tutorial di oggi dà l'inizio all'ultima settimana di Jobeet. Parleremo di un
-argomento molto interessante: caching.
+Oggi parleremo della cache. Il framework symfony ha molte strategie di cache
+da offrire. Per esempio i file di configurazione YAML sono prima convertiti
+in PHP e poi memorizzati in cache sul filesystem. Abbiamo visto inoltre che
+i moduli generati dall'admin generator sono salvati in cache per avere
+migliori performance.
 
-Il framework symfony ha molte strategie di cache da offrire. Per esempio i file
-di configurazione YAML sono prima convertiti in PHP e poi memorizzati in cache 
-sul filesystem. Abbiamo visto inoltre che i moduli generati dall'admin generator
-sono salvati in cache per avere migliori performance.
-
-Oggi parleremo di un altro tipo di cache: la cache HTML. Per migliorare le
+Ma oggi parleremo di un altro tipo di cache: la cache HTML. Per migliorare le
 performance del vostro sito web potete inserire in cache tutte le pagine HTML o
 solo parte di esse.
 
@@ -157,9 +155,9 @@ Create un file `cache.yml` per il modulo `sfJobeetJob`:
       with_layout: true
 
 >**TIP**
->Il file do configurazione `cache.yml` ha le stesse proprietà di altri file di
->configurazione come `view.yml`. Significa, per esempio, che potete abilitare la
->cache per tutte le action di un modulo utilizzando la chiave speciale `all`.
+>Il file di configurazione `cache.yml` ha le stesse proprietà di ogni altro file di
+>configurazione, come `view.yml`. Significa, per esempio, che potete abilitare la
+>cache per tutte le azioni di un modulo utilizzando la chiave speciale `all`.
 
 Se aggiornate la pagina nel browser, vedrete che symfony ha decorato la pagina
 con un box che indica i contenuti inseriti in cache:
@@ -209,8 +207,8 @@ La pagina per l'inserimento di un offerta di lavoro può essere inserita in cach
       with_layout: true
 
 Dato che le due pagine possono essere inserite in cache con il layout abbiamo
-creato una sezione `all` che definisce la configurazione di default per il 
-modulo `sfJobeetJob`.
+creato una sezione `all` che definisce la configurazione di default per
+tutte le azioni del modulo `sfJobeetJob`.
 
 Pulire la Cache
 ---------------
@@ -235,15 +233,25 @@ la cache aggiungendo ogni query string nell'URL o utilizzando il pulsante
 Cache dell'azione
 -----------------
 
-A volte non potete inserire in cache una pagina intera, ma l'action template
-può comunque essere inserita. Guardiamola diversamente, potete inserire tutto
-in cache tranne che il layout. Cambiate la configurazione della cache per 
-l'action `index` come segue:
+A volte non potete inserire in cache una pagina intera, ma il template
+dell'azione può comunque essere inserito. Guardiamola diversamente, potete
+inserire tutto in cache tranne che il layout.
+
+Per l'applicazione Jobeet, non possiamo mettere in cache l'intera pagina,
+perché c'è la barra della cronologia degli ultimi annunci consultati.
+
+Cambiamo la configurazione della cache per il modulo `job_module` di
+conseguenza:
 
     [yml]
     # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
+    new:
+      enabled:     on
+
     index:
       enabled:     on
+
+    all:
       with_layout: false
 
 Cambiando l'impostazione di `with_layout` a `false` avrete disabilitato la cache 
@@ -260,17 +268,17 @@ Ricaricate la pagina nel browser per vederne le differenze:
 Anche se il flusso della richiesta è molto simile nel diagramma semplificato, 
 usare la cache senza il layout è molto più dispendioso da lato delle risorse.
 
-![Action Cache Flow](http://www.symfony-project.org/images/jobeet/1_2/22/flow_cache_action.png)
+![Flusso della cache dell'azione](http://www.symfony-project.org/images/jobeet/1_2/22/flow_cache_action.png)
 
 Cache di Partial e Component
 ----------------------------
 
 Per i siti web altamente dinamici a volte è impossibile inserire in cache l'intero
-action template. Per questi casi avete bisogno di configurare la cache ad un
-livello di granularità maggiore. Fortunatamente partial e component possono essere
-inseriti in cache.
+template dell'azione. Per questi casi avete bisogno di configurare la cache ad un
+livello di granularità maggiore. Fortunatamente anche partial e component possono
+essere inseriti in cache.
 
-![Partial Cache](http://www.symfony-project.org/images/jobeet/1_2/22/partial_cache.png)
+![Cache di partial](http://www.symfony-project.org/images/jobeet/1_2/22/partial_cache.png)
 
 Inseriamo in cache il component `language` creando un file `cache.yml` per il 
 modulo `sfJobeetLanguage`:
@@ -308,12 +316,6 @@ per questo tipo di cache visto che non nè avrebbe alcun senso:
 >       enabled:    on
 >       contextual: true
 
--
-
->**NOTE**
->Si può ora rimettere l'impostazione `with_layout` a `true` se questo ha
->più senso per il sito Jobeet.
-
 Form in cache
 -------------
 
@@ -344,8 +346,8 @@ questo caso, non serve nessuna protezione CSRF, quindi possiamo
 rimuovere il token CSRF:
 
     [php]
-    // plugins/sfJobeetJob/lib/form/PluginJobeetJobForm.class.php
-    abstract class PluginJobeetJobForm extends BaseJobeetJobForm
+     // plugins/sfJobeetJob/lib/form/JobeetJobForm.class.php
+    class JobeetJobForm extends BaseJobeetJobForm
     {
       public function __construct(BaseObject $object = null, $options = array(), $CSRFSecret = null)
       {
@@ -455,6 +457,10 @@ abbiamo inserito la rimozione nella cache in un blocco `if`.
 >     [php]
 >     $user = sfContext::getInstance()->getUser();
 >
+>Ogni volta che volete usare `sfContext::getInstance()` in una classe,
+>pensateci due volte, perché introduce un forte accoppiamento. Quasi
+>sempre è meglio passare l'oggetto necessario come parametro.
+>
 >Si può anche usare `sfContext` come un registro ed aggiungere i propri
 >oggetti usando il metodo `set()`. Accetta come parametro un nome
 >ed un oggetto, mentre il metodo `get()` può essere usato
@@ -466,20 +472,6 @@ abbiamo inserito la rimozione nella cache in un blocco `if`.
 
 Testare la cache
 ----------------
-
-Poiché abbiamo fatti molti cambiamenti alla configurazione della cache,
-ecco quello che serve per il modulo `job`:
-
-    [yml]
-    # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
-    index:
-      enabled:     on
-
-    new:
-      enabled:     on
-
-    all:
-      with_layout: true
 
 Prima di iniziare, occorre cambiare la configurazione per l'ambiente
 `test`, per abilitare la cache:
@@ -501,12 +493,12 @@ Testiamo la pagina di creazione di un lavoro:
       info('  7 - Job creation page')->
 
       get('/fr/')->
-      with('view_cache')->isCached(true, true)->
+      with('view_cache')->isCached(true, false)->
 
       createJob(array('category_id' => $browser->getProgrammingCategory()->getId()), true)->
 
       get('/fr/')->
-      with('view_cache')->isCached(true, true)->
+      with('view_cache')->isCached(true, false)->
       with('response')->checkElement('.category_programming .more_jobs', '/29/')
     ;
 

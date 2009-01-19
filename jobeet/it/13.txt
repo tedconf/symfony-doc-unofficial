@@ -49,9 +49,9 @@ Un flash è impostato usando il metodo `setFlash()` di `sfUser`:
       $this->redirect($this->generateUrl('job_show_user', $job));
     }
 
-Il primo argomento è l'identificatore del flash mentre il secondo è il
-messaggio da mostrare. Potete definire tutti i flash che volete ma `notice`
-e `error` sono due dei più comuni (sono usati dall'admin generator).
+Il primo parametro è l'identificatore del flash, mentre il secondo è il
+messaggio da mostrare. Potete definire tutti i flash che volete, ma `notice`
+e `error` sono due dei più comuni (sono usati parecchio dall'admin generator).
 
 È lasciato allo sviluppatore includere i messaggi flash nei template. Per
 Jobeet vengono visualizzati dal `layout.php`:
@@ -237,35 +237,12 @@ Il metodo `getJobHistory()` usa il metodo di Propel `retrieveByPKs()` per
 recuperare diversi oggetti `JobeetJob` in una sola chiamata.
 </propel>
 
-Per renderlo migliore, aggiungiamo il seguente codice alla fine del
-foglio di stile `main.css`:
-
-    [css]
-    /* web/css/main.css */
-    #job_history
-    {
-      padding: 7px;
-      background: #eee;
-      font-size: 80%;
-    }
-
-    #job_history ul
-    {
-      display: inline;
-    }
-
-    #job_history li
-    {
-      margin-right: 10px;
-      display: inline;
-    }
-
-![History dei lavori](http://www.symfony-project.org/images/jobeet/1_2/13/job_history.png)
+![Cronologia dei lavori](http://www.symfony-project.org/images/jobeet/1_2/13/job_history.png)
 
 ### `sfParameterHolder`
 
 Per completare le API della history dei lavori, aggiungiamo un metodo per
-resettare la history:
+azzerare la cronologia:
 
     [php]
     // apps/frontend/lib/myUser.class.php
@@ -329,8 +306,8 @@ sicurezza, symfony rimanda la richiesta all'azione `login` configurata in
         login_action: login
 
 >**NOTE**
->Non è possibile mettere in sicurezza l'azione di login. Questo per evitare
->una ricorsione.
+>Non è possibile mettere in sicurezza l'azione di login, per evitare
+>una ricorsione infinita.
 
 -
 
@@ -497,7 +474,7 @@ diverse nuove classi del modello per gestire utenti, gruppi, e permessi, è
 necessario ricostruire il modello:
 
 <propel>
-    $ php symfony propel:build-all-load
+    $ php symfony propel:build-all-load --no-confirmation
 </propel>
 <doctrine>
     $ php symfony doctrine:build-all-reload
@@ -512,7 +489,7 @@ necessario ricostruire il modello:
 </doctrine>
 >prima di ricrearle. Per evitarlo, si può costruire il modello, i form, ed i
 >filtri, e poi creare le nuove tabelle eseguendo le istruzioni SQL generate
->e memorizzate in `data/sql`.
+>e memorizzate in `data/sql/`.
 
 Come sempre, quando nuove classi sono create, occorre pulire la cache di symfony:
 
@@ -534,11 +511,17 @@ la classe base di `myUser` in `sfGuardSecurityUser`:
     }
 
 <propel>
-`sfGuardPlugin` fornisce un'azione di default per autenticare gli utenti:
+`sfGuardPlugin` fornisce un'azione `signin` nel modulo `sfGuardAuth`
+per autenticare gli utenti:
 </propel>
 <doctrine>
-`sfDoctrineGuardPlugin` fornisce un'azione di default per autenticare gli utenti:
+`sfDoctrineGuardPlugin` fornisce un'azione `signin` nel modulo `sfGuardAuth`
+per autenticare gli utenti:
 </doctrine>
+
+Modifichiamo il file `settings.yml` per cambiare l'azione di default
+usata per la pagina di login:
+
 
     [yml]
     // apps/backend/config/settings.yml
@@ -555,14 +538,14 @@ la classe base di `myUser` in `sfGuardSecurityUser`:
         # ...
 
 Poiché i plugin sono condivisi da tutte le applicazioni di un progetto, occorre
-abilitare esplicitamente i moduli che si vogliono usare, usando
-l'impostazione `enabled_modules`.
+abilitare esplicitamente i moduli che si vogliono usare, aggiungendoli
+nell'impostazione `enabled_modules`.
 
 ![login con sfGuardPlugin](http://www.symfony-project.org/images/jobeet/1_2/13/sf_guard_login.png)
 
 L'ultimo passo è creare un utente amministratore:
 
-    $ php symfony guard:create-user fabien $ecretPa$$
+    $ php symfony guard:create-user fabien SecretPaSS
     $ php symfony guard:promote fabien
 
 >**TIP**
@@ -585,7 +568,7 @@ Quando l'utente non è autenticato, la barra del menù va nascosta:
       </div>
     <?php endif; ?>
 
-Quando l'utente è autenticato, nel menù va aggiunto un link per uscire:
+E quando l'utente è autenticato, nel menù va aggiunto un link per uscire:
 
     [php]
     // apps/backend/templates/layout.php

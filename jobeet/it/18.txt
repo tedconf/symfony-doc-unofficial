@@ -42,6 +42,11 @@ Avremmo potuto includere jQuery direttamente con un tag `<script>`, ma
 usando l'helper `use_javascript()` assicura che lo stesso file JavaScript
 non sia incluso due volte.
 
+>**NOTE**
+>Per
+>[motivi di performance](http://developer.yahoo.com/performance/rules.html#js_bottom),
+>si potrebbe voler spostare la chiamata all'helper `include_javascripts()`
+>subito prima della chiusura del tag `</body>`.
 
 Aggiungere comportamenti
 ------------------------
@@ -49,7 +54,7 @@ Aggiungere comportamenti
 Implementare una ricerca dal vivo significa che ogni volta che un utente
 scrive una lettera nel riquadro di ricerca, bisogna attivare una chiamata
 al server; il server quindi restituirà le informazioni richieste per
-aggiornare le parti della pagina, senza aggiornare la pagina intera.
+aggiornare alcune parti della pagina, senza aggiornare la pagina intera.
 
 Invece di aggiungere i comportamenti usando gli attributi HTML `on*()`,
 il principio essenziale di jQuery è di aggiungere i comportamenti al DOM
@@ -60,7 +65,7 @@ form funziona come prima.
 Il primo passo è intercettare la pressione di un tasto da parte dell'utente
 nel riquadro di ricerca:
 
-    [js]
+    [php]
     $('#search_keywords').keyup(function(key) {
       if (this.value.length >= 3 || this.value == '')
       {
@@ -84,7 +89,7 @@ un elemento DOM:
       if (this.value.length >= 3 || this.value == '')
       {
         $('#jobs').load(
-          '<?php echo url_for('@job_search') ?>', { query: this.value + '*' } }
+          $(this).parents('form').attr('action'), { query: this.value + '*' } }
         );
       }
     });
@@ -93,7 +98,8 @@ Per gestire le chiamate AJAX, viene richiamata la stessa azione della chiamata
 "normale". Le modifiche necessarie nell'azione saranno fatte nella prossima
 sezione.
 
-Ma prima rimuoviamo il bottone di ricerca, se JavaScript è abilitato:
+Infine, ma non meno importante, se JavaScript è abilitato, rimuoviamo
+il bottone di ricerca
 
     [php]
     $('.search input[type="submit"]').hide();
@@ -111,7 +117,7 @@ chiamata AJAX. Aggiorniamo il layout per aggiungere l'immagine di
 caricamento e nasconderla di default:
 
     [php]
-    // apps/frontend/templates/layout.php
+    <!-- apps/frontend/templates/layout.php -->
     <div class="search">
       <h2>Ask for a job</h2>
       <form action="<?php echo url_for('@job_search') ?>" method="get">
@@ -124,36 +130,62 @@ caricamento e nasconderla di default:
       </form>
     </div>
 
-Si può scaricare l'immagine dal 
-[repository di oggi](http://svn.jobeet.org/tags/release_day_18/web/images/loader.gif).
-
 >**NOTE**
->L'icona è ottimizzata per il layout attuale di Jobeet. Se se ne vuole creare
->uno personalizzato, si possono trovare molti servizi online gratuiti come
->http://www.ajaxload.info/.
+>L'icona di default è ottimizzata per il layout attuale di Jobeet. Se se ne
+>vuole creare uno personalizzato, si possono trovare molti servizi online
+>gratuiti come http://www.ajaxload.info/.
 
-Ora che tutti pezzi sono a posto, apriamo il file del layout ed aggiungiamo
-il seguente codice JavaScript nella sezione `<head>`:
+Ora che tutti pezzi sono a posto, creiamo un file `search.js` che contenga
+il codice JavaScript scritto finora:
 
     [php]
-    // apps/frontend/templates/layout.php
-    <script type="text/javascript">
-      $(document).ready(function() {
-        $('.search input[type="submit"]').hide();
+    # web/js/search.js
+    $(document).ready(function()
+    {
+      $('.search input[type="submit"]').hide();
 
-        $('#search_keywords').keyup(function(key) {
-          if (this.value.length >= 3 || this.value == '')
-          {
-            $('#loader').show();
-            $('#jobs').load(
-              '<?php echo url_for('@job_search') ?>',
-              { query: this.value + '*' },
-              function() { $('#loader').hide(); }
-            );
-          }
-        });
+      $('#search_keywords').keyup(function(key)
+      {
+        if (this.value.length >= 3 || this.value == '')
+        {
+          $('#loader').show();
+          $('#jobs').load(
+            $(this).parents('form').attr('action'),
+            { query: this.value + '*' },
+            function() { $('#loader').hide(); }
+          );
+        }
       });
-    </script>
+    });
+
+Occorre anche aggiornare il layout per includere questo nuovo file:
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <?php use_javascript('search.js') ?>
+
+>**SIDEBAR**
+>JavaScript come azione
+>
+>Sebbene il JavaScript che abbiamo scritto per il motore di ricerca sia
+>statico, a  volte occorre usare del codice PHP (ad esempio per
+>usare l'helper `url_for()`).
+>
+>JavaScript è solo un altro formato, come HTML, e come abbiamo visto
+>alcuni giorni fa, symfony rende la gestioone dei formati molto
+>semplice. Poiché il file JavaScript conterrà dei comportamenti per
+>una pagina, possiamo anche avere la stessa URL della pagina
+>per il file JavaScript, ma con `.js` finale. Ad esempio, se
+>volete creare un file per il comportamento del motore di
+>ricerca, potete modificare la rotta `job_search` come
+>segue e creare un template `searchSuccess.js.php`:
+>
+>     [yml]
+>     job_search:
+>       url:   /search.:sf_format
+>       param: { module: job, action: search, sf_format: html }
+>       requirements:
+>         sf_format: (?:html|js)
 
 AJAX in un'azione
 -----------------
@@ -238,7 +270,8 @@ una semplice stringa di testo.
     }
 
 >**TIP**
->Si può anche restituire un component usando il metodo `renderComponent()`.
+>Si può anche restituire un component in un'azione usando il metodo
+>`renderComponent()`.
 
 JavaScript come azione
 ----------------------

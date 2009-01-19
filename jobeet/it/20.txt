@@ -226,7 +226,7 @@ il file `schema.yml` e aggiungere la seguente configurazione:
       _attributes:      { package: plugins.sfJobeetPlugin.lib.model }
 
 Ora symfony genererà i suoi file dentro la cartella
-`plugins/sfJobeetPlugin/lib/model`. I costruttori dei form e dei filtri
+`plugins/sfJobeetPlugin/lib/model/`. I costruttori dei form e dei filtri
 terranno conto anche loro della configurazione quando generano dei file.
 
 Il task `propel:build-sql` genera un file SQL per creare le tabelle. Essendo che
@@ -283,13 +283,11 @@ per controllare che ogni cosa funzioni correttamente:
 
 ### I Controllori e le Viste
 
-Il prossimo passo logico è quello di spostare i moduli nel plugin:
+Il prossimo passo logico è quello di spostare i moduli nel plugin. Per
+evitare collisioni con il nome del modulo, è buona abitudine aggiungere
+un prefisso al nome del modulo plugin con il nome del plugin:
 
-    $ mv apps/frontend/modules plugins/sfJobeetPlugin/
-
-Per evitare collisioni con il nome del modulo, è buona abitudine aggiungere un prefisso
-al nome del modulo plugin con il nome del plugin:
-
+    $ mkdir plugins/sfJobeetPlugin/modules/
     $ mv apps/frontend/modules/affiliate plugins/sfJobeetPlugin/modules/sfJobeetAffiliate
     $ mv apps/frontend/modules/api plugins/sfJobeetPlugin/modules/sfJobeetApi
     $ mv apps/frontend/modules/category plugins/sfJobeetPlugin/modules/sfJobeetCategory
@@ -297,19 +295,17 @@ al nome del modulo plugin con il nome del plugin:
     $ mv apps/frontend/modules/language plugins/sfJobeetPlugin/modules/sfJobeetLanguage
 
 Per ciascun modulo, è necessario cambiare il nome delle classi in tutti
-i file `actions.class.php` e `components.class.php`.
+i file `actions.class.php` e `components.class.php` (ad esempio, la classe
+`affiliateActions` deve essere rinominata in `sfJobeetAffiliateActions`).
 
 Le chiamate a `include_partial()` e `include_component()` devono essere cambiate
 nei seguenti template:
 
-  * `sfJobeetAffiliate/templates/newSuccess.php`
   * `sfJobeetAffiliate/templates/_form.php` (cambiare `affiliate` in `sfJobeetAffiliate`)
   * `sfJobeetCategory/templates/showSuccess.atom.php`
   * `sfJobeetCategory/templates/showSuccess.php`
-  * `sfJobeetJob/templates/editSuccess.php`
   * `sfJobeetJob/templates/indexSuccess.atom.php`
   * `sfJobeetJob/templates/indexSuccess.php`
-  * `sfJobeetJob/templates/newSuccess.php`
   * `sfJobeetJob/templates/searchSuccess.php`
   * `sfJobeetJob/templates/showSuccess.php`
   * `apps/frontend/templates/layout.php`
@@ -367,6 +363,8 @@ Infine, modificare il file `routing.yml` in modo da rispecchiare i cambiamenti f
         object_actions: { wait: GET }
         prefix_path:    /:sf_culture/affiliate
         module:         sfJobeetAffiliate
+      requirements:
+        sf_culture: (?:fr|en)
 
     api_jobs:
       url:     /api/:token/jobs.:sf_format
@@ -383,12 +381,13 @@ Infine, modificare il file `routing.yml` in modo da rispecchiare i cambiamenti f
       options: { model: JobeetCategory, type: object, method: doSelectForSlug }
       requirements:
         sf_format: (?:html|atom)
+        sf_culture: (?:fr|en)
 
     job_search:
-      url:   /:sf_culture/search.:sf_format
-      param: { module: sfJobeetJob, action: search, sf_format: html }
+      url:   /:sf_culture/search
+      param: { module: sfJobeetJob, action: search }
       requirements:
-        sf_format: (?:html|js)
+        sf_culture: (?:fr|en)
 
     job:
       class:   sfPropelRouteCollection
@@ -400,15 +399,28 @@ Infine, modificare il file `routing.yml` in modo da rispecchiare i cambiamenti f
         module:         sfJobeetJob
       requirements:
         token: \w+
+        sf_culture: (?:fr|en)
 
     job_show_user:
       url:     /:sf_culture/job/:company_slug/:location_slug/:id/:position_slug
       class:   sfPropelRoute
-      options: { model: JobeetJob, type: object, method_for_criteria: doSelectActive }
+<propel>
+      options:
+        model: JobeetJob
+        type: object
+        method_for_criteria: doSelectActive
+</propel>
+<doctrine>
+      options:
+        model: JobeetJob
+        type: object
+        method_for_query: retrieveActiveJob
+</doctrine>
       param:   { module: sfJobeetJob, action: show }
       requirements:
         id:        \d+
         sf_method: GET
+        sf_culture: (?:fr|en)
 
     change_language:
       url:   /change_language
@@ -531,14 +543,14 @@ classe di configurazione del plugin:
       }
     }
 
-Le notifiche degli eventi sono gestiti dall'oggetto evento speditore (event dispatcher):
+Le notifiche degli eventi sono gestiti dall'oggetto
 ([`sfEventDispatcher`](http://www.symfony-project.org/api/1_2/sfEventDispatcher)).
-Registrare un ascoltatore (listener) è semplice come chiamare `connect()`. Il metodo `connect()`
-collega un nome di evento con un PHP chiamabile (callable).
+Registrare un ascoltatore (listener) è semplice come chiamare `connect()`.
+Il metodo `connect()` collega un nome di evento con un PHP richiamabile (callable).
 
 >**NOTE**
 >Un [PHP callable](http://www.php.net/manual/en/function.is-callable.php) è una
->variabile PHP che può essere usata dalla funzione `call_user_func()` e ritornare
+>variabile PHP che può essere usata dalla funzione `call_user_func()` e restituire
 >`true` quando passata alla funzione `is_callable()`. Una stringa rappresenta una
 >funzione, e un array può rappresentare il metodo di un oggetto o il metodo di una classe.
 
