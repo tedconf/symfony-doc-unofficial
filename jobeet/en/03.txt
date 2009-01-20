@@ -32,7 +32,7 @@ If you prefer to have all plugins enabled by default, you can do the following:
       $this->enableAllPluginsExcept(array('sf#PropelPlugin', 'sfCompat10Plugin'));
     }
 
->**CAUTION**
+>**NOTE**
 >After this change you will get an error until we configure the
 >`config/databases.yml` file at a later step to use `sfDoctrineDatabase`.
 
@@ -46,11 +46,9 @@ install them via the `plugin:install-assets` task:
 
     $ php symfony plugin:publish-assets
 
-We also need to add the assets `web/sfDoctrinePlugin` to svn and remove the assets from `web/sfPropelPlugin`:
+We also need to remove the `web/sfPropelPlugin` directory:
 
-    $ svn add web/sfDoctrinePlugin
-    $ svn remove web/sfPropelPlugin
-
+    $ rm web/sfPropelPlugin
 </doctrine>
 
 The Relational Model
@@ -148,7 +146,8 @@ agnostic, let's create the schema file by hand by editing the empty
 `config/doctrine/schema.yml` file:
 
 >**TIP**
->You will need to manually create the `config/doctrine` directory in your project as it does not already exist:
+>You will need to manually create the `config/doctrine/` directory in your
+>project as it does not already exist:
 >
 >     $ mkdir config/doctrine
 
@@ -156,84 +155,37 @@ agnostic, let's create the schema file by hand by editing the empty
     # config/doctrine/schema.yml
     ---
     JobeetCategory:
-      actAs:
-        Timestampable: ~
+      actAs: { Timestampable: ~ }
       columns:
-        name:
-          type: string(255)
-          notnull:  true
-          unique: true
+        name: { type: string(255), notnull: true, unique: true }
 
     JobeetJob:
-      actAs:
-        Timestampable: ~
+      actAs: { Timestampable: ~ }
       columns:
-        category_id:
-          type: integer
-          notnull:  true
-        type:
-          type: string(255)
-        company:
-          type: string(255)
-          notnull:  true
-        logo:
-          type: string(255)
-        url:
-          type: string(255)
-        position:
-          type: string(255)
-          notnull:  true
-        location:
-          type: string(255)
-          notnull:  true
-        description:
-          type: string(4000)
-          notnull:  true
-        how_to_apply:
-          type: string(4000)
-          notnull:  true
-        token:
-          type: string(255)
-          notnull:  true
-          unique: true
-        is_public:
-          type: boolean
-          notnull:  true
-          default:  1
-        is_activated:
-          type: boolean
-          notnull:  true
-          default:  0
-        email:
-          type: string(255)
-          notnull:  true
-        expires_at:
-          type: timestamp
-          notnull:  true
+        category_id:  { type: integer, notnull: true }
+        type:         { type: string(255) }
+        company:      { type: string(255), notnull: true }
+        logo:         { type: string(255) }
+        url:          { type: string(255) }
+        position:     { type: string(255), notnull: true }
+        location:     { type: string(255), notnull: true }
+        description:  { type: string(4000), notnull: true }
+        how_to_apply: { type: string(4000), notnull: true }
+        token:        { type: string(255), notnull: true, unique: true }
+        is_public:    { type: boolean, notnull: true, default: 1 }
+        is_activated: { type: boolean, notnull: true, default: 0 }
+        email:        { type: string(255), notnull: true }
+        expires_at:   { type: timestamp, notnull: true }
       relations:
-        JobeetCategory:
-          local:  category_id
-          foreign:  id
-          foreignAlias: JobeetJobs
+        JobeetCategory: { local: category_id, foreign: id, foreignAlias: JobeetJobs } 
 
     JobeetAffiliate:
-      actAs:
-        Timestampable: ~
+      actAs: { Timestampable: ~ }
       columns:
-        url:
-          type: string(255)
-          notnull:  true
-        email:
-          type: string(255)
-          notnull:  true
-          unique: true
-        token:
-          type: string(255)
-          notnull:  true
-        is_active:
-          type: boolean
-          notnull:  true
-          default:  0
+        url:       { type: string(255), notnull: true }
+        email:     { type: string(255), notnull: true, unique: true }
+        token:     { type: string(255), notnull: true }
+        is_active: { type: boolean, notnull: true, default: 0 }
       relations:
         JobeetCategories:
           class: JobeetCategory
@@ -244,21 +196,11 @@ agnostic, let's create the schema file by hand by editing the empty
 
     JobeetCategoryAffiliate:
       columns:
-        category_id:
-          type: integer
-          primary:  true
-        affiliate_id:
-          type: integer
-          primary:  true
+        category_id:  { type: integer, primary: true }
+        affiliate_id: { type: integer, primary: true }
       relations:
-        JobeetCategory:
-          onDelete: CASCADE
-          local:  category_id
-          foreign:  id
-        JobeetAffiliate:
-          onDelete: CASCADE
-          local:  affiliate_id
-          foreign:  id
+        JobeetCategory:  { onDelete: CASCADE, local: category_id, foreign: id }
+        JobeetAffiliate: { onDelete: CASCADE local: affiliate_id, foreign: id }
 </doctrine>
 
 >**TIP**
@@ -354,7 +296,8 @@ We need to tell symfony to use this database for the Jobeet project:
       ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
 </propel>
 <doctrine>
-    $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase
+    $ php symfony configure:database --name=doctrine
+      ➥ --class=sfDoctrineDatabase
       ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
 
 >**NOTE**
@@ -581,11 +524,11 @@ First, create the following fixture files:
         position:     Web Developer
         location:     Paris, France
         description:  |
-          You've already developed websites with symfony and you want to work
-          with Open-Source technologies. You have a minimum of 3 years
-          experience in web development with PHP or Java and you wish to
-          participate to development of Web 2.0 sites using the best
-          frameworks available.
+          You've already developed websites with symfony and you want to
+          work with Open-Source technologies. You have a minimum of 3
+          years experience in web development with PHP or Java and you
+          wish to participate to development of Web 2.0 sites using the
+          best frameworks available.
         how_to_apply: |
           Send your resume to fabien.potencier [at] sensio.com
         is_public:    true
@@ -686,8 +629,8 @@ First, create the following fixture files:
 
 >**NOTE**
 >The job fixture file references two images. You can download them
->(http://www.symfony-project.org/get/jobeet/sensio-labs.gif,
->http://www.symfony-project.org/get/jobeet/extreme-sensio.gif) and put them
+>(`http://www.symfony-project.org/get/jobeet/sensio-labs.gif`,
+>`http://www.symfony-project.org/get/jobeet/extreme-sensio.gif`) and put them
 >under the `uploads/jobs/` directory.
 
 A fixtures file is written in YAML, and defines model objects, labelled with a

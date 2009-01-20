@@ -62,14 +62,16 @@ Let's change it to only select active jobs:
     {
 <propel>
       $criteria = new Criteria();
-      $criteria->add(JobeetJobPeer::CREATED_AT, time() - 86400 * 30, Criteria::GREATER_THAN);
+      $criteria->add(JobeetJobPeer::CREATED_AT,
+       ➥ time() - 86400 * 30, Criteria::GREATER_THAN);
 
       $this->jobeet_job_list = JobeetJobPeer::doSelect($criteria);
 </propel>
 <doctrine>
       $q = Doctrine_Query::create()
         ->from('JobeetJob j')
-        ->where('j.created_at > ?', date('Y-m-d h:i:s', time() - 86400 * 30));
+        ->where('j.created_at > ?',
+         ➥ date('Y-m-d h:i:s', time() - 86400 * 30));
 
       $this->jobeet_job_list = $q->execute();
 </doctrine>
@@ -265,7 +267,9 @@ fixtures to add a job that is already expired:
         company:      Sensio Labs
         position:     Web Developer
         location:     Paris, France
-        description:  Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+        description:  |
+          Lorem ipsum dolor sit amet, consectetur
+          adipisicing elit.
         how_to_apply: Send your resume to lorem.ipsum [at] dolor.sit
         is_public:    true
         is_activated: true
@@ -426,7 +430,8 @@ Now the action code can use this new method to retrieve the active jobs.
       $this->jobeet_job_list = JobeetJobPeer::getActiveJobs();
 </propel>
 <doctrine>
-      $this->jobeet_job_list = Doctrine::getTable('JobeetJob')->getActiveJobs();
+      $this->jobeet_job_list =
+        ➥ Doctrine::getTable('JobeetJob')->getActiveJobs();
 </doctrine>
     }
 
@@ -536,7 +541,8 @@ Change the `index` action accordingly:
       $this->categories = JobeetCategoryPeer::getWithJobs();
 </propel>
 <doctrine>
-      $this->categories = Doctrine::getTable('JobeetCategory')->getWithJobs();
+      $this->categories =
+       ➥ Doctrine::getTable('JobeetCategory')->getWithJobs();
 </doctrine>
     }
 
@@ -785,8 +791,8 @@ Secure the Job Page
 
 When a job expires, even if you know the URL, it must not be possible to
 access it anymore. Try the URL for the expired job (replace the `id` with the
-actual `id` in your database - `SELECT `id`, `token` FROM `jobeet_job` WHERE
-`expires_at` < NOW()`):
+actual `id` in your database - `SELECT id, token FROM jobeet_job WHERE
+expires_at < NOW()`):
 
     /frontend_dev.php/job/sensio-labs/paris-france/ID/web-developer-expired
 
@@ -820,9 +826,7 @@ retrieve the object, but you can change it by providing a
 
 <doctrine>
 >**NOTE**
->The above used `method_for_query` was not working prior to 12/16/08 so in order
->for the above to work you will have to use the latest from the 1.2 or branch.
->The changes will be included in the next 1.2.2 release.
+>The `method_for_query` setting was not working prior to the 1.2.2 release.
 </doctrine>
 
 <propel>

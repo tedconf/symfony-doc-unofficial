@@ -169,38 +169,60 @@ The class definition should now look like the following:
       // ...
     }
 
-Now do the same thing for the forms and filter classes. Rename them to include a 
-prefix with the word `Plugin`.
+Now do the same thing for the forms and filter classes. Rename them to include
+a prefix with the word `Plugin`.
 
-Make sure to remove the `base` directory in `plugins/sfJobeetPlugin/lib/*/doctrine` for `form`,
-`filter`, and `model` directories.
-
-Example:
+Make sure to remove the `base` directory in
+`plugins/sfJobeetPlugin/lib/*/doctrine/` for `form`, `filter`, and `model`
+directories:
 
     $ rm -rf plugins/sfJobeetPlugin/lib/form/doctrine/base
     $ rm -rf plugins/sfJobeetPlugin/lib/filter/doctrine/base
     $ rm -rf plugins/sfJobeetPlugin/lib/model/doctrine/base
 
-Once you have moved, renamed and removed some forms, filters and model classes run the
-tasks to build the re-build all the classes:
+Once you have moved, renamed and removed some forms, filters and model classes
+run the tasks to build the re-build all the classes:
 
     $ php symfony doctrine:build-models
     $ php symfony doctrine:build-forms
     $ php symfony doctrine:build-filters
 
-Now you will notice some new directories created to hold the models created from
-the schema included with the `sfJobeetPlugin` at `lib/model/doctrine/sfJobeetPlugin`.
+Now you will notice some new directories created to hold the models created
+from the schema included with the `sfJobeetPlugin` at
+`lib/model/doctrine/sfJobeetPlugin/`.
 
-This directory contains the top level models and the base classes generated from
-the schema. For example the model `JobeetJob` now has this class structure.
+This directory contains the top level models and the base classes generated
+from the schema. For example the model `JobeetJob` now has this class
+structure:
 
-| Class Name            | Extends                    | Path                        | Description                 |
-|-----------------------|----------------------------|-----------------------------|-----------------------------|
-| JobeetJob             | PluginJobeetJob            | lib/model/doctrine/sfJobeetPlugin/JobeetJob.class.php | Top level class where all project model functionality can be placed. This is where you can add and override functionality that comes with the plugin models. |
-| PluginJobeetJob       | BaseJobeetJob              | plugins/sfJobeetPlugin/lib/model/doctrine/PluginJobeetJob.class.php | This class contains all the plugin specific functionality. You can override functionality in this class and the base by modifying the `JobeetJob` class. |
-| BaseJobeetJob         | sfDoctrineRecord           | lib/model/doctrine/sfJobeetPlugin/base/BaseJobeetJob.class.php | Base class that is generated from the yaml schema file each time you run `doctrine:build-models`. |
-| JobeetJobTable        | PluginJobeetJobTable       | lib/model/doctrine/sfJobeetPlugin/JobeetJobTable.class.php | Same as the `JobeetJob` class except this is the instance of `Doctrine_Table` that will be returned when you call `Doctrine::getTable('JobeetJob')`. |
-| PluginJobeetJobTable  | Doctrine_Table             | lib/model/doctrine/sfJobeetPlugin/JobeetJobTable.class.php | This class contains all the plugin specific functionality for the instance of `Doctrine_Table` that will be returned when you call `Doctrine::getTable('JobeetJob')`.
+  * `JobeetJob` (extends `PluginJobeetJob`) in
+    `lib/model/doctrine/sfJobeetPlugin/JobeetJob.class.php`:
+    Top level class where all project model functionality can be placed. This
+    is where you can add and override functionality that comes with the plugin
+    models.
+
+  * `PluginJobeetJob` (extends `BaseJobeetJob`) in
+    `plugins/sfJobeetPlugin/lib/model/doctrine/PluginJobeetJob.class.php`:
+    This class contains all the plugin specific functionality. You can
+    override functionality in this class and the base by modifying the
+    `JobeetJob` class.
+
+  * `BaseJobeetJob` (extends `sfDoctrineRecord`) in
+    `lib/model/doctrine/sfJobeetPlugin/base/BaseJobeetJob.class.php`:
+    Base class that is generated from the yaml schema file each time you run
+    `doctrine:build-models`.
+
+  * `JobeetJobTable` (extends `PluginJobeetJobTable`) in
+    `lib/model/doctrine/sfJobeetPlugin/JobeetJobTable.class.php`:
+    Same as the `JobeetJob` class except this is the instance of
+    `Doctrine_Table` that will be returned when you call
+    `Doctrine::getTable('JobeetJob')`.
+
+  * `PluginJobeetJobTable` (extends `Doctrine_Table`) in
+    `lib/model/doctrine/sfJobeetPlugin/JobeetJobTable.class.php`:
+    This class contains all the plugin specific functionality for the instance
+    of `Doctrine_Table` that will be returned when you call
+    `Doctrine::getTable('JobeetJob')`.
 
 With this generated structure you have the ability to customize the models of a
 plugin by editing the top level `JobeetJob` class. You can customize the schema
@@ -334,7 +356,8 @@ Update the `search` and `delete` actions:
         $this->jobs = JobeetJobPeer::getForLuceneQuery($query);
 </propel>
 <doctrine>
-        $this->jobs = Doctrine::getTable('JobeetJob')->getForLuceneQuery($query);
+        $this->jobs = Doctrine::getTable('JobeetJob')
+          ➥ ->getForLuceneQuery($query);
 </doctrine>
 
         if ($request->isXmlHttpRequest())
@@ -345,7 +368,8 @@ Update the `search` and `delete` actions:
           }
           else
           {
-            return $this->renderPartial('sfJobeetJob/list', array('jobs' => $this->jobs));
+            return $this->renderPartial('sfJobeetJob/list',
+             ➥ array('jobs' => $this->jobs));
           }
         }
       }
