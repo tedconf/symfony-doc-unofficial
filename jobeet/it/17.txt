@@ -12,15 +12,15 @@ La tecnologia
 Prima di creare tutto, parliamo un attimo della storia di symfony. Sosteniamo
 un sacco di best practice, come testare il codice e rifattorizzare, e
 tentiamo noi stessi di applicarle al framework stesso. Per esempio, ci piace il
-famoso motto "Non reinventare la ruota". In realtà symfony è nato quattro anni
+famoso motto "non reinventare la ruota". In realtà symfony è nato quattro anni
 fa come collante tra due progetti open source esistenti: Mojavi e Propel. Ogni
-volta che dobbiamo affrontare un problema, cerchiamo per una libreria esistente
+volta che dobbiamo affrontare un problema, cerchiamo se una libreria esistente
 faccia già quello che ci serve prima di scrivere noi stessi il codice da zero.
 
 Oggi, vogliamo aggiungere un motore di ricerca a Jobeet, e lo Zend Framework
 fornisce un'ottima libreria, chiamata
 [Zend Lucene](http://framework.zend.com/manual/en/zend.search.lucene.html),
-che è un porting del conosciuto Lucene project per Java. Al posto di creare un
+che è un porting del conosciuto Lucene project per Java. Invece di creare un
 nuovo motore di ricerca per Jobeet, che sarebbe un processo complesso, useremo
 Zend Lucene.
 
@@ -28,11 +28,12 @@ Nella pagina di documentazione di Zend Lucene, la libreria è descritta così:
 
 >... un motore di ricerca general purpose scritto interamente in PHP 5. Dato che
 >conserva i suoi indici nel filesystem e non necessita di un database, può aggiungere
->capacità di ricerca ad praticamente ogni sito scritto in PHP.
+>capacità di ricerca praticamente ad ogni sito scritto in PHP.
 >Zend_Search_Lucene supporta le seguenti opzioni:
 >
 >  * Ricerca posizionata - i migliori risultati per primi
->  * Molti potenti tipi di query: frasi, booleani, con wildcard, di prossimità, in un raggio d'azione, e molti altri
+>  * Molti potenti tipi di query: frasi, booleani, con wildcard, di prossimità,
+>    in un raggio d'azione, e molti altri
 >  * Ricerca per campo specifico (ad esempio titolo, autore, contenuti)
 
 -
@@ -50,14 +51,14 @@ Framework che abbiamo fatto per inviare le email.
 Indicizzazione
 --------------
 
-Il motore di ricerca dovrebbe essere capace di ritornare tutti i lavori
-con keywords combacianti con quelle inserite dall'utente. Prima di essere capace
-di costruire qualcosa, un indice dev'essere creato per i lavori: per Jobeet, sarà
+Il motore di ricerca dovrebbe essere capace di restituire tutti i lavori
+con keywords corrispondente con quelle inserite dall'utente. Prima di essere capace
+di costruire qualcosa, dev'essere creato un indice per i lavori: per Jobeet, sarà
 salvato nella directory `data/`.
 
 Zend Lucene fornisce due metodi per recuperare un indice dipendentemente dalla sua
-esistenza. Creiamo un helper nella classe `JobeetJobPeer` che ritorna un indice
-esistente o ne crea uno nuovo per noi:
+esistenza. Creiamo un helper nella classe `JobeetJobPeer` che restituisce
+un indice esistente o ne crea uno nuovo per noi:
 
     [php]
 <propel>
@@ -176,10 +177,10 @@ useremo i veri oggetti per visualizzare i risultati.
 ### Transazioni ##ORM##
 
 Cosa succederebbe se ci fosse un problema indicizzato un lavoro, oppure il lavoro
-non viene salvato nel database? Sia ##ORM## che Zend Lucene genereranno un'eccezione.
+non venisse salvato nel database? Sia ##ORM## che Zend Lucene genereranno un'eccezione.
 Ma in alcune circostanze, potremmo avere un lavoro salvato nel database ma senza
-il corrispondente indice. Per prevenire questo, possiamo contenere i due aggiornamenti
-all'interno di una transazione, e tornare indietro in caso di errore:
+il corrispondente indice. Per prevenirlo, possiamo inserire i due aggiornamenti
+all'interno di una transazione, ed annullarli in caso di errore:
 
 <propel>
     [php]
@@ -240,8 +241,8 @@ all'interno di una transazione, e tornare indietro in caso di errore:
 
 ### `delete()`
 
-Dobbiamo inoltre sovrascrivere il metodo `delete()` per rimuovere il corrispondente
-lavoro dall'indice:
+Dobbiamo inoltre sovrascrivere il metodo `delete()` per rimuovere
+dall'indice il corrispondente lavoro :
 
 <propel>
     [php]
@@ -278,9 +279,10 @@ lavoro dall'indice:
 
 ### Eliminazione di massa
 
-Quando carichi delle fixture con il comando `propel:data-load`, symfony rimuoverà
-tutti i lavori esistenti chiamando il metodo `JobeetJobPeer::doDeleteAll()`.
-Sovrascriviamo il comportamento per cancellare anche gli indici insieme:
+Quando si caricano delle fixture con il comando `propel:data-load`,
+symfony rimuoverà tutti i lavori esistenti, richiamando il metodo
+`JobeetJobPeer::doDeleteAll()`. Sovrascriviamo il comportamento per
+cancellare contemporaneamente anche gli indici:
 
     [php]
     // lib/model/JobeetJobPeer.php
@@ -299,7 +301,7 @@ Sovrascriviamo il comportamento per cancellare anche gli indici insieme:
 Ricerca
 -------
 
-Ora che abbiamo tutto al suo posto, possiamo ricaricare le fixutre per indicizzarle:
+Ora che abbiamo tutto al suo posto, possiamo ricaricare le fixture per indicizzarle:
 
     $ php symfony propel:data-load --env=dev
 
@@ -308,20 +310,20 @@ dall'ambiente, e l'ambiente di default per i processi è `cli`.
 
 >**TIP**
 >Per gli utenti di sistemi Unix-like: dato che l'indice è modificato sia dalla
->riga di comando che dal web, dovete cambiare i permessi della directory
->dipendentemente dalla configurazione: controlla che sia l'utente da riga di comando
->che quello usato da web server abbiano permessi di scrittura nella directory
->degli indici.
+>riga di comando che dal web, bisogna cambiare i permessi della cartella
+>dipendentemente dalla configurazione: controllare che sia l'utente da riga di
+>comando che quello usato da web server abbiano permessi di scrittura nella
+>cartella degli indici.
 
-Implementare la ricerca nel frontend è un gioco da ragazzi. Per prima cosa, creiamo
-una rotta:
+Implementare la ricerca nel frontend è un gioco da ragazzi. Per prima cosa,
+creiamo una rotta:
 
     [yml]
     job_search:
       url:   /search
       param: { module: job, action: search }
 
-E l'azione corrispodente:
+E l'azione corrispondente:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -404,8 +406,8 @@ La ricerca stessa è delegata al metodo `getForLuceneQuery()`:
     }
 </doctrine>
 
-Dopo aver ottenuto tutti i risultati dall'indice di Lucene, li filtriamo i lavori
-inattivi, e limitiamo il numero di risultati a `20`.
+Dopo aver ottenuto tutti i risultati dall'indice di Lucene, filtriamo i lavori
+inattivi e limitiamo il numero di risultati a `20`.
 
 Per farlo funzionare, aggiorniamo il layout:
 
@@ -429,10 +431,10 @@ Test Unitari
 ------------
 
 Che tipo di test dobbiamo creare per testare il motore di ricerca? Non testeremo
-cercamente Zend Lucene stesso, ma la sua integrazione con la classe `JobeetJob`.
+certamente Zend Lucene stesso, ma la sua integrazione con la classe `JobeetJob`.
 
 Aggiungete i seguenti test alla fine di `JobeetJobTest.php` e non dimenticate di
-aggiornate il numero di test all'inizio del file:
+aggiornare il numero di test all'inizio del file:
 
     [php]
     // test/unit/model/JobeetJobTest.php
@@ -467,15 +469,15 @@ aggiornate il numero di test all'inizio del file:
 </doctrine>
     $t->is(count($jobs), 0, '::getForLuceneQuery() does not return delete jobs');
 
-Testiamo che un lavoro non attiamo, o uno cancellato non compaia tra i risultati;
-controlliamo inoltre che i lavori combacianti con la ricerca siano mostrati all'inizio
-dei risultati.
+Testiamo che un lavoro non attivato o uno cancellato non compaia tra i risultati;
+controlliamo inoltre che i lavori che corrispondono alla ricerca siano
+mostrati all'inizio dei risultati.
 
 Processi
 --------
 
 Come ultima cosa, dobbiamo creare un processo per pulire l'indice dagli elementi
-non più validi (quando un lavoro scade per esempio), ed ottimizzare l'indice
+non più validi (quando un lavoro scade, per esempio) ed ottimizzare l'indice
 di volta in volta. Dato che abbiamo già un processo per la pulizia, aggiorniamolo
 con queste nuove caratteristiche:
 
@@ -529,12 +531,12 @@ con queste nuove caratteristiche:
     }
 
 Il processo rimuove tutti i lavori scaduti dall'indice, e poi lo ottimizza grazie
-al metodo predefinita di Zend Lucene `optimize()`.
+al metodo predefinito di Zend Lucene `optimize()`.
 
 A domani
 --------
 
-Oggi abbiamo implementato un motore di ricerca com molte caratteristiche in meno
+Oggi abbiamo implementato un motore di ricerca con molte caratteristiche in meno
 di un'ora. Ogni volta che avete bisogno di aggiungere una nuova caratteristica
 ad un vostro progetto, controllate che qualcun'altro non ci abbia già pensato.
 Controllate inoltre che non sia implementato nativamente nel
