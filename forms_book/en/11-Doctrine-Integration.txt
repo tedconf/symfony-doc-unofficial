@@ -72,7 +72,7 @@ Generating Form Classes
 
 We want to edit the information of the `article`, `author`, `category`, and `tag` tables. To do so, we need to create forms linked to each of these tables and configure widgets and validators related to the database schema. Even if it is possible to create these forms manually, it is a long, tedious task, and overall, it forces repetition of the same kind of information in several files (column and field name, maximum size of column and fields, ...). Furthermore, each time we change the model, we will also have to change the related form class. Fortunately, the Doctrine plugin has a built-in task `doctrine:build-forms` that automates this process generating the forms related to the object model:
 
-    $ ./symfony doctrine:build-forms frontend
+    $ ./symfony doctrine:build-forms
 
 During the form generation, the task creates one class per table with validators and widgets for each column using introspection of the model and taking into account relations between tables.
 
@@ -460,7 +460,7 @@ Listing 4-9 - Using the `sfValidatorDoctrineUnique` validator to check the Uniqu
       }
     }
 
-The `sfValidatorDoctrineUnique` validator is a `postValidator` running on the whole data after the individual validation of each field. In order to validate the `slug` uniqueness, the validator must be able to access, not only the `slug` value, but also the value of the primary key(s). Validation rules are indeed different throughout creating and editing the article, since the slug can stay the same during the update of an article.
+The `sfValidatorDoctrineUnique` validator is a `postValidator` running on the whole data after the individual validation of each field. In order to validate the `slug` uniqueness, the validator must be able to access, not only the `slug` value, but also the value of the primary key(s). Validation rules are indeed different throughout the creation and the edition since the slug can stay the same during the update of an article.
 
 Let's Customize now the `active` field of the `author` table, used to know if an author is active. Listing 4-10 shows how to exclude inactive authors from the `ArticleForm` form, modifying the `query` option of the `sfWidgetDoctrineSelect` widget connected to the `author_id` field. The `query` option accepts a Doctrine Query object, allowing to narrow down the list of available options in the rolling list.
 
@@ -500,7 +500,7 @@ Listing 4-11 - Customizing the `sfValidatorDoctrineChoice` validator
       }
     }
 
-In the previous example we defined the `Query` object directly in the `configure()` method. In our project, this query will certainly be helpful in other circumstances, so it is better to create a `getActiveAuthorsQuery()` method within the `AuthorPeer` class and to call this method from `ArticleForm` as Listing 4-12 shows.
+In the previous example we defined the `Query` object directly in the `configure()` method. In our project, this query will certainly be helpful in other circumstances, so it is better to create a `getActiveAuthorsQuery()` method within the `AuthorTable` class and to call this method from `ArticleForm` as Listing 4-12 shows.
 
 Listing 4-12 - Refactoring the `Query` in the Model
 
@@ -581,12 +581,12 @@ Listing 4-15 - Adding a Validator
 
 ### Changing widget
 
-In the database schema, the `status` field of the `article` table stores the article status as a string of characters. The possible values were defined in the `ArticePeer` class, as shown in Listing 4-16.
+In the database schema, the `status` field of the `article` table stores the article status as a string of characters. The possible values were defined in the `ArticeTable` class, as shown in Listing 4-16.
 
-Listing 4-16 - Defining available Statuses in the `ArticlePeer` class
+Listing 4-16 - Defining available Statuses in the `ArticleTable` class
 
     [php]
-    class ArticlePeer extends BaseArticlePeer
+    class ArticleTable extends Doctrine_Table
     {
       static protected $statuses = array('draft', 'online', 'offline');
 
@@ -607,7 +607,7 @@ Listing 4-17 - Changing the Widget for the `status` field
     {
       public function configure()
       {
-        $this->widgetSchema['status'] = new sfWidgetFormSelect(array('choices' => ArticlePeer::getStatuses()));
+        $this->widgetSchema['status'] = new sfWidgetFormSelect(array('choices' => ArticleTable::getStatuses()));
       }
     }
 
@@ -620,7 +620,7 @@ Listing 4-18 - Modifying the `status` Field Validator
     {
       public function configure()
       {
-        $statuses = ArticlePeer::getStatuses();
+        $statuses = ArticleTable::getStatuses();
         
         $this->widgetSchema['status'] = new sfWidgetFormSelect(array('choices' => $statuses));
 
@@ -675,13 +675,13 @@ Listing 4-21 - `ArticleForm` Form
 
         // widgets
         $this->widgetSchema['content']->setAttributes(array('rows' => 10, 'cols' => 40));
-        $this->widgetSchema['status'] = new sfWidgetFormSelect(array('choices' => ArticlePeer::getStatuses()));
+        $this->widgetSchema['status'] = new sfWidgetFormSelect(array('choices' => ArticleTable::getStatuses()));
         $this->widgetSchema['author_id']->setOption('query', $authorQuery);
 
         // validators
         $this->validatorSchema['slug']->setOption('required', false);
         $this->validatorSchema['content']->setOption('min_length', 5);
-        $this->validatorSchema['status'] = new sfValidatorChoice(array('choices' => array_keys(ArticlePeer::getStatuses())));
+        $this->validatorSchema['status'] = new sfValidatorChoice(array('choices' => array_keys(ArticleTable::getStatuses())));
         $this->validatorSchema['author_id']->setOption('query', $authorQuery);
 
         unset($this['created_at']);
