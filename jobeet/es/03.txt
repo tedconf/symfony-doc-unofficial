@@ -3,6 +3,45 @@
 
 Aquellos de ustedes locos por abrir el editor de texto y hacer algo de PHP estarán encantados de saber que el tutorial de hoy nos introduce algo en el desarrollo. Vamos a definir el modelo de datos Jobeet, utilizaremos un ORM para interactuar con la base de datos, y construiremos el primer módulo de la aplicación. Pero como symfony hace una gran parte del trabajo por nosotros, vamos a tener un módulo web totalmente funcional sin tener que escribir mucho código PHP.
 
+<doctrine>
+Activando `sfDoctrinePlugin`
+---------------------------
+
+Si estás leyendo esto, entonces has decidido completar el tutorial de Jobeet con el ORM Doctrine en lugar de Propel. Esto es simple ya que todo lo que necesitas hacer primero es habilitar `sfDoctrinePlugin` y deshabilitar `sf#PropelPlugin`. Esto puede ser hecho con el siguiente código en tu `config/ProjectConfiguration.class.php`.
+
+    [php]
+    public function setup()
+    {
+      $this->enablePlugins(array('sfDoctrinePlugin'));
+      $this->disablePlugins(array('sf#PropelPlugin'));
+    }
+
+Si prefieres tener todos los plugins habilitados por defecto, puedes hacer lo siguiente:
+
+    [php]
+    public function setup()
+    {
+      $this->enableAllPluginsExcept(array('sf#PropelPlugin', 'sfCompat10Plugin'));
+    }
+
+>**NOTE**
+>Despues de este cambio tendrás un error hasta que configures el 
+>archivo `config/databases.yml` en un paso posterior a la utilización de `sfDoctrineDatabase`.
+
+Después de realizar estos cambios, debes asegurarte de borrar el cache.
+
+    $ php symfony cc
+
+Como veremos más adelante en el tutorial, cada plugin puede tener recursos web (imágenes,
+hojas de estilo, y javascripts). Cuando se instala o activa un nuevo plugin, debemos instalarlos vía la tarea `plugin:publish-assets`:
+
+    $ php symfony plugin:publish-assets
+
+También necesitamos quitar el directorio `web/sfPropelPlugin`:
+
+    $ rm web/sfPropelPlugin
+</doctrine>
+
 El Modelo Relacional
 --------------------
 
@@ -19,7 +58,7 @@ Para almacenar los puestos de trabajo, los afiliados, y las categorías, es evid
 
 Pero como symfony es un Framework Orientado a Objetos, nos gustaría manipular los objetos cada vez que podamos. Por ejemplo, en lugar de escribir sentencias SQL para recuperar los registros de la base de datos, preferimos más usar los objetos.
 
-La información de la base de datos relacional debe ser mapeada a un modelo de objetos. Esto se puede hacer con una [herramienta ORM](http://en.wikipedia.org/wiki/Object-relational_mapping), o [Mapeo](http://es.wikipedia.org/wiki/Mapeo_objeto-relacional)
+La información de la base de datos relacional debe ser mapeada a un modelo de objetos. Esto se puede hacer con una [herramienta ORM](http://en.wikipedia.org/wiki/Object-relational_mapping), o [Mapeador](http://es.wikipedia.org/wiki/Mapeo_objeto-relacional)
 y afortunadamente, symfony tiene incluido dos de ellos:
 [Propel](http://propel.phpdb.org/) and [Doctrine](http://www.doctrine-project.org/).
 En este tutorial, usaremos ##ORM##.
@@ -244,7 +283,7 @@ La tarea `configure:database` emplea tres argumentos: el
 la clave de acceso a la base de datos. Si no tienes ninguna contraseña de la base
 en el servidor de desarrollo, basta con omitir el tercer argumento.
 
->**NOTA**
+>**NOTE**
 >La tarea `configure:database` almacena la configuración de la base de datos en el  
 >archivo de configuración `config/databases.yml`. En lugar de utilizar la tarea, 
 >puedes editar este archivo manualmente.
@@ -662,9 +701,17 @@ Eso es todo por hoy. Te lo adverti en la introducción. Hoy, apenas hemos escrit
 Si todavía te queda algo de energía, no dudes en leer el código generado para el módulo y el modelo y tratar de entender cómo funciona. Si no, no te preocupes y duerme bien, mañana, vamos a hablar de uno de los paradigmas más utilizados en los frameworks web, el
 [Patrón de Diseño MVC](http://es.wikipedia.org/wiki/Modelo_Vista_Controlador).
 
-Como cualquier otro día, el código escrito hoy está disponible en el repositorio de SVN Jobeet
-Checkout la etiqueta `release_day_03`:
+Como cualquier otro día, el código escrito hoy está disponible en el repositorio SVN de Jobeet
+Revisa la etiqueta `release_day_03`:
 
     $ svn co http://svn.jobeet.org/##ORM_LOWER##/tags/release_day_03/ jobeet/
 
-__ORM__    
+Feedback
+--------
+
+>**Tip**
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
+>no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
+
+__ORM__
