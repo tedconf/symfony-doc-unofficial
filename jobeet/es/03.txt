@@ -85,7 +85,7 @@ Como la base de datos no existe todavía y, como queremos mantener la base de da
       jobeet_job:
         id:           ~
         category_id:  { type: integer, foreignTable: jobeet_category,
-          âž¥ foreignReference: id, required: true }
+          ➥ foreignReference: id, required: true }
         type:         { type: varchar(255) }
         company:      { type: varchar(255), required: true }
         logo:         { type: varchar(255) }
@@ -112,11 +112,11 @@ Como la base de datos no existe todavía y, como queremos mantener la base de da
 
       jobeet_category_affiliate:
         category_id:  { type: integer, foreignTable: jobeet_category,
-          âž¥ foreignReference: id, required: true, primaryKey: true,
-          âž¥ onDelete: cascade }
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
         affiliate_id: { type: integer, foreignTable: jobeet_affiliate,
-          âž¥ foreignReference: id, required: true, primaryKey: true,
-          âž¥ onDelete: cascade }
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
 </propel>
 <doctrine>
 Como la base de datos no existe todavía y, como queremos mantener la base de datos Jobeet agnóstica, vamos a crear el archivo de esquema a mano editando el archivo vacío `config/doctrine/schema.yml`:
@@ -205,7 +205,7 @@ El esquema es la traducción directa de un diagrama de entidad relación en form
 >Si todavía no están familiarizados con YAML, es hora de empezar con él pues el 
 >framework symfony lo utiliza ampliamente para sus archivos de configuración.
 >
->Hay una cosa importate que necesitas recordar cuando estás editando un archivo YAML:
+>Hay una cosa importante que necesitas recordar cuando estás editando un archivo YAML:
 >**la indentación debe hacerse con uno o mas espacios en blanco, pero nunca con
 >tabulaciones**.
 
@@ -229,7 +229,7 @@ Para las columnas establecidas a `~`, el cual significa `null` en YAML (`id`, `c
 >**NOTE**
 >El atributo `onDelete` define el comportamiento `ON DELETE` para claves foráneas,
 >y Propel da soporte para `CASCADE`, `SETNULL`, y `RESTRICT`. Por ejemplo, cuando
->un registro de `job` es borrado, todos los registros `jobeet_category_affiliate`  
+>un registro `job` es borrado, todos los registros `jobeet_category_affiliate`  
 >relacionados serán automáticamente eliminados de la base de datos o por Propel si el motor de 
 >la base de datos no soporta esta funcionalidad.
 </propel>
@@ -258,7 +258,7 @@ Vamos a usar MySQL para este tutorial:
     $ mysqladmin -uroot -pmYsEcret create jobeet
 
 >**Note**
->Siéntete libre de elegir otro motor de base de datos si lo deseas. No será difícil 
+>Eres libre de elegir otro motor de base de datos si lo deseas. No será difícil 
 >adaptar el código que vamos a escribir ya que vamos a utilizar el ORM quien será quien escriba 
 >el SQL por nosotros.
 
@@ -266,12 +266,12 @@ Tenemos que decirle a symfony que base de datos usar para el proyecto Jobeet:
 
 <propel>
     $ php symfony configure:database
-      âž¥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
+      ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
 </propel>
 <doctrine>
     $ php symfony configure:database --name=doctrine
-      âž¥ --class=sfDoctrineDatabase
-      âž¥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
+      ➥ --class=sfDoctrineDatabase
+      ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
 
 >**NOTE**
 >Después de configurar la conexión de doctrine a la base de datos, necesitarás manualmente 
@@ -395,13 +395,13 @@ La tarea `propel:build-all` es un acceso directo para las tareas que han ejecuta
 
 Verás los validadores en acción al final del día y los formularios se explicarán en gran detalle en el día 10.
 
-Como se verás más adelante, symfony automáticamente carga las clases PHP por nosotros, lo que significa que nunca mas necesitarás utilizar un `require` en tu código. Esta es una de las numerosas cosas que automatiza symfony para el desarrollador, pero hay un inconveniente:
+Como verás más adelante, symfony automáticamente carga las clases PHP por nosotros, lo que significa que nunca más necesitarás utilizar un `require` en tu código. Esta es una de las numerosas cosas que automatiza symfony para el desarrollador, pero hay un inconveniente:
 siempre que agreges una nueva clase, necesitarás borrar la caché de symfony. Como la tarea `propel:build-model` ha creado un montón de nuevas clases, vamos a borrar la caché:
 
      $ php symfony cache:clear
 
 >**TIP**
->Una tarea symfony está hecho de un nombre y un espacio de nombres. Cada una puede ser más breve
+>Una tarea symfony está hecha de un nombre y un espacio de nombres. Cada una puede ser más breve
 >en tanto no haya ambigüedad con otras tareas. Por lo tanto, los siguientes comandos
 >son equivalentes a `cache:clear`:
 >
@@ -560,21 +560,21 @@ Primero, crea los siguientes archivos de datos:
 >`http://www.symfony-project.org/get/jobeet/extreme-sensio.gif`) y colocarlas 
 >en el directorio `uploads/jobs/`.
 
-Es escrito en YAML, y define el modelo de objetos, etiquetados con un nombre único 
+Esta escrito en YAML, y define el modelo de objetos, etiquetados con un nombre único 
 (por ejemplo, hemos definido dos puestos de trabajo etiquetados con `job_sensio_labs`
 y `job_extreme_sensio`). Estas etiquetas son de gran utilidad para vincular objetos relacionados sin tener que definir claves primarias (que a menudo son auto-incrementales y no se pueden establecer).
 Por ejemplo, la categoría de `job_sensio_labs` es `programming`, que es la etiqueta dada a la categoría 'Programming'.
 
 >**TIP**
->En un archivo YAML, cuado una cadeba tiene saltos de linea (como la 
->columna `description` en el archivo de datos de puestes de trabajo), puedes usar la barra vertical (`|`) para
+>En un archivo YAML, cuado una cadena tiene saltos de linea (como la 
+>columna `description` en el archivo de datos de puestos de trabajo), puedes usar la barra vertical (`|`) para
 >indicar que la cadena aparecerá en varias lineas.
 
 A través de un archivo de datos se puede tener objetos de uno o varios modelos, 
 hemos decidido crear un archivo por cada modelo para los datos de Jobeet.
 <propel>
 >**TIP**
->Nota los números de prefijo del nombre de archivo. Es un amanera simple de controlar 
+>Nota los números de prefijo del nombre de archivo. Es una 	manera simple de controlar 
 >el orden de carga de datos. Más adelante en el proyecto, si es necesario insertar algunos
 >nuevos archivos, será fácil como tengamos algunos números libres entre 
 >los existentes.
@@ -616,7 +616,7 @@ Vamos a ver cómo mostrar la lista de puestos de trabajo, cómo editar un trabaj
 Symfony es capaz de generar automáticamente un módulo para un determinado modelo que proporciona las características básicas de manipulación:
 
     $ php symfony propel:generate-module --with-show
-      âž¥ --non-verbose-templates frontend job JobeetJob
+      ➥ --non-verbose-templates frontend job JobeetJob
 
 La tarea `propel:generate-module` genera módulo `job` en la 
 aplicación `frontend` para el modelo `JobeetJob`. Como con la mayoría de las tareas symfony, algunos archivos y directorios se han creado para ti bajo la directorio `apps/frontend/modules/job/`:
@@ -632,7 +632,7 @@ El archivo `actions/actions.class.php` define todas las **acciones** disponibles
  | ---------------------- | -------------------------------------------------------
  | `index`                | Muestra los registros de la tabla
  | `show`                 | Muestra los campos de un registro
- | `new`                  | Muestra una formulario para crear un nuevo registro
+ | `new`                  | Muestra un formulario para crear un nuevo registro
  | `create`               | Crea un nuevo registro
  | `edit`                 | Muestra un formulario para crear editar un registro existente
  | `update`               | Actualiza un registro con los valores que envió el usuario 
@@ -647,6 +647,19 @@ Ahora puedes probar el módulo job en un navegador:
 <propel>
 Si intentas editar un puesto de trabajo, tendrás una excepción porque symfony necesita de un texto que represente una categoría. Un objeto de PHP se representa definiendo el método mágico PHP `__toString()`. El texto de representación de una categoría
 debería definirse en la clase del modelo `JobeetCategory`:
+
+    [php]
+    // lib/model/JobeetCategory.php
+    class JobeetCategory extends BaseJobeetCategory
+    {
+      public function __toString()
+      {
+        return $this->getName();
+      }
+    }
+
+Ahora cada vez que necesite un texto que represente a una categoría, se llamará al 
+método `__toString()` el cual devuelve el nombre de la categoría. ya que necesitaremos un texto para todas las clases del modelo en un punto u otro, vamos a definie un método `__toString()` para cada clase del modelo:
 </propel>
 <doctrine>
 Si intentas editar un puesto de trabajo, te darás cuenta que el combo Category id tiene una lista  
@@ -670,7 +683,7 @@ usando la columna `name` de la tabla `jobeet_category`.
       public function __toString()
       {
         return sprintf('%s at %s (%s)', $this->getPosition(),
-         âž¥ $this->getCompany(), $this->getLocation());
+         ➥ $this->getCompany(), $this->getLocation());
       }
     }
 
@@ -688,7 +701,6 @@ usando la columna `name` de la tabla `jobeet_category`.
       }
     }
 
-
 Ahora puedes editar y crear puestos de trabajo. Trata de dejar un campo obligatorio en blanco, o tratar de dar una fecha no válida. Así es, symfony ha creado básicas reglas de validación analizando el esquema de base de datos.
 
 ![Validación](http://www.symfony-project.org/images/jobeet/1_2/03/validation.png)
@@ -696,7 +708,7 @@ Ahora puedes editar y crear puestos de trabajo. Trata de dejar un campo obligato
 Nos vemos mañana
 ----------------
 
-Eso es todo por hoy. Te lo adverti en la introducción. Hoy, apenas hemos escrito el código PHP, pero tenemos un módulo web para el modelo job, listo para ser personalizado. Recuerda, sin código PHP también significa sin errores!
+Eso es todo por hoy. Te lo advertí en la introducción. Hoy, apenas hemos escrito el código PHP, pero tenemos un módulo web para el modelo job, listo para ser personalizado. ¡Recuerda, menos código PHP también significa enos errores!
 
 Si todavía te queda algo de energía, no dudes en leer el código generado para el módulo y el modelo y tratar de entender cómo funciona. Si no, no te preocupes y duerme bien, mañana, vamos a hablar de uno de los paradigmas más utilizados en los frameworks web, el
 [Patrón de Diseño MVC](http://es.wikipedia.org/wiki/Modelo_Vista_Controlador).
