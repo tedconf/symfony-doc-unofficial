@@ -1,70 +1,21 @@
 ﻿Día 4: El Contralor y la Vista
 ==============================
 
-Antes de empezar
-----------------
+Ayer, hemos explorado cómo symfony simplifica la gestión de bases de datos por abstracción entre los diferentes motores de bases de datos, y mediante la conversión de elementos relacionales con utiles clases orientadas a objetos. También hemos jugado con ##ORM## para describir el esquema de base de datos, crear las tablas, y llenar la base de datos con algunos datos iniciales.
 
-Si ya dispones de una tabla `jobeet_category_affiliate` en uu esquema de base de datos, puedes saltarte esta sección e ir directamente a la sección `Anteriormente en Jobeet`.
-
-Si tienes una tabla `jobeet_job_affiliate`, sigue leyendo.
-
-El Jobeet tutorial se hace día a día. Te agradecemos todos los comentarios que nos proporcionas en tiempo real. Sobre la base de algunos comentarios del tutorial de ayer, hemos decidido cambiar el esquema de base de datos. En lugar de tener una relación muchos-a-muchos entre afiliados y puestos de trabajo, algunos de ustedes sugirierón que sería más lógico tener una entre los afiliados y las categorías. Y no podríamos estar más de acuerdo. Por lo tanto, antes de iniciar el tutorial de hoy, vamos a hacer el cambio. En caso de no tener demasiado tiempo, la mayoría de las cosas serán automatizadas por el framework.
-
-Primero reemplaza la definición de la tabla `jobeet_job_affiliate` por `jobeet_category_affiliate`:
-
-    [yml]
-    // config/schema.yml
-    jobeet_category_affiliate:
-      category_id:  { type: integer, foreignTable: jobeet_category,
-        ➥ foreignReference: id, required: true, primaryKey: true,
-        ➥ onDelete: cascade }
-      affiliate_id: { type: integer, foreignTable: jobeet_affiliate,
-        ➥ foreignReference: id, required: true, primaryKey: true,
-        ➥ onDelete: cascade }
-
-Reconstruye las clases del modelo, re-genera las sentencias SQL de creación para las tablas, e carga los archivos de datos:
-
-    $ php symfony propel:build-all-load
-
-Elimina los archivos que no necesitaremos más:
-
-  * lib/filter/base/BaseJobeetJobAffiliateFormFilter.class.php
-  * lib/filter/JobeetJobAffiliateFormFilter.class.php
-  * lib/form/base/BaseJobeetJobAffiliateForm.class.php
-  * lib/form/JobeetJobAffiliateForm.class.php
-  * lib/model/JobeetJobAffiliate.php
-  * lib/model/JobeetJobAffiliatePeer.php
-  * lib/model/map/JobeetJobAffiliateMapBuilder.php
-  * lib/model/om/BaseJobeetJobAffiliate.php
-  * lib/model/om/BaseJobeetJobAffiliatePeer.php
-
-Borrar la caché de symfony para tener en cuenta los cambios:
-
-    $ php symfony cc
-
-Hemos terminado.
-
->**NOTA**
->La etiqueta SVN para el día 4 también ha sido actualizada para reflejar el cambio.
-
-Anteriormente en Jobeet
------------------------
-
-Ayer, hemos explorado cómo symfony simplifica la gestión de bases de datos por abstracción entre los diferentes motores de bases de datos, y mediante la conversión de elementos relacionales con utiles clases orientadas a objetos. También hemos jugado con Propel para describir el esquema de base de datos, crear las tablas, y llenar la base de datos con algunos datos iniciales.
-
-Hoy, vamos a personalizar el módulo básise `job` creado ayer. El módulo `job` existente tiene todo el código que necesitamos para Jobeet:
+Hoy, vamos a personalizar el módulo básico `job` creado ayer. El módulo `job` existente tiene todo el código que necesitamos para Jobeet:
 
  * Una página que lista todos los puestos de trabajo
  * Una página para crear un nuevo puesto de trabajo
  * Una página para actualizar un puesto de trabajo existente
  * Una página para eliminar un puesto de trabajo
 
-Aunque el código está listo para ser utilizado como esta, vamos a refactorizar las plantillas para adaptarlas lo mas cerca a los mockups Jobeet.
+Aunque el código está listo para ser utilizado como esta, vamos a refactorizar las plantillas para adaptarlas lo más cerca a los mockups Jobeet.
 
 La arquitectura MVC
 -------------------
 
-Si estas desarrollando con PHP sitios web sin ningun framework, probablemente uses el paradigma de un archivo PHP por página HTML. Estos archivos PHP probablemente contengan el mismo tipo de estructura: inicialización y configuración global, lógica de negocio relacionadas con la página solicitada, busqueda de registros en la base, y finalmente el código HTML que arman la página.
+Si estás desarrollando con PHP sitios web sin ningún framework, probablemente uses el paradigma de un archivo PHP por página HTML. Estos archivos PHP probablemente contengan el mismo tipo de estructura: inicialización y configuración global, lógica de negocio relacionada con la página solicitada, busqueda de registros en la base, y finalmente el código HTML que arma la página.
 
 Puede utilizar un motor de plantillas para separar la lógica del HTML.
 Tal vez utilizas una capa de abstracción de la base de datos para separar el modelo de la lógica de negocio. Sin embargo, la mayoría de las veces, terminas con un montón de código que es una pesadilla para mantener. Es rápido para construir, pero con el tiempo, es más y más difícil de hacer cambios, especialmente porque nadie, excepto tú entiende cómo se construye y cómo funciona.
@@ -124,14 +75,15 @@ Reemplaza el layout por defecto de symfony por el siguiente código:
                 <div class="post">
                   <h2>Ask for people</h2>
                   <div>
-                    <a href="/new">Post a Job</a>
+                    <a href="/job/new">Post a Job</a>
                   </div>
                 </div>
 
                 <div class="search">
                   <h2>Ask for a job</h2>
                   <form action="" method="get">
-                    <input type="text" name="keywords" id="search_keywords" />
+                    <input type="text" name="keywords"
+                      id="search_keywords" />
                     <input type="submit" value="search" />
                     <div class="help">
                       Enter some keywords (city, country, position, ...)
@@ -144,11 +96,15 @@ Reemplaza el layout por defecto de symfony por el siguiente código:
 
           <div id="content">
             <?php if ($sf_user->hasFlash('notice')): ?>
-              <div class="flash_notice"><?php echo $sf_user->getFlash('notice') ?></div>
+              <div class="flash_notice">
+                <?php echo $sf_user->getFlash('notice') ?>
+              </div>
             <?php endif; ?>
 
             <?php if ($sf_user->hasFlash('error')): ?>
-              <div class="flash_notice"><?php echo $sf_user->getFlash('error') ?></div>
+              <div class="flash_error">
+                <?php echo $sf_user->getFlash('error') ?>
+              </div>
             <?php endif; ?>
 
             <div class="content">
@@ -161,7 +117,8 @@ Reemplaza el layout por defecto de symfony por el siguiente código:
               <span class="symfony">
                 <img src="/images/jobeet-mini.png" />
                 powered by <a href="http://www.symfony-project.org/">
-                <img src="/images/symfony.gif" alt="symfony framework" /></a>
+                <img src="/images/symfony.gif" alt="symfony framework" />
+                </a>
               </span>
               <ul>
                 <li><a href="">About Jobeet</a></li>
@@ -175,11 +132,11 @@ Reemplaza el layout por defecto de symfony por el siguiente código:
       </body>
     </html>
 
-Una plantilla symfony es sólo un simple archivo PHP. En la plantilla layout, verás llamadas a funciones PHP y referencias a variables PHP. `$sf_content` es la variable más interesante: la define el framework mismo y contiene el código HTML generado por la acción.
+Una plantilla symfony es sólo un simple archivo PHP. En la plantilla layout, verás llamadas a funciones PHP y referencias a variables PHP. `$sf_content` es la variable más interesante: la define el mismo framework y contiene el código HTML generado por la acción.
 
 Si navegas el módulo `job` (`http://jobeet.localhost/frontend_dev.php/job`), verás que todas las acciones ahora son decoradas por el layout.
 
->**NOTA**
+>**NOTE**
 >En el layout, incluimos un *favicon*. Puedes
 >[descargar el de Jobeet](http://www.symfony-project.org/images/jobeet/favicon.ico)
 >y ponerlo en el directorio `web/`.
@@ -189,28 +146,28 @@ Las Hojas de Estilo, Imágenes, y JavaScripts
 
 Como vamos a organizar un concurso al "mejor diseño" para el dia 21, tenemos preparado un muy básico diseño para usar mientras tanto:
 [descarga los archivo gráficos](http://www.symfony-project.org/get/jobeet/images.zip)
-y colocálos dentro del directorio `web/images/`;
+y copiarlos dentro del directorio `web/images/`;
 [descarga los archivo de hojas de estilo](http://www.symfony-project.org/get/jobeet/css.zip)
-y colocálos dentro del directorio `web/css/`.
+y copiarlos dentro del directorio `web/css/`.
 
 ![El módulo job con un layout y recursos](http://www.symfony-project.org/images/jobeet/1_2/04/job_layout_assets.png)
 
 >**TIP**
 >Por defecto, la tarea `generate:project` ha creado tres directorios para los recusos de 
 >project: `web/images/` para las imágenes, `web/css/` para las hojas de estilo, y 
->`web/js/` para los JavaScripts. Esta es una de las muchas convenciones definidas por
+>`web/js/` para los Javascripts. Esta es una de las muchas convenciones definidas por
 >symfony, pero por supuesto puedes almacenar en otro lugar bajo el directorio
 >`web/`.
 
 El astuto lector habrá notado que, incluso si el archivo `main.css` no es mencionado en cualquier lugar del layout por defecto, está sin duda presentes en el código HTML generado. Pero no los otros. ¿Cómo es esto posible?
 El archivo de estilo se ha incluido por la llamada a la función `include_stylesheets()` 
 que encuentra la etiqueta `<head>`. La función`include_stylesheets()` es
-llamada un **helper**. Un helper es una función, definida por symfony, que puede tener parámetros y devolver código HTML. La mayoría de las veces, los helpers son ahorradores de tiempo, ellos empaquetan código en snippets utilizados con frecuencia en las plantillas. El helper `include_stylesheets()` genera una etiqueta `<link>` para las hojas de estilo.
+llamada un **helper**. Un helper es una función, definida por symfony, que puede tener parámetros y devolver código HTML. La mayoría de las veces, los helpers te ahorran tiempo, ellos empaquetan código en snippets (porciones de código) utilizados con frecuencia en las plantillas. El helper `include_stylesheets()` genera una etiqueta `<link>` para las hojas de estilo.
 
 Pero, ¿cómo hace el helper para saber que hojas de estilo incluir?
 
 La capa de la Vista se puede configurar editando el archivo de configuración
-`view.yml` de la aplicación. Aquí está la predeterminada generada por la tarea `generate:app`:
+`view.yml` de la aplicación. Aquí está el archivo por defecto generado por la tarea `generate:app`:
 
     [yml]
     # apps/frontend/config/view.yml
@@ -232,9 +189,9 @@ La capa de la Vista se puede configurar editando el archivo de configuración
       has_layout:     on
       layout:         layout
 
-El archivo `view.yml` configura el configuración `por defecto` para todas las plantillas de la aplicación. Por ejemplo, las `hojas de estilo` define un array de archivos de estilo para incluir en todas las páginas de la aplicación (la inclusión se hace por el helper `include_stylesheets()`).
+El archivo `view.yml` establece la configuración `por defecto` para todas las plantillas de la aplicación. Por ejemplo, para las `hojas de estilo` define un array de archivos de estilo para incluir en todas las páginas de la aplicación (la inclusión se hace por el helper `include_stylesheets()`).
 
->**NOTA**
+>**NOTE**
 >En el archivo de configuración `view.yml` por defecto, se hace referencia al archivo
 >`main.css`, y no al `/css/main.css`. Como cuestión de hecho, ambas definiciones
 >son equivalentes pues el prefijo symfony relativo es `/css/`.
@@ -260,11 +217,11 @@ Esta configuración se presentará así:
 >**TIP**
 >El archivo de configuración `view.yml` también define el layout por defecto usado por la
 >aplicación. Por defecto, el nombre es `layout`, y así symfony decora cada
->página con el archivo `layout.php`. Puedes También deshabilitar el proceso de decoración
+>página con el archivo `layout.php`. Puedes también deshabilitar el proceso de decoración
 >completo cambiando el valor de `has_layout` a `false`.
 
 Funciona como es pero el archivo `jobs.css` es solo necesario en la página principal y el
-`job.css` sólo es necesario para la página job. El archivo `view.yml` se puede personalizar partiendo de una base por-módulo. Cambia el archivo `view.yml` de la  aplicación sólo para tener el archivo `main.css`:
+`job.css` sólo es necesario para la página job. El archivo `view.yml` se puede personalizar partiendo de una base por-módulo. Cambia el archivo `view.yml` de la aplicación sólo para tener el archivo `main.css`:
 
     [yml]
     # apps/frontend/config/view.yml
@@ -280,12 +237,12 @@ Para personalizar la vista del módulo `job`, crea un archivo `view.yml` en el d
     showSuccess:
       stylesheets: [job.css]
 
-Bajo las secciones `indexSuccess` y `showSuccess` sections (ellas son las plantilla asociadas a las acciones `index` y `show`, como veremos más adelante), puedes personalizar cualquiera de las entradas encontradas bajo la sección `default` del `view.yml` de la aplicación. Todas las entradas se fusionana con la configuración de la aplicación. También puede definir algunas configuraciones para todas las acciones de un módulo con la sección especial `all`.
+Bajo las secciones `indexSuccess` y `showSuccess` (ellas son las plantilla asociadas a las acciones `index` y `show`, como veremos más adelante), puedes personalizar cualquiera de los items encontrados bajo la sección `default` del `view.yml` de la aplicación. Todos los items se fusionan con la configuración de la aplicación. También puedes definir algunas configuraciones para todas las acciones de un módulo con la sección especial `all`.
 
 >**SIDEBAR**
 >Principios de configuración en symfony
 >
->Para muchos archivos de configuración de symfony, la misma configuración se puede definir en
+>Para los muchos archivos de configuración de symfony, la misma configuración se puede definir en
 >diferentes niveles:
 >
 >  * La configuración por defecto se encuentra en el framework
@@ -295,9 +252,9 @@ Bajo las secciones `indexSuccess` y `showSuccess` sections (ellas son las planti
 >    `apps/APP/modules/MODULE/config/`)
 >
 >En tiempo de ejecución, la configuración del sistema combina todos los valores de los diferentes
->archivos si existen y guarda en cache el resultado para un mejor rendimiento.
+>archivos si existen y guarda en la memoria cache el resultado para un mejor rendimiento.
 
-Como una regla empírica, cuando algo es configurable a través de un archivo de configuración, la misma puede realizarse con código PHP. En lugar de crear un archivo `view.yml` para el módulo `job` por ejemplo, también puedes utilizar el helper `use_stylesheet()` a fin de incluir una hoja de estilos a partir de una plantilla:
+Como regla empírica, cuando algo es configurable a través de un archivo de configuración, la misma puede realizarse con código PHP. En lugar de crear un archivo `view.yml` para el módulo `job` por ejemplo, también puedes utilizar el helper `use_stylesheet()` a fin de incluir una hoja de estilos a partir de una plantilla:
 
     [php]
     <?php use_stylesheet('main.css') ?>
@@ -337,19 +294,31 @@ Esto recupera todos los puestos de trabajo de la base de datos:
     {
       public function executeIndex(sfWebRequest $request)
       {
+<propel>
         $this->jobeet_job_list = JobeetJobPeer::doSelect(new Criteria());
+</propel>
+<doctrine>
+        $this->jobeet_job_list = Doctrine::getTable('JobeetJob')
+          ->createQuery('a')
+          ->execute();
+</doctrine>
       }
 
       // ...
     }
 
+<propel>
 Echemos un vistazo más de cerca al código: el método `executeIndex()` (el Controlador) llama al Módelo `JobeetJobPeer` para recuperar todos los puestos de trabajo
 (`new Criteria()`). Devuelve un array de objetos `Job` que se asignan a la propiedad `jobeet_job_list` del objeto.
+</propel>
+<doctrine>
+Echemos un vistazo más de cerca al código: el método `executeIndex()` (el Controlador) llama a la Tabla `JobeetJob` para crear una consulta que recupere todos los puestos de trabajo. Devuelve una `Doctrine_Collection` de objetos `JobeetJob` que se asignan a la propiedad `jobeet_job_list` del objeto.
+</doctrine>
 
 Todas las propiedades del objeto luego se pasa automáticamente a la plantilla (la Vista). Para pasar los datos del Controlador a la Vista, solo crea una nueva propiedad:
 
     [php]
-    public function executeIndex(sfWebRequest $request)
+    public function executeFooBar(sfWebRequest $request)
     {
       $this->foo = 'bar';
       $this->bar = array('bar', 'baz');
@@ -365,6 +334,8 @@ La plantilla `indexSuccess.php` genera una tabla HTML para todos los puestos de 
 
     [php]
     <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
     <h1>Job List</h1>
 
     <table>
@@ -399,8 +370,7 @@ La plantilla `indexSuccess.php` genera una tabla HTML para todos los puestos de 
     <a href="<?php echo url_for('job/new') ?>">New</a>
 
 En el código de plantilla, el `foreach` itera a través de la lista de objetos `Job` (`$jobeet_job_list`), y para cada puesto de trabajo, cada valor de la columna es mostrado.
-Recuerde, el acceso a un valor de una columna es tan simple como una llamada al método de acceso cuyo nombre comienza con `get` y el nombre de la columna camelCased (por ejemplo, el método 
-`getCreatedAt()` para la columna `created_at`).
+Recuerda, el acceso a un valor de una columna es tan simple como una llamada al método de acceso cuyo nombre comienza con `get` y el nombre de la columna camelCased (por ejemplo, el método `getCreatedAt()` para la columna `created_at`).
 
 Vamos a limpiar esto un poco para mostrar sólo un subconjunto de las columnas disponibles:
 
@@ -412,13 +382,13 @@ Vamos a limpiar esto un poco para mostrar sólo un subconjunto de las columnas d
       <table class="jobs">
         <?php foreach ($jobeet_job_list as $i => $job): ?>
           <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
-            <td><?php echo $job->getLocation() ?></td>
-            <td>
+            <td class="location"><?php echo $job->getLocation() ?></td>
+            <td class="position">
               <a href="<?php echo url_for('job/show?id='.$job->getId()) ?>">
                 <?php echo $job->getPosition() ?>
               </a>
             </td>
-            <td><?php echo $job->getCompany() ?></td>
+            <td class="company"><?php echo $job->getCompany() ?></td>
           </tr>
         <?php endforeach; ?>
       </table>
@@ -428,12 +398,14 @@ Vamos a limpiar esto un poco para mostrar sólo un subconjunto de las columnas d
 
 La función `url_for()` llamada en esta plantilla es un helper symfony que vamos a discutir mañana.
 
-La Plantila de Puestos de Trabajo
----------------------------------
+La Plantilla para los Puestos de Trabajo
+----------------------------------------
 
-Ahora vamos a personalizar la plantilla de la página de puestos. Abre el archivo `showSuccess.php` y reemplaza su contenido con el siguiente código:
+Ahora vamos a personalizar la plantilla de la página de puestos de trabajo. Abre el archivo `showSuccess.php` y reemplaza su contenido con el siguiente código:
 
     [php]
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
     <?php use_helper('Text') ?>
 
     <div id="job">
@@ -447,7 +419,7 @@ Ahora vamos a personalizar la plantilla de la página de puestos. Abre el archiv
       <?php if ($job->getLogo()): ?>
         <div class="logo">
           <a href="<?php echo $job->getUrl() ?>">
-            <img src="<?php echo $job->getLogo() ?>"
+            <img src="/uploads/jobs/<?php echo $job->getLogo() ?>"
               alt="<?php echo $job->getCompany() ?> logo" />
           </a>
         </div>
@@ -462,38 +434,56 @@ Ahora vamos a personalizar la plantilla de la página de puestos. Abre el archiv
       <p class="how_to_apply"><?php echo $job->getHowToApply() ?></p>
 
       <div class="meta">
+<propel>
         <small>posted on <?php echo $job->getCreatedAt('m/d/Y') ?></small>
+</propel>
+<doctrine>
+        <small>posted on <?php echo date('m/d/Y', strtotime($job->getCreatedAt())) ?></small>
+</doctrine>
       </div>
 
       <div style="padding: 20px 0">
-        <a href="<?php echo url_for('job/edit?id='.$job->getId()) ?>">Edit</a>
+        <a href="<?php echo url_for('job/edit?id='.$job->getId()) ?>">
+          Edit
+        </a>
       </div>
     </div>
 
-Esta plantilla utiliza la variable `$job` pasada por la acción para mostrar la información del puesto. Como hemos rebautizado el nombre de variable pasada a la plantilla de
-`$jobeet_job` a `$job`, es necesario también realizar este cambio en la acción `show` (tener cuidado, hay dos ocurrencias de la variable):
+Esta plantilla utiliza la variable `$job` pasada por la acción para mostrar la información del puesto de trabajo. Como hemos rebautizado el nombre de variable pasada a la plantilla de `$jobeet_job` a `$job`, es necesario también realizar este cambio en la acción `show` (tener cuidado, hay dos ocurrencias de la variable):
 
     [php]
-    // apps/frontend/jobeet/actions/actions.class.php
+    // apps/frontend/modules/job/actions/actions.class.php
     public function executeShow(sfWebRequest $request)
     {
-      $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+<propel>
+      $this->job =
+       ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+      $this->job = Doctrine::getTable('JobeetJob')->
+       ➥ find($request->getParameter('id'));
+</doctrine>
       $this->forward404Unless($this->job);
     }
 
+<propel>
 Observa que algunos métodos accesores de Propel toman argumentos. Como hemos definido la columna `created_at` como un timestamp, el método accesor  `getCreatedAt()` toma un dia formateado como su primer argumento:
 
     [php]
     $job->getCreatedAt('m/d/Y');
 
->**NOTA**
+</propel>
+
+>**NOTE**
 >La descripción del trabajo usa el helper `simple_format_text()` para formatearlo como
 >HTML, sustituyendo los retornos de carro con `<br />` por ejemplo. Como este helper
 >pertenece al grupo de helper `Text`, que no se carga por defecto, tenemos
 >que cargarlo manualmente utilizando el helper `use_helper()`.
 
-Slots
------
+![Página del Puesto de Trabajo](http://www.symfony-project.org/images/jobeet/1_2/04/job.png)
+
+Los Slots
+---------
 
 Ahora, el título de todas las páginas se define en la etiqueta `<title>` del layout:
 
@@ -516,7 +506,10 @@ Cada slot es definido por un nombre (`title`) y se pueden visualizar mediante el
 
     [php]
     // apps/frontend/modules/job/templates/showSuccess.php
-    <?php slot('title', sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition())) ?>
+    <?php slot(
+      'title',
+      sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()))
+    ?>
 
 Si el título es complejo de generar, el helper `slot()` también se puede utilizar con un bloque de código:
 
@@ -536,7 +529,7 @@ Para algunas páginas, como la página de inicio, sólo necesitamos un título g
       <?php endif; ?>
     </title>
 
-El helper `include_slot()` regresa `true` si el slot se ha definido. Por lo tanto, cuando defines el slot `title` contenido en una plantilla, éste es usado; sino, el título predeterminado será utilizado.
+El helper `include_slot()` regresa `true` si el slot se ha definido. Por lo tanto, cuando defines el contenido del slot `title` en una plantilla, éste es usado; sino, el título predeterminado será utilizado.
 
 >**TIP**
 >Ya hemos visto bastantes helpers comenzando con `include_`. Estos helpers
@@ -560,32 +553,47 @@ La página de puestos de trabajo es generada por la acción `show`, definida en 
     {
       public function executeShow(sfWebRequest $request)
       {
-        $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+<propel>
+        $this->job =
+         ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+        $this->job = Doctrine::getTable('JobeetJob')->
+         ➥ find($request->getParameter('id'));
+</doctrine>
         $this->forward404Unless($this->job);
       }
 
       // ...
     }
 
-Como en la acción `index`, la clase `JobeetJobPeer` es usada para obtener un puesto, esta vez mediante el uso del método `retrieveByPk()`. El parámetro de este método es el identificador único de un puesto de trabajo, su clave principal. La siguiente sección explicará el por qué la sentencia `$request->getParameter('id')` devuelve la clave principal del puesto de trabajo.
+<propel>
+Como en la acción `index`, la clase `JobeetJobPeer` es usada para obtener un puesto de trabajo, esta vez es mediante el uso del método `retrieveByPk()`. El parámetro de este método es el identificador único de un puesto de trabajo, su clave principal. La siguiente sección explicará el por qué la sentencia `$request->getParameter('id')` devuelve la clave principal del puesto de trabajo.
+</propel>
+<doctrine>
+Como en la acción `index`, la clase `JobeetJob` es usada para obtener un puesto de trabajo, esta vez es mediante el uso del método `find()`.  El parámetro de este método es el identificador único de un puesto de trabajo, su clave principal. La siguiente sección explicará el por qué la sentencia `$request->getParameter('id')` devuelve la clave principal del puesto de trabajo.
+</doctrine>
 
+<propel>
 >**TIP**
 >Las clases del modelo generadas tienen un montón de métodos útiles para interactuar con
->los objetos del proyecto. Tómete un tiempo para navegar por el código ubicado en el directorio
+>los objetos del proyecto. Date un tiempo para navegar por el código ubicado en el directorio
 >`lib/om/` y descubre todo el poder de estas clases.
+</propel>
 
-Si el puesto de trabajo no existe en la base de datos, queremos llevar al usuario a una página 404, que es exactamente lo que el método `forward404Unless()` hace. Este toma un Booleano como primer argumento y, a menos que sea true, se detiene el flujo de la actual ejecución. Como los métodos forward paran la ejecución de la acción
-enseguida lanzando un `sfError404Exception`, no necesitas volver atrás después.
+Si el puesto de trabajo no existe en la base de datos, queremos llevar al usuario a una página 404, que es exactamente lo que hace el método `forward404Unless()`. Este toma un Booleano como primer argumento y, a menos que sea true, se detiene el flujo de la actual ejecución. Como los métodos forward paran la ejecución de la acción enseguida lanzando un `sfError404Exception`, no necesitas después volver atrás.
 
-En cuanto a las excepciones, la página que aparece al usuario es diferente en el entorno `prod` del  entorno `dev`:
+En cuanto a las excepciones, la página que aparece al usuario es diferente en el entorno `prod` del entorno `dev`:
 
-![404 error in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/05/404_dev.png)
+![error 404 en el entorno dev](http://www.symfony-project.org/images/jobeet/1_2/05/404_dev.png)
 
-![404 error in the prod environment](http://www.symfony-project.org/images/jobeet/1_2/05/404_prod.png)
+![error 404 en el entorno prod](http://www.symfony-project.org/images/jobeet/1_2/05/404_prod.png)
 
->**NOTA**
+>**NOTE**
 >Antes de implementar el sitio web Jobeet para el servidor de producción, aprenderás
 >cómo personalizar la página 404 por defecto.
+
+-
 
 >**SIDEBAR**
 >La Familia de Métodos "forward"
@@ -617,13 +625,13 @@ En cuanto a las excepciones, la página que aparece al usuario es diferente en e
 La Petición y la Respuesta
 --------------------------
 
-Cuando navegas por las páginas `/job` o `/job/show/id/1` en tu navegador, están iniciando un viaje de ida y vuelta al servidor web. El navegador está enviando una **Petición** y el servidor devuelve una **Respuesta**.
+Cuando navegas por las páginas `/job` o `/job/show/id/1` en tu navegador, estás iniciando un viaje de ida y vuelta al servidor web. El navegador está enviando una **Petición** y el servidor devuelve una **Respuesta**.
 
-Ya hemos visto que symfony encapsula la petición en un object `sfWebRequest` (mirá el método `executeShow()`). Y como symfony es un framework Orientado a Objetos, la respuesta es también un objeto, de la clase `sfWebResponse`. Puedes acceder al objeto respuesta en la acción llamando al `$this->getResponse()`.
+Ya hemos visto que symfony encapsula la petición en un object `sfWebRequest` (mirá el método `executeShow()`). Y como symfony es un Framework Orientado a Objetos, la respuesta es también un objeto, de la clase `sfWebResponse`. Puedes acceder al objeto respuesta en la acción llamando a `$this->getResponse()`.
 
-Estos objetos proporcionan una gran cantidad de métodos convenientes para acceder a la información de funciones PHP y variables PHP globales.
+Estos objetos proporcionan una gran cantidad de métodos convenientes para acceder a la información de funciones PHP y variables globales PHP.
 
->**NOTA**
+>**NOTE**
 >¿Por qué symfony envuelve funcionalidades PHP existentes? En primer lugar, porque 
 >symfony y sus métodos son más poderosos que su homólogo PHP. Luego, porque
 >cuando se prueba una aplicación, es mucho más fácil para simular un request o
@@ -658,7 +666,7 @@ Ya hemos accesido parámetros de solicitud usando el método `getParameter()`. D
 Si deseas asegurarte de que un parámetro de la petición procede de uno particular de estas variables, necesitas utilizar los métodos  `getGetParameter()`, `getPostParameter()`,
 y `getUrlParameter()` respectivamente.
 
->**NOTA**
+>**NOTE**
 >Si deseas restringir la acción de un método específico, por ejemplo, cuando
 >que deseas asegurarte de que un formulario es enviado como `POST`, puede utilizar el 
 >método `isMethod()`: 
@@ -696,6 +704,23 @@ Si deseas presentar un diseño original para nuestro **concurso de diseño** (qu
 
 Mañana, vamos a aprender más acerca del helper `url_for()` que hemos utilizado hoy, y el sub-framework de enrutamiento asociado a él.
 
-Hasta entonces, siéntete libre de navegar por el código del tutorial de hoy (etiqueta `release_day_4`) en:
+>**Note**
+>Si deseas comprobar el código del día de hoy, o de cualquier otro día, el código esta
+>disponible día a día en el repositorio SVN oficial de Jobeet
+>(`http://svn.jobeet.org/##ORM_LOWER##/`).
+>
+>Por ejemplo, puedes obtener el código de hoy de la
+>etiqueta `release_day_04`:
+>
+>       $ svn co http://svn.jobeet.org/##ORM_LOWER##/tags/release_day_04/ jobeet/
+>
 
-    http://svn.jobeet.org/tags/release_day_4/
+Feedback
+--------
+
+>**Tip**
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
+>no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
+
+__ORM__
