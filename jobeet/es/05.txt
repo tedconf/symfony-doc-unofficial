@@ -1,15 +1,5 @@
-Día 5: El Enrutamiento
+﻿Día 5: El Enrutamiento
 ======================
-
-Antes de empezar
-----------------
-
-Ayer, iniciamos el concurso de diseños Jobeet. Si quieres participar, hemos preparado un 
-[archivo](http://www.symfony-project.org/images/jobeet/mockups.zip) con las principales páginas que vamos a desarrollar durante el tutorial (el archivo contiene los archivos HTML, las hojas de estilo, y las imágenes). El día 21 lo destinaremos a la votación, deberías enviarme (fabien.potencier [.at.]
-symfony-project.org) los mockups con tu diseño antes de esa fecha. Buena suerte!
-
-Anteriormente en Jobeet
------------------------
 
 Si has completado el día 4, ahora deberías estar familiarizado con el patrón MVC y 
 deberías sentir mas y mas natural esta forma de codificación. Dedica un poco más de tiempo con esto para no tener que colver y mirar hacia atrás. Para practicar un poco el día de ayer, hemos personalizado la páginas Jobeet y en el proceso, también examinamos varios conceptos de symfony, como el layout, los helpers, y los slots.
@@ -108,6 +98,7 @@ Puedes ahora cambiar el enlace al logo de Jobeet en el layout para usar la ruta
 `homepage`:
 
     [php]
+    <!-- apps/frontend/templates/layout.php -->
     <h1>
       <a href="<?php echo url_for('@homepage') ?>">
         <img src="/images/jobeet.gif" alt="Jobeet Job Board" />
@@ -129,10 +120,10 @@ El siguiente patrón coincide con esta URL:
 
     /job/:company/:location/:id/:position
 
-Edita el archivo `routing.yml` y agrega la ruta `job` al principio del archivo:
+Edita el archivo `routing.yml` y agrega la ruta `job_show_user` al principio del archivo:
 
     [yml]
-    job:
+    job_show_user:
       url:   /job/:company/:location/:id/:position
       param: { module: job, action: show }
 
@@ -160,7 +151,7 @@ Los Requisitos
 Durante el primer día de tutoría, hemos hablado de la validación y manejo de errores por una buena razóns. El sistema de enrutamiento tiene incorporada una función de validación. Cada variable patrón pueda ser validada por una expresión regular definida utilizando la linea `requirements` en la definición de la ruta:
 
     [yml]
-    job:
+    job_show_user:
       url:   /job/:company/:location/:id/:position
       param: { module: job, action: show }
       requirements:
@@ -172,29 +163,30 @@ La Clase Route
 --------------
 
 Cada ruta se definida en `routing.yml` es internamente convertida en un objecto de la clase [`sfRoute`](http://www.symfony-project.org/api/1_2/sfRoute). Esta clase se puede cambiar mediante una linea `class` en la definición de la ruta. Si estás familiarizado con el protocolo HTTP, sabes que este define varios "métodos",
-como `GET`, `POST`, `HEADER`, `DELETE`, y `PUT`. Los tres primeros cuentan con soporte en todos los navegadores, mientras que los otros dos no.
+como `GET`, `POST`, `HEAD`, `DELETE`, y `PUT`. Los tres primeros cuentan con soporte en todos los navegadores, mientras que los otros dos no.
 
 Para restringir una ruta a sólo la coincidencia con algunos métodos, puedes modificar la clase de enrutamiento a
 [`sfRequestRoute`](http://www.symfony-project.org/api/1_2/sfRequestRoute) y añadir un requisito para la variable virtual `sf_method`:
 
     [yml]
-    job:
+    job_show_user:
       url:   /job/:company/:location/:id/:position
       class: sfRequestRoute
       param: { module: job, action: show }
       requirements:
         id: \d+
-        sf_method: [GET]
+        sf_method: [get]
 
->**NOTA**
->Exigir una ruta para solo algunos métodos HTTP es equivalente a usar
->`sfWebRequest::isMethod()` en tus actions.
+>**NOTE**
+>Exigir una ruta para solo algunos métodos HTTP no es totalmente 
+>equivalente a usar `sfWebRequest::isMethod()` en tus acciones.
+>Eso es porque el enrutamiento continuará buscando por una ruta coincidente
+>si el método no coincide con el esperado
 
-Los Objectos de la Clase Route
-------------------------------
+El Objecto de la Clase Route
+----------------------------
 
-La nueva URI interna para un puesteo de trabajo es bastante larga y tediosa de escribir, pero como recien hemos aprendido en la sección anterior, la clase route puede ser cambiada. Para la ruta `job`, es mejor utilizar
-[`sfPropelRoute`](http://www.symfony-project.org/api/1_2/sfPropelRoute) ya que la clase está optimizada para las rutas que representan objetos Propel o colecciones de objetos Propel:
+La nueva URI interna para un puesto de trabajo es bastante larga y tediosa de escribir, (`url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().'&location='.$job->getLocation().'&position='.$job->getPosition())`), pero como acabamos de aprender en la sección anterior, la clase route puede ser modificada. Para la ruta `job_show_user`, es mejor utilizar [`sfPropelRoute`](http://www.symfony-project.org/api/1_2/sfPropelRoute) ya que la clase está optimizada para las rutas que representan objetos ##ORM## o colecciones de objetos ##ORM##:
 
     [yml]
     job_show_user:
@@ -204,22 +196,22 @@ La nueva URI interna para un puesteo de trabajo es bastante larga y tediosa de e
       param:   { module: job, action: show }
       requirements:
         id: \d+
-        sf_method: [GET]
+        sf_method: [get]
 
-La linea `options` personaliza el comportamiento de la ruta. Aquí, la opción `model` define la clase del módelo Propel (`JobeetJob`) relacionada a la ruta, y la opción `type` define que esta ruta está vinculada a un objeto (también puedes utilizar `list` si una ruta representa una colección de objetos).
+La linea `options` personaliza el comportamiento de la ruta. Aquí, la opción `model` define la clase del módelo ##ORM## (`JobeetJob`) relacionada a la ruta, y la opción `type` define que esta ruta está vinculada a un objeto (también puedes utilizar `list` si una ruta representa una colección de objetos).
 
 La ruta `job_show_user` es ahora consciente de su relación con `JobeetJob` y así podemos simplificar la llamada `url_for()` a:
 
     [php]
     url_for(array('sf_route' => 'job_show_user', 'sf_subject' => $job))
 
-o:
+o solo:
 
     [php]
     url_for('job_show_user', $job)
 
 >**NOTA**
->El primer ejemplo es mejor cuando necesitas pasar más argumentos que sólo
+>El primer ejemplo es muy útil cuando necesitas pasar más argumentos que sólo
 >el objeto.
 
 Funciona porque todas las variables en la ruta tiene su método correspondiente en la clase `JobeetJob` (por ejemplo, la variable `company` es reemplazada con el valor de `getCompany()`).
@@ -231,7 +223,12 @@ Si hechas una mirada a las URL generadas, no son todavía bastantes como queremo
 Tenemos que "slugify" los valores de columna mediante la sustitución de todos los caracteres no ASCII por un `-`. Abre el archivo `JobeetJob` y añadir el siguiente métodos para la clase:
 
     [php]
+<propel>
     // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
     public function getCompanySlug()
     {
       return Jobeet::slugify($this->getCompany());
@@ -276,7 +273,7 @@ Tenemos definidos tres nuevos métodos "virtuales" : `getCompanySlug()`,
       param:   { module: job, action: show }
       requirements:
         id: \d+
-        sf_method: [GET]
+        sf_method: [get]
 
 Antes de actualizar la página principal Jobeet, es necesario vaciar la caché, como hemos añadido una nueva clase (`Jobeet`):
 
@@ -284,9 +281,9 @@ Antes de actualizar la página principal Jobeet, es necesario vaciar la caché, 
 
 Tendrás ahora las URLs esperadas:
 
-    http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/4/web-developer
+    http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/1/web-developer
 
-Pero eso es sólo la mitad de la historia. La ruta es capaz de generar una URL sobre la base de un objeto, pero también es capaz de encontrar el objeto en relación con una determinada URL. Los objetos pueden ser recuperados con el método `getObject()` de la ruta. Al analizar una petición, el enrutamiento guarda la ruta del objeto coincidentes para que la uses en las acciones. Por lo tanto, puedes cambiar el método `executeShow()` para utilizar este método:
+Pero eso es sólo la mitad de la historia. La ruta es capaz de generar una URL sobre la base de un objeto, pero también es capaz de encontrar el objeto en relación con una determinada URL. Los objetos pueden ser recuperados con el método `getObject()` de la ruta. Al analizar una petición, el enrutamiento guarda la ruta del objeto coincidentes para que la uses en las acciones. Por lo tanto, cambia el método `executeShow()` para utilizar el objeto route para obtener el objeto `Jobeet`:
 
     [php]
     class jobActions extends sfActions
@@ -294,7 +291,6 @@ Pero eso es sólo la mitad de la historia. La ruta es capaz de generar una URL s
       public function executeShow(sfWebRequest $request)
       {
         $this->job = $this->getRoute()->getObject();
-        $this->forward404Unless($this->getRoute()->getObject());
       }
 
       // ...
@@ -321,6 +317,13 @@ Esto es así porque el error 404 ha sido lanzado de forma automática por el mé
 >**TIP**
 >Si no deseas que la ruta genere un error 404, puede establecer la opción 
 >`allow_empty` a `true`.
+
+-
+
+>**NOTE**
+>El objeto relacionado de una ruta es cargado ligeramente. Este es obtenido desde
+>la base de datos solo si llamas al método `getRoute()`.
+
 
 El Enrutamiento en Acciones y Plantillas
 ----------------------------------------
@@ -371,15 +374,34 @@ and `delete`) están aun gestionadas por la ruta `default`:
 
 La ruta `default` es una gran manera de comenzar la codificación sin definir demasiadas rutas. Pero como la ruta actúa como un "catch-all", no puede ser configurada para necesidades específicas.
 
-Como todas las acciones `job` están relacionadas con el modelo de la clase `JobeetJob`, podemos facilmente definir una ruta particular `sfPropelRoute` para cada uno de ellas como ya lo hemos hecho para la acción `show`. Sin embargo, como el módulo `job` define las clásicas siete posibles acciones para un modelo, también podemos utilizar la clase [`sfPropelRouteCollection`](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection):
+Como todas las acciones `job` están relacionadas con el modelo de la clase `JobeetJob`, podemos facilmente definir una ruta particular `sfPropelRoute` para cada uno de ellas como ya lo hemos hecho para la acción `show`. Sin embargo, como el módulo `job` define las clásicas siete posibles acciones para un modelo, también podemos utilizar la clase [`sfPropelRouteCollection`](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection). Abre el archivo `routing.yml` y modificalo para que se lea como sigue:
 
     [yml]
-    // apps/frontend/config/routing.yml
-
-    # put this definition just before the job_show_user one
+    # apps/frontend/config/routing.yml
     job:
       class:   sfPropelRouteCollection
       options: { model: JobeetJob }
+
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [get]
+
+    # default rules
+    homepage:
+      url:   /
+      param: { module: job, action: index }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
 
 La ruta `job` anterior es en realidad un acceso directo que generará automáticamente las siguientes siete rutas `sfPropelRoute`:
 
@@ -389,54 +411,55 @@ La ruta `job` anterior es en realidad un acceso directo que generará automátic
       class:   sfPropelRoute
       options: { model: JobeetJob, type: list }
       param:   { module: job, action: index, sf_format: html }
-      requirements: { sf_method: GET }
+      requirements: { sf_method: get }
 
     job_new:
       url:     /job/new.:sf_format
       class:   sfPropelRoute
       options: { model: JobeetJob, type: object }
       param:   { module: job, action: new, sf_format: html }
-      requirements: { sf_method: GET }
+      requirements: { sf_method: get }
 
     job_create:
       url:     /job.:sf_format
       class:   sfPropelRoute
       options: { model: JobeetJob, type: object }
       param:   { module: job, action: create, sf_format: html }
-      requirements: { sf_method: POST }
+      requirements: { sf_method: post }
 
     job_edit:
       url:     /job/:id/edit.:sf_format
       class:   sfPropelRoute
       options: { model: JobeetJob, type: object }
       param:   { module: job, action: edit, sf_format: html }
-      requirements: { sf_method: GET }
+      requirements: { sf_method: get }
 
     job_update:
       url:     /job/:id.:sf_format
       class:   sfPropelRoute
       options: { model: JobeetJob, type: object }
       param:   { module: job, action: update, sf_format: html }
-      requirements: { sf_method: PUT }
+      requirements: { sf_method: put }
 
     job_delete:
       url:     /job/:id.:sf_format
       class:   sfPropelRoute
       options: { model: JobeetJob, type: object }
       param:   { module: job, action: delete, sf_format: html }
-      requirements: { sf_method: DELETE }
+      requirements: { sf_method: delete }
 
     job_show:
       url:     /job/:id.:sf_format
       class:   sfPropelRoute
       options: { model: JobeetJob, type: object }
       param:   { module: job, action: show, sf_format: html }
-      requirements: { sf_method: GET }
+      requirements: { sf_method: get }
 
->**NOTA**
->Some routes generated by `sfPropelRouteCollection` have the same URL. The
->routing is still able to use them because they all have different HTTP method
->requirements.
+
+>**NOTE**
+>Algunas rutas generadas por `sfPropelRouteCollection` tienen la misma URL. El
+>enrutamiento está aún disponible para usarlas porque todas ellas tienen diferentes 
+>parámetro en el método HTTP.
 
 Las rutas `job_delete` y `job_update` require métodos HTTP que no son compatibles con los navegadores (`DELETE` y `PUT` respectivamente). Esto funciona porque los simula symfony. Abre la plantilla `_form.php` Para ver un ejemplo:
 
@@ -455,7 +478,7 @@ Las rutas `job_delete` y `job_update` require métodos HTTP que no son compatibl
 
 Todos los helpers symfony pueden ser invocados para simular cualquier método HTTP que desea pasando el parámetro especial `sf_method`.
 
->**NOTA**
+>**NOTE**
 >symfony tiene otros parámetros especiales como `sf_method`, todo lo que inicie con el prefijo
 >`sf_`. En las rutas generadas antes, se puede ver otro:
 >`sf_format`, que se explicará en los próximos días.
@@ -474,10 +497,12 @@ También puedes tener una gran cantidad de información de depuración para una 
 Las Rutas por defecto
 ---------------------
 
-Es una buena práctica definir las rutas para todas tus URL. Si lo haces, elimina o comenta las rutas por defecto del archivo de configuración `routing.yml`:
+Es una buena práctica definir las rutas para todas tus URLs. Ya que la ruta `job` 
+define todas las rutas necesarias para describir la aplicación Jobeet, sigue adelante y 
+quita o comenta las rutas por defecto del archivo de configuración `routing.yml`:
 
     [yml]
-    // apps/frontend/config/routing.yml
+    # apps/frontend/config/routing.yml
     #default_index:
     #  url:   /:module
     #  param: { action: index }
@@ -485,14 +510,33 @@ Es una buena práctica definir las rutas para todas tus URL. Si lo haces, elimin
     #default:
     #  url:   /:module/:action/*
 
+La aplicación Jobeet debe seguir funcionando como antes.
+
+
 Nos vemos mañana
 ----------------
 
 Hoy estuvo lleno de una gran cantidad información nueva. Ya has aprendido cómo utilizar el framework de Enrutamiento de Symfony y como desacoplar tus URLs desde la implmentación técnica.
 
-Nosotros publicaremos un nuevo tutorial mañana, a pesar de que es sábado. No vamos a introducir nuevos conceptos, sino más bien gastando el tiempo profundizando lo que hemos cubierto hasta ahora.
+Mañana, no introducieremos ningún concepto nuevo, sino más bien pasar tiempo profundizando lo que hemos cubierto hasta ahora.
 
-El código fuente de Jobeet para el día de hoy está disponible en el repositorio de SVN:
+>**Note**
+>Si deseas comprobar el código del día de hoy, o de cualquier otro día, el código esta
+>disponible día a día en el repositorio SVN oficial de Jobeet
+>(`http://svn.jobeet.org/##ORM_LOWER##/`).
+>
+>Por ejemplo, puedes obtener el código de hoy de la
+>etiqueta `release_day_05`:
+>
+>       $ svn co http://svn.jobeet.org/##ORM_LOWER##/tags/release_day_05/ jobeet/
+>
 
-    http://svn.jobeet.org/tags/release_day_05/
+Feedback
+--------
 
+>**Tip**
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
+>no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
+
+__ORM__
