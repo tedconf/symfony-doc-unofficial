@@ -49,9 +49,18 @@ task `plugin:publish-assets`:
 
     $ php symfony plugin:publish-assets
 
-Occorre anche cancellare la cartella `web/sfPropelPlugin`:
+Occorre anche cancellare la cartella `web/sf#PropelPlugin`:
 
-    $ rm web/sfPropelPlugin
+    $ rm web/sf#PropelPlugin
+
+>**TIP**
+>Un'altra raccomandazione per l'uso di Doctrine al posto di Propel 
+>è quella di cancellare i file `config/propel.ini` e `config/schema.yml`,
+>in modo da a vere un'installazione pulita e senza riferimenti a Propel.
+>
+>     $ rm config/propel.ini
+>     $ rm config/schema.yml
+
 </doctrine>
 
 Il modello relazionale
@@ -333,7 +342,6 @@ Il framework symfony supporta tutti i database supportati da PDO
 (MySQL, PostgreSQL, SQLite, Oracle, MSSQL, ...). PDO è il livello di
 astrazione per database incluso di default in PHP.
 
-
 Per questo tutorial useremo MySQL.
 
     $ mysqladmin -uroot -pmYsEcret create jobeet
@@ -350,13 +358,24 @@ Dobbiamo dire a symfony di usare questo database per Jobeet:
       ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
 </propel>
 <doctrine>
-    $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase 
+
+Il file `config/databases.yml` contiene una connessione riferita a propel.
+Siccome stiamo usando Doctrine, dobbiamo cancellare `config/databases.yml`,
+in modo da poterlo rigenerare per Doctrine.
+
+    $ rm config/databases.yml
+
+Ora eseguiamo i comandi seguenti per generare un nuovo file di configurazione
+del database per Doctrine:
+
+    $ php symfony configure:database --name=doctrine 
+      ➥ --class=sfDoctrineDatabase 
       ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
 </doctrine>
 
 Il task `configure:database` accetta tre parametri: il
-[PDO DSN](http://www.php.net/manual/en/pdo.drivers.php), lo username e la
-password per accedere al database. Se non si ha bisogno di password 
+[DSN di PDO](http://www.php.net/manual/en/pdo.drivers.php), il nome utente
+e la password per accedere al database. Se non si ha bisogno di password 
 per accedere al database nel server di sviluppo, basta
 omettere il terzo parametro.
 
