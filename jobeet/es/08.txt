@@ -1,10 +1,7 @@
-﻿Día 8: Pruebas unitarias
+﻿Día 8: Pruebas Unitarias
 =====================
 
-Anteriormente en Jobeet
------------------------
-
-Durante el fin de semana hemos revisado todas las funciones aprendidas durante los cinco primeros días del calendario de Jobeet para personalizar y añadir nuevas funciones. En el proceso, también hemos tocado otras funciones más avanzadas de symfony.
+Durante las últimas dos semanas hemos revisado todas las funciones aprendidas durante los cinco primeros días del calendario de Jobeet para personalizar y añadir nuevas funciones. En el proceso, también hemos tocado otras funciones más avanzadas de symfony.
 
 Hoy, vamos a empezar hablando de algo completamente diferente:
 **pruebas** automáticas. Como el tema es bastante grande, nos llevará dos días completos para cubrir todo.
@@ -200,7 +197,7 @@ La descripción de la prueba es también una herramienta importante cuando trata
 >Como `test:coverage` depende de `XDebug` para recoger esta información,
 >necesitas instalarlo y habilitarlo.
 
-Agregando Pruebas para las nuevos Características
+Agregando Pruebas para las nuevas Características
 -------------------------------------------------
 
 El slug de una cadena vacía es una cadena vacía. Puedes probarlo, va a funcionar. Pero una cadena vacía en una URL no es que una gran idea. Vamos a cambiar el método `slugify()` para que devuelva la cadena "n-a" en caso de una cadena vacía.
@@ -209,8 +206,7 @@ Puede escribir la prueba primero, entonces actualiza el método, o al revés.
 Es realmente una cuestión de gusto, pero escribir la prueba primero te da la confianza de que tu código se ajusta en realidad lo que previste:
 
     [php]
-    $t->is(Jobeet::slugify(''), 'n-a',
-     âž¥ '::slugify() converts the empty string by n-a');
+    $t->is(Jobeet::slugify(''), 'n-a', '::slugify() converts the empty string to n-a');
 
 Si lanzas las pruebas ahora, debes obtener una barra roja. Si no es así, significa que la característica ya está implementada o tu prueba no está probando lo que debería estar probando.
 
@@ -228,7 +224,7 @@ Ahora, edita la clase `Jobeet` y añade la siguiente condición al inicio:
       // ...
     }
 
-La prueba debe pasar ahora según lo esperado, pero sólo si has recordado actualizar el plan de pruebas. Si no es así, tendrás un mensaje que planeaste seis pruebas y se ejecutó una extra. Después de haber planificado las pruebas debes contar con ellas hasta la fecha y esto es importante, ya que ee le mantendrá informado si la secuencia de comandos de prueba termina antes de los deseado.
+La prueba debe pasar ahora según lo esperado, y puedes disfrutar de la barra verde, pero sólo si has recordado actualizar el plan de pruebas. Si no es así, tendrás un mensaje que te dice planeaste seis pruebas y se ejecutó una extra. Después de haber planificado las pruebas debes contar con ellas hasta la fecha y esto es importante, ya que ee le mantendrá informado si la secuencia de comandos de prueba termina antes de los deseado.
 
 Agregar Pruebas a causa de un Fallo
 -----------------------------------
@@ -238,8 +234,7 @@ Digamos que el tiempo ha pasado y uno de tus usuarios informa de un extraño err
 encuentras la causa. Cuando una cadena sólo contiene caracteres no ASCII, el método `slugify()` lo convierte a una cadena vacía. Tan feliz de haber encontrado la causa, abres la clase `Jobeet` y solucionas el problema de inmediato. Eso es una mala idea. En primer lugar, vamos a añadir una prueba:
 
     [php]
-    $t->is(Jobeet::slugify(' - '), 'n-a',
-     âž¥ '::slugify() converts a string that only contains non-ASCII characters by n-a');
+    $t->is(Jobeet::slugify(' - '), 'n-a', '::slugify() converts a string that only contains non-ASCII characters to n-a');
 
 ![slugify() bug](http://www.symfony-project.org/images/jobeet/1_2/08/slugify_bug.png)
 
@@ -274,8 +269,8 @@ Pero cuando descubres un, tienes que escribir una prueba antes de arreglar tu c�
 >
 >La prueba debe fallar. En lugar de sustituir `Ã©` por `e`, el Método `slugify()` 
 >ha sido sustituido por un guión (`-`). Eso es un problema difícil, llamado
->Transliteración. Esperemos que, si tiene "iconv" instalado, haga el trabajo
->para nosotros:
+>*Transliteración*. Esperemos que, si tiene "iconv" instalado, haga el trabajo
+>para nosotros. Reemplaza el código del método `slugify` con lo siguiente:
 >
 >     [php]
 >     // code derived from http://php.vrana.cz/vytvoreni-pratelskeho-url.php
@@ -288,7 +283,10 @@ Pero cuando descubres un, tienes que escribir una prueba antes de arreglar tu c�
 >       $text = trim($text, '-');
 >
 >       // transliterate
->       $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+>       if (function_exists('iconv'))
+>       {
+>         $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+>       }
 >
 >       // lowercase
 >       $text = strtolower($text);
@@ -313,26 +311,30 @@ Pero cuando descubres un, tienes que escribir una prueba antes de arreglar tu c�
 >     [php]
 >     if (function_exists('iconv'))
 >     {
->       $t->is(Jobeet::slugify('DÃ©veloppeur Web'), 'developpeur-web',
->        âž¥ '::slugify() removes accents');
+>       $t->is(Jobeet::slugify('DÃ©veloppeur Web'), 'developpeur-web', '::slugify() removes accents');
 >     }
 >     else
 >     {
 >       $t->skip('::slugify() removes accents - iconv not installed');
 >     }
 
-Pruebas Unitarias y Propel
-------------------------
+Pruebas Unitarias y ##ORM## 
+---------------------------
 
 ### Configuración de la Base de datos
 
-Probar en forma unitaria una clase Propel del modelo es un poco más complejo ya que requiere una conexión de base de datos. Ya tienes la que utilizas para el desarrollo, pero es un buen hábito crear una base de datos especial para las pruebas.
+Probar en forma unitaria una clase ##ORM## del modelo es un poco más complejo ya que requiere una conexión de base de datos. Ya tienes la que utilizas para el desarrollo, pero es un buen hábito crear una base de datos especial para las pruebas.
 
 Durante el día 1, se presentaron los entornos como una forma de variar la configuración de una aplicación. Por defecto, todas las pruebas de symfony se ejecutan en el entorno `test`, así que vamos a configurar una base de datos para el entorno `test`:
 
+<propel>
     $ php symfony configure:database --env=test "mysql:host=localhost;dbname=jobeet_test" root mYsEcret
+</propel>
+<doctrine>
+    $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase --env=test "mysql:host=localhost;dbname=jobeet_test" root mYsEcret
+</doctrine>
 
-La opción `env` le dice a la tarea que la configuración de la base de datos es sólo para el entorno `dev`. Cuando usamos esta tarea durante el día 3, no pasó ninguna opción `env`, por lo que la configuración se aplica a todos los entornos.
+La opción `env` le dice a la tarea que la configuración de la base de datos es sólo para el entorno `test`. Cuando usamos esta tarea durante el día 3, no pasó ninguna opción `env`, por lo que la configuración se aplica a todos los entornos.
 
 >**NOTA**
 >Si eres curioso, abre el archivo de configuración  `config/databases.yml` para ver
@@ -356,18 +358,22 @@ Ahora que hemos configurado la base de datos, podemos iniciarla usando la tarea 
 >entorno, la clave `all` rsta indicando que los ajustes son para todos los entornos:
 >
 >     [yml]
->     // config/databases.yml
+>     # config/databases.yml
 >     dev:
 >       propel:
 >         class: sfPropelDatabase
+<propel>
 >         param:
 >           classname: DebugPDO
+</propel>
 >
 >     test:
 >       propel:
 >         class: sfPropelDatabase
 >         param:
+<propel>
 >           classname: DebugPDO
+</propel>
 >           dsn: 'mysql:host=localhost;dbname=jobeet_test'
 >
 >     all:
@@ -380,14 +386,23 @@ Ahora que hemos configurado la base de datos, podemos iniciarla usando la tarea 
 
 ### Datos de Prueba
 
-Ahora que ya tenemos una base de datos sólo para pruebas, tenemos que llenarla con datos de prueba. Durante el día 3 aprendimos a utilizar la tarea `propel:data-load`, pero en las pruebas es necesario volver a cargar los datos cada vez que ejecutamos las pruebas para conocer el estado inicial de la base de datos. La tarea`propel:data-load` internamente utiliza la clase [`sfPropelData`](http://www.symfony-project.org/api/1_2/sfPropelData)
+Ahora que ya tenemos una base de datos sólo para pruebas, tenemos que llenarla con datos de prueba. Durante el día 3 aprendimos a utilizar la tarea `propel:data-load`, pero en las pruebas es necesario volver a cargar los datos cada vez que ejecutamos las pruebas para conocer el estado inicial de la base de datos. 
+
+<propel>
+La tarea`propel:data-load` internamente utiliza la clase [`sfPropelData`](http://www.symfony-project.org/api/1_2/sfPropelData)
 para cargar los datos:
 
     [php]
     $loader = new sfPropelData();
     $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+La tarea`doctrine:data-load`internamente utiliza el método `Doctrine::loadData()` para cargar los datos:
+    [php]
+    Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
 
->**NOTA**
+>**NOTE**
 >El objeto `sfConfig` puede ser utilizado para obtener la ruta completa de un 
 >sub-directorio del proyecto. Uso que permite a la estructura de directorio por defecto ser
 >personalizada.
@@ -395,7 +410,7 @@ para cargar los datos:
 El método `loadData()` toma un directorio o un archivo como primer argumento. También puede tomar un array directorios y/o archivos.
 
 Ya hemos creado algunos datos iniciales en el directorio `data/fixtures/`.
-Para las pruebas, pondremos los datos en el directorio `test/fixtures/`. Estos datos se utilizarán para pruebas unitarias y pruebas funcionales con objetos Propel.
+Para las pruebas, pondremos los datos en el directorio `test/fixtures/`. Estos datos se utilizarán para pruebas unitarias y pruebas funcionales con objetos ##ORM##.
 
 Por el momento, copiar los archivos de `data/fixtures/` al directorio `test/fixtures/`.
 
@@ -403,40 +418,56 @@ Por el momento, copiar los archivos de `data/fixtures/` al directorio `test/fixt
 
 Vamos a crear algunas de las pruebas unitarias para la clase del modelo, `JobeetJob`.
 
-Como todos nuestros objetos Propel harán las pruebas unitarias comenzarán con el mismo código, crea un archivo `propel.php` en el directorio `bootstrap/` con el siguiente código:
+Como todos nuestros objetos ##ORM## harán las pruebas unitarias comenzarán con el mismo código, crea un archivo `##ORM##.php` en el directorio `bootstrap/` con el siguiente código:
 
     [php]
-    // test/bootstrap/propel.php
+    // test/bootstrap/##ORM##.php
     include(dirname(__FILE__).'/unit.php');
 
     $configuration =
-     âž¥ ProjectConfiguration::getApplicationConfiguration('frontend', 'test', true);
+     âž¥ ProjectConfiguration::getApplicationConfiguration(
+     âž¥ 'frontend', 'test', true);
 
     new sfDatabaseManager($configuration);
 
+<propel>
     $loader = new sfPropelData();
     $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+    Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
 
 El script se explica bastante por sí mismo:
 
   * Como pasa en todos los controladores frontales, los inicializamos con un objeto de configuración para el entorno `test` :
 
         [php]
-        $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'test', true);
+        $configuration =
+         âž¥ ProjectConfiguration::getApplicationConfiguration(
+         âž¥ 'frontend', 'test', true);
 
-  * Creamos un gestor de bases de datos e inicializamos la conexión Propel cargando el archivo de configuración `databases.yml`.
+  * Creamos un gestor de bases de datos e inicializamos la conexión ##ORM## cargando el archivo de configuración `databases.yml`.
 
         [php]
         new sfDatabaseManager($configuration);
 
+<propel>
   * Cargamos nuestros datos de prueba mediante el uso de `sfPropelData`:
 
         [php]
         $loader = new sfPropelData();
         $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+  * Cargamos nuestros datos de prueba mediante el uso de `Doctrine::loadData()`:
 
->**NOTA**
->Propel se conecta a la base de datos sólo si tiene algunas sentencias SQL para
+        [php]
+        Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+>**NOTE**
+>##ORM## se conecta a la base de datos sólo si tiene algunas sentencias SQL para
 >ejecutar.
 
 Ahora que todo está en su lugar, podemos empezar a probar la clase `JobeetJob`.
@@ -444,16 +475,21 @@ Ahora que todo está en su lugar, podemos empezar a probar la clase `JobeetJob`.
 En primer lugar, tenemos que crear el archivo `JobeetJobTest.php` en `test/unit/model`:
 
     [php]
-    // test/unit/module/JobeetJobTest.php
-    include(dirname(__FILE__).'/../../bootstrap/propel.php');
+    // test/unit/model/JobeetJobTest.php
+    include(dirname(__FILE__).'/../../bootstrap/##ORM##.php');
 
-    $t = new lime_test(0, new lime_output_color());
+    $t = new lime_test(1, new lime_output_color());
 
 Entonces, vamos a empezar por agregar una prueba para el método `getCompanySlug()`:
 
     [php]
     $t->comment('->getCompanySlug()');
+<propel>
     $job = JobeetJobPeer::doSelectOne(new Criteria());
+</propel>
+<doctrine>
+    $job = Doctrine::getTable('JobeetJob')->createQuery()->fetchOne();
+</doctrine>
     $t->is($job->getCompanySlug(), Jobeet::slugify($job->getCompany()), '->getCompanySlug() return the slug for the company');
 
 Observe que sólo prueba el método `getCompanySlug()` y no si el slug es correcto o no, como ya estamos probando este en otros lugares.
@@ -464,12 +500,23 @@ Escribir pruebas para el método `save()` es ligeramente más complejo:
     $t->comment('->save()');
     $job = create_job();
     $job->save();
-    $expiresAt = date('Y-m-d', time() + 86400 * sfConfig::get('app_active_days'));
+    $expiresAt = date('Y-m-d', time() + 86400
+      âž¥ * sfConfig::get('app_active_days'));
+<propel>
     $t->is($job->getExpiresAt('Y-m-d'), $expiresAt, '->save() updates expires_at if not set');
+</propel>
+<doctrine>
+    $t->is(date('Y-m-d', strtotime($job->getExpiresAt())), $expiresAt, '->save() updates expires_at if not set');
+</doctrine>
 
     $job = create_job(array('expires_at' => '2008-08-08'));
     $job->save();
+<propel>
     $t->is($job->getExpiresAt('Y-m-d'), '2008-08-08', '->save() does not update expires_at if set');
+</propel>
+<doctrine>
+    $t->is(date('Y-m-d', strtotime($job->getExpiresAt())), '2008-08-08', '->save() does not update expires_at if set');
+</doctrine>
 
     function create_job($defaults = array())
     {
@@ -477,7 +524,15 @@ Escribir pruebas para el método `save()` es ligeramente más complejo:
 
       if (is_null($category))
       {
+<propel>
         $category = JobeetCategoryPeer::doSelectOne(new Criteria());
+</propel>
+<doctrine>
+        $category = Doctrine::getTable('JobeetCategory')
+          ->createQuery()
+          ->limit(1)
+          ->fetchOne();
+</doctrine>
       }
 
       $job = new JobeetJob();
@@ -491,19 +546,24 @@ Escribir pruebas para el método `save()` es ligeramente más complejo:
         'email'        => 'job@example.com',
         'token'        => rand(1111, 9999),
         'is_activated' => true,
+<propel>
       ), $defaults), BasePeer::TYPE_FIELDNAME);
+</propel>
+<doctrine>
+      ), $defaults));
+</doctrine>
 
       return $job;
     }
 
->**NOTA**
+>**NOTE**
 >Cada vez que añadas pruebas, no te olvides de actualizar el número de pruebas previsto
 >(el plan) en el método constructor `lime_test`. Para el archivo `JobeetJobTest`
 >es necesario cambiar de `0` a `3`.
 
-### Prueba otras Clases Propel 
+### Prueba otras Clases ##ORM##
 
-Ahora puedes añadir pruebas para todas las demás clases de Propel. Como ahora te acostumbrarste al proceso de la escritura de pruebas unitarias, debería ser bastante fácil. Comprueba el repositorio para el día de hoy si quieres ver los archivos de datos que hemos creado,
+Ahora puedes añadir pruebas para todas las demás clases de ##ORM##. Como ahora te acostumbrarste al proceso de la escritura de pruebas unitarias, debería ser bastante fácil. Comprueba el repositorio para el día de hoy si quieres ver los archivos de datos que hemos creado,
 y los pruebas unitarias asociadas (bajo la etiqueta `release_day_08`).
 
 Set de Pruebas Unitarias 
@@ -517,6 +577,11 @@ Esta tarea muestra si ha pasado o ha fallado cada uno de los archivos de pruebas
 
 ![pruebas unitarias harness](http://www.symfony-project.org/images/jobeet/1_2/08/test_harness.png)
 
+>**TIP**
+>Si la tarea `test:unit` devuelve un estado "dubious" para un archivo, esto indica
+>que el script se detuvo/murió antes de llegar al final. Ejecutando un archivo de pruebas en forma 
+>individual te dará el mensaje de error exacto.
+
 Nos vemos mañana
 ----------------
 
@@ -524,5 +589,26 @@ Incluso si probar una aplicación es muy importante, Sé que algunos de ustedes 
 
 Claro, que abarcar symfony es aprender todas las grandes características que el framework da, pero también de su filosofía de desarrollo y las mejores prácticas. Y las pruebas son unas de ellas. Tarde o temprano, las pruebas unitarias te salvarán el día. Te dan una sólida confianza en el código y la libertad refactorizar sin miedo. Las pruebas unitarias son un guardia de seguridad que te alertará si se rompió algo. El framework symfony en sí cuenta con más de 9000 pruebas.
 
-Mañana vamos a escribir algunas pruebas funcionales para los módulos job y category.
+Mañana vamos a escribir algunas pruebas funcionales para los módulos `job` y `category`.
 Hasta entonces, toma algo de tiempo para escribir más pruebas unitarias para las clases del modelo de Jobeet.
+
+>**Note**
+>Si deseas comprobar el código del día de hoy, o de cualquier otro día, el código esta
+>disponible día a día en el repositorio SVN oficial de Jobeet
+>(`http://svn.jobeet.org/##ORM_LOWER##/`).
+>
+>Por ejemplo, puedes obtener el código de hoy de la
+>etiqueta `release_day_08`:
+>
+>       $ svn co http://svn.jobeet.org/##ORM_LOWER##/tags/release_day_08/ jobeet/
+>
+
+Feedback
+--------
+
+>**Tip**
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
+>no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
+
+__ORM__
