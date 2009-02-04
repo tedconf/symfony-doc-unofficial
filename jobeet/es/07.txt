@@ -1,10 +1,7 @@
 ﻿Día 7: Jugando con la Página de Categoría
 =========================================
 
-Anteriormente en Jobeet
------------------------
-
-Ayer expandiste tus conocimiento de symfony sobre un montón de areas diferentes: el Objeto Criteria de Propel, archivos de datos, enrutamiento, depuración, y personalizar la configuración. Y terminamos con un pequeño desafio para hoy.
+Ayer expandiste tus conocimiento de symfony sobre un montón de áreas diferentes: consultas con ##ORM##, archivos de datos, enrutamiento, depuración, y personalizar la configuración. Y terminamos con un pequeño desafío para hoy.
 
 Espero que hayas trabajado en la Página de Categoría de Jobeet así el tutorial de hoy será mucho mas productivo para ti.
 
@@ -17,7 +14,7 @@ Primero, necesitamos agregar una ruta para definir una URL amigable para la pág
 Agregalo al inicio del archivo de enrutamiento:
 
     [yml]
-    // apps/frontend/config/routing.yml
+    # apps/frontend/config/routing.yml
     category:
       url:      /category/:slug
       class:    sfPropelRoute
@@ -26,16 +23,26 @@ Agregalo al inicio del archivo de enrutamiento:
 
 >**TIP**
 >Si vas a comenzar la implementación de una nueva funcionalidad, es una buena práctica primero
->pensar acerca de la URL y crear la ruta asociada.
+>pensar acerca de la URL y crear la ruta asociada. Y esto es obligatorio si
+>quitas las reglas de enrutamiento por defecto.
 
 Como `slug` no es una columna de la tabla `category`, necesitamos para agregar un método virtual en `JobeetCategory` para que la ruta funcione:
 
+Un ruta puede usar cualquier columna desde su objeto asociado como un parámetro. También puede
+usa cualquier otro valor si hay un método asociado definido en la clase del objeto. Debido a que el parámetro `slug` no tiene una columna correspondiente en la tabla `category`, necesitamos agregar un método de acceso virtual en `JobeetCategory` para que la ruta funcione:
+
     [php]
+<propel>
     // lib/model/JobeetCategory.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetCategory.class.php
+</doctrine>
     public function getSlug()
     {
       return Jobeet::slugify($this->getName());
     }
+
 
 El Enlace Categoría
 -------------------
@@ -45,7 +52,9 @@ Ahora, edita la plantilla `indexSuccess.php` del módulo `job` para agregar el e
     [php]
     <!-- some HTML code -->
 
-            <h1><?php echo link_to($category, 'category', $category) ?></h1>
+            <h1>
+              <?php echo link_to($category, 'category', $category) ?>
+            </h1>
 
     <!-- some HTML code -->
 
@@ -64,6 +73,7 @@ Ahora, edita la plantilla `indexSuccess.php` del módulo `job` para agregar el e
 
 Solo agregamos el enlace si hay más de 10 puestos de rabajo a mostrar para la categoría actual. El enlace tiene el número de puetos no mostrados. Para que esta plantilla funcione, necesitamos agregar el método `countActiveJobs()` a `JobeetCategory`:
 
+<propel>
     [php]
     // lib/model/JobeetCategory.php
     public function countActiveJobs()
@@ -74,17 +84,28 @@ Solo agregamos el enlace si hay más de 10 puestos de rabajo a mostrar para la c
       return JobeetJobPeer::countActiveJobs($criteria);
     }
 
-El método `countActiveJobs()` emplea un método `countActiveJobs()` que aún no existe en `JobeetJobPeer`:
+El método `countActiveJobs()` emplea un método `countActiveJobs()` que aún no existe en `JobeetJobPeer`. Reemplaza el contenido del archivo `JobeetJobPeer.php` con el siguiente código:
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function countActiveJobs()
+    {
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('j.category_id = ?', $this->getId());
 
+      return Doctrine::getTable('JobeetJob')->countActiveJobs($q);
+    }
+
+El método `countActiveJobs()` emplea un método `countActiveJobs()` que aún no existe en 
+`JobeetJobTable`. Reemplaza el contenido del archivo `JobeetJobTable.php` con el siguiente código:
+</doctrine>
+<propel>
     [php]
     // lib/model/JobeetJobPeer.php
     class JobeetJobPeer extends BaseJobeetJobPeer
     {
-      static public function doSelectActive(Criteria $criteria)
-      {
-        return self::doSelectOne(self::addActiveJobsCriteria($criteria));
-      }
-
       static public function getActiveJobs(Criteria $criteria = null)
       {
         return self::doSelect(self::addActiveJobsCriteria($criteria));
@@ -107,18 +128,72 @@ El método `countActiveJobs()` emplea un método `countActiveJobs()` que aún no
 
         return $criteria;
       }
+
+      static public function doSelectActive(Criteria $criteria)
+      {
+        return self::doSelectOne(self::addActiveJobsCriteria($criteria));
+      }
     }
 
 Como puedes ver por ti mismo, tenemos que refactorizar todo el código de `JobeetJobPeer` para introducir un nuevo método compartido `addActiveJobsCriteria()` para hacer el código más [DRY (Don't Repeat Yourself)](http://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      public function retrieveActiveJob(Doctrine_Query $q)
+      {
+        return $this->addActiveJobsQuery($q)->fetchOne();
+      }
+
+      public function getActiveJobs(Doctrine_Query $q = null)
+      {
+        return $this->addActiveJobsQuery($q)->execute();
+      }
+
+      public function countActiveJobs(Doctrine_Query $q = null)
+      {
+        return $this->addActiveJobsQuery($q)->count();
+      }
+
+      public function addActiveJobsQuery(Doctrine_Query $q = null)
+      {
+        if (is_null($q))
+        {
+          $q = Doctrine_Query::create()
+            ->from('JobeetJob j');
+        }
+
+        $alias = $q->getRootAlias();
+
+        $q->andWhere($alias . '.expires_at > ?', date('Y-m-d h:i:s', time()))
+          ->addOrderBy($alias . '.expires_at DESC');
+
+        return $q;
+      }
+    }
+
+
+Como puedes ver por ti mismo, tenemos que refactorizar todo el código de `JobeetJobTable` para introducir un nuevo método compartido `addActiveJobsQuery()` para hacer el código más [DRY (Don't Repeat Yourself)](http://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+</doctrine>
+
 
 >**TIP**
 >La primera vez un trozo de código es re-usado, copiando el código puede ser suficiente.
 >Pero si encuentras otra función en él necesitas refactorizar todos los usos paraa compartir la
 >función o un método, como hemos hecho aquí.
 
-En el método `countActiveJobs()`, en vez de usar `doSelect()` y recien contar el número de resultdo, usamos el método mas rápido `doCount()`.
+<propel>
+En el método `countActiveJobs()`, en vez de usar `doSelect()` y recién contar el número de resultados, usamos el método mas rápido `doCount()`.
+</propel>
+<doctrine>
+En el método `countActiveJobs()`, en vez de usar `execute()` y recién contar el número de resultados, usamos el método mas rápido `count()`.
+</doctrine>
 
 Hemos cambiado un montón de archivos, recien para esta simple funcionalidad. Pero cada vez que debas agregar algún código, tenemos que tratar de ponerlo en la capa correcta de la aplicación y también tratamos de hace el código mas reusable. En el proceso, Tenemos que rectorizar algún código existente. Ese es el típico workflow cuando trbajamos en un proyecto symfony.
+
+![Página de Inicio](http://www.symfony-project.org/images/jobeet/1_2/07/homepage.png)
 
 Creación del Módulo Category
 ----------------------------
@@ -141,6 +216,7 @@ Actualizar la Base de Datos
 
 Tenemos que añadir una columna `slug` para la tabla `category`:
 
+<propel>
     [yml]
     # config/schema.yml
     propel:
@@ -148,9 +224,28 @@ Tenemos que añadir una columna `slug` para la tabla `category`:
         id:           ~
         name:         { type: varchar(255), required: true }
         slug:         { type: varchar(255), required: true, index: unique }
+</propel>
+<doctrine>
+Esta columna `slug` puede ser tomada con cuidado por un comportamiento Doctrine llamado `Sluggable`.
+Simplemente necesitamos habilitar el comportamiento sobre nuestro modelo `JobeetCategory` y este se encargará de todo por tí.
+
+    [yml]
+    # config/doctrine/schema.yml
+    JobeetCategory:
+      actAs:
+        Timestampable: ~
+        Sluggable:
+          fields: [name]
+      columns:
+        name:
+          type: string(255)
+          notnull:  true
+
+</doctrine>
 
 Ahora que `slug` es una columna real, es necesario eliminar el método `getSlug()` de `JobeetCategory`.
 
+<propel>
 Cada vez que el nombre `category` cambia, tenemos que calcular el cambio y asi como para `slug`. Vamos a sobreescribir el método `setName()`:
 
     [php]
@@ -161,12 +256,19 @@ Cada vez que el nombre `category` cambia, tenemos que calcular el cambio y asi c
 
       $this->setSlug(Jobeet::slugify($name));
     }
+</propel>
+<doctrine>
+>**NOTE**
+>La configuración de la columna slug es tomada automáticamente cuando guardas un
+>registro. El slug es armado usando el valor del campo `name` y se lo da al
+>objeto.
+</doctrine>
 
 Usa la tarea `propel:build-all-load` para actualizar la base de datos de tablas, y llenar la base de datos con nuestros datos:
 
-    $ php symfony propel:build-all-load
+    $ php symfony propel:build-all-load --no-confirmation
 
-Tenemos ahora todo lo que en lugar para crear el método `executeShow()`:
+Tenemos ahora todo lo que en lugar para crear el método `executeShow()`. Reemplaza el contenido del archivo de acciones `category` con el siguiente código:
 
     [php]
     // apps/frontend/modules/category/actions/actions.class.php
@@ -175,21 +277,25 @@ Tenemos ahora todo lo que en lugar para crear el método `executeShow()`:
       public function executeShow(sfWebRequest $request)
       {
         $this->category = $this->getRoute()->getObject();
-        $this->jobs = $this->category->getActiveJobs();
       }
     }
+
+>**NOTE**
+>Debido a que quitamos el método generado `executeIndex()`, también puedes
+>quitar la platilla automáticamente generada `indexSuccess.php` 
+>(`apps/frontend/modules/category/templates/indexSuccess.php`).
 
 El último paso es crear la plantilla `showSuccess.php`:
 
     [php]
-    // apps/frontend/modules/category/template/showSuccess.php
+    // apps/frontend/modules/category/templates/showSuccess.php
     <?php use_stylesheet('jobs.css') ?>
 
     <?php slot('title', sprintf('Jobs in the %s category', $category->getName())) ?>
 
     <div class="category">
       <div class="feed">
-        <a href="">RSS feed</a>
+        <a href="">Feed</a>
       </div>
       <h1><?php echo $category ?></h1>
     </div>
@@ -197,26 +303,44 @@ El último paso es crear la plantilla `showSuccess.php`:
     <table class="jobs">
       <?php foreach ($category->getActiveJobs() as $i => $job): ?>
         <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
-          <td><?php echo $job->getLocation() ?></td>
-          <td><?php echo link_to($job->getPosition(), 'job_show_user', $job) ?></td>
-          <td><?php echo $job->getCompany() ?></td>
+          <td class="location">
+            <?php echo $job->getLocation() ?>
+          </td>
+          <td class="position">
+            <?php echo link_to($job->getPosition(), 'job_show_user', $job) ?>
+          </td>
+          <td class="company">
+            <?php echo $job->getCompany() ?>
+          </td>
         </tr>
       <?php endforeach; ?>
     </table>
 
-Parciales
----------
+Elementos Parciales o Partials
+------------------------------
 
-Observa que hemos copiado y pegado la etiqueta `<table>` que crear una lista de puestos de trabajo en la plantilla `indexSuccess.php`. Eso esta mal. Es tiempo para aprender un nuevo truco. Cuando necesites volver a utilizar una parte de una plantilla, lo que necesitas es crear un **partial**. Un partial es un snippet de código de plantilla que puede ser compartido entre varias plantillas. Un partial es sólo otra plantilla que comienza con un guión bajo (`_`):
+>**Tip**
+>**Nota del Traductor**
+>Los Partials o Parciales, son elementos que se usan en las plantillas, haciendo uso del helper `include_partial()`, es por eso que su traducción literal no es muy amigable, ya que debemos pensar no en parcial sino en porción (de código de la capa Vista)
+
+Observa que hemos copiado y pegado la etiqueta `<table>` que crear una lista de puestos de trabajo en la plantilla `indexSuccess.php`. Eso esta mal. Es tiempo para aprender un nuevo truco. Cuando necesites volver a utilizar una parte de una plantilla, lo que necesitas es crear un **partial**. Un partial es un snippet de código de plantilla que puede ser compartido entre varias plantillas. Un partial es sólo otra plantilla que comienza con un guión bajo (`_`).
+
+Crea el archivo `_list.php`:
 
     [php]
     // apps/frontend/modules/job/templates/_list.php
     <table class="jobs">
       <?php foreach ($jobs as $i => $job): ?>
         <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
-          <td><?php echo $job->getLocation() ?></td>
-          <td><?php echo link_to($job->getPosition(), 'job_show_user', $job) ?></td>
-          <td><?php echo $job->getCompany() ?></td>
+          <td class="location">
+            <?php echo $job->getLocation() ?>
+          </td>
+          <td class="position">
+            <?php echo link_to($job->getPosition(), 'job_show_user', $job) ?>
+          </td>
+          <td class="company">
+            <?php echo $job->getCompany() ?>
+          </td>
         </tr>
       <?php endforeach; ?>
     </table>
@@ -249,12 +373,12 @@ De los requisitos del día 2:
 
   "La lista es paginada, con 20 puestos de trabajo por página."
 
-Para paginar una lista de un Objeto Propel, symfony proporciona una clase dedicada a ello:
+Para paginar una lista de un Objetos ##ORM##, symfony proporciona una clase dedicada a ello:
 [`sfPropelPager`](http://www.symfony-project.org/api/1_2/sfPropelPager).
-En lugar de pasar los objetos puestos de trabajo a la plantilla, pasamos un paginador:
+En la acción `category` en lugar de pasar los objetos (jobs) de los puestos de trabajo a la plantilla, pasamos un paginador:
 
     [php]
-    // apps/frontend/job/modules/category/actions/actions.class.php
+    // apps/frontend/modules/category/actions/actions.class.php
     public function executeShow(sfWebRequest $request)
     {
       $this->category = $this->getRoute()->getObject();
@@ -263,13 +387,18 @@ En lugar de pasar los objetos puestos de trabajo a la plantilla, pasamos un pagi
         'JobeetJob',
         sfConfig::get('app_max_jobs_on_category')
       );
+<propel>
       $this->pager->setCriteria($this->category->getActiveJobsCriteria());
+</propel>
+<doctrine>
+      $this->pager->setQuery($this->category->getActiveJobsQuery());
+</doctrine>
       $this->pager->setPage($request->getParameter('page', 1));
       $this->pager->init();
     }
 
 >**TIP**
->El método `getParameter()` toma un valor por defecto como un segundo argumento. En
+>El método `sfRequest::getParameter()` toma un valor por defecto como un segundo argumento. En
 >la acción anterior, si el parámetro de la petición `page` no existe, entonces
 >`getParameter()` devolverá `1`.
 
@@ -282,8 +411,16 @@ El constructor de `sfPropelPager` tiene una clase del modelo y el número máxim
       max_jobs_on_homepage: 10
       max_jobs_on_category: 20
 
-El método `sfPropelPager::setCriteria()` toma un objeto Criteria para utilizarlo a la hora de seleccionar los elementos de la base de datos. Una vez más, hacemos un poco de refactoring en el Modelo:
+<propel>
+El método `sfPropelPager::setCriteria()` toma un objeto `Criteria` para utilizarlo a la hora de seleccionar los elementos de la base de datos.
+</propel>
+<doctrine>
 
+El método `sfDoctrinePager::setQuery()` toma un objeto `Doctrine_Query` para utilizarlo a la hora de seleccionar los elementos de la base de datos.
+</doctrine>
+
+Agrega el método `getActiveJobsCriteria()`:
+<propel>
     [php]
     // lib/model/JobeetCategory.php
     public function getActiveJobsCriteria()
@@ -293,10 +430,29 @@ El método `sfPropelPager::setCriteria()` toma un objeto Criteria para utilizarl
 
       return JobeetJobPeer::addActiveJobsCriteria($criteria);
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function getActiveJobsQuery()
+    {
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('j.category_id = ?', $this->getId());
 
+      return Doctrine::getTable('JobeetJob')->addActiveJobsQuery($q);
+    }
+</doctrine>
+
+<propel>
 Ahora que tenemos el método `getActiveJobsCriteria()`, podemos refactorizar otros métodos de
+`JobeetCategory` para usarlos:</propel>
+<doctrine>
+Ahora que tenemos el método `getActiveJobsQuery()`, podemos refactorizar otros métodos de
 `JobeetCategory` para usarlos:
+</doctrine>
 
+<propel>
     [php]
     // lib/model/JobeetCategory.php
     public function getActiveJobs($max = 10)
@@ -310,16 +466,42 @@ Ahora que tenemos el método `getActiveJobsCriteria()`, podemos refactorizar otr
     public function countActiveJobs()
     {
       $criteria = $this->getActiveJobsCriteria();
-      $criteria->add(JobeetJobPeer::CATEGORY_ID, $this->getId());
 
       return JobeetJobPeer::doCount($criteria);
     }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetCategory.class.php
+    public function getActiveJobs($max = 10)
+    {
+      $q = $this->getActiveJobsQuery()
+        ->limit($max);
+
+      return $q->execute();
+    }
+
+    public function countActiveJobs()
+    {
+      return $this->getActiveJobsQuery()->count();
+    }
+</doctrine>
 
 Por último, vamos a actualizar la plantilla:
 
     [php]
     <!-- apps/frontend/modules/category/templates/showSuccess.php -->
     <?php use_stylesheet('jobs.css') ?>
+
+    <?php slot('title', sprintf('Jobs in the %s category', $category->getName())) ?>
+
+    <div class="category">
+      <div class="feed">
+        <a href="">Feed</a>
+      </div>
+      <h1><?php echo $category ?></h1>
+    </div>
+
     <?php include_partial('job/list', array('jobs' => $pager->getResults())) ?>
 
     <?php if ($pager->haveToPaginate()): ?>
@@ -360,7 +542,7 @@ Por último, vamos a actualizar la plantilla:
 
 La mayor parte de este código se refiere a los enlaces a otras páginas. Aquí está la lista de métodos `sfPropelPager` usados en esta plantilla:
 
-  * `getResults()`: Devuelve un array objetos Propel para la página actual
+  * `getResults()`: Devuelve un array objetos ##ORM## para la página actual
   * `getNbResults()`: Devuelve el número total de resultados
   * `haveToPaginate()`: Devuelve `true` si hay más de una página
   * `getLinks()`: Devuelve una lista de los enlaces de la página a mostrar
@@ -369,6 +551,8 @@ La mayor parte de este código se refiere a los enlaces a otras páginas. Aquí 
   * `getNextPage()`: Devuelve el número de la siguiente página
   * `getLastPage()`: Devuelve el número de la última página
 
+![Paginación](http://www.symfony-project.org/images/jobeet/1_2/07/pagination.png)
+
 Nos vemos mañana
 ----------------
 
@@ -376,6 +560,23 @@ Si trabajaste en tu propia implementación ayer puedes sentir que no aprendiste 
 
 Mañana será el comienzo de una nueva semana para Jobeet. Para celebrar, vamos a hablar de un nuevo tema: las pruebas.
 
-La etiqueta subversion `release_day_07` contiene el código actualizado para hoy:
+>**Note**
+>Si deseas comprobar el código del día de hoy, o de cualquier otro día, el código esta
+>disponible día a día en el repositorio SVN oficial de Jobeet
+>(`http://svn.jobeet.org/##ORM_LOWER##/`).
+>
+>Por ejemplo, puedes obtener el código de hoy de la
+>etiqueta `release_day_07`:
+>
+>       $ svn co http://svn.jobeet.org/##ORM_LOWER##/tags/release_day_07/ jobeet/
+>
 
-    http://svn.jobeet.org/tags/release_day_07/
+Feedback
+--------
+
+>**Tip**
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
+>no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
+
+__ORM__
