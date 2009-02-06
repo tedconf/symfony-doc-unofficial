@@ -1,7 +1,7 @@
 Capitolo 1 - Creazione di form
 ==============================
 
-Un form è composta da campi, che possono essere nascosti, di testo,
+Un form è composto da campi, che possono essere nascosti, di testo,
 di selezione e di spunta. Questo capitolo introduce la creazione di
 form e la gestione di campi di form usando il framework per i form di symfony.
 
@@ -15,7 +15,7 @@ Prima di iniziare
 
 Inizieremo aggiungendo un form di contatto ad un'applicazione symfony.
 
-La Figura 1-1 mostra il form di contatto come viene vista dagli utenti
+La Figura 1-1 mostra il form di contatto come viene visto dagli utenti
 che vogliono inviare un messaggio.
 
 Figura 1-1 - Form di contatto
@@ -41,7 +41,7 @@ Widget
 ### Le classi sfForm e sfWidget
 
 Gli utenti inseriscono le informazioni nei campi che compongono i form.
-In symfony, un form è un oggetto che eredita dalla calsse `sfForm`.
+In symfony, un form è un oggetto che eredita dalla classe `sfForm`.
 Nel nostro esempio, creeremo una classe `ContactForm` che eredita
 dalla classe `sfForm`.
 
@@ -52,7 +52,7 @@ dalla classe `sfForm`.
 Si può iniziare a configurare il proprio form aggiungendo **widget**
 usando il metodo `configure()`.
 
-Un '''widget''' rappresenta un campo di una form. Per il nostro
+Un **widget** rappresenta un campo di una form. Per il nostro
 esempio, abbiamo bisogno di tre widget che rappresentano i nostri
 tre campi: `name`, `email`, e `message`. Il Listato 1-1 mostra la
 prima implementazione della classe `ContactForm`.
@@ -77,7 +77,7 @@ I widget sono definiti nel metodo `configure()`. Questo metodo viene
 chiamato automaticamente dal costruttore della classe `sfForm`.
 
 Il metodo `setWidgets()` è usato dai widget nel form. Il metodo
-`setWidgets()` accetta un'array associativo in cui le chiavi sono
+`setWidgets()` accetta un array associativo in cui le chiavi sono
 i nomi dei campi ed i valori sono gli oggetti widget. Ciascun widget
 è un oggetto che eredita dalla classe `sfWidget`. Per questo
 esempio abbiamo usato due tipi di widget:
@@ -123,6 +123,7 @@ form, come mostrato nel Listato 1-3.
 
 Listato 1-3 - Template che mostra il form
 
+    [php]
     // apps/frontend/modules/contact/templates/indexSuccess.php
     <form action="<?php echo url_for('contact/submit') ?>" method="post">
       <table>
@@ -241,6 +242,7 @@ template per personalizzare ulteriormente il form.
 >abbiamo chiamato il metodo `setWidgets()`. Ciò è equivalente al
 >seguente codice:
 >
+>     [php]
 >     $this->setWidgetSchema(new sfWidgetFormSchema(array(
 >       'name'    => new sfWidgetFormInput(),
 >       'email'   => new sfWidgetFormInput(),
@@ -327,7 +329,7 @@ Listato 1-5 - Uso dell'azione `submit` nel modulo `contact`
  
 >**NOTE**
 >`http_build_query` è una funzione di libreria di PHP che genera una
->query string URL-encoded da un'array di parametri.
+>query string URL-encoded da un array di parametri.
 
 Il metodo `executeSubmit()` esegue tre azioni:
 
@@ -358,15 +360,15 @@ Invece di redirigere l'utente ad un'altra pagina, potremmo creare un
 template `submitSuccess.php`. Sebbene sia possibile, è una pratica
 migliore redirigere sempre l'utente dopo una richiesta con metodo `POST`:
 
-  * Questo previene il reinvio delil form, se l'utente ricarica la pagina
+  * Questo previene il reinvio del form, se l'utente ricarica la pagina
   * L'utente può anche cliccare sul bottone "indietro" senza vedere l'avviso
     che gli chiede di inviare nuovamente il form.
   
 >**TIP**
->Forse hai notato che `executeSubmit()` è diverso da `executeIndex()`.
+>Forse avete notato che `executeSubmit()` è diverso da `executeIndex()`.
 >Quando chiama questi metodi, symfony passa l'oggetto `sfRequest`
->corrente come primo argomento ai metodi `executeXXX()`. Con PHP, non
->devi raccogliere tutti i parametri, perciò non abbiamo definito la
+>corrente come primo parametro ai metodi `executeXXX()`. Con PHP, non
+>occorre raccogliere tutti i parametri, perciò non abbiamo definito la
 >variabile di `$request` in `executeIndex()`, perché non ne abbiamo bisogno.
 
 La Figura 1-5 mostra il flusso dei metodi quando interagiscono con l'utente.
@@ -377,19 +379,19 @@ Figura 1-5 - Flusso dei metodi
 
 >**NOTE**
 >Quando si mostra di nuovo i dati immessi dall'utente nel template,
->corriamo il rischio di un attacco XSS (Cross-Site Scripting). Puoi
+>corriamo il rischio di un attacco XSS (Cross-Site Scripting). Si possono
 >trovare ulteriori informazioni su come prevenire il rischio di XSS
 >implementando una strategia di escaping nel capitolo
 >[wiki:Documentation/it_IT/book/1.1/07-Inside-the-View-Layer All'interno del Layer Vista] della guida.
 
-Dopo aver inviato il form dovresti vedere la pagina in Figura 1-6.
+Dopo aver inviato il form, si dovrebbe vedere la pagina in Figura 1-6.
 
 Figura 1-6 - Pagina visualizzata dopo l'invio del form
 
 ![Pagina visualizzata dopo l'invio del form](http://www.symfony-project.org/images/forms_book/en/01_06.png "Pagina visualizzata dopo l'invio del form")
 
 Invece di creare l'array dei parametri, sarebbe più facile ottenere le
-informazioni dall'utente direttamente in un'array. Il Listato 1-6
+informazioni dall'utente direttamente in un array. Il Listato 1-6
 modifica l'attributo HTML `name` nei widget, per memorizzare i valori
 dei campi nell'array `contact`.
 
@@ -414,7 +416,7 @@ Chiamare `setNameFormat()` ci consente di modificare l'attributo
 HTML `name` per tutti i widget. `%s` verrà sostituito automaticamente
 dal nome del campo durante la generazione del form. Per esempio,
 l'attributo `name` per il campo `email` sarà `contact[email]`. PHP
-crea automaticamente un'array con i valori di una richiesta che include
+crea automaticamente un array con i valori di una richiesta che include
 il formato `contact[email]`. In questo modo i campi saranno disponibili
 nell'array `contact`.
 
@@ -462,8 +464,6 @@ con dei trattini bassi (_):
 
 ### Un'altra soluzione
 
-
-
 In questo esmepio, abbiamo usato due azioni per gestire il form:
 `index` per la visualizzazione, `submit` per l'invio. Poiché il form
 è visualizzato tramite il metodo `GET` e l'invio tramite il metodo
@@ -507,7 +507,7 @@ widget `sfWidgetFormSelect`.
 
 Figura 1-7 - Aggiungere un campo `subject` al form
 
-![Aggiungere un campo `subject` alla form](http://www.symfony-project.org/images/forms_book/en/01_07.png "Aggiungere un campo `subject` alla form")
+![Aggiungere un campo `subject` al form](http://www.symfony-project.org/images/forms_book/en/01_07.png "Aggiungere un campo `subject` al form")
 
 Listato 1-9 - Aggiungere un campo `subject` al form
 
@@ -532,30 +532,32 @@ Listato 1-9 - Aggiungere un campo `subject` al form
 >**SIDEBAR**
 >L'opzione `choices` del widget `sfWidgetFormSelect`
 >
->PHP non fa alcuna distinzione tra array semplici e associative,
+>PHP non fa alcuna distinzione tra array semplici e associativi,
 >quindi l'array che abbiamo usato per la lista dei `subject` è
->identica al codice sequente:
+>identico al codice sequente:
 >
+>     [php]
 >     $subjects = array(0 => 'Subject A', 1 => 'Subject B', 2 => 'Subject C');
 >
 >Il widget generato prende la chiave dell'array come valore dell'attributo
 >del tag `option`, e il relativo valore come contenuto del tag:
 >
->
+>     [php]
 >     <select name="contact[subject]" id="contact_subject">
 >       <option value="0">Subject A</option>
 >       <option value="1">Subject B</option>
 >       <option value="2">Subject C</option>
 >     </select>
 >
->
 >Per poter cambiare gli attributi `value`, dobbiamo definire
 >le chiavi dell'array:
 >
+>     [php]
 >     $subjects = array('A' => 'Subject A', 'B' => 'Subject B', 'C' => 'Subject C');
 >
 >Che genera il template HTML:
 >
+>     [php]
 >     <select name="contact[subject]" id="contact_subject">
 >       <option value="A">Subject A</option>
 >       <option value="B">Subject B</option>
@@ -563,46 +565,25 @@ Listato 1-9 - Aggiungere un campo `subject` al form
 >     </select>
      
 Il widget `sfWidgetFormSelect`, come tutti i widget, prende una
-lista di opzioni come primo argomento. Un'opzione può essere
+lista di opzioni come primo parametro. Un'opzione può essere
 obbligatoria od opzionale. `sfWidgetFormSelectwidget` ha un'opzione
 obbligatoria, `choiches`. Ecco le opzioni disponibili per i widget
 che abbiamo già usato:
 
-<table>
-  <tr>
-    <th>Widget</th>
-    <th>Opzioni obbligatorie</th>
-    <th>Opzioni addizionali</th>
-  </tr>
-  <tr>
-    <td>sfWidgetFormInput</td>
-    <td>-</td>
-    <td>type (default to text)</td>
-  </tr>
-  <tr>
-    <td></td>
-    <td></td>
-    <td>is_hidden (default to false)</td>
-  </tr>
-  <tr>
-    <td>sfWidgetFormSelect</td>
-    <td>choices</td>
-    <td>multiple (default to false)</td>
-  </tr>
-  <tr>
-    <td>sfWidgetFormTextarea</td>
-    <td>-</td>
-    <td>-</td>
-  </tr>
-</table>
+  | **Widget**             | **Opzioni obbligatorie** | **Opzioni addizionali**         |
+  | ---------------------- | ------------------------ | ------------------------------- |
+  | `sfWidgetFormInput`    | -                        | `type` (default a `text`)       |
+  |                        |                          | `is_hidden` (default a `false`) |
+  | `sfWidgetFormSelect`   | `choices`                | `multiple` (default a `false`)  |
+  | `sfWidgetFormTextarea` | -                        | -                               |
 
 >**TIP**
 >Se si vuol conoscere tutte le opzioni per un widget, si può fare
 >riferimento alla documentazioni completa delle API disponibile
->online su http://www.symfony-project.org/api/1_1/. Tutte le opzioni
+>online su http://www.symfony-project.org/api/1_2/. Tutte le opzioni
 >hanno una spiegazione, sia quelle addizionali che quelle di default.
 >Per esempio, tutte le opzioni per `sfWidgetFormSelect` sono
->disponibili qui: http://www.symfony-project.org/api/1_1/sfWidgetFormSelect.
+>disponibili qui: http://www.symfony-project.org/api/1_2/sfWidgetFormSelect.
 
 ### Gli attributi HTML dei widget
 
@@ -677,7 +658,7 @@ Listato 1-13 - Valori predefiniti dei widget usando i metodi `setDefault()` e `s
 
 I metodi `setDefault()` e `setDefaults()` sono molto utili per ogni
 istanza della stessa classe di form. Se vogliamo modificare un oggetto
-esistente che usa una form, i valori predefiniti dipenderanno dall'istanza,
+esistente che usa un form, i valori predefiniti dipenderanno dall'istanza,
 quindi devono essere dinamici. Il Listato 1-14 mostra che il costruttore
 `sfForm` ha un primo parametro che imposta i valori predefiniti dinamicamente.
 
