@@ -1,0 +1,711 @@
+اليوم 3:  طراز البيانات
+======================
+
+ رأينا سابقا في Jobeet 
+--------------------
+
+ لمن يحب فتح قارئ نصوصه وكتابة بعض أسطر PHP سيكون سعيدا بمعرفته أن درس اليوم سيمكنه من البرمجة. 
+ سنقوم بتعريف طراز بينات Jobeet وسنستعمل ORM للتحاور مع قاعدة البيانات ثم ننشئ أول وحدة من تطبيقنا. 
+ و بما أن symfony يقوم بالجزء الأكبر من العمل فسنحصل على وحدة تعمل جيدا دون كتابة الكثير من الرمز PHP .  
+‎
+الطراز الإرتباطي 
+---------------
+
+ حكايات المستعملين التي قمنا أمس بسردها تبرز العناصر الأساسية لمشروعنا : الوظائف و الأصناف و المنضمين  
+
+ وفي مايلي مبيان العلاقات و الكيانات :
+
+ ![Entity relationship diagram](http://www.symfony-project.org/images/jobeet/1_2/03/diagram.png)
+
+ بالإضافة للأعمدة المذكورة سابقا سنضيف العمود 'created_at' للجداول . يتعرف symfony على بعض الحقول و يعطيها أثناء الإنشاء القيمة المطابقة لها في ساعة النظام. 
+
+ و كذلك بالنسبة للحقل `updated_at` سيأخذ قيمة ساعة النظام أثناء التحديث . 
+
+المخطط
+-----
+ لتسجيل الوظائف و الأصناف و المنضمين أكيد سنكون بحاجة لقاعدة بيانات إرتباطية . 
+ ولكن بما أن symfony إطار موجه للكائنات فنحن نحب إستخدام الكائنات كلما سمحت الفرصة. 
+ على سبيل المثال نفضل إستعمال الكائنات على كتابة إستعلامات SQL للحصول على تسجيلات من قاعدة البيانات. 
+ يجب على معلومات قاعدة البيانات الإرتباطية أن توافق طراز الكائن وهذا يمكن فعله عن طريق أداة 
+ [ORM tool](http://en.wikipedia.org/wiki/Object-relational_mapping) 
+ .و شكرا لsymfony الذي يقدم لنا إثنين هما: 
+ [Propel](http://propel.phpdb.org/) و [Doctrine](http://www.doctrine-project.org/)
+ في هذا الدرس سنستعمل ##ORM##. 
+
+ ORM تتطلب وصف الجداول و العلاقات بينها لإنشاء الأصناف المرتبطة بها , هناك طريقتان لكتابة مخطط الوصف : 
+ إستجواب قاعدة بيانات موجودة أو إنشاء مخطط يدويا. 
+
+<propel>
+>**معلومة**
+> توجد أدوات تمكنك من بناء قاعدة بيانات عن طريق مبيان 
+> على سبيل المثال [Fabforce's Dbdesigner](http://www.fabforce.net/dbdesigner4/) 
+> ينشأ أتوماتيكيا ملف `schema.xml` 
+> [DB Designer 4 TO Propel Schema Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php) 
+
+ بما أن قاعدة البيانات لا توجد بعد و نريد الحفاظ عليها agnostic في Jobeet. 
+ لننشأها يدويا باستعمال الملف `config/schema.yml` 
+
+    [yml]
+    # config/schema.yml
+    propel:
+      jobeet_category:
+        id:           ~
+        name:         { type: varchar(255), required: true }
+
+      jobeet_job:
+        id:           ~
+        category_id:  { type: integer, foreignTable: jobeet_category,
+          ➥ foreignReference: id, required: true }
+        type:         { type: varchar(255) }
+        company:      { type: varchar(255), required: true }
+        logo:         { type: varchar(255) }
+        url:          { type: varchar(255) }
+        position:     { type: varchar(255), required: true }
+        location:     { type: varchar(255), required: true }
+        description:  { type: longvarchar, required: true }
+        how_to_apply: { type: longvarchar, required: true }
+        token:        { type: varchar(255), required: true, index: unique }
+        is_public:    { type: boolean, required: true, default: 1 }
+        is_activated: { type: boolean, required: true, default: 0 }
+        email:        { type: varchar(255), required: true }
+        expires_at:   { type: timestamp, required: true }
+        created_at:   ~
+        updated_at:   ~
+
+      jobeet_affiliate:
+        id:           ~
+        url:          { type: varchar(255), required: true }
+        email:        { type: varchar(255), required: true, index: unique }
+        token:        { type: varchar(255), required: true }
+        is_active:    { type: boolean, required: true, default: 0 }
+        created_at:   ~
+
+      jobeet_category_affiliate:
+        category_id:  { type: integer, foreignTable: jobeet_category,
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
+        affiliate_id: { type: integer, foreignTable: jobeet_affiliate,
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
+
+>**TIP**
+> إذا قررت بإنشاء الجداول بكتابة الرمز SQL تستطيع توليد ملف التهيئة `schema.yml`بتطبيق الأمر  
+> `propel:build-schema`
+
+</propel>
+<doctrine>
+ بما أن قاعدة البيانات لا توجد بعد و نريد الحفاظ عليها agnostic في Jobeet. 
+ لننشأها يدويا باستعمال الملف `config/doctrine/schema.yml` 
+
+    [yml]
+    # config/doctrine/schema.yml
+    ---
+    JobeetCategory:
+      actAs:
+        Timestampable: ~
+      columns:
+        name:
+          type: string(255)
+          notnull:  true
+
+    JobeetJob:
+      actAs:
+        Timestampable: ~
+      columns:
+        category_id:
+          type: integer
+          notnull:  true
+        type:
+          type: string(255)
+        company:
+          type: string(255)
+          notnull:  true
+        logo:
+          type: string(255)
+        url:
+          type: string(255)
+        position:
+          type: string(255)
+          notnull:  true
+        location:
+          type: string(255)
+          notnull:  true
+        description:
+          type: string(4000)
+          notnull:  true
+        how_to_apply:
+          type: string(4000)
+          notnull:  true
+        token:
+          type: string(255)
+          notnull:  true
+          unique: true
+        is_public:
+          type: boolean
+          notnull:  true
+          default:  1
+        is_activated:
+          type: boolean
+          notnull:  true
+          default:  0
+        email:
+          type: string(255)
+          notnull:  true
+        expires_at:
+          type: timestamp
+          notnull:  true
+      relations:
+        JobeetCategory:
+          local:  category_id
+          foreign:  id
+        Affiliates:
+          class:  JobeetAffiliate
+          local:  category_id
+          foreign:  affiliate_id
+          refClass: JobeetCategoryAffiliate
+          foreignAlias: Affiliates
+
+    JobeetAffiliate:
+      actAs:
+        Timestampable: ~
+      columns:
+        url:
+          type: string(255)
+          notnull:  true
+        email:
+          type: string(255)
+          notnull:  true
+          unique: true
+        token:
+          type: string(255)
+          notnull:  true
+        is_active:
+          type: boolean
+          notnull:  true
+          default:  0
+
+    JobeetCategoryAffiliate:
+      columns:
+        category_id:
+          type: integer
+          primary:  true
+        affiliate_id:
+          type: integer
+          primary:  true
+      relations:
+        JobeetCategory:
+          onDelete: CASCADE
+          local:  category_id
+          foreign:  id
+        JobeetAffiliate:
+          onDelete: CASCADE
+          local:  affiliate_id
+          foreign:  id
+
+>**TIP**
+>إذا قررت إنشاء الجداول بكتابة الرمزSQL تستطيع توليد ملف التهيئة `schema.yml`بتطبيق الأمر  
+>`doctrine:build-schema`
+
+</doctrine> 
+
+ المخطط هو ترجمة لمخطط علاقات الكيانات في شكل YAML 
+
+>**SIDEBAR** 
+>الشكلYAML
+>
+>حسب الموقع الرسمي [YAML](http://yaml.org/)
+>هو قياس تسلسل المعلومات `صديق للإنسان ` لجميع لغات البرمجة 
+>من وجهة نظر أخرى YAML هو لغة بسيطة لوصف المعلومات (strings integers, dates, arrays, and hashes)  
+>
+>مع YAML تظهر البنية بواسطة الإزاحة. 
+> تبرز الواجهة تسلسل العناصر  
+> و فصل الزوج مفتاح / قيمة  في قلب الخريطة بفواصل .
+>
+> YAML يقدم أيضا كتابة قصيرة لوصف البنية حيث الجداول توجد بين `[]` 
+> و المتتالية بين `{}`. 
+> إذا لم تكن متعودا على YAML فهذا هو الوقت المناسب لتعلمه لأن symfony يستعمله بشكل كبير في ملفات التهيئة . 
+
+ يحتوي الملف `schema.yml` على وصف لجميع الجداول و أعمدتها . كل عمود يعرف بالمعلومات التالية: 
+
+<propel>
+
+* `type`: نوع العمود  (`boolean`, `tinyint`, `smallint`, `integer`, `bigint`, `double`, `float', `real`, `decimal`, `char`, `varchar(size)`, `longvarchar`, `date`, `time`, `timestamp`, `blob`, and `clob`) 
+
+* `required`: يعرف ب `true` إذا كنت تريد للسطر أن يكون required. 
+
+* `primaryKey`: يعرف السطر الذي سيكون مفتاح رئيسي. 
+
+* `foreignTable`, `foreignReference`: يعرف السطر الذي سيكون foreign key لجدول أخر 
+
+* `index`:يعرف ب `true` إذا أردت إنشاء فهرس على العمود أو إستعمال `unique` إذا كنت تريد فهرس واحد. 
+
+بالنسبة للأعمدة المعرفة ب `~` (`id`, `created_at`, and`updated_at`)يقدم symfony أتوماتيكيا  أحسن التهيئة : 
+ المفتاح الرئيسي ل `id` و ساعة النظام ل `created_at`و `updated_at`. 
+
+>**TIP**
+> الخاصية `OnDelete`تعرف التصرف `ON DELETE`على foreign key 
+> و Propel يتحمل القيم `CASCADE`و `SETNULL`و `RESTRICT`. 
+>
+> على سبيل المثال, إذا حذف تسجيل من الجدول`jobeet_job`جميع التسجيلات الموافقة في الجدول `jobeet_category_affiliate` 
+> ستحذف أتوماتيكيا إما عن طريق قاعدة البيانات أو عن طريق Propelإذا كان محرك قاعدة البيانات ليحتمل مثل هذه المهام. 
+</propel>
+<doctrine>
+* `type`: نوع العمود (`boolean`, `integer`, `float`, `decimal`, `string`, `array`, `object`, `date`, `time`, `timestamp`, `blob`, `clob`, `enum`, `gzip`) 
+
+* `notnull`: يعرف ب `true` إذا كنت تريد للسطر أن يكون required. 
+* `unique`: يعرف ب `true` إذا أردت إنشاء فهرس وحيد على العمود. 
+
+>**TIP**
+> الخاصية `OnDelete`تعرف التصرف `ON DELETE`على foreign key 
+> و Doctrine يتحمل القيم `CASCADE`و `SETNULL`و `RESTRICT`. 
+>
+> على سبيل المثال, إذا حذف تسجيل من الجدول`jobeet_job`جميع التسجيلات الموافقة في الجدول `jobeet_category_affiliate` 
+> ستحذف أتوماتيكيا بواسطة قاعدة البيانات  
+</doctrine>
+
+قاعدة البيانات
+--------------
+
+الإطار symfony يحتمل جميع قواعد البيانات المتوافقة مع PDO 
+
+ (..., MSSQL, Oracle, SQLite, PostgreSQL, MySQL).
+
+ PDO هي طبقة التجريد لقاعدة البيانات الممنوحة من طرف PHP.
+
+ استعملوا MySQL في هذا الدرس : 
+
+    $ mysqladmin -uroot -pmYsEcret create jobeet 
+
+>**Note**
+> أنتم أحرار في إختيار محرك آخر لقواعد البيانات . 
+>فلن يكون من الصعب تكيف الرمز الذي سنكتبه لأننا نستعمل ORM الذي سيكتب لنا الرمز SQL. 
+
+ يجب علينا أن ندل symfony على قاعدة البيانات التي سنستعملها لمشروع Jobeet: 
+
+<propel>
+    $ php symfony configure:database "mysql:host=localhost;dbname=jobeet" root mYsEcret
+</propel>
+<doctrine>
+    $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=jobeet" root mYsEcret
+
+>**Note** 
+> بعد ربط الاتصال بقاعدة البيانات Doctrine ستحتاج إلى تعديل `config/databases.yml` يدويا  وإزالة أي إشارة لروابط Propel
+
+</doctrine>
+
+يتطلب الأمر `configure:database`ثلاث معطيات :
+ [PDO DSN](http://www.php.net/manual/en/pdo.drivers.php) اسم المستخدم و كلمة المرور للوصول لقاعدة البيانات .
+ لا تستعمل المعطى الثالث  إذا كنت لا تستعمل كلمة مرور للوصول لمزود التطوير .
+
+>**Note**
+> يكتب الأمر `configure:database` تهيئة قاعدة البيانات في الملف `config/databases.yml`. 
+> يمكنكم التعديل على هذا الملف يدويا و الاستغناء عن الأمر. 
+
+ORM
+---
+
+ بفضل وصف قاعدة البيانات الموجود في الملف `schema.yml`,  نستطيع إستعمال الأوامر المتضمنة في ##ORM## لتوليد تصاريح SQL اللازمة لإنشاء الجداول : 
+
+    $ php symfony doctrine:build-model
+
+ بما أن النماذج حاضرة الآن يمكنك أن تولد أو تضيف SQL .
+
+</doctrine>
+
+    $ php symfony propel:build-sql
+
+الأمر `propel:build-sql` يولد تصاريح SQL في المجلد `data/sql` الأمثل لمحرك قاعدة البيانات التي قمنا بتهييئها:
+
+<propel>
+    [sql]
+    #مقتطف من data/sql/lib.model.schema.sql
+    CREATE TABLE `jobeet_category`
+    (
+      `id` INTEGER  NOT NULL AUTO_INCREMENT,
+      `name` VARCHAR(255)  NOT NULL,
+      PRIMARY KEY (`id`)
+    )Type=InnoDB;
+</propel>
+<doctrine>
+    [sql]
+    # مقتطف من data/sql/schema.sql
+    CREATE TABLE jobeet_category (id BIGINT AUTO_INCREMENT, name VARCHAR(255)
+    NOT NULL COMMENT `test`, created_at DATETIME, updated_at DATETIME, slug
+    VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), PRIMARY KEY(id))
+    ENGINE = INNODB;
+</doctrine>
+
+ الآن أنشئ الجداول في قاعدة البيانات بتنفيذ الأمر `propel:insert-sql`: 
+
+    $ php symfony propel:insert-sql
+
+<propel>
+
+ بما أن الأمر  يحذف الجداول الموجودة قبل أن ننشأها من جديد, يجب عليكم تأكيد العملية . 
+ تستطيعون أيضا إستعمال الخاصية `no-confirmation--` لتجنب تأكيد الأمر , و هذا ما يتم تطبيقه إذا كنا نريد تنفيذ الأمر من سطر أوامر غير متفاعل  :
+
+    $ php symfony propel:insert-sql --no-confirmation
+</propel>
+
+>**TIP**
+> كأي أداة تستعمل سطر الأوامر , يمكن لأوامر symfony أن تأخذ حججا و خواصا. كل أمر مصحوب برسالات مساعدة التي يمكن إظهارها بتنفيذ الأمر `help` : 
+>
+>     $ php symfony help propel:insert-sql
+>
+> رسالة المساعدة تمنح قائمة الحجج و الخواص الممكنة , تمنح القيم الافتراضية لكل واحدة منهم و تعطي أمثلة مفيدة . 
+
+ يولد ORM أيضا أصناف PHP التي تقوم بالربط بين تسجيلات الجداول و العناصر : 
+
+    $ php symfony propel:build-model
+
+ الأمر `propel:build-model` يولد ملفات PHP التي ستستعمل للتفاعل مع قاعدة البيانات في المجلد `lib/model`.
+ 
+ <propel> 
+ إذا بحثنا في الملفات المولدة فمن المحتمل أن تلاحظوا بأن Propel يولد 4 أصناف لكل جدول . للجدول  `jobeet_job` :
+
+  * `JobeetJob` : عنصر من هذا الصنف يمثل تسجيلا واحدا في الجدول `jobeet_job`. هذا الصنف فارغ إفتراضيا . 
+
+  * `BaseJobeetJob`: هي الصنف الأب ل `JobeetJob`. في كل مرة تنفذون الأمر `propel:build-model`, يعاد كتابة الصنف . يجب أن تتم جميع التطويرات في الصنف `JobeetJob`. 
+
+  * `JobeetJobPeer`: هذا الصنف يعرف الأساليب الثابتة التي تعطي كنتيجة مجموعة عناصر `JobeetJob`. هذا الصنف فارغ إفتراضيا . 
+
+  * `BaseJobeetJobPeer`: هي الصنف الأب ل `JobeetJobPeer`. في كل مرة تنفذون الأمر `propel:build-model`, يعاد كتابة الصنف . يجب أن تتم جميع التطويرات في الصنف `JobeetJobPeer`.
+
+</propel>
+<doctrine>
+
+إذا بحثنا في المفات المولد فمن المحتمل أن تلاحظوا بأن Doctrine يولد 3 أصناف لكل جدول . للجدول  `jobeet_job` : 
+
+  * `JobeetJob` : عنصر من هذا الصنف يمثل تسجيلا واحدا في الجدول `jobeet_job`. هذا الصنف فارغ إفتراضيا . 
+
+  * `BaseJobeetJob`: هي الصنف الأب ل `JobeetJob`. في كل مرة تنفذون الأمر `doctrine:build-model`, يعاد كتابة الصنف . يجب أن تتم جميع التطويرات في الصنف `JobeetJob`. 
+
+  * `JobeetJobTable`: هذا الصنف يعرف الأساليب الثابتة التي تعطي كنتيجة مجموعة عناصر `JobeetJob`. هذا الصنف فارغ إفتراضيا . 
+
+</doctrine>
+
+يمكن التلاعب بقيم أعمدة تسجيل ما من خلال العنصر باستعمال الموصل (`get*()` methods)
+و mutators 
+( `set*()`methods)
+:
+
+    [php]
+
+    $job = new JobeetJob();
+    $job->setPosition(`Web developer`);
+    $job->save();
+    echo $job->getPosition();
+    $job->delete();
+
+يمكنكم أيضا تعريف المفتاح الأجنبي بربط العناصر ببعضها :
+
+    [php]
+
+    $category = new JobeetCategory();
+    $category->setName(`Programming`);
+    $job = new JobeetJob();
+    $job->setCategory($category);
+
+ الأمر`propel:build-all` عبارة عن إختصار لتنفيذ الأوامر التي سبق أن رأيناها أو أخرى. إذا نفذ الآن الأمر لتوليد الأشكال و مصادقة طراز عناصر Jobeet:
+
+    $ php symfony propel:build-all
+
+ و سترون في آخر اليوم تطبيق المصادقة و سنتطرق للأشكال في اليوم 10 بشكل مدقق .
+
+>**TIP**
+> الأمر `propel:build-all-load` عبارة عن إختصار ل  `propel:build-all` متبوع بالأمر `propel:data-load`. 
+
+و كما سنرى بعد قليل يقوم symfony أتوماتيكيا بشحن أصناف PHP من أجلكم , و هذا ما يعني أنكم لستم بحاجة إلى إستعمال `require` في برمجتكم .
+ هذه واحدة من العديد من الأشياء التي يقوم symfony بجعلها أتوماتيكيا للمبرمجين , و لكن بالمقابل يجب عليكم في كل مرة تضيفون فيها عنصرا تفريغ المخزن  .
+ و بما أن الأمر `propel:build-model` أنشأ عناصر جديدة , يجب تفريغ المخزن : 
+
+    $ php symfony cache:clear
+
+>**TIP**
+> يتكون أمر synfony من فضاء من الأسماء و اسم الأمر . لدى كل أمر إختصار بأقل غموض مع الأوامر الأخرى . الأمر التالي موافق للأمر :
+>
+>     $ php symfony cc
+
+
+المعطيات الأولية
+--------------
+
+ لقد أنشأت الجداول في قاعدة البيانات لكنها فارغة . في كل تطبيق ويب هناك ثلاث أنواع من المعطيات : 
+
+
+   * **المعطيات الأولية**:
+ المعطيات الأولية مهمة لاشتغال التطبيق. على سبيل المثال,يلزم 
+ Jobeet الأصناف , و إلا لن يتمكن أحد من تقديم وظيفة . 
+ و يلزمنا أيضا مسير يستطيع أن يدخل لل backend. 
+
+   * **معطيات الإختبار**:
+ معطيات الإختبار ضرورية لتجربة التطبيق. كمبرمج اكتب إختبارات لتتأكد من أن Jobeet يتصرف كما هو مذكور في حكايات المستعملين . أفضل طريقة هي كتابة إختبارات أتوماتيكية .
+ إذا في كل مرة تريدون عمل إختبارات فأنتم بحاجة إلى قاعدة بيانات نظيفة بمعطيات جديدة . 
+
+   * **معطيات المستعمل**:
+ معطيات المستعمل ينشئها المستعملون خلال الحياة العادية للتطبيق . 
+
+ في كل مرة يقوم symfony بإنشاء الجداول في قاعدة البيانات نفقد المعطيات. لإرسال المعطيات الأولية للقاعدة نستطيع كتابة سكريبت PHP, أو تنفيذ رمز SQL بواسطة البرنامج `mysql`.
+ بما أن الحاجة مشتركة , هناك طريقة أفضل بواسطة symfony: 
+ إنشاء ملف YAML في المجلد `data/fixtures/` و إستعملوا الأمر `propel:data-load` لإرسالهم لقاعدة البيانات:
+
+<propel>
+        [yml]
+        # data/fixtures/010_categories.yml
+        JobeetCategory:
+          design:        { name: Design }
+          programming:   { name: Programming }
+          manager:       { name: Manager }
+          administrator: { name: Administrator }
+    
+        # data/fixtures/020_jobs.yml
+        JobeetJob:
+          job_sensio_labs:
+            category_id:  programming
+            type:         full-time
+            company:      Sensio Labs
+            logo:         sensio_labs.png
+            url:          http://www.sensiolabs.com/
+            position:     Web Developer
+            location:     Paris, France
+            description:  |
+              You've already developed websites with symfony and you want to work
+              with Open-Source technologies. You have a minimum of 3 years
+              experience in web development with PHP or Java and you wish to
+              participate to development of Web 2.0 sites using the best
+              frameworks available.
+            how_to_apply: |
+              Send your resume to fabien.potencier [at] sensio.com
+            is_public:    true
+            is_activated: true
+            token:        job_sensio_labs
+            email:        job@example.com
+            expires_at:   2010-10-10
+    
+          job_extreme_sensio:
+            category_id:  design
+            type:         part-time
+            company:      Extreme Sensio
+            logo:         extreme_sensio.png
+            url:          http://www.extreme-sensio.com/
+            position:     Web Designer
+            location:     Paris, France
+            description:  |
+              Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+              enim ad minim veniam, quis nostrud exercitation ullamco laboris
+              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+              in reprehenderit in.
+    
+              Voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+              Excepteur sint occaecat cupidatat non proident, sunt in culpa
+              qui officia deserunt mollit anim id est laborum.
+            how_to_apply: |
+              Send your resume to fabien.potencier [at] sensio.com
+            is_public:    true
+            is_activated: true
+            token:        job_extreme_sensio
+            email:        job@example.com
+            expires_at:   2010-10-10
+</propel>
+<doctrine>
+        [yml]
+        # data/fixtures/categories.yml
+        JobeetCategory:
+          design:
+            name: Design
+          programming:
+            name: Programming
+          manager:
+            name: Manager
+          administrator:
+            name: Administrator
+
+        # data/fixtures/jobs.yml
+        JobeetJob:
+          job_sensio_labs:
+            JobeetCategory: programming
+            type:         full-time
+            company:      Sensio Labs
+            logo:         /uploads/jobs/sensio_labs.png
+            url:          http://www.sensiolabs.com/
+            position:     Web Developer
+            location:     Paris, France
+            description:  |
+              You've already developed websites with symfony and you want to work
+              with Open-Source technologies. You have a minimum of 3 years
+              experience in web development with PHP or Java and you wish to
+              participate to development of Web 2.0 sites using the best
+              frameworks available.
+            how_to_apply: |
+              Send your resume to fabien.potencier [at] sensio.com
+            is_public:    true
+            is_activated: true
+            token:        job_sensio_labs
+            email:        job@example.com
+            expires_at:   '2008-10-10'
+
+          job_extreme_sensio:
+            JobeetCategory:  design
+            type:         part-time
+            company:      Extreme Sensio
+            logo:         /uploads/jobs/extreme_sensio.png
+            url:          http://www.extreme-sensio.com/
+            position:     Web Designer
+            location:     Paris, France
+            description:  |
+              Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+              enim ad minim veniam, quis nostrud exercitation ullamco laboris
+              nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+              in reprehenderit in.
+              Voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+              Excepteur sint occaecat cupidatat non proident, sunt in culpa
+              qui officia deserunt mollit anim id est laborum.
+            how_to_apply: |
+              Send your resume to fabien.potencier [at] sensio.com
+            is_public:    true
+            is_activated: true
+            token:        job_extreme_sensio
+            email:        job@example.com
+            expires_at:   '2008-10-10'
+</doctrine>
+
+ ملف fixtures للإختبارات مكتوب ب YAML. يستعمل طراز العناصر مع اسم وحيد لكل تسجيل . 
+ يصلح هذا الإسم لربط العناصر الارتباطية في ما بينها دون ضرورة تعريف المفتاح الرئيسي 
+ (و غالبا ما يكون هذا الحقل يزيد أتوماتيكيا و لا يعرف ).
+ على سبيل المثال, الوظيفة `job_sensio_labs` يستعمل الصنف `programming`, و هذاالذي يتعلق بالصنف `Programming`. 
+
+ يمكن لملف fixture الإحتواء على عنصر طراز واحد أو العديد. 
+
+<propel>
+>**TIP**
+> لاحظ الرقم الذي يسبق اسم الملف. و هذه وسيلة سهلة للتحكم في ترتيب تحميل المعطيات . 
+> إذا كنت تريد لاحقا إضافة fixture جديد سيكون الأمر سهلا لأننا نتوفر على أرقام يمكن إستعمالها بين الأرقام الموجودة . 
+</propel>
+
+ في ملف fixtures لستم بحاجة إلى تعريف قيم جميع الأعمدة . في هذه الحالة سيستعمل symfony القيمة الإفتراضية المشار إليها في مخطط قاعدة البيانات . و بما أن symfony يستعمل ##ORM## لتحميل المعطيات في القاعدة, 
+ تم تفعيل جميع تصرفات الإنشاء مثل
+(`created_at` أو `updated_at`) 
+ أو السلوكيات التي أضفتموها للنموذج .
+
+تحميل المعطيات الأولية في قاعدة البيانات بسيط بتنفيذ الأمر :
+
+    $ php symfony propel:data-load 
+
+See it in Action in the Browser
+-------------------------------
+
+ لقد استعملنا كثيرا واجهة سطر الأوامر و لكن هذا غير ممتع خصوصا في مشروع ويب . لدينا الآن كل ما نحتاجه لإنشاء صفحات الويب التي ستتعامل مع قاعدة البيانات . 
+
+ ترون كيف تظهر قائمة الوظائف , كيفية تحرير وظيفة موجودة , و كيفية حذفها . وكما شرحنا في اليوم الأول مشروع symfony مكون من تطبيق .     
+ كل واحدة منها مكونة من  **modules**. 
+ يحتوي module على رمز PHP الذي يمثل مهمة من التطبيق 
+ (مثلا  API module) 
+ أو التلاعب في نموذج العنصر الذي يمكن لمستعمل أن يقوم به 
+ (مثلا  job module).
+
+ symfony قادر على إن يولد أتوماتيكيا لنموذج وحدات الذي يمنح مهمات أولية :
+
+     $ php symfony propel:generate-module --with-show --non-verbose-templates frontend job JobeetJob
+
+ الأمر `propel:generate-module` يولد الوحدة `job` في التطبيق frontend في نموذج `JobeetJob`. 
+ كما في مجمل أوامر symfony, أنشئت من أجلك مجلدات و ملفات في المجلد  `apps/frontend/modules/job` :
+
+
+  | دليل |      الوصف     
+  | ---------- | --------------
+  | /actions   | عمل الوحدة
+  | /templates | قوالب الوحدة
+
+
+ الملف `actions/actions.class.php` يعرف جميع الاعمال المتوفرة للوحدة `job` :
+
+
+  | دليل |        الوصف     
+  | ------------ | -------------------------------
+  | index        | تظهر تسجيلات الجدول 
+  | show         | تظهر حقل تسجيل معطى
+  | new          | تظهر قائمة لإنشاء تسجيل جديد
+  | create       | إنشاء تسجيل جديد 
+  | edit         | تظهر قائمة لتحرير تسجيل 
+  | update       | تحديث تسجيل وفقا لقيمة مقدمة
+  | delete       | حذف تسجيل معطى
+
+
+ يمكنك من الآن تجربة الوحدة job في متصفحك : 
+
+     http://jobeet.localhost/frontend_dev.php/job
+
+![Job module](http://www.symfony-project.org/images/jobeet/1_2/03/job.png)
+
+<propel>
+ إذا كنت تريد تحرير وظيفة, فستحصل على إستثناء لأن symfony يحتاج تمثيل كتابي لصنف . تمثيل عنصر PHP يمكن أن يعرف عن طريق الدالة السحرية `()toString__`. 
+ يجب أن يعرف التمثيل الكتاب لتسجيل لصنف في الصنف  `JobeetCategory`:
+
+    [php]
+    // lib/model/JobeetCategory.php
+    class JobeetCategory extends BaseJobeetCategory
+    {
+      public function __toString()
+      {
+        return $this->getName();
+      }
+    }
+
+ الآن في كل مرة يحتاج symfony لتمثيل لصنف , تنادى الدالة السحرية `()toString__` و تعطي كنتيجة اسم الصنف. و بما أننا سنكون بحاجة لتمثيل لجميع أصناف الطراز في وقت أو آخر , عرفوا في كل صنف طراز الدالة  `()toString__`. 
+
+</propel>
+<doctrine>
+ إذا كنت تريد تحرير وظيفة, ستحذر من أن الحقل `id` من الجدول  `JobeetCategory` هي قائمة لجميع أسماء الصنف. مصدر قيم كل خاصية هي الدالة `()toString__`. 
+ ستحاول  Doctrine و تمنح دالة أساسية `()toString__` بالبحث عن عمود مسمى  `title`,
+ `name`, `subject`... .
+ إذا كنت تريد شيئا خاصا فعليك إضافة الدالة `()toString__` الخاصة بك كالآتي : 
+</doctrine>
+
+    [php]
+    <propel>
+    // lib/model/JobeetJob.php
+    </propel>
+    <doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+    </doctrine>
+    class JobeetJob extends BaseJobeetJob
+        {
+          public function __toString()
+          {
+            return sprintf('%s at %s (%s)', $this->getPosition(),
+             ➥ $this->getCompany(), $this->getLocation());
+          }
+        }
+
+    <propel>
+// lib/model/JobeetAffiliate.php
+    </propel>
+    <doctrine>
+// lib/model/doctrine/JobeetAffiliate.class.php
+    </doctrine>
+    class JobeetAffiliate extends BaseJobeetAffiliate
+        {
+          public function __toString()
+          {
+            return $this->getUrl();
+          }
+        }
+
+ تستطيع إنشاء أو تحرير وظيفة . جربوا أن تتركوا حقل مطلوب فارغا أو بإدخال تاريخ خاطئ . جيد لقد أنشأ  symfony قواعد مصادقة أساسية بفحص نموذج قاعدة البيانات .
+
+![validation](http://www.symfony-project.org/images/jobeet/1_2/03/validation.png)
+
+نراكم غدا إن شاء الله
+-------------------
+
+ نكتفي اليوم بهذا القدر . لقد حذرناكم في المقدمة . اليوم , بالكاد كتبنا رمز  PHP لكن لدينا وحدة تعمل على النموذج `job`,
+جاهز للتغيير حسب رغبتكم . تذكروا , دون رمز PHP يعني لا وجود للأخطاء المعوقة . 
+ إذا بقيت لديك بعد الطاقة كونوا أحرار في قراءة شفرة لكل وحدة أو لكل نموذج و حاولوا فهم طريقة عملها . و إذا لم تتمكنوا من الفهم فلا تقلقوا و ناموا جيدا , 
+ لأننا غدا سنتكلم عن أحد النماذج الأكثر إستعمالا في إطارات الويب 
+ [MVC design pattern](http://en.wikipedia.org/wiki/Model-view-controller). 
+
+ رمز اليوم متوفر في مخزن Jobeet SVN بالوسم  `release_day_03` (`http://svn.jobeet.org/tags/release_day_03/`).  
+
+__ORM__
