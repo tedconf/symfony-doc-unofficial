@@ -65,14 +65,17 @@ Listato 3-1 - Il template prototipo che visualizza il form `contact`
  
 >**SIDEBAR**
 >Invio di file
->Quando in un form usi un campo per inviare un file, occorre
+>
+>Quando in un form si usa un campo per inviare un file, occorre
 >aggiungere l'attributi `enctype` al tag `form`:
 >
->      <form action="<?php echo url_for('contact/index') ?>" method="post" enctype="multipart/data">
+>     [php]
+>     <form action="<?php echo url_for('contact/index') ?>" method="post" enctype="multipart/data">
 >
 >Il metodo `isMultipart()` dell'oggetto `form` restituisce `true`
 >se il form necessita di tale attributo:
 >
+>     [php]
 >     <form action="<?php echo url_for('contact/index') ?>" method="post" <?php $form->isMultipart() and print 'enctype="multipart/form-data"' ?>>
 
 Il template prototipo
@@ -138,6 +141,14 @@ Listato 3-2 - Template generato in caso di invio non valido
       </table>
     </form>
 
+>**TIP**
+>C'è un'altra scorciatoia per generare il tag di apertura del form:
+>`echo $form->renderFormTag(url_for('contact/index'))`. Questo consente
+>anche di passare un numero arbitrario di attributi addizionali al tag
+>form in modo più semplice, usando un array. Lo svantaggio di usare questa
+>scorciatoia sta nel fatto che gli strumenti di design avranno più
+>difficoltà ad individuare correttamente il form.
+
 Analizziamo questo codice. La Figura 3-2 evidenzia le righe
 `<tr>` prodotte per ogni campo.
 
@@ -160,7 +171,7 @@ Ecco il codice HTML generato per il campo `email`:
         <input type="text" name="contact[email]" value="fabien" id="contact_email" />
   
   * I **messaggi di errore**
- 
+
         [php]
         <ul class="error_list">
           <li>The email address is invalid.</li>
@@ -502,6 +513,7 @@ Il template attuale non gestisce i messaggi di errore. Il Listato 3-11 li reintr
 
 Listato 3-11 - Mostrare i messaggi di errore usando il metodo `renderError()`
 
+    [php]
     <form action="<?php echo url_for('contact/index') ?>" method="post">
       <table>
         <tr>
@@ -552,6 +564,7 @@ personalizzare i messaggi di errore per il campo `email`.
 
 Listato 3-12 - Accedere ai messaggi di errore
 
+    [php]
     <?php if ($form['email']->hasError()): ?>
       <ul class="error_list">
         <?php foreach ($form['email']->getError() as $error): ?>
