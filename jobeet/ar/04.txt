@@ -1,0 +1,1078 @@
+اليوم 04 : المراقب و العرض 
+========================
+
+ بالأمس اكتشفنا كيف أن  symfony
+ يبسط إدارة قواعد البيانات و ذلك عن طريق تجريدabstracting
+ الاختلافات بين محركات  قواعد البيانات,
+ و تحويل العناصر المتصلة إلى عنصر أصناف موجهة  .
+ لقد  قمنا أيضا باللعب ب ##ORM##
+ لوصف مخطط قاعدة البيانات ،
+ إنشاء الجداول ،
+ و ملء قاعدة البيانات ببعض البيانات الأولية .
+
+ اليوم، سنقوم بتخصيص الوحدة الأساسية `job`
+ التى أنشأناها بالأمس .
+ تتوفر الوحدة `job` 
+ مسبقا على كل الترميز البرمجي الذي نحتاج إليه  ل   Jobeet:
+
+ * صفحة لائحة جميع الوظائف .
+ * صفحة لإنشاء وظيفة جديدة .
+ * صفحة لتحديث وظيفة موجودة .
+ * صفحة لحذف وظيفة.
+
+ و مع أن الترميز البرمجي جاهز للإستعمال كما هو ،
+ فإننا سنقوم  بتعميل القالب  templates 
+ ليتقارب  بشكل كبير  مع  نموذج  Jobeet.
+
+الهندسة  MVC
+-----------
+
+ إذا كنت  تقوم  بتطوير مواقع  الويب دون إستخدام الإطار،
+ فإنك  تستعمل  على الأرجح  ملف  PHP
+ في كل صفحة  HTML .
+ ربما تحتوي هذه الملفات على نفس النوع من الهيكل :
+ التحكم الأولي و الإجمالي ،
+ العمل المنطقي المرتبط  بالصفحة المطلوبة ،
+ جلب سجلات  قاعدة بيانات ،
+ و أخيرا الترميز البرمجي HTML
+الذي ينشئ الصفحة .
+
+ يمكنك استخدام محرك قالبي templating engine
+ للفصل بين المنطق وال  HTML.
+ ربما  تستخدم  طبقة abstraction
+ التابعة لقاعدة البيانات
+ وذلك لفصل  نموذج التفاعل عن المنطق العملي .
+ ولكن في معظم الأوقات ، ينتهي بك الأمر مع الكثير من الترميز البرمجي الذي  يصعب  صيانته  .
+ كان سريعا إنشاؤه ، ولكن مع مرور الوقت ،
+ أصبح من الصعب إحداث تغييرات عليه ،  خاصة  لأنه لا أحد  سواك  يفهم كيف أنشئ وكيف يعمل.
+
+ كما هو الحال مع كل مشكلة ، هناك حلول لطيفة.
+ بالنسبة لشبكة  التطوير ،
+ أكثر  حل مشترك لتنظيم  الترميز البرمجي  في الوقت الحاضر هو 
+ [**MVC design pattern**](http://en.wikipedia.org/wiki/Model-view-controller).
+ وباختصار ،
+ يعرف التصميم  MVC
+ طريقة لتنظيم ترميزك البرمجي  وفقا لطبيعته .
+ هذا التصميم يفصل الترميز البرمجي إلى
+ **ثلاث طبقات**
+ **three layers**:
+
+  * تحدد  طبقة
+ **النموذج** **Model**
+ المنطق العملي
+ (
+ تنتمي قاعدة البيانات إلى   هذه الطبقة
+ ).
+ أنت تعلم مسبقا أن  symfony
+ يجمع  كل الأصناف و الملفات المتصلة بالنموذج  في المجلد  /lib/model`.
+
+  * طبقة
+ **العرض** **View**
+ هي الطبقة التي يتفاعل معها المستخدم
+ (
+ محرك القالب template engine 
+ هو جزء من هذه الطبقة 
+ ).
+ في  symfony ،
+ تتكون طبقة العرض  أساسا  من القوالب PHP templates 
+ المجموعة  في أماكن مختلفة `/templates`
+كما سنرى لاحقا  هذا اليوم .
+
+  * طبقة
+ **المراقب** **Controller**
+ هي قطعة من الترميز البرمجي التي تقوم  باستدعاء  النموذج the Model
+  للحصول على  بعض البيانات   
+ التي يمررها إلى طبقة العرض  لتقديمها إلى  المستخدم.
+ عندما قمنا بتثبيت  symfony
+، في اليوم الأول
+ رأينا كيف أن جميع الطلبات  تسير من طرف front controllers
+ مراقبي الواجهة 
+ (`index.php`
+ و
+ `frontend_dev.php`
+).
+ يقوم  مراقبي الواجهة  بتوكيل العمل الحقيقي ل **actions**.
+ كما رأينا بالأمس ، فإن هذه الإجراءات تجمع منطقيا في
+ **وحدات**.
+
+![MVC](http://www.symfony-project.org/images/jobeet/1_2/04/mvc.png)
+
+The Layout
+----------
+
+ أولا ، إذا امعنت النظر في النماذج
+ ستلاحظ أن هناك الكثير من التشابه بين كل الصفحات .
+ تعلم مسبقا أن  تكرار الترميز البرمجي أمر سيء ،
+ سواء كنا نتحدث  عن الترميز البرمجي HTML
+ أو  PHP،
+ لذلك نحتاج إلى ايجاد وسيلة لمنع هذه العناصر المشتركة في العرض 
+ من الترميز البرمجي المستنسخ الناتج .
+
+ إحدى الطرق لحل هذه المشكلة هي تحديد  بداية و نهاية  و ادخالهما  في كل قالب template:
+
+![Header and footer](http://www.symfony-project.org/images/jobeet/1_2/04/header_footer.png)
+
+ولكن هنا لا تحتوي ملفات البداية و النهاية على HTML
+ صالح.
+يجب  أن تكون هناك  طريقة أفضل .
+ بدلا من إعادة  إدارة العجلة مرة أخرى
+ سنستعمل تصميما آخر design
+ لحل المشكل: 
+[decorator design pattern](http://en.wikipedia.org/wiki/Decorator_pattern).
+
+ The decorator design pattern
+ يحل المشكلة بطريقة أخرى :
+ القالب يصمم بعد المحتوى المقدم  من القالب  الإجمالي  global template,
+ المسمى ب  **layout**
+ في symfony:
+
+![Layout](http://www.symfony-project.org/images/jobeet/1_2/04/layout.png)
+
+ يسمى layout
+ الافتراضي لتطبيق ما
+ب `layout.php`
+ و يمكن إيجاده  في المجلد `/apps/frontend/templates`
+ يحتوي  هذا المجلد  على مجمل  قوالب التطبيق .
+
+ قم  بتعويض  layout
+ الافتراضي ل symfony
+ بالترميز البرمجي التالي :
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+      <head>
+        <title>Jobeet - Your best job board</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <?php include_javascripts() ?>
+        <?php include_stylesheets() ?>
+      </head>
+      <body>
+        <div id="container">
+          <div id="header">
+            <div class="content">
+              <h1><a href="/job">
+                <img src="/images/jobeet.gif" alt="Jobeet Job Board" />
+              </a></h1>
+
+              <div id="sub_header">
+                <div class="post">
+                  <h2>Ask for people</h2>
+                  <div>
+                    <a href="/job/new">Post a Job</a>
+                  </div>
+                </div>
+
+                <div class="search">
+                  <h2>Ask for a job</h2>
+                  <form action="" method="get">
+                    <input type="text" name="keywords" id="search_keywords" />
+                    <input type="submit" value="search" />
+                    <div class="help">
+                      Enter some keywords (city, country, position, ...)
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="content">
+            <?php if ($sf_user->hasFlash('notice')): ?>
+              <div class="flash_notice"><?php echo $sf_user->getFlash('notice') ?></div>
+            <?php endif; ?>
+
+            <?php if ($sf_user->hasFlash('error')): ?>
+              <div class="flash_error"><?php echo $sf_user->getFlash('error') ?></div>
+            <?php endif; ?>
+
+            <div class="content">
+              <?php echo $sf_content ?>
+            </div>
+          </div>
+
+          <div id="footer">
+            <div class="content">
+              <span class="symfony">
+                <img src="/images/jobeet-mini.png" />
+                powered by <a href="http://www.symfony-project.org/">
+                <img src="/images/symfony.gif" alt="symfony framework" /></a>
+              </span>
+              <ul>
+                <li><a href="">About Jobeet</a></li>
+                <li class="feed"><a href="">Full feed</a></li>
+                <li><a href="">Jobeet API</a></li>
+                <li class="last"><a href="">Affiliates</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+
+ القالب  symfony
+ هو مجرد ملف php
+ سهل .
+ في  layout
+ القالب template ،
+ ترى  استدعاءات   للدوال PHP,
+ و مراجع  لمتغيراتPHP.
+ تعتبر `sf_content$`
+  من أهم المتغيرات:
+ و هي تحدد من الإطار نفسه
+ و تحتوي على HTML
+ المولد من الاجراء .
+
+ إذا تصفحت وحدة  `job`
+
+ (`http://jobeet.localhost/frontend_dev.php/job`),
+سترى أن جميع الإجراءات صممت حاليا عن طريق  layout.
+
+معدات الشكل، الصور و JavaScripts
+----------------------------------
+
+ و بما أن هذا الكتاب التعليمي ليس لتصميم المواقع الإلكترونية فلقد قمنا بتحضير كل ما نحتاج لاستخدامه في Jobeet:
+
+[download the image files](http://www.symfony-project.org/get/jobeet/images.zip)
+ قم بخزن هذه الملفات و ضعها في المجلد `/web/images`;
+
+[download the stylesheet files](http://www.symfony-project.org/get/jobeet/css.zip)
+ قم بخزن هذه الملفات و ضعها في المجلد  `/web/css`.
+
+>**NOTE**
+> في  layout,
+> قمنا بإضافة *favicon*.
+> تستطيع 
+>[download the Jobeet one](http://www.symfony-project.org/get/jobeet/favicon.ico)
+> و ضعه في المجلد  `/web`.
+
+![The job module with a layout and assets](http://www.symfony-project.org/images/jobeet/1_2/04/job_layout_assets.png)
+
+>**TIP**
+> إفتراضيا ,
+> خلقت `generate:project`
+> ثلاث مجلدات  أصول المشروع:
+>`/web/images` بالنسبة لمجلد الصور ،
+>`/web/css` بالنسبة لمجلد معدات الشكل 
+>و `/web/js`
+> بالنسبة لمجلد JavaScripts .
+>ولكن يمكنك بالطبع تجميعها في أي مكان تريد في المجلد `/web`.
+
+ سيلاحظ القارئ الماهر مع أن الملف `main.css`
+ لم يذكر في أي مكان في  layout
+ الافتراضي،
+فإنه من المؤكد موجود في HTML
+ المولد.
+ ولكن ليس في الآخرين .
+كيف يتم هذا؟ 
+
+ لقد تم إدخال  ملف  معد الشكل بواسطة استدعاء الدالة  `()include_stylesheets`
+ الموجودة في  layout `<head>` tag
+ تسمى الدالة  `()include_stylesheets`
+ ب  **helper** **المساعد**. 
+ المساعد هو دالة ،
+ معرفة من  symfony،
+ و التي يمكنها أن   تأخذ  متغيرات و تعطي كنتيجة الترميز البرمجي HTML.
+في معظم الوقت ،
+المساعدون هم مدخرون للوقت ،
+ ففي كثير من الأحيان يقومون بتجميع قصاصات الترميز البرمجي  المستعمل  في القوالب  templates.
+يقوم المساعد `()include_stylesheets`
+ بتوليد `<link>`tags
+ بالنسبة لمعدات الشكل  .
+
+ ولكن كيف يمكن للمساعد معرفة أي معدات الشكل يجب إدخالها؟
+
+ يمكن التحكم في طبقة العرض بتحرير ملف التحكم للتطبيق `view.yml` . 
+لديك هنا الترميز البرمجي  المولد  إفتراضيا بواسطة `generate:app`:
+
+    [yml]
+    # apps/frontend/config/view.yml
+    default:
+      http_metas:
+        content-type: text/html
+
+      metas:
+        #title:        symfony project
+        #description:  symfony project
+        #keywords:     symfony, project
+        #language:     en
+        #robots:       index, follow
+
+      stylesheets:    [main.css]
+
+      javascripts:    []
+
+      has_layout:     on
+      layout:         layout
+
+ يتحكم الملف `view.yml`
+ في الإعدادات الافتراضية `default`
+ لجميع قوالب التطبيق .
+ على سبيل المثال ،
+ يحدد مدخل معدات الشكل the `stylesheets` entry
+ جدول من ملفات  معد الشكل التي يجب إدخالها في كل صفحة من التطبيق 
+ (
+ تتم عملية الادخال عن طريق المساعد `()include_stylesheets`
+).
+
+>**NOTE**
+> في  ملف  التحكم  `view.yml` ،
+> الملف المرجعي هو `main.css`
+> وليس `css/main.css/`.
+> في الواقع التعريفين متكافآن لأن symfony ،
+>  يبتدئ  paths
+> النسبي ب `/css/` .
+
+ إذا حددت العديد من الملفات ،
+ فإن  symfony
+ سيقوم بإدخالها في نفس الترتيب الذي حددت فيه  :
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css]
+
+ يمكنك أيضا تغيير  المتغير `media`
+ وحذف `.css` :
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css, print: { media: print }]
+
+ سيصبح هذا التحكم كما يلي  :
+
+    [php]
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/jobs.css" />
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/job.css" />
+    <link rel="stylesheet" type="text/css" media="print"
+      href="/css/print.css" />
+
+>**TIP**
+> يحدد  ملف التحكم `view.yml`
+> أيضا  layout
+> افتراضيا يستعمل في التطبيق .
+> افتراضيا ، الاسم هو `layout`,
+> و يزين  symfony
+> كل صفحة بالملف `layout.php`.
+> يمكنك أيضا تعطيل عملية التزيين  وذلك  بتحويل 
+>  المدخل  `has_layout`
+> إلى `false`.
+
+ يعمل كما هو 
+ لكن الملف `jobs.css`
+ نحتاجه فقط في الصفحة الرئيسية
+ و الملف  `job.css`
+ نحتاجه فقط في صفحة الوظائف .
+ يمكن تخصيص ملف التحكم  view.yml`
+ كقاعدة في كل وحدة .
+ قم بتغيير ملف التطبيق  `view.yml`
+ لكي يحتوي فقط على الملف  `main.css` .
+
+    [yml]
+    # apps/frontend/config/view.yml
+    stylesheets:    [main.css]
+
+ يمكن تخصيص العرض 
+ بالنسبة للوحدة `job` ،
+أنشئ الملف  `view.yml` 
+ في المجلد `/apps/frontend/modules/job/config` :
+
+    [yml]
+    # apps/frontend/modules/job/config/view.yml
+    indexSuccess:
+      stylesheets: [jobs.css]
+
+    showSuccess:
+      stylesheets: [job.css]
+
+ في إطار الأقسام `indexSuccess`
+ و `showSuccess`
+( هما أسماء القوالب المكافئة للاجراءات `index` 
+ و `show` ،
+ كما سنرى لاحقا
+ ) ،
+ يمكنك تخصيص أي مدخل موجود في القسم  `default`
+ للتطبيق  `view.yml`.
+ جميع المداخل الخاصة هي مدمجة مع تحكم التطبيق .
+ كما يمكنك تحديد بعض التحكم لجميع الاجراءات المتخذة لوحدة بواسطة القسم الخاص `all`.
+
+>**SIDEBAR**
+> مبادئ التحكم في symfony
+>
+> بالنسبة لكثير من ملفات التحكم , تحدد نفس الإعدادات على  مستويات  مختلفة :
+>
+>  * يوجد التحكم الافتراضي في الإطار .
+>  * يوجد التحكم الإجمالي للمشروع في `/config`.
+>  * يوجد التحكم المحلي للتطبيق في  `/apps/APP/config`.
+>  * يوجد التحكم المحلي للوحدة في`/apps/APP/modules/MODULE/config`.
+>
+> في وقت التشغيل,  يقوم نظام التحكم بتجميع كل القيم من مختلف الملفات إذا كانت موجودة ويخبئ النتيجة لأداء أفضل . 
+
+ وكقاعدة عامة، عندما نتحكم في شيء بواسطة ملف التحكم ،
+ فانه يمكن تحقيق نفس الشيء عن طريق الترميز البرمجي PHP.
+ على سبيل المثال ، بدلا  من إنشاء  الملف  `view.yml`
+ للوحدة `job`،
+ يمكنك أيضا استخدام  المساعد `()use_stylesheet`
+ لإدخال معد الشكل من القالب :
+
+    [php]
+    <?php use_stylesheet('main.css') ?>
+
+ يمكنك أيضا استخدام هذا المساعد في layout
+ ليشمل  بصفة عامة  معد الشكل  .
+
+  الاختيار بين طريقة أو أخرى هو  فعلا مسألة أذواق.
+  يوفر الملف `view.yml`
+ وسيلة لتحديد الامور بالنسبة لجميع إجراءات الوحدة
+ التي هي غير ممكنة في القالب ،
+ ولكن التحكم قار  static
+ تماما.
+ ومن ناحية أخرى، استخدام المساعد  `use_stylesheet()`
+ سيكون أكثر مرونة ،
+ كل شيء في نفس المكان :
+ تعريف معد الشكل و الترميز البرمجي  HTML .
+ بالنسبة ل  Jobeet,
+ سوف نستخدم المساعد `use_stylesheet()`
+إذا يمكنك ازالة  `view.yml`
+ الذي أنشأناه للتو و تحديث قوالب الوحدة `job`
+ و ذلك باستدعاء `use_stylesheet()`:
+
+    [php]
+    <!-- apps/frontend/modules/job/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <!-- apps/frontend/modules/job/showSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
+
+>**NOTE**
+> بالتماثل ،
+> يتم التحكم  في  JavaScript
+> عن طريق المدخل  `javascripts`
+> لملف التحكم `view.yml`
+> كما يحدد المساعد  `()use_javascript`
+> ملفات JavaScript
+> التي يجب إدخالها إلى القالب  template.
+
+ الصفحة  الرئيسية للوظائف
+-------------------------
+
+ كما شاهدنا في اليوم 3، تولد الصفحة الرئيسية للوظائف  عن طريق الاجراء  `index`
+ للوحدة `job`
+ الاجراء `index`
+ هو القسم المراقب للصفحة و القالب المرتبط به 
+ و  `indexSuccess.php`
+ هو قسم العرض:
+
+    apps/
+      frontend/
+        modules/
+          job/
+            actions/
+              actions.class.php
+            templates/
+              indexSuccess.php
+
+### الإجراء 
+يمثل كل اجراء بدالة الصنف .
+ بالنسبة للصفحة الرئيسية للوظائف، الصنف هو  `jobActions`
+(
+ مكون من اسم الوحدة مع إضافة `Actions`
+ في الأخير)
+والدالة  هي
+`()executeIndex`  
+(
+ `execute`
+ مع إضافة اسم الإجراء
+ في الأخير).
+ انه يسترجع جميع الوظائف من قاعدة البيانات. 
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    class jobActions extends sfActions
+    {
+      public function executeIndex(sfWebRequest $request)
+      {
+<propel>
+        $this->jobeet_job_list = JobeetJobPeer::doSelect(new Criteria());
+</propel>
+<doctrine>
+        $this->jobeet_job_list = Doctrine::getTable('JobeetJob')
+          ->createQuery('a')
+          ->execute();
+</doctrine>
+      }
+
+      // ...
+    }
+
+<propel>
+ دعونا نمعن النظر في الترميز البرمجي: تقوم الدالة `()executeIndex`
+ (
+ المراقب the Controller)
+ باستدعاء  النموذج `JobeetJobPeer`
+  لاسترجاع جميع الوظائف     
+ (`new Criteria()`
+ ).
+ يعطي كنتيجة جدول من العناصر `JobeetJob`
+ و التي  تعطى
+ للعنصر `jobeet_job_list`.
+</propel>
+<doctrine>
+ دعونا نمعن النظر في الترميز البرمجي: تقوم الدالة `()executeIndex`
+ (
+ المراقب the Controller)
+ باستدعاءالجدول `JobeetJob`
+ لإنشاء استعلام a query
+ لاسترجاع جميع الوظائف .
+ يعطي كنتيجة `Doctrine_Collection`
+ للعنصر `JobeetJob`
+ و التي  تعطى
+ للعنصر `jobeet_job_list`.
+</doctrine>
+
+ كل خصائص العنصر تمرر تلقائيا إلى القالب
+(
+ العرض).
+ لتمرير البيانات من المراقب  إلى العرض ،
+  فقط قم بإنشاء خاصية جديدة :
+
+    [php]
+    public function executeFooBar(sfWebRequest $request)
+    {
+      $this->foo = 'bar';
+      $this->bar = array('bar', 'baz');
+    }
+
+ سيقوم هذا الترميز البرمجي بتمكين المتغيرين  `foo$`
+ و `bar$`
+ من ولوج القالب .
+
+### القالب
+
+ افتراضيا ، يستخلص اسم القالب المرتبطة بالإجراء عن طريق symfony
+ وذلك  بفضل اتفاقية ( اسم الإجراء 
+ مع إضافة `Success`
+ في الأخير ).
+
+ يولد القالب `indexSuccess.php`
+ جدول HTML 
+ لجميع الوظائف.
+ إليك نموذجا من الترميز البرمجي للقالب :
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <h1>Job List</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Category</th>
+          <th>Type</th>
+    <!-- more columns here -->
+          <th>Created at</th>
+          <th>Updated at</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($jobeet_job_list as $jobeet_job): ?>
+        <tr>
+          <td>
+            <a href="<?php echo url_for('job/show?id='.$jobeet_job->getId()) ?>">
+              <?php echo $jobeet_job->getId() ?>
+            </a>
+          </td>
+          <td><?php echo $jobeet_job->getCategoryId() ?></td>
+          <td><?php echo $jobeet_job->getType() ?></td>
+    <!-- more columns here -->
+          <td><?php echo $jobeet_job->getCreatedAt() ?></td>
+          <td><?php echo $jobeet_job->getUpdatedAt() ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+
+    <a href="<?php echo url_for('job/new') ?>">New</a>
+
+في الترميز البرمجي للقالب ،
+ يتكرر  `foreach`
+ من خلال قائمة
+ العناصر 
+`Job`  
+ (`jobeet_job_list$`
+ )،
+ ولكل وظيفة هنالك قيمة عمود .
+ تذكر ،
+ الولوج إلى قيمة العمود هو ببساطة استدعاء دالة  accessor
+ و التي يبتدئ  إسمها ب `get`
+ و camelCased 
+ إسم العمود
+ (على سبيل المثال
+ الدالة `()getCreatedAt`
+ بالنسبة للعمود `created_at`
+ ).
+
+ دعونا نقوم بتنظيف  هذا قليلا حتى نعرض فقط المجموعة الفرعية من الأعمدة المتاحة :
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <div id="jobs">
+      <table class="jobs">
+        <?php foreach ($jobeet_job_list as $i => $job): ?>
+          <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
+            <td class="location"><?php echo $job->getLocation() ?></td>
+            <td class="position">
+              <a href="<?php echo url_for('job/show?id='.$job->getId()) ?>">
+                <?php echo $job->getPosition() ?>
+              </a>
+            </td>
+            <td class="company"><?php echo $job->getCompany() ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+    </div>
+
+![Homepage](http://www.symfony-project.org/images/jobeet/1_2/04/homepage.png)
+
+ الدالة `()url_for`
+ التي قمنا باستدعائها في القالب هي مساعد symfony
+ والتي  سنناقشه غدا .
+
+صفحة قالب الوظيفة
+-----------------
+
+ الآن دعونا نقوم بتخصيص قالب  صفحة الوظيفة.
+ افتح الملف `showSuccess.php`
+ و قم بتعويض محتواها بالترميز البرمجي التالي :
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
+    <?php use_helper('Text') ?>
+
+    <div id="job">
+      <h1><?php echo $job->getCompany() ?></h1>
+      <h2><?php echo $job->getLocation() ?></h2>
+      <h3>
+        <?php echo $job->getPosition() ?>
+        <small> - <?php echo $job->getType() ?></small>
+      </h3>
+
+      <?php if ($job->getLogo()): ?>
+        <div class="logo">
+          <a href="<?php echo $job->getUrl() ?>">
+            <img src="/uploads/jobs/<?php echo $job->getLogo() ?>"
+              alt="<?php echo $job->getCompany() ?> logo" />
+          </a>
+        </div>
+      <?php endif; ?>
+
+      <div class="description">
+        <?php echo simple_format_text($job->getDescription()) ?>
+      </div>
+
+      <h4>How to apply?</h4>
+
+      <p class="how_to_apply"><?php echo $job->getHowToApply() ?></p>
+
+      <div class="meta">
+<propel>
+        <small>posted on <?php echo $job->getCreatedAt('m/d/Y') ?></small>
+</propel>
+<doctrine>
+        <small>posted on <?php echo date('m/d/Y', strtotime($job->getCreatedAt())) ?></small>
+</doctrine>
+      </div>
+
+      <div style="padding: 20px 0">
+        <a href="<?php echo url_for('job/edit?id='.$job->getId()) ?>">
+          Edit
+        </a>
+      </div>
+    </div>
+
+ يستعمل هذا القالب المتغير `job$`
+ الممرر من الاجراء و ذلك لعرض معلومات الوظيفة.
+ بما أننا  قمنا بتغيير اسم المتغير الممرر إلى القالب 
+ من `jobeet_job$`
+ إلى `job$`،
+ تحتاج أيضا إلى إحداث هذا التغيير في الاجراء `show`
+ ( إحذر ،
+ هناك حالتان للمتغير
+ ):
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeShow(sfWebRequest $request)
+    {
+<propel>
+      $this->job =
+       ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+      $this->job = Doctrine::getTable('JobeetJob')->
+       ➥ find($request->getParameter('id'));
+</doctrine>
+      $this->forward404Unless($this->job);
+    }
+
+<propel>
+ لاحظ ان بعض  Propel accessors
+  تأخذ  قيم .
+ بما أننا  عرفنا العمود `created_at`
+ على أنه timestamp
+ فإن `getCreatedAt()` accessor
+ يأخد كقيمة أولى التاريخ المصاغ النمطي:
+
+    [php]
+    $job->getCreatedAt('m/d/Y');
+</propel>
+
+>**NOTE**
+> يستعمل وصف الوظيفة المساعد `()simple_format_text`
+> لتشكيل  HTML
+> و ذلك بتعويض الرجوع إلى السطر ب `</br >`
+>  على سبيل المثال.
+
+![Job page](http://www.symfony-project.org/images/jobeet/1_2/04/job.png)
+
+Slots
+-----
+
+حتى الآن عنوان كل الصفحات هو معرف في  `<tag<title`
+ ل  layout:
+
+    [php]
+    <title>Jobeet - Your best job board</title>
+
+ ولكن بالنسبة لصفحة الوظيفة ،
+ نريد توفير المزيد من المعلومات المفيدة ،مثل إسم الشركة والوظيفة .
+
+ في  symfony
+ عندما يعتمد عرض منطقة من layout
+ على القالب فإنك تحتاج إلى تعريف slot:
+
+![Slots](http://www.symfony-project.org/images/jobeet/1_2/04/layout_slots.png)
+
+ قم بإضافة slot
+ إلى layout
+ لجعل العنوان ديناميا  :
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <title><?php include_slot('title') ?></title>
+
+ يعرف كل slot
+ بإسم (`title`)
+ ويمكن عرضه باستعمال المساعد  `()include_slot` .
+ الآن ، في بداية القالب `showSuccess.php`,
+ استعمل المساعد `()slot`,
+ لتحديد مضمون `()slot`
+ لصفحة الوظيفة :
+
+    [php]
+    // apps/frontend/modules/job/templates/showSuccess.php
+    <?php slot(
+      'title',
+      sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()))
+    ?>
+
+ إذا كان من الصعب توليد العنوان، يمكن أيضا استخدام المساعد`()slot`
+ مع مجموعة من  الترميز البرمجي :
+
+    [php]
+    // apps/frontend/modules/job/templates/showSuccess.php
+    <?php slot('title') ?>
+      <?php echo sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()) ?>
+    <?php end_slot(); ?>
+
+ بالنسبة لبعض الصفحات ، مثل الصفحة الرئيسية ، كل ما نحتاجه هو عنوان عام.
+ بدلا من تكرار نفس عنوان مرارا وتكرارا في القوالب ، يمكننا تحديد عنوان إفتراضي 
+ في layout:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <title>
+      <?php if (!include_slot('title')): ?>
+        Jobeet - Your best job board
+      <?php endif; ?>
+    </title>
+
+ يعطي  المساعد `()include_slot`
+ كنتيجة `true`
+ إذا كان قد تم تحديد slot.
+ عندما تقوم بتحديد محتوى `title` slot 
+ في القالب ,
+ فإنه يستعمله ;
+ إذا لم يكن كذلك ،
+ فإن العنوان الافتراضي هو الذي يستعمل .
+
+>**TIP**
+> لقد شاهدنا بالفعل عددا غير قليل من المساعدين الذين يبتدؤون ب `include_`.
+>   هؤلاء المساعدون     
+>  وفي معظم الحالات يكون لديهم المساعدين `get_`
+>لإعطاء كنتيجة فقط المحتوى :
+>
+>     [php]
+>     <?php include_slot('title') ?>
+>     <?php echo get_slot('title') ?>
+>
+>     <?php include_stylesheets() ?>
+>     <?php echo get_stylesheets() ?>
+
+صفحة إجراء الوظيفة
+-------------------
+
+ تولد صفحة الوظيفة عن طريق الإجراء `show` ،
+ المعرفة في الدالة `()executeShow`
+ للوحدة `job`:
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+<propel>
+        $this->job =
+         ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+        $this->job = Doctrine::getTable('JobeetJob')->
+         ➥ find($request->getParameter('id'));
+</doctrine>
+        $this->forward404Unless($this->job);
+      }
+
+      // ...
+    }
+
+<propel>
+ كما هو الحال في الإجراء `index`
+ يستخدم الصنف `JobeetJobPeer` 
+ لإستعادة الوظيفة ،
+ هذه المرة باستعمال الدالة`()retrieveByPk` .
+ معامل هذه الدالة هو المحدد الوحيد للوظيفة إنه 
+ المفتاح الرئيسي .
+ سيفسر القسم الموالي لماذا 
+ `('request->getParameter('id$`
+ يعطي كنتيجة المفتاح الرئيسي للوظيفة .
+</propel>
+<doctrine>
+كما هو الحال في الإجراء `index`
+ يستخدم جدول الصنف `JobeetJob` 
+ لإستعادة الوظيفة ،
+ هذه المرة باستعمال الدالة`()find` .
+ معامل هذه الدالة هو المحدد الوحيد للوظيفة إنه 
+ المفتاح الرئيسي .
+ سيفسر القسم الموالي لماذا   
+ `('request->getParameter('id$`
+ يعطي كنتيجة المفتاح الرئيسي للوظيفة .
+</doctrine>
+
+<propel>
+>**TIP**
+>  تحتوي أصناف النموذج المولدة على الكثير من الدوال المفيدة للتفاعل مع عناصر المشروع 
+> خد بعض الوقت لتصفح الترميز البرمجي الموجود في المجلد   `lib/om/` 
+> إكتشف كل القوة الموجودة في هذه الأصناف  .
+</propel>
+
+  إذا كانت الوظيفة غير موجودة في قاعدة البيانات، نريد أن نوجه المستخدم إلى صفحة 404 ،
+ وهو بالضبط ماتقوم به الدالة  `()forward404Unless`
+ إنها   تأخذ  Boolean
+ ، كمُعطى أول، ما لم يكن ذلك صحيحة
+ فإن التنفيذ يتوقف  .
+ بما أن دوال forward
+ توقف تنفيذ الإجراء على الفور ، و ذلك  بالقاء `sfError404Exception`,
+لست بحاجة للعودة إلى الوراء .
+ 
+ كما هو الحال بالنسبة للاستثناءات، الصفحة المعروضة على المستخدم مختلفة في بيئة الإنتاج `prod` environment
+ عن بيئة البرمجة `dev` environment
+
+![404 error in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/05/404_dev.png)
+
+![404 error in the prod environment](http://www.symfony-project.org/images/jobeet/1_2/05/404_prod.png)
+
+>**NOTE**
+>  قبل نشر الموقع الالكترونى  Jobeet
+> على خدوم الإنتاج ،ستتعلم كيفية تخصيص الصفحة الإفتراضية 404 .
+
+-
+
+>**SIDEBAR**
+> أسرة دوال  "forward"
+>
+> استدعاء `forward404Unless` 
+>يعادل تماما :
+>
+>     [php]
+>     $this->forward404If(!$this->job);
+>
+> و الذي يعادل أيضا :
+>
+>     [php]
+>     if (!$this->job)
+>     {
+>       $this->forward404();
+>     }
+>
+> الدالة `()forward404` 
+> في حد ذاتها هي مجرد اختصار ل:
+>
+>     [php]
+>     $this->forward('default', '404');
+>
+> تمر الدالة `()forward` 
+> إلى إجراء آخر  من نفس التطبيق ؛ 
+> في المثال السابق ،
+>`404`إلى الإجراء
+>من الوحدة `default`.
+>يوفر  symfony
+>الوحدة `default`
+> و  الإجراءت الإفتراضية لتقديم  `404` 
+>والتأمين ، والدخول إلى الصفحات.
+
+ الاستعلام و الإجابة
+-----------------
+
+ عندما تتصفح الصفحات `job/` 
+ أو `job/show/id/1/`,
+ فقد أطلقت رحلة ذهابا وإيابا مع خادوم الويب .
+ سيرسل المتصفح  **request** 
+ ويرد الخادوم server 
+ ب **response**.
+
+ لقد رأينا  مسبقا  كيف أن symfony
+ يقوم بتلخيص الاستعلام 
+ في العنصر `sfWebRequest`
+ (انظر في الدالة `()executeShow`
+ ).
+ و بما أن symfony 
+ هو إطار Object-Oriented,
+ فإن الإجابة هي أيضا عنصر Object
+  من الصنف `sfWebResponse`.
+ يمكنك الولوج إلى عنصر الإجابة في الإجراء وذلك باستدعاء
+ `()this->getResponse$`.
+
+ توفر هذه العناصر الكثير من الدوال المريحة للولوج إلى المعلومات من الدوال PHP
+ و متغيرات PHP
+ العامة .
+
+>**NOTE**
+> لماذا يلف  symfony
+> خصائص PHP 
+> الوظيفية؟
+> أولا ، لأن دوال  symfony
+> أقوى من مثيلاتها في  PHP.
+> ثم إنه عند اختبار التطبيق 
+> من السهل محاكاة عنصر الاستعلام أو الإجابة عوض محاولة اللعب بالمتغيرات العامة أو العمل بدوال  PHP
+> مثل  `()header`
+>التي تقوم بالكثير من الاشياء السحرية .
+
+### الاستعلام
+
+ يلف الصنف `sfWebRequest`
+ جداول PHP
+ الإجمالية:
+ `POST`,
+ `$_GET`, 
+ `$_COOKIE`,
+ `$_SERVER_$`
+ و `FILES`
+
+   اسم الدالة |            يعادل في PHP                                    
+ -------------------- | --------------------------------------------------
+ `()getMethod`        | `['SERVER['REQUEST_METHOD_$`
+ `()getUri`           | `['SERVER['REQUEST_URI_$`
+ `()getReferer`       | `['SERVER['HTTP_REFERER_$`
+ `()getHost`          | `['SERVER['HTTP_HOST_$`
+ `()getLanguages`     | `['SERVER['HTTP_ACCEPT_LANGUAGE_$`
+ `()getCharsets`      | `['SERVER['HTTP_ACCEPT_CHARSET_$`
+ `()isXmlHttpRequest` | `['SERVER['X_REQUESTED_WITH' == 'XMLHttpRequest_$`
+ `()getHttpHeader`    | `SERVER_$`
+ `()getCookie`        | `COOKIE_$`
+ `()isSecure`         | `['SERVER['HTTPS_$`
+ `()getFiles`         | `FILES_$`
+ `()getGetParameter`  | `GET_$`
+ `()getPostParameter` | `POST_$`
+ `()getUrlParameter`  | `['SERVER['PATH_INFO_$`
+ `()getRemoteAddress` | `['SERVER['REMOTE_ADDR_$`
+
+ لقد سبق لنا أن قمنا بالولوج إلى معاملات الاستعلام 
+ باستعمال الدالة `()getParameter`.
+ و هي تعطي كنتيجة قيمة من  `$_GET`
+ أو من المتغير العام  `$_POST`
+ أو من المتغير `PATH_INFO`.
+
+ ،إذا كنت ترغب في التأكد من أن معامل الاستعلام يأتي من معاملات  خاصة لهذه  المتغيرات
+ عليك باستخدام الدوال`()getGetParameter` 
+ و `()getPostParameter`
+ و `()getUrlParameter`
+على التوالي.
+
+>**NOTE**
+> عندما تريد تقييد إجراء محدد لدالة معينة، على سبيل المثال عندما ترغب في التأكد من أن استمارة قد أرسلت ب`POST`،
+> يمكنك استخدام الدالة  `()isMethod`:
+>
+>`;(('this->forwardUnless($request->isMethod('POST$`.
+
+### الإجابة
+
+ يلف الصنف `sfWebResponse`
+ دوال PHP:
+
+`()header`
+ و `()setrawcookie`.
+
+   اسم الدالة |                     يعادل في PHP  
+ ----------------------------- | ----------------
+ `()setCookie`                 | `()setrawcookie`
+ `()setStatusCode`             | `()header`
+ `()setHttpHeader`             | `()header`
+ `()setContentType`            | `()header`
+ `()addVaryHttpHeader`         | `()header`
+ `()addCacheControlHttpHeader` | `()header`
+
+ بطبيعة الحال، يوفر الصنف  `sfWebResponse`
+ أيضا وسيلة لتحديد مضمون الإجابة 
+ (`()setContent`).
+ وإرسال الإجابة على المتصفح 
+ (`()send`).
+
+شاهدنا في وقت سابق هذا اليوم كيفية إدارة معدات الشكل و  JavaScripts
+ في كل من ملف`view.yml`
+و في القوالب .
+ في النهاية ، كلتا التقنيتان تستخدمان عنصر الإجابة `()addStylesheet`
+و دوال `()addJavascript`.
+
+>**TIP**
+> توفر الأصناف 
+> [`sfAction`](http://www.symfony-project.org/api/1_2/sfAction)، 
+> [`sfRequest`](http://www.symfony-project.org/api/1_2/sfRequest)، 
+> و [`sfResponse`](http://www.symfony-project.org/api/1_2/sfResponse) 
+> الكثير من الدوال الأخرى المفيدة  .
+>  لا تتردد في تصفح
+>[API documentation](http://www.symfony-project.org/api/1_2/)
+> لمعرفة المزيد عن الأصناف الداخلية ل symfony.
+
+نراكم غدا إن شاء الله
+-------------------
+
+لقد قمنا اليوم، بوصف بعض أنماط التصميم  المستخدمة في symfony.
+ أخيرا بدأت بنية المشروع تأخذ معنى .
+لقد قمنا باللعب بالقوالب و ذلك عن طريق layout
+ و ملفات template.
+ كما اننا جعلناهم بعض الشيء أكثر دينامية بفضل slots
+ والإجراءات.
+ غدا سنتعلم المزيد عن المساعد`()url_for`
+ الذي استعملناه اليوم 
+ و التوجيه sub-framework 
+ المرتبط به .
+
+__ORM__
