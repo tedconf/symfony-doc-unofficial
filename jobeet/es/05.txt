@@ -79,7 +79,7 @@ La URL `/job/show/id/1` se pueden crear desde una plantilla utilizando la siguie
 También puedes usar el nombre de la ruta gracias al prefijo `@`:
 
     [php]
-    url_for('@default?id='.$job->getId())
+    url_for('@default?module=job&action=show&id='.$job->getId())
 
 Ambas llamadas son equivalentes, pero esta última es mucho más rápido ya que el enrutamiento no tiene que analizar todas las rutas para encontrar el mejor patrón coincidente, y es menos complicado su implementación (los nombres del módulo y la acción no están presentes en el URI interna).
 
@@ -283,7 +283,7 @@ Tendrás ahora las URLs esperadas:
 
     http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/1/web-developer
 
-Pero eso es sólo la mitad de la historia. La ruta es capaz de generar una URL sobre la base de un objeto, pero también es capaz de encontrar el objeto en relación con una determinada URL. Los objetos pueden ser recuperados con el método `getObject()` de la ruta. Al analizar una petición, el enrutamiento guarda la ruta del objeto coincidentes para que la uses en las acciones. Por lo tanto, cambia el método `executeShow()` para utilizar el objeto route para obtener el objeto `Jobeet`:
+Pero esa es sólo la mitad de la historia. La ruta es capaz de generar una URL sobre la base de un objeto, pero también es capaz de encontrar el objeto en relación con una determinada URL. Los objetos pueden ser recuperados con el método `getObject()` de la ruta. Al analizar una petición, el enrutamiento guarda la ruta del objeto coincidentes para que la uses en las acciones. Por lo tanto, cambia el método `executeShow()` para utilizar el objeto route para obtener el objeto `Jobeet`:
 
     [php]
     class jobActions extends sfActions
@@ -291,6 +291,8 @@ Pero eso es sólo la mitad de la historia. La ruta es capaz de generar una URL s
       public function executeShow(sfWebRequest $request)
       {
         $this->job = $this->getRoute()->getObject();
+
+        $this->forward404Unless($this->job);
       }
 
       // ...
