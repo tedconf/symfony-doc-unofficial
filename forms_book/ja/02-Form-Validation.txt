@@ -1,0 +1,686 @@
+第2章 - フォームのバリデーション
+======================
+
+1章で、基本的な問い合わせフォームを作り表示する方法を学びました。この章ではフォームのバリデーションを管理する方法を学びます。
+
+始める前に
+----------
+
+1章で作成した問い合わせフォームの機能は、まだ十分ではありません。ユーザーが無効なEメールアドレスを投稿したり、投稿したメッセージが空である場合、何が起こるでしょうか？このような場合、図2-1で示されるように、ユーザーに入力を訂正することを求めるエラーメッセージを表示するようにしてみます。
+
+図2-1 - エラーメッセージを表示する
+
+![エラーメッセージを表示する](/images/forms_book/en/02_01.png "エラーメッセージを表示する")
+
+問い合わせフォームに実装するバリデーションルールは下記の通りです:
+
+  * `name`   : オプション
+  * `email`  : 必須、値は有効なEメールアドレスでなければなりません
+  * `subject`: 必須、選択した値は値のリストに対して有効でなければなりません
+  * `message`: 必須、メッセージの長さは少なくとも4文字でなければなりません
+
+>**Note**
+>なぜ`subject`フィールドをバリデートする必要があるのでしょうか？`<select>`タグでは、ユーザーは予め定義された値しか選択できません。通常のユーザーは、表示された選択肢の1つのみを選択できます。しかし、Firefox Developer Toolbarのようなツールを利用するか、`curl`や`wget`でリクエストをシミュレートすることで、定義された値とは異なる値を投稿できます。
+
+リスト2-1は、1章で使用したテンプレートです。
+
+リスト2-1 - 問い合わせフォームのテンプレート
+
+    [php]
+    // apps/frontend/modules/contact/templates/indexSucces.php
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <?php echo $form ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+図2-2は、アプリケーションとユーザー間のインタラクションを示しています。まず最初に、フォームをユーザーに表示します。ユーザーがフォームを投稿すると、入力が有効な場合はthank youページにリダイレクトされ、入力は無効な値を含む場合は、エラーメッセージとともにフォームが再表示されます。
+
+図2-2 - アプリケーションとユーザー間のインタラクション
+
+![アプリケーションとユーザー間のインタラクション](/images/forms_book/en/02_02.png "アプリケーションとユーザー間のインタラクション")
+
+バリデータ
+----------
+
+symfonyのフォームはフィールドで構成されます。1章で見てきたように、それぞれのフィールドはユニークな名前で識別されます。フィールドをユーザーに表示するために、それぞれのフィールドにウィジェットを結び付けました。ここでは、それぞれのフィールドにバリデーションルールを適用する方法を見てみましょう。
+
+### sfValidatorBaseクラス
+
+それぞれのフィールドのバリデーションは、`sfValidatorBase`クラスを継承するオブジェクトによって行われます。問い合わせフォームのバリデーションを行うために、4つのそれぞれのフィールド: `name`、`email`、`subject`、`message`に対してバリデータオブジェクトを定義します。リスト2-2は、フォームクラス内で`setValidators()`メソッドを利用して、これらのバリデータを実装する方法を示しています。
+
+リスト2-2 - バリデータを`ContactForm`クラスに追加する
+
+    [php]
+    // lib/form/ContactForm.class.php
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+      
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'subject' => new sfWidgetFormSelect(array('choices' => self::$subjects)),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+        $this->widgetSchema->setNameFormat('contact[%s]');
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+        ));
+      }
+    }
+
+3つの異なるバリデータを使います:
+
+  * `sfValidatorString`: 文字列のバリデーションを行います
+  * `sfValidatorEmail` : Eメールのバリデーションを行います
+  * `sfValidatorChoice`: 入力値と予め定義された選択のリストに対してバリデーションを行います
+
+それぞれのバリデータは、最初の引数としてオプションのリストを取ります。ウィジェットのように、これらのオプションの中には必須であるものと、必須ではないものがあります。例えば、`sfValidatorChoice`バリデータは1つの必須オプションである、`choices`を取ります。それぞれのバリデータは、`sfValidatorBase`クラスで定義された`required`と`trim`オプションを取ることもできます:
+
+  | **オプション**  | **デフォルト値**  | **説明**
+  | --------------- | ----------------- | ---------------
+  | required        | `true`            | フィールドが必須であるか指定します
+  | trim            | `false`           | バリデーションが行われる前に、文字列の最初と最後の空白を自動的に削除します
+
+リスト2-2で使用したバリデータで利用可能なオプションを見てみましょう:
+
+  | **バリデータ**     | **必須のオプション**    | **任意のオプション**       |
+  | ------------------ | ----------------------- | -------------------------- |
+  | sfValidatorString  |                         | `max_length`               |
+  |                    |                         | `min_length`               |
+  | sfValidatorEmail   |                         | `pattern`                  |
+  | sfValidatorChoice  | `choices`               |                            |
+
+この時点でフォームに無効な値を投稿しても、フォームの動作は以前と同じままです。リスト2-3で示されるように、投稿された値をバリデートするように`contact`モジュールを更新する必要があります。
+
+リスト2-3 - `contact`モジュール内でバリデーションを実装する
+
+    [php]
+    class contactActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new ContactForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('contact'));
+          if ($this->form->isValid())
+          {
+            $this->redirect('contact/thankyou?'.http_build_query($this->form->getValues()));
+          }
+        }
+      }
+
+      public function executeThankyou()
+      {
+      }
+    }
+
+リスト2-3には、多くの新しい概念が導入されています:
+
+  * 最初の`GET`リクエストの場合、フォームは初期化されユーザーに表示するためにテンプレートに渡されます。フォームは**初期の状態**にあります:
+
+        [php]
+        $this->form = new ContactForm();
+
+  * ユーザーが`POST`リクエストでフォームを投稿すると、`bind()`メソッドによりフォームとユーザーの入力データが結び付けられ、バリデーション処理が実行されます。フォームは**バインドされた状態**に変化します。
+
+        [php]
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('contact'));
+
+  * 一旦フォームがバインドされると、`isValid()`メソッドを利用してフォームの有効性をチェックできます:
+
+      * 戻り値が`true`の場合、フォームは有効なので、ユーザーはthank youページにリダイレクトされます:
+
+            [php]
+            if ($this->form->isValid())
+            {
+              $this->redirect('contact/thankyou?'.http_build_query($this->form->getValues()));
+            }
+
+      * 戻り値が`true`ではない場合、最初と同じように`indexSuccess`テンプレートが表示されます。バリデーション処理によって、ユーザーに表示されるエラーメッセージがフォームに追加されます。
+
+>**Note**
+>フォームが初期の状態のとき、`isValid()`メソッドは常に`false`を返し`getValues()`メソッドは常に空の配列を返します。
+
+図2-3は、アプリケーションとユーザー間のインタラクションで実行されるコードを示しています。
+
+図2-3 - アプリケーションとユーザー間のインタラクションで実行されるコード
+
+![アプリケーションとユーザー間のインタラクションで実行されるコード](/images/forms_book/en/02_03.png "アプリケーションとユーザー間のインタラクションで実行されるコード")
+
+### バリデータの目的
+
+thank youページにリダイレクトする箇所で、`$request->getParameter('contact')`ではなく`$this->form->getValues()`が使われていることにお気づきかもしれません。実際、`$request->getParameter('contact')`はユーザーデータを返し、`$this->form->getValues()`はバリデートされた値を返します。
+
+フォームが有効な場合、なぜこれら2つの文は同一ではないのでしょうか？それぞれのバリデータには2つのタスク: **バリデーションタスク**、だけでなく**クリーニングタスク**があります。実際、`getValues()`メソッドは、バリデーションとクリーニングが行われたデータを返しています。
+
+クリーニングプロセスには、2つの主要なアクション: 入力データの**標準化**と**変換**があります。
+
+既に`trim`オプションによるデータの標準化のケースについて説明しました。しかし、例えば日付フィールドでは、標準化のアクションはさらに重要です。`sfValidatorDate`は日付をバリデートします。このバリデータでは、タイムスタンプ、正規表現に基づくフォーマットなど、多くのフォーマットを利用できます。デフォルトでは、入力を単に返す代わりに`Y-m-d H:i:s`フォーマットに変換されます。したがって、開発者は入力フォーマットを気にすることなく、特定のフォーマットでデータを取得できることが保証されます。システムはユーザーに多くの柔軟性を提供し、開発者には一貫性を保証します。
+
+では、ファイルのアップロードのような変換アクションを考えてみましょう。ファイルは`sfValidatorFile`を利用してバリデートできます。一旦ファイルがアップロードされると、バリデータはファイルの名前を返す代わりに`sfValidatedFile`オブジェクトを返します。`sfValidatedFile`オブジェクトを使用すると、ファイル情報の取り扱いがより簡単になります。この章の後半で、このバリデータを使う方法を説明します。
+
+>**Tip**
+>`getValues()`メソッドはバリデートされクリーンになったすべての値の配列を返します。しかし、何か1つの値を読み取るだけの場合は、`getValue()`メソッド: `$email = $this->form->getValue('email')`を利用できます。
+
+### 無効なフォーム
+
+フォームに無効な値があるときは、`indexSuccess`テンプレートが表示されます。図2-4は無効なデータでフォームを投稿したときの表示結果です。
+
+図2-4 - 無効なフォーム
+
+![無効なフォーム](/images/forms_book/en/02_04.png "無効なフォーム")
+
+`<?php echo $form ?>`文のコールでは、フィールドに関連したエラーメッセージが自動的に表示され、クリーンアップされたユーザーの入力データが投入されます。
+
+`bind`メソッドを利用してフォームが外部データにバインドされると、フォームはバインドされた状態になり、次のアクションが実行されます:
+
+  * バリデーション処理が実行されます
+
+  * テンプレートで利用できるように、エラーメッセージがフォームに保存されます
+
+  * フォームのデフォルト値が、クリーンアップされたユーザーの入力データに置き換えられます
+
+エラーメッセージや入力データを表示するために必要な情報は、テンプレート内で`form`変数を使うことで簡単に利用できます。
+
+>**Caution**
+>1章で説明したように、デフォルト値をフォームクラスのコンストラクタに渡すことができます。無効なフォームを投稿した後に、これらのデフォルト値は投稿された値で上書きされ、ユーザーは間違いを訂正できます。したがって、次の例のように入力データをデフォルト値として使わないで下さい: `$this->form->setDefaults($request->getParameter('contact'))`
+
+バリデータのカスタマイズ
+--------------------------------
+
+### エラーメッセージをカスタマイズする
+
+図2-4でお気づきかもしれませんが、このエラーメッセージは実際には役立ちません。これらのメッセージをより分かりやすいものにカスタマイズする方法を見てみましょう。
+
+それぞれのバリデータは、フォームにエラーを追加できます。エラーは、エラーコードとエラーメッセージで構成されます。すべてのバリデータには、少なくとも`sfValidatorBase`で定義された`required` と`invalid`エラーがあります:
+
+  | **コード**     | **メッセージ**     | **説明**
+  | -------------- | ------------------ | ------------------------
+  | required       | `Required.`        | フィールドは必須で値は空
+  | invalid        | `Invalid.`         | フィールドは無効
+
+既に利用したバリデータに関するエラーコードは以下の通りです:
+
+  | **バリデータ**    | **エラーコード** |
+  | ----------------- | ---------------- |
+  | sfValidatorString | `max_length`     |
+  |                   | `min_length`     |
+  | sfValidatorEmail  |                  |
+  | sfValidatorChoice |                  |
+
+エラーメッセージをカスタマイズするには、バリデーションオブジェクトを作るときに2番目の引数で指定します。リスト2-4ではいくつかのエラーメッセージをカスタマイズし、図2-5ではカスタマイズされたエラーメッセージが実際に表示されています。
+
+リスト2-4 - エラーメッセージをカスタマイズする
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+      
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(array(), array('invalid' => 'The email address is invalid.')),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4), array('required' => 'The message field is required.')),
+        ));
+      }
+    }
+
+図2-5 - カスタマイズされたエラーメッセージ
+
+![カスタマイズされたエラーメッセージ](/images/forms_book/en/02_05.png "カスタマイズされたエラーメッセージ")
+
+図2-6は、短すぎるメッセージを投稿しようとすると表示されるエラーメッセージを示しています(最小の長さを4文字に設定します)。
+
+図2-6 - 短すぎるメッセージエラー
+
+![短すぎるメッセージエラー](/images/forms_book/en/02_06.png "短すぎるメッセージエラー")
+
+このエラーコード(`min_length`)に関連したデフォルトのエラーメッセージは、既に説明したメッセージと異なります。2つの動的な値: ユーザーの入力データ(`foo`)と、このフィールドで許可する最小の文字数(`4`)を実装しています。リスト2-5では、これらの動的な値を利用してエラーメッセージをカスタマイズし、図2-7はカスタマイズした結果です。
+
+リスト2-5 - 動的な値でエラーメッセージをカスタマイズする
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(array(), array('invalid' => 'Email address is invalid.')),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4), array(
+            'required'   => 'The message field is required',
+            'min_length' => 'The message "%value%" is too short. It must be of %min_length% characters at least.',
+          )),
+        ));
+      }
+    }
+
+図2-7 - 動的な値でカスタマイズされたエラーメッセージ
+
+![動的な値でカスタマイズされたエラーメッセージ](/images/forms_book/en/02_07.png "動的な値でカスタマイズされたエラーメッセージ")
+
+それぞれのエラーメッセージには、動的な値を使うこともできます。値の名前をパーセント記号(`%`)で囲みます。利用可能な値は、通常はユーザーの入力データ(`value`)とエラーに関連したバリデータの値です。
+
+>**Tip**
+>バリデータのすべてのエラーコード、オプション、デフォルトメッセージを確認したい場合は、APIのオンラインドキュメント ([http://www.symfony-project.org/api/1_1/](http://www.symfony-project.org/api/1_1/))を参照して下さい。デフォルト値に加えて、それぞれのコード、オプションとエラーメッセージが詳細に記述されています。例えば、`sfValidatorString`バリデータのAPIは [http://www.symfony-project.org/api/1_1/sfValidatorString](http://www.symfony-project.org/api/1_1/sfValidatorString)で利用可能です。
+
+バリデータのセキュリティ
+------------------------
+
+デフォルトでは、ユーザーによって投稿されるすべてのフィールドにバリデータがある場合にのみ、フォームは有効になります。これにより、それぞれのフィールドにバリデーションルールが設定されていること、およびフォームで定義されていないフィールドを使用して値を不正に注入できないことが保証されます。 
+
+このセキュリティルールを理解するために、リスト2-6で示されるユーザーオブジェクトを考えてみましょう。
+
+リスト2-6 - `User`クラス
+
+    [php]
+    class User
+    {
+      protected
+        $name = '',
+        $is_admin = false;
+
+      public function setFields($fields)
+      {
+        if (isset($fields['name']))
+        {
+          $this->name = $fields['name'];
+        }
+
+        if (isset($fields['is_admin']))
+        {
+          $this->is_admin = $fields['is_admin'];
+        }
+      }
+
+      // ...
+    }
+
+`User`オブジェクトは2つのプロパティ:ユーザー名(`name`)、管理者のステータスを保存する論理値(`is_admin`)から構成されます。`setFields()`メソッドは両方のプロパティを更新します。リスト2-7では`User`クラスに関連したフォームクラスで、ユーザーは`name`プロパティのみを修正することができます。
+
+リスト2-7 - `User`フォーム
+
+    [php]
+    class UserForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array('name' => new sfWidgetFormInputString()));
+        $this->widgetSchema->setNameFormat('user[%s]');
+
+        $this->setValidators(array('name' => new sfValidatorString()));
+      }
+    }
+
+リスト2-8では、リスト2-7で定義したフォームクラスを利用して、ユーザーがnameフィールドを修正できる`user`モジュールの実装を示しています。
+
+リスト2-8 - `user`モジュールの実装
+
+    [php]
+    class userActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new UserForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('user'));
+          if ($this->form->isValid())
+          {
+            $user = // 現在のユーザーを読み取る
+
+            $user->setFields($this->form->getValues());
+
+            $this->redirect('...');
+          }
+        }
+      }
+    }
+
+保護が無い場合、ユーザーが`name`フィールドと同時に`is_admin`フィールドの値をフォームから投稿すると、このコードには脆弱性があります。このような投稿は、Firebugのようなツールを利用することで簡単に実現できます。実際、フォーム内に`is_admin`フィールドに関連付けrられたバリデータがないため、`is_admin`の値は常に有効です。値が何であれ、`setFields()`メソッドは`name`プロパティだけでなく、`is_admin`プロパティも更新します。
+
+しかし、このコードで`name`と`is_admin`フィールドの両方に対して値を渡すテストすると、図2-8で示されるように、"Extra field name."グローバルエラーが表示されます。投稿されたフィールドに、バリデータが関連付けられていないものがあるため、システムでエラーが生成されました。`is_admin`フィールドは`UserForm`フォームクラスで定義されていません。
+
+図2-8 - バリデータが見つからないエラー
+
+![バリデータが見つからないエラー](/images/forms_book/en/02_08.png "バリデータが見つからないエラー")
+
+これまで説明したすべてのバリデータは、フィールドに関連するエラーを生成します。このグローバルエラーはどこで処理されているのでしょうか？`setValidators()`メソッドを使うと、symfonyにより`sfValidatorSchema`オブジェクトが作成されます。`sfValidatorSchema`は、バリデータのコレクションを定義します。`setValidators()`の呼び出しは次のコードと同等です:
+
+    [php]
+    $this->setValidatorSchema(new sfValidatorSchema(array(
+      'email'   => new sfValidatorEmail(),
+      'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+      'message' => new sfValidatorString(array('min_length' => 4)),
+    )));
+
+`sfValidatorSchema`には、バリデータのコレクションを保護するためにデフォルトで有効な2つのバリデーションルールがあります。デフォルトのルールは、`allow_extra_fields`と`filter_extra_fields`オプションで設定できます。
+
+`allow_extra_fields`オプションは、デフォルトで`false`に設定されていて、ユーザーの入力データのすべてにバリデータがあるかをチェックします。バリデータがない場合、以前の例で示したように、"Extra field name."グローバルエラーが表示されます。開発時には、開発者がフィールドを明示的にバリデートすることを忘れた場合の警告になります。
+
+問い合わせフォームに戻ってみましょう。`name`フィールドが必須のフィールドとなるようバリデーションルールを変更してみましょう。`required`オプションのデフォルトの値は`true`なので、`name`バリデータを次のように変更できます: 
+
+    [php]
+    $nameValidator = new sfValidatorString();
+
+`min_length`もしくは`max_length`オプションを持たないので、このバリデータは何も影響を与えません。この場合、これを空のバリデータに置き換えることもできます:
+
+    [php]
+    $nameValidator = new sfValidatorPass();
+
+空のバリデータを定義する代わりに、バリデータを削除することもできますが、すでに説明したデフォルトの保護機能があるため上手くいきません。リスト2-9では、`allow_extra_fields`オプションを利用して保護機能を無効にする方法を示しています。
+
+リスト2-9 - `allow_extra_fields`保護機能を無効にする
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+        ));
+
+        $this->validatorSchema->setOption('allow_extra_fields', true);
+      }
+    }
+
+図2-9に示すように、これでフォームをバリデートできます。
+
+図2-9 - `allow_extra_fields`を`true`にセットしたバリデーション
+
+![`allow_extra_fields`を`true`にセットしたバリデーション](/images/forms_book/en/02_09.png "`allow_extra_fields`を`true`にセットしたバリデーション")
+
+よく見ると、フォームが有効であるにも関わらず、どんな値を投稿しても、thank youページ内で`name`フィールドの値が空になっています。実際、`$this->form->getValues()`で返される配列に値は設定されていません。`allow_extra_fields`オプションを無効にすることで、バリデータが存在しないエラーは発生しなくなりますが、`filter_extra_fields`オプションは、デフォルトで`true`に設定されており、バリデータが存在しない値をフィルタリングして、バリデート済みの値から削除します。リスト2-10で示すように、もちろんこの振る舞いを変更することもできです。
+
+リスト2-10 - `filter_extra_fields`保護を無効にする
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+        ));
+
+        $this->validatorSchema->setOption('allow_extra_fields', true);
+        $this->validatorSchema->setOption('filter_extra_fields', false);
+      }
+    }
+
+これでフォームをバリデートして、thank youページで入力された値を読み取ることができるようになります。
+
+4章では、フォームの値からPropelオブジェクトを安全にシリアライズするために、これらの保護を利用できることを説明します。
+
+論理バリデータ
+---------------
+
+論理バリデータを利用すると、いくつかのバリデータを単独のフィールドに対して定義できます:
+
+  * `sfValidatorAnd`: フィールドがすべてのバリデータのバリデーションをパスすると有効になります
+  
+  * `sfValidatorOr` : フィールドが少なくとも1つのバリデータのバリデーションをパスすると有効になります
+
+論理バリデータのコンストラクタは、最初の引数としてバリデータのリストを取ります。リスト2-11では、同時に満たす必要がある2つのバリデータを`name`フィールドに関連付けるために、`sfValidatorAnd`を使います。
+
+リスト2-11 - `sfValidatorAnd`バリデータを使う
+
+    [php]
+    class ContactForm extends sfForm
+    {
+     public function configure()
+     {
+        // ...
+
+        $this->setValidators(array(
+          // ...
+          'name' => new sfValidatorAnd(array(
+            new sfValidatorString(array('min_length' => 5)),
+            new sfValidatorRegex(array('pattern' => '/[\w- ]+/')),
+          )),
+        ));
+      }
+    }
+
+フォームを投稿するとき、`name`フィールドの入力データは少なくとも5文字で構成され、**かつ**、正規表現(`[\w- ]+`)にマッチする必要があります。
+
+論理バリデータはそれ自身がバリデータなので、リスト2-12で示されるように、高度な論理式を定義するために組み合わせることができます。
+
+リスト2-12 - いくつかの論理バリデータを組み合わせる
+
+    [php]
+    class ContactForm extends sfForm
+    {
+     public function configure()
+     {
+        // ...
+
+        $this->setValidators(array(
+          // ...
+          'name' => new sfValidatorOr(array(
+            new sfValidatorAnd(array(
+              new sfValidatorString(array('min_length' => 5)),
+              new sfValidatorRegex(array('pattern' => '/[\w- ]+/')),
+            )),
+            new sfValidatorEmail(),
+          )),
+        ));
+      }
+    }
+
+グローバルバリデータ
+--------------------
+
+これまで説明したそれぞれのバリデータは、特定のフィールドと結びつけられ一度に1つの値のバリデーションのみを行います。デフォルトでは、フィールドのバリデーションはユーザーによって投稿された別のフィールドのデータに関係しませんが、コンテキストに依存したり、多くの別のフィールドの値に依存してバリデーションを行う場合もあります。例えば、2つのパスワードが同じでなければならないときや、開始日が終了日より前の日付でなければならないときに、グローバルバリデータが必要となります。
+
+これら両方の場合において、それぞれのコンテキストでユーザー入力をバリデートするためにグローバルバリデータを使わなければなりません。プレバリデータもしくはポストバリデータをそれぞれ使うことで、個別のフィールドバリデーションの前または後にグローバルバリデータが処理されるように設定できます。通常はポストバリデータを使う方がベターです。データは既にバリデートおよびクリーンアップされている、つまり標準化されたフォーマットになっているからです。リスト2-13では、`sfValidatorSchemaCompare`バリデータを利用して2つのパスワードの比較を実装する方法を示しています。
+
+リスト2-13 - `sfValidatorSchemaCompare`バリデータを使う
+
+    [php]
+    $this->validatorSchema->setPostValidator(new sfValidatorSchemaCompare('password', sfValidatorSchemaCompare::EQUAL, 'password_again'));
+
+symfony 1.2に関しては、`sfValidatorSchemaCompare`クラスの定数の代わりに"自然な"PHP演算子も使用できます。上述の例は下記のコードと同等です:
+
+    [php]
+    $this->validatorSchema->setPostValidator(new sfValidatorSchemaCompare('password', '==', 'password_again'));
+
+]
+>**Tip**
+>`sfValidatorSchemaCompare`クラスは、sfValidatorSchema`クラスを継承します。他のグローバルバリデータも同様です。`sfValidatorSchema`はそれ自身がグローバルバリデータで、別のバリデータにそれぞれのフィールドのバリデーションを処理させることで、ユーザーの入力データ全体をバリデートします。
+
+リスト2-14では、開始日が終了日より前の日付であることをバリデートする1つのバリデータの使い方と、エラーメッセージのカスタマイズを示しています。
+
+リスト2-14 - `sfValidatorSchemaCompare`バリデータを使う
+
+    [php]
+    $this->validatorSchema->setPostValidator(
+      new sfValidatorSchemaCompare('start_date', sfValidatorSchemaCompare::LESS_THAN_EQUAL, 'end_date',
+        array(),
+        array('invalid' => 'The start date ("%left_field%") must be before the end date ("%right_field%")')
+      )
+    );
+
+ポストバリデータを利用することで、2つの日付の比較が正確になることが保証されます。入力に使われる日付フォーマットに関わらず、`start_date`と`end_date`フィールドのバリデーションでは、比較できるフォーマット(デフォルトでは`Y-m-d H:i:s`)に常に変換されます。
+
+デフォルトでは、プレバリデータとポストバリデータは、フォームに対してグローバルエラーを返します。とは言うものの、エラーを特定のフィールドに関連づけたい場合もあります。例えば、`sfValidatorSchemaCompare`バリデータの`throw_global_error`オプションを使うと、グローバルエラー(図2-10)にするか、またはエラーを最初のフィールドに関連付ける(図2-11)かを選択できます。リスト2-15では、`throw_global_error`オプションの使い方を示しています。
+
+リスト2-15 - `throw_global_error`オプションを使う
+
+    [php]
+    $this->validatorSchema->setPostValidator(
+      new sfValidatorSchemaCompare('start_date', sfValidatorSchemaCompare::LESS_THAN_EQUAL, 'end_date',
+        array('throw_global_error' => true),
+        array('invalid' => 'The start date ("%left_field%") must be before the end date ("%right_field%")')
+      )
+    );
+
+図2-10 - グローバルバリデータのグローバルエラー
+
+![グローバルバリデータのグローバルエラー](/images/forms_book/en/02_10.png "グローバルバリデータのグローバルエラー")
+
+図2-11 - グローバルバリデータのローカルエラー
+
+![グローバルバリデータのローカルエラー](/images/forms_book/en/02_11.png "グローバルバリデータのローカルエラー")
+
+最後に、論理バリデータを使うと、リスト2-16で示されるようにポストバリデータを結合することもできます。
+
+リスト2-16 - 論理バリデータでいくつかのポストバリデータを結合する
+
+    [php]
+    $this->validatorSchema->setPostValidator(new sfValidatorAnd(array(
+      new sfValidatorSchemaCompare('start_date', sfValidatorSchemaCompare::LESS_THAN_EQUAL, 'end_date'),
+      new sfValidatorSchemaCompare('password', sfValidatorSchemaCompare::EQUAL, 'password_again'),
+    )));
+
+ファイルのアップロード
+----------------------
+
+PHPでファイルのアップロードを扱う場合、すべてのウェブ指向の言語と同様に、HTMLコードとサーバーサイドのファイルの読み取りの両方を含みます。このセクションでは、開発者を楽にするためにフォームフレームワークが提供するツールを説明します。よくある失敗を防ぐ方法も見ることにします。
+
+メッセージにファイルを添付できるようにするために問い合わせフォームを変更してみましょう。これを行うために、リスト2-17で示されるように`file`フィールドを追加します。
+
+リスト2-17 - `file`フィールドを`ContactForm`フォームに追加する
+
+    [php]
+    // lib/form/ContactForm.class.php
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'subject' => new sfWidgetFormSelect(array('choices' => self::$subjects)),
+          'message' => new sfWidgetFormTextarea(),
+          'file'    => new sfWidgetFormInputFile(),
+        ));
+        $this->widgetSchema->setNameFormat('contact[%s]');
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+          'file'    => new sfValidatorFile(),
+        ));
+      }
+    }
+
+ファイルをアップロードすることを許可するフォーム内に`sfWidgetFormInputFile`ウィジェットが存在する場合、リスト2-18で示されるように`enctype`属性を`form`タグに追加する必要があります。
+
+リスト2-18 - `file`フィールドを考慮に入れるためにテンプレートを修正する
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST" enctype="multipart/form-data">
+      <table>
+        <?php echo $form ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+>**Note**
+>フォームに関連したテンプレートを動的に生成する際に、フォームオブジェクトの`isMultipart()`メソッドは、`enctype`属性が必要なフォームの場合`true`を返します。
+
+PHPでは、アップロードされたファイルに関する情報は、投稿された他の値とは別に保存されます。リスト2-19で示されるように、この情報を2番目の引数として渡すように`bind()`メソッドの呼び出しを修正する必要があります。
+
+リスト2-19 - アップロードされたファイルを`bind()`メソッドに渡す
+
+    [php]
+    class contactActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new ContactForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('contact'), $request->getFiles('contact'));
+          if ($this->form->isValid())
+          {
+            $values = $this->form->getValues();
+            // do something with the values
+
+            // ...
+          }
+        }
+      }
+
+      public function executeThankyou()
+      {
+      }
+    }
+
+これでフォームは十分に利用できますが、アップロードされたファイルをディスク上に保存するためにアクションを変更する必要もあります。この章の最初で説明したように、`sfValidatorFile`はアップロードされたファイルに関連する情報を`sfValidatedFile`オブジェクトに変換します。リスト2-20では、このオブジェクトを使用してファイルを`web/uploads`ディレクトリに保存する方法を示しています。
+
+リスト2-20 - `sfValidatedFile`オブジェクトを使う
+
+    [php]
+    if ($this->form->isValid())
+    {
+      $file = $this->form->getValue('file');
+
+      $filename = 'uploaded_'.sha1($file->getOriginalName());
+      $extension = $file->getExtension($file->getOriginalExtension());
+      $file->save(sfConfig::get('sf_upload_dir').'/'.$filename.$extension);
+
+      // ...
+    }
+
+次の表は、`sfValidatedFile`オブジェクトのすべてのメソッドの一覧です:
+
+  | **メソッド**             | **説明**
+  | ------------------------ | ---------------
+  | save()                   | アップロードされたファイルを保存します
+  | isSaved()                | ファイルが保存された場合は`true`を返します
+  | getSavedName()           | 保存されたファイルの名前を返します
+  | getExtension()           | mimeタイプに従ってファイルの拡張子を返します
+  | getOriginalName()        | アップロードされたファイルの名前を返します
+  | getOriginalExtension()   | アップロードされたファイルの拡張子を返します
+  | getTempName()            | 一時ファイルのパスを返します
+  | getType()                | ファイルのmimeタイプを返します
+  | getSize()                | ファイルのサイズを返します
+
+>**Tip**
+>ファイルのアップロードにおいて、ブラウザから提供されたmimeタイプは信頼できません。セキュリティを最大限に保証するために、ファイルのバリデーション処理において、`finfo_open`と`mime_content_type`関数、`file`ツールが順番に使われます。最後の方法として、どの関数もmimeタイプを推測できない場合、もしくはシステムがこれらを提供しない場合、ブラウザのmimeタイプが考慮に入れられます。mimeタイプを推測する関数を追加または変更したい場合、`mime_type_guessers`オプションを`sfValidatorFile`コンストラクタに追加します。
