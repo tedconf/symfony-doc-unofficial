@@ -1,16 +1,16 @@
 ﻿Día 13: El usuario
 ==================
 
-Ayer estuvo lleno de una gran información. Con muy pocas líneas de código PHP, el generador de administració de symfony permitió al desarrollador crear interfaces backend en cuestión de minutos.
+Ayer estuvo lleno de una gran información. Con muy pocas líneas de código PHP, el generador de administración de Symfony permitió al desarrollador crear interfaces backend en cuestión de minutos.
 
-Hoy, vamos a descubrir cómo symfony gestiona persistentemente datos entre las peticiones HTTP. Como se puede saber, el protocolo HTTP no tiene memoria, lo que significa que cada petición es independiente de lo anterior o de la subsiguiente. Los sitios web modernos necesitan una manera de mantener los datos entre las peticiones para mejorar la experiencia del usuario.
+Hoy, vamos a descubrir cómo Symfony gestiona persistentemente datos entre las peticiones HTTP. Como se puede saber, el protocolo HTTP no tiene memoria, lo que significa que cada petición es independiente de lo anterior o de la subsiguiente. Los sitios web modernos necesitan una manera de mantener los datos entre las peticiones para mejorar la experiencia del usuario.
 
-Una sesión de usuario puede ser identificada mediante una cookie. En symfony, el desarrollador no tiene que manipular directamente las sesiones, sino que usa el objeto `sfUser`, lo que representa al usuario final de la aplicación.
+Una sesión de usuario puede ser identificada mediante una cookie. En Symfony, el desarrollador no tiene que manipular directamente las sesiones, sino que usa el objeto `sfUser`, que representa al usuario final de la aplicación.
 
 Mensajes Flashes del Usuario
 ----------------------------
 
-Ya hemos visto el objeto de usuario en acción con los mensajes flashes. Un flash es un efímero mensaje almacenado en la sesión de usuario que se eliminará automáticamente después de la próxima petición. Es muy útil cuando se necesita mostrar un mensaje al usuario después de un redireccionamiento. El generador de administración utiliza flashes mucho para mostrar información al usuario cuando se guarda un puesto de trabajo, se borra o extiende su validez.
+Ya hemos visto el objeto de usuario en acción con los mensajes flashes. Un flash es un efímero mensaje almacenado en la sesión de usuario que se eliminará automáticamente después de la próxima petición. Es muy útil cuando se necesita mostrar un mensaje al usuario después de un redireccionamiento. El generador de administración utiliza flashes para mostrar información al usuario cuando se guarda un puesto de trabajo, se borra o extiende su validez.
 
 ![Flashes](http://www.symfony-project.org/images/jobeet/1_2/13/flashes.png)
 
@@ -35,7 +35,7 @@ Un flash se establece utilizando el método `setFlash()` de `sfUser`:
       $this->redirect($this->generateUrl('job_show_user', $job));
     }
 
-El primer argumento es el identificador del flash y el segundo es el mensaje a mostrar. Se puede definir cualquier flashes que quieras, pero `notice` y `error` son dos de los más comunes (que son utilizadas por el generador de administración).
+El primer argumento es el identificador del flash y el segundo es el mensaje a mostrar. Se puede definir cualquier flashes que quieras, pero `notice` y `error` son dos de los más comunes (que son utilizadas intensivamente por el generador de administración).
 
 Corresponde a los desarrolladores incluír el mensaje flash en
 las plantillas. Para Jobeet, se muestran en el `layout.php`:
@@ -52,7 +52,7 @@ las plantillas. Para Jobeet, se muestran en el `layout.php`:
 
 En una plantilla, el usuario es accesible a través de la variable especial `sf_user`.
 
->**NOTA**
+>**NOTE**
 >Algunos objetos symfony siempre son accesibles en las plantillas, sin la necesidad
 >de explicitamente pasarlos desde la acción: `sf_request`, `sf_user`, y
 >`sf_response`.
@@ -60,7 +60,7 @@ En una plantilla, el usuario es accesible a través de la variable especial `sf_
 Atributos de Usuario
 --------------------
 
-Lamentablemente, los casos de uso de Jobeet no tienen ningún requisito sobre el almacenamiento de algo en la sesión de usuario. Así que vamos a añadir un nuevo requisito: para facilitar la navegación de los puestos de trabajo, los últimos tres vistos por el usuario se debe debería mostrar un menú con enlaces para volver a la página de esos puestos de trabajo más tarde.
+Lamentablemente, los casos de uso de Jobeet no tienen ningún requisito sobre el almacenamiento de algo en la sesión de usuario. Así que vamos a añadir un nuevo requisito: para facilitar la navegación de los puestos de trabajo, los últimos tres vistos por el usuario se deben mostrar en un menú con enlaces para volver a la página de esos puestos de trabajo más tarde.
 
 Cuando un usuario accede a una página de puestos de trabajo, el objeto job mostrado necesita ser agregado en el historial del usuario y almacenado en la sesión:
 
@@ -85,20 +85,20 @@ Cuando un usuario accede a una página de puestos de trabajo, el objeto job most
       // ...
     }
 
->**NOTA**
+>**NOTE**
 >Podríamos haber almacenado los objetos `JobeetJob` directamente en la sesión.
 >Esto está totalmente desaconsejada ya que las variables de sesión son serializadas (almacenadas)
 >entre las peticiones. Y cuando la sesión se ha cargado, los objetos `JobeetJob` 
 >son de-serializados y pueden quedar "estancos" aun si han sido modificados o
 >borrados en el ínterin.
 
-### `getAttribute()`, `setAttribute()`
+### Los métodos `getAttribute()`, `setAttribute()`
 
 Dado un identificador, el método `sfUser::getAttribute()` obtiene los valores de la sesión de usuario. Por el contrario, el método `setAttribute()` almacena cualquier variable PHP en la sesión, para un determinado identificador.
 
 El método `getAttribute()` también tiene un valor predeterminado opcional a devolver si el identificador no está todavía definido.
 
->**NOTA**
+>**NOTE**
 >El valor por defecto tomado por el método `getAttribute()` es un acceso directo para:
 >
 >     [php]
@@ -109,7 +109,7 @@ El método `getAttribute()` también tiene un valor predeterminado opcional a de
 
 ### La Clase `myUser` 
 
-Lo mejor respeto a la separación de las preocupaciones, es mover el código a la clase `myUser`. La clase `myUser` sobreescribe la clase por defecto base symfony 
+Lo mejor respeto a la separación de las capas, es mover el código a la clase `myUser`. La clase `myUser` sobreescribe la clase por defecto base symfony 
 [`sfUser`](http://www.symfony-project.org/api/1_2/sfUser) con comportamientos específicos de la aplicación:
 
     [php]
@@ -167,7 +167,7 @@ En el layout, agrega el código siguiente antes de que la variable `$sf_content`
       <?php echo $sf_content ?>
     </div>
 
-The layout uses a new `getJobHistory()` método to retrieve the current job history:
+El layout usa un nuevo método `getJobHistory()` para obtener el historial job:
 
     [php]
     // apps/frontend/lib/myUser.class.php
@@ -192,7 +192,9 @@ The layout uses a new `getJobHistory()` método to retrieve the current job hist
             ->createQuery('a')
             ->whereIn('a.id', $ids)
             ->execute();
-        } else {
+        }
+        else
+        {
           return array();
         }
       }
@@ -205,32 +207,9 @@ The layout uses a new `getJobHistory()` método to retrieve the current job hist
 EL método `getJobHistory()` usa el método propel `retrieveByPKs()` para recuperar varios objetos `JobeetJob` en una llamada.
 </propel>
 
-Para hacer que se vea mejor, agrega el código siguiente al final de la hoja de estilos `main.css`
-:
-
-    [css]
-    /* web/css/main.css */
-    #job_history
-    {
-      padding: 7px;
-      background: #eee;
-      font-size: 80%;
-    }
-
-    #job_history ul
-    {
-      display: inline;
-    }
-
-    #job_history li
-    {
-      margin-right: 10px;
-      display: inline;
-    }
-
 ![Historial de Job](http://www.symfony-project.org/images/jobeet/1_2/13/job_history.png)
 
-### `sfParameterHolder`
+### El `sfParameterHolder`
 
 Para completar el API del historial de job, vamos a añadir un método para resetear el historial:
 
@@ -238,7 +217,6 @@ Para completar el API del historial de job, vamos a añadir un método para rese
     // apps/frontend/lib/myUser.class.php
     class myUser extends sfBasicSecurityUser
     {
-
       public function resetJobHistory()
       {
         $this->getAttributeHolder()->remove('job_history');
@@ -247,11 +225,11 @@ Para completar el API del historial de job, vamos a añadir un método para rese
       // ...
     }
 
-Los atributos del usuario son gestionados por un objeto de clase`sfParameterHolder`. Los métodos `getAttribute()` y `setAttribute()` son métodos proxy para
+Los atributos del usuario son gestionados por un objeto de la clase `sfParameterHolder`. Los métodos `getAttribute()` y `setAttribute()` son métodos proxy para
 `getParameterHolder()->get()` y `getParameterHolder()->set()`. Como el método `remove()` no tiene método proxy en `sfUser`, necesitas usar el objeto del contenedor de parámetros directamente.
 
 >**NOTE**
->La clase[`sfParameterHolder`](http://www.symfony-project.org/api/1_2/sfParameterHolder)
+>La clase [`sfParameterHolder`](http://www.symfony-project.org/api/1_2/sfParameterHolder)
 >es también utilizada por `sfRequest` para almacenar sus parámetros.
 
 Seguridad de la Aplicación 
@@ -261,7 +239,7 @@ Seguridad de la Aplicación
 Al igual que muchas otras características, la seguridad es manejada por un archivo YAML, `security.yml`. Por ejemplo, puedes encontrar la configuración por defecto para la aplicación backend en el directorio `config/`:
 
     [yml]
-    // apps/backend/config/security.yml
+    # apps/backend/config/security.yml
     default:
       is_secure: off
 
@@ -278,7 +256,7 @@ Si echas un vistazo a los registros en la barra web de depuración, se puede obs
 
 ![Web debug](http://www.symfony-project.org/images/jobeet/1_2/13/web_debug.png)
 
-Cuando un usuario no-autenticado intenta acceder a una acción segura, symfony remite la peticióna la acción `login` configurada en `settings.yml`:
+Cuando un usuario no-autenticado intenta acceder a una acción segura, Symfony remite la peticióna la acción `login` configurada en `settings.yml`:
 
     [yml]
     all:
@@ -287,7 +265,7 @@ Cuando un usuario no-autenticado intenta acceder a una acción segura, symfony r
         login_action: login
 
 >**NOTE**
->No es posible asegurar a la acción login. Esto es para evitar la recursión.
+>No es posible asegurar a la acción login para evitar una recursión infinita.
 
 -
 
@@ -300,6 +278,7 @@ Cuando un usuario no-autenticado intenta acceder a una acción segura, symfony r
 >     [yml]
 >     index:
 >       is_secure: off
+>
 >     all:
 >       is_secure: on
 
@@ -323,12 +302,12 @@ Cuando un usuario está autenticado, el acceso a algunas acciones pueden ser aú
       is_secure:   off
       credentials: admin
 
-El sistema de credenciales de symfony es bastante simple y poderoso. Una credencial puede representar todo lo que sea necesario para describir la seguridad al modelo de la aplicación (como grupos o permisos).
+El sistema de credenciales de Symfony es bastante simple y poderoso. Una credencial puede representar todo lo que sea necesario para describir la seguridad al modelo de la aplicación (como grupos o permisos).
 
 >**SIDEBAR**
 >Credenciales Complejas
 >
->El item `credentials` de `security.yml` doporta operadores Booleanos para
+>El item `credentials` de `security.yml` soporta operadores Booleanos para
 >describir las necesidades complejas en credenciales.
 >
 >Si un usuario debe tener credenciales A **y** B, hay que envolver las credenciales con
@@ -376,10 +355,10 @@ Por el Backend de Jobeet, no vamos a usar ninguna credencial ya que sólo tenemo
 
 Plugins
 -------
-Como no nos gusta reinventar la rueda, no vamos a desarrollar la acción de acceso a partir de cero. En lugar de ello, se instalará un **symfony plugin**.
+Como no nos gusta reinventar la rueda, no vamos a desarrollar la acción de acceso a partir de cero. En lugar de ello, se instalará un **plugin symfony**.
 
-Uno de los grandes puntos fuertes del symfony framework son los 
-[plugin](http://www.symfony-project.org/plugins/). Como veremos en los próximos días, es muy fácil crear un plugin. También es bastante potente, ya que un plugin puede contener cualquier cosa, desde la configuración de los módulos y los recursos web.
+Uno de los grandes puntos fuertes del framework Symfony son los 
+[plugins](http://www.symfony-project.org/plugins/). Como veremos en los próximos días, es muy fácil crear un plugin. También es bastante potente, ya que un plugin puede contener cualquier cosa, desde la configuración de los módulos hasta los recursos web.
 
 <propel>
 Hoy, vamos a instalar
@@ -389,37 +368,35 @@ secure the backend application:
     $ php symfony plugin:install sfGuardPlugin
 </propel>
 <doctrine>
-Today, we will install
-[`sfDoctrineGuardPlugin`](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin)para garantizar el acceso al backend 
+Hoy, vamos a instalar
+[`sfDoctrineGuardPlugin`](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin) para garantizar el acceso al backend 
 
     $ php symfony plugin:install sfDoctrineGuardPlugin
 </doctrine>
 
 La tarea `plugin:install` instala un plugin por nombre. Todos los plugins son almacenados bajo el directorio `plugins/` y cada uno tiene su propio directorio con el nombre del nombre del plugin.
 
->**NOTA**
+>**NOTE**
 >PEAR debe estar instalado para que la tarea `plugin:install` funcione.
 
-Cuando se instala un plugin con la tarea `plugin:install`, symfony instala la última versión estable del mismo. Para instalar una versión específica de un plugin, pasa la opción `--release`.
+Cuando se instala un plugin con la tarea `plugin:install`, Symfony instala la última versión estable del mismo. Para instalar una versión específica de un plugin, pasa la opción `--release`.
 
 <propel>
-La 
-[web del plugin](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_all_releases)
-lista todas las versiones disponibles agrupados por la versión de symfony.
+La [web de los  plugins](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_all_releases)
+lista todas las versiones disponibles agrupados por la versión de Symfony.
 
 Como un plugin es auto-contenido en un directorio, también puedes
 [descargar el paquete](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_installation)
-desde el sitio web de symfony y descomprimirlo, o alternativamente, haces un enlace `svn:externals` a su
+desde el sitio web de Symfony y descomprimirlo, o alternativamente, haces un enlace `svn:externals` a su
 [Subversion repository](http://svn.symfony-project.com/plugins/sfGuardPlugin).
 </propel>
 <doctrine>
-La 
-[web del plugin](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_all_releases)
-lista todas las versiones disponibles agrupados por la versión de symfony.
+La [web de los  plugins](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_all_releases)
+lista todas las versiones disponibles agrupados por la versión de Symfony.
 
 Como un plugin es auto-contenido en un directorio, también puedes
 [descargar el paquete](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_installation)
-desde el sitio web de symfony y descomprimirlo, o alternativamente, haces un enlace `svn:externals` a su 
+desde el sitio web de Symfony y descomprimirlo, o alternativamente, haces un enlace `svn:externals` a su 
 [Subversion repository](http://svn.symfony-project.com/plugins/sfDoctrineGuardPlugin).
 
 </doctrine>
@@ -431,10 +408,10 @@ Cada plugin tiene un archivo
 [README](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_readme)
 que explica cómo configurarlo.
 
-Vamos a ver cómo configurar el nuevo plugin. Como el plugin ofrece varias nuevas clases de modelo para la gestión de usuarios, grupos y permisos, necesitas reconstruir tu modelo:
+Vamos a ver cómo configurar el nuevo plugin. Como el plugin ofrece varias nuevas clases al modelo para la gestión de usuarios, grupos y permisos, necesitas reconstruir tu modelo:
 
 <propel>
-    $ php symfony propel:build-all-load
+    $ php symfony propel:build-all-load --no-confirmation
 </propel>
 <doctrine>
     $ php symfony doctrine:build-all-reload
@@ -449,9 +426,9 @@ Vamos a ver cómo configurar el nuevo plugin. Como el plugin ofrece varias nueva
 </doctrine>
 >antes de volver a crearlas. Para evitar esto, puedes construir los modelos, formularios y
 >filtros y, a continuación, crear las nuevas tablas ejecutando el 
->SQL generado y almacenado en `data/sql`.
+>SQL generado y almacenado en `data/sql/`.
 
-Como siempre, cuando se crean nuevas clases, tendrás que borrar la caché de symfony:
+Como siempre, cuando se crean nuevas clases, tendrás que borrar la caché de Symfony:
 
     $ php symfony cc
 
@@ -469,14 +446,16 @@ Como `sfDoctrineGuardPlugin` agrega varios métodos a la clase de usuario, es ne
     }
 
 <propel>
-`sfGuardPlugin` proporciona una acción predeterminada para autenticar a los usuarios:
+`sfGuardPlugin` proporciona una acción `signin` en el modulo `sfGuardAuth` para autenticar a los usuarios:
 </propel>
 <doctrine>
-`sfDoctrineGuardPlugin` proporciona una acción predeterminada para autenticar a los usuarios:
+`sfDoctrineGuardPlugin` proporciona una acción `signin` en el modulo `sfGuardAuth` para autenticar a los usuarios:
 </doctrine>
 
+Edita el archivo `settings.yml` para cambiar la acción por defecto empleada por la página de login:
+
     [yml]
-    // apps/backend/config/settings.yml
+    # apps/backend/config/settings.yml
     all:
       .settings:
         enabled_modules: [default, sfGuardAuth]
@@ -489,23 +468,23 @@ Como `sfDoctrineGuardPlugin` agrega varios métodos a la clase de usuario, es ne
 
         # ...
 
-Como los plugins son compartidos entre todas las aplicaciones de un proyecto, tiene que permitir explícitamente los módulos que desea utilizar con el item `enabled_modules`.
+Como los plugins son compartidos entre todas las aplicaciones de un proyecto, tiene que permitir explícitamente los módulos que desea utilizar agregando el item `enabled_modules`.
 
 ![sfGuardPlugin login](http://www.symfony-project.org/images/jobeet/1_2/13/sf_guard_login.png)
 
 El último paso es crear un usuario administrador:
 
-    $ php symfony guard:create-user fabien $ecretPa$$
+    $ php symfony guard:create-user fabien SecretPass
     $ php symfony guard:promote fabien
 
 >**TIP**
->El `sfGuardPlugin`proporciona funciones para la gestión de usuarios, grupos y permisos
+>El `sfGuardPlugin` proporciona funciones para la gestión de usuarios, grupos y permisos
 >desde la línea de comandos. Utiliza la tarea `list` para listar todas las tareas pertenecientes al 
 >espacio de nombres `guard`:
 >
 >     $ php symfony list guard
 
-WCuando el usuario no está autenticado, tenemos que ocultar la barra de menú:
+Y cuando el usuario no está autenticado, tenemos que ocultar la barra de menú:
 
     [php]
     // apps/backend/templates/layout.php
@@ -545,8 +524,8 @@ Añadir un enlace en el menú:
 
 Terminamos!
 
-Pronado al Usuario
-------------------
+Probando al Usuario
+-------------------
 
 El tutorial de hoy no termina ya que no hemos aún hablado de las pruebas al usuario.
 Como el symfony browser simula las cookies, es bastante fácil de probar el comportamiento del usuario mediante el uso del tester 
@@ -583,13 +562,32 @@ Para facilitar las pruebas, primero hacemos la recarga datos y reiniciamos el na
 
 El método `isAttribute()` controla un atributo de usuario dado.
 
->**NOTA**
+>**NOTE**
 >El tester `sfTesterUser` también proporciona métodos `isAuthenticated()` and
 >`hasCredential()` para poner a prueba la autenticación de usuario y autorizaciones.
 
 Nos vemos mañana
 ----------------
 
-Las clases usuario de symfony son una buena manera de abstraerse de la gestión de las sesiones PHP. Junto con el sistema de plugins y el plugin `sfGuardPlugin`, hemos sido capaces de asegurar el backend de Jobeet en cuestión de minutos. E incluso hemos añadido una limpia interfaz de administrador para la gestión de nuestros usuarios de forma gratuita, gracias a los módulos proporcionados por el plugin.
+Las clases usuario de Symfony son una buena manera de abstraerse de la gestión de las sesiones PHP. Junto con el sistema de plugins y el plugin `sfGuardPlugin`, hemos sido capaces de asegurar el backend de Jobeet en cuestión de minutos. E incluso hemos añadido una limpia interfaz de administrador para la gestión de nuestros usuarios de forma gratuita, gracias a los módulos proporcionados por el plugin.
+
+>**Note**
+>Si deseas comprobar el código del día de hoy, o de cualquier otro día, el código esta
+>disponible día a día en el repositorio SVN oficial de Jobeet
+>(`http://svn.jobeet.org/##ORM_LOWER##/`).
+>
+>Por ejemplo, puedes obtener el código de hoy de la
+>etiqueta `release_day_13`:
+>
+>       $ svn co http://svn.jobeet.org/##ORM_LOWER##/tags/release_day_13/ jobeet/
+>
+
+Feedback
+--------
+
+>**Tip**
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
+>no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
 
 __ORM__
