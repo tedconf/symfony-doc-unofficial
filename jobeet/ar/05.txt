@@ -1,0 +1,728 @@
+اليوم 05 :  التوجيه
+====================
+
+ إذا كنت قد أكملت اليوم 4 ، يجب أن تكون الآن قد اعتدت على النمط  MVC
+و سينتابك شعور طبيعي أكثر فأكثر  حول كيفية الترميز البرمجي .
+ اقض المزيد من الوقت معه  ،
+ ولا تنظر إلى الوراء.
+ بالأمس وللممارسة بعض الشيء، قمنا بالتخصيص في الصفحات و في العملية process،
+ كما استعرضنا عدة مفاهيم symfony،
+ مثل  layout، 
+ والمساعدين 
+ وslots.
+
+ اليوم سنغوص في العالم الرائع من توجيه الإطار symfony.
+
+عناوين المواقع URLs
+------------------
+
+ إذا نقرت على وظيفة في الصفحة الرئيسية ل Jobeet ،
+ فإن عنوان الموقع يبدوعلى الشكل التالي  :
+`job/show/id/1/`.
+ إذا كان قد سبق لك و أن طورت مواقع إلكترونية ب  PHP 
+ستكون ربما معتادا أكثر على عناوين مثل
+ `job.php?id=1/`.
+ كيف يجعل symfony
+ هذايعمل؟ 
+ كيف يمكن ل symfony
+ معرفة الإجراء الذي يجب إستدعاؤه في العنوان `URL` ؟ 
+ لماذا يتم استرجاع  `id`
+ الوظيفة عن طريق
+ `('request->getParameter('id$`?
+ اليوم ، سوف نجيب على جميع هذه الأسئلة.
+
+ لكن أولا ، لنتكلم عن عناوين المواقع ، و ماذا تكون بالضبط . في سياق شبكة الإنترنت
+ العنوان هو المعرف الوحيد للمصدر على شبكة الإنترنت.
+ عندما تذهب الى العنوان ، فإنك  تطلب من المتصفح جلب المصدر الذي حدده هذا العنوان.
+ وبما أن العنوان هو الواجهة التي تربط المستخدم بالموقع،
+ يجب  نقل  بعض المعلومات المفيدة من المصدر الذي تشير إليه.
+ ولكن عناوين  المواقع "التقليدية" لا تصف حقا المصادر،
+ فهي تعرض البنية الداخلية للتطبيق .
+ فالمستخدم لا يهتم إذا كان موقعك قد طور بلغة PHP 
+ أو أن للوظيفة محدد معين في قاعدة البيانات .
+ عرض العمل الداخلي لتطبيقك هو أمر سيء للغاية شأنه في ذلك شأن التأمين :
+ ماذا لو حاول المستخدم تخمين عنوان موقع لا يحق له الولوج  إلى مصدره ؟
+ بالتأكيد ،يجب على المطور  تأمينه بالطريقة الصحيحة .
+ ولكن من الأفضل إخفاء المعلومات الحساسة.
+
+ العناوين مهمة جدا في  symfony
+ لدرجة أن هناك إطارا كاملا مكرسا لإدارتها :
+ إطار
+ **التوجيه** **routing**.
+ يقوم التوجيه  بإدارة عناوين المواقع الداخلية والخارجية .
+ عندما يأتي الطلب ، يقوم التوجيه بتعريف العنوان ويحوله إلى عنوان داخلي .
+
+ لقد  سبق لك  أن شاهدت العنوان الداخلي لصفحة الوظيفة في القالب `showSuccess.php` :
+
+    'job/show?id='.$job->getId()
+
+ يقوم المساعد  `()url_for`
+ بتحويل العنوان الداخلي الى عنوان مناسب .
+
+    /job/show/id/1
+
+يتكون العنوان الداخلي من عدة أجزاء : 
+ `job` هي الوحدة ،
+ `show` هو الإجراء
+ ويضيف  query string
+ معايير لتمريرها إلى الإجراء .
+ النمط العام للعنوان الداخلي هو :
+
+    MODULE/ACTION?key=value&key_1=value_1&...
+
+ بما أن التوجيه symfony
+ هو عملية ذات اتجاهين ، يمكنك تغيير عناوين المواقع دون تغيير التقنية في التنفيذ.
+ هذه واحدة من المزايا الرئيسية لجبهة المراقب في نمط التصميم .
+
+التحكم في التوجيه 
+----------------
+
+ يتم رسم الخرائط  The mapping
+ بين العناوين الداخلية والخارجية في ملف التحكم  `routing.yml`:
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    homepage:
+      url:   /
+      param: { module: default, action: index }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
+
+ يصف الملف  `routing.yml`
+ المسارات .
+  `للمسار اسم (`الصفحة الرئيسية)(`homepage`) ، 
+ نمط (`*/module/:action:/`) ، 
+ وبعض المُعامِلات  
+ (في المفتاح `param`).
+
+ عندما يأتي طلب الاستعلام، يحاول التوجيه التوفيق بين النمط و عنوان الموقع . 
+ المسار الأول الذي يطابقه هو الذي يفوز ، 
+لهذا فإن الترتيب مهم جدا في `routing.yml` .
+لنلق نظرة على بعض الأمثلة لنفهم كيف يعمل هذا .
+
+ عندما تطلب استعلام من الصفحة الرئيسية ل Jobeet
+ التي لديها عنوان الموقع `job/` ، 
+ المسار الأول الذي يتوافق هو  `default_index` .
+ في النمط، الكلمة التي تبتدىء ب (`:`) 
+ هي متغير،
+إذن فالنمط `module:/`
+ يعني:
+ أكتب `/`
+ متبوعة بشيء ما.
+ في هذا المثال ،
+ سوف يحتوي المتغير `module` 
+ على  `job`
+ كقيمة .
+ سيتم إسترجاع هذه القيمة من بعد في الإجراء 
+ عن طريق 
+ `('request->getParameter('module$`.
+يحدد هذا المسار أيضا قيمة إفتراضية للمتغير `action`.
+ إذن بالنسبة  لجميع عناوين المواقع التي تتوافق مع هذا المسار ،
+ سيكون لطلب الاستعلام معامل `action` 
+ مع `index`
+كقيمة له .
+
+ عندما تطلب استعلام صفحة`job/show/id/1/`
+ سيقوم symfony
+ بتوفيق النمط الأخير `*/module/:action:/`. 
+ في النمط ، النجمة  (`*`)
+ توافق مجموعة من الأزواج قيمة/متغير
+ تفصل بينهما (`/`):
+
+  | معامل طلب الاستعلام |            القيمة|
+  | ----------------- | ----- -----------|
+  | الوحدة            | job              |
+  | الإجراء            | show             |
+  | id                | 1                |
+
+>**NOTE**
+>المتغيران 
+>`module`
+> و `action`
+>مميزان لأنهما يستعملان من طرف symfony
+>لتحديد الإجراء الذي يجب تنفيذه.
+
+ يمكن إنشاء عنوان الموقع `job/show/id/1/`
+ في القالب  و ذلك باستدعاء المساعد التالي `()url_for`:
+
+    [php]
+    url_for('job/show?id='.$job->getId())
+
+ يمكنك أيضا استخدام اسم المسار مع وضع الرمز `@`
+ في المقدمة :
+
+    [php]
+    url_for('@default?id='.$job->getId())
+
+ كلا الاستدعاءين متكافئين و لكن الأخير أسرع بكثير لأنه لا يتعين على التوجيه تفسير جميع المسارات لإيجاد أفضلها ، 
+ وهو أقل ارتباطا بالتنفيذ
+ (أسماء الوحدة و الإجراء ليست موجودة في العنوان الداخلي ).
+
+ تخصيص التوجيه
+-------------
+
+ من الآن فصاعدا، عندما تطلب استعلام العنوان `/`
+ في المتصفح ، لديك صفحة التهاني الافتراضية ل  symfony .
+ هذا لأن هذا العنوان يتطابق مع مسار الصفحة الرئيسية .
+ ولكن من المنطقي تغييرها لتكون الصفحة الرئيسية ل Jobeet.
+ لإحداث التغيير قم بإبدال المتغير `module`
+ لمسار الصفحة الرئيسية `homepage`
+ ب  `job`:
+
+    [php]
+    # apps/frontend/config/routing.yml
+    homepage:
+      url:   /
+      param: { module: job, action: index }
+
+ يمكننا الآن تغيير رابط شعار Jobeet
+ في layout
+ و ذلك لإستعمال مسار الصفحة الرئيسية :
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <h1>
+      <a href="<?php echo url_for('@homepage') ?>">
+        <img src="/images/jobeet.gif" alt="Jobeet Job Board" />
+      </a>
+    </h1>
+
+ كان سهلا! بالنسبة لشيء أكثر تشاركا ، لنغير عنوان صفحة الوظيفة إلى شيء أكثر معنى :
+
+    /job/sensio-labs/paris-france/1/web-developer
+
+من دون معرفة أي شيء عن Jobeet,
+،ودون النظر إلى الصفحة 
+يمكن أن تفهم من العنوان أن Sensio Labs
+ تبحث عن مطور الويب  يعمل في باريس ، فرنسا . 
+
+>**NOTE**
+> العناوين الجميلة هامة لأنها تنقل المعلومات للمستخدم.
+> فهي مفيدة أيضا عند نسخ وإلصاق عنوان الموقع في رسالة بالبريد الالكتروني أو جعل الموقع الالكتروني الخاص بك مثاليا لمحركات البحث .
+
+يتطابق النمط التالي مع عنوان الموقع :
+
+    /job/:company/:location/:id/:position
+
+قم بتغيير الملف `routing.yml`
+ بإضافة المسار `job_show_user`
+ في بداية الملف :
+
+    [yml]
+    job_show_user:
+      url:   /job/:company/:location/:id/:position
+      param: { module: job, action: show }
+
+ إذا قمت بتحديث الصفحة الرئيسية ل Jobeet
+ ستلاحظ أن الرابط إلى الوظائف لم يتغير  .
+هذا لأنه لتوليد مسار  يجب عليك تمرير جميع المتغيرات المطلوبة.
+ لذا ، يجب عليك تغيير الإستدعاء  `()url_for`
+ في `indexSuccess.php`
+ إلى ما يلي:
+
+    [php]
+    url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().
+      '&location='.$job->getLocation().'&position='.$job->getPosition())
+
+يمكن تعبير العنوان الداخلي على شكل جدول: 
+
+    [php]
+    url_for(array(
+      'module'   => 'job',
+      'action'   => 'show',
+      'id'       => $job->getId(),
+      'company'  => $job->getCompany(),
+      'location' => $job->getLocation(),
+      'position' => $job->getPosition(),
+    ))
+
+المتطلبات 
+--------
+
+خلال اليوم الأول من هذا البرنامج التعليمي ، تحدثنا عن المصادقة و معالجة الأخطاء لأسباب وجيهة.
+ يتوفر نظام التوجيه على ميزة المصادقة .
+يمكن المصادقة على أي نمط متغير عن طريق  تعبير منتظم 
+ محدد  باستعمال المدخل `requirements`
+في تعريف التوجيه :
+
+    [yml]
+    job_show_user:
+      url:   /job/:company/:location/:id/:position
+      param: { module: job, action: show }
+      requirements:
+        id: \d+
+
+ يجبر المدخل `requirements`
+ أعلاه،
+ ال `id`
+ على أن يكون قيمة رقمية و إلا فالتوجيه لن يعمل .
+
+صنف التوجيه 
+-----------
+
+كل مسار معرف في  `routing.yml`
+ يحول داخليا إلى عنصر من الصنف 
+ [`sfRoute`](http://www.symfony-project.org/api/1_2/sfRoute). 
+ يمكن تغيير هذا الصنف بتعريف المدخل  `class`
+ في تعريف المسار .
+ إذا كنت معتادا على HTTP protocol,
+ فإنك تعلم أنه يحدد عدة "دوال " "methods",
+ مثل `DELETE`,`HEAD`, `POST`, `GET`,
+ و`PUT`.
+ الثلاثة الأوائل هم مدعومين من جميع المتصفحات ،
+في حين أن الاثنين الآخرين ليسوا كذلك.
+
+ لتحديد المسار كي يعمل فقط لطلب استعلام بعض الدوال فقط، يمكنك تغيير صنف المسار إلى
+[`sfRequestRoute`](http://www.symfony-project.org/api/1_2/sfRequestRoute)
+أضف شرطا للمتغير الافتراضي  `sf_method`:
+
+    [yml]
+    job_show_user:
+      url:   /job/:company/:location/:id/:position
+      class: sfRequestRoute
+      param: { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [get]
+
+>**NOTE**
+>اشتراط مسار لكي يطابق فقط بعض دوال HTTP
+> لا يكافىء تماما إستخدام `()sfWebRequest::isMethod`
+> في إجرائك .
+> هذا لأن التوجيه سيواصل البحث عن مسار مطابق إذا لم يتناسب مع الواحد المتوقع .
+
+ عنصر صنف التوجيه 
+-----------------
+
+العنوان الجديد الداخلي للوظيفة طويل  جدا وشاق للكتابة
+
+(`url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().'&location='.$job->getLocation().'&position='.$job->getPosition())`),
+
+ ولكن وكما تعلمنا في القسم السابق ،  يمكن تغيير صنف التوجيه .
+بالنسبة للمسار `job_show_user`، 
+من الأحسن إستعمال 
+[`sfPropelRoute`](http://www.symfony-project.org/api/1_2/sfPropelRoute)
+بما أن الصنف مخصص للمسارات التي تمثل العناصر ##ORM##
+ أو مجموعة من العناصر ##ORM##:
+
+    [yml]
+    job_show_user:
+      url:     /job/:company/:location/:id/:position
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [get]
+
+يخصص المدخل  `options`
+ لسلوك المسار .
+ هنا، يعرف الخيار `model`
+ صنف النموذج (##ORM##(`JobeetJob`
+  المرتبط بالمسار ، 
+ و يعرف الخيار `type`
+ أن هذا المسار هو رابط لصنف واحد 
+ (يمكنك أيضا استخدام `list`
+ إذا كان المسار يمثل مجموعة من العناصر 
+ ).
+
+يدرك المسار `job_show_user` 
+ الآن، علاقته ب `JobeetJob`
+ و عليه يمكن تبسيط الإستدعاء `()url_for`
+ إلى ما يلي :
+
+    [php]
+    url_for(array('sf_route' => 'job_show_user', 'sf_subject' => $job))
+
+ أو فقط :
+
+    [php]
+    url_for('job_show_user', $job)
+
+>**NOTE**
+> المثال الأول مفيد عندما تحتاج إلى تمرير أكثر من مُعطى و ليس فقط العنصر.
+
+ إنه يعمل ، لأن جميع المتغيرات في المسار تتوفر على accessor
+ مكافىء لها في الصنف  `JobeetJob`
+(على سبيل المثال ،
+ متغير المسار  `company`
+ يستبدل بقيمة 
+`()getCompany`).
+
+إذا ألقيت نظرة على عناوين المواقع المولدة، فإنها تماما كما نريدها حتى الآن :
+
+    http://jobeet.localhost/frontend_dev.php/job/Sensio+Labs/Paris%2C+France/1/Web+Developer
+
+نحن بحاجة إلى  "slugify"
+ قيم العمود 
+ و ذلك بتغيير كل الحروف غير أسكي  non ASCII
+ ب `-` .
+افتح الملف `JobeetJob`
+ وأضف الدوال التالية إلى الصنف :
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    public function getCompanySlug()
+    {
+      return Jobeet::slugify($this->getCompany());
+    }
+
+    public function getPositionSlug()
+    {
+      return Jobeet::slugify($this->getPosition());
+    }
+
+    public function getLocationSlug()
+    {
+      return Jobeet::slugify($this->getLocation());
+    }
+
+ بعد ذلك ، قم بتحرير الملف `lib/Jobeet.class.php`
+ وأضف إليه الدالة `slugify`:
+
+    [php]
+    // lib/Jobeet.class.php
+    class Jobeet
+    {
+      static public function slugify($text)
+      {
+        // replace all non letters or digits by -
+        $text = preg_replace('/\W+/', '-', $text);
+
+        // trim and lowercase
+        $text = strtolower(trim($text, '-'));
+
+        return $text;
+      }
+    }
+
+ لقد قمنا بثحديد ثلاث  accessors
+إفتراضية "virtual"
+و هي: `()getPositionSlug`
+ `(),getCompanySlug`
+ و `()getLocationSlug`.
+ و هم يعطون كنتيجة قيمة العمود المكافئة لها بعد تطبيق الدالة `()slugify`.
+ الآن ، تستطيع أن تغير الأسماء الحقيقية للعمود بالأسماء الإفتراضية في المسار `job_show_user`:
+
+    [yml]
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [get]
+
+ قبل تحديث الصفحة الرئيسية ل Jobeet،
+ تحتاج إلى مسح الذاكرة المؤقتة لأننا أضفنا الصنف الجديد (`Jobeet`):
+
+    $ php symfony cc
+
+ ستحصل الآن على عناوين المواقع المتوقعة :
+
+    http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/1/web-developer
+
+ ولكن هذا نصف القصة فقط. التوجيه قادر على توليد عنوان يستند على عنصر ، 
+ ولكنه قادر أيضا على العثور على العناصر  المتعلقة بعنوان معين  . 
+ يمكن استرجاع العنصر المرتبط عن طريق دالة مسار العنصر `()getObject` .
+ عند تحليل طلب إستعلام قادم ،
+ يقوم التوجيه بتخزين مسار العنصر المطابق  لاستخدامه في الإجراءت . لذا ، قم بتغيير الدالة `()executeShow`
+ لاستعمال مسار العنصر لاستعادة العنصر  `Jobeet` :
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+        $this->job = $this->getRoute()->getObject();
+      }
+
+      // ...
+    }
+
+ إذا حاولت الحصول على وظيفة ذات `id`
+ مجهول ،
+ سترى صفحة الخطأ 404
+ ولكن رسالة الخطأ قد تغيرث :
+
+![404 with sfPropelRoute](http://www.symfony-project.org/images/jobeet/1_2/05/404_propel_route.png)
+
+ هذا لأن الخطأ 404  قد ألقي إليك تلقائيا عن طريق الدالة `()getRoute` .
+ يمكننا تبسيط  الدالة أكثر `executeShow`:
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+        $this->job = $this->getRoute()->getObject();
+      }
+
+      // ...
+    }
+
+>**TIP**
+> إذا كنت لا ترغب في أن المسار يقوم بتوليد الخطأ 404 ، 
+> يمكنك تعيين خيار التوجيه  `true`
+>على`allow_empty` .
+
+-
+
+>**NOTE**
+> يصعب تحميل العنصر المتصل .
+> `()getRoute`
+> لكن يمكن الحصول عليها من قاعدة البيانات باستدعاء الدلة  `()getRoute`.
+
+ التوجيه في الإجراءات و القوالب 
+-----------------------------
+
+ في القالب، يحول المساعد `()url_for`
+ عنوانا داخليا إلى عنوان خارجي .
+يأخذ بعض المساعدين الآخرين في symfony 
+ عنوان داخلي كمعطى 
+ مثل المساعد `()link_to`
+ الذي يولد `<a>`:
+
+    [php]
+    <?php echo link_to($job->getPosition(), 'job_show_user', $job) ?>
+
+ الذي يولد الترميز البرمجي HTML
+ التالي :
+
+    [php]
+    <a href="/job/sensio-labs/paris-france/1/web-developer">Web Developer</a>
+
+ يمكن لكل من `()url_for`
+ و`()link_to`
+ أن يولدوا أيضا عناوين المواقع المطلقة :
+
+    [php]
+    url_for('job_show_user', $job, true);
+
+    link_to($job->getPosition(), 'job_show_user', $job, true);
+
+ إذا كنت تريد توليد عنوان من الإجراء ، يمكنك استخدام الدالة `()generateUrl`:
+
+    [php]
+    $this->redirect($this->generateUrl('job_show_user', $job));
+
+>**SIDEBAR**
+> أسرة  الدوال  "redirect"
+>
+> في الدرس التعليمي للأمس ، تحدثنا عن الدوال  "forward" .
+> هذه الدوال تبعث  طلب الاستعلام الحالي إلى إجراء آخر دون القيام بذهابا وإيابا للمتصفح .
+> 
+> تقوم الدوال ."redirect"
+> بإعادة توجيه المستخدم إلى عنوان آخر .
+> وكما هو الحال بالنسبة إلى forward,
+> يمكنك استخدام الدالة `()redirect`
+>أو`()redirectIf`
+> و `()redirectUnless`
+> تختصر الدوال  .
+
+مجموعة صنف التوجيه 
+------------------
+
+بالنسبة للوحدة  `job`، 
+لقد قمنا سابقا بتخصيص إجراء المسار  `show`
+  لكن عناوين المواقع للدوال الأخرى 
+ ( `update`,`create`,`edit`, `new`, `index`,
+و `delete`) 
+ ما زال يديرها المسار الافتراضي `default`:
+
+    [yml]
+    default:
+      url: /:module/:action/*
+
+ المسار الافتراضي `default`
+ هو طريقة رائعة لبدء الترميز البرمجي دون تحديد عدد كبير جدا من المسارات  
+ ولكن بما أن المسار بمثابة "catch-all",
+ لا يمكن التحكم فيه للإحتياجات الخاصة  .
+
+ بما أن جميع الإجراءت `job`
+ متصلة بنموذج الصنف `JobeetJob`، 
+ يمكننا بسهولة تعريف مسار  `sfPropelRoute`
+ لكل واحد كما فعلنا سابقا بالإجراء `show`.
+ ولكن بما أن النموذج  `job`
+ يحدد سبعة من الإجراءات الكلاسيكية الممكنة للنموذج ،
+ يمكننا أيضا استخدام
+[`sfPropelRouteCollection`](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection)
+
+افتح الملف `routing.yml`
+ وقم  بتعديله كي يصبح نصه كما يلي : 
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    job:
+      class:   sfPropelRouteCollection
+      options: { model: JobeetJob }
+
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [get]
+
+    # default rules
+    homepage:
+      url:   /
+      param: { module: job, action: index }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
+
+ المسار `job`
+أعلاه هو حقا مجرد اختصار الذي  يولد تلقائيا المسارات السبع التالية `sfPropelRoute` :
+
+    [yml]
+    job:
+      url:     /job.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: list }
+      param:   { module: job, action: index, sf_format: html }
+      requirements: { sf_method: get }
+
+    job_new:
+      url:     /job/new.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: new, sf_format: html }
+      requirements: { sf_method: get }
+
+    job_create:
+      url:     /job.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: create, sf_format: html }
+      requirements: { sf_method: post }
+
+    job_edit:
+      url:     /job/:id/edit.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: edit, sf_format: html }
+      requirements: { sf_method: get }
+
+    job_update:
+      url:     /job/:id.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: update, sf_format: html }
+      requirements: { sf_method: put }
+
+    job_delete:
+      url:     /job/:id.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: delete, sf_format: html }
+      requirements: { sf_method: delete }
+
+    job_show:
+      url:     /job/:id.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show, sf_format: html }
+      requirements: { sf_method: get }
+
+>**NOTE**
+> بعض المسارات  المولدة من طرف `sfPropelRouteCollection`
+> لها نفس العنوان. 
+> ما زال المسار قادرا على استخدامها لأنها تتوفر جميعا على مختلف متطلبات الدوال HTTP.
+
+ يتوفر المساران  `job_delete`
+ و `job_update`
+على الدوال HTTP
+غير مدعومة من المتصفحات
+ (`DELETE` 
+ و `PUT` 
+على التوالي).
+هذا يعمل لأن symfony
+ يحاكي بها.
+ افتح القالب `_form.php`
+ لنر مثال على ذلك : 
+
+    [php]
+    // apps/frontend/modules/job/templates/_form.php
+    <form action="..." ...>
+    <?php if (!$form->getObject()->isNew()): ?>
+      <input type="hidden" name="sf_method" value="PUT" />
+    <?php endif; ?>
+
+    <?php echo link_to(
+      'Delete',
+      'job/delete?id='.$form->getObject()->getId(),
+      array('method' => 'delete', 'confirm' => 'Are you sure?')
+    ) ?>
+
+يمكن استدعاء  جميع  مساعدي  symfony 
+لتحديد أي دالة HTTP
+ تريد ، و ذلك  بتمرير المعطى الخاص  `sf_method`. 
+
+>**NOTE**
+> لدى symfony
+> معطيات أخرى خاصة مثل `sf_method`,
+> جميعها  تبتدىء ب `sf_`.
+> في المسارات المولدة أعلاه ، تستطيع أن ترى واحدا آخر :`sf_format`، 
+>والذي سيتم توضيحه في اليوم القادم. 
+
+مصحح أخطاء المسار 
+----------------
+
+ عندما تستعمل مجموعة من المسارات ، فإنه من المفيد أحيانا تقسيم المسارات المتولدة .
+ تعطي  `app:routes`
+ جميع المسارات بالنسبة لتطبيق معين :
+ 
+     $ php symfony app:routes frontend
+
+ يمكنك أيضا الحصول على الكثير من المعلومات لتصحيح الأخطاء لمسار ما وذلك بتمرير اسمه كمعطى إضافي :
+
+     $ php symfony app:routes frontend job_edit
+
+المسارات الإفتراضية 
+----------------
+
+من الممارسات الجيدة تحديد مسارات لجميع عناوين المواقع الخاصة بك . 
+ بما أن المسار `job`
+ يحدد كل المسارات اللازمة لوصف التطبيق Jobeet ، 
+ امض قدما  ،
+ وقم بإزالة أو تعليق المسار الافتراضي من ملف التحكم`routing.yml`:
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    #default_index:
+    #  url:   /:module
+    #  param: { action: index }
+    #
+    #default:
+    #  url:   /:module/:action/*
+
+ لا بد للتطبيق Jobeet
+ أن يعمل كما في السابق .
+
+نراكم غدا إن شاء الله
+-------------------
+
+اليوم كان مليئا بالكثير من المعلومات الجديدة. لقد تعلمت كيفية استخدام إطار التوجيه في symfony
+وكيفية فصل عناوين المواقع الخاصة بك من التنفيذ التقني  .
+
+ غدا ، لن نتطرق لأي مفاهيم جديدة ، وإنما سنخصص  وقتنا لتعميق ما تعلمناه حتى الآن .
+
+__ORM__
