@@ -1,49 +1,9 @@
 ﻿Día 16: Servicios Web
 =====================
 
-<doctrine>
-Antes de empezar
-----------------
-
-El día seis, cuando se define la ruta para ver jobs llamada `job_show_user` en
-`apps/frontend/config/routing.yml` tuvimos un pequeño error en la definición.
-La ruta debe ser la siguiente:
-
-    [yml]
-    job_show_user:
-      url:     /job/:company_slug/:location_slug/:id/:position_slug
-      class:   sfDoctrineRoute
-      options:
-        model: JobeetJob
-        type:  object
-        method_for_query: retrieveActiveJob
-      param:   { module: job, action: show }
-      requirements:
-        id: \d+
-
-Observa el cambio del uso de `method` a `method_for_query`. Este fue un pequeño error en symfony y un error en el tutorial por lo que deberás actualizar tu proyecto.
-
-También tenemos que hacer un pequeño cambio en el esquema `JobAffiliate` para incluir la relación muchos a muchos para `JobeetCategory` para completar este día. Puedes ver el esquema del día tres o simplemente ver lo que hay que añadir a continuación.
-
-    [yml]
-    JobeetAffiliate:
-      # ...
-      relations:
-        JobeetCategories:
-          class: JobeetCategory
-          refClass: JobeetCategoryAffiliate
-          local: affiliate_id
-          foreign: category_id
-          foreignAlias: JobeetAffiliates
-
-Asegúrate de reconstruir el modelo después de hacer el cambio:
-
-    $ php symfony doctrine:build-model
-</doctrine>
-
 Con agregar feeds a Jobeet, los solicitantes de puestos de trabajo pueden ahora ser informados de los nuevos puestos de trabajo en tiempo real.
 
-En el otro lado de la valla, es cuando se envía puesto de empleo, deseas tener la mayor exposición posible. Si tu trabajo es sindicado en una gran cantidad de pequeños sitios web, tendrás una mejor oportunidad de encontrar a la persona adecuada. Ese es el poder de la [Larga Cola](http://es.wikipedia.org/wiki/Larga_Cola) o [long tail](http://en.wikipedia.org/wiki/The_Long_Tail).
+En el otro lado de la valla, esta cuando se envía un puesto de empleo, y deseas tener la mayor exposición/publicidad posible. Si tu trabajo es sindicado en una gran cantidad de pequeños sitios web, tendrás una mejor oportunidad de encontrar a la persona adecuada. Ese es el poder de la [Larga Cola](http://es.wikipedia.org/wiki/Larga_Cola) o [long tail](http://en.wikipedia.org/wiki/The_Long_Tail).
 Los afiliados podrán publicar los puestos de trabajos más recientes en sus sitios web gracias a los servicios web que se desarrollarán hoy.
 
 Los Afiliados
@@ -58,7 +18,12 @@ Según los requisitos del día 2:
 Vamos a crear un nuevo archivo de datos para los afiliados:
 
     [yml]
-    // data/fixtures/030_affiliates.yml
+<propel>
+    # data/fixtures/030_affiliates.yml
+</propel>
+<doctrine>
+    # data/fixtures/affiliates.yml
+</doctrine>
     JobeetAffiliate:
       sensio_labs:
         url:       http://www.sensio-labs.com/
@@ -136,12 +101,12 @@ Ahora puedes recargar los datos:
 
     $ php symfony propel:data-load
 
-### El Servicio Web de Job
+### El Servicio Web de los Puestos de Trabajo
 
-Como siempre, cuando se crea un nuevo recurso, es un buen hábito definir la dirección URL primero:
+Como siempre, cuando se crea un nuevo recurso, es un buen hábito primero definir la dirección URL:
 
     [yml]
-    // apps/frontend/config/routing.yml
+    # apps/frontend/config/routing.yml
     api_jobs:
       url:     /api/:token/jobs.:sf_format
       class:   sfPropelRoute
@@ -193,7 +158,7 @@ El método `getForToken()` es llamado cuando la acción recupera la colección d
     }
 </doctrine>
 
-Si el token no existe en la base de datos, arrojamos una excepción `sfError404Exception`. Esta clase excepción se convierten automáticamente a una respuesta `404`. Esta es la forma más sencilla de generar una página`404` de una clase del modelo.
+Si el token no existe en la base de datos, arrojamos una excepción `sfError404Exception`. Esta clase excepción se convierten automáticamente en una respuesta `404`. Esta es la forma más sencilla de generar una página `404` de una clase del modelo.
 
 <propel>
 El método `getForToken()` usa dos nuevos métodos que vamos a crear ahora.
@@ -272,7 +237,7 @@ El último paso es crear la acción y plantillas para la `api`. Inicializa el m�
     $ php symfony generate:module frontend api
 
 >**NOTE**
->Como no vamos a utilizar la acción predeterminada `index`, puede eliminar de la
+>Como no vamos a utilizar la acción predeterminada `index`, puedes eliminarla de la
 >clase action, y eliminar la plantilla asociada `indexSucess.php`.
 
 ### La Acción
@@ -363,7 +328,7 @@ Soportar el formato [JSON](http://json.org/) es similar:
 
 ### El Formato `yaml`
 
-Para Formatos nativos,, symfony hace algunas configuraciones en el fondo, como cambiar el content type, o desactivar el layout.
+Para Formatos nativos, Symfony hace algunas configuraciones en el fondo, como cambiar el content type, y desactivar el layout.
 
 Como el Formato YAML no esta en la lista de los formatos nativos, la respuesta y su content type se puede cambiar y el layout desactivado  en la acción:
 
@@ -404,7 +369,7 @@ La plantilla de YAML dice lo siguiente:
     <?php endforeach; ?>
     <?php endforeach; ?>
 
-Si intentas llamar a los servicios web con un token no-válido, tendrás una página XML 404 para el formato XML, y una página JSON 404 para el formato JSON. Pero para el formato YAML, symfony no sabe qué mostrar.
+Si intentas llamar a los servicios web con un token no-válido, tendrás una página XML 404 para el formato XML, y una página JSON 404 para el formato JSON. Pero para el formato YAML, Symfony no sabe qué mostrar.
 
 Cuando creas un formato, una plantilla personalizada de error debe ser creada. La plantilla se utilizará para páginas 404, y todas las demás excepciones.
 
@@ -430,7 +395,7 @@ Dado que la excepción debe ser diferente según sea un entorno de desarrollo o 
         'message'   => $message,
     ))) ?>
 
-Antes de probarlo, debe crear un layout para el formato YAML:
+Antes de probarlo, debes crear un layout para el formato YAML:
 
     [php]
     // apps/frontend/templates/layout.yaml.php
@@ -440,7 +405,7 @@ Antes de probarlo, debe crear un layout para el formato YAML:
 
 >**TIP**
 >Sobreescribiendo las plantillas por defecto de error 404 y de excepción es tan
->simple como la crear los archivos en cuestión en el directorio `config/error/`.
+>simple como crear los archivos en cuestión en el directorio `config/error/`.
 
 Probando los Servicios Web
 --------------------------
@@ -483,7 +448,7 @@ Para probar el servicio web, copia los datos de los afiliados de `data/fixtures/
       end()
     ;
 
-En esta prueba, t darás cuenta de dos nuevos métodos:
+En esta prueba, te darás cuenta de dos nuevos métodos:
 
   * `isFormat()`: Pone a prueba el formato de un request
   * `contains()`: Para formatos no-HTML, comprueba si la respuesta contiene el fragmento de texto esperado
@@ -506,17 +471,17 @@ Lo sabes. La ruta es la primera cosa a crear:
         actions: [new, create]
         object_actions: { wait: get }
 
-Se trata de una clásica colección ruta ##ORM## con una nueva opción de configuración: `actions`. Como no necesitamos todas las siete acciones definidas por defecto para la ruta, la opción `actions` instruye la ruta para sólo coincidir con las acciones `new` y `create` . La ruta adicional `wait` se utilizarán para dar el inminente afiliado algunos comentarios acerca de su cuenta.
+Se trata de una clásica colección de rutas ##ORM## con una nueva opción de configuración: `actions`. Como no necesitamos todas las siete acciones definidas por defecto para la ruta, la opción `actions` instruye a la ruta para sólo coincidir con las acciones `new` y `create` . La ruta adicional `wait` se utilizarán para dar al inminente afiliado algunos comentarios acerca de su cuenta.
 
 ### Inicialización
 
-El clásico segundo paso es generar un módulo:
+El segundo paso clásico es generar un módulo:
 
     $ php symfony propel:generate-module frontend affiliate JobeetAffiliate --non-verbose-templates
 
 ### Las Plantillas
 
-La tarea `propel:generate-module` generar las clásicas siete acciones y sus correspondientes plantillas. En el directorio `templates/`, elimina todos los archivos, pero no `_form.php` ni `newSuccess.php`. Y para los archivos que mantenemos, sustituye sus contenidos con los siguientes:
+La tarea `propel:generate-module` genera las clásicas siete acciones y sus correspondientes plantillas. En el directorio `templates/`, elimina todos los archivos, pero no `_form.php` ni `newSuccess.php`. Y para los archivos que mantenemos, sustituye sus contenidos con los siguientes:
 
     [php]
     <!-- apps/frontend/modules/affiliate/templates/newSuccess.php -->
@@ -567,7 +532,7 @@ Por último, cambiar el enlace en el pie de página para que apunte al módulo `
 
 ### Las Acciones
 
-Una vez más, ya que sólo utiliza el formulario de creación, abre el archivo `actions.class.php` y elimina todos los métodos pero deja  `executeNew()`, `executeCreate()`, y `processForm()`.
+Una vez más, ya que sólo se utiliza el formulario de creación, abre el archivo `actions.class.php` y elimina todos los métodos pero deja  `executeNew()`, `executeCreate()`, y `processForm()`.
 
 Para la acción `processForm()`, cambiar la URL de redireccionamiento a la acción `wait`:
 
@@ -575,7 +540,7 @@ Para la acción `processForm()`, cambiar la URL de redireccionamiento a la acci�
     // apps/frontend/modules/affiliate/actions/actions.class.php
     $this->redirect($this->generateUrl('affiliate_wait', $jobeet_affiliate));
 
-La acción `wait` es simple ya que no hace falta pasarle nada a la plantilla:
+La acción `wait` es simple que no hace falta pasarle nada a la plantilla:
 
     [php]
     // apps/frontend/modules/affiliate/actions/actions.class.php
@@ -617,7 +582,7 @@ El afiliado no puede elegir su token, ni puede activar su cuenta inmediatamente.
     }
 
 El framework de formularios soporta relaciones muchos-a-muchos como cualquier otra columna.
-Por defecto, esta relación es mostrada como un cuadro desplegable gracias al widget `sfWidgetFormChoice`. Como se ha visto durante el día 10, hemos cambiado la mostrada mediante el uso de la opción `expanded`.
+Por defecto, esta relación es mostrada como un cuadro desplegable gracias al widget `sfWidgetFormChoice`. Como se ha visto durante el día 10, hemos cambiado lo mostrado mediante el uso de la opción `expanded`.
 
 Como emails y URLs tienden a ser bastante más largo que el tamaño predeterminado de una etiqueta input, los atributos de HTML por defecto se puede configurar utilizando el método `setAttribute()`.
 
@@ -700,7 +665,7 @@ Pero, como ya tenemos este código en el método `getMostRecentProgrammingJob()`
       return self::doSelectOne($criteria);
     }
 
-A continuación, reemplaza las dos ocurenciass de este código en `JobeetTestFunctional`.
+A continuación, reemplaza las dos ocurrencias de este código en `JobeetTestFunctional`.
 </propel>
 
 El Backend para Afiliados
@@ -754,7 +719,7 @@ Para acceder al nuevo módulo creado, añade un enlace en el menú principal con
 
     }
 
-Como la única acción necesaria en el backend es para activar o desactivar las cuentas, cambiar la sección `config` del generador por defecto para simplificar la interfaz un poco y añadir un enlace para activar directamente las cuentas en la vista list:
+Como la única acción necesaria en el backend es para activar o desactivar las cuentas, cambia la sección `config` del generador por defecto para simplificar la interfaz un poco y añade un enlace para activar directamente las cuentas en la vista list:
 
     [yml]
     # apps/backend/modules/affiliate/config/generator.yml
@@ -880,7 +845,7 @@ El único otro código a escribir es para las acciones `activate`, `deactivate` 
 Envíando Emails
 ---------------
 
-Cuando una cuenta de afiliado es activada por el administrador, un mensaje de correo electrónico deben enviarse al afiliado para confirmar su suscripción y darle su token.
+Cuando una cuenta de afiliado es activada por el administrador, un mensaje de correo electrónico debe enviarse al afiliado para confirmar su suscripción y darle su token.
 
 PHP tiene un buen número de bibliotecas para enviar mensajes de correo electrónico como 
 [SwiftMailer](http://www.swiftmailer.org/),
@@ -904,7 +869,7 @@ En primer lugar, la descarga
   * `Mime.php`
   * `Search/`
 
->**NOTA**
+>**NOTE**
 >El directorio `Search/` no se necesita para enviar mensajes de correo electrónico, sino que será necesario
 >para el tutorial de mañana.
 
@@ -968,14 +933,14 @@ Edita la acción `activate` para enviar un correo electrónico cuando el adminis
     }
 Para que el código funcione, es necesario cambiar `jobeet@example.com` a una verdadera dirección de correo electrónico.
 
->**NOTA**
+>**NOTE**
 >Un completo tutorial sobre la biblioteca `Zend_Mail` está disponible en 
 >[Zend Framework website](http://framework.zend.com/manual/en/zend.mail.html).
 
 Nos vemos mañana
 ----------------
 
-Gracias a la arquitectura REST de symfony, es muy fácil de implementar los servicios web para tus proyectos. Si bien, escribimos el código  de servicios web de sólo lectura, tienes suficiente conocimientos de symfony para implementar un servicio web de lectura y escritura.
+Gracias a la arquitectura REST de symfony, es muy fácil de implementar los servicios web para tus proyectos. Si bien, escribimos el código  de servicios web de sólo lectura, tienes suficiente conocimientos sobre symfony para implementar un servicio web de lectura y escritura.
 
 La implementación de un formulario de alta de cuentas de afiliado en el frontend y su contraparte backend fue tan fácil ya que ahora estás familiarizado con el proceso de agregar nuevas características a tu proyecto.
 
@@ -986,5 +951,13 @@ Si te acuerdas de los requisitos del día 2:
 La implementación de esta función es tan fácil que te permitiremos hacerlo esta noche.
 
 Mañana, vamos a implementar la última característica faltante del sitio web Jobeet, el motor de búsqueda.
+
+Feedback
+--------
+
+>**Tip**
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
+>no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
 
 __ORM__
