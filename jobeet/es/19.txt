@@ -1,18 +1,13 @@
 ﻿Día 19: Internacionalización y Localización
 ===========================================
 
-Anteriormente en Jobeet
---------------------
+Ayer se terminó la función de motor de búsqueda, haciéndola más divertida con la incorporación de algunas bondades AJAX. Hoy, vamos a hablar de **internacionalización** (o i18n) y **localización** (o l10n). Según [Wikipedia:en](http://en.wikipedia.org/wiki/Internationalization):
 
-Ayer se terminó la función de motor de búsqueda, haciéndola más divertida con la incorporación de algunas bondades AJAX.
-Hoy, vamos a hablar de internacionalización (o i18n) y localización (o l10n).
-Según [Wikipedia:en](http://en.wikipedia.org/wiki/Internationalization) y [Wikipedia:es](http://es.wikipedia.org/wiki/Internacionalizaci%C3%B3n_(computaci%C3%B3n)):
-
->La Internacionalización es un proceso a través del cual se diseñan 
+>La **Internacionalización** es un proceso a través del cual se diseñan 
 >productos de software para que puedan adaptarse a diferentes idiomas
 >y regiones sin necesidad de cambios de ingeniería ni cambios en el código.
 >
->La Localización es el proceso de adaptación de software para una región o
+>La **Localización** es el proceso de adaptación de software para una región o
 >idioma mediante la incorporación de componentes específicos de localización y traducción de textos.
 
 Como siempre, el framework symfony no ha reinventado la rueda y su soporte de i18n y l10n esta basado en el [ICU standard](http://www.icu-project.org/).
@@ -22,7 +17,7 @@ Usuario
 
 La internacionalización no es posible sin un usuario. Cuando su sitio web está disponible en varios idiomas o para distintas regiones del mundo, el usuario es el responsable de elegir la que mejor se ajuste a él.
 
->**NOTA**
+>**NOTE**
 >Ya hemos hablado de la clase User de symfony durante el día 13.
 
 ### La Cultura del Usuario
@@ -66,31 +61,28 @@ El método `getLanguages()` del objeto de la petición devuelve un array de los 
     // in an action
     $languages = $request->getLanguages();
 
-Pero la mayor parte del tiempo, tu sitio web no estará disponible en los 136 principales idiomas del mundo. El método `getPreferredCulture()` devuelve el mejor lenguaje mediante la comparación de los idiomas preferidos del usuario y los idiomas de tu sitio web:
+Pero la mayor parte del tiempo, tu sitio web no estará disponible en los 136 principales idiomas. El método `getPreferredCulture()` devuelve el mejor lenguaje mediante la comparación de los idiomas preferidos del usuario y los idiomas de tu sitio web:
 
     [php]
     // in an action
     $language = $request->getPreferredCulture(array('en', 'fr'));
 
-En la anterior llamada, el lenguaje devuelto será Inglés o Francés
-de acuerdo con los idiomas preferidos del usuario, o Inglés (primer idioma en el array) si no coincide ninguno.
+En la anterior llamada, el lenguaje devuelto será Inglés o Francés de acuerdo con los idiomas preferidos del usuario, o Inglés (primer idioma en el array) si no coincide ninguno.
 
 La Cultura en la URL
 --------------------
 
-El sitio web Jobeet estará disponible en Inglés y francés. Como una dirección URL sólo puede representar a un único recurso, la cultura debe estar integrada en la URL. Para ello, abre el archivo `routing.yml`, y agrega la variable especial `:sf_culture`
-para todas las rutas, pero no para `api_jobs` y `homepage`. Para simples rutas, agrega `/:sf_culture` al principio de la `url`. Para colección de rutas, agrega una opción `prefix_path` que comience con `/:sf_culture`.
+El sitio web Jobeet estará disponible en Inglés y francés. Como una dirección URL sólo puede representar a un único recurso, la cultura debe estar integrada en la URL. Para ello, abre el archivo `routing.yml`, y agrega la variable especial `:sf_culture` para todas las rutas, pero no para `api_jobs` y `homepage`. Para simples rutas, agrega `/:sf_culture` al principio de la `url`. Para colección de rutas, agrega una opción `prefix_path` que comience con `/:sf_culture`.
 
     [yml]
     # apps/frontend/config/routing.yml
     affiliate:
       class: sfPropelRouteCollection
       options:
-        model:          JobeetJob
+        model:          JobeetAffiliate
         actions:        [new, create]
-        object_actions: { wait: GET }
+        object_actions: { wait: get }
         prefix_path:    /:sf_culture/affiliate
-
 
     category:
       url:     /:sf_culture/category/:slug.:sf_format
@@ -101,17 +93,15 @@ para todas las rutas, pero no para `api_jobs` y `homepage`. Para simples rutas, 
         sf_format: (?:html|atom)
 
     job_search:
-      url:   /:sf_culture/search.:sf_format
-      param: { module: job, action: search, sf_format: html }
-      requirements:
-        sf_format: (?:html|js)
+      url:   /:sf_culture/search
+      param: { module: job, action: search }
 
     job:
       class: sfPropelRouteCollection
       options:
         model:          JobeetJob
         column:         token
-        object_actions: { publish: PUT, extend: PUT }
+        object_actions: { publish: put, extend: put }
         prefix_path:    /:sf_culture/job
       requirements:
         token: \w+
@@ -120,20 +110,25 @@ para todas las rutas, pero no para `api_jobs` y `homepage`. Para simples rutas, 
       url:     /:sf_culture/job/:company_slug/:location_slug/:id/:position_slug
       class:   sfPropelRoute
 <propel>
-      options: { model: JobeetJob, type: object, method_for_criteria: doSelectActive }
+      options:
+        model: JobeetJob
+        type: object
+        method_for_criteria: doSelectActive
 </propel>
 <doctrine>
-      options: { model: JobeetJob, type: object, method_for_query: retrieveActiveJob }
+      options:
+        model: JobeetJob
+        type: object
+        method_for_query: retrieveActiveJob
 </doctrine>
       param:   { module: job, action: show }
       requirements:
         id:        \d+
-        sf_method: GET
+        sf_method: get
 
 Cuando la variable `sf_culture` se utiliza en una ruta, symfony automáticamente usa su valor para cambiar la cultura del usuario.
 
-Como necesitamos muchas páginas de inicio como idiomas soportemos (`/en/`, `/fr/`, ...),
-la página de inicio predeterminada (`/`) deben redirijirnos a la página apropiada, de acuerdo con la cultura del usuario. Pero si el usuario no tiene todavía una cultura, porque él viene a Jobeet por primera vez, la mejor cultura serán elegidos para él.
+Como necesitamos muchas páginas de inicio como idiomas soportemos (`/en/`, `/fr/`, ...), la página de inicio predeterminada (`/`) deben redirijirnos a la página apropiada, de acuerdo con la cultura del usuario. Pero si el usuario no tiene todavía una cultura, porque él viene a Jobeet por primera vez, la mejor cultura serán elegidos para él.
 
 En primer lugar, añade el método `isFirstRequest()` a `myUser`. Devuelve `true` sólo para la primer petición de una sesión de usuario:
 
@@ -191,7 +186,7 @@ Cambia la acción `index` del módulo `job` para aplicar la lógica para redirig
 </doctrine>
     }
 
-Si la variable `sf_culture` no está presente en la petición, esto significa que el usuario ha llegado a la URL `/`. Si este es el caso y la sesión es nueva, la cultura preferida es usada como la cultura del usuario. De lo contrario, se utiliza la cultura del usuario actual.
+Si la variable `sf_culture` no está presente en la petición, esto significa que el usuario tiene que ir a la URL `/`. Si este es el caso y la sesión es nueva, la cultura preferida es usada como la cultura del usuario. De lo contrario, se utiliza la cultura actual del usuario.
 
 El último paso es redirigir al usuario a la URL `localized_homepage`. Nota que la variable `sf_culture` no ha sido pasada en la redirección  ya que symfony la agrega automáticamente por tí.
 
@@ -204,12 +199,12 @@ Ahora, si tratas de ir a la URL `/it/`, symfony devolverá un error 404 ya que r
 Probando la Cultura
 -------------------
 
-Es hora de poner a prueba nuestra aplicación. Pero antes de añadir más pruebas, tenemos que arreglar los ya existentes. Como han cambiado todas las direcciones URL, edita los archivos de todas las prueba funcionales en `test/functional/frontend/` y agrega `/en` al principio de todas las URLs. No olvides de cambiar las URLs en el archivo 
-`lib/test/JobeetTestFunctional.class.php`. Poner en marcha el conjunto de pruebas para comprobar que has arreglado correctamente las pruebas:
+Es hora de poner a prueba nuestra aplicación. Pero antes de añadir más pruebas, tenemos que arreglar los ya existentes. Como han cambiado todas las direcciones URL, edita los archivos de todas las prueba funcionales en `test/functional/frontend/` y agrega `/en` al principio de todas las URLs. No olvides de cambiar las URLs en el archivo `lib/test/JobeetTestFunctional.class.php`. Poner en marcha el conjunto de pruebas para comprobar que has arreglado correctamente las pruebas:
 
     $ php symfony test:functional frontend
 
-El user tester da un método `isCulture()` que prueba la cultura del usuario actual. Abre el archivo `jobActionsTest` y añade las siguientes pruebas:
+El user tester da un método `isCulture()` que prueba la cultura del usuario actual. 
+Abre el archivo `jobActionsTest` y añade las siguientes pruebas:
 
     [php]
     // test/functional/frontend/jobActionsTest.php
@@ -241,8 +236,7 @@ El user tester da un método `isCulture()` que prueba la cultura del usuario act
 Cambiando de idioma
 -------------------
 
-Para que el usuario pueda cambiar la cultura, un formulario de idioma  hay que añadir en el layout. El framework de formularios no proporciona una formulario de fabrica pero como la necesidad es muy común para los sitios web internacionalizados, el symfony core team mantiene el [`sfFormExtraPlugin`](http://www.symfony-project.org/plugins/sfFormExtraPlugin?tab=plugin_readme),
-que contiene los validadores, widgets, y formularios que no pueden ser incluidos con el paquete principal symfony ya que son demasiado específicas o tienen dependencias externas, pero no obstante son muy útil.
+Para que el usuario pueda cambiar la cultura, un formulario de idioma hay que añadir en el layout. El framework de formularios no proporciona una formulario de fabrica pero como la necesidad es muy común para los sitios web internacionalizados, el symfony core team mantiene el [`sfFormExtraPlugin`](http://www.symfony-project.org/plugins/sfFormExtraPlugin?tab=plugin_readme), que contiene los validadores, widgets, y formularios que no pueden ser incluidos con el paquete principal symfony ya que son demasiado específicas o tienen dependencias externas, pero no obstante son muy útil.
 
 Instala el plugin con la tarea `plugin:install`:
 
@@ -252,7 +246,7 @@ Limpia el cache ya que el plugin define nuevas clases:
 
     $ php symfony cc
 
->**NOTA**
+>**NOTE**
 >El `sfFormExtraPlugin` tiene widgets que requieran dependencias externas
 >como bibliotecas JavaScript. Encontrarás un widget para seleccionar fechas, 
 >un para un editor WYSIWYG, y mucho más. Tóma un tiempo para leer la documentación
@@ -260,7 +254,7 @@ Limpia el cache ya que el plugin define nuevas clases:
 
 El plugin `sfFormExtraPlugin` da un formulario `sfFormLanguage` para gestionar la selección de idioma. Añadiendo el formulario de idiomas se puede hacer en el layout así:
 
->**NOTA**
+>**NOTE**
 >El código a continuación no pretende ser aplicado. Es aquí que te mostramos cómo
 >podrías tener la tentación de aplicar algo de forma equivocada. Vamos a mostrarte
 >cómo aplicarlo correctamente utilizando symfony.
@@ -282,10 +276,9 @@ El plugin `sfFormExtraPlugin` da un formulario `sfFormLanguage` para gestionar l
       </div>
     </div>
 
-¿Detectas el problema? Así es, la creación de un objeto form no pertenece a la capa de la Vista. Debe ser creado en una acción. Pero como el código está en el layout, el formulario debe crearse para cada acción, que está lejos de ser práctico.
-En tales casos, debes usar un **componente**. Un componente es como un partial pero con algo de código en él. Consideralo una acción ligera.
+¿Detectas el problema? Así es, la creación de un objeto form no pertenece a la capa de la Vista. Debe ser creado en una acción. Pero como el código está en el layout, el formulario debe crearse para cada acción, que está lejos de ser práctico. En tales casos, debes usar un **componente**. Un componente es como un partial pero con algo de código en él. Consideralo una acción ligera.
 
-Incluyendo un componente en una plantilla se puede hacer mediante el uso del helper `include_component()`:
+Incluyendo un componente en una plantilla se puede hacer mediante el uso del helper  `include_component()`:
 
     [php]
     // apps/frontend/templates/layout.php
@@ -303,7 +296,9 @@ Crea un módulo `language` para alojar el componente y la acción que realmente 
 
     $ php symfony generate:module frontend language
 
-Los Componentes se definirán en el archivo  `actions/components.class.php`. Crear este archivo ahora:
+Los Componentes se definirán en el archivo `actions/components.class.php`. 
+
+Crear este archivo ahora:
 
     [php]
     // apps/frontend/modules/language/actions/components.class.php
@@ -414,7 +409,7 @@ Aquí está cómo usa el helper `__()` para el pie de página de Jobeet:
             <a href=""><?php echo __('About Jobeet') ?></a>
           </li>
           <li class="feed">
-            <?php echo link_to(__('Feed'), '@job?sf_format=atom') ?>
+            <?php echo link_to(__('Full feed'), '@job?sf_format=atom') ?>
           </li>
           <li>
             <a href=""><?php echo __('Jobeet API') ?></a>
@@ -427,18 +422,16 @@ Aquí está cómo usa el helper `__()` para el pie de página de Jobeet:
       </div>
     </div>
 
->**NOTA**
+>**NOTE**
 >El helper `__()` puede tomar la cadena para el idioma por defecto o se puede
 >utilizar también un identificador único para cada cadena. Es sólo una cuestión de gusto.
 >Para Jobeet, haremos uso de la antigua estrategia para tener plantillas más legibles.
 
 Cuando symfony muestra una plantilla, cada vez que el helper `__()` es llamado, symfony busca por una traducción para la cultura del usuario actual. Si se encuentra una traducción, se utiliza, si no, el primer argumento se devuelve como un valor fallback.
 
-Todas las traducciones se almacenan en un catálogo. El framework i18n proporciona una gran cantidad de estrategias diferentes para almacenar las traducciones. Vamos a utilizar el formato 
-["XLIFF"](http://en.wikipedia.org/wiki/XLIFF), que es un estándar y el más flexible. También es el utilizado por el admin generator y demás
-symfony plugins.
+Todas las traducciones se almacenan en un catálogo. El framework i18n proporciona una gran cantidad de estrategias diferentes para almacenar las traducciones. Vamos a utilizar el formato ["XLIFF"](http://en.wikipedia.org/wiki/XLIFF), que es un estándar y el más flexible. También es el utilizado por el admin generator y demás symfony plugins.
 
->**NOTA**
+>**NOTE**
 >Oros Catálogos son `gettext`, `MySQL`, y `SQLite`. Como siempre, echa
 >una mirada a la [i18n API](http://www.symfony-project.org/api/1_2/i18n) para
 >más detalles.
@@ -449,8 +442,7 @@ En lugar de crear el catálogo de archivos a mano, utiliza la tarea de serie `i1
 
     $ php symfony i18n:extract frontend fr --auto-save
 
-La tarea `i18n:extract` encuentra todas las cadenas que deben traducirse en `fr` en la aplicación `frontend` y crea o actualiza el correspondiente catálogo. La opción `--auto-save` guarda las nuevas cadenas de en el catálogo.
-También puedes utilizar la opción `--auto-delete` para eliminar automáticamente las cadenas que ya no existen.
+La tarea `i18n:extract` encuentra todas las cadenas que deben traducirse en `fr` en la aplicación `frontend` y crea o actualiza el correspondiente catálogo. La opción `--auto-save` guarda las nuevas cadenas de en el catálogo. También puedes utilizar la opción `--auto-delete` para eliminar automáticamente las cadenas que ya no existen.
 
 En nuestro caso, rellena el archivo que hemos creado:
 
@@ -519,7 +511,8 @@ Cada traducción es administrada por una etiqueta `trans-unit` que tiene un úni
     </xliff>
 
 >**TIP**
->Como XLIFF es un formato estándar, una gran cantidad de herramientas existentes facilitan el proceso de traducción.
+>Como XLIFF es un formato estándar, una gran cantidad de herramientas existentes facilitan 
+>el proceso de traducción.
 >[Open Language Tools](https://open-language-tools.dev.java.net/) es
 >un proyecto Java Open-Source con un editor integrado XLIFF.
 
@@ -549,8 +542,7 @@ El número de puestos de trabajo es una variable que debe ser utilizada para la 
       <?php echo __('and %count% more...', array('%count%' => link_to($count, 'category', $category))) ?>
     </div>
 
-La cadena a traducir es ahora "and %count% more...", y el `%count%`
-es la variable que será sustituido por el número real en tiempo de ejecución, gracias a el valor dado como segundo argumento al helper `__()`.
+La cadena a traducir es ahora "and %count% more...", y el `%count%` es la variable que será sustituido por el número real en tiempo de ejecución, gracias a el valor dado como segundo argumento al helper `__()`.
 
 Añadir la nueva cadena manualmente insertando una etiqueta `trans-unit` en el archivo `messages.xml`, o usa la tarea `i18n:extract` para actualizar automáticamente el archivo:
 
@@ -566,7 +558,7 @@ Después de ejecutar la tarea, abre el archivo XLIFF para añadir la traducción
 
 El único requisito en la tradución de la cadena es utilizar el contenedor/variable `%count%` en algún lugar.
 
-Algunas otras cadenas son aún más complejas ya que implican plurales. Según algunos números, la frases cambian, pero no necesariamente del mismo modo para todos los idiomas. Algunos idiomas tienen reglas gramaticales muy complejas para los plurales, como el Polaco o el Ruso.
+Algunas otras cadenas son aún más complejas ya que implican plurales. Según algunoss números, la frases cambian, pero no necesariamente del mismo modo para todos los idiomas. Algunos idiomas tienen reglas gramaticales muy complejas para los plurales, como el Polaco o el Ruso.
 
 En la página de categoría, el número de puestos de trabajo en la categoría actual se muestra:
 
@@ -608,16 +600,16 @@ Traducir la cadena es similar a otras cadenas de mensajes:
     [xml]
     <trans-unit id="6">
       <source>[0]No job in this category|[1]One job in this category|(1,+Inf]%count% jobs in this category</source>
-      <target>[0]Aucune annonce dans cette categorie|[1]Une annonce dans cette categorie|(1,+Inf]%count% annonces dans cette categorie</target>
+      <target>[0]Aucune annonce dans cette catÃ©gorie|[1]Une annonce dans cette catÃ©gorie|(1,+Inf]%count% annonces dans cette catÃ©gorie</target>
     </trans-unit>
 
 Ahora que sabes cómo internacionalizar todo tipo de cadenas, tomate un tiempo para agregar una llamada al `__()` para todas las plantillas de la aplicación frontend. No vamos a internacionalizar la aplicación backend.
 
-### Formularioss
+### Formularios
 
 Las clases form contienen muchas cadenas que deben ser traducidas, como etiquetas, mensajes de error y mensajes de ayuda. Todas estas cadenas son automáticamente internacionalizadas por symfony, por lo que sólo tendrá que proporcionar las traducciones en los archivos XLIFF.
 
->**NOTA**
+>**NOTE**
 >Lamentablemente, la tarea `i18n:extract` aún no analiza las clases form para
 >cadenas sin traducir.
 
@@ -690,7 +682,6 @@ También tenemos que qrreglar el método `getForSlug()` en `JobeetCategoryPeer`:
       $criteria = new Criteria();
       $criteria->addJoin(JobeetCategoryI18nPeer::ID, self::ID);
       $criteria->add(JobeetCategoryI18nPeer::CULTURE, 'en');
-
       $criteria->add(JobeetCategoryI18nPeer::SLUG, $slug);
 
       return self::doSelectOne($criteria);
@@ -705,18 +696,13 @@ También tenemos que qrreglar el método `getForSlug()` en `JobeetCategoryPeer`:
         I18n:
           fields: [name]
           actAs:
-            Sluggable:
-              fields: [name]
-              uniqueBy: [lang, name]
+            Sluggable: { fields: [name], uniqueBy: [lang, name] }
       columns:
-        name:
-          type: string(255)
-          notnull:  true
+        name: { type: string(255), notnull: true }
 
-Al encender el comportamiento `I18n`, un modelo llamado `JobeetCategoryTranslation` 
-se creará automáticamente y los especificos `campos` se trasladarán a ese modelo.
+Al encender el comportamiento `I18n`, un modelo llamado `JobeetCategoryTranslation` se creará automáticamente y los especificos `campos` se trasladarán a ese modelo.
 
-Nota que simplemente volvimos sobre el comportamiento `I18n` y movimos el comportamiento `Sluggable` para ser adjuntado al modelo `JobeetCategoryTranslation` que se crea automáticamente. La opción  `uniqueBy` le dice al comportamiento `Sluggable` campos que determinan si una slug es único o no. En este caso, cada slug debe ser único para cada par `lang` y `name`.
+Nota que simplemente volvimos sobre el comportamiento `I18n` y movimos el comportamiento `Sluggable` para ser adjuntado al modelo `JobeetCategoryTranslation`  que se crea automáticamente. La opción  `uniqueBy` le dice al comportamiento `Sluggable` campos que determinan si una slug es único o no. En este caso, cada slug debe ser único para cada par `lang` y `name`.
 
 Y actualiza los archivos de datos para las categorías:
 
@@ -861,6 +847,7 @@ vamos a crear un método que se encargará de la recuperación del objeto:
         return self::doSelectOne($criteria);
       }
 </propel>
+
 <doctrine>
 Puesto que ya sobreescribimos el `findOneBySlug()` vamos a refactorizar un poco más estos métodos para que pueden ser compartidos. Vamos a crear un nuevo `findOneBySlugAndCulture()`
 y `doSelectForSlug()` y cambiar el `findOneBySlug()` para simplemente usar el `findOneBySlugAndCulture()`.
@@ -885,7 +872,10 @@ y `doSelectForSlug()` y cambiar el `findOneBySlug()` para simplemente usar el `f
     {
       return $this->findOneBySlugAndCulture($slug, 'en');
     }
+
 </doctrine>
+    // ...
+  }
 
 A continuación, utiliza la opción `method` para decirle a la ruta `category` que use el método 
 `doSelectForSlug()` para recuperar el objeto:
@@ -899,6 +889,10 @@ A continuación, utiliza la opción `method` para decirle a la ruta `category` q
       options: { model: JobeetCategory, type: object, method: doSelectForSlug }
       requirements:
         sf_format: (?:html|atom)
+
+Necsesitamos recargar los datos para regenerar los slugs correctos para las categoríaes:
+
+    $ php symfony propel:data-load
 
 Ahora la ruta `category` se encuentra internacionalizado y la URL de una categoría incluye las traducciones del slug:
 
@@ -918,7 +912,7 @@ Para el backend, queremos que las traducciones de el francés y el Inglés sean 
 
 ![Backend categories](http://www.symfony-project.org/images/jobeet/1_2/19/backend_categories.png)
 
-Invluir un formulario i18n se puede hacer mediante el uso del método  `embedI18N()`:
+Incluir un formulario i18n se puede hacer mediante el uso del método  `embedI18N()`:
 
     [php]
     // lib/form/JobeetCategoryForm.class.php
@@ -930,7 +924,10 @@ Invluir un formulario i18n se puede hacer mediante el uso del método  `embedI18
         unset($this['jobeet_category_affiliate_list']);
 </propel>
 <doctrine>
-        unset($this['jobeet_affiliates_list'], $this['created_at'], $this['updated_at']);
+        unset(
+          $this['jobeet_affiliates_list'],
+          $this['created_at'], $this['updated_at']
+        );
 </doctrine>
 
         $this->embedI18n(array('en', 'fr'));
@@ -979,7 +976,7 @@ Ahora puedes lanzar todas las pruebas para comprobar que están funcionando bien
 
     $ php symfony test:all
 
->**NOTA**
+>**NOTE**
 >Cuando hemos desarrollado la interfaz de backend para Jobeet, no hemos escrito
 >pruebas funcionales. Pero cada vez que creas un módulo con el comando de linea symfony
 >symfony también generan las pruebas. Estás son seguras para eliminarlas.
@@ -1035,5 +1032,13 @@ Internacionalización y localización son clases de first-class en symfony.
 Dar un sitio web localizado para tus usuarios es muy fácil con lo que symfony da con todas las herramientas básicas e incluso le da la línea de comandos para realizar tareas rápidamente.
 
 Preparate para un especial tutorial de mañana puesto que se va a mover un montón de archivos y la exploración en torno a un enfoque diferente para la organización de un proyecto symfony.
+
+Feedback
+--------
+
+>**Tip**
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
+>no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
 
 __ORM__
