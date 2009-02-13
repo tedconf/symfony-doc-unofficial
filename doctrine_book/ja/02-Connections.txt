@@ -1,0 +1,261 @@
+2章 - 接続
+===========
+
+## 導入
+
+この章では複数の接続の設定する、モデルをバインドする、活動に関連したデータベースと他の接続の作成と削除の方法など、Doctrineの接続についていくつか説明します。
+
+デフォルトの`config/databases.yml`は次のようになります。
+
+    all:
+      propel:
+        class:      sfPropelDatabase
+        param:
+          dsn:      mysql:host=localhost;dbname=dbname
+          username: user
+
+PropelとDoctrineの唯一の違いは`sfPropelDatabase`の代わりに`sfDoctrineDatabase`で接続名はpropelの代わりにdoctrineでなければならないことです。
+DoctrineとPropelの両方はPDO(PHP Data Objects)をデータベース抽象化レイヤーとして使います。
+
+>**NOTE**
+>Propelは`propel`という名前の接続を少なくとも1つ必要ですが、Doctrineは`doctrine`という名前の接続を必要としないので好きな名前を使うことができます。
+
+次のように`configure:database`タスクで`config/databases.yml`の中の接続を設定できます。
+
+    $ ./symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=dbname" user secret
+
+次のような新しい接続の設定を見ることになります:
+
+    doctrine:
+      class: sfDoctrineDatabase
+      param:
+        dsn: 'mysql:host=localhost;dbname=dbname'
+        username: user
+        password: secret
+
+>**NOTE**
+>sfPropelPluginを無効にすれば`config/databases.yml`のpropelへの参照を完全に削除する必要があります。
+
+## サポートされるドライバ
+
+DoctrineはPDOがサポートするすべてのドライバをサポートします。PHPにおいてPDOと使いたいPDO_* ドライバの両方をコンパイルしなければなりません。PDOと連携するデータベースの一覧は次の通りです。
+
+| 名前              | 説明                                         |
+|-------------------|----------------------------------------------|
+| MS SQL Server     | Microsoft SQL ServerとSybase関数 (PDO_DBLIB) |
+| Firebird/Interbase| Firebird/Interbase関数 (PDO_FIREBIRD)        |
+| IBM               | IBM関数 (PDO_IBM)                            |
+| Informix          | Informix関数 (PDO_INFORMIX)                  |
+| MySQL             | MySQL関数 (PDO_MYSQL)                        |
+| Oracle            | Oracle関数 (PDO_OCI)                         |
+| ODBC and DB2      | ODBCとDB2関数 (PDO_ODBC)                     |
+| PostgreSQL        | PostgreSQL関数 (PDO_PGSQL)                   |
+| SQLite            | SQLite関数 (PDO_SQLITE)                      |
+
+>**NOTE**
+>PDOの詳細は [http://www.php.net/pdo](http://www.php.net/pdo) で読むことができます。
+
+## データソース名(DSN)
+
+DoctrineはDSN(Data Source Name)の情報を指定する方法を2つ提供します。DoctrineスタイルのDSNもしくはネイティブのPDOスタイルの両方を利用できます。
+
+### Doctrineスタイル
+
+DoctrineはPEARのMDB2パッケージを参考にしたDSN構文を持ちます。
+
+    all:
+      doctrine:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          driver://username:password@host/database_name
+
+### PDOスタイル
+
+PDO構文でもDSN情報を指定できます。
+
+    all:
+      doctrine:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          driver:dbname=database_name;host=localhost
+          username:     username
+          password:     password
+
+>**TIP**
+>PDOスタイルの構文を利用することでより優れた柔軟性とPDOへの接続に関する非標準の情報を指定できます。例えば、接続する際に非標準のunix_socketのパスもしくはポートを指定するとき、PDO構文で指定すればより柔軟に対応できます。`configure:database`コマンドはPDOスタイルでのみ動作します。
+
+## データベースからインポートする
+
+Doctrineは既存のデータベースから`config/doctrine/schema.yml`スキーマファイルを生成する機能を持ちます。インポートしたいデータベースに対してDoctrineの接続を設定して次のコマンドを走らせるだけです。
+
+>**NOTE**
+>これはPropelスキーマをDoctrineのものに変換する良い方法です。Propelを利用してデータベースを作成し、Doctrineを利用して作成されたデータベースからスキーマを生成します。
+
+    $ ./symfony doctrine:build-schema
+    >> doctrine  generating yaml schema from database
+
+`config/doctrine/schema.yml` の中を見るとデータベースに関するYAML形式の情報が見つかります。この例ではユーザーテーブルが1つあります。
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+上記のMySQLのテーブルは`config/doctrine/schema.yml`の中で次のようなYAML形式のスキーマを生成します。
+
+    [yml]
+    User:
+      tableName: user
+      columns:
+        id:
+          type: integer(8)
+          primary: true
+          autoincrement: true
+        username: string(255)
+        password: string(255)
+
+## multiple 接続
+
+Doctrineはmultiple接続をする機能を提供します。クエリが適切な接続の上で実行されるようにモデルを接続に簡単にバインドできます。
+最初に`configure:database`コマンドでmultiple接続を追加する必要があります。
+
+    $ ./symfony configure:database --name=master --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" user secret
+    $ ./symfony configure:database --name=client --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" user secret
+
+作成したオリジナルの接続を削除すると`config/databases.yml`は次のようになります。
+
+    all:
+      master:
+        class: sfDoctrineDatabase
+        param:
+          dsn: 'mysql:host=localhost;dbname=master'
+          username: user
+          password: secret
+      client:
+        class: sfDoctrineDatabase
+        param:
+          dsn: 'mysql:host=localhost;dbname=client'
+          username: user
+          password: secret
+
+マスターデータベースにバインドしたい`Client`モデルがあるとします。次のように`config/doctrine/schema.yml`にYAMLコードを設定することで、モデルを直に定義できます。
+
+    Client:
+      connection: master
+      columns:
+        name: string(255)
+        username: string(255)
+        password: string(255)
+
+それぞれの`Client`は`Stores`を持ちますがこれらは`Clients`から個別のデータベースに保存されます。
+
+    Store:
+      connection: client
+      attributes:
+        export: tables
+      columns:
+        name: string(255)
+        description: string(500)
+        client_id: integer
+      relations:
+        Client:
+         foreignAlias: Stores
+
+>**Note**
+>テーブルは個別のデータベースの中にあるのでデータは遅延ロードのみできます。現在DoctrineはデータベースをまたがったテーブルをjoinするSQLの生成をサポートしません。また、tablesに設定されたexport属性に注意して下さい。これはcreate table文だけをエクスポートして外部キーの制約はエクスポートしないようにDoctrineに指示します。
+
+## 接続属性
+
+sfDoctrinePluginによって次のように`config/databases.yml`ファイルの中で接続属性を直に指定できます。
+
+      doctrine:
+        class: sfDoctrineDatabase
+        param:
+          dsn: 'mysql:host=localhost;dbname=dbname'
+          username: user
+          password: secret
+          attributes:
+            use_dql_callbacks: true
+
+ここで指定した属性は接続が作成されたときに`Doctrine_Connection`インスタンスに設定されます。
+
+>**NOTE**
+>Doctrineの属性は機能の設定と制御のためにあります。属性の詳細は [Doctrineの公式ドキュメント](http://www.doctrine-project.com/documentation/manual/1_0?chapter=configuration)で読むことができます。
+
+## すべてをビルドする
+
+定義した接続とスキーマは次のコマンドですべてビルドできます。
+
+    $ ./symfony doctrine:build-all-reload
+                                                       
+      This command will remove all data in your database.  
+      Are you sure you want to proceed? (y/N)              
+                                                       
+    y
+    >> doctrine  dropping databases
+    >> doctrine  creating databases
+    >> doctrine  generating model classes
+    >> doctrine  generating sql for models
+    >> doctrine  generating form classes
+    >> doctrine  generating filter form classes
+    >> doctrine  created tables successfully
+    >> doctrine  loading data fixtures from "/Us...ymfony12doctrine/data/fixtures"
+
+上述のコマンドの実行は次のコマンドを個別に実行することと同じです。
+
+    $ ./symfony doctrine:drop-db
+                                                       
+      This command will remove all data in your database.  
+      Are you sure you want to proceed? (y/N)              
+                                                       
+    y
+    >> doctrine  dropping databases
+    $ ./symfony doctrine:build-db
+    >> doctrine  creating databases
+    $ ./symfony doctrine:build-model
+    >> doctrine  generating model classes
+    $ ./symfony doctrine:build-sql
+    >> doctrine  generating sql for models
+    $ ./symfony doctrine:build-form
+    >> doctrine  generating form classes
+    $ ./symfony doctrine:build-filters
+    >> doctrine  generating filter form classes
+    $ ./symfony doctrine:insert-sql
+    >> doctrine  created tables successfully
+    $ ./symfony doctrine:data-load
+    >> doctrine  loading data fixtures from "/Us...ymfony12doctrine/data/fixtures"
+
+>**Note**
+>YAMLスキーマファイルから生成されたモデルは`lib/model/doctrine and lib/model/doctrine/base`で見ることができます。ベースディレクトリの中にモデルが存在しないとき、モデルをビルドするたびに生成フォルダの中のファイルは書き換えられます。`lib/model/doctrine`の中のクラスを編集することでモデルをカスタマイズできます。
+
+`lib/model/doctrine/base/BaseClient.class.php`の内容は次のようになります。
+
+    [php]
+    <?php
+    // Connection Component Binding
+    Doctrine_Manager::getInstance()->bindComponent('Client', 'master');
+
+    /**
+     * This class has been auto-generated by the Doctrine ORM Framework
+     */
+    abstract class BaseClient extends sfDoctrineRecord
+    {
+      public function setTableDefinition()
+      {
+        $this->setTableName('client');
+        $this->hasColumn('name', 'string', 255, array('type' => 'string', 'length' => '255'));
+        $this->hasColumn('username', 'string', 255, array('type' => 'string', 'length' => '255'));
+        $this->hasColumn('password', 'string', 255, array('type' => 'string', 'length' => '255'));
+      }
+
+      public function setUp()
+      {
+        $this->hasMany('Store as Stores', array('local' => 'id',
+                                                'foreign' => 'client_id'));
+      }
+    }
+
+>**TIP**
+>開発の最中に`./symfony doctrine:build-all-reload-test-all`コマンドを走らせることはcommon practiceです。このコマンドによって環境全体がリビルドされテストスイートのすべてが実施されます。これは新しい回帰が起きていないことを保証するために新しいコードをコミットする前に実行する前に使う素晴らしいコマンドです。
+
+-
+
+>**TIP**
+>接続に関する詳細な情報は[Doctrineのマニュアル](http://www.doctrine-project.org/documentation/manual/1_0/en/connection-management)で読むことができます。
