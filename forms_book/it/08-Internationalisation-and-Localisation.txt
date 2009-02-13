@@ -1,18 +1,27 @@
 Capitolo 8 - Internazionalizzazione e localizzazione
 =================================================
 
-Molti popolari applicativi web sono disponibili in diverse lingue e talvolta sono anche personalizzati in base alla cultura dell'utente. Symfony viene fornito con un sistema che facilita la gestione di queste caratteristiche (vedere il capitolo "[I18n And L10n](http://www.symfony-project.org/book/1_1/13-I18n-and-L10n)" (`http://www.symfony-project.org/book/1_1/13-I18n-and-L10n`) del libro di symfony).
+Molti popolari applicativi web sono disponibili in diverse lingue e talvolta
+sono anche personalizzati in base alla cultura dell'utente. Symfony viene
+fornito con un sistema che facilita la gestione di queste caratteristiche
+(vedere il capitolo "[I18n e L10n](http://trac.symfony-project.org/wiki/Documentation/it_IT/book/1.1/13-I18n-and-L10n)" (`http://trac.symfony-project.org/wiki/Documentation/it_IT/book/1.1/13-I18n-and-L10n`) del libro di symfony).
 
-Il framework dei form presenta anche un supporto interno per la traduzione dell'interfaccia utente e provvede un modo semplice per gestire oggetti da internazionalizzare.
+Il framework dei form presenta anche un supporto interno per la traduzione
+dell'interfaccia utente e fornisce un modo semplice per gestire oggetti da
+internazionalizzare.
 
-Internazionalizzazione del form
--------------------------
+Internazionalizzazione di form
+------------------------------
 
-Un form di symfony è internazionalizzabile di default. La traduzione di **labels**, **help texts**, e **errors messages** può essere fatta modificando i file della traduzione, siano essi in `XLIFF`, `gettext`, o qualsiasi altro formato supportato da symfony.
+Un form di symfony è internazionalizzabile di default. La traduzione di
+**label**, **testi di aiuto**, e **messaggi di errore** può essere fatta
+modificando i file della traduzione, siano essi in `XLIFF`, `gettext`, o
+qualsiasi altro formato supportato da symfony.
 
-Listato 8-1 mostra il form contact che abbiamo sviluppato nei precedenti capitoli.
+Il Listato 8-1 mostra il form di contatto che abbiamo sviluppato nei
+precedenti capitoli.
 
-Listato 8-1 - Form Contact
+Listato 8-1 - Form di Contatto
 
     [php]
     class ContactForm extends sfForm
@@ -20,22 +29,23 @@ Listato 8-1 - Form Contact
       public function configure()
       {
         $this->setWidgets(array(
-          'name'  => new sfWidgetFormInput(),    // the default label is "Name"
-          'email' => new sfWidgetFormInput(),    // the default label is "Email"
-          'body'  => new sfWidgetFormTextarea(), // the default label is "Body"
+          'name'  => new sfWidgetFormInput(),    // la label di default è "Name"
+          'email' => new sfWidgetFormInput(),    // la label di default è "Email"
+          'body'  => new sfWidgetFormTextarea(), // la label di default è "Body"
         ));
 
-        // Change the email widget label
+        // Cambia la label del widget email
         $this->widgetSchema->setLabel('email', 'Email address');
       }
     }
 
-Ora possiamo definire le etichette per le traduzioni nel file `XLIFF` come mostrato nel listato 8-2 per la lingua francese.
+Ora possiamo definire le traduzioni delle label nel file `XLIFF`,
+come mostrato nel Listato 8-2 per la lingua francese.
 
 Listato 8-2 - File traduzione XLIFF
 
     [xml]
-    // apps/frontend/i18n/messages.fr.xml
+    <!-- apps/frontend/i18n/messages.fr.xml -->
     <?xml version="1.0" ?>
     <xliff version="1.0">
       <file original="global" source-language="en" datatype="plaintext">
@@ -58,7 +68,11 @@ Listato 8-2 - File traduzione XLIFF
 
 ### Specificare il catalogo da usare per le traduzioni
 
-Se usate la caratteristica catalogo del framework i18n di symfony (`http://www.symfony-project.org/book/1_1/13-I18n-and-L10n#Managing%20Dictionaries`), potete legare un form a una dato catalogo. Nel listato 8-3, associamo il form `ContactForm` con il catalogo `contact_form`. In questo modo, gli elementi da tradurre del form saranno cercati nel file `contact_form.fr.xml`.
+Se usate la caratteristica catalogo del framework i18n di symfony
+(`http://trac.symfony-project.org/wiki/Documentation/it_IT/book/1.1/13-I18n-and-L10n`),
+potete legare un form a una dato catalogo. Nel Listato 8-3, associamo il
+form `ContactForm` con il catalogo `contact_form`. In questo modo, gli
+elementi da tradurre del form saranno cercati nel file `contact_form.fr.xml`.
 
 Listato 8-3 - Personalizzazione del catalogo di traduzione
 
@@ -74,13 +88,20 @@ Listato 8-3 - Personalizzazione del catalogo di traduzione
     }
 
 >**Note**
->L'utilizzo dei cataloghi consente una migliore organizzazione delle traduzioni, ad esempio utilizzando un file per ciascun form.
+>L'utilizzo dei cataloghi consente una migliore organizzazione delle
+>traduzioni, ad esempio utilizzando un file per ciascun form.
 
 ### Internazionalizzazione dei messaggi di errore
 
-A volte, i messaggi di errore incorporano il valore inviato dall'utente (per esempio, "L'indirizzo email user@domain non è valido."). Abbiamo già visto nel Capitolo 2 che questo può essere fatto facilmente nella classe del form definendo messaggi di errore personalizzati e usando riferimenti ai valori inviati dall'utente. Questi riferimenti seguono il pattern `%parameter_name%`.
+A volte, i messaggi di errore incorporano il valore inviato dall'utente
+(per esempio, "L'indirizzo email user@domain non è valido."). Abbiamo già
+visto nel Capitolo 2 che questo può essere fatto facilmente nella classe
+del form, definendo messaggi di errore personalizzati e usando riferimenti
+ai valori inviati dall'utente. Questi riferimenti seguono lo schema
+`%parameter_name%`.
 
-Il listato 8-4 mostra come utilizzare questo principio con il campo `name` del form contact.
+Il Listato 8-4 mostra come utilizzare questo principio con il campo
+`name` del form di contatto.
 
 Listato 8-4 - Internazionalizzazione dei messaggi di errore
 
@@ -100,7 +121,8 @@ Listato 8-4 - Internazionalizzazione dei messaggi di errore
       }
     }
 
-Ora possiamo tradurre questi messaggi di errore modificando il file XLIFF come mostrato nel listato 8-5.
+Ora possiamo tradurre questi messaggi di errore, modificando il file
+XLIFF, come mostrato nel Listato 8-5.
 
 Listato 8-5 - File di traduzione XLIFF per i messaggi di errore
 
@@ -115,22 +137,30 @@ Listato 8-5 - File di traduzione XLIFF per i messaggi di errore
     </trans-unit>
 
 Personalizzazione dell'oggetto traduzione
----------------------------------------
+-----------------------------------------
 
-Se volete utilizzare il framework dei form di symfony senza il framework i18n, dovete fornire il vostro *oggetto traduzione*.
+Se volete utilizzare il framework dei form di symfony senza il framework
+i18n, dovete fornire il vostro *oggetto traduzione*.
 
-Un oggetto traduzione è semplicemente un *callable PHP*. Quest'ultimo, può essere una delle seguenti tre cose:
+Un oggetto traduzione è semplicemente un *callable PHP*. Quest'ultimo
+può essere una delle seguenti tre cose:
 
   * una stringa rappresentante un nome funzione, come `my_function`
 
-  * un array con riferimento ad una istanza di una classe e al nome di uno dei suoi metodi, come `array($anObject, 'oneOfItsMethodsName')`
+  * un array con riferimento ad una istanza di una classe e al nome di
+    uno dei suoi metodi, come `array($anObject, 'oneOfItsMethodsName')`
 
-  * una istanza `sfCallable`. Questa classe incapsula un PHP callable in un modo consistente.
+  * una istanza `sfCallable`. Questa classe incapsula un PHP callable
+    in un modo coerente.
 
 >**Note**
->Un PHP callable è un riferimento a una funzione o all'istanza di un metodo. E' anche una variabile PHP che restituisce `true` quando passata ad una funzione `is_callable()`.
+>Un PHP callable è un riferimento a una funzione o all'istanza di un
+>metodo. È anche una variabile PHP che restituisce `true` quando
+>passata ad una funzione `is_callable()`.
 
-Facciamo un esempio. Dovete migrare un progetto che ha già il suo sistema di internazionalizzazione, fornito dalla classe mostrata nel listato 8-6.
+Facciamo un esempio. Dovete migrare un progetto che ha già il suo
+sistema di internazionalizzazione, fornito dalla classe mostrata nel
+Listato 8-6.
 
 Listato 8-6 - Classe I18N personalizzata
 
@@ -161,14 +191,16 @@ Listato 8-6 - Classe I18N personalizzata
     $myI18n = new myI18n();
 
     $_SESSION['culture'] = 'en';
-    echo $myI18n->translateText('Subject'); // => display "Subject"
+    echo $myI18n->translateText('Subject'); // => mostra "Subject"
 
     $_SESSION['culture'] = 'fr';
-    echo $myI18n->translateText('Subject'); // => display "Sujet"
+    echo $myI18n->translateText('Subject'); // => mostra "Sujet"
 
-Ciascun form può definire un proprio callable, il quale gestirà l'internazionalizzazione degli elementi del form, come mostrato nel Listato 8-7.
+Ciascun form può definire un proprio callable, il quale gestirà
+l'internazionalizzazione degli elementi del form, come mostrato nel
+Listato 8-7.
 
-Listato 8-7 - Overriding per un form del metodo di internazionalizzazione
+Listato 8-7 - Override per un form del metodo di internazionalizzazione
 
     [php]
     class ContactForm extends sfForm
@@ -186,11 +218,14 @@ La traduzione con callable può prendere fino a tre argomenti :
 
   * il **testo da tradurre**;
 
-  * un **array associativo** di argomenti da sostituire all'interno del testo originale, tipicamente per sostituire parametri dinamici come abbiamo visto precedentemente in questo capitolo;
+  * un **array associativo** di argomenti da sostituire all'interno
+    del testo originale, tipicamente per sostituire parametri dinamici
+    come abbiamo visto precedentemente in questo capitolo;
 
   * un **nome catalogo** da utilizzare quando traduciamo il testo.
 
-Ecco la chiamata usata dal metodo `sfFormWidgetSchemaFormatter::translate()` per chiamare la traduzione callable:
+Ecco la chiamata usata dal metodo `sfFormWidgetSchemaFormatter::translate()`
+per chiamare la traduzione callable:
 
     [php]
     return call_user_func(self::$translationCallable, $subject, $parameters, $catalogue);
@@ -230,15 +265,23 @@ Questa è la versione aggiornata della classe `MyI18n` che supporta questi argom
     }
 
 >**SIDEBAR**
->Perchè dobbiamo usare `sfWidgetFormSchemaFormatter` per personalizzare il processo di traduzione?
+>Perché dobbiamo usare `sfWidgetFormSchemaFormatter` per personalizzare
+>il processo di traduzione?
 >
->Come abbiamo visto nel Capitolo 2, il form framework è basato su una architettura MVC e la classe `sfWidgetFormSchemaFormatter`  appartiene allo strato della Vista. Questa classe è responsabile per tutte le visualizzazioni di testo, così può intercettare tutte le stringhe di testo e tradurle al volo.
+>Come abbiamo visto nel Capitolo 2, il framework dei form è basato su una
+>architettura MVC e la classe `sfWidgetFormSchemaFormatter` appartiene allo
+>livello della Vista. Questa classe è responsabile per tutte le
+>visualizzazioni di testo, così può intercettare tutte le stringhe di
+>testo e tradurle al volo.
 
-Internazionalizzazione degli oggetti di Propel
------------------------------------
+Internazionalizzazione degli oggetti Propel
+-------------------------------------------
 
-Il framework dei form framework ha il supporto per gli oggetti di Propel che sono internazionalizzati. Prendiamo un modello internazionalizzato di esempio per mostrare il modo in cui funziona:
+Il framework dei form ha il supporto per gli oggetti Propel, che sono
+internazionalizzati. Prendiamo un modello internazionalizzato di esempio
+per mostrare il modo in cui funziona:
 
+    [yml]
     propel:
       article:
         id:
@@ -248,7 +291,8 @@ Il framework dei form framework ha il supporto per gli oggetti di Propel che son
         title:      varchar(255)
         content:    longvarchar
 
-Potete generare le classi di Propel e le relative classi dei form con i seguenti comandi:
+Potete generare le classi di Propel e le relative classi dei form con
+i seguenti comandi:
 
     $ php symfony build:model
     $ php symfony build:forms
@@ -266,7 +310,9 @@ Questi comandi generano diversi file nel progetto symfony:
         ArticleI18n.php
         ArticleI18nPeer.php
 
-Il listato 8-8 mostra come configurare `ArticleForm` in modo che dia la possibilità di modificare la versione Francese e Inglese di un articolo nello stesso form.
+Il Listato 8-8 mostra come configurare `ArticleForm` in modo che dia
+la possibilità di modificare la versione Francese e Inglese di un
+articolo nello stesso form.
 
 Listato 8-8 - Form I18n per un oggetto di Propel internazionalizzato
 
@@ -279,7 +325,9 @@ Listato 8-8 - Form I18n per un oggetto di Propel internazionalizzato
       }
     }
 
-Potete anche personalizzare le etichette della lingua di un form aggiungendo il seguente codice al metodo `configure()` come mostrato nel Listato 8-9.
+Potete anche personalizzare le etichette della lingua di un form 
+aggiungendo il seguente codice al metodo `configure()`, come mostrato
+nel Listato 8-9.
 
 Listato 8-9 - Personalizzazione delle etichette di lingua
 
@@ -287,16 +335,19 @@ Listato 8-9 - Personalizzazione delle etichette di lingua
     $this->widgetSchema->setLabel('en', 'English');
     $this->widgetSchema->setLabel('fr', 'French');
 
-Figure 8-1 - Form di Propel internazionalizzato
+Figure 8-1 - Form Propel internazionalizzato
 
-![Internationalized Propel Form](/images/forms_book/en/08_01.png "Internationalized Propel Form")
+![Form Propel internazionalizzato](/images/forms_book/en/08_01.png "Form Propel internazionalizzato")
 
-Questo è tutto quello che c'è da fare. Quando chiamate il metodo `save()` dell'oggetto del form, l'oggetto Proper associato e tutti gli oggetti i18n sono salvati automaticamente.
+Questo è tutto quello che c'è da fare. Quando chiamate il metodo
+`save()` dell'oggetto del form, l'oggetto Propel associato e tutti
+gli oggetti i18n sono salvati automaticamente.
 
 >**SIDEBAR**
 >Come passare la cultura dell'utente a un Form?
 >
->Se volete associare un form alla corrente cultura dell'utente, potete passare il parametro opzionale `culture` quando create il form:
+>Se volete associare un form alla corrente cultura dell'utente, potete
+>passare il parametro opzionale `culture` quando create il form:
 >
 >     [php]
 >     class articleActions extends sfActions
@@ -312,7 +363,8 @@ Questo è tutto quello che c'è da fare. Quando chiamate il metodo `save()` dell
 >       }
 >     }
 >
->Nella classe `ArticleForm`, ora potete recuperare il valore dall'array `options`:
+>Nella classe `ArticleForm`, ora potete recuperare il valore dall'array
+>`options`:
 >
 >     [php]
 >     class ArticleForm extends BaseArticleForm
@@ -328,44 +380,50 @@ Questo è tutto quello che c'è da fare. Quando chiamate il metodo `save()` dell
 >       }
 >     }
 
-Widgets localizzati
------------------
+Widget localizzati
+------------------
 
-Il framework dei form di symfony è preinstallato con alcuni widgets che sono predisposti per l'utilizzo con i18n. Possono essere usati per localizzare alcuni widgets secondo la cultura dell'utente.
+Il framework dei form di symfony è preinstallato con alcuni widget che
+sono predisposti per l'utilizzo con i18n. Possono essere usati per
+localizzare alcuni widget secondo la cultura dell'utente.
 
 ### Selettori delle date
 
-Qui ci sono i widgets disponibili per localizzare una data:
+Qui ci sono i widget disponibili per localizzare una data:
 
-  * Il widget `sfWidgetFormI18nDate` visualizza gli input per una data (giorno, mese, anno):
+  * Il widget `sfWidgetFormI18nDate` visualizza gli input per una
+    data (giorno, mese, anno):
 
         [php]
         $this->widgetSchema['published_on'] = new sfWidgetFormI18nDate(array('culture' => 'fr'));
 
-    Potete anche definire il formato di visualizzazione del mese, grazie all'opzione `month_format` che può prendere tre differenti valori:
+    Potete anche definire il formato di visualizzazione del mese, grazie
+    all'opzione `month_format` che accetta tre differenti valori:
 
      * `name` per mostrare il nome del mese (default)
      * `short_name` per mostrare il nome abbreviato del mese
      * `number` per mostrare il numero del mese (da 1 a 12)
 
-  * Il widget `sfWidgetFormI18nTime` visualizza gli input per un tempo (ore, minuti e secondi):
+  * Il widget `sfWidgetFormI18nTime` visualizza gli input per un orario
+    (ore, minuti e secondi):
 
         [php]
         $this->widgetSchema['published_on'] = new sfWidgetFormI18nTime(array('culture' => 'fr'));
 
-  * Il widget `sfWidgetFormI18nDateTime` visualizza gli input per data e tempo:
+  * Il widget `sfWidgetFormI18nDateTime` visualizza gli input per data e ora:
 
         [php]
         $this->widgetSchema['published_on'] = new sfWidgetFormI18nDateTime(array('culture' => 'fr'));
 
 ### Selettore del paese
 
-Il widget `sfWidgetFormI18nSelectCountry` visualizza un select box riempito con una lista di paesi. I nomi dei paesi sono tradotti nel linguaggio dato:
+Il widget `sfWidgetFormI18nSelectCountry` visualizza un select riempito
+con una lista di paesi. I nomi dei paesi sono tradotti nel linguaggio dato:
 
     [php]
     $this->widgetSchema['country'] = new sfWidgetFormI18nSelectCountry(array('culture' => 'fr'));
 
-Potete anche restringere i paesi nel select box, grazie all'opzione `countries`:
+Potete anche restringere i paesi nel select, grazie all'opzione `countries`:
 
     [php]
     $countries = array('fr', 'en', 'es', 'de', 'nl');
@@ -374,12 +432,13 @@ Potete anche restringere i paesi nel select box, grazie all'opzione `countries`:
 
 ### Selettore di cultura
 
-Il widget `sfWidgetFormI18nSelectLanguage` visualizza un select box riempito con una lista di lingue. I nomi delle lingue sono tradotti nel linguaggio dato:
+Il widget `sfWidgetFormI18nSelectLanguage` visualizza un select riempito
+con una lista di lingue. I nomi delle lingue sono tradotti nella lingua data:
 
     [php]
     $this->widgetSchema['language'] = new sfWidgetFormI18nSelectLanguage(array('culture' => 'fr'));
 
-Potete anche restringere le lingue nel select box, grazie all'opzione `languages`:
+Potete anche restringere le lingue nel select, grazie all'opzione `languages`:
 
     [php]
     $languages = array('fr', 'en', 'es', 'de', 'nl');
