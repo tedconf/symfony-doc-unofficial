@@ -1,0 +1,495 @@
+Ngày 22: Cache
+===============
+
+Hôm nay, chúng ta sẽ nói về cache. Symfony framework đã có sẵn rất nhiều loại
+cache khác nhau. Ví dụ, file cấu hình YAML đầu tiên được chuyển thành
+PHP và sau đó được cache thành file hệ thống. Chúng ta cũng đã thấy các
+module được tạo ra bởi admin generator được cache để tăng hiệu năng.
+
+Nhưng hôm nay, chúng ta sẽ nói về loại cache khác: HTML cache. Để giải quyết vấn đề hiệu năng
+cho website của mình, bạn có thể cache toàn bộ trang HTML hoặc một phần của trang.
+
+Tạo một môi trường mới
+--------------------------
+
+Mặc định, tính năng cache template của symfony được enable trong file cấu hình `settings.yml`
+cho môi trường `prod` , và tắt trong môi trường `test` và `dev`:
+
+    [yml]
+    prod:
+      .settings:
+        cache: on
+
+    dev:
+      .settings:
+        cache: off
+
+    test:
+      .settings:
+        cache: off
+
+Do chúng ta cần test tính năng cache trước khi đưa vào sản phẩm, chúng ta có thể
+kích hoạt cache cho môi trường `dev` hoặc tạo một môi trường mới.
+Như ta đã biết, một môi trường được xác định bởi tên gọi (một chuỗi), một
+front controller tương ứng, và tập các cấu hình cụ thể.
+
+Để sử dụng hệ thống cache cho Jobeet, chúng ta sẽ tạo một môi trường `cache`,
+tương tự như môi trường `prod`, nhưng sẽ có thông tin log và debug như môi trường `dev`.
+
+Tạo front controller tương ứng cho môi trường `cache` bằng cách
+copy file `dev` front controller `web/frontend_dev.php` thành
+`web/frontend_cache.php`:
+
+    [php]
+    // web/frontend_cache.php
+    if (!in_array(@$_SERVER['REMOTE_ADDR'], array('127.0.0.1', '::1')))
+    {
+      die('You are not allowed to access this file. Check '.basename(__FILE__).' for more information.');
+    }
+
+    require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
+
+    $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'cache', true);
+    sfContext::createInstance($configuration)->dispatch();
+
+Đó là tất cả những gì phải làm. Môi trường `cache` đã sẵn sàng để sử dụng. Chỉ có một sự khác biệt là tham số thứ 2 của phương thức `getApplicationConfiguration()`
+là tên của môi trường, `cache`.
+
+Bạn có thể kiểm tra môi trường `cache` từ trình duyệt bằng cách gọi front controller của nó:
+
+    http://jobeet.localhost/frontend_cache.php/
+
+>**NOTE**
+>Front controller script bắt đầu bằng một đoạn code để chắc rằng front
+>controller chỉ được gọi từ mội địa chỉ IP ở local. Sự bảo mật này để bảo vệ
+>front controller tránh bị gọi trên production servers.
+>Chúng ta sẽ nói về vấn đề này chi tiết hơn vào ngày mai.
+
+Bây giờ, môi trường `cache` thừa kế các cấu hình mặc định. Sửa file cấu hình
+`settings.yml` để thêm các cấu hình cho môi trường `cache`:
+
+    [yml]
+    # apps/frontend/config/settings.yml
+    cache:
+      .settings:
+        error_reporting: <?php echo (E_ALL | E_STRICT)."\n" ?>
+        web_debug:       on
+        cache:           on
+        etag:            off
+
+Trong những thiết lập này,tính năng symfony template cache được kích hoạt với
+`cache` setting và web debug toolbar được enable với `web_debug` setting.
+
+<propel>
+As we also want to log SQL statements, we need to change the database
+configuration. Edit `databases.yml` and add the following configuration at the
+beginning of the file:
+
+    [yml]
+    # config/databases.yml
+    cache:
+      propel:
+        class: sfPropelDatabase
+        param:
+          classname: DebugPDO
+</propel>
+
+Mặc định, tất cả các cấu hình được cache, nên bạn cần xóa cache để thiết lập có hiệu lực:
+
+    $ php symfony cc
+
+Bây giờ, nếu bạn refresh lại trình duyệt, web debug toolbar sẽ hiện ở góc trên phải của trang, như trong môi trường `dev`.
+
+Cấu hình Cache 
+---------------
+
+Symfony template cache có thể được cấu hình trong file `cache.yml`. Cấu hình mặc định cho ứng dụng nằm ở `apps/frontend/config/cache.yml`:
+
+    [yml]
+    default:
+      enabled:     off
+      with_layout: false
+      lifetime:    86400
+
+Mặc định, do tất cả các trang đều có thể chứa nội dung động, nên cache bị
+disabled ở mức global (`enabled: off`). Chúng ta không cần thay đổi thiết lập này,
+bởi vì chúng ta có thể enable cache ở từng trang cụ thể.
+
+`lifetime` setting xác định thời gian tồn tại của cache tính theo giây
+(`86400` giây tương đương với một ngày).
+
+>**TIP**
+>Bạn cũng có thể dùng các khác: enable cache ở múc global và sau đó,
+>disable nó với những trang ko dùng cache. Chọn cách nào phụ thuộc
+>vào ứng dụng của bạn.
+
+Page Cache
+----------
+
+Trang chủ có lẽ là trang được truy cập nhiều nhất của Jobeet,
+nên thay vì request dữ liệu từ database mỗi khi người dùng truy cập,
+ta có thể cache nó.
+
+Tạo một file `cache.yml` cho module `sfJobeetJob`:
+
+    [yml]
+    # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
+    index:
+      enabled:     on
+      with_layout: true
+
+>**TIP**
+>File cấu hình `cache.yml` cũng giống như bất kì file cấu hình nào khác của
+>symfony như `view.yml`. Có nghĩa là bạn có thể
+>enable cache cho toàn bộ action của một module bằng cách sử dụng từ khóa `all`.
+
+Nếu bạn refresh lại trình duyệt, bạn sẽ thấy rằng symfony đã thêm vào trang
+một box để chỉ rõ nội dung được cache:
+
+![Fresh Cache](http://www.symfony-project.org/images/jobeet/1_2/22/fresh_cache.png)
+
+Box cung cấp một vài thông tin về cache,
+như lifetime của cache, và age của nó.
+
+Nếu bạn refresh trang web lần nữa, màu của box sẽ chuyển từ xanh
+sang vàng, chỉ ra rằng nội dung được lấy từ cache:
+
+![Cache](http://www.symfony-project.org/images/jobeet/1_2/22/cache.png)
+
+Bạn cũng để ý rằng không có yêu cầu nào tới database , như
+được chỉ ra trên web debug toolbar.
+
+>**TIP**
+>Mặc dù ngôn ngữ có thể thay đổi tùy vào user, nhưng cache vẫn làm việc
+>do ngôn ngữ được nhúng vào URL.
+
+Khi một trang được cache, và nếu cache chưa có trước đó, symfony sẽ chứa
+đối tương trả về vào cache ở cuối mỗi request. Đối với các request sau đó,
+symfony sẽ lấy nội dung trả về từ cache mà không gọi controller:
+
+![Page Cache Flow](http://www.symfony-project.org/images/jobeet/1_2/22/flow_cache_page.png)
+
+Điều này đem lại sự thay đổi lớn về hiệu năng mà bạn có thể thấy thông qua các công cụ như
+[JMeter](http://jakarta.apache.org/jmeter/).
+
+>**NOTE**
+>Một request chứa `GET` parameters hoặc submit với `POST`,
+>`PUT`, hoặc `DELETE` method sẽ không được cache, trong cả trường hợp
+>đã được cấu hình.
+
+Trang đăng tuyển dụng cũng được cache:
+
+    [yml]
+    # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
+    new:
+      enabled:     on
+
+    index:
+      enabled:     on
+
+    all:
+      with_layout: true
+
+Do 2 trang có thể được cache có layout, chúng ta tạo một mục `all`
+xác định cấu hình mặc định cho tất cả action của module `sfJobeetJob`.
+
+Xóa Cache
+------------------
+
+Nếu bạn muốn xóa cache, bạn có thể sử dụng lệnh `cache:clear`:
+
+    $ php symfony cc
+
+Lệnh `cache:clear` xóa tất cả các cache nằm trong thư mục
+`cache/`. Nó cũng có lựa chọn để xóa một phần cache. Để chỉ xóa cache cho template ở môi trường `cache`, sử dụng option
+`--type` và `--env`:
+
+    $ php symfony cc --type=template --env=cache
+
+Thay vì xóa cache mỗi khi bạn có thay đổi, bạn có thể
+disable cache bằng cách thêm câu truy vấn bất kì vào URL, hoặc sử dụng nút
+"Ignore cache" ở web debug toolbar:
+
+![Web Debug Toolbar](http://www.symfony-project.org/images/jobeet/1_2/22/debug.png)
+
+Cache Action
+------------
+
+Đôi khi, bạn không thể cache toàn bộ trang, nhưng có thể cache action
+template. Nói cách khác, bạn có thể cache mọi thứ trừ toàn bộ layout.
+
+Với ứng dụng Jobeet, chúng ta không thể cache toàn bộ trang do có thanh "history job".
+
+Do đó file cấu hình cache cho module `job` được thay đổi như sau:
+
+    [yml]
+    # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
+    new:
+      enabled:     on
+
+    index:
+      enabled:     on
+
+    all:
+      with_layout: false
+
+Bằng cách chuyển `with_layout` setting thành `false`, bạn đã disable cache layout.
+
+Xóa cache:
+
+    $ php symfony cc
+
+Refresh lại trình duyệt để thấy sự khác biệt:
+
+![Action Cache](http://www.symfony-project.org/images/jobeet/1_2/22/action_cache.png)
+
+Even if the flow of the request is quite similar in the simplified diagram,
+caching without the layout is much more resource intensive.
+
+![Action Cache Flow](http://www.symfony-project.org/images/jobeet/1_2/22/flow_cache_action.png)
+
+Cache Partial và Component
+---------------------------
+
+Với các website thường xuyên thay đổi, bạn gần như không thể cache toàn bộ
+action template. Trong trường hợp này, bạn cần cấu hình cache
+ở mức chi tiết hơn. Thật may mắn là partials và components cũng có thể được cache.
+
+![Partial Cache](http://www.symfony-project.org/images/jobeet/1_2/22/partial_cache.png)
+
+Hãy cache component `language` bằng cách tạo file `cache.yml` cho module
+`sfJobeetLanguage`:
+
+    [yml]
+    # plugins/sfJobeetJob/modules/sfJobeetLanguage/config/cache.yml
+    _language:
+      enabled: on
+
+Cấu hình cache cho một partial hay component đơn giản là thêm một mục với tên của thành phần đó. Lựa chọn `with_layout` trở nên không còn tác dụng trong trường hợp này:
+
+![Partial and Component Cache Flow](http://www.symfony-project.org/images/jobeet/1_2/22/flow_cache_partial.png)
+
+>**SIDEBAR**
+>Phụ thuộc ngữ cảnh hay không?
+>
+>Cùng một component hay partial có thể được sử dụng ở nhiều template khác nhau.
+>Ví dụ, partial job `list` được sử dụng ở cả module `job` và `category`.
+>Do render theo cùng một cách, partial không phụ thuộc vào nội dung
+>nó được sử dụng và cache là giống nhau cho tất cả các template (
+>cache vẫn khác nhau với các tham số khác nhau).
+>
+>Nhưng đôi khi, một partial hay component hiển thị khác nhau, tùy vào
+>action sử dụng nó (ví dụ như một blog sidebar, nó sẽ hiển thị khác nhau
+>ở trang homepage và blog post). Trong những trường hợp này,
+>partial và component phụ thuộc ngữ cảnh, và cache phải được cấu hình
+>thiết lập `contextual` option thành `true`:
+>
+>     [yml]
+>     _sidebar:
+>       enabled:    on
+>       contextual: true
+
+Cache Form
+--------------
+
+Chứa trang đăng tuyển dụng ở cache gặp một rắc rối là nó chứa
+form. Để hiểu rõ hơn vấn đề, ta truy cập vào trange "Post a Job" từ trình duyệt để cache trang. Sau đó, xóa session cookie, và thử submit một công việc. Bạn sẽ gặp thông báo lỗi "CSRF attack":
+
+![CSRF and Cache](http://www.symfony-project.org/images/jobeet/1_2/22/csrf.png)
+
+Tại sao lại vậy? Chúng ta đã cấu hình một CSRF secret khi tạo frontend
+application, do đó symfony nhúng một CSRF token vào tất cả các form. Để bảo vệ bạn khỏi tấn công
+CSRF, token này là duy nhất đối với mỗi user và form.
+
+Lần đầu tiên trang được hiển thị, HTML form tạo ra được chứa trong
+cache với token của user hiện tại. Nếu user khác sử dụng tiếp sau đó, nội dung trang được lấy từ
+cache sẽ hiển thị với CSRF token của user trước. Khi
+submit form, token không match, và lỗi xảy ra.
+
+Làm thế nào sửa vấn đề này để có thể chứa form trong
+cache? Form đăng tuyển dụng không phụ thuộc vào user, và nó không thay đổi bất kì thứ gì so với 
+user trước. Trong trường hợp này, bảo vệ CSRF là không cần thiết, và chúng ta có thể bỏ CSRF token:
+
+    [php]
+<propel>
+    // plugins/sfJobeetPlugin/lib/form/JobeetJobForm.class.php
+    class JobeetJobForm extends BaseJobeetJobForm
+</propel>
+<doctrine>
+    // plugins/sfJobeetPlugin/lib/form/doctrine/PluginJobeetJobForm.class.php
+    abstract PluginJobeetJobForm extends BaseJobeetJobForm
+</doctrine>
+    {
+<propel>
+      public function __construct(BaseObject $object = null, $options = array(), $CSRFSecret = null)
+</propel>
+<doctrine>
+      public function __construct(sfDoctrineRecord $object = null, $options = array(), $CSRFSecret = null)
+</doctrine>
+      {
+        parent::__construct($object, $options, false);
+      }
+
+      // ...
+    }
+
+Sau khi thực hiện thay đổi trên, xóa cache và thử lại các bước trên để chắc rằng mọi thứ hoạt động như mong đợi.
+
+Cấu hình tương tự cho form language do nó nằm trong layout và sẽ được chứa trong cache. Do mặc định `sfLanguageForm`
+được sử dụng, nên thay vì tạo một class mới, để bỏ CSRF token, ta hãy thực hiện từ action và component của `sfJobeetLanguage` module:
+
+    [php]
+    // plugins/sfJobeetJob/modules/sfJobeetLanguage/actions/components.class.php
+    class sfJobeetLanguageComponents extends sfComponents
+    {
+      public function executeLanguage(sfWebRequest $request)
+      {
+        $this->form = new sfFormLanguage($this->getUser(), array('languages' => array('en', 'fr')));
+        unset($this->form[$this->form->getCSRFFieldName()]);
+      }
+    }
+
+    // plugins/sfJobeetJob/modules/sfJobeetLanguage/actions/actions.class.php
+    class sfJobeetLanguageActions extends sfActions
+    {
+      public function executeChangeLanguage(sfWebRequest $request)
+      {
+        $form = new sfFormLanguage($this->getUser(), array('languages' => array('en', 'fr')));
+        unset($form[$this->form->getCSRFFieldName()]);
+
+        // ...
+      }
+    }
+
+`getCSRFFieldName()` trả về tên của field chứa CSRF
+token. Bằng cách unset field này, widget và validator liên quan được bỏ đi.
+
+Xóa Cache
+------------------
+
+Mỗi khi người dùng đưa lên một công việc mới và kích hoạt nó, trang chủ phải được cập nhật danh sách.
+
+DO chúng ta không cần công việc xuất hiện ngay lập tức trên trang chủ, nên tốt nhất là chọn thời gian cache ở mức chấp nhận được:
+
+    [yml]
+    # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
+    index:
+      enabled:  on
+      lifetime: 600
+
+Thay vì để cấu hình mặc định là một ngày, cache ở trang chủ
+sẽ được tự động xóa bỏ sau 10 phút.
+
+Nhưng nếu bạn muốn cập nhật trang chủ ngay khi người dùng kích hoạt một công việc mới,
+hãy sửa lại phương thức `executePublish()` của module `sfJobeetJob` và thêm phần xóa
+cache:
+
+    [php]
+    // plugins/sfJobeetJob/modules/sfJobeetJob/actions/actions.class.php
+    public function executePublish(sfWebRequest $request)
+    {
+      $request->checkCSRFProtection();
+
+      $job = $this->getRoute()->getObject();
+      $job->publish();
+
+      if ($cache = $this->getContext()->getViewCacheManager())
+      {
+        $cache->remove('sfJobeetJob/index?sf_culture=*');
+        $cache->remove('sfJobeetCategory/show?id='.$job->getJobeetCategory()->getId());
+      }
+
+      $this->getUser()->setFlash('notice', sprintf('Your job is now online for %s days.', sfConfig::get('app_active_days')));
+
+      $this->redirect($this->generateUrl('job_show_user', $job));
+    }
+
+Cache được quản lý bởi class `sfViewCacheManager`. Phương thức `remove()` xóa cache liên quan đến
+internal URI. Để xóa cache cho tất cả các tham số có thể của một biến variable, sử dụng `*`.
+`sf_culture=*` được sử dụng ở trên có nghĩa là symfony sẽ xóa bỏ cache
+cho cả trang chủ English và French.
+
+Do cache manager là `null` khi cache chưa được bật, chúng ta đưa đoạn code xóa cache
+vào trong khối lệnh `if`.
+
+>**SIDEBAR**
+>Lớp `sfContext`
+>
+>Object `sfContext` chứa tham chiếu đến các symfony core object như
+>request, response, user, ... Do `sfContext` hoạt động như một
+>singleton, bạn có thể sử dụng lệnh `sfContext::getInstance()` để lấy nó
+>ở bất kì đâu và sau đó truy cập bất kì symfony core object nào:
+>
+>     [php]
+>     $user = sfContext::getInstance()->getUser();
+>
+>Khi bạn muốn sử dụng `sfContext::getInstance()` trong một class,
+>think twice as it introduces a strong coupling. Nó thực sự tốt hơn là cung cấp đối tượng bạn cần như một tham số.
+>
+>Bạn cũng có thể sử dụng `sfContext` như một registry và thêm object của bạn bằng cách sử dụng phương thức
+>`set()`. Nó nhận tên và object làm tham số và sau này có thể dùng phương thức `get()`
+>để nhận object thông qua tên:
+>
+>     [php]
+>     sfContext::getInstance()->set('job', $job);
+>     $job = sfContext::getInstance()->get('job');
+
+Test Cache
+-----------------
+
+Trước khi bắt đầu, chúng ta cần thay đổi cấu hình cho môi trường `test`
+để cho phép cache layer:
+
+    [yml]
+    # apps/frontend/config/settings.yml
+    test:
+      .settings:
+        error_reporting: <?php echo ((E_ALL | E_STRICT) ^ E_NOTICE)."\n" ?>
+        cache:           on
+        web_debug:       off
+        etag:            off
+
+Bắt đầu test trang đăng tuyển dụng:
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->
+      info('  7 - Job creation page')->
+
+      get('/fr/')->
+      with('view_cache')->isCached(true, false)->
+
+<propel>
+      createJob(array('category_id' => $browser->getProgrammingCategory()->getId()), true)->
+</propel>
+<doctrine>
+      createJob(array('category_id' => Doctrine::getTable('CategoryTranslation')->findOneBySlug('programming')->getId()), true)->
+</doctrine>
+
+      get('/fr/')->
+      with('view_cache')->isCached(true, false)->
+      with('response')->checkElement('.category_programming .more_jobs', '/23/')
+    ;
+
+Tester `view_cache` được dùng để test cache. Phương thức `isCached()` nhận 2 tham số
+boolean:
+
+  * trang có được cache hay không
+  * có cache layout hay không
+
+>**TIP**
+>Mặc dù functional test framework cung cấp cho ta đầy đủ công cụ, nhưng đôi khi chuẩn đoán vấn đề thông qua trình duyệt
+>đơn giản hơn.
+>Hãy tạo một front controller cho môi trường `test`.
+>log chứa trong `log/frontend_test.log` có thể rất hữu ích.
+
+Hẹn gặp lại ngày mai
+--------------------
+
+Giống như nhiều tính năng khác, symfony cache sub-framework rất mềm dẻo
+và cho phép lập trình viên cấu hình cache ở các mức khác nhau.
+
+Ngày mai, chúng ta sẽ nói về bước cuối cùng trong vòng đời của một sản phẩm: 
+deployment lên production servers.
+
+__ORM__
