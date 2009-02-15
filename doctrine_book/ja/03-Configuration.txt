@@ -1,0 +1,132 @@
+3章 - 設定
+===========
+
+## 属性
+
+Doctrineは機能と設定を属性(attribute)で制御します。属性を異なるレベルの階層で定義できます。属性の中にはすべてのレベルで指定できるものもあればそうではないものもあります。この章ではそれぞれのレベルで属性を指定する方法を説明します。属性は、個別の接続、モデルごとにグローバルに指定できます。
+
+symfonyでは`config/ProjectConfiguration.class.php`もしくは`apps/appname/config/appnameConfiguration.class.php`の中でDoctrineの構成を制御できます。
+
+### グローバル
+
+設定の中で`configureDoctrine()`を作ることでグローバル属性を制御できます。すべてのグローバル属性はSingletonの`Doctrine_Manager`インスタンスで設定されます。`sfDoctrinePlugin`の`config.php`がロードされるときにこのメソッドが起動します。これは接続が存在する前なので、この時点では`Doctrine_Manager`属性のみが制御できます。
+
+    [php]
+    public function configureDoctrine(Doctrine_Manager $manager)
+    {
+      $manager->setAttribute('use_dql_callbacks', true);
+      $manager->setAttribute('use_native_enum', true);
+    }
+
+### すべての接続
+
+設定クラスの中で`configureDoctrineConnection()`を作ることで接続属性ごとに制御できます。`config/databases.yml`で記述されている順序でそれぞれの接続がsymfonyによってインスタンス化されるとき`sfDoctrineDatabase`の中でこのメソッドが呼び出されます。
+
+    [php]
+    public function configureDoctrineConnection(Doctrine_Connection $connection)
+    {
+      $connection->setAttribute('use_dql_callbacks', true);
+      $connection->setAttribute('use_native_enum', true);
+    }
+
+オプションとして`config/doctrine/databases.yml`の中で接続属性を直に指定することもできます:
+
+    [yml]
+    doctrine:
+       class: sfDoctrineDatabase
+       param:
+         dsn: 'mysql:host=localhost;dbname=dbname'
+         username: user
+         password: secret
+         attributes:
+           use_dql_callbacks: true
+           use_native_enum:  true
+
+それぞれの接続ごとに異なる設定を用意するのであれば個別の接続ごとに起動する特別な関数を作ることもできます。`master`という名前の接続を用意するのであれば`config/ProjectConfniguration.class.php`ファイルの中で`configureDoctrineConnectionMaster()`という名前の関数を作ることが必要になります。
+
+    [php]
+    public function configureDoctrineConnectionMaster(Doctrine_Connection $connection)
+    {
+      $connection->setAttribute('use_dql_callbacks', false);
+      $connection->setAttribute('use_native_enum', false);
+    }
+
+上述の例では、`use_dql_callbacks`と`use_native_enum`はmaster接続以外に対して有効です。
+
+### モデル
+
+Doctrine用の最後のレベルの階層はモデルです。YAMLフォーマットのモデルの定義で属性を直に指定できます。
+
+    [yml]
+    Store:
+      connection: client
+      attributes:
+        export: tables
+      columns:
+        name: string(255)
+        description: string(500)
+
+PHPコードを利用して属性を`lib/model/doctrine`の中の生成モデルクラスに設定することもできます。`lib/model/doctrine/Store.class.php`を確認して追加属性をいくつか指定するために`setTableDefinition()`をオーバーライドします。
+
+    [php]
+    public function setTableDefinition()
+    {
+      parent::setTableDefinition();
+      $this->setAttribute('export', 'tables');
+    }
+
+## モデルのビルド方法を設定する
+
+sfDoctrinePluginはモデルのデフォルトのビルド方法のオプションをいくつか上書きする機能を提供します。これらの設定は`sfConfig`クラスの中で`doctrine_model_builder_options`という名前のパラメータを使うことで制御できます。
+
+モデルを生成するときに使われる基底クラスを変更する例は次の通りです。基底クラスを例えば`myDoctrineRecord`と設定できます。symfonyのオートロード機能がクラスを見つけられるようになっているか確認して下さい。
+
+    [php]
+    public function configureDoctrine(Doctrine_Manager $manager)
+    {
+      $options = array('baseClassName' => 'myDoctrineRecord');
+      sfConfig::set('doctrine_model_builder_options', $options);
+    }
+
+クラスを必ず作って下さい。例えば、`sfproject/lib/myDoctrineRecord.class.php`のPHPコードは次の通りです。
+
+    [php]
+    class myDoctrineRecord extends sfDoctrineRecord
+    {
+    }
+
+モデルを生成するとき、すべてのクラスは`sfDoctrineRecord`の代わりに`myDoctrineRecord`を継承するのですべてのモデルにカスタムの機能を追加できます。
+
+モデルのビルドプロセスのための異なる値に変更できるすべてのオプションの一覧です。
+
+| 名前                 | 説明                             | デフォルト       |
+|----------------------|----------------------------------|------------------|
+| suffix               | 生成クラス用に使う接尾辞         | .class.php       |
+| generateBaseClasses  | 基底クラスを生成するかどうか     | true             |
+| generateTableClasses | テーブルクラスを生成するかどうか | true             |
+| baseClassPrefix      | 基底クラスに使う接頭辞の単語     | Base             |
+| baseClassesDirectory | 基底クラスを生成するディレクトリ | base             |
+| baseClassName        | モデルが継承するスーパークラス   | sfDoctrineRecord |
+
+>**TIP**
+>設定に関する詳細はDoctrineの[公式マニュアル](http://www.doctrine-project.org/documentation/manual/1_0/ja/configuration)で見ることができます。
+
+## Doctrineライブラリパスをカスタマイズする
+
+sfDoctrinePluginを利用すれば、設定値を1つ変更するだけで、簡単に使用中のDoctrineのバージョンを切り替えることができます。
+
+例えば異なるバージョンのDoctrineを使うようにsfDoctrinePluginを設定する方法を以下に示します。
+
+まず、lib/vendor/doctrineで使いたいバージョンのDoctrineをチェックアウトする必要があります。
+
+    $ mkdir lib/vendor
+    $ cd lib/vendor
+    $ svn co http://svn.doctrine-project.org/branches/1.1/lib doctrine
+
+これで、プラグインとしてバンドルされていたバージョンの代わりに、先程チェックアウトしたバージョンを設定できます。次のように、`ProjectConfiguration::setup()`メソッドと`sfConfig`で、`sfDoctrinePlugin_doctrine_lib_path`の値を変更する必要があります:
+
+    [php]
+    public function setup()
+    {
+      sfConfig::set('sfDoctrinePlugin_doctrine_lib_path', sfConfig::get('sf_lib_dir') . '/vendor/doctrine/Doctrine.php');
+    }
