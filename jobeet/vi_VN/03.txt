@@ -11,6 +11,56 @@ module đầu tiên của ứng dụng. Nhưng symfony sẽ làm nhiều việc 
 chúng ta sẽ có một module với đầy đủ các chức năng mà không cần phải viết nhiều
 code PHP.
 
+<doctrine>
+Sử dụng `sfDoctrinePlugin`
+---------------------------
+
+Nếu bạn đang đọc hướng dẫn này, có nghĩa là bạn đã quyết định sử dụng
+Doctrine ORM thay cho Propel. Đầu tiên bạn cần
+enable `sfDoctrinePlugin` và disable `sf#PropelPlugin`. Để thực hiện điều này, bạn cần thêm đoạn code sau
+vào file `config/ProjectConfiguration.class.php`.
+
+    [php]
+    public function setup()
+    {
+      $this->enablePlugins(array('sfDoctrinePlugin'));
+      $this->disablePlugins(array('sf#PropelPlugin'));
+    }
+
+Nếu bạn muốn tất cả các plugin đều được enabled , bạn có thể viết:
+
+    [php]
+    public function setup()
+    {
+      $this->enableAllPluginsExcept(array('sf#PropelPlugin', 'sfCompat10Plugin'));
+    }
+
+>**NOTE**
+>Sau thay đổi này bạn sẽ gặp một lỗi khi chúng ta cấu hình file
+>`config/databases.yml` và chúng ta sẽ sử dụng `sfDoctrineDatabase`.
+
+Xóa cache để thay đổi có hiệu lực.
+
+    $ php symfony cc
+
+Như chúng ta sẽ thấy sau này, mỗi plugin có thể có chứa các assets (javascripts,
+stylesheets, and images). Sau khi cài đặt hay enable một plugin, chúng ta cần cài đặt chúng
+bằng task `plugin:publish-assets`:
+
+    $ php symfony plugin:publish-assets
+
+Chúng ta cũng cần xóa thư mục `web/sf#PropelPlugin`:
+
+    $ rm web/sf#PropelPlugin
+
+>**TIP**
+>Khi sử dụng Doctrine thay cho Propel bạn có thể xóa file
+>`config/propel.ini` và `config/schema.yml`.
+>
+>     $ rm config/propel.ini
+>     $ rm config/schema.yml
+</doctrine>
+
 Relational Model
 --------------------
 
@@ -38,28 +88,6 @@ Thông tin về relational database phải được chuyển thành một object
 symfony cung cấp sẵn 2 công cụ:
 [Propel](http://propel.phpdb.org/) và [Doctrine](http://www.doctrine-project.org/).
 Trong hướng dẫn này, chúng ta sẽ sử dụng ##ORM##.
-
-<doctrine>
->**Note**
->Mặc định, symfony sử dụng ORM Propel, để sử dụng Doctrine, bạn cần sửa
->phương thức setup trong file `config/ProjectConfiguration.class.php`
->
->     [php]
->     public function setup()
->     {
->       $this->enablePlugins(array('sfDoctrinePlugin'));
->       $this->disablePlugins(array('sfPropelPlugin'));
->     }
->
->hoặc
->
->     [php]
->     public function setup()
->     {
->       $this->enableAllPluginsExcept(array('sfPropelPlugin', 'sfCompat10Plugin'));
->     }
->(`note này là do người dịch thêm vào :D`)
-</doctrine>
 
 ORM cần thông tin mô tả các bảng và quan hệ giữa chúng để tạo class tương ứng. Có hai cách để tạo một schema mô tả: từ một cơ sở dữ liệu có sẵn hoặc tự tạo nó.
 
@@ -121,99 +149,53 @@ Cơ sở dữ liệu chưa tồn tại và chúng ta muốn cơ sở dữ liệu
 >Một vài công cụ cho phép bạn tạo database ở chế độ đồ họa
 >(ví dụ [Fabforce's Dbdesigner](http://www.fabforce.net/dbdesigner4/))
 >và sinh ra trực tiếp file `schema.xml` (với
->[sfDbDesignerPlugin](http://blog.tooleshed.com/docs/dbd2propel/transform.php),
+>[sfDbDesignerPlugin](http://symfony-project.org/plugins/sfdbdesignerplugin),
 >bạn có thể convert thành file schema cho doctrine).
->(`note này cũng do người dịch thêm vào, hehe`)
+>(`note này do người dịch thêm vào`)
 
 Cơ sở dữ liệu chưa tồn tại và chúng ta muốn cơ sở dữ liệu Jobeet là agnostic, do đó chúng ta tự tạo file schema `config/doctrine/schema.yml`:
+
+>**TIP**
+>Bạn cần tự tạo thêm tư mục `config/doctrine/` trong
+>project do nó chưa có sẵn:
+>
+>     $ mkdir config/doctrine
 
     [yml]
     # config/doctrine/schema.yml
     ---
     JobeetCategory:
-      actAs:
-        Timestampable: ~
+      actAs: { Timestampable: ~ }
       columns:
-        name:
-          type: string(255)
-          notnull:  true
+        name: { type: string(255), notnull: true, unique: true }
 
     JobeetJob:
-      actAs:
-        Timestampable: ~
+      actAs: { Timestampable: ~ }
       columns:
-        category_id:
-          type: integer
-          notnull:  true
-        type:
-          type: string(255)
-        company:
-          type: string(255)
-          notnull:  true
-        logo:
-          type: string(255)
-        url:
-          type: string(255)
-        position:
-          type: string(255)
-          notnull:  true
-        location:
-          type: string(255)
-          notnull:  true
-        description:
-          type: string(4000)
-          notnull:  true
-        how_to_apply:
-          type: string(4000)
-          notnull:  true
-        token:
-          type: string(255)
-          notnull:  true
-          unique: true
-        is_public:
-          type: boolean
-          notnull:  true
-          default:  1
-        is_activated:
-          type: boolean
-          notnull:  true
-          default:  0
-        email:
-          type: string(255)
-          notnull:  true
-        expires_at:
-          type: timestamp
-          notnull:  true
+        category_id:  { type: integer, notnull: true }
+        type:         { type: string(255) }
+        company:      { type: string(255), notnull: true }
+        logo:         { type: string(255) }
+        url:          { type: string(255) }
+        position:     { type: string(255), notnull: true }
+        location:     { type: string(255), notnull: true }
+        description:  { type: string(4000), notnull: true }
+        how_to_apply: { type: string(4000), notnull: true }
+        token:        { type: string(255), notnull: true, unique: true }
+        is_public:    { type: boolean, notnull: true, default: 1 }
+        is_activated: { type: boolean, notnull: true, default: 0 }
+        email:        { type: string(255), notnull: true }
+        expires_at:   { type: timestamp, notnull: true }
       relations:
-        JobeetCategory:
-          local:  category_id
-          foreign:  id
-          foreignAlias: JobeetJobs
-        Affiliates:
-          class:  JobeetAffiliate
-          local:  category_id
-          foreign:  affiliate_id
-          refClass: JobeetCategoryAffiliate
-          foreignAlias: JobeetJobs
+        JobeetCategory: { local: category_id, foreign: id, foreignAlias: JobeetJobs } 
 
     JobeetAffiliate:
-      actAs:
-        Timestampable: ~
+      actAs: { Timestampable: ~ }
       columns:
-        url:
-          type: string(255)
-          notnull:  true
-        email:
-          type: string(255)
-          notnull:  true
-          unique: true
-        token:
-          type: string(255)
-          notnull:  true
-        is_active:
-          type: boolean
-          notnull:  true
-          default:  0
+        url:       { type: string(255), notnull: true }
+        email:     { type: string(255), notnull: true, unique: true }
+        token:     { type: string(255), notnull: true }
+        is_active: { type: boolean, notnull: true, default: 0 }
       relations:
         JobeetCategories:
           class: JobeetCategory
@@ -224,21 +206,11 @@ Cơ sở dữ liệu chưa tồn tại và chúng ta muốn cơ sở dữ liệu
 
     JobeetCategoryAffiliate:
       columns:
-        category_id:
-          type: integer
-          primary:  true
-        affiliate_id:
-          type: integer
-          primary:  true
+        category_id:  { type: integer, primary: true }
+        affiliate_id: { type: integer, primary: true }
       relations:
-        JobeetCategory:
-          onDelete: CASCADE
-          local:  category_id
-          foreign:  id
-        JobeetAffiliate:
-          onDelete: CASCADE
-          local:  affiliate_id
-          foreign:  id
+        JobeetCategory:  { onDelete: CASCADE, local: category_id, foreign: id }
+        JobeetAffiliate: { onDelete: CASCADE, local: affiliate_id, foreign: id }
 </doctrine>
 
 >**TIP**
@@ -320,6 +292,14 @@ Chúng ta cần khai báo với symfony cơ sở dữ liệu ta sử dụng cho 
     $ php symfony configure:database "mysql:host=localhost;dbname=jobeet" root mYsEcret
 </propel>
 <doctrine>
+Mặc định, `config/databases.yml` chứa cấu hình cho propel.
+Do chúng ta sử dụng Doctrine, nên chúng ta cần xóa file `config/databases.yml` để có thể tạo lại
+cho Doctrine.
+
+    $ rm config/databases.yml
+
+Bây giờ, chạy lệnh dưới đây để tạo cấu hình tới database cho Doctrine:
+
     $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=jobeet" root mYsEcret
 </doctrine>
 
@@ -338,18 +318,37 @@ Nhờ những mô tả về cơ sở dữ liệu trong file `schema.yml` , chún
 sử dụng của ##ORM## để sinh các câu SQL cần thiết để tạo các bảng trong cơ sở
 dữ liệu:
 
+<doctrine>
+Để tạo câu SQL, trước tiên bạn cầu build model từ file schema.
+
+    $ php symfony doctrine:build-model
+
+Sau khi đã có model, bạn có thể tạo và insert SQL.
+</doctrine>
+
     $ php symfony propel:build-sql
 
 Lệnh `propel:build-sql` sinh ra các câu lệnh SQL nằm trong thư mục `data/sql`:
 
+<propel>
     [sql]
     # snippet from data/sql/lib.model.schema.sql
     CREATE TABLE `jobeet_category`
     (
-      `id` INTEGER  NOT NULL AUTO_INCREMENT,
-      `name` VARCHAR(255)  NOT NULL,
-      PRIMARY KEY (`id`)
+            `id` INTEGER  NOT NULL AUTO_INCREMENT,
+            `name` VARCHAR(255)  NOT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `jobeet_category_U_1` (`name`)
     )Type=InnoDB;
+</propel>
+<doctrine>
+    [sql]
+    # snippet from data/sql/schema.sql
+    CREATE TABLE jobeet_category (id BIGINT AUTO_INCREMENT, name VARCHAR(255)
+    NOT NULL COMMENT 'test', created_at DATETIME, updated_at DATETIME, slug
+    VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), PRIMARY KEY(id))
+    ENGINE = INNODB;
+</doctrine>
 
 Để tạo các bảng trong cơ sở dữ liệu, chúng ta chạy lệnh `propel:insert-sql`:
 
@@ -604,6 +603,12 @@ tạo một file YAML trong thư mục `data/fixtures/` và dùng lệnh
         email:        job@example.com
         expires_at:   '2008-10-10'
 </doctrine>
+
+>**NOTE**
+>job fixture file sử dụng 2 ảnh. Bạn có thể download chúng
+>(`http://www.symfony-project.org/get/jobeet/sensio-labs.gif`,
+>`http://www.symfony-project.org/get/jobeet/extreme-sensio.gif`) và đặt trong thư mục
+>`uploads/jobs/`.
 
 Một file fixtures được viết bằng YAML, với mỗi model object được gán một label
 duy nhất. Label được sử dụng để link đến object liên quan mà không cần dùng
