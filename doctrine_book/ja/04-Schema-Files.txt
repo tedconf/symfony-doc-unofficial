@@ -1,0 +1,637 @@
+4章 - スキーマファイル
+======================
+
+以前の章では`config/doctrine`に設置されるYAMLファイルでスキーマの情報を指定するための構文をいろいろ見てきました。この章では構文とYAMLフォーマットでスキーマのメタデータを指定する方法を説明します。
+
+## データ型
+
+Doctrineはいくつかのデータ型を提供します。Doctrineの型を指定すると使用しているDBMSの適切な型に自動的に変換されます。MySQL DBMSを利用するときに型が変換されるのと同様に利用可能なカラムの型の一覧は下記の通りです。
+
+>**NOTE**
+>Doctrineのデータ型は標準化されすべてのDBMSにまたがってポータブルです。DBMSがネイティブにサポートしない型に関して、Doctrineはデータをデータベースの内外に変換する機能を持ちます。例えばDoctrineの`array`と`object`型は`serialize()`で変換され`unserialize()`で元に戻されます。
+
+| 型          | MySQLの型    |
+|-------------|--------------|
+| integer     | integer      |
+| float       | double       |
+| decimal     | decimal      |
+| string      | varchar      |
+| array       | text         |
+| object      | text         |
+| blob        | longblob     |
+| clob        | longtext     |
+| timestamp   | datetime     |
+| time        | time         |
+| date        | date         |
+| enum        | varchar/enum |
+| gzip        | text         |
+
+>**SIDEBAR**
+>Doctrineの`enum`型はエミュレートされるもしくはDBMSがサポートするのであればネイティブのenum型を使用できます。デフォルトではoffなのでネイティブのenumを使うためには属性を有効にする必要があります。
+>
+>属性を有効にする前にDoctrineは次のようにSQLを生成しenum型をそのままエミュレートし指定する値が有効で指定された値の1つであることを保証します。
+>
+>     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+>
+>DBMSに対してネイティブのenumのSQLを生成することをDoctrineが知っているようにするために接続で`use_native_enum`属性を指定します。
+>
+>     [yml]
+>     all:
+>       doctrine:
+>         class: sfDoctrineDatabase
+>         param:
+>           dsn: 'mysql:host=localhost;dbname=symfony12doctrine'
+>           username: user
+>           attributes:
+>             use_native_enum: true
+>
+>属性が有効にしたのでDoctrineはMySQLに対して次のようなSQLを生成します:
+>
+>     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type ENUM('Normal', 'Administrator'), PRIMARY KEY(id)) ENGINE = INNODB;
+
+下記のコードはそれぞれ異なるカラム型を実装するサンプルのYAMLスキーマファイルです。
+
+    [yml]
+    User:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        username: string(255)
+        password: string(255)
+        latitude: float
+        longitude: float
+        hourly_rate:
+          type: decimal
+          scale: 2
+        groups_array: array
+        session_object: object
+        description: clob
+        profile_image_binary_data: blob
+        created_at: timestamp
+        time_last_available: time
+        date_last_available: date
+        roles:
+          type: enum
+          values: [administrator, moderator, normal]
+          default: normal
+        html_header: gzip
+
+上記のコードの場合MySQLに対して次のようなSQLが生成されます:
+
+    CREATE TABLE user (id INT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), latitude DOUBLE, longitude DOUBLE, hourly_rate DECIMAL(18,2), groups_array TEXT, session_object TEXT, description LONGTEXT, profile_image_binary_data LONGBLOB, created_at DATETIME, time_last_available TIME, date_last_available DATE, roles ENUM('administrator', 'moderator', 'normal') DEFAULT 'normal', html_header TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
+
+## オプション
+
+MySQLで文字セット、と照合順序とテーブル型などを制御するためにテーブルのオプションを設定することがよくあります。これらはオプションで簡単に制御できます。
+
+    [yml]
+    User:
+      options:
+        type: MyISAM
+        collate: utf8_unicode_ci
+        charset: utf8
+      columns:
+        username: string(255)
+        password: string(255)
+
+上記の場合MySQLに対して次のようなSQLが生成されます:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = MyISAM;
+
+## インデックス
+
+クエリーの条件で使用されるカラム上のインデックスを定義することでデータベースを最適化できます。
+ユーザーのusernameでテーブルを探すことはありふれているのでUserテーブルのusernameカラムのインデックス作成の例を示します。
+
+    [yml]
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+      indexes:
+        username_index:
+          fields: [username]
+          type: unique
+
+MySQLに対して次のようなSQLが生成されます:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), UNIQUE INDEX username_indext_idx (username), PRIMARY KEY(id)) ENGINE = INNODB;
+
+単一カラムのユニークインデックスを扱うときオプションとしてuniqueを直接指定することもできます。
+
+    [yml]
+    User:
+      columns:
+        username:
+          type: string(255)
+          unique: true
+        password: string(255)
+
+MySQLに対して次のようなSQLが生成されます:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255) UNIQUE, password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+>**Note**
+>リレーションが定義されたときリレーションの外部キーにインデックスが自動的に作成されます。次のセクションでテーブル上の外部キーの間のリレーションを定義する方法を説明します。
+
+## リレーション
+
+Doctrineはデータに取り組むときに最も手助けになるようにデータベースの中に存在するリレーションをORMにマッピングする機能を提供します。
+
+### 一対一
+
+次のコードはUserとProfileモデルの間の一対一のリレーションを定義する単純な方法を示しています。
+
+    [yml]
+    Profile:
+      columns:
+        user_id: integer
+        name: string(255)
+        email_address:
+          type: string(255)
+          email: true
+      relations:
+        User:
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: one
+
+MySQLに対して次のようなSQLが生成されます:
+
+    CREATE TABLE profile (id BIGINT AUTO_INCREMENT, user_id BIGINT, name VARCHAR(255), email_address VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE profile ADD FOREIGN KEY (user_id) REFERENCES user(id);
+
+### 一対多
+
+次はUserとPhonenumberモデルの間の一対多のリレーションを定義する方法の簡単な例です。
+
+    [yml]
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+
+MySQLに対して次のSQLが生成されます:
+
+    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id);
+
+### 多対多
+
+次はBlogPostとTagモデルの間の多対多のリレーションを定義する方法の簡単な例です。
+
+    [yml]
+    BlogPost:
+      columns:
+        user_id: integer
+        title: string(255)
+        body: clob
+      relations:
+        User:
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: one
+          foreignAlias: BlogPosts
+        Tags:
+          class: Tag
+          foreignAlias: BlogPosts
+          refClass: BlogPostTag
+          local: blog_post_id
+          foreign: tag_id
+
+    Tag:
+      columns:
+        name: string(255)
+
+    BlogPostTag:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          local: blog_post_id
+          foreign: id
+          foreignAlias: BlogPostTags
+        Tag:
+          local: tag_id
+          foreign: id
+          foreignAlias: BlogPostTags
+
+MySQLに対して次のようなSQLが生成されます:
+
+    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE blog_post_tag (blog_post_id BIGINT, tag_id BIGINT, PRIMARY KEY(blog_post_id, tag_id)) ENGINE = INNODB;
+    CREATE TABLE tag (id BIGINT AUTO_INCREMENT, name VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE blog_post ADD FOREIGN KEY (user_id) REFERENCES user(id);
+    ALTER TABLE blog_post_tag ADD FOREIGN KEY (tag_id) REFERENCES tag(id);
+    ALTER TABLE blog_post_tag ADD FOREIGN KEY (blog_post_id) REFERENCES blog_post(id);
+
+## カスケーディングオペレーション
+
+Doctrineでオブジェクトを保存するときデフォルトでは関連オブジェクトにカスケードされます。削除機能は微妙に異なります。Doctrineはアプリケーションレベルとデータベースレベルの両方での削除機能を持ちます。
+
+### データベースレベル
+
+Doctrineはデータベースレベルでカスケーディングオペレーションをエクスポートする機能を持ちます。下記のコードはカスケーディングオペレーションを伴うモデルをセットアップする方法です。
+
+    [yml]
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+          onDelete: CASCADE
+
+MySQLに対して生成されるSQLは次の通りです:
+
+    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE;
+
+>**NOTE**
+>データベースレベルのカスケーディングは外部キーが存続する面で指定されます。
+
+### アプリケーションレベル
+
+`save()`オペレーションとは異なり`delete()`カスケーディングは明確に有効にする必要があります。例は次の通りです:
+
+>**NOTE**
+>`save()`と`delete()`を呼び出したときのみ、DQLのupdateとdeleteステートメントを行っているときにアプリケーションレベルでの`save()`と`delete()`のカスケーディングは適用されません。
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+      relations:
+        Phonenumbers:
+          class: Phonenumber
+          local: id
+          foreign: id
+          type: many
+          foreignType: one
+          cascade: [delete]
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+
+>**NOTE**
+>cascadeをonにしたいリレーションが定義されいてる面で定義されているとい点で、アプリケーションレベルのdeleteカスケーディングはデータベースレベルとは異なります。これは外部キーが存在する面で常に指定するデータベースレベルのカスケードとは異なります。
+
+## ビヘイビア
+
+Doctrineの素晴らしい機能はビヘイビアを追加できることです。これらのビヘイビアはモデルの定義に簡単に含めることができ、機能を自動的に継承されます。
+
+### コアビヘイビア
+
+Doctrineコアに搭載されているビヘイビアのリストです。コードを書かずに任意のビヘイビアを使うことができます。
+
+| 名前           | 説明                                                                               |
+|----------------|------------------------------------------------------------------------------------|
+| Geographical   | 緯度と経度をモデルに追加してレコード間のマイル/キロメータを計算する機能を提供する。|
+| I18n           | モデルに国際化機能を追加する。                                                     |
+| NestedSet      | モデルをtraversableツリーに変換する。                                              |
+| Searchable     | モデルのデータすべてのインデックスを作成して検索可能にする。                       |
+| Sluggable      | `slug`フィールドをモデルに追加し設定に基づいてスラグを自動的に作成する。           |
+| SoftDelete     | 実際にはレコードを削除しない。代わりにdeletedフラグを設定してクエリーのselectからすべてのdeleteされたレコードをフィルタリングします。|
+| Timestampable  | `created_at`と`updated_at`カラムをモデルに追加しレコードのinsertとupdateをするときにDoctrineにそれらを設定させる。|
+| Versionable    | モデルをauditログに切り替えすべての変更を記録する。以前のバージョンに簡単に差し戻しする機能を提供する。|
+
+actAsの機能を利用することでビヘイビアを簡単に有効にできます。次のコードはSluggableビヘイビアを使う方法の例です。
+
+    BlogPost:
+      actAs:
+        Sluggable:
+          fields: [title]
+          unique: true
+      columns:
+        user_id: integer
+        title: string(255)
+        body: clob
+
+上記の例ではslugカラムをモデルに追加して and will set the value of the slug column based on the value of the title column and make sure the value is unique. If a slug already exists in the database with the same value then 1, 2, 3などが最後に追加されます。
+
+MySQLに対して次のSQLが生成されます:
+
+    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, slug VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+
+>**NOTE**
+>独自のビヘイビアを書くこともできます。ビヘイビアがどのように機能するのか少し見るためには既存のビヘイビアのソースコードをチェックアウトして下さい。これらは `SF_ROOT/plugins/sfDoctrinePlugin/lib/doctrine/Doctrine/Template` で見つかります。Doctrineのビヘイビアに関する詳細な情報は [マニュアル](http://www.doctrine-project.org/documentation/manual/1_0?one-page#behaviors) をご覧下さい。
+
+## 入れ子のビヘイビア
+
+Doctrineはビヘイビアを簡単に入れ子にする機能を提供します。例えば`I18n`ビヘイビアを持つ自動生成モデルに`Sluggable`ビヘイビアを持たせたい場合は次のようになります。
+
+    [yml]
+    Gallery:
+      actAs:
+        I18n:
+          fields: [title, description]
+          actAs:
+            Sluggable:
+              fields:  [title]
+      columns:
+        title: string(255)
+        description: clob
+
+自動生成される`GalleryTranslation`モデルは翻訳されたタイトルのカラムに基づいて自動的に設定される`slug`カラムを持ちます。ビヘイビアを一緒に混ぜられますが、ビヘイビアの中にはお互いに連携しないものがあることを覚えておいて下さい。これらはスタンドアロンで開発されお互いを認識しないからです。
+
+## 継承
+
+Doctrineの別の素晴らしい機能はモデルでPHPネイティブのOOPの継承を利用できることです。3つの異なる継承戦略がサポートされ、それぞれを個別に使ったり混ぜたりすることができます。継承戦略の異なるいくつかの例は下記の通りです。
+
+**継承の型**
+
+| 名前                           | 説明                                                           |
+|--------------------------------|----------------------------------------------------------------|
+| 具象(Concrete)                 | それぞれの子クラスは親のカラムをすべて持つ個別のテーブルを持つ |
+| 単一(Simple)                   | それぞれの子クラスは親と同じテーブルとカラムを持つ             |
+| カラム集約(Column Aggregation) | すべてのカラムは親の中で定義しなければならずそれぞれの子クラスは`type`カラムで決定される |
+
+Doctrineによってサポートされる3つの異なる継承戦略の例は下記の通りです。
+
+### 具象継承
+
+具象継承(Concrete inheritance)では子クラスに対して個別のテーブルが作成されます。しかしながら具象継承においてそれぞれのクラスは、継承されたカラムも含めてすべてのカラムを格納します。
+
+    TextItem:
+      columns:
+        topic: string(100)
+
+    Comment:
+      inheritance:
+        extends: TextItem
+        type: concrete
+      columns:
+        content: string(300)
+
+MySQLに対して次のSQLが生成されます:
+
+    CREATE TABLE text_item (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE comment (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), content TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
+
+### 単一継承
+
+単一継承(Simple inheritance)は最も単純な継承です。単一継承においてすべての子クラスは親と同じカラムを共有します。
+
+    Entity:
+      columns:
+        name: string(30)
+        username: string(20)
+        password: string(16)
+        created: integer(11)
+
+    User:
+      inheritance:
+        extends: Entity
+        type: simple
+
+    Group:
+      inheritance:
+        extends: Entity
+        type: simple
+
+MySQLに対して次のSQLが生成されます:
+
+    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, PRIMARY KEY(id)) ENGINE = INNODB;
+
+### カラム集約継承
+
+次の例ではエンティティ(entity)と呼ばれる1つのデータベーステーブルがあります。ユーザーとグループの両方はエンティティでこれらは同じデータベーステーブルを共有します。
+
+エンティティのテーブルはtype と呼ばれるカラムを持ちます。カラムは自動的に追加されエンティティがグループかユーザーかを伝えます。
+
+    Entity:
+      columns:
+        name: string(30)
+        username: string(20)
+        password: string(16)
+        created: integer(11)
+
+    User:
+      inheritance:
+        extends: Entity
+        type: column_aggregation
+
+    Group:
+      inheritance:
+        extends: Entity
+        type: column_aggregation
+
+MySQLに対して次のようなSQLが生成されます:
+
+    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+## グローバルスキーマ情報
+
+Doctrineスキーマによってスキーマファイルで定義されたすべてのモデルに適用される特定のパラメータを指定できます。スキーマファイルに対して設定できるグローバルパラメータの例です。
+
+グローバルパラメータの一覧:
+
+| 名前        | 説明                                                |
+|-------------|-----------------------------------------------------|
+| connection  | モデルをバインドする接続の名前                      |
+| attributes  | モデルに適用する属性の配列                          |
+| actAs       | モデルで有効にするactAsビヘイビアとオプションの配列 |
+| options     | モデルに適用するテーブルオプションの配列            |
+| inheritance | モデルに適用する継承オプション                      |
+
+グローバルスキーマ情報を実装するサンプルのスキーマファイルは次の通りです:
+
+    [yml]
+    connection: conn_name1
+    actAs: [Timestampable]
+    options:
+      type: INNODB
+
+    User:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        contact_id:
+          type: integer(4)
+        username:
+          type: string(255)
+        password:
+          type: string(255)
+      relations:
+        Contact:
+          foreignType: one
+
+    Contact:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        name:
+          type: string(255)
+
+MySQLに対して次のようなSQLが生成されます:
+
+    CREATE TABLE contact (id INT AUTO_INCREMENT, name VARCHAR(255), created_at DATETIME, updated_at DATETIME, PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE user (id INT AUTO_INCREMENT, contact_id INT, username VARCHAR(255), password VARCHAR(255), created_at DATETIME, updated_at DATETIME, INDEX contact_id_idx (contact_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE user ADD FOREIGN KEY (contact_id) REFERENCES contact(id);
+
+トップでの設定のすべてはYAMLファイルで定義されるすべてのモデルに適用されます。
+
+## プラグインスキーマ
+
+symfonyプラグインによって、Doctrineのスキーマを使うこととメインの`config/doctrine`フォルダで使用することの違いはありません。プラグインはYAMLファイルを格納する`config/doctrine`ディレクトリも持ちます。Propelのようにパッケージパラメータを指定する必要はありません。プラグインは位置から自分がプラグインの一部であることを理解するぐらい賢いです。
+
+モデルの編成とメンテナンスを簡単にするために、モデル、フォーム、フィルタなどはすべてプラグイン用のサブフォルダの中で生成されます。`sfDoctrineGuardPlugin`の例において、`sfGuardUser`は次のように生成されます。
+
+    lib/
+      model/
+       doctrine/
+         sfDoctrineGuardPlugin/
+           sfGuardUser.class.php
+           sfGuardUserTable.class.php
+           base
+             BasesfGuardUser.class.php
+      form/
+        doctrine/
+          BaseFormDoctrine.class.php
+          sfDoctrineGuardPlugin/
+            sfGuardUserForm.class.php
+            base
+              BasesfGuardUserForm.class.php
+    plugins/
+      sfDoctrineGuardPlugin/
+        lib/
+          model/
+            doctrine/
+              PluginsfGuardUser.class.php
+              PluginsfGuardUserTable.class.php
+          form/
+            doctrine/
+              PluginsfGuardUserForm.class.php
+
+生成クラスの階層は次の通りです。
+
+| 名前                   | 拡張                   | 説明                               |
+|------------------------|------------------------|------------------------------------|
+| sfGuardUser            | PluginsfGuardUser      | すべてのプロジェクトのカスタム機能用のトップレベルのモデルクラス |
+| PluginsfGuardUser      | BasesfGuardUser        | プラグインに搭載される機能用のプラグインレベルのモデルクラス |
+| BasesfGuardUser        | sfDoctrineRecord       | スキーマのメタデータを格納する生成モデルの基底クラス |
+| sfGuardUserTable       | PluginsfGuardUserTable | カスタム機能用のトップレベルのテーブルクラス |
+| PluginsfGuardUserTable | Doctrine_Table         | プラグインに搭載される機能用のプラグインレベルのテーブルクラス。 |
+| sfGuardUserForm        | PluginsfGuardUserForm  | すべてのプロジェクトのカスタム機能用のトップレベルのフォームクラス |
+| PluginsfGuardUserForm  | BasesfGuardUserForm    | プラグインに搭載される機能用のプラグインレベルのフォームクラス |
+| BasesfGuardUserForm    | BaseFormDoctrine       | フォームのウィジェットとバリデータを格納する生成フォームの基底クラス |
+| BaseFormDoctrine       | sfFormDoctrine         | すべての生成フォームが継承する生成フォームの基底クラス |
+
+## 要素の定義
+
+許可されるすべての要素とそれぞれの手短な説明のリストは次の通りです。
+
+### Root要素
+
+| 名前         | 説明                       |
+|--------------|----------------------------|
+| abstract     | 生成クラスをabstractするかどうか。デフォルトはfalse。クラスはabstractのときはデータベースにエクスポートされない。 |
+| className    | 生成するクラスの名前 |
+| tableName    | 使用するDBMSのテーブルの名前 |
+| connection   | モデルにバインドする`Doctrine_Connection`インスタンスの名前 |
+| columns      | カラムの定義 |
+| relations    | リレーションの定義 |
+| indexes      | インデックスの定義 |
+| attributes   | 属性の定義 |
+| actAs        | ActAsの定義 |
+| options      | オプションの定義    |
+| inheritance  | 継承の定義用の配列  |
+| listeners    | アタッチするリスナーを定義する配列 |
+| checks       | DBMSにエクスポートするのと同様にアプリケーションレベルで実行するチェック |
+
+### カラム
+
+| 名前         | 説明                                      |
+|--------------|-------------------------------------------|
+| name         | カラムの名前                              |
+| fixed        | カラムが修正されるかどうか                |
+| primary      | カラムが主キーの一部であるかどうか        |
+| autoincrement| autoincrementカラムであるかどうか         |
+| type         | Doctrineのカラムのデータ型                |
+| length       | カラムの長さ                              |
+| default      | カラムのデフォルト値                      |
+| scale        | カラムのスケール。`decimal`型に使用される |
+| values       | `enum`型用の値のリスト                    |
+| comment      | カラム用のコメント                        |
+| sequence     | カラム用のシーケンスの定義                |
+| zerofill     | カラムの空の文字列をゼロで満たすかどうか  |
+| extra        | カラム定義に保存する追加情報の配列        |
+
+### リレーション
+
+| 名前         | 説明                                   |
+|--------------|----------------------------------------|
+| class        | リレーション用に使うクラスの名前。     |
+| alias        | リレーションを識別するために使うエイリアス。 |
+| type         | リレーションの型。値は`one`もしくは`many`のどちらかでデフォルトは`one`。 |
+| refClass     | 多対多のリレーション用に使われる中間の参照クラス。 |
+| local        | リレーションで使われるローカルフィールドの名前。 |
+| foreign      | リレーションで使われる外部フィールドの名前。 |
+| foreignAlias | リレーションの反対端のエイリアス。`autoComplete`が`true`に設定されるときのみ許可されます。|
+| foreignType  | リレーションの反対端の型。`autoComplete`が`true`に設定されるときのみ許可されます。|
+| autoComplete | リレーションを反対側に追加して双方向にするかどうか。デフォルトはtrue。 |
+| cascade      | アプリケーションレベルのカスケーディングオプション。|
+| onDelete     | データベースレベルのカスケーディング削除の値。      |
+| onUpdate     | データベースレベルのカスケーディング更新の値。      |
+| equal        | リレーションが入れ子の多対多に等しいかどうか。      |
+| owningSide   |                                                   - |
+| refClassRelationAlias |                                          - |
+
+### 継承
+
+| 名前         | 説明                                                                         |
+|--------------|------------------------------------------------------------------------------|
+| type         | 使用する継承の型。許可される値は`concrete`、`column_aggregation`、と`simple` |
+| extends      | 継承するクラスの名前                                                         |
+| keyField     | `column_aggregation`継承用のキーとして使用するフィールドの名前。             |
+| keyValue     | `column_aggregation`継承で`keyField`を満たす値                               |
+
+### インデックス
+
+| 名前         | 説明                                  |
+|--------------|---------------------------------------|
+| name         | 作成するインデックスの名前            |
+| fields       | インデックスの中で使うフィールドの配列|
+| unique       | インデックスがユニークかどうか        |
+
+>**TIP**
+>スキーマに関する詳細な情報はDoctrineの[マニュアル](http://www.doctrine-project.org/documentation/manual/1_0/en/introduction-to-models#generating-models:schema-files)で読むことができます。
