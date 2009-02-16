@@ -1,0 +1,254 @@
+5章 - データのフィクスチャ
+==========================
+
+## 導入
+
+オブジェクトのリレーションの階層にロードされるデータを指定するためにDoctrineはYAML構文を使用したサンプルのテストデータの小さなセットをロードする機能を提供します。テーブル用の情報とレコード間のリンクの作成機能がサポートされます。
+
+>**Note**
+>この章で示される例は次の単純な`User`と`Phonenumber`スキーマを使用し、これらは`config/doctrine/schema.yml`に設置されます。
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(25)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+
+    Profile:
+      columns:
+        name: string(255)
+        about: string(500)
+        user_id: integer
+      relations:
+        User:
+          foreignType: one
+
+>**NOTE**
+>`sfPropelPlugin`では外部キーの名前が使われるのは異なり、`sfDoctrinePlugin`では、データフィクスチャのレコードをリンクするときにリレーションの名前を使います。データフィクスチャをインラインで指定することもできます。一方で、`Doctrine_Record`インスタンスを表すYAMLブロックは`Doctrine_Record`の子のためのリレーショングラフを定義する入れ子のデータ構造を持つことができます。この章の後で`original`と`inline`スタイルの両方のデータフィクスチャを示します。
+
+## original
+
+`data/fixtures/user.yml`を作成し次のYAMLコードをロードします。
+
+    User:
+      User_1:
+        username: jwage
+        password: changeme
+      User_2:
+        username: fabpot
+        password: changeme
+      User_3:
+        username: dwhittle
+        password: changeme
+
+データベースをリビルドするには次のコマンドを実行します。
+
+    $ ./symfony doctrine:build-all-reload
+
+データが適切にロードされたことを検査するために次のシンプルなDQLクエリーを実行します。
+
+    $ ./symfony doctrine:dql "FROM User u"
+    >> doctrine  executing dql query
+    DQL: FROM User u
+    found 3 results
+    -
+      id: '1'
+      username: jwage
+      password: changeme
+    -
+      id: '2'
+      username: fabpot
+      password: changeme
+    -
+      id: '3'
+      username: dwhittle
+      password: changeme
+
+>**CAUTION**
+>データフィクスチャでデータの値を設定する
+>
+>`sfYaml`パーサーに関して文字列の型を強制するシングルクォートで明示的にラップしない限り、
+>`sfYaml`パーサーは自動的に有効なデータをunixタイムスタンプに変換します。
+>`date`もしくは`timestamp`カラム型を設定するときにシングルクォートを使わないのであれば
+>Doctrineのバリデーションは失敗します。
+>`Doctrine_Record`に渡される値がunixのタイムスタンプだからです。
+>
+>
+>`User`モデルの`created_at`カラムを設定する方法は次の通りです。
+>
+>
+>     [yml]
+>     User:
+>       User_1:
+>         username: jwage
+>         password: changeme
+>         created_at: '2008-12-17 00:01:00'
+
+## リレーションをリンクする
+
+`data/fixtures/phonenumber.yml`を作成し次のYAMLデータフィクスチャをロードします。
+
+    Phonenumber:
+      Phonenumber_1:
+        phonenumber: 6155139185
+        User: User_1
+      Phonenumber_2:
+        phonenumber: 1234567890
+        User: User_2
+      Phonenumber_3:
+        phonenumber: 0987654321
+        User: User_3
+
+データベースをリビルドしてロードされたデータフィクスチャを検査する別のDQLクエリーを実行します。
+
+    $ ./symfony doctrine:build-all-reload
+
+では`User`と`Phonenumber`レコードをjoinするより複雑なクエリーでデータを検査します。
+
+    $ ./symfony doctrine:dql "FROM User u, u.Phonenumbers p"
+    >> doctrine  executing dql query
+    DQL: FROM User u, u.Phonenumbers p
+    found 3 results
+    -
+      id: '1'
+      username: jwage
+      password: changeme
+      Phonenumbers:
+        -
+          id: '1'
+          phonenumber: 6155139185
+          user_id: '1'
+    -
+      id: '2'
+      username: fabpot
+      password: changeme
+      Phonenumbers:
+        -
+          id: '2'
+          phonenumber: 1234567890
+          user_id: '2'
+    -
+      id: '3'
+      username: dwhittle
+      password: changeme
+      Phonenumbers:
+        -
+          id: '3'
+          phonenumber: 0987654321
+          user_id: '3'
+
+## 多対多
+
+次のデータフィクスチャで`config/doctrine/schema.yml`のYAMLスキーマを使用します。
+
+    BlogPost:
+      columns:
+        title: string(255)
+        body: clob
+      relations:
+        Tags:
+          class: Tag
+          refClass: BlogPostTag
+          foreignAlias: BlogPosts
+
+    BlogPostTag:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          foreignAlias: BlogPostTags
+        Tag:
+          foreignAlias: BlogPostTags
+
+    Tag:
+      columns:
+        name: string(255)
+
+データフィクスチャの`data/fixtures/data.yml`をロードします。
+
+    BlogPost:
+      BlogPost_1:
+        title: Test Blog Post
+        body: This is the body of the test blog post
+        Tags: [test, php, doctrine, orm]
+
+    Tag:
+      test:
+        name: test
+      php:
+        name: php
+      doctrine:
+        name: doctrine
+      orm:
+        name: orm
+
+データベースをリビルドしてロードされたデータを見るためにDQLクエリーを実行します。
+
+    $ ./symfony doctrine:build-all-reload
+
+`BlogPost`レコードと関連`Tags`のすべてを取得する別のDQLクエリーでデータを検査します。
+
+    $ ./symfony doctrine:dql "FROM BlogPost p, p.Tags"
+    >> doctrine  executing dql query
+    DQL: FROM BlogPost p, p.Tags
+    found 1 results
+    -
+      id: '1'
+      title: 'Test Blog Post'
+      body: 'This is the body of the test blog post'
+      Tags:
+        -
+          id: '1'
+          name: test
+        -
+          id: '2'
+          name: php
+        -
+          id: '3'
+          name: doctrine
+        -
+          id: '4'
+          name: orm
+
+## インライン
+
+Doctrineはインラインでのデータフィクスチャのリレーションを指定する機能を提供します。
+
+    User:
+      User_1:
+        username: jwage
+        password: changeme
+        Phonenumbers:
+          Phonenumber_1:
+            6155139185
+
+    BlogPost:
+      BlogPost_1:
+        title: Test Blog Post
+        body: This is the body of the test blog post
+        Tags:
+          test:
+            name: test
+          php:
+            name: php
+          doctrine:
+            name: doctrine
+          orm:
+            name: orm
+
+この代替構文はデータフィクスチャの長さと複雑性を大いに減らすことができます。
+
+>**TIP**
+>データフィクスチャに関する詳細な情報はDoctrineの[マニュアル](http://www.doctrine-project.org/documentation/manual/1_0/en/data-fixtures)で読むことができます。
