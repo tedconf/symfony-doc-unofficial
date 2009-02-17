@@ -1,0 +1,114 @@
+Cross Application Links
+=======================
+
+A symfony project is made of one or more applications. Applications share
+nothing, but the model classes. But sometimes, you need the ability to create
+links to a frontend application from a backend one. Think about a CMS backend
+where you want the user to edit an article and then link to the corresponding
+article in the frontend.
+
+In this tutorial, I will show you a simple solution to this problem.
+
+Beside parsing the configuration files and converting the resulting array to a
+PHP cache, some configuration handler classes can also "evaluate" the
+configuration for direct consumption (the autoload, database, and routing
+configuration handlers sports this new behavior).
+
+For example, if you want to convert a file containing route definitions in the
+YAML format to their corresponding routes objects, you can do something like
+the following:
+
+    [php]
+    $config = new sfRoutingConfigHandler();
+    $routes = $config->evaluate(array('/path/to/routing.yml'));
+
+If you execute the above code snippet, the `$routes` array will be populated
+with an array of route objects, equivalent to the route definitions in the
+YAML file. The `generate()` method takes an array of YAML filenames as its first
+argument and merge the content of the files.
+
+>**TIP**
+>The `evaluate()` method takes an array of configuration files. If you
+>have some plugins that define routes in a `routing.yml` file, add its
+>file path in the array and the configuration will be merged with the
+>main configuration.
+
+Thanks to the framework decoupling and the `sfPatternRouting::setRoutes()`
+method, you can easily create a frontend routing object from any PHP script:
+
+    [php]
+    $routing = new sfPatternRouting(new sfEventDispatcher());
+    $routing->setRoutes($routes);
+
+Generating URLs is now as simple as calling the routing object `generate()`
+method:
+
+    [php]
+    $routing->generate('homepage');
+    $routing->generate('article', array('id' => $id));
+
+The `generate()` method takes a route name as its first argument, and an array
+of parameters as its second one.
+
+Let's use this knowledge to simplify the creation of frontend URLs from a
+backend application.
+
+In the `backendConfiguration` class, add the following code:
+
+    [php]
+    // apps/backend/config/backendConfiguration.class.php
+    class backendConfiguration extends sfApplicationConfiguration
+    {
+      protected $frontendRouting = null;
+
+      public function generateFrontendUrl($name, $parameters = array())
+      {
+        return 'http://frontend.example.com'.$this->getFrontendRouting()->generate($name, $parameters);
+      }
+
+      public function getFrontendRouting()
+      {
+        if (!$this->frontendRouting)
+        {
+          $this->frontendRouting = new sfPatternRouting(new sfEventDispatcher());
+
+          $config = new sfRoutingConfigHandler();
+          $routes = $config->evaluate(array(sfConfig::get('sf_apps_dir').'/frontend/config/routing.yml'));
+
+          $this->frontendRouting->setRoutes($routes);
+        }
+
+        return $this->frontendRouting;
+      }
+
+      // ...
+    }
+
+>**NOTE**
+>Notice that the `generateFrontendUrl()` method always generates
+>absolute URLs for obvious reasons. This is the only information that still need to be
+>hardcoded, as symfony does not have this knowledge and cannot guess it.
+
+With this code in place, you can now generate a frontend URL from anywhere in
+the backend. Here is for instance how to redirect the user to the frontend
+from a backend action:
+
+    [php]
+    $this->redirect($this->getContext()->getConfiguration()->generateFrontendUrl('hello', array('name' => 'Bar')));
+
+You can also create a small helper for templates:
+
+    [php]
+    function link_to_frontend($name, $parameters)
+    {
+      return sfConfiguration::getActive()->generateFrontendUrl($name, $parameters);
+    }
+
+That's all there is to it!
+
+If you have many applications, it is pretty easy to refactor the above code to
+generate URL for and from any other application.
+
+>**NOTE**
+>The technique described in this post is used internally by symfony for
+>the `app:routes` tasks.
