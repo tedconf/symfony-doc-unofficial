@@ -46,13 +46,13 @@ fatto che siano attive o meno:
 
 <propel>
 Un'offerta di lavoro attiva è un'offerta pubblicata da meno di 30 giorni. Il 
-metodo `doSelect()` utilizza un oggetto di tipo `Criteria` che descrive la 
+metodo `doSelect()` utilizza un oggetto di tipo `~Criteria~` che descrive la 
 richiesta da fare al database. Nel codice precedente viene passato un `Criteria`
 vuoto, il che significa che tutti i record vengono recuperati dal database.
 </propel>
 <doctrine>
 Un'offerta di lavoro attiva è un'offerta pubblicata da meno di 30 giorni. Il 
-metodo `Doctrine_Query::execute()` farà una richiesta al database.
+metodo `~Doctrine_Query~::execute()` farà una richiesta al database.
 Nel codice precedente non abbiamo specificato nessuna condizione di "where",
 il che significa che tutti i record vengono recuperati dal database.
 </doctrine>
@@ -103,8 +103,8 @@ Visto che non si scriverà direttamente le query SQL a mano,
 ##ORM## si prenderà cura delle differenze tra i diversi database engine e
 genererà codice SQL ottimizzato per il database engine selezionato durante
 il giorno 3. Alcune volte però è molto utile verificare il codice SQL
-generato da ##ORM##; per esempio per fare del debug di una query che
-non funziona come ci si aspetta. Nell'ambiente di sviluppo (`dev`),
+generato da ##ORM##; per esempio per fare il ~debug~ di una query che
+non funziona come ci si aspetta. Nell'~ambiente~ di sviluppo (`dev`),
 symfony logga queste query (assieme a molto altro) nella cartella `log/`.
 Esiste un file di log per ogni combinazione di applicazione ed ambiente. Il file 
 che stiamo cercando si chiama `frontend_dev.log`:
@@ -125,12 +125,12 @@ Potete vedere da soli che Propel ha generato una clausola where per la colonna
 `created_at` (`WHERE jobeet_job.CREATED_AT > :p1`).
 
 >**NOTE**
->La stringa `:p1` nella query indica che Propel genera dei prepared
->statement. Il vero valore di `:p1` ('`2008-11-06 15:47:12`' nell'esempio precedente)
+>La stringa `:p1` nella query indica che Propel genera dei ~prepared
+>statement~. Il vero valore di `:p1` ('`2008-11-06 15:47:12`' nell'esempio precedente)
 >è passato durante l'esecuzione della query e su di esso viene eseguito l'apposito
 >escape dal database engine. L'utilizzo dei prepared statement riduce drasticamente
 >l'esposizione ad attacchi di tipo
->[SQL injection](http://it.wikipedia.org/wiki/Sql_injection).
+>[~SQL injection~](http://it.wikipedia.org/wiki/Sql_injection).
 </propel>
 <doctrine>
     Dec 04 13:58:33 symfony [info] {sfDoctrineLogger} executeQuery : SELECT 
@@ -148,23 +148,23 @@ Si può vedere che Doctrine ha una clausola where per la colonna `created_at`
 (`WHERE j.created_at > ?`).
 
 >**NOTE**
->La stringa `?` nella query indica che Doctrine genera dei prepared
->statement. Il vero valore di `?` ('2008-11-08 01:13:35' nell'esempio sopra)
+>La stringa `?` nella query indica che Doctrine genera dei ~prepared
+>statement~. Il vero valore di `?` ('2008-11-08 01:13:35' nell'esempio sopra)
 >è passato durante l'esecuzione della query e su di esso viene eseguito
 >l'apposito escape dal database engine. 
 >L'utilizzo dei prepared statement riduce drasticamente
->l'esposizione al problema dell'[SQL injection](http://it.wikipedia.org/wiki/Sql_injection).
+>l'esposizione al problema dell'[~SQL injection~](http://it.wikipedia.org/wiki/Sql_injection).
 </doctrine>
 
-Questo è bene ma è un po' scomodo dover passare dal browser, all'IDE ed al file 
+Questo è bene, ma è un po' scomodo dover passare dal browser all'IDE ed al file 
 di log ogni volta che si ha bisogno di testare un cambiamento. Grazie alla
 barra di debug di symfony, tutte le informazioni necessarie sono comodamente
 disponibili all'interno del browser:
 
 ![query SQL nella web debug toolbar](http://www.symfony-project.org/images/jobeet/1_2/06/web_debug_sql.png)
 
-Serializzazione degli oggetti
------------------------------
+~Serializzazione~ degli oggetti
+-------------------------------
 
 Anche se il codice precedente funziona, non è affatto perfetto, perché
 non considera i requisiti del giorno 2:
@@ -225,8 +225,8 @@ il metodo `save()` della classe del modello:
     }
 </doctrine>
 
-Il metodo `isNew()` restituisce il valore `true` quando l'oggetto non è ancora 
-stato serializzato a database e `false` altrimenti.
+Il metodo `~isNew()~` restituisce il valore `true` quando l'oggetto non è ancora 
+stato serializzato nel database e `false` altrimenti.
 
 Modifichiamo ora l'azione per utilizzare la colonna `expires_at` al
 posto di `created_at` per selezionare i lavori attivi:
@@ -300,14 +300,14 @@ per aggiungere un lavoro che sia già scaduto.
 
 >**NOTE**
 >Fate attenzione quando copiate e incollate il codice in una
->fixture, per non alterare l'indentazione. `expired_job` deve
+>~fixture~, per non alterare l'indentazione. `expired_job` deve
 >avere solo due spazi davanti.
 
 Come si può vedere nel lavoro che abbiamo aggiunto nel file
 fixture, il valore della colonna `created_at` può
 essere definito anche se viene riempito automaticamente da
-##ORM##. Il vaolre definito sovrascriverà quello di default.
-Ricarichiamo le fixtures ed aggiorniamo il browser, per
+##ORM##. Il valore definito sovrascriverà quello di default.
+Ricarichiamo le fixture ed aggiorniamo il browser, per
 assicurarci che il vecchio lavoro non si veda più:
 
     $ php symfony propel:data-load
@@ -318,7 +318,7 @@ Configurazione personalizzata
 Nel metodo `JobeetJob::save()` abbiamo inserito il numero di giorni dopo cui
 un lavoro scade. Sarebbe stato molto meglio rendere quel valore
 configurabile. Il framework symfony fornisce un file di configurazione per
-le impostazioni specifiche dell'applicazione, il file `app.yml`. Questo file
+le ~impostazioni~ specifiche dell'~applicazione~, il file `app.yml`. Questo file
 YAML può contenere tutte le impostazioni che si desiderano:
 
     [yml]
@@ -327,7 +327,7 @@ YAML può contenere tutte le impostazioni che si desiderano:
       active_days: 30
 
 Nell'applicazione, queste impostazioni sono disponibili tramite la classe
-globale `sfConfig`:
+globale `~sfConfig~`:
 
     [php]
     sfConfig::get('app_active_days')
@@ -364,8 +364,12 @@ Aggiorniamo il codice per tenere in considerazione queste nuove impostazioni:
     }
 </doctrine>
 
-Il file di configurazione `app.yml` è un bel modo per centralizzare le impostazioni
-globali per la propria applicazione.
+Il file di configurazione `app.yml` è un bel modo per centralizzare le
+~impostazioni globali~ per la propria applicazione.
+
+Infine, se si ha bisogno di impostazioni che valgano per tutto il progetto,
+basta creare un nuovo file `app.yml` nella cartella `config`, sotto la
+cartella radice del proprio progetto symfony.
 
 Rifattorizzare
 --------------
@@ -375,15 +379,15 @@ Riuscite ad intravedere il problema?
 
 <propel>
 Il codice dei `Criteria` non appartiene all'azione (livello del Controllore),
-ma al livello del Modello. Nel pattern MVC, il Modello definisce
-tutta la business logic, ed il Controllore si limita a richiamare il
+ma al livello del Modello. Nel pattern ~MVC~, il Modello definisce
+tutta la ~business logic~, ed il Controllore si limita a richiamare il
 Modello per recuperare da esso i dati. Siccome il codice restituisce
 un insieme di lavori, creiamo un metodo `getActiveJobs()`:
 </propel>
 <doctrine>
 Il codice di `Doctrine_Query` non appartiene all'azione (livello del
-Controllore), ma al livello del Modello. Nel pattern MVC, il Modello
-definisce tutta la business logic, ed il Controllore si limita a
+Controllore), ma al livello del Modello. Nel pattern ~MVC~, il Modello
+definisce tutta la ~business logic~, ed il Controllore si limita a
 richiamare il Modello per recuperare da esso i dati. Siccome il
 codice restituisce un insieme di lavori, spostiamo il codice
 nella classe `JobeetJobTable`  e creiamo un metodo `getActiveJobs()`:
@@ -433,9 +437,9 @@ i lavori attivi.
 </doctrine>
     }
 
-Questa rifattorizzazione ha diversi benefici rispetto al codice precedente:
+Questa ~rifattorizzazione~ ha diversi benefici rispetto al codice precedente:
 
- * La logica per ottenere i lavori attivi è ora nel Modell, a cui appartiene
+ * La logica per ottenere i lavori attivi è ora nel Modello, a cui appartiene
  * Il codice nel controllore è molto più leggibile
  * Il metodo `getActiveJobs()` è riutilizzabile (ad esempio in un'altra azione)
  * Il codice del modello è ora testabile con i test unitari
@@ -507,7 +511,7 @@ Aprire la classe `JobeetCategoryTable` ed aggiungere un metodo `getWithJobs()`:
       }
     }
 
-Il metodo `Criteria::addJoin()` aggiunge una clausola `JOIN` all'SQL generato.
+Il metodo `Criteria::addJoin()` aggiunge una clausola `~JOIN~` all'SQL generato.
 Per default, la condizione di join è aggiunta alla clausola `WHERE`.
 Si può anche cambiare l'operatore di join aggiungendo un terzo parametro
 (`Criteria::LEFT_JOIN`, `Criteria::RIGHT_JOIN`, e `Criteria::INNER_JOIN`).
@@ -707,7 +711,7 @@ Questo è semplice quanto aggiungere il metodo `getActiveJobs()`:
     }
 </doctrine>
 
-L'appropriata clausola `LIMIT` è ora insita nel Modello, ma è meglio che tale
+L'appropriata clausola `~LIMIT~` è ora insita nel Modello, ma è meglio che tale
 valore sia configurabile. Cambiamo il template in modo che passi un numero
 massimo di lavori, impostato in `app.yml`:
 
@@ -729,11 +733,11 @@ Fixture dinamiche
 
 A meno che non si abbassi l'impostazione `max_jobs_on_homepage` ad uno, non si
 vedrà nessuna differenza. Abbiamo bisogno di aggiungere un sacco di lavori alle
-fixture. Si potrebbe copiare e incollare un lavoro esistente per dieci o venti
+~fixture~. Si potrebbe copiare e incollare un lavoro esistente per dieci o venti
 volte a mano... ma c'è un modo migliore.
 La duplicazione è male, anche nei file fixture.
 
-symfony al salvataggio! I file YAML in symfony possono contenere codice PHP,
+symfony al salvataggio! I file ~YAML~ in symfony possono contenere codice PHP,
 che viene valutato appena prima di leggere il file. Modifichiamo il file fixture
 `020_jobs.yml` ed aggiungiamo alla fine il seguente codice:
 
@@ -761,8 +765,8 @@ che viene valutato appena prima di leggere il file. Modifichiamo il file fixture
 
     <?php endfor; ?>
 
-State attenti, il parser YAML si arrabbierà se si fa confusione con l'
-indentazione. Tenete a mente i seguenti semplici consigli, quando
+State attenti, il parser YAML si arrabbierà se si fa confusione con
+l'~indentazione~. Tenete a mente i seguenti semplici consigli, quando
 aggiungete codice PHP ad un file YAML:
 
  * Le istruzioni `<?php ?>` devono sempre iniziare la riga od essere compresi in
@@ -794,9 +798,9 @@ Ma come possiamo farlo, visto che il lavoro è recuperato automaticamente
 dalla rotta?
 
 <propel>
-Di default, `sfPropelRoute` usa il metodo standard `doSelectOne()` per recuperare
+Di default, `~sfPropelRoute~` usa il metodo standard `doSelectOne()` per recuperare
 l'oggetto, ma si può cambiare questo comportamento fornendo un'opzione
-`method_for_criteria` nella configurazione della rotta:
+`~method_for_criteria~` nella configurazione della rotta:
 </propel>
 
     [yml]
@@ -819,7 +823,7 @@ l'oggetto, ma si può cambiare questo comportamento fornendo un'opzione
         sf_method: [GET]
 <doctrine>
 >**NOTE**
->L'impostazione per il metodo `method_for_query` non funzionava prima
+>L'impostazione per il metodo `~method_for_query~` non funzionava prima
 >della versione 1.2.2.
 </doctrine>
 <propel>
@@ -876,15 +880,11 @@ A domani
 --------
 
 Lavorate ad un'implementazione del vostro progetto Jobeet in locale. Abusate pure
-della [documentazione API](http://www.symfony-project.org/api/1_2/) online e di
-tutta la [documentazione](http://www.symfony-project.org/doc/1_2/) liberamente
+della [documentazione ~API~](http://www.symfony-project.org/api/1_2/) online e di
+tutta la [~documentazione~](http://www.symfony-project.org/doc/1_2/) liberamente
 disponibile sul sito di symfony per aiutarvi. Ci vediamo domani con la nostra
 implementazione.
 
 Buona fortuna!
-
-Come sempre, si può fare un checkout del codice sorgente di Jobeet di oggi:
-
-    http://svn.jobeet.org/tags/release_day_06/
 
 __ORM__
