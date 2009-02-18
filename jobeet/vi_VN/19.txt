@@ -4,8 +4,8 @@ Ngày 19: Internationalization và Localization
 Ngày hôm qua, chúng ta đã hoàn thành chức năng tìm kiếm bằng cách thêm vào một vài
 tiện ích AJAX.
 
-Hôm nay, chúng ta sẽ nói về việc **internationalization** (viết tắt i18n) và
-**localization** (viết tắt l10n) ứng dụng Jobeet.
+Hôm nay, chúng ta sẽ nói về việc **internationalization** (i18n) và
+**localization** (l10n) ứng dụng Jobeet.
 
 From [Wikipedia](http://en.wikipedia.org/wiki/Internationalization):
 
@@ -27,7 +27,7 @@ có các lựa chọn ngôn ngữ khác nhau cho cac vùng trên thế giới, u
 sẽ chọn ngôn ngữ phù hợp với mình.
 
 >**NOTE**
->Chúng ta đã nói về symfony User class ở ngày 13.
+>Chúng ta đã nói về class symfony User ở ngày 13.
 
 ### User Culture
 
@@ -49,7 +49,7 @@ Bạn có thể quản lý user culture thông qua phương thức `setCulture()
 
 ### Culture mặc định
 
-User culture được cấu hình trong file `settings.yml`:
+Culture mặc định được xác định trong file `settings.yml`:
 
     [yml]
     # apps/frontend/config/settings.yml
@@ -58,7 +58,7 @@ User culture được cấu hình trong file `settings.yml`:
         default_culture: it_IT
 
 >**TIP**
->Do culture được quản lý bởi User object, nên nó được chứa trong user
+>Do culture được quản lý bởi object User, nên nó được chứa trong
 >session. Trong quá trình phát triển, nếu bạn thay đổi culture mặc định, bạn cần phải
 >xóa session cookie để thiết lập mới có hiệu quả.
 
@@ -85,7 +85,7 @@ Nếu không có ngôn ngữ nào phù hợp, ngôn ngữ đầu tiên trong m�
 Culture trên URL
 ------------------
 
-Jobeet website hỗ trợ English và French. Do mỗi URL chỉ có thể tương ứng với một
+Website Jobeet hỗ trợ English và French. Do mỗi URL chỉ có thể tương ứng với một
 resource, nên culture phải được nhúng trong URL. Để thực hiện điều này, mở file `routing.yml`,
 và thêm biến `:sf_culture` vào tất cả routes trừ `api_jobs` và `homepage`. Để đơn giản
 route, ta thêm `/:sf_culture` vào trước của `url`. Với collection route, ta thêm một
@@ -147,9 +147,9 @@ Khi biến `sf_culture` được sử dụng ở route, symfony sẽ tự độn
 để xác định culture của user.
 
 Do chúng ta cần trang chủ hỗ trợ nhiều ngôn ngữ (`/en/`, `/fr/`, ...),
-nên trang chủ mặc định (`/`) phải được chuyển sang ngôn ngữ phù hợp với user culture. Nhưng nếu user chưa xác định được culture, do anh ta truy cập vào Jobeet lần đầu tiên, culture thích hợp sẽ được hệ thống chọn cho anh ta.
+nên trang chủ mặc định (`/`) phải được chuyển sang ngôn ngữ phù hợp với culture của user. Nhưng nếu user chưa xác định culture, do anh ta truy cập vào Jobeet lần đầu tiên, hệ thống sẽ tự chon culture thích hợp.
 
-Đầu tiên, thêm phương thức `isFirstRequest()` vào `myUser`. Nó trả về `true` nếu đây là
+Thêm phương thức `isFirstRequest()` vào `myUser`, trả về `true` nếu là
 request đầu tiên của một user session:
 
     [php]
@@ -166,7 +166,7 @@ request đầu tiên của một user session:
       }
     }
 
-Thêm một `localized_homepage` route:
+Thêm route `localized_homepage` :
 
     [yml]
     # apps/frontend/config/routing.yml
@@ -176,8 +176,8 @@ Thêm một `localized_homepage` route:
       requirements:
         sf_culture: (?:fr|en)
 
-Sửa lại action `index` của module `job` để thực hiện việc chuyển
-người dùng trang trang chủ phù hợp nhất ở request đầu tiên của session:
+Sửa lại action `index` của module `job` để chuyển
+người dùng trang trang chủ với ngôn ngữ phù hợp:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -211,10 +211,10 @@ Nếu biến `sf_culture` chưa có trong request, có nghĩa là
 user truy cập vào trang web từ URL `/`. Trong trường hợp này và session là mới,
 culture thích hợp nhất sẽ được chọn. Ngược lại, culture hiện tại chứa trong session sẽ được sử dụng.
 
-Bước cuối cùng là chuyển user tới URL `localized_homepage`. Chú ý rằng, ta ko cần cung cấp
-biến `sf_culture` do symfony sẽ tự động làm việc này cho bạn.
+Cuối cùng, chuyển user tới URL `localized_homepage`. Chú ý rằng, ta ko cần cung cấp
+biến `sf_culture`, symfony sẽ tự động làm việc này cho bạn.
 
-Bây giờ, thử truy cập URL `/it/`, symfony sẽ trả về một 404 error do chúng ta
+Khi truy cập URL `/it/`, symfony sẽ trả về một 404 error do chúng ta
 giới hạn biến `sf_culture` là `en`, hoặc `fr`. Thêm yêu cầu này vào tất cả các
 route có chứa culture:
 
@@ -261,13 +261,13 @@ User tester cung cấp phương thức `isCulture()` để kiểm tra culture hi
       with('user')->isCulture('fr')
     ;
 
-Chuyển ngôn ngữ
+Chuyển đổi ngôn ngữ
 ------------------
 
 Để user có thể chuyển sang ngôn ngữ khác, ta cần thêm một language form vào
-layout. Form framework không cung cấp một form out of the box nhưng điều này là cần thiết đối với internationalized websites, symfony core team đã phát triển
+layout. Form framework không cung cấp form ngoài nhưng điều này là cần thiết đối với websites đa ngôn ngữ, do đó symfony core team đã phát triển
 [`sfFormExtraPlugin`](http://www.symfony-project.org/plugins/sfFormExtraPlugin?tab=plugin_readme),
-chứa validators, widgets, và forms không nằm trong symfony package chính do nó quá cụ thể và cần một vài thứ liên quan nhưng nó cũng rất hữu ích.
+chứa các validator, widget, và form hữu ích.
 
 Cài đặt plugin với task `plugin:install`:
 
@@ -307,10 +307,10 @@ Thêm language form vào layout như sau:
       </div>
     </div>
 
-Vấn đề ở đây là gì? Vâng, đó chính là, việc tạo form object không nằm ở
+Vấn đề ở đây là gì? Đó chính là việc tạo form object không nằm ở
 View layer. Nó phải được tạo từ một action. Nhưng code nằm trong
 layout, và form phải được tạo với mọi action.
-Trong trường hợp này, bạn có thể sử dụng một **component**. Một component tương tự như partial
+Trong trường hợp này, bạn có thể sử dụng **component**. Một component tương tự như partial
 nhưng có thêm một vài đoạn code gắn với nó. CÓ thể coi nó là một lightweight action.
 
 Include một component trong template được thực hiện thông qua helper
@@ -326,10 +326,10 @@ Include một component trong template được thực hiện thông qua helper
       </div>
     </div>
 
-helper nhận tham số là tên module và action. Tham số thứ 3
-là các giá trị cung cấp cho component.
+Helper nhận tham số là tên module và component. Tham số thứ 3
+là các giá trị cung cấp cho component đó.
 
-Tạo một module `language` để chứa component và action thực hiện việc đổi ngôn ngữ cho user:
+Tạo module `language` để chứa component và action thực hiện việc chuyển đổi ngôn ngữ cho user:
 
     $ php symfony generate:module frontend language
 
@@ -350,7 +350,7 @@ Nội dung file này:
       }
     }
 
-Như bạn có thể thấy, một components class tương tự như một actions class.
+Như bạn có thể thấy, class component tương tự như một class action.
 
 Template cho một component có cách đặt tên tương tự partial: một kí tự gạch dưới (`_`) sau đó là tên component:
 
@@ -399,7 +399,7 @@ Internationalization
 
 Những ngôn ngữ khác nhau có tập các kí tự khác nhau. Tiếng Anh là ngôn ngữ đơn giản nhất do chỉ sử dụng
 các kí tự ASCII, tiếng Pháp phức tạp hơn một chút với các kí tự nhấn trọng âm như
-"é", và những ngôn ngữ như Russian, Chinese, hay Arabic thì rất phức tạp do các kí tự nằm ngoài dải kí tự
+"é", những ngôn ngữ như Russian, Chinese, hay Arabic thì rất phức tạp do các kí tự nằm ngoài dải kí tự
 ASCII.
 
 Khi làm việc với dữ liệu international, tốt hơn là sử dụng tiêu chuẩn unicode.
@@ -409,7 +409,7 @@ với web, chúng ta sử dụng UTF-8, sẽ map Unicode code points với varia
 sequences của octets. Trong UTF-8, hầu hết các ngôn ngữ có mã kí tự với độ dài ít hơn
 3 bits.
 
-UTF-8 là encode mặc định trong symfony, là được xác định trong file cấu hình
+UTF-8 là encode mặc định trong symfony, được xác định trong file cấu hình
 `settings.yml`:
 
     [yml]
@@ -429,7 +429,7 @@ UTF-8 là encode mặc định trong symfony, là được xác định trong fi
 
 ### Templates
 
-Một internationalized website có nghĩa là người dùng tương tác với bản dịch ra vài ngôn ngữ.
+Một website đa ngôn ngữ có nghĩa là nội dung sẽ được dịch ra vài ngôn ngữ.
 
 Trong một template, tất cả các câu phụ thuộc ngôn ngữ được chứa trong helper
 `__()` (chú ý rằng có 2 kí tự gạch dưới).
@@ -485,7 +485,7 @@ nếu không, tham số đầu tiên của helper sẽ được dùng làm giá 
 
 Tất cả các bản dịch được chứa trong một catalogue. i18n framework cung cấp nhiều cách khác nhau
 để chứa bản dịch. Chúng tôi sử dụng format
-["XLIFF"](http://en.wikipedia.org/wiki/XLIFF), đó là một chuẩn và khá mềm dẻo.
+["XLIFF"](http://en.wikipedia.org/wiki/XLIFF), đó là một chuẩn khá mềm dẻo.
 Nó cũng được sử dụng bởi admin generator và phần lớn các symfony plugin.
 
 >**NOTE**
@@ -494,7 +494,7 @@ Nó cũng được sử dụng bởi admin generator và phần lớn các symfo
 
 ### `i18n:extract`
 
-Thay vì tạo catalogue file bằng tay, chúng ta sử dụng task có sẵn `i18n:extract`:
+Thay vì tạo file catalogue bằng tay, chúng ta sử dụng task có sẵn `i18n:extract`:
 
     $ php symfony i18n:extract frontend fr --auto-save
 
@@ -600,11 +600,11 @@ Số công việc là một biến được thay thế bởi một placeholder t
       <?php echo __('and %count% more...', array('%count%' => link_to($count, 'category', $category))) ?>
     </div>
 
-Chuỗi cần dịch bây giờ là "and %count% more...", và `%count%`
-placeholder sẽ được thay bởi số cụ thể khi chạy, nhờ có giá trị được cung cấp trong tham số thứ 2 của helper `__()`.
+Chuỗi cần dịch bây giờ là "and %count% more...", và placeholder `%count%`
+sẽ được thay bởi số cụ thể khi chạy, nhờ có giá trị được cung cấp trong tham số thứ 2 của helper `__()`.
 
-Thêm chuỗi mới bằng cách thêm một `trans-unit` tag vào file
-`messages.xml`, hoặc sử dụng `i18n:extract` task để tự động cập nhật file:
+Thêm một `trans-unit` tag mới vào file
+`messages.xml`, hoặc sử dụng task `i18n:extract` để tự động cập nhật file:
 
     $ php symfony i18n:extract frontend fr --auto-save
 
@@ -616,9 +616,9 @@ Sau khi chạy lệnh, mở file XLIFF và thêm phần dịch ra tiếng Pháp:
       <target>et %count% autres...</target>
     </trans-unit>
 
-Khi dịch, `%count%` placeholder cần được giữ nguyên và đặt ở nơi thích hợp.
+Khi dịch, placeholder `%count%` cần được giữ nguyên và đặt ở nơi thích hợp.
 
-Một số chuỗi phức tạp hơn do quy tắc về số nhiều của ngôn ngữ. Tùy thuộc vào giá trị của số mà câu thay đổi theo, nhưng lại không hoàn toàn giống nhau với tất cả các ngôn ngữ. Một vài ngôn ngữ có quy tắc số nhiều phức tạp như Polish hay Russian.
+Một số chuỗi phức tạp hơn do quy tắc về số nhiều của ngôn ngữ. Tùy thuộc vào giá trị của số mà câu thay đổi theo, nhưng mỗi ngôn ngữ lại có một nguyên tắc riêng. Một vài ngôn ngữ có quy tắc số nhiều phức tạp như Polish hay Russian.
 
 Trong trang category, số công việc trong category hiện tại được hiển thị:
 
@@ -645,7 +645,7 @@ Khi một câu có các nội dung dịch khác nhau tùy vào giá trị của 
 
 Chuỗi mô tả các bản dịch khác nhau tùy vào giá trị của số được format theo quy tắc:
 
-  * Các chuỗi được cách nhau bởi dấu gạch đúng (`|`)
+  * Các chuỗi được cách nhau bởi dấu gạch đứng (`|`)
   * Mỗi chuỗi bao gồm một range theo sau là bản dịch
 
 range có thể mô tả bất kì dải số nào:
@@ -673,13 +673,13 @@ error messages, và help messages. Tất cả những chuỗi này được symf
 internationalized, bạn chỉ cần thêm bản dịch vào file XLIFF.
 
 >**NOTE**
->Không may thay, task `i18n:extract` không phân tích các form class để xác định các chuỗi cần dịch.
+>Không may thay, task `i18n:extract` không phân tích các form class để xác định các chuỗi cần dịch, bạn phải tự thêm bằng tay.
 
 ### ##ORM## Objects
 
-Với Jobeet website, chúng ta sẽ không internationalize tất cả các bảng do không thể yêu cầu nhà tuyển dụng đưa lên bảng dịch cho tuyển dụng của họ sang ngôn ngữ khác. Nhưng bảng category cần được dịch.
+Với Jobeet website, chúng ta sẽ không internationalize tất cả các bảng do không thể yêu cầu nhà tuyển dụng đưa lên bảng dịch cho tuyển dụng của họ sang ngôn ngữ khác. Ta chỉ dịch cho bảng category.
 
-##ORM## plugin hỗ trợ bảng i18n out of the box. Với mỗi bảng chứa dữ liệu local, 2 bảng cần được tạo: một chứa các cột không phụ thuộc i18n, và một cho các cột cần được internationalized. 2 bảng này được liên kết theo quan hệ một-nhiều.
+##ORM## plugin hỗ trợ bảng i18n. Với mỗi bảng chứa dữ liệu local, 2 bảng cần được tạo: một chứa các cột không phụ thuộc i18n, và một cho các cột cần được internationalized. 2 bảng này được liên kết theo quan hệ một-nhiều.
 
 Cập nhật lại `schema.yml`:
 
@@ -772,9 +772,9 @@ Bằng cách bật `I18n` behavior, model `JobeetCategoryTranslation`
 được tự động tạo và chứa các `fields` cần dịch đã được chỉ định.
 
 Chú ý rằng chúng ta đơn giản là bật `I18n` behavior và chuyển `Sluggable` behavior
-gắn vào model `JobeetCategoryTranslation` sẽ được tạo tự động. Option `uniqueBy` cho `Sluggable` behavior biết các field nào quyết định một slug là duy nhất hay không. Ở đây, một slug là duy nhất với mỗi cặp `lang` và `name`.
+gắn vào model `JobeetCategoryTranslation` sẽ được tạo tự động. Option `uniqueBy` cho `Sluggable` behavior biết các field nào quyết định slug là duy nhất hay không. Ở đây, slug là duy nhất với mỗi cặp `lang` và `name`.
 
-Và cập nhật fixtures cho categories:
+Cập nhật fixtures cho categories:
 
     [yml]
     # data/fixtures/categories.yml
@@ -882,7 +882,7 @@ category sẽ vẫn làm việc và nhận giá trị với culture hiện tại
 <doctrine>
 >**TIP**
 >Để giảm số request tới database, join bảng `JobeetCategoryTranslation`
->trong câu truy vấn của bạn. Nó sẽ lấy object chính là một i18n trong một câu truy vấn.
+>trong câu truy vấn của bạn. Nó sẽ lấy object chính và một i18n trong một câu truy vấn.
 >
 >     [php]
 >     $categories = Doctrine_Query::create()
@@ -951,8 +951,8 @@ Chúng ta sẽ tạo phương thức mới `findOneBySlugAndCulture()` và `doSe
     // ...
   }
 
-Sau đó, sử dụng `method` option để `category` route sử dụng
-`doSelectForSlug()` method để nhận object:
+Sau đó, sử dụng option `method` để route `category` sử dụng method
+`doSelectForSlug()` để nhận object:
 
     [yml]
     # apps/frontend/config/routing.yml
@@ -987,7 +987,7 @@ Với backend, chúng ta muốn bản dịch French và English được sửa t
 
 ![Backend categories](http://www.symfony-project.org/images/jobeet/1_2/19/backend_categories.png)
 
-Nhúng một i18n form được thực hiện sử dụng `embedI18N()` method:
+Nhúng form i18n sử dụng method `embedI18N()`:
 
     [php]
     // lib/form/JobeetCategoryForm.class.php
@@ -1011,8 +1011,8 @@ Nhúng một i18n form được thực hiện sử dụng `embedI18N()` method:
       }
     }
 
-Giao diện admin generator hỗ trợ internationalization out of the box.
-Nó chứa sẵn bản dịch của hơn 20 languages, và thực sự dễ dàng để thêm một bản dịch mới, hoặc sửa bản dịch có sẵn.
+Giao diện admin generator hỗ trợ internationalization.
+Nó chứa sẵn bản dịch của hơn 20 ngôn ngữ, và dễ dàng thêm một bản dịch mới, hoặc sửa bản dịch có sẵn.
 Sửa file cho ngôn ngữ bạn muốn thay đổi (admin translations có thể tìm trong
 <propel>
 `lib/vendor/symfony/lib/plugins/sfPropelPlugin/i18n/`) ở application
@@ -1067,7 +1067,7 @@ Localization
 ### Templates
 
 Hỗ trợ các culture khác nhau cũng có nghĩa là hỗ trợ các cách khác nhau để format
-date và number. Trong một template, có vài helper giúp bạn thực hiện điều này, dựa trên culture hiện tại của user:
+date và number. Trong một template, có vài helper giúp bạn thực hiện điều này dựa trên culture hiện tại của user:
 
 Trong [`Date`](http://www.symfony-project.org/api/1_2/DateHelper) helper
 group:
@@ -1111,11 +1111,11 @@ Form framework cung cấp một vài widgets and validators cho dữ liệu loca
 Hẹn gặp lại ngày mai
 --------------------
 
-Internationalization và localization là first-class citizens trong symfony.
-Cung cấp một localized website cho user thật đơn giản do symfony cung cấp tất cả các công cụ cơ bản
+Internationalization và localization là tính năng được hỗ trợ sẵn trong symfony.
+Xây dựng một website đa ngôn ngữ thật đơn giản do symfony cung cấp tất cả các công cụ cơ bản
 và các task từ dòng lệnh để thực hiện điều đó nhanh chóng.
 
-Để chuẩn bị cho hướng dẫn đặc biệt ngày mai, chugns ta sẽ chuyển rất nhiều
+Để chuẩn bị cho hướng dẫn đặc biệt ngày mai, chúng ta sẽ chuyển rất nhiều
 files và khám phá sự khác nhau trong cách tổ chức một symfony project.
 
 __ORM__
