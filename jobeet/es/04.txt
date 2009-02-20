@@ -1,7 +1,7 @@
 ﻿Día 4: El Controlador y la Vista
 ==============================
 
-Ayer, hemos explorado cómo symfony simplifica la gestión de bases de datos por abstracción entre los diferentes motores de bases de datos, y mediante la conversión de elementos relacionales con útiles clases orientadas a objetos. También hemos jugado con ##ORM## para describir el esquema de base de datos, crear las tablas, y llenar la base de datos con algunos datos iniciales.
+Ayer, hemos explorado cómo Symfony simplifica la gestión de bases de datos por abstracción entre los diferentes motores de bases de datos, y mediante la conversión de elementos relacionales con útiles clases orientadas a objetos. También hemos jugado con ##ORM## para describir el esquema de base de datos, crear las tablas, y llenar la base de datos con algunos datos iniciales.
 
 Hoy, vamos a personalizar el módulo básico `job` creado ayer. El módulo `job` existente tiene todo el código que necesitamos para Jobeet:
 
@@ -23,11 +23,11 @@ Tal vez utilizas una capa de abstracción de la base de datos para separar el mo
 Al igual que con todos los problemas, hay soluciones agradables. Para desarrollo web, la solución más común para la organización de su código de hoy en día es el [**patrón de diseño MVC**](http://en.wikipedia.org/wiki/Model-view-controller).
 En resumen, el patrón de diseño MVC define una manera de organizar el código de acuerdo a su naturaleza. Este patrón separa el código en **tres capas**:
 
-  * La capa **Modelo** define la lógica de negocio (la base de datos pertenece a esta capa). Ya sabes que symfony guarda todas las clases y archivos relacionados con el modelo en el directorio `lib/model/`.
+  * La capa **Modelo** define la lógica de negocio (la base de datos pertenece a esta capa). Ya sabes que Symfony guarda todas las clases y archivos relacionados con el modelo en el directorio `lib/model/`.
 
-  * La **Vista** es con lo que el usuario interactúa (un motor de plantillas es parte de esta capa). En symfony, la vista es principalmente la capa de plantillas PHP. Estas son guardadas en varios directorios `templates/` como veremos más adelante en el día de hoy.
+  * La **Vista** es con lo que el usuario interactúa (un motor de plantillas es parte de esta capa). En Symfony, la vista es principalmente la capa de plantillas PHP. Estas son guardadas en varios directorios `templates/` como veremos más adelante en el día de hoy.
 
-  * El **Controlador** es la pieza de código que llama al Modelo para obtener algunos datos que le pasa a la Vista para la presentación al cliente. Cuando instalamos symfony el primer día, vimos que todas las solicitudes son gestionadas por un controlador frontal (`index.php` y `frontend_dev.php`). Estos controladores frontales delegadan la verdadera labor a las **acciones**. Como vimos ayer, estas acciones son, lógicamente, agrupadas en **módulos**.
+  * El **Controlador** es la pieza de código que llama al Modelo para obtener algunos datos que le pasa a la Vista para la presentación al cliente. Cuando instalamos Symfony el primer día, vimos que todas las solicitudes son gestionadas por un controlador frontal (`index.php` y `frontend_dev.php`). Estos controladores frontales delegadan la verdadera labor a las **acciones**. Como vimos ayer, estas acciones son, lógicamente, agrupadas en **módulos**.
 
 ![MVC](http://www.symfony-project.org/images/jobeet/1_2/04/mvc.png)
 
@@ -44,13 +44,13 @@ Una forma de resolver el problema es definir un encabezado y un pie de página y
 
 Pero los archivos de la cabecera y el pie de página no contienen HTML válido. Debe haber una mejor manera. En lugar de reinventar la rueda, vamos a utilizar otro patrón de diseño para resolver este problema: el 
 [patrón de diseño decorator](http://en.wikipedia.org/wiki/Decorator_pattern).
-El patrón de diseño decorator resuelve el problema al revés: la plantilla es decorada después de que el contenido es mostrado por una plantilla global, llamada **layout** en symfony:
+El patrón de diseño decorator resuelve el problema al revés: la plantilla es decorada después de que el contenido es mostrado por una plantilla global, llamada **layout** en Symfony:
 
 ![Layout](http://www.symfony-project.org/images/jobeet/1_2/04/layout.png)
 
 El layout de una aplicación se llama `layout.php` y se puede encontrar en el directorio `apps/frontend/templates/`. Este directorio contiene todas las plantillas globales para una aplicación.
 
-Reemplaza el layout por defecto de symfony por el siguiente código:
+Reemplaza el layout por defecto de Symfony por el siguiente código:
 
     [php]
     <!-- apps/frontend/templates/layout.php -->
@@ -156,11 +156,11 @@ y copiarlos dentro del directorio `web/css/`.
 >Por defecto, la tarea `generate:project` ha creado tres directorios para los recusos de 
 >project: `web/images/` para las imágenes, `web/css/` para las hojas de estilo, y 
 >`web/js/` para los Javascripts. Esta es una de las muchas convenciones definidas por
->symfony, pero por supuesto puedes almacenar en otro lugar bajo el directorio
+>Symfony, pero por supuesto puedes almacenar en otro lugar bajo el directorio
 >`web/`.
 
 El astuto lector habrá notado que, incluso si el archivo `main.css` no es mencionado en cualquier lugar del layout por defecto, está sin duda presentes en el código HTML generado. Pero no los otros. ¿Cómo es esto posible?
-El archivo de estilo se ha incluido por la llamada a la función `include_stylesheets()` que encuentra la etiqueta `<head>`. La función `include_stylesheets()` es llamada un **helper**. Un helper es una función, definida por symfony, que puede tener parámetros y devolver código HTML. La mayoría de las veces, los helpers te ahorran tiempo, ellos empaquetan código en snippets (porciones de código) utilizados con frecuencia en las plantillas. El helper `include_stylesheets()` genera una etiqueta `<link>` para las hojas de estilo.
+El archivo de estilo se ha incluido por la llamada a la función `include_stylesheets()` que encuentra la etiqueta `<head>`. La función `include_stylesheets()` es llamada un **helper**. Un helper es una función, definida por Symfony, que puede tener parámetros y devolver código HTML. La mayoría de las veces, los helpers te ahorran tiempo, ellos empaquetan código en snippets (porciones de código) utilizados con frecuencia en las plantillas. El helper `include_stylesheets()` genera una etiqueta `<link>` para las hojas de estilo.
 
 Pero, ¿cómo hace el helper para saber que hojas de estilo incluir?
 
@@ -194,7 +194,7 @@ El archivo `view.yml` establece la configuración `por defecto` para todas las p
 >`main.css`, y no al `/css/main.css`. Como cuestión de hecho, ambas definiciones
 >son equivalentes pues el prefijo relativo symfony es `/css/`.
 
-Si muchos archivos se definen, symfony los incluye en el mismo orden que la definición:
+Si muchos archivos se definen, Symfony los incluye en el mismo orden que la definición:
 
     [yml]
     stylesheets:    [main.css, jobs.css, job.css]
@@ -218,7 +218,7 @@ Esta configuración se presentará así:
 
 >**TIP**
 >El archivo de configuración `view.yml` también define el layout por defecto usado por la
->aplicación. Por defecto, el nombre es `layout`, y así symfony decora cada
+>aplicación. Por defecto, el nombre es `layout`, y así Symfony decora cada
 >página con el archivo `layout.php`. Puedes también deshabilitar el proceso de decoración
 >completo cambiando el valor de `has_layout` a `false`.
 
@@ -239,12 +239,12 @@ Para personalizar la vista del módulo `job`, necesitas crear un nuevo sub-direc
     showSuccess:
       stylesheets: [job.css]
 
-Bajo las secciones `indexSuccess` y `showSuccess` (ellas son las plantilla asociadas a las acciones `index` y `show`, como veremos más adelante), puedes personalizar cualquiera de los items encontrados bajo la sección `default` del `view.yml` de la aplicación. Todos los items se fusionan con la configuración de la aplicación. También puedes definir algunas configuraciones para todas las acciones de un módulo con la sección especial `all`.
+Bajo las secciones `indexSuccess` y `showSuccess` (ellas son las plantillas asociadas a las acciones `index` y `show`, como veremos más adelante), puedes personalizar cualquiera de los items encontrados bajo la sección `default` del `view.yml` de la aplicación. Todos los items se fusionan con la configuración de la aplicación. También puedes definir algunas configuraciones para todas las acciones de un módulo con la sección especial `all`.
 
 >**SIDEBAR**
->Principios de configuración en symfony
+>Principios de configuración en Symfony
 >
->Para los muchos archivos de configuración de symfony, la misma configuración se puede definir en
+>Para los muchos archivos de configuración de Symfony, la misma configuración se puede definir en
 >diferentes niveles:
 >
 >  * La configuración por defecto se encuentra en el framework
@@ -263,8 +263,7 @@ Como regla empírica, cuando algo es configurable a través de un archivo de con
 
 También puedes utilizar este helper en el layout a fin de incluir una hoja de estilo globalmente.
 
-Elegir entre un método u otro es realmente una cuestión de gusto. El 
-archivo `view.yml` proporciona una manera de definir las cosas para todas las acciones de un módulo, las cuales no son posible en una plantilla, pero la configuración es bastante estático. Por otro lado, utilizando el helper `use_stylesheet()` es más flexible y además, todo está en el mismo lugar: la definición de estilos y el código HTML. Para Jobeet, vamos a utilizar el helper `use_stylesheet()`, osea puedes quitar el `view.yml` que recien creamos y actualizar la plantilla `job` con la llamada a `use_stylesheet()`:
+Elegir entre un método u otro es realmente una cuestión de gusto. El archivo `view.yml` proporciona una manera de definir las cosas para todas las acciones de un módulo, las cuales no son posible en una plantilla, pero la configuración es bastante estático. Por otro lado, utilizando el helper `use_stylesheet()` es más flexible y además, todo está en el mismo lugar: la definición de estilos y el código HTML. Para Jobeet, vamos a utilizar el helper `use_stylesheet()`, osea puedes quitar el `view.yml` que recién creamos y actualiza la plantilla `job` con la llamada a `use_stylesheet()`:
 
     [php]
     <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
@@ -281,7 +280,7 @@ archivo `view.yml` proporciona una manera de definir las cosas para todas las ac
 La Página Principal de Puesto de Trabajo
 ----------------------------------------
 
-Como se observa en el día 3, la página principal de puestos es generada por la acción `index` del módulo `job`. La acción `index` es la parte del Controlador de la página y la plantilla asociada, `indexSuccess.php`, en la parte de la Vista:
+Como se observa en el día 3, la página principal de puestos de trabajo (job) es generada por la acción `index` del módulo `job`. La acción `index` es la parte del Controlador de la página y la plantilla asociada, `indexSuccess.php`, en la parte de la Vista:
 
     apps/
       frontend/
@@ -294,7 +293,7 @@ Como se observa en el día 3, la página principal de puestos es generada por la
 
 ### La Acción
 
-Cada acción está representado por un método de una clase. Para la página principal de puestos de trabajo, la clase es `jobActions` (el nombre del módulo seguido de `Actions`) y el método es `executeIndex()` (`execute` seguido por el nombre de la acción).
+Cada acción está representada por un método de una clase. Para la página principal de puestos de trabajo, la clase es `jobActions` (el nombre del módulo seguido de `Actions`) y el método es `executeIndex()` (`execute` seguido por el nombre de la acción).
 Esto recupera todos los puestos de trabajo de la base de datos:
 
     [php]
@@ -337,9 +336,9 @@ Este código hará que las variables `$foo` y `$bar` sean accesibles en la plant
 
 ### La Plantilla
 
-De forma predeterminada, el nombre de plantilla asociado con una acción se deduce por symfony gracias a un convención (el nombre de la acción seguida por `Success`).
+De forma predeterminada, el nombre de plantilla asociado con una acción se deduce por Symfony gracias a un convención (el nombre de la acción seguida por `Success`).
 
-La plantilla `indexSuccess.php` genera una tabla HTML para todos los puestos de trabajo. Aquí esta el códifo de la plantilla actual:
+La plantilla `indexSuccess.php` genera una tabla HTML para todos los puestos de trabajo. Aquí esta el códido de la plantilla actual:
 
     [php]
     <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
@@ -379,7 +378,7 @@ La plantilla `indexSuccess.php` genera una tabla HTML para todos los puestos de 
     <a href="<?php echo url_for('job/new') ?>">New</a>
 
 En el código de plantilla, el `foreach` itera a través de la lista de objetos `Job` (`$jobeet_job_list`), y para cada puesto de trabajo, cada valor de la columna es mostrado.
-Recuerda, el acceso a un valor de una columna es tan simple como una llamada al método de acceso cuyo nombre comienza con `get` y el nombre de la columna camelCased (por ejemplo, el método `getCreatedAt()` para la columna `created_at`).
+Recuerda, el acceso a un valor de una columna es tan simple como una llamada al método de acceso cuyo nombre comienza con `get` y el nombre de la columna en formato CamelCase (por ejemplo, el método `getCreatedAt()` para la columna `created_at`).
 
 Vamos a limpiar esto un poco para mostrar sólo un subconjunto de las columnas disponibles:
 
@@ -405,7 +404,7 @@ Vamos a limpiar esto un poco para mostrar sólo un subconjunto de las columnas d
 
 ![Página de inicio](http://www.symfony-project.org/images/jobeet/1_2/04/homepage.png)
 
-La función `url_for()` llamada en esta plantilla es un helper symfony que vamos a discutir mañana.
+La función `url_for()` en esta plantilla es un helper symfony que vamos a discutir mañana.
 
 La Plantilla para los Puestos de Trabajo
 ----------------------------------------
@@ -476,7 +475,7 @@ Esta plantilla utiliza la variable `$job` pasada por la acción para mostrar la 
     }
 
 <propel>
-Observa que algunos métodos accesores de Propel toman argumentos. Como hemos definido la columna `created_at` como un timestamp, el método accesor  `getCreatedAt()` toma un dia formateado como su primer argumento:
+Observa que algunos métodos de acceso de Propel toman argumentos. Como hemos definido la columna `created_at` como un timestamp, el método de acceso `getCreatedAt()` toma un día formateado como su primer argumento:
 
     [php]
     $job->getCreatedAt('m/d/Y');
@@ -590,7 +589,7 @@ Como en la acción `index`, la clase `JobeetJob` es usada para obtener un puesto
 >`lib/om/` y descubre todo el poder de estas clases.
 </propel>
 
-Si el puesto de trabajo no existe en la base de datos, queremos llevar al usuario a una página 404, que es exactamente lo que hace el método `forward404Unless()`. Este toma un Booleano como primer argumento y, a menos que sea true, se detiene el flujo de la actual ejecución. Como los métodos forward paran la ejecución de la acción enseguida lanzando un `sfError404Exception`, no necesitas después volver atrás.
+Si el puesto de trabajo no existe en la base de datos, queremos llevar al usuario a una página 404, que es exactamente lo que hace el método `forward404Unless()`. Este toma un Booleano como primer argumento y, a menos que sea true, detiene el flujo de la actual ejecución. Como los métodos forward detienen la ejecución de la acción enseguida lanzando un `sfError404Exception`, no necesitas después volver atrás.
 
 En cuanto a las excepciones, la página que aparece al usuario es diferente en el entorno `prod` del entorno `dev`:
 
@@ -608,7 +607,6 @@ En cuanto a las excepciones, la página que aparece al usuario es diferente en e
 >La Familia de Métodos "forward"
 >
 >El `forward404Unless` es en realidad equivalente a:
-
 >
 >     [php]
 >     $this->forward404If(!$this->job);
@@ -628,7 +626,7 @@ En cuanto a las excepciones, la página que aparece al usuario es diferente en e
 >
 >El método `forward()` hace un forwards a otra acción de la misma aplicación;
 >en el ejemplo anterior, para la acción `404` del módulo `default`.
->El módulo `default` es incluído con symfony y da acciones predeterminadas
+>El módulo `default` es incluído con Symfony y da acciones predeterminadas
 >para mostrar páginas 404, de seguridad, y de login.
 
 La Petición y la Respuesta
@@ -636,15 +634,15 @@ La Petición y la Respuesta
 
 Cuando navegas por las páginas `/job` o `/job/show/id/1` en tu navegador, estás iniciando un viaje de ida y vuelta al servidor web. El navegador está enviando una **Petición** y el servidor devuelve una **Respuesta**.
 
-Ya hemos visto que symfony encapsula la petición en un object `sfWebRequest` (mirá el método `executeShow()`). Y como symfony es un Framework Orientado a Objetos, la respuesta es también un objeto, de la clase `sfWebResponse`. Puedes acceder al objeto respuesta en la acción llamando a `$this->getResponse()`.
+Ya hemos visto que Symfony encapsula la petición en un object `sfWebRequest` (mirá el método `executeShow()`). Y como Symfony es un Framework Orientado a Objetos, la respuesta es también un objeto, de la clase `sfWebResponse`. Puedes acceder al objeto respuesta en la acción llamando a `$this->getResponse()`.
 
 Estos objetos proporcionan una gran cantidad de métodos convenientes para acceder a la información de funciones PHP y variables globales PHP.
 
 >**NOTE**
->¿Por qué symfony envuelve funcionalidades PHP existentes? En primer lugar, porque 
->symfony y sus métodos son más poderosos que su homólogo PHP. Luego, porque
+>¿Por qué Symfony envuelve funcionalidades PHP existentes? En primer lugar, porque 
+>Symfony y sus métodos son más poderosos que su homólogo PHP. Luego, porque
 >cuando se prueba una aplicación, es mucho más fácil para simular un request o
->un response con Objetos de tratar de ver alrededor de variables globales o trabajar
+>un response con Objetos que tratar de ver alrededor de variables globales o trabajar
 >con funciones PHP como `header()` la cuales hacen demasiado magia por detrás.
 
 ### La Petición
@@ -670,7 +668,7 @@ y `$_FILES`:
  `getUrlParameter()`  | `$_SERVER['PATH_INFO']`
  `getRemoteAddress()` | `$_SERVER['REMOTE_ADDR']`
 
-Ya hemos accesido parámetros de solicitud usando el método `getParameter()`. Devuelve un valor de la variable global `$_GET` o `$_POST`, o de la variable `PATH_INFO`.
+Ya hemos accedido a parámetros de solicitud usando el método `getParameter()`. Devuelve un valor de la variable global `$_GET` o `$_POST`, o de la variable `PATH_INFO`.
 
 Si deseas asegurarte de que un parámetro de la petición procede de uno particular de estas variables, necesitas utilizar los métodos  `getGetParameter()`, `getPostParameter()`,
 y `getUrlParameter()` respectivamente.
@@ -699,15 +697,15 @@ Por supuesto, que la clase `sfWebResponse` también proporciona una manera de co
 Hoy hemos visto cómo gestionar hojas de estilo y JavaScripts tanto en el `view.yml` como en las plantillas. Al final, ambas técnicas utilizan el objeto Response y sus métodos `addStylesheet()` y `addJavascript()`.
 
 >**TIP**
->Las clases `sfAction`, `sfRequest`, y `sfResponse` dan un muchos otros
+>Las clases `sfAction`, `sfRequest`, y `sfResponse` dan muchos otros
 >métodos útiles. No dudes en navegar por la
 >[API documentation](http://www.symfony-project.org/api/1_2/) para aprender más
->acerca de todas las clases internas de symfony.
+>acerca de todas las clases internas de Symfony.
 
 Nos vemos mañana
 ----------------
 
-Hoy, hemos descrito algunos patrones de diseño utilizados por symfony. Esperemos que la estructura de directorios del proyecto ahora tenga más sentido. Hemos tocado con las plantillas mediante la manipulación del layout y los archivos de plantilla. También lo hemos hecho un poco más dinámico gracias a slots y las acciones.
+Hoy, hemos descrito algunos patrones de diseño utilizados por Symfony. Esperemos que la estructura de directorios del proyecto ahora tenga más sentido. Hemos tocado con las plantillas mediante la manipulación del layout y los archivos de plantilla. También lo hemos hecho un poco más dinámico gracias a slots y las acciones.
 
 Mañana, vamos a aprender más acerca del helper `url_for()` que hemos utilizado hoy, y el sub-framework de enrutamiento asociado a él.
 
