@@ -1,0 +1,493 @@
+6章 - データを扱う
+==================
+
+## データを読み取る
+
+DoctrineにおいてRDBMSから複雑な結果を読み取りそれらをリレーション構造を表す配列もしくはオブジェクトのデータ構造にハイドレイト(hydrate)できます。これはDoctrine Query Languageによって行われます。これは可能な限り最小のクエリーですべてのデータを読み取るための最良の方法です。利便性のために単一のテーブルに取り組むとき、シンプルなfinderメソッドを提供します。このメソッドはこれらのクエリーを動的に構築して実行します。
+### DQL
+
+データを読み取りそれらをビルドするための完全な`Doctrine_Query` APIを提供するためにDoctrineはDQLを使用します。活用する例と同様にメソッドの完全な一覧は下記の通りです。
+
+#### クエリーのAPI
+
+**共通のAPI**
+
+| 関数名                                 | SQL                           | append  | 説明             |
+|----------------------------------------|-------------------------------|---------|------------------|
+| where('u.username = ?', 'jwage')       | u.username = ?                | No      | `WHERE`を設定して既存の`WHERE`条件をオーバーライドする |
+| andWhere('u.username = ?', 'jwage')    | AND u.username = ?            | Yes     | `AND`でappendされる`WHERE`条件を追加する |
+| whereIn('u.id', array(1, 2, 3))        | AND u.id IN (?, ?, ?)         | Yes     | appendされる`AND` `IN` `WHERE` 条件を追加する |
+| andWhereIn('u.id', array(1, 2, 3))     | ^                             | Yes     | `whereIn()`用のコンビニエンス/プロキシメソッド |
+| orWhereIn('u.id', array(1, 2, 3))      | OR u.id IN (?, ?, ?)          | Yes     | appendされる`OR` `IN` `WHERE`条件を追加する |
+| whereNotIn('u.id', array(1, 2, 3))     | AND u.id NOT IN (?, ?, ?)     | Yes     | appendされる`AND` `NOT IN` `WHERE`条件を追加する |
+| andWhereNotIn('u.id', array(1, 2, 3))  | ^                             | Yes     | `whereNotIn()`用のコンビニエンス/プロキシメソッド |
+| orWhereNotIn('u.id', array(1, 2, 3))   | OR u.id NOT IN (?, ?, ?)      | Yes     | appendされる`OR` `NOT IN` `WHERE`の条件を追加する |
+| orWhere('u.username = ?', 'jwage')     | OR u.username = ?             | Yes     | `OR`、`WHERE`条件を追加する |
+| groupBy('u.id')                        | GROUP BY u.id, u.username     | No      | `GROUP BY`を設定して既存の`GROUP BY`をオーバーライドする |
+| addGroupBy('u.username')               | GROUP BY u.username           | Yes     | appendされる`GROUP BY`を追加する that is appended |
+| having('num_phonenumbers > 0')         | HAVING `num_phonenumbers` > 0 | No      | `HAVING`を設定して既存の`HAVING`をオーバーライドする |
+| addHaving('u.username = ?', 'jwage')   | HAVING u.username = ?         | Yes     | 追加される`HAVING`を追加する |
+
+**選択のAPI**
+
+| 関数名                                                      | 説明                          |
+|-------------------------------------------------------------|--------------------------------------|
+| distinct($flag = true)                                      | フラグをdistinct selectに設定する    |
+| select('u.id, u.username, COUNT(p.id) as num_phonenumbers') | `SELECT`を設定して既存の`SELECT`をオーバーライドする |
+| addSelect('u.email_address')                                | appendされるselectを追加する |
+| from('User u, u.Phonenumber p')                             | `FROM`を設定して既存の`FROM`とjoinをオーバーライドする |
+| leftJoin('u.Phonenumber p')                                 | `FROM`にappendされる`LEFT JOIN`を追加する |
+| innerJoin('u.Profile p')                                    | `FROM`にappendされる`INNER JOIN`を追加する |
+| addFrom('u.Phonenumber p')                                  | `FROM`にappendされる`FROM` joinを追加する |
+| orderBy('u.username')                                       | `ORDER BY`を設定して既存の`ORDER BY`をオーバーライドする |
+| addOrderBy('u.is_active = ?', 1)                            | appendされる`ORDER BY`を追加する |
+| limit(20)                                                   | 結果セットを制限するレコードの数を設定する |
+| offset(5)                                                   | レコードの制限をオフセットする番号を設定する |
+
+**更新API**
+
+| 関数名                           | 説明                                  |
+|----------------------------------|---------------------------------------|
+| forUpdate($flag = true)          | `FOR UPDATE`を使うためにクエリーを変更する |
+| update('User u')                 | `UPDATE`するモデルの名前を指定する |
+| set('u.username', '?', 'jwage')  | `UPDATE`クエリーのために新しい値を設定する。最初の引数は修正するデータで、2番目はDQLの文字列に直接加える式(`?`もしくはDBMS関数)、で3番目は新しい値。 |
+
+**削除API**
+
+| 関数名        | 説明                          |
+|---------------|-------------------------------|
+| delete()      | 削除するクエリーを変更する    |
+
+#### 新しいクエリーを作成する
+
+Doctrine_Tableインスタンスから新しいクエリーを作成する。
+
+    [php]
+    $q = Doctrine::getTable('User')->createQuery('u')
+      ->where('u.username = ?', 'jwage');
+
+新しいクエリーを手動で作成する。
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username = ?', 'jwage');
+
+>**NOTE**
+>上記の2つのクエリーは理想的ですが、わかりやすくするために最初のコードは2番目のコードを内部で行っています。
+
+#### クエリーの例
+
+Doctrineで結果セットを読み取る方法はいくつかのクエリーの例を見ればわかります。
+
+**算出されるカラム**
+
+カラムを算出するためにDBMSの関数を使うとき、これらは式に最初に関わるコンポーネント/モデルにハイドレイトされます。下記の例において、クエリーで最初に遭遇するコンポーネントなので、モデルは`Phonenumber`リレーションにハイドレイトされます。
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->select('u.*, COUNT(DISTINCT p.id) AS num_phonenumbers')
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p')
+      ->groupBy('u.id');
+
+    $users = $q->fetchArray();
+
+    echo $users[0]['num_phonenumbers'];
+
+**ユーザーとユーザーが所属するグループを読み取る**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Groups g');
+
+    $users = $q->fetchArray();
+
+    foreach ($users[0]['Groups'] as $group) {
+        echo $group['name'];
+    }
+
+**1つのパラメータの値を持つシンプルなWHERE**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username = ?', 'jwage');
+
+    $users = $q->fetchArray();
+
+**複数のパラメータの値を持つ複数のWHERE**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.is_active = ? AND u.is_online = ?', array(1, 1));
+
+    $users = $q->fetchArray();
+
+    // 既存のwhere部分に追加するためにオプションとしてandWhere()も使用できる
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.is_active = ?', 1)
+      ->andWhere('u.is_online = ?', 1);
+
+    $users = $q->fetchArray();
+
+**whereIn()コンビニエンスメソッドを使う**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->whereIn('u.id', array(1, 2, 3));
+
+    $users = $q->fetchArray();
+
+    // 上記と同じ
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.id IN (1, 2, 3)');
+
+    $users = $q->fetchArray();
+
+**WHEREでDBMS関数を使う**
+
+    [php]
+    $userEncryptedKey = 'a157a558ac00449c92294c7fab684ae0';
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where("MD5(CONCAT(u.username, 'secret_user_key')) = ?", $userEncryptedKey);
+
+    $user = $q->fetchOne();
+
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('LOWER(u.username) = LOWER(?)', 'jwage');
+
+    $user = $q->fetchOne();
+
+**集約関数を使用して結果セットを制限する**
+
+    [php]
+    // 電話番号を複数持つユーザー
+    $q = Doctrine_Query::create()
+      ->select('u.*, COUNT(DISTINCT p.id) AS num_phonenumbers')
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p')
+      ->having('num_phonenumbers > 1')
+      ->groupBy('u.id');
+
+    $users = $q->fetchArray();
+
+**WITHを使用して最初の電話番号だけJOINする**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p WITH p.primary_num = ?', true);
+
+    $users = $q->fetchArray();
+
+**ONを使用してJOIN条件をオーバーライドする**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p ON u.id = p.user_id AND p.primary_num = ?', true);
+
+    $users = $q->fetchArray();
+
+**最適化用に特定のカラムを選択する**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->select('u.username, p.phone')
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p');
+
+    $users = $q->fetchArray();
+
+**すべてのカラムを選択するためにワイルドカードを使う**
+
+    [php]
+    // すべてのUserカラムを選択するが電話番号のカラムのみ
+    $q = Doctrine_Query::create()
+      ->select('u.*, p.phone')
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p');
+
+    $users = $q->fetchArray();
+
+**シンプルなWHEREでDQLのdeleteを実行する**
+
+    [php]
+    // user id = 5に対して電話番号を削除する
+    $deleted = Doctrine_Query::create()
+      ->delete()
+      ->from('Phonenumber')
+      ->andWhere('user_id = 5')
+      ->execute();
+
+**カラム用にシンプルなDQLのupdateを実行する**
+
+    [php]
+    // 有効にするためにuser id = 1をセットする
+    Doctrine_Query::create()
+      ->update('User u')
+      ->set('u.is_active', '?', true)
+      ->where('u.id = ?', 1)
+      ->execute();
+
+**DBMS関数のDQLのupdateを実行する**
+
+    [php]
+    // すべてのユーザー名を小文字にする
+    Doctrine_Query::create()
+      ->update('User u')
+      ->set('u.username', 'LOWER(u.username)')
+      ->execute();
+
+**レコードを検索するためにMySQLのLIKEを使う**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username LIKE ?', '%jwage%');
+
+    $users = $q->fetchArray();
+
+**レコードエントリのキーが割り当てるカラムの名前であるデータをハイドレイトするにはINDEXBYキーワードを使う**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u INDEXBY u.username');
+
+    $users = $q->fetchArray();
+    print_r($users['jwage']); // usernameがjwageであるユーザーを表示する
+
+**位置と名前つきパラメータを使う**
+
+    [php]
+    // 位置パラメータ
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username = ?', array('Arnold'));
+
+    $users = $q->fetchArray();
+
+    // 名前つきパラメータ
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username = :username', array(':username' => 'Arnold'));
+
+    $users = $q->fetchArray();
+
+**WHEREでサブクエリーを使う**
+
+    [php]
+    // 名前がGroup 2であるグループに存在しないユーザーを見つける
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.id NOT IN (SELECT u.id FROM User u2 INNER JOIN u2.Groups g WHERE g.name = ?)', 'Group 2');
+
+    $users = $q->fetchArray();
+
+    // 下記の2つの例のようにこれをサブクエリー無しで実現できる
+    // これは上記と同じ
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->innerJoin('u.Groups g WITH g.name != ?', 'Group 2')
+
+    $users = $q->fetchArray();
+
+    // もしくはこれ
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Groups g')
+      ->where('g.name != ?', 'Group 2');
+
+    $users = $q->fetchArray();
+
+**Doctrineでクエリーを実行してデータを読み取る方法はいろいろあります。下記はクエリーを実行できるすべての異なる方法の一覧です。**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u');
+
+    // 配列のハイドレーション
+    $users = $q->fetchArray();                                         // ハイドレイトされた配列として結果を取得する
+    $users = $q->execute(array(), Doctrine::HYDRATE_ARRAY);            // 上記と同じ
+    $users = $q->setHydrationMode(Doctrine::HYDRATE_ARRAY)->execute(); // これも同じ
+
+    // ハイドレーション無し
+    $users = $q->execute(array(), Doctrine::HYDRATE_NONE);             // プレーンなPDOとハイドレーション無しでクエリーを実行する
+    $users = $q->setHydrationMode(Doctrine::HYDRATE_NONE)->execute();  // これは上記と同じ
+
+    // 1つを取得する
+    $user = $q->fetchOne();
+
+    // すべてを取得してコレクションから最初のものを得る
+    $user = $q->execute()->getFirst();
+
+### finder
+
+Doctrineはシンプルで魔法の力を持つfinderメソッドを提供します。このメソッドはバックグラウンドでDoctrine_Queryオブジェクトを自動的に作成します。下記のものはこれらのメソッドを活用するいくつかの例です。
+
+**マジックfinderメソッド**
+
+1つのフィールドの値によってレコードを見つけるために`findBy*()`と`findOneBy*()`マジックメソッドを活用できます。
+
+    [php]
+    $user = Doctrine::getTable('User')->findOneByUsername('jwage');
+    $users = Doctrine::getTable('User')->findByIsActive(1);
+
+**識別子によるfind**
+
+Doctrine_Table::find()メソッドは主キーでレコードを見つけるためにあります。サロゲートもしくは複合主キーを持つ両方のモデルに対して機能します。
+
+    [php]
+    $user = Doctrine::getTable('User')->find(1);
+    $userGroup = Doctrine::getTable('UserGroup')->find(array(1, 2));
+
+## データを変更する
+
+DoctrineによってDQLのupdateとdeleteクエリーを直接実行することでデータを変更する、もしくはオブジェクトを取得しプロパティを変更して保存することができます。下記のものは両方の戦略の例です。
+
+### オブジェクトのプロパティ
+
+Doctrineはオブジェクトのプロパティを変更する方法を3つ提供し、sfDoctrinePluginは4番目の方法を実装します。これらのアクセス方法のスタイルにはオブジェクト、配列、と関数とPropelがあります。
+
+    [php]
+    $user = new User();
+    $user->username = 'jwage';        // オブジェクト
+    $user['username'] = 'jwage';      // 配列
+    $user->set('username', 'jwage');  // 関数
+    $user->setUsername('jwage');      // Propelスタイル
+    $user->save();
+
+### アクセサとミューテータをオーバーライドする
+
+    [php]
+    class User extends BaseUser
+    {
+      public function setPassword($password)
+      {
+        return $this->_set('password', md5($password));
+      }
+
+      public function getUsername()
+      {
+        return 'PREFIX_' . $this->_get('username');
+      }
+    }
+
+    $user = new User();
+    $user->username = 'jwage';
+    $user->password = 'changeme'; // setPassword()を起動する
+    echo $user->username; // getPassword()を起動してPREFIX_jwageを返す
+
+### リレーションを扱う
+
+DoctrineでPHPオブジェクトを活用すればオブジェクトグラフでデータを操作することは簡単です。
+
+**User hasOne Profile**
+
+    [php]
+    $user = new User();
+    $user->username = 'jwage';
+    $user->password = 'changeme';
+    $user->Profile->name = 'Jonathan H. Wage';
+    $user->Profile->about = 'His name is Jonathan';
+    $user->save();
+
+**User hasMany Phonenumber as Phonenumbers**
+
+    [php]
+    $user = new User();
+    $user->username = 'jwage';
+    $user->password = 'changeme';
+    $user->Phonenumbers[]->phonenumber = '6155139185';
+    $user->Phonenumbers[]->phonenumber = '1234567890';
+    $phonenumber = $user->Phonenumbers[2];
+    $phonenumber->phonenumber = '0987654321';
+
+**BlogPost hasMany Tag as Tags**
+
+    [php]
+    $blogPost = new BlogPost();
+    $blogPost->title = 'Test blog post';
+    $blogPost->body = 'This is the content of the test blog post';
+    $tag = Doctrine::getTable('Tag')->findOneByName('doctrine');
+    if ( ! $tag) {
+      $blogPost->Tags[] = $tag;
+    }
+    $blogPost->Tags[] = $tag;
+
+上記のコードは醜いので、`lib/model/doctrine/BlogPostTable.class.php`に設置されている`BlogPostTable`子クラスにそのログインを抽出します.
+
+    [php]
+    class TagTable extends Doctrine_Table
+    {
+      public function findOneByName($name)
+      {
+        $tag = $this->findOneBy('name', $name);
+        if ( ! $tag) {
+          $tag = new Tag();
+          $tag->name = $name;
+        }
+        return $tag;
+      }
+    }
+
+最初の例は次のように簡略化できます。
+
+    [php]
+    $blogPost = new BlogPost();
+    $blogPost->title = 'Test blog post';
+    $blogPost->body = 'This is the content of the test blog post';
+    $tag = Doctrine::getTable('Tag')->findOneByName('doctrine');
+    $blogPost->Tags[] = $tag;
+
+別の方法は`lib/model/doctrine/Tag.class.php`に設置されている生成された`Tag`クラスの`setName()`という名前の関数を作ることによる`Tag`の`name`ミューテータです。
+
+    [php]
+    class Tag extends BaseTag
+    {
+      public function setName($name)
+      {
+        $tag = Doctrine::getTable('Tag')->findOneByName($name);
+        if ($tag) {
+          $this->assignIdentifier($tag->identifier());
+        } else {
+          $this->_set('name', $name);
+        }
+      }
+    }
+
+コードはよりシンプルになり、重複タグはデータベースに挿入されていないことが保証されます。
+
+    [php]
+    $blogPost = new BlogPost();
+    $blogPost->title = 'Test blog post';
+    $blogPost->body = 'This is the content of the test blog post';
+    $blogPost->Tags[]->name = 'doctrine';
+
+## データを削除する
+
+データを削除する方法は2つあります。最初にオブジェクトを取得して`Doctrine_Record::delete()`メソッドを呼び出すかDQLのdeleteクエリーを単独で実行します。
+
+    [php]
+    $user = Doctrine::getTable('User')->find(1);
+    $user->delete();
+
+単独のDQL deleteクエリーが発行されます。使うクエリーは1つだけなので上述の方法よりも効率的です。上述の例はオブジェクトを読み取り削除しなければなりません。
+
+    [php]
+    $deleted = Doctrine_Query::create()
+      ->delete()
+      ->from('User u')
+      ->where('u.id = ?', 1)
+      ->execute();
+
+>**TIP**
+>Doctrineでデータを扱う方法の詳細は[マニュアル](http://www.doctrine-project.org/documentation/manual/1_0/en/working-with-objects)をご覧下さい。
