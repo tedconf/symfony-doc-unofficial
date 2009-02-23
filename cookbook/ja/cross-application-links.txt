@@ -1,0 +1,97 @@
+アプリケーション間のリンクを作る方法
+====================================
+
+symfonyのプロジェクトは1つもしくは複数のアプリケーションで構成されます。アプリケーションはモデルクラス以外は何も共有しません。しかし時には、バックエンドのアプリケーションからフロントエンドのアプリケーションにリンクを作る機能が必要です。CMSでユーザーがバックエンドで記事を編集してフロントエンドの対応する記事にリンクできるようにしたい場合を考えてみましょう。
+
+このチュートリアルでは、この問題のシンプルな解決方法を示します。
+
+設定ファイルの解析と結果の配列をPHPキャッシュに変換する機能に加えて、設定ハンドラクラスの中には直接利用するために設定を"評価(evaluate)"できるものもあります(オートロード、データベース、とルーティングの設定ハンドラはこの新しい振る舞いを示します)。
+
+例えば、YAMLフォーマットでrouteの定義を格納するファイルを対応するrouteオブジェクトに変換する場合、次のように対処できます:
+
+    [php]
+    $config = new sfRoutingConfigHandler();
+    $routes = $config->evaluate(array('/path/to/routing.yml'));
+
+上述のコードスニペットを実行する場合、配列`$routes`はrouteオブジェクトの配列で投入されます。
+この配列はYAMLファイルのroute定義と同等です。
+`generate()`メソッドはYAMLファイル名の配列を1番目の引数として受け取りファイルの内容をマージします。
+
+>**TIP**
+>`evaluate()`メソッドは設定ファイルの配列を受け取ります。
+>`routing.yml`ファイルでrouteを定義するプラグインがいくつかある場合、
+>配列にファイルパスを追加すればこの設定はメインの設定にマージされます。
+
+フレームワークのデカップリングと`sfPatternRouting::setRoutes()`メソッドのおかげで、PHPスクリプトからフロントエンドのルーティングオブジェクトを簡単に作ることができます:
+
+    [php]
+    $routing = new sfPatternRouting(new sfEventDispatcher());
+    $routing->setRoutes($routes);
+
+ルーティングオブジェクトの`generate()`メソッドを呼び出すことで簡単にURLを生成できます:
+
+    [php]
+    $routing->generate('homepage');
+    $routing->generate('article', array('id' => $id));
+
+`generate()`メソッドは1番目の引数にrouteの名前を、2番目の引数にパラメータの配列を受け取ります。
+
+バックエンドアプリケーションからフロントエンドのURLを作成する作業を簡略化させるためにこの知識を使ってみましょう。
+
+`backendConfiguration`クラスに、次のコードを追加します:
+
+    [php]
+    // apps/backend/config/backendConfiguration.class.php
+    class backendConfiguration extends sfApplicationConfiguration
+    {
+      protected $frontendRouting = null;
+
+      public function generateFrontendUrl($name, $parameters = array())
+      {
+        return 'http://frontend.example.com'.$this->getFrontendRouting()->generate($name, $parameters);
+      }
+
+      public function getFrontendRouting()
+      {
+        if (!$this->frontendRouting)
+        {
+          $this->frontendRouting = new sfPatternRouting(new sfEventDispatcher());
+
+          $config = new sfRoutingConfigHandler();
+          $routes = $config->evaluate(array(sfConfig::get('sf_apps_dir').'/frontend/config/routing.yml'));
+
+          $this->frontendRouting->setRoutes($routes);
+        }
+
+        return $this->frontendRouting;
+      }
+
+      // ...
+    }
+
+>**NOTE**
+>明らかな理由で`generateFrontendUrl()`メソッドは常に絶対URLを生成することに注意して下さい。
+>symfonyはこの知識を持たず推測できないので、
+>これは決め打ちされる必要のある唯一の情報です。
+
+このコードを用意することで、これでバックエンドのどこからでもフロントエンドのURLを生成できます。
+例えばユーザーをバックグラウンドのアクションからフロントエンドにリダイレクトする方法は次の通りです:
+
+    [php]
+    $this->redirect($this->getContext()->getConfiguration()->generateFrontendUrl('hello', array('name' => 'Bar')));
+
+テンプレート用に小さなヘルパーを作ることもできます:
+
+    [php]
+    function link_to_frontend($name, $parameters)
+    {
+      return sfProjectConfiguration::getActive()->generateFrontendUrl($name, $parameters);
+    }
+
+これでお終いです！
+
+たくさんのアプリケーションがある場合、他のアプリケーション用もしくはそれらからURLを生成するように上記のコードをリファクタリングするのはとても簡単です。
+
+>**NOTE**
+>この記事で説明されたテクニックは
+>symfony内部の`app:routes`タスクで使われています。
