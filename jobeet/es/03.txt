@@ -1,4 +1,4 @@
-﻿Día 3: El Modelo De Datos
+﻿﻿Día 3: El Modelo De Datos
 =========================
 
 Aquellos de ustedes locos por abrir el editor de texto y hacer algo de PHP estarán encantados de saber que el tutorial de hoy nos introduce algo en el desarrollo. Vamos a definir el modelo de datos Jobeet, utilizaremos un ORM para interactuar con la base de datos, y construiremos el primer módulo de la aplicación. Pero como Symfony hace una gran parte del trabajo por nosotros, vamos a tener un módulo web totalmente funcional sin tener que escribir mucho código PHP.
@@ -84,7 +84,7 @@ Como la base de datos no existe todavía, y como queremos mantener la base de da
       jobeet_job:
         id:           ~
         category_id:  { type: integer, foreignTable: jobeet_category,
-          ➥ foreignReference: id, required: true }
+          ➥ foreignReference: id, required: true, onDelete: CASCADE }
         type:         { type: varchar(255) }
         company:      { type: varchar(255), required: true }
         logo:         { type: varchar(255) }
@@ -152,7 +152,7 @@ Como la base de datos no existe todavía, y como queremos mantener la base de da
         email:        { type: string(255), notnull: true }
         expires_at:   { type: timestamp, notnull: true }
       relations:
-        JobeetCategory: { local: category_id, foreign: id, foreignAlias: JobeetJobs } 
+        JobeetCategory: { onDelete: CASCADE, local: category_id, foreign: id, foreignAlias: JobeetJobs } 
 
     JobeetAffiliate:
       actAs: { Timestampable: ~ }
@@ -245,6 +245,20 @@ Para las columnas establecidas a `~`, el cual significa `null` en YAML (`id`, `c
 >un registro de `job` es borrado, todos los registros `jobeet_category_affiliate`  
 >relacionados serán automáticamente eliminados de la base de datos
 </doctrine>
+
+-
+
+>**TIP**
+>**Nota del Traductor**
+>Si bien no es probable, es posible que se quiera eliminar una categoría completa del sistema. 
+> 
+>El campo category_id de la entidad JobeetJob, tiene al final añadida la opción onDelete. 
+>La misma está establecida como `CASCADE`, para determinar que cuando una categoría sea 
+>eliminada, tambien se eliminen los registros `job` (los puestos de trabajo). 
+>
+>Esto se debe a que los registros `job` tienen establecido como campo obligatorio a la categoría 
+>asociada (a la que pertenece), por lo que no sería correcto dejar `huerfano` a un registro, 
+>ni establecer éste valor a `null`. 
 
 La Base De Datos
 ----------------
