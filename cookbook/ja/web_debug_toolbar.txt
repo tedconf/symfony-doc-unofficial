@@ -1,0 +1,211 @@
+ウェブデバッグツールバーをカスタマイズする方法
+==============================================
+
+symfonyのウェブデバッグツールバーは開発者の最良の友の1つです。開発環境を利用するとき常にブラウザで手軽にアクセスできます。これは現在のページに関して知る必要があるすべての情報をあなたに伝えアプリケーションのデバッギング作業を楽にしてくれます。そして最もうれしいことはウェブデバッグツールバーを思い通りに設定できることです。
+
+ウェブデバッグツールバー
+------------------------
+
+設定無しの状態では、デフォルトのツールバーの外見は次の通りです:
+
+![デフォルトのウェブデバッグツールバー](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/default.png)
+
+ツールバーはパネルで構成されます。それぞれのパネルはタイトルとオプションのパネルの内容で構成され、パネルはPHPオブジェクトで表現されます。デフォルトでは、7つのパネルが存在します:
+
+ *名前*               | *クラスの名前*                    | *説明*
+ -------------------- | ------------------------------- | ----------------
+ symfony version      | `sfWebDebugPanelSymfonyVersion` | ![symfonyのバージョン](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/symfony_version.png)
+ cache information    | `sfWebDebugPanelCache`          | ![キャッシュ](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/cache.png)
+ configuration        | `sfWebDebugPanelConfig`         | ![設定](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/configuration.png)
+ logs                 | `sfWebDebugPanelLogs`           | ![ログ](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/logs.png)
+ database information | `sfWebDebugPanelDatabase`       | ![データベース](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/database.png)
+ memory usage         | `sfWebDebugPanelMemory`         | ![メモリー](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/memory.png)
+ timer                | `sfWebDebugPanelTimer`         | ![タイマー](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/timer.png)
+
+ツールバーをカスタマイズする
+----------------------------
+
+`debug.web.load_panels`イベントをリスニングすることでアプリケーションもしくはプロジェクトの設定ファイルでウェブデバッグツールバーをカスタマイズできます。次のコードはフロントエンドの設定クラスの中でこのイベントをリスニングする方法を示しています:
+
+    [php]
+    <?php
+
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->dispatcher->connect('debug.web.load_panels', array($this, 'configureWebDebugToolbar'));
+      }
+    }
+
+この設定を適切に行うことで、symfonyはウェブデバッグツールバーを初期化するときに`configureWebDebugToolbar()`メソッドを自動的に呼び出します。このメソッドはパネルの削除、置き換えもしくは追加することが可能です。
+
+すべてのリスナーに関して、symfonyはイベントを引数として`configureWebDebugToolbar()`メソッドを呼び出します。イベントの題目(Subject)は操作したいウェブデバッグツールバーのオブジェクトです:
+
+    [php]
+    <?php
+
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      public function configure()
+      {
+        $this->dispatcher->connect('debug.web.load_panels', array($this, 'configureWebDebugToolbar'));
+      }
+
+      public function configureWebDebugToolbar(sfEvent $event)
+      {
+        $webDebugToolbar = $event->getSubject();
+      }
+    }
+
+パネルを削除する
+----------------
+
+パネルを削除するには、次のようにパネルの名前で`removePanel()`メソッドを呼び出します:
+
+    [php]
+    <?php
+
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      // ...
+
+      public function configureWebDebugToolbar(sfEvent $event)
+      {
+        $webDebugToolbar = $event->getSubject();
+
+        $webDebugToolbar->removePanel('memory');
+      }
+    }
+
+パネルを置き換えるもしくは追加する
+----------------------------------
+
+パネルを置き換えるには、既存の名前で`setPanel()`メソッドを呼び出します。
+
+パネルを作るには、同じ`setPanel()`メソッドを呼び出しますがユニークで新しい名前を渡します。
+
+もちろん、同じ情報を追加もしくは削除するために既存のパネルを拡張することができます。説明のために、レスポンスオブジェクトの範囲内に登録されたJavaScriptとスタイルシートのファイルを表示する真新しいパネルを作ってみましょう:
+
+    [php]
+    <?php
+
+    class frontendConfiguration extends sfApplicationConfiguration
+    {
+      // ...
+
+      public function configureWebDebugToolbar(sfEvent $event)
+      {
+        $webDebugToolbar = $event->getSubject();
+
+        $webDebugToolbar->setPanel('assets', new sfWebDebugPanelAssets($webDebugToolbar));
+      }
+    }
+
+`sfWebDebugPanelAssets`クラスを作る必要があります。すべてのパネルクラスは`sfWebDebugPanel`を拡張しなければならず少なくとも3つの抽象メソッドを実装する必要があります:
+
+  * `getTitle()`:        ウェブデバッグツールバーに表示されるHTMLを返します。これが`null`を返すとき、パネルは表示されません。
+  * `getPanelContent()`: パネルのHTML表現を返します。これが`null`を返すとき、タイトルはクリックできません。
+  * `getPanelTitle()`:   表示されるときにパネルのタイトルを返します。
+
+この情報を頭の中に入れた上で、下記のコードによって最少のパネルがおそらく動作するはずです:
+
+    [php]
+    <?php
+
+    class sfWebDebugPanelAssets extends sfWebDebugPanel
+    {
+      public function getTitle()
+      {
+        return 'assets';
+      }
+
+      public function getPanelTitle()
+      {
+        return 'Stylesheet and JavaScript files from sfWebResponse';
+      }
+
+      public function getPanelContent()
+      {
+        return null;
+      }
+    }
+
+これはウェブデバッグツールバーの中で新しい'assets'のエントリを表示しますが、パネルの内容は空なのでテキストをクリックすることはできません。
+
+パネルに内容を追加してもう少し面白いものにしてみましょう。レスポンスオブジェクトは2つのメソッド、`getJavascripts()`と`getStylesheets()`を持ち、3つのメソッドはレスポンスオブジェクトによって含まれるJavaScriptとスタイルシートのファイルの配列を返します。
+
+`getPanelContent()`メソッドはパネルの内容をコンストラクトするためにこれらの2つの配列をイテレートしてこれをHTMLの文字列として返します:
+
+    [php]
+    <?php
+
+    class sfWebDebugPanelAssets extends sfWebDebugPanel
+    {
+      // ...
+
+      public function getPanelContent()
+      {
+        $response = sfContext::getInstance()->getResponse();
+        $html = '';
+
+        if ($stylesheets = $response->getStylesheets())
+        {
+          $html .= '<h2>Stylesheets</h2><ul>';
+          foreach ($stylesheets as $file => $options)
+          {
+            $html .= sprintf('<li><strong>%s</strong> %s</li>', stylesheet_path($file), count($options) ? '('.var_export($options, true).')' : '');;
+          }
+          $html .= '</ul>';
+        }
+
+        if ($javascripts = $response->getJavascripts())
+        {
+          $html .= '<h2>Javascripts</h2><ul>';
+          foreach ($javascripts as $file => $options)
+          {
+            $html .= sprintf('<li><strong>%s</strong> %s</li>', javascript_path($file), count($options) ? '('.var_export($options, true).')' : '');;
+          }
+          $html .= '</ul>';
+        }
+
+        return $html;
+      }
+    }
+
+symfonyのページの結果は次の通りです:
+
+![カスタマイズされたウェブデバッグツールバー](http://www.symfony-project.org/uploads/assets/web_debug_toolbar/final.png)
+
+独自のパネルをプラグインとしてパッケージにする
+----------------------------------------------
+
+新しいパネルをパッケージして[symfonyのプラグイン](http://www.symfony-project.org/plugins/)として配布することもできます。
+
+ユーザーがプラグインをインストールするとき、以前に我々が行ったようにイベントリスナーを追加するために設定クラスを変更してよいか問い合わせることができますが、次のようにプラグインの`config.pho`ファイルの中で`web.debug.load_panels`イベントに接続することもできます:
+
+    [php]
+    <?php
+
+    // ...
+
+    require_once '/path/to/sfWebDebugPanelAssets';
+
+    $this->dispatcher->connect('debug.web.load_panels', array('sfWebDebugPanelAssets', 'listenToAddPanelEvent'));
+
+それから、`sfWebDebugPanelAssets`クラスに`listenToAddPanelEvent()`メソッドを追加します:
+
+    [php]
+    class sfWebDebugPanelAssets extends sfWebDebugPanel
+    {
+      static public function listenToAddPanelEvent(sfEvent $event)
+      {
+        $event->getSubject()->setPanel('assets', new sfWebDebugPanelAssets($event->getSubject()));
+      }
+    }
+
+この方法によって、開発者からの変更を行わずにパネルがウェブデバッグツールバーに追加されます。
+
+作業はこれでお終いです。新しい`web.debug.load_panels`イベントのおかげで、望む方法でウェブデバッグツールバーを自由にカスタマイズできます。詳しい情報を知りたいもしくは詳しい仕組みを学びたいのであれば、[組み込みのパネル](http://trac.symfony-project.org/browser/branches/1.2/lib/debug)に関するコードを見ることができます。
