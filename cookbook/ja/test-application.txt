@@ -1,0 +1,400 @@
+アプリケーションをテストするには？
+==================================
+
+symfonyフレームワークは常に機能テストフレームワークを搭載してきており、これは主要な強みの1つです。
+
+機能テスト(functional test)とは何でしょうか？機能テストのゴールはすべてのアプリケーションレイヤーの統合: ルーティングからコントローラ、テンプレート、とデータベースのコールをテストすることです。
+これらは単体テストの置き換えにはなりません。
+
+唯一簡単にテストできないものはテンプレートに埋め込まれたJavaScriptのコードです。
+もちろんこのために[selenium](http://selenium.openqa.org/)のようなツールを利用できます。
+しかし良い知らせは機能テストはAjaxのような"何かの"JavaScriptコードをテストできることです。
+
+仕事を行うために、機能テストフレームワークはブラウザをシミュレートします。
+symfonyの内部とリクエストに基づいてレスポンスを生成する方法を知っているのでこれはウェブサーバーを必要としません。
+これによってそれぞれのリクエストの後でアプリケーションの状態のイントロスペクションを簡単で深く行うことができます。
+もちろんレスポンスもしくはユーザーセッションのようなsymfonyコアオブジェクトだけでなく、モデルのようなあなた独自のコードもイントロスペクトできます。
+
+symfonyがリリースされるごとに機能テストフレームワークはより改善されます。
+今日は、symfony 1.2に追加されたすべての良いところをお見せします。
+驚く用意をして下さい！
+
+デカップリング
+--------------
+
+みなさんがご存じの通り、私はテストがとても好きです。
+古いコードをよりベターなものにリファクタリングすることも好きです。
+symfony 1.2に関しては、ブラウザ(`sfBrowser`)とテストブラウザ(`sfTextBrowser`)クラスを
+はるかに柔軟で設定しやすくするためにリファクタリングしました。
+
+symfony 1.2に関しては、機能テストフレームワークは再利用可能で異なるいくつかのレイヤーで構成されています。
+
+最も大きな変更はテスターの導入です。
+テスター(tester)はアプリケーションの特定のレイヤーをテストする方法を知っているオブジェクトです。
+リクエスト、レスポンス、ユーザー、ビューキャッシュ、フォームとPropelに関して
+symfonyはいくつかの組み込みのテスターを備えています。
+
+重要度の低い変更は**`sfTestFunctional`クラス**の導入です。
+このクラスはアプリケーションをテストしてすべての登録された**テスター**を管理するために
+**`sfBrowser`オブジェクト**に依存します。
+
+次は典型的な機能テストです:
+
+    [php]
+    $browser = new sfTestFunctional(new sfBrowser());
+
+    $browser->
+      get('/')->
+      // テストを行う
+    ;
+
+symfony 1.0と1.1の広報互換性を維持するには、
+新しく非推奨の`sfTestBrowser`クラスをまだ利用できます:
+
+    [php]
+    $browser = new sfTestBrowser();
+
+    $browser->
+      get('/')->
+      // 何かテストを行う
+    ;
+
+テスター
+--------
+
+ですので、実際にはすべてのテストはテスタークラスで行われます。
+テスターはアプリケーションの特定の部分をテストする方法を知っています。
+
+テスターは`checkResponseElement()`もしくは`isRequestParameter()`のような、
+あなたが慣れ親しんだすべてのメソッドを置き換えます。もちろん、
+広報互換性を維持するためにこれらのメソッドはまだ利用できます
+([UPGRADE_TO_1_2](http://www.symfony-project.org/installation/1_2/upgrade)
+ファイルにはすべての古いメソッドとテスターの対応するメソッドの対照表があります)。
+
+次のコードはリクエストテスターを利用することで`isRequestParameter()`コールを置き換える方法を
+示すシンプルな例です:
+
+    [php]
+    // symfony 1.2以前
+    $browser->
+      get('/')->
+
+      isRequestParameter('module', 'foo')->
+      checkResponseElement('h1', 'foo')
+    ;
+
+    // symfony 1.2の場合
+    $browser->
+      get('/')->
+
+      with('request')->isParameter('module', 'foo')->
+      checkResponseElement('h1', 'foo')
+    ;
+
+`with('request')`コールはすぐ次のコールに対してリクエストテスターへの
+流れるようなインターフェイスのコンテキストを切り替えます。
+ですので、`isParameter()`メソッドは`sfTesterRequest`メソッドです。
+
+コンテキストがテスターオブジェクトであｒコールのブロックを作ることもできます:
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('request')->begin()->
+        isParameter('module', 'foo')->
+        isParameter('action', 'index')->
+      end()->
+
+      checkResponseElement('h1', 'foo')
+    ;
+
+`begin()`と`end()`の間のすべてのメソッドコールは現在のテスターオブジェクトに対して呼び出されます。
+
+Let's see the testing methods provided by the built-in tester classes.
+
+### リクエストテスター
+
+`request`テスターは`sfTesterRequest`クラスで定義され次のメソッドを持ちます:
+
+ **メソッド**  | **説明**
+ ------------- | ---------------------------------------
+ `isParameter` | リクエストパラメータをテストする
+ `isMethod`    | リクエストメソッドをテストする
+ `isFormat`    | リクエストフォーマットをテストする
+ `hasCookie`   | リクエストが渡されたcookieを持つかテストする
+ `isCookie`    | cookieの値をテストする
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('request')->begin()->
+        isParameter('module', 'foo')->
+        isMethod('get')->
+        isFormat('html')->
+        hasCookie('foo')->
+        isCookie('foo', 'bar')->
+      end()
+    ;
+
+### レスポンステスター
+
+`response`テスターは`sfTesterResponse`クラスで定義されており次のメソッドを
+含みます:
+
+ **メソッド**   | **説明**
+ -------------- | -----------------------------------------------------------
+ `isStatusCode` | レスポンスステータスコードをテストする
+ `contains`     | 単純な正規表現でレスポンスの内容をテストする
+ `isHeader`     | 与えられたヘッダーの値をテストする
+ `checkElement` | CSS3セレクタの値をチェックする
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('response')->begin()->
+        isStatusCode(200)->
+        contains('foo')->
+        isHeader('Content-Type', 'text/plain')->
+        checkElement('ul.foo li:last', '/foo/')->
+      end()
+    ;
+
+### ビューキャッシュテスター
+
+`view cache`テスターは`sfTesterViewCache`クラスで定義され次のメソッドを持ちます:
+
+ **メソッド**  | **説明**
+ ------------- | -------------------------------------------------------
+ `isCached`    | ページ/アクションがキャッシュの中にあるかチェックする
+ `isUriCached` | 特定のURI(パーシャルも可能)がキャッシュの中にあるかチェックする
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('view_cache')->begin()->
+        isCached(true)->
+        isUriCached('@sf_cache_partial?module=foo&action=_partial&sf_cache_key=some_cache_key')->
+      end()
+    ;
+
+### ユーザーテスター
+
+`user`テスターは`sfTesterUser`クラスで定義され次のメソッドを持ちます:
+
+ **メソッド**      | **説明**
+ ----------------- | -------------------------------------
+ `isCulture`       | ユーザーのcultureをテストする
+ `isAuthenticated` | ユーザーが認証されたかチェックする
+ `hasCredential`   | ユーザーのクレデンシャルをチェックする
+ `isAttribute`     | 与えられた属性の値をテストする
+ `isFlash`         | flash変数の値をテストする
+
+    [php]
+    $browser->
+      get('/')->
+
+      with('user')->begin()->
+        isCulture('fr')->
+        isAuthenticated(true)->
+        hasCredential('admin')->
+        isAttribute('sfguard_user_id', '3')->
+        isFlash('notice', '/foo/')->
+      end()
+    ;
+
+### フォームテスター
+
+新しくセクシーなテスターを発見する時間です！
+
+`form`テスターは`sfTesterForm`クラスで定義されています。
+これはフォームが以前のリクエストで使われたかどうか知っており、
+フォームオブジェクト自身への参照を持ち、イントロスペクトが許可されているのか知っています。
+
+ **メソッド**      | **説明**
+ ----------------- | ---------------------------------------------
+ `hasErrors`       | 投稿されたフォームがエラーを持つかチェックする
+ `isError`         | 与えられたフィールドに対するエラーの値をテストする
+ `hasGlobalError`  | グローバルエラー以外は`isError`と同じ
+
+`isError()`メソッドは`checkResponseElement()`メソッドと
+同じ種類の2番目の引数を取ります。
+
+    [php]
+    $browser->
+      click('save', array(...))->
+      with('form')->begin()->
+        hasErrors()->
+        hasGlobalError('The login and password does not match.')->
+        isError('name', 'Required.')->
+        isError('name', '/Required/')->
+        isError('name', '!/Invalid/')->
+        isError('name')->
+        isError('name', false)->
+        isError('name', 1)->
+      end()
+    ;
+
+### Propelテスター
+
+`propel`テスターは別の偉大なテスターです。
+
+It does not replace HTMLレスポンスチェックを置き換えませんが、
+テストすることが重要であるにもかかわらずブラウザに表示されないものをチェックするための手段です
+(例えばユーザー用の`last_connection`タイムスタンプが更新されてきたかどうか、
+もしくは記事用のビューの番号が増分されてきたかどうか、...)。
+
+`propel`テスターはPropelプラグインの`sfTesterPropel`で定義され使用される前に登録しなければなりません:
+
+    [php]
+    $browser->setTester('propel', 'sfTesterPropel');
+
+テスターが登録された後で、これをテストの中で利用できます:
+
+    [php]
+    $browser->
+      post('/')->
+      with('propel')->begin()->
+        check('Article', array('title' => 'foo'), false)->
+        check('Article', array('title' => '!foo'), false)->
+        check('Article', array(), 4)->
+        check('Article', array('title' => '%foo%'), true)->
+        check('Article', array('title' => '!%foo%'))->
+        check('Article', $criteria)->
+      end()
+    ;
+
+`propel`テスターは1つのメソッド: `check()`だけしか提供しません。
+このメソッドはあなたが渡した引数に基づいて異なる振る舞いをします:
+
+  * 最初の引数はモデルクラス名
+  * 2番目の引数は`Criteria`オブジェクトもしくは条件のシンプルな配列
+  * 3番目の引数は次の通り:
+      * オブジェクトが条件にマッチする場合は`true`
+      * オブジェクトが条件にマッチしない場合は`false`
+      * マッチするオブジェクトの数をチェックするために整数
+
+テスターを拡張もしくは作成する
+------------------------------
+
+テスターにはいくつかの利点があります:
+
+  * **分離**:     テスターのデカップリングのおかげで、
+                       以前よりもはるかに多くのテストメソッドを提供できます。
+  * **可読性**:   ブロックの概念と短いメソッドの名前のおかげで、
+                       テストはいっそう読みやすいです。
+  * **拡張性**: それぞれのテスターをあなた独自のメソッドで拡張できる
+                       もしくは独自のテスタークラスを作成できます。
+
+### 組み込みのテスターを拡張する
+
+既存のテスターにメソッドを追加したい場合、組み込みのテスターを継承するクラスを作り
+独自クラスの名前で再登録する必要があります:
+
+    [php]
+    class ApplicationTesterRequest extends sfTesterRequest
+    {
+      // テスターメソッドを追加する
+    }
+
+    // 機能テストの中で
+    $browser->setTester('request', 'ApplicationTesterRequest');
+
+組み込みテスターのまとまりをオーバーライドする必要がある場合、
+`setTesters`メソッドが使えます:
+
+    [php]
+    $browser->setTesters(array(
+      'request'  => 'ApplicationTesterRequest',
+      'response' => 'ApplicationTesterResponse',
+    ));
+
+テスターメソッドは望むことは何でもできますが流れるインターフェイスを正しく動作させるためには
+常に次のコードで終わらなければなりません:
+
+    [php]
+    return $this->getObjectToReturn();
+
+メソッドの中では、いくつかのオブジェクトにアクセスする権限があります:
+
+  * `$this->browser`: 現在のブラウザーメソッド
+  * `$this->tester`:  `lime_test`オブジェクト
+
+### 新しいテスターを作成する
+
+ユニークな名前で登録することで新しいテスタークラスも登録できます:
+
+    [php]
+    $browser->setTester('my_tester', 'myTester');
+
+テスタークラスは`sfTester`を継承し次のメソッドを実装しなければなりません:
+
+  * `initialize()`: テストで`with()`を使うたびにこのメソッドが呼び出されます。
+                    これはリクエストが送信された後でオブジェクトを取得するのに便利です:
+
+        [php]
+        public function initialize()
+        {
+          $this->request = $this->browser->getRequest();
+        }
+
+  * `prepare()`: ブラウザオブジェクトへのコールの直前にこのメソッドが呼び出されます。
+                 これはリクエストが送信される直前に何かを行う必要がある場合に便利です。
+
+流れるようなインターフェイスにする
+----------------------------------
+
+与えられたモジュールに対してたくさんの機能テストを書くとき、
+何が行われているのか視覚的な情報があると便利であることがあります。
+新しいテスターは新しいレベルのインデントを追加するのでテストは読みやすくなります。
+
+また、テストの分類を手助けするためにテキストを出力する新しい`info()`メソッドがあります:
+
+    [php]
+    $browser->
+      info('First scenario: Form with errors')->
+      // ... 何かのテスト
+      info('Second scenario: Valid form submission')->
+      // ... さらに何かのテスト
+    ;
+
+![ブラウザーの情報](http://www.symfony-project.org/uploads/assets/functional_tests_1_2/1.png)
+
+テストをデバッグする
+--------------------
+
+機能テストで問題が起きるとき、
+ブラウザーに転送されるHTMLは原因の診断の手助けをしてくれます。
+symfony 1.2に関しては、流れるようなインターフェイスのスタイルを乱すことなく、
+生成されたHTMLを表示するのはとても簡単です:
+
+    [php]
+    $browser->
+      get('/a_uri_with_an_error')->
+      with('response')->debug()->
+      // 実行されないテスト
+    ;
+
+`debug()`メソッドはレスポンスヘッダーと内容を出力しブラウザーの流れを中断します。
+
+同じ`debug()`メソッドが`form`テスト用にも存在し
+投稿された値と存在するのであればフォームエラーを出力します:
+
+    [php]
+    $browser->
+      post('/post_to_a_form_with_some_errors')->
+      with('form')->debug()->
+      // 実行されないテスト
+    ;
+
+![デバッグ](http://www.symfony-project.org/uploads/assets/functional_tests_1_2/2.png)
+
+今日はこれでお終いです。symfony製のアプリケーションをテストすることが簡単になったわけではありません。
+ですので、新しいテストフレームワークが難しくなく時間を節約することを
+あなたが理解して下さることを期待しております。
+
+新しい[ウェブデバッグツールバー](http://www.symfony-project.org/blog/2008/08/27/new-in-symfony-1-2-customize-the-web-debug-toolbar)
+のパネルに関しては、新しいテスターを作成するのであれば、これらをプラグインパッケージとして作成することをためらわないでください。
