@@ -1,0 +1,252 @@
+Chương 5 - Data Fixtures
+=========================
+
+## Giới thiệu
+
+Doctrine hỗ trợ khả năng load dữ liệu test bằng cách sử dụng cấu trúc YAML đơn giản để xác định dữ liệu được nạp vào. Nó giúp bạn dễ dàng tạo dữ liệu cho các bảng và liên kết khóa ngoài giữa các bản ghi.
+
+>**Note**
+>Ví dụ trong chương này sử dụng schema `User` và `Phonenumber` được xác định trong file `config/doctrine/schema.yml`.
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(25)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+
+    Profile:
+      columns:
+        name: string(255)
+        about: string(500)
+        user_id: integer
+      relations:
+        User:
+          foreignType: one
+
+>**NOTE**
+>Trong `sfDoctrinePlugin`, khi liên kết bản ghi trong data fixtures bạn sử dụng tên quan hệ, không như `sfPropelPlugin` bạn sử dụng tên khóa ngoài. Bạn cũng có thể tạo dữ liệu inline. Có nghĩa là, một khối YAML diễn tả một `Doctrine_Record` có thể chứa cấu trúc dữ liệu xác định sơ đồ quan hệ cho các `Doctrine_Record` con. Sau đâu chúng ta sẽ xem xét cả 2 cách `original` và `inline` style data fixtures.
+
+## Original
+
+Tạo file `data/fixtures/user.yml` và thêm code YAML sau.
+
+    User:
+      User_1:
+        username: jwage
+        password: changeme
+      User_2:
+        username: fabpot
+        password: changeme
+      User_3:
+        username: dwhittle
+        password: changeme
+
+Chạy lệnh sau để tạo lại database.
+
+    $ ./symfony doctrine:build-all-reload
+
+Bây giờ thực thi câu truy vấn DQL để lấy dữ liệu vừa nạp vào.
+
+    $ ./symfony doctrine:dql "FROM User u"
+    >> doctrine  executing dql query
+    DQL: FROM User u
+    found 3 results
+    -
+      id: '1'
+      username: jwage
+      password: changeme
+    -
+      id: '2'
+      username: fabpot
+      password: changeme
+    -
+      id: '3'
+      username: dwhittle
+      password: changeme
+
+>**CAUTION**
+>Thiết lập giá trị ngày tháng trong Data Fixtures
+>
+>`sfYaml` parser tự động chuyển giá trị ngày tháng sang unix
+>timestamps trừ khi bạn đưa chúng vào trong dấu nháy đơn để parser coi đó là kiểu
+>string. Nếu bạn không sử dụng dấu nháy đơn
+>với các cột có kiểu dữ liệu `date` hoặc `timestamp`, Doctrine validation sẽ
+>fail do dữ liệu pass phải là kiểu unix timestamp.
+>
+>Dưới đây là ví dụ các thiết lập giá trị cho cột `created_at` của model `User`.
+>
+>     [yml]
+>     User:
+>       User_1:
+>         username: jwage
+>         password: changeme
+>         created_at: '2008-12-17 00:01:00'
+
+## Liên kết các quan hệ
+
+Tạo file `data/fixtures/phonenumber.yml` và thêm dữ liệu.
+
+    Phonenumber:
+      Phonenumber_1:
+        phonenumber: 6155139185
+        User: User_1
+      Phonenumber_2:
+        phonenumber: 1234567890
+        User: User_2
+      Phonenumber_3:
+        phonenumber: 0987654321
+        User: User_3
+
+Tạo lại database và c thực hiện câu truy vấn DQL khác để lấy dữ liệu vừa nạp vào.
+
+    $ ./symfony doctrine:build-all-reload
+
+Bây giờ lấy dữ liệu với câu truy vấn phức tạp hơn thực hiện việc joins trường `User` và `Phonenumber`.
+
+    $ ./symfony doctrine:dql "FROM User u, u.Phonenumbers p"
+    >> doctrine  executing dql query
+    DQL: FROM User u, u.Phonenumbers p
+    found 3 results
+    -
+      id: '1'
+      username: jwage
+      password: changeme
+      Phonenumbers:
+        -
+          id: '1'
+          phonenumber: 6155139185
+          user_id: '1'
+    -
+      id: '2'
+      username: fabpot
+      password: changeme
+      Phonenumbers:
+        -
+          id: '2'
+          phonenumber: 1234567890
+          user_id: '2'
+    -
+      id: '3'
+      username: dwhittle
+      password: changeme
+      Phonenumbers:
+        -
+          id: '3'
+          phonenumber: 0987654321
+          user_id: '3'
+
+## Quan hệ nhiều-nhiều
+
+Sử dụng file YAML schema `config/doctrine/schema.yml` sau.
+
+    BlogPost:
+      columns:
+        title: string(255)
+        body: clob
+      relations:
+        Tags:
+          class: Tag
+          refClass: BlogPostTag
+          foreignAlias: BlogPosts
+
+    BlogPostTag:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          foreignAlias: BlogPostTags
+        Tag:
+          foreignAlias: BlogPostTags
+
+    Tag:
+      columns:
+        name: string(255)
+
+Thêm dữ liệu vào file `data/fixtures/data.yml`
+
+    BlogPost:
+      BlogPost_1:
+        title: Test Blog Post
+        body: This is the body of the test blog post
+        Tags: [test, php, doctrine, orm]
+
+    Tag:
+      test:
+        name: test
+      php:
+        name: php
+      doctrine:
+        name: doctrine
+      orm:
+        name: orm
+
+Tạo lại database again và chạy câu truy vấn DQL để lấy dữ liệu đã nạp.
+
+    $ ./symfony doctrine:build-all-reload
+
+Bây giờ thực hiện câu truy vấn DQL để lấy tất cả các bản ghi `BlogPost` và `Tags` liên quan
+
+    $ ./symfony doctrine:dql "FROM BlogPost p, p.Tags"
+    >> doctrine  executing dql query
+    DQL: FROM BlogPost p, p.Tags
+    found 1 results
+    -
+      id: '1'
+      title: 'Test Blog Post'
+      body: 'This is the body of the test blog post'
+      Tags:
+        -
+          id: '1'
+          name: test
+        -
+          id: '2'
+          name: php
+        -
+          id: '3'
+          name: doctrine
+        -
+          id: '4'
+          name: orm
+
+## Inline
+
+Doctrine hỗ trợ khả năng mô tả dữ liệu quan hệ inline như dưới đây.
+
+    User:
+      User_1:
+        username: jwage
+        password: changeme
+        Phonenumbers:
+          Phonenumber_1:
+            6155139185
+
+    BlogPost:
+      BlogPost_1:
+        title: Test Blog Post
+        body: This is the body of the test blog post
+        Tags:
+          test:
+            name: test
+          php:
+            name: php
+          doctrine:
+            name: doctrine
+          orm:
+            name: orm
+
+Cấu trúc trên giúp giảm độ dài và sự phức tạp của data fixtures.
+
+>**TIP**
+>Bạn có thể tìm hiểu thêm về data fixtures trong Doctrine Manual [ở đây](http://www.doctrine-project.org/documentation/manual/1_0/en/data-fixtures).
