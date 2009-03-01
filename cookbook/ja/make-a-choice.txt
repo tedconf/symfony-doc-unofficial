@@ -1,0 +1,370 @@
+フォームで選択機能を実装するには？
+==================================
+
+フォームを表示するとき、ユーザーが選択可能なもののリストから選べるようにしたいことがよくあります。
+
+HTMLにおいて、選択肢は`select`タグによって表現されます:
+
+![selectタグ](http://www.symfony-project.org/uploads/assets/choices/1.png)
+
+複数の選択を受け入れられるように`multiple`属性を追加できます:
+
+![複数のselectタグ](http://www.symfony-project.org/uploads/assets/choices/2.png)
+
+`sfWidgetFormChoice`
+--------------------
+
+選択はラジオボタンのリスト(単独の選択)もしくはチェックボックスのリスト(複数の選択)でも表現できます。
+
+これらすべての実現方法を統一するために、symfony 1.2は`sfWidgetFormChoice`と呼ばれる新しいウィジェットを搭載しています。
+`sfWidgetFormChoice`はレンダリングを別のウィジェット(**レンダラ**ウィジェット)に委譲する**抽象ウィジェット**です。
+
+可能な組み合わせを描くためにシンプルな例を取り上げてみます。
+プロジェクトにおいて、次のスキーマがあるとします:
+
+![データベーススキーマ](http://www.symfony-project.org/uploads/assets/choices/3.png)
+
+    [yml]
+    // config/schema.yml
+    propel:
+      demo_article:
+        id:           ~
+        author_id:    { type: integer, foreignReference: id, foreignTable: demo_author, onDelete: cascade, onUpdate: cascade, required: true }
+        status:       varchar(255)
+        title:        varchar(255)
+        content:      longvarchar
+        published_at: timestamp
+
+      demo_category:
+        id:          ~
+        name:        varchar(255)
+
+      demo_author:
+        id:          ~
+        name:        varchar(255)
+
+      demo_tag:
+        id:          ~
+        name:        varchar(255)
+
+      demo_tag_article:
+        tag_id:      { type: integer, primaryKey: true, foreignReference: id, foreignTable: demo_tag, onDelete: cascade, onUpdate: cascade, required: true }
+        article_id:  { type: integer, primaryKey: true, foreignReference: id, foreignTable: demo_article, onDelete: cascade, onUpdate: cascade, required: true }
+
+      demo_category_article:
+        category_id: { type: integer, primaryKey: true, foreignReference: id, foreignTable: demo_category, onDelete: cascade, onUpdate: cascade, required: true }
+        article_id:  { type: integer, primaryKey: true, foreignReference: id, foreignTable: demo_article, onDelete: cascade, onUpdate: cascade, required: true }
+
+これらはシンプルなCMS用の古典的なスキーマです。記事は1人の著者を持ち、たくさんのタグとカテゴリを持つことができます。
+それぞれの記事は1つのステータス: `published`、`draft`、もしくは`deleted`を持つことができます。ステータスを保存するためのテーブルは作られていないので、ステータスの値はプレーンテキストとして保存されます。
+
+基本的なCRUDオペレーションを提供するモジュールを作って`DemoArticle`モデルを遊んでみましょう:
+
+    $ php symfony propel:build-all
+    $ php symfony propel:generate-module frontend article DemoArticle
+
+編集ページに移動すると、次のようなフォームが表示されます:
+
+![生のフォーム](http://www.symfony-project.org/uploads/assets/choices/4.png)
+
+`DemoArticle`モデル (`lib/form/base/BaseDemoArticle.class.php`)用の生成フォームクラスを見てみると、
+symfonyは`author_id`に対して`sfWidgetFormPropelChoice`ウィジェット、
+`demo_category_article_list`と`demo_tag_article_list`に対して`sfWidgetFormPropelChoiceMany`ウィジェット
+を使用していることがわかります。
+symfonyはスキーマの定義に基づいて使用する最良のウィジェットを推測しました。
+
+`sfWidgetFormPropelChoice`はPropelオブジェクトに基づいた単独の選択を表し
+`sfWidgetFormPropelChoiceMany`はPropelオブジェクトに基づいた複数選択を表します。
+
+フォームをカスタマイズする
+---------------------------
+
+フォームをカスタマイズするために最初にできることは`status`ウィジェットを選択に変換することです:
+
+![ステータス用の選択があるフォーム](http://www.symfony-project.org/uploads/assets/choices/5.png)
+
+最初に、`DemoArticlePeer`モデルクラスでステータスを定義する必要があります:
+
+    [php]
+    // lib/model/DemoArticlePeer.php
+    class DemoArticlePeer extends BaseDemoArticlePeer
+    {
+      static protected $choices = array(
+        'published' => 'published',
+        'draft'     => 'draft',
+        'deleted'   => 'deleted'
+      );
+
+      static public function getStatusChoices()
+      {
+        return self::$choices;
+      }
+    }
+
+それから、ウィジェットと`status`に関連付けされたバリデータを変更するために
+`DemoArticleForm`クラスを編集します:
+
+    [php]
+    // lib/form/DemoArticleForm.class.php
+    class DemoArticleForm extends BaseDemoArticleForm
+    {
+      public function configure()
+      {
+        $this->widgetSchema['status'] = new sfWidgetFormChoice(array(
+          'choices' => DemoArticlePeer::getStatusChoices()
+        ));
+
+        $this->validatorSchema['status'] = new sfValidatorChoice(array(
+          'choices' => array_keys(DemoArticlePeer::getStatusChoices())
+        ));
+      }
+    }
+
+`sfWidgetFormChoice`は`select`タグで使用する選択の配列を`choices`オプションとして受け取ります。
+
+`sfValidatorChoice`は`choices`オプションも受け取ります。これは`status`カラムに対して
+有効な値です(配列`DemoArticlePeer::getStatusChoices()`のキー)。
+
+選択肢で遊ぶ
+------------
+
+### ラジオボタンのリスト
+
+`sfWidgetFormChoice`ウィジェットで少し遊んでみましょう！
+以前のスクリーンショットで見ることができるように、
+ステータスは`select`タグで表現できます。
+ステータス用の値の数は少ないので、
+ステータスをラジオボタンのリストとして表示する方がベターです:
+
+![ステータス用のラジオボタンを備えているフォーム](http://www.symfony-project.org/uploads/assets/choices/6.png)
+
+これを実現するのはとても簡単です。`sfWidgetFormChoice`は
+`select`タグからの出力をラジオボタンのリストに変換する`expanded`オプションを受け取ります:
+
+    [php]
+    $this->widgetSchema['status'] = new sfWidgetFormChoice(array(
+      'choices'  => DemoArticlePeer::getStatusChoices(),
+      'expanded' => true,
+    ));
+
+### チェックボックスリスト
+
+カテゴリのリストもとても小さいので、それらをチェックボックスのリストとして表示する方がベターです:
+
+![カテゴリ用のチェックボックスリストを持つフォーム](http://www.symfony-project.org/uploads/assets/choices/7.png)
+
+単独選択に使用してきた`expanded`オプションは複数選択のウィジェットにも使用できます。
+ウィジェットは基底フォームクラスで生成され変更を必要としないので
+`expanded`オプションを`true`に設定するだけです:
+
+    [php]
+    $this->widgetSchema['demo_category_article_list']->setOption('expanded', true);
+
+### 要約
+
+次のテーブルは`sfWidgetFormChoice`とレンダラウィジェットの異なる設定を要約しています:
+
+ **`sfWidgetFormChoice`** | `expanded`が`false`      | `expanded`が`true`
+ ------------------------ | ------------------------ | ----------------------------
+ `multiple`が`false`      | `sfWidgetFormSelect`     | `sfWidgetFormSelectRadio`
+ `multiple`が`true`       | `sfWidgetFormSelectMany` | `sfWidgetFormSelectCheckbox`
+
+The same table with some screenshots:
+
+ **`sfWidgetFormChoice`** | `expanded`が `false`                                                                  | `expanded` is `true`
+ ------------------------ | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------
+ `multiple`が`false`    | ![単独で展開されていない](http://www.symfony-project.org/uploads/assets/choices/8.png)    | ![single expanded](http://www.symfony-project.org/uploads/assets/choices/9.png)
+ `multiple`が`true`     | ![複数で展開されていない](http://www.symfony-project.org/uploads/assets/choices/10.png) | ![multiple expanded](http://www.symfony-project.org/uploads/assets/choices/11.png)
+
+選択のグループを作成する
+------------------------
+
+`select`タグのあまり知られていない機能の1つは`optgroup`機能で選択のグループを作成できる方法です:
+
+![optgroup機能](http://www.symfony-project.org/uploads/assets/choices/17.png)
+
+`sfWidgetFormChoice`ファミリーウィジェットはグループ用の組み込みのサポート機能を持ちます。
+必要なのは`choices`オプションに対して配列の配列を渡すことだけです:
+
+    [php]
+    $choices = array(
+      'Europe'  => array('France' => 'France', 'Spain' => 'Spain', 'Italy' => 'Italy'),
+      'America' => array('USA' => 'USA', 'Canada' => 'Canada', 'Brazil' => 'Brazil'),
+    );
+    
+    $this->widgetSchema['country'] = new sfWidgetFormChoice(array('choices' => $choices));
+
+もちろん、ラジオボタンのリストを展開できます:
+
+    [php]
+    $this->widgetSchema['country'] = new sfWidgetFormChoice(array(
+      'choices'  => $choices,
+      'expanded' => true,
+    ));
+
+![展開されたoptgroup機能](http://www.symfony-project.org/uploads/assets/choices/18.png)
+
+レンダラウィジェットによって使用されるレイアウトも使用できます:
+
+    [php]
+    $this->widgetSchema['country'] = new sfWidgetFormChoice(array(
+      'choices'  => $choices,
+      'expanded' => true,
+      'renderer_options' => array('template' => '<strong>%group%</strong> %options%'),
+    ));
+
+![カスタマイズされ展開されるoptgroup機能](http://www.symfony-project.org/uploads/assets/choices/19.png)
+
+そしてもちろん、`multiple`オプションに対しても機能します:
+
+![複数のoptgroup機能](http://www.symfony-project.org/uploads/assets/choices/20.png)
+
+![複数で展開されているoptgroup機能](http://www.symfony-project.org/uploads/assets/choices/21.png)
+
+さらにJavaScript
+----------------
+
+これまでの作業は簡単でした。さらなる可能性を探るためにJavaScriptを追加してみましょう。
+
+### 二重リスト
+
+CMSが大規模で使われる場合、タグがますます増え、現在の記事に関連したタグを見つけるのがより困難になります。
+このような状況に対して、二重リストウィジェットはベストの解決方法の1つです:
+
+![タグ用の二重リスト](http://www.symfony-project.org/uploads/assets/choices/12.png)
+
+これまでのところ、シンプルな設定(`multiple`と `expanded`)に基づいて
+symfonyはベストなウィジェットを選択してきました。
+しかし`sfWidgetFormChoice`は`select`タグウィジェットをそのまま二重リストとしてレンダリングできません。
+
+幸いにして、我々は`sfWidgetFormChoice`がレンダリング作業を別のウィジェットに委譲することを知っています。 
+レンダリングウィジェットの変更するには`renderer_class`オプションを修正します。
+
+[`sfFormExtraPlugin`](http://www.symfony-project.org/plugins/sfFormExtraPlugin)をインストールする場合、
+とても便利で興味深いウィジェットとバリデータが見つかりますが、サードパーティのライブラリに依存しているので
+コアに取り込まれていません。
+
+`sfWidgetFormSelectDoubleList`ウィジェットはそれらの1つです:
+
+    [php]
+    $this->widgetSchema['demo_tag_article_list']->setOption('renderer_class', 'sfWidgetFormSelectDoubleList');
+
+ページをリフレッシュすると、ウィジェットがJavaScriptに依存しているので正しく動作しません。
+ウィジェットのAPIドキュメントには適切に設定する必要がある内容が書かれています:
+
+    [php]
+    // apps/frontend/modules/article/templates/_form.php
+    <?php use_javascript('/sfFormExtraPlugin/js/double_list.js') ?>
+
+    <form action="<?php echo url_for('@article_update') ?>">
+      <table>
+        <?php echo $form ?>
+
+        <!-- ... -->
+      </table>
+    </form>
+
+### 自動入力補完
+
+まだ`author_id`フィールドを遊んでいませんでした。本当にCMSにたくさんの筆者がいる場合を想像してみましょう。
+ドロップダウンのselectタグでとても長い名前リストで何かを見つけるのは簡単なことではありません。
+ですので、これを自動入力補完ウィジェットに変換してみましょう。
+
+![著者用の自動入力補完](http://www.symfony-project.org/uploads/assets/choices/13.png)
+
+![著者用の自動入力補完](http://www.symfony-project.org/uploads/assets/choices/14.png)
+
+![著者用の自動入力補完](http://www.symfony-project.org/uploads/assets/choices/15.png)
+
+感動的だと思いませんか？動作させるためには、以前よりも少し多くの作業をしなければなりません。
+
+`sfFormExtraPlugin`はJQueryライブラリに基づいた2つの自動入力ウィジェットを含みます:
+
+  * `sfWidgetFormJQueryAutocompleter`: 任意の自動入力補完タスク用に使用できる
+  * `sfWidgetFormPropelJQueryAutocompleter`: Propel用に最適化された自動入力補完機能
+
+我々の状況において、Propel用のウィジェットを利用します:
+
+    [php]
+    // lib/form/DemoArticleForm.class.php
+    $this->widgetSchema['author_id']->setOption('renderer_class', 'sfWidgetFormPropelJQueryAutocompleter');
+    $this->widgetSchema['author_id']->setOption('renderer_options', array(
+      'model' => 'DemoAuthor',
+      'url'   => $this->getOption('url'),
+    ));
+
+`renderer_options`を設定することでウィジェットにいくつかのオプションを渡しました。
+これらのオプションにおいて、`url`が`url`フォームオプション(`$this->getOption('url')`)に
+設定されていることにお気づきかもしれません。
+フォームインスタンスを作るとき、最初のコンストラクタの最初の引数はデフォルトの値で
+2番目の引数はオプションの配列です:
+
+    [php]
+    public function executeEdit($request)
+    {
+      // ...
+
+      $this->form = new DemoArticleForm($article, array('url' => $this->getController()->genUrl('article/ajax')));
+
+      // ...
+    }
+
+`article/ajax`アクションを作る必要があります。ウィジェットがこのアクションを呼び出すとき、
+いくつかのリクエストパラメータを渡します:
+
+  * `q`:     ユーザーが入力した文字列
+  * `limit`: 返す項目の最大数
+
+コードは次の通りです:
+
+    [php]
+    // apps/frontend/modules/article/actions/actions.class.php
+    public function executeAjax($request)
+    {
+      $this->getResponse()->setContentType('application/json');
+
+      $authors = DemoAuthorPeer::retrieveForSelect($request->getParameter('q'), $request->getParameter('limit'));
+
+      return $this->renderText(json_encode($authors));
+    }
+
+    // lib/model/DemoAuthorPeer.php
+    class DemoAuthorPeer extends BaseDemoAuthorPeer
+    {
+      static public function retrieveForSelect($q, $limit)
+      {
+        $criteria = new Criteria();
+        $criteria->add(DemoAuthorPeer::NAME, '%'.$q.'%', Criteria::LIKE);
+        $criteria->addAscendingOrderByColumn(DemoAuthorPeer::NAME);
+        $criteria->setLimit($limit);
+
+        $authors = array();
+        foreach (DemoAuthorPeer::doSelect($criteria) as $author)
+        {
+          $authors[$author->getId()] = (string) $author;
+        }
+
+        return $authors;
+      }
+    }
+
+すべてのJavaScriptウィジェットに関して、適切に動作させるためにフォームテンプレートにファイルを追加することも必要です:
+
+    [php]
+    // apps/frontend/modules/article/templates/_form.php
+    <?php use_javascript('/sfFormExtraPlugin/js/jquery.autocompleter.js') ?>
+    <?php use_stylesheet('/sfFormExtraPlugin/css/jquery.autocompleter.css') ?>
+
+    <!-- ... -->
+
+作業は終わりました。著者の名前を表示し、著者のidをフォームに投稿できる自動入力補完ウィジェットが
+手に入りました。バリデータのおかげで、有効なidのみが投稿されデータベースに保存されることを保証できます。
+
+完成品のフォーム
+----------------
+
+完成品のフォームは次の通りです。選択に関してユーザーに質問をする方法をすべて示しています:
+
+![実現できる機能のすべて](http://www.symfony-project.org/uploads/assets/choices/16.png)
+
+これはたった1つのウィジェットによる柔軟性のおかげです！
