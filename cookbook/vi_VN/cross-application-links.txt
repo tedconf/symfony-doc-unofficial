@@ -1,0 +1,107 @@
+Tạo Link tới Application khác
+=============================
+
+Một symfony project có thể có một hoặc nhiều application. Các Application chỉ dùng chung
+model class, còn lại là độc lập với nhau. Nhưng đôi khi, bạn cần tạo một
+link tới frontend application từ backend. Ví dụ với một CMS backend
+bạn cần sửa một bài viết và sau đó link tới bài viết đó ở
+frontend để xem kết quả.
+
+Trong hướng dẫn này, tôi sẽ hướng dẫn bạn một cách đơn giản để giải quyết vấn đề này.
+
+Ngoài việc phân tích file cấu hình và chuyển kết quản thành mảng trong file
+PHP cache, một vài lớp quản lý cấu hình còn có thể cấu hình trực tiếp
+(các lớp quản lý cấu hình autoload, database, và routing).
+
+Ví dụ, nếu bạn muốn chuyển một file chứa route được viết dưới dạng YAML
+thành object routes tương ứng, bạn có thể làm như sau:
+
+    [php]
+    $config = new sfRoutingConfigHandler();
+    $routes = $config->evaluate(array('/path/to/routing.yml'));
+
+Trong đoạn code trên, `$routes` là mảng các object route, tương đương với các route xác định trong file
+YAML. Phương thức `generate()` nhận một mảng các tên file YAML và ghép nội dung của tất cả các file đó lại.
+
+>**TIP**
+>Phương thức `evaluate()` nhận một mảng các file cấu hình. Nếu bạn có một vài plugin
+>xác dịnh route trong file `routing.yml`, thêm đường dẫn file đó vào
+>mảng và cấu hình sẽ được thêm vào cùng với cấu hình chính.
+
+Nhờ có framework decoupling và phương thức `sfPatternRouting::setRoutes()`,
+bạn có thể dễ dàng tạo một object frontend routing từ bất kì PHP script nào:
+
+    [php]
+    $routing = new sfPatternRouting(new sfEventDispatcher());
+    $routing->setRoutes($routes);
+
+Tạo URLs bây giờ đơn giản là gọi phương thức `generate()` của object routing:
+
+    [php]
+    $routing->generate('homepage');
+    $routing->generate('article', array('id' => $id));
+
+Phương thức `generate()` nhận tên của route là tham số đầu tiên, và tham số thứ 2 là mảng các
+parameter.
+
+Hãy sử dụng những hiểu biết trên để tạo một frontend URL từ
+backend application.
+
+Trong lớp `backendConfiguration`, thêm đoạn code sau:
+
+    [php]
+    // apps/backend/config/backendConfiguration.class.php
+    class backendConfiguration extends sfApplicationConfiguration
+    {
+      protected $frontendRouting = null;
+
+      public function generateFrontendUrl($name, $parameters = array())
+      {
+        return 'http://frontend.example.com'.$this->getFrontendRouting()->generate($name, $parameters);
+      }
+
+      public function getFrontendRouting()
+      {
+        if (!$this->frontendRouting)
+        {
+          $this->frontendRouting = new sfPatternRouting(new sfEventDispatcher());
+
+          $config = new sfRoutingConfigHandler();
+          $routes = $config->evaluate(array(sfConfig::get('sf_apps_dir').'/frontend/config/routing.yml'));
+
+          $this->frontendRouting->setRoutes($routes);
+        }
+
+        return $this->frontendRouting;
+      }
+
+      // ...
+    }
+
+>**NOTE**
+>Chú ý rằng phương thức `generateFrontendUrl()` luôn trả về
+>đường dẫn tuyệt đối nên bạn cần phải cung cấp thông tin về host.
+
+Với đoạn code này, bạn có thể tạo ra một frontend URL ở bất kì đâu trong
+backend. Dưới đây là ví dụ cách redirect người dùng tới frontend
+từ một action ở backend:
+
+    [php]
+    $this->redirect($this->getContext()->getConfiguration()->generateFrontendUrl('hello', array('name' => 'Bar')));
+
+Bạn cũng có thể tạo một helper cho template:
+
+    [php]
+    function link_to_frontend($name, $parameters)
+    {
+      return sfProjectConfiguration::getActive()->generateFrontendUrl($name, $parameters);
+    }
+
+Đó là tất cả những gì chúng ta phải làm!
+
+Nếu bạn có nhiều application, thật dễ dàng refactor code trên để tạo
+URL cho các application khác nhau.
+
+>**NOTE**
+>Kĩ thuật mô tả trong hướng dẫn này được sử dụng trong task
+>`app:routes`.
