@@ -1,0 +1,127 @@
+条件つきバリデータを実装するには？
+==================================
+
+古典的なログインフォームは2つのフィールド: ユーザー名とパスワードで構成されます。
+
+バリデーションのルールはとても直感的です:
+
+  * それぞれのフィールドを必須にしたい
+  * パスワードの正しさをチェックしたい
+
+ログインフォームの最初の実装です:
+
+    [php]
+    class loginForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'username'  => new sfWidgetFormInput(),
+          'password'  => new sfWidgetFormInputPassword(),
+        ));
+
+        $this->setValidators(array(
+          'username' => new sfValidatorString(array('required' => true)),
+          'password' => new sfValidatorString(array('required' => true)),
+        ));
+
+        $this->widgetSchema->setNameFormat('login[%s]');
+      }
+    }
+
+このフォームによってユーザー名とパスワードフィールドの要件が強制されますが
+パスワードの正しさはチェックされません。
+
+![ログインフォームの最初の実装](http://www.symfony-project.org/uploads/assets/call_the_expert/1/1.png)
+
+ユーザー名の値へのアクセス権限もある場合のみパスワードはバリデート可能です。
+しかしおわかりの通り、フィールドに添付されたバリデータはフォームの他の値にアクセスする権限がありません。
+
+**バリデータが別の投稿された値に依存するとき、ポストバリデータを作ることが必要です**.
+ポストバリデータは他のすべてのバリデータの後で実行されクリーンナップされた値の全体の配列が渡されます。
+
+パスワードをチェックするために、投稿されたパスワードがユーザーと等しいことを確認するために
+シンプルなコールバックバリデータを実装します。もちろん、彼の実際のプロジェクトに関して、
+実際の作業を行うためにモデルレイヤーを呼び出さなければなりません。
+
+追加されたpostバリデータつきの修正されたログインフォームは次の通りです:
+
+    [php]
+    class loginForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'username'  => new sfWidgetFormInput(),
+          'password'  => new sfWidgetFormInputPassword(),
+        ));
+
+        $this->setValidators(array(
+          'username' => new sfValidatorString(array('required' => true)),
+          'password' => new sfValidatorString(array('required' => true)),
+        ));
+
+        $this->widgetSchema->setNameFormat('login[%s]');
+
+        // postバリデータを追加する
+        $this->validatorSchema->setPostValidator(
+          new sfValidatorCallback(array('callback' => array($this, 'checkPassword')))
+        );
+      }
+
+      public function checkPassword($validator, $values)
+      {
+        if ($values['password'] != $values['username'])
+        {
+          // パスワードが正しくなければ、エラーを投げる
+          throw new sfValidatorError($validator, 'Invalid password');
+        }
+
+        // パスワードが正しければ、クリーンな値を返す
+        return $values;
+      }
+    }
+
+これで、フォームは期待通りに動作しますが、小さな問題が1つあります: 
+ユーザー名を入力せずにランダムなパスワードを投稿すると、
+2つのエラーメッセージ: 必須項目のユーザー名に対するエラーと間違ったパスワードに対するグローバルエラーが表示されます。
+
+![2つのエラーメッセージ](http://www.symfony-project.org/uploads/assets/call_the_expert/1/2.png)
+
+しかし、少しお待ち下さい。ユーザー名が空の場合、パスワードをバリデートする必要はありません。
+ユーザー名が投稿される場合のみパスワードをバリデートするようにフォームを変更してみましょう。
+$values['username']`が空ではないことを確認することだけなので、これはとても簡単です:
+
+    [php]
+    public function checkPassword($validator, $values)
+    {
+      // パスワードをバリデートする前に、ユーザー名が空ではないことをチェックする
+      if (!empty($values['username']) && $values['password'] != $values['username'])
+      {
+        throw new sfValidatorError($validator, 'Invalid password');
+      }
+
+      return $values;
+    }
+
+グローバルエラーを用意する代わりに、上記のパスワードフィールドで'Invalid password'エラーメッセージを
+表示したいとします。
+
+グローバルエラーを投げる代わりに、`password`フィールドにバインドされたエラーを投げることで
+実現するのはとても簡単です:
+
+    [php]
+    public function checkPassword($validator, $values)
+    {
+      if (!empty($values['username']) && $values['password'] != $values['username'])
+      {
+        $error = new sfValidatorError($validator, 'Invalid password');
+
+        // パスワードフィールドにバインドされたエラーを投げる
+        throw new sfValidatorErrorSchema($validator, array('password' => $error));
+      }
+
+      return $values;
+    }
+
+![フィールドにバインドされたエラーメッセージ](http://www.symfony-project.org/uploads/assets/call_the_expert/1/3.png)
