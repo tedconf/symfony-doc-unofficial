@@ -1,0 +1,132 @@
+Chương 3 - Cấu hình
+===================
+
+## Attribute
+
+Doctrine quản lý các tính năng và cấu hình thông qua các attribute. Các attribute có thể được xác định ở các mức khác nhau và thừa kế lẫn nhau. Một số attribute có thể được xác định ở tất cả các mức, một số thì không. Dưới đây miêu tả cách xác định các attribute ở mỗi mức. Attribute có thể xác định ở toàn cục, cho từng connection, hay mỗi model riêng biệt.
+
+Trong symfony bạn có thể quản lý cấu hình Doctrine trong file `config/ProjectConfiguration.class.php` hoặc `apps/appname/config/appnameConfiguration.class.php`
+
+### Toàn cục
+
+Bạn có thể quản lý global attribute bằng cách tạo một `configureDoctrine()` trong file cấu hình. Tất cả các global attribute được thiết lập với singleton instance của `Doctrine_Manager` . Phương thức này được gọi khi `sfDoctrinePlugin` `config.php` được load. Đó là trước khi bất kì kết nối nào tồn tại do đó chỉ có `Doctrine_Manager` attribute được quản lý ở thời điểm này.
+
+    [php]
+    public function configureDoctrine(Doctrine_Manager $manager)
+    {
+      $manager->setAttribute('use_dql_callbacks', true);
+      $manager->setAttribute('use_native_enum', true);
+    }
+
+### Tất cả kết nối
+
+Bạn có thể quản lý các attribute của từng connection bằng cách tạo một `configureDoctrineConnection()` trong lớp cấu hình. Phương thức này được gọi trong `sfDoctrineDatabase` khi mỗi kết nối được symfony tạo theo thứ tự trong file `config/databases.yml`.
+
+    [php]
+    public function configureDoctrineConnection(Doctrine_Connection $connection)
+    {
+      $connection->setAttribute('use_dql_callbacks', true);
+      $connection->setAttribute('use_native_enum', true);
+    }
+
+Bạn cũng có thể xác định các attribute cho connection trực tiếp trong file cấu hình `config/doctrine/databases.yml`:
+
+    [yml]
+    doctrine:
+       class: sfDoctrineDatabase
+       param:
+         dsn: 'mysql:host=localhost;dbname=dbname'
+         username: user
+         password: secret
+         attributes:
+           use_dql_callbacks: true
+           use_native_enum:  true
+
+Bạn cũng có thể cấu hình khác nhau cho mỗi connection bằng cách tạo một function ứng với mỗi connection. Nếu bạn có một connection tên `master` thì bạn cần tạo một function tên `configureDoctrineConnectionMaster()` trong file `config/ProjectConfiguration.class.php`.
+
+    [php]
+    public function configureDoctrineConnectionMaster(Doctrine_Connection $connection)
+    {
+      $connection->setAttribute('use_dql_callbacks', false);
+      $connection->setAttribute('use_native_enum', false);
+    }
+
+Trong ví dụ trên chúng ta đã thiết lập `use_dql_callbacks` và `use_native_enum` cho tất cả các connection ngoại trừ kết nối có tên `doctrine`.
+
+### Model
+
+Mức cấu hình cuối cùng của Doctrine là model. Attribute có thể được xác định trực tiết trong file YAML xác định model.
+
+    [yml]
+    Store:
+      connection: client
+      attributes:
+        export: tables
+      columns:
+        name: string(255)
+        description: string(500)
+
+Bạn cũng có thể thiết lập các attribute sử dụng code php trong các lớp model được tạo ra trong thư mục `lib/model/doctrine`. Mở file `lib/model/doctrine/Store.class.php` và override phương thức `setTableDefinition()` để thêm một số attribute. 
+
+    [php]
+    public function setTableDefinition()
+    {
+      parent::setTableDefinition();
+      $this->setAttribute('export', 'tables');
+    }
+
+## Cấu hình quá trình tạo Model
+
+sfDoctrinePlugin cung cấp khả năng override một số lựa chọn để build model. Những thiết lập này có thể điều khiển bằng lớp `sfConfig` sử dụng tham số `doctrine_model_builder_options`.
+
+Dưới đây là ví dụ cách thay đổi tên base class khi tạo models. Bạn có thể thiết lập để đổi nó thành `myDoctrineRecord` hay bất cứ gì bạn muốn.
+
+    [php]
+    public function configureDoctrine(Doctrine_Manager $manager)
+    {
+      $options = array('baseClassName' => 'myDoctrineRecord');
+      sfConfig::set('doctrine_model_builder_options', $options);
+    }
+
+Bạn cần tạo thêm một lớp, ở đây là `sfproject/lib/myDoctrineRecord.class.php` với đoạn code sau.
+
+    [php]
+    class myDoctrineRecord extends sfDoctrineRecord
+    {
+    }
+
+Bây giờ hãy generate model, tất cả các lớp sẽ extend từ `myDoctrineRecord` thay vì `sfDoctrineRecord` do đó bạn có thể thêm các chỉnh sửa cho tất cả các model của mình.
+
+Dưới đây là danh sách tất cả các option bạn có thể thay đổi thành giá trị khác trong quá trình tạo model.
+
+| Tên                  | Mô tả                                     | Mặc định         |
+|----------------------|-------------------------------------------|------------------|
+| suffix               | Hậu tố dùng cho các lớp được tạo ra       | .class.php       |
+| generateBaseClasses  | Có tạo các lớp base hay không             | true             |
+| generateTableClasses | Có tạo các lớp *Table hay không           | true             |
+| baseClassPrefix      | Tiền tố cho các lớp base                  | Base             |
+| baseClassesDirectory | Thư mục chứa các lớp base                 | base             |
+| baseClassName        | Lớp cha của các model                     | sfDoctrineRecord |
+
+>**TIP**
+>Bạn có thể tìm hiểu thêm về cấu hình trong Doctrine Manual [ở đây](http://www.doctrine-project.org/documentation/manual/1_0/en/configuration).
+
+## Chỉnh sửa đường dẫn tới thư viện Doctrine
+
+Với `sfDoctrinePlugin` thật dễ dàng để thêm một phiên bản mới của Doctrine bằng thay đổi một giá trị trong file cấu hình.
+
+Dưới đây bạn sẽ tìm được ví dụ về cách cấu hình `sfDoctrinePlugin` để sử dụng một phiên bản khác của Doctrine, ví dụ 1.1.
+
+Đầu tiên chúng ta cần thêm phiên bản của Doctrine chúng ta muốn sử dụng vào trong `lib/vendor/doctrine`:
+
+    $ mkdir lib/vendor
+    $ cd lib/vendor
+    $ svn co http://svn.doctrine-project.org/branches/1.1/lib doctrine
+
+Bây giờ chúng ta có thể cấu hình `sfDoctrinePlugin` để sử dụng phiên bản này thay vì phiên bản có sẵn trong plugin. Trong phương thức `ProjectConfiguration::setup()` bạn cần thay đổi giá trị của `sfDoctrinePlugin_doctrine_lib_path` như dưới đây:
+
+    [php]
+    public function setup()
+    {
+      sfConfig::set('sfDoctrinePlugin_doctrine_lib_path', sfConfig::get('sf_lib_dir') . '/vendor/doctrine/Doctrine.php');
+    }
