@@ -1,0 +1,361 @@
+DoctrineのAdminジェネレータ
+===========================
+
+実際の世界の例
+--------------
+
+この記事ではDoctrineに慣れるためにsymfony1.2で新規プロジェクトを始めます。ありふれたコンテンツマネジメントシステムを使います。スキーマは記事、筆者とカテゴリで構成され記事は国際化されています。
+
+プロジェクトを始める
+--------------------
+
+最初に symfony1.2で新規プロジェクトとbackendアプリケーションを初期化する必要があります。ベータ1版ではDoctrineの機能が含まれていなかったのでSVNから最新のコードを利用していることを確認して下さい。
+
+**プロジェクトを生成する**
+
+    $ mkdir cms
+    $ cd cms
+    $ symfony generate:project cms
+
+**データベースを設定する**
+
+`config/databases.yml`を開きDoctrineのために設定内容を次のように置き換えます:
+
+    [yml]
+    all:
+      doctrine:
+        class: sfDoctrineDatabase
+        param:
+          dsn:      mysql:host=localhost;dbname=dbname
+          username: root
+          password: secret
+
+**backendアプリケーションを生成する**
+
+    $ symfony generate:app backend
+
+Doctrineを有効にする
+---------------------
+
+Doctrineを有効にしてPropelを無効にする必要があります。`config/ProjectConfiguration.class.php`を編集して次のコードを`setup()`関数に追加します。
+
+    [php]
+    public function setup()
+    {
+      $this->enablePlugins(array('sfDoctrinePlugin'));
+      $this->disablePlugins(array('sfPropelPlugin'));
+    }
+
+Doctrineが有効になったので利用可能なDoctrineのタスクの一覧を表示できます(訳注：実際には英文が表示されます):
+
+    $ ./symfony list doctrine
+
+    Available tasks for the "doctrine" namespace:
+      :build-all                   Doctrineのモデル、SQLを生成し、データベースを初期化する (doctrine-build-all)
+      :build-all-load              Doctrineのモデル、SQLを生成し、データベースを初期化し、データをロードする (doctrine-build-all-load)
+      :build-all-reload            Doctrineのモデル、SQLを生成し、データベースを初期化し、データをロードする (doctrine-build-all-reload)
+      :build-all-reload-test-all   Doctrineのモデル、SQLを生成し、データベースを初期化し、データをロードしテストスイートを実行する (doctrine-build-all-reload-test-all)
+      :build-db                    現在のモデル用のデータベースを作成する (doctrine-build-db)
+      :build-filters               現在のモデル用のフィルタクラスを生成する
+      :build-forms                 現在のモデル用のフォームクラスを生成する (doctrine-build-forms)
+      :build-model                 現在のモデル用のクラスを生成する (doctrine-build-model)
+      :build-schema                既存のデータベースからスキーマを作成する (doctrine-build-schema)
+      :build-sql                   現在のモデル用にSQLを作成する (doctrine-build-sql)
+      :data-dump                   データをフィクスチャディレクトリにダンプする (doctrine-dump-data)
+      :data-load                   フィクスチャディレクトリからデータをロードする (doctrine-load-data)
+      :dql                         DQLクエリを実行して結果を閲覧する (doctrine-dql)
+      :drop-db                     現在のモデル用のデータベースをドロップする (doctrine-drop-db)
+      :generate-admin              Doctrineのadminモジュールを生成する
+      :generate-migration          マイグレーションクラスを生成する (doctrine-generate-migration)
+      :generate-migrations-db      既存のデータベースの接続からマイグレーションクラスを生成する (doctrine-generate-migrations-db, doctrine-gen-migrations-from-db)
+      :generate-migrations-models  既存のモデルのセットからマイグレーションクラスを生成する (doctrine-generate-migrations-models, doctrine-gen-migrations-from-models)
+      :generate-module             Doctrineモジュールを生成する (doctrine-generate-crud, doctrine:generate-crud)
+      :generate-module-for-route   routeの定義用にDoctrineモジュールを生成する
+      :insert-sql                  現在のモデルのためにSQLをinsertする (doctrine-insert-sql)
+      :migrate                     データベースを現在の/指定されたバージョンにマイグレートする (doctrine-migrate)
+      :rebuild-db                  現在のモデル用のデータベースを作成する (doctrine-rebuild-db)
+
+スキーマ
+----------
+
+お楽しみはこれからです。最初にすべきことは `config/doctrine/schema.yml` でCMS用のスキーマを定義することです。
+
+    [yml]
+    ---
+    Article:
+      actAs:
+        Timestampable:
+        I18n:
+          fields: [title, content]
+      columns:
+        author_id: integer
+        status:
+          type: enum
+          values: [Draft, Published]
+          notnull: true
+        title:
+          type: string(255)
+          notnull: true
+        content:
+          type: clob
+          notnull: true
+        is_on_homepage: boolean
+        published_at: timestamp
+      relations:
+        Author:
+          foreignAlias: Articles
+        Categories:
+          class: Category
+          refClass: ArticleCategory
+          foreignAlias: Articles
+
+    Category:
+      columns:
+        name:
+          type: string(255)
+          notnull: true
+
+    Author:
+      columns:
+        name:
+          type: string(255)
+          notnull: true
+        about: string(1000)
+
+    ArticleCategory:
+      columns:
+        article_id: integer
+        category_id: integer
+      relations:  
+        Article:
+          foreignAlias: ArticleCategories
+        Category:
+          foreignAlias: ArticleCategories
+
+データフィクスチャ
+------------------
+
+スキーマがあり、テストするためのデータが必要なので`data/fixtures/data.yml`に次のYAMLをにコピーします。
+
+    [yml]
+    ---
+    Article:
+      Article_1:
+        Author: jwage
+        status: Published
+        is_on_homepage: true
+        published_at: '<?php echo date("Y-m-d h:i:s"); ?>'
+        Categories: [article, ontheedge]
+        Translation:
+          en:
+            title: symfony 1.2 and Doctrine
+            content: Article about the new Doctrine integration in symfony 1.2
+          fr:
+            title: symfony 1.2 et doctrine
+            content: Article sur l'intégration de Doctrine dans symfony 1.2
+
+    Author:
+      jwage:
+        name: Jonathan H. Wage
+        about: Jonathan is the lead developer of the Doctrine project and is also a core contributor to the symfony project.
+
+    Category:
+      article:
+        name: Article
+      tutorial:
+        name: Tutorial
+      ontheedge:
+        name: Living on the edge
+
+ビルドとテスト
+--------------
+
+スキーマとデータフィクスチャが揃ったので必要なことはデータベース、モデル、フォーム、データその他を初期化することです。これは下記のようなとても簡単なコマンドで実行できます:
+
+       $ ./symfony doctrine:build-all-reload --no-confirmation
+    >> doctrine  dropping databases
+    >> doctrine  creating databases
+    >> doctrine  generating model classes
+    >> doctrine  generating sql for models
+    >> doctrine  generating form classes
+    >> doctrine  generating filter form classes
+    >> doctrine  created tables successfully
+    >> doctrine  loading data fixtures from "/Us...ymfony12doctrine/data/fixtures"
+
+簡単でしたよね？データが適切にロードされたかどうかを確認するためにDQLでインスペクションを行いましょう。
+
+    $ ./symfony doctrine:dql "FROM Article a, a.Author a2, a.Translation t"
+    >> doctrine  executing dql query
+    DQL: FROM Article a, a.Author a2, a.Translation t
+    found 1 results
+    -
+      id: '1'
+      author_id: '1'
+      status: Published
+      is_on_homepage: true
+      published_at: '2008-11-06 04:37:11'
+      created_at: '2008-11-06 16:37:11'
+      updated_at: '2008-11-06 16:37:11'
+      Author:
+        id: '1'
+        name: 'Jonathan H. Wage'
+        about: 'Jonathan is the lead developer of the Doctrine project and is also a core contributor to the symfony project.'
+      Translation:
+        en:
+          id: '1'
+          title: 'symfony 1.2 and Doctrine'
+          content: 'Article about the new Doctrine integration in symfony 1.2'
+          lang: en
+        fr:
+          id: '1'
+          title: 'symfony 1.2 et doctrine'
+          content: 'Article sur l''intégration de Doctrine dans symfony 1.2'
+          lang: fr
+
+
+
+Doctrine Query Language(DQL)を味合うのは初めてかもしれません。SQLによく似ているでしょ？口を閉じて。よだれが垂れてますよ。
+
+生のDQL文字列を書きたくない人へ。クエリをビルドするための十分な機能を持つ`Doctrine_Query`オブジェクトがあります。
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('Article a, a.Author a2, a.Translation t');
+    $articles = $q->execute();
+
+Adminジェネレータ
+-----------------
+
+すべてが組み込まれたので、symfonyでマジックを生成することを始められます。記事、著者とカテゴリの管理用にrouteのコレクションを定義することから始めましょう。エディタで`apps/backend/config/routing.yml`を開き次のrouteのコードをペーストします。
+
+
+    [yml]
+    articles:
+      class:                    sfDoctrineRouteCollection
+      options:
+        model:                  Article
+        module:                 articles
+        prefix_path:            articles
+        with_wildcard_routes:   true
+
+    categories:
+      class:                    sfDoctrineRouteCollection
+      options:
+        model:                  Category
+        module:                 categories
+        prefix_path:            categories
+        with_wildcard_routes:   true
+
+    authors:
+      class:                    sfDoctrineRouteCollection
+      options:
+        model:                  Author
+        module:                 authors
+        prefix_path:            authors
+        with_wildcard_routes:   true
+
+これらのrouteとそれぞれのDoctrineモデルを通してデータを管理するadminジェネレータモジュールを生成できます。3つのモジュールを生成するには次のコマンドを実行します。
+
+    $ ./symfony doctrine:generate-admin backend articles
+    $ ./symfony doctrine:generate-admin backend categories
+    $ ./symfony doctrine:generate-admin backend authors
+
+backendから `categories` モジュールにアクセスすると次の画面が表示されます。
+
+![新しいadminジェネレータ](http://www.symfony-project.org/uploads/assets/doctrine/new_admin_gen.gif "新しいadminジェネレータ")
+
+リストとフィルタフォームでフィールドの特定の集合を表示するためにarticles adminジェネレータを少しカスタマイズすることができます。`apps/backend/modules/articles/config/generator.yml`に設置された`generator.yml`を編集することでこれを実現できます。
+
+    [yml]
+    config:
+      list:
+        display:  [title, published_at, is_on_homepage, status]
+      filter:
+        class:    ArticleFormFilter
+        display:  [author_id, status, is_on_homepage, published_at, categories_list]
+
+他のモジュールを同じ方法でカスタマイズできます。
+
+URLに`?sf_culture=fr`が含まれるように変更すると、フランス語バージョンのタイトルが表示されます。articlesモジュールを引き出すときにブラウザで次の内容が表示されます。
+
+![新しいadminジェネレータ](http://www.symfony-project.org/uploads/assets/doctrine/new_admin_gen_articles.gif "新しいadminジェネレータ")
+
+翻訳を編集する
+--------------
+
+では、これらの翻訳を編集する方法は？古いadminジェネレータによる方法ではほとんど不可能でした。しかし今では`ArticleForm`に1行のコードを追加するだけの話です。必要なことは`ArticleTranslation`フォームを埋め込むことです。`lib/form/doctrine/ArticleForm.class.php`を編集して`configure()`に次のコードをお追加します。
+
+    [php]
+    public function configure()
+    {
+      $this->embedI18n(array('en', 'fr'));
+    }
+
+これで記事を編集するときに記事の内部で翻訳を直接編集する機能を使えます。
+
+![新しいadminジェネレータの国際化](http://www.symfony-project.org/uploads/assets/doctrine/new_admin_gen_i18n.gif "新しいAdminジェネレータの国際化")
+
+これはとてもクールですが、`Article`内部で`Author`を直接編集したい場合はどうしましょうか？
+または`Author`が存在しない場合に新しい`Author`を作成し、名前が存在しない既存の`Author`レコードを使用する場合はどうしましょうか？これも同じようにシンプルにできます。
+
+著者を編集/追加する
+-------------------
+
+上記の機能を追加するために少量のコードを3つの異なる場所に追加する必要があります。 `lib/form/doctrine/ArticleForm.class.php`を編集して次のコードを追加することで`Article`に`Author`フォームを埋め込みます。
+
+    [php]
+    public function configure()
+    {
+      unset($this['author_id']);
+      $authorForm = new AuthorForm($this->getObject()->getAuthor());
+      unset($authorForm['about']);
+      $this->embedForm('Author', $authorForm);
+
+      $this->embedI18n(array('en', 'fr'));
+    }
+
+
+>**SIDEBAR**
+>オプションとしてクエリを最適化する
+>
+>データがメインのクエリでjoinされデータベースに追加のクエリを行う遅延ロードが行われないようにするために、`Author`と`Translation`の情報をjoinする`articles`アクションクラスを修正できます。このステップはオプションです。`apps/backend/modules/articles/actions/actions.class.php`を開き`executeEdit()`メソッドをオーバーライドします。
+>
+>     [php]
+>     public function executeEdit(sfWebRequest $request)
+>     {
+>       $this->article = Doctrine_Query::create()
+>         ->from('Article a')
+>         ->leftJoin('a.Author a2')
+>         ->leftJoin('a.Translation t')
+>         ->where('a.id = ?', $request->getParameter('id'))
+>         ->fetchOne();
+>       $this->form = $this->configuration->getForm($this->article);
+>     }
+
+Articleの編集と作成のためにフォームを見るとき既存の情報が入力されたAuthor用の埋め込みフォームが見つかります。
+
+![筆者の名前が埋め込まれた新しいAdminジェネレータ](http://www.symfony-project.org/uploads/assets/doctrine/new_admin_gen_author.gif "筆者の名前が埋め込まれた新しいAdminジェネレータ")
+
+最後のステップは`Author`と重複した名前を作らないようにするために、Doctrineに既存の`Author`オブジェクトを探すように伝えます。`lib/model/doctrine/Author.class.php`を編集し、次のコードを追加して`name`ミューテータをオーバーライドします。
+
+    [php]
+    public function setName($name)
+    {
+      $name = trim($name);
+      $found = Doctrine_Query::create()
+        ->select('a.id')
+        ->from('Author a')
+        ->where('a.name = ?', $name)
+        ->fetchOne(array(), Doctrine::HYDRATE_ARRAY);
+      if ($found)
+      {
+        $this->assignIdentifier($found['id']);
+      } else {
+        $this->_set('name', $name);
+      }
+    }
+
+上記のコードは渡された名前を持つ`Author`が既に存在するかチェックし、それを行う場合、レコードで見つかる識別子を割り当て、さもなければ通常通りに名前をオブジェクトに設定します。
+
+>**NOTE**
+>アクセサとミューテータをオーバーライドするときに無限ループを回避するためには`_set()`と`_get()`メソッドを使わなければなりません。
