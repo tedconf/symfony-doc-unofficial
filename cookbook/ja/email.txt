@@ -1,0 +1,233 @@
+Eメールを送信する方法
+=====================
+
+概要
+----
+
+メールの送信はウェブ開発者の日常のタスクです。symfony 1.1では[Swift Mailer](http://www.swiftmailer.org/)を利用してこのタスクを簡単にできます。
+
+Swift Mailerはメールに関するあなたのニーズを120％カバーするよく考えられたフル機能のPHP5オブジェクトライブラリです。
+
+タグ付けされたSVNリポジトリで利用可能で、ライブラリは更新されるので、あなたのプロジェクトが壊れることはありません。新しいバージョンに切り替えるかはあなたしだいです(訳注：Swift Mailerのライセンスはバージョン3ではLGPLでしたがバージョン4ではGPL3に変更されています)。
+
+symfonyプロジェクトからメールを送信する方法はとてもシンプルです。Eメールの内容をレンダリングするパーシャルもしくはコンポーネントを作り、柔軟な方法で送信するためにSwiftを使用します。
+
+インストール方法
+----------------
+
+既にあなたのプロジェクトがSVNを利用しているのであれば、`svn:externals`プロパティを利用してインストールできます:
+
+    $ cd /path/to/symfony/project
+    $ mkdir -p lib/vendor
+    $ cd lib/vendor
+    $ svn propedit svn:externals .
+
+次の行を追加します:
+
+    swift http://swiftmailer.svn.sourceforge.net/svnroot/swiftmailer/tags/php5/3.3.3/lib/
+
+そして実行します:
+
+    $ svn update
+
+あなたのプロジェクトがSVNを利用していない場合、タグをチェックアウトしてSuversionの作業コピーを入手できます。
+
+    $ cd /path/to/symfony/project
+    $ mkdir -p lib/vendor
+    $ cd lib/vendor
+    $ svn checkout http://swiftmailer.svn.sourceforge.net/svnroot/swiftmailer/tags/php5/3.3.3/lib/ swift
+
+クラスのオートローディング機能のキャッシュをクリアし、インストール作業は終了です。
+
+設定
+-----
+
+メール固有の設定はありません。
+
+プロジェクトを柔軟に保つためには、決め打ちされたEメールアドレスを維持するために`app.yml`設定ファイルを使います。
+この方法では、環境に対応して異なる送信者/受信者のアドレスを持つことができます。
+また変更することが必要になる場合、プロジェクトのすべてのコードを掘り起こす必要はありません。変更する場所はとても明快です。
+
+Eメールをレンダリングする
+-------------------------
+
+symfony 1.1 RC2に関しては、アクションからレンダリングされたパーシャルもしくはコンポーネントを簡単に取得できます:
+
+    [php]
+    $mailBody = $this->getPartial('mailBody', array('name' => 'John Doe'));
+
+もしくは
+
+    [php]
+    $mailBody = $this->getComponent('mail', 'mailBody', array('name' => 'John Doe'));
+
+HTML Eメールを送信する
+----------------------
+
+Swiftを利用して次のようにメールを送信します:
+
+    [php]
+    try
+    {
+      // メーラーとメッセージオブジェクトを作る
+      $mailer = new Swift(new Swift_Connection_NativeMail());
+      $message = new Swift_Message('Mail\'s subject', $mailBody, 'text/html');
+
+      // 送信する
+      $mailer->send($message, $mailTo, $mailFrom);
+      $mailer->disconnect();
+    }
+    catch (Exception $e)
+    {
+      $mailer->disconnect();
+
+      // ここでエラーを扱う
+    }
+
+マルチパート対応のEメールを送信する
+-----------------------------------
+
+Eメールクライアントの中にはHTMLメールをまったく利用できないものがあります。
+その場合はHTMLとプレーンテキストの両方でメールを提供するとよいでしょう。
+
+    [php]
+    try
+    {
+      // メーラーとメッセージオブジェクトを作る
+      $mailer = new Swift(new Swift_Connection_NativeMail());
+      $message = new Swift_Message('Test mail subject');
+
+      // メッセージ部分をレンダリングする
+      $mailContext = array('name' => 'John Doe');
+      $message->attach(new Swift_Message_Part($this->getPartial('mail/mailHtmlBody', $mailContext), 'text/html'));
+      $message->attach(new Swift_Message_Part($this->getPartial('mail/mailTextBody', $mailContext), 'text/plain'));
+
+      // 送信する
+      $mailer->send($message, $mailTo, $mailFrom);
+      $mailer->disconnect();
+    }
+    catch (Exception $e)
+    {
+      $mailer->disconnect();
+
+      // エラーを扱う
+    }
+
+異なる接続設定を利用する
+------------------------
+
+Swiftオブジェクトを作るとき、異なるSwift_Connectionオブジェクトを利用できます。
+
+  * **Swift_Connection_NativeMail**はPHPネイティブの`mail()`関数を利用する接続ドライバです。
+
+  * **Swift_Connection_SMTP**はSMTPサーバーを利用してメールを送信します。コンストラクタは3つのパラメータを受け取ります。これらのパラメータすべてがオプションです:
+
+        [php]
+        public function __construct($server="localhost", $port=null, $encryption=null)
+
+    セキュアなGmailのSMTPを利用する方法をすぐ後で見ることになります。
+
+  * **Swift_Connection_Sendmail**はメールを送信するためにsendmailバイナリを使用します。コンストラクタでパスを指定できます。
+
+  * **Swift_Connection_Multi**は複数の接続ドライバを結びつけるために使用できる最初の特別なドライバです。
+    これはリクエスト時にSMTPサーバーが利用できないイベントに冗長性を提供します。
+    コンストラクタは`Swift_Connection`オブジェクトインスタンスの配列を受け取り、
+    他の`Swift_Connection_Multi`インスタンスを埋め込むこともできます(このように行う利点が少し不明瞭な場合でも)
+
+  * **Swift_Connection_Rotator**は最後のパラメータで、ダウンしてるサーバーを追跡することで`Swift_Connection_Multi`よりも少し多くのことをこなし、"活動している"サーバーのローテーションを管理します。使い方の説明はcookbookレシピの範囲を超えるので、[Swift Mailerのドキュメント](http://swiftmailer.org/wikidocs/#the_connections "SwiftMailerのドキュメント")を参照して下さい。
+
+Google MailのSMTPサーバーを利用する
+-----------------------------------
+
+Gmailアカウントを使いたいのはなぜでしょうか？
+
+  * SMTPサーバーの用意と維持をする必要がない
+  * hotmailユーザー(もしくは類似サービス)のスパムとしてマークされません
+  * Gmailアカウントの`Sent Mails`のCC(Carbon Copy)を取得できるのでデバッグしやすい
+
+制限は？
+
+  * Gmailのアカウントが必要
+  * SSLを通したSMTPネゴシエーションはプレーンなSMTPネゴシエーションよりも長い
+  * 任意のEメールアドレスからEメールを送信できません(Gmailの設定/アカウントで新しい送信者の名前を追加できます)
+
+Swiftのオブジェクトを設定する方法は次の通りです:
+
+    [php]
+    $connection = new Swift_Connection_SMTP('smtp.gmail.com', 465, Swift_Connection_SMTP::ENC_SSL);
+    $connection->setUsername('romain@gmail.com');
+    $connection->setPassword('SuperSecurePassword');
+     
+    $mailer = new Swift($connection);
+
+埋め込み画像
+------------
+
+メールに画像を埋め込むには、内容をレンダリングするために、埋め込みオブジェクトからメールに依存するURLを取得する必要があります。これを行う方法の例は次の通りです。
+
+    [php]
+    // メーラーとメッセージオブジェクトを作成する
+    $mailer = new Swift(new Swift_Connection_NativeMail());
+    $message = new Swift_Message('Test mail subject');
+
+    // インラインの画像
+    $images = array();
+    $images['symfony'] = new Swift_Message_Image(new Swift_File(sfConfig::get('sf_web_dir').'/images/symfony.gif'));
+    $images['swift']   = new Swift_Message_Image(new Swift_File(sfConfig::get('sf_web_dir').'/images/swift.jpg'));
+
+    $imageReferences = array();
+    foreach ($images as $name => $image)
+    {
+      $imageReferences[$name] = $message->attach($image);
+    }
+
+    // メッセージ部分をレンダリングする
+    $mailContext = array('name' => 'John Doe', 'images' => $imageReferences);
+    $message->attach(new Swift_Message_Part($this->getPartial('mail/mailHtmlBody', $mailContext), 'text/html'));
+    $message->attach(new Swift_Message_Part($this->getPartial('mail/mailTextBody', $mailContext), 'text/plain'));
+
+    // 送信する
+    $mailer->send($message, $mailTo, $mailFrom);
+    $mailer->disconnect();
+
+これで次のように、コンポーネント/パーシャルテンプレートでこれらの添付写真を簡単に表示できます:
+
+    <img src="<?php echo $images['symfony']; ?>" alt="Symfony Project" />
+    <img src="<?php echo $images['swift']; ?>" alt="Swift Mailer" />
+
+簡単でしたね？
+
+添付
+----
+
+あなたの期待通り、メールにドキュメントを添付するのもシンプルです:
+
+    [php]
+    $message->attach(new Swift_Message_Attachment(new Swift_File($file), $filename, $mime_type));
+
+受信者のリスト
+-----------------
+
+メール用に複数の受信者もしくはCCを利用したい場合がよくあります。これは`Swift_RecipientList`クラスを利用して行われます。
+
+    [php]
+    $recipients = new Swift_RecipientList();
+    $recipients->addTo($to);
+    $recipients->addCc($cc);
+    $recipients->addBcc($bcc);
+
+ループでEメールを送信する場合、$recipientsリストを`->flush()`することを忘れないで下さい。さもなければ、なぜ誰かが同じメーリングリストの500ものコピーを受け取ったのか説明しなければならないばつの悪い思いをすることになります。
+
+タスクからEメールを送信する
+--------------------------
+
+`sfAction`メソッドが使えないことを除いて処理方法はアクションから行う方法とまったく同じです。
+
+`sfAction::getPartial()`と`sfAction::getComponent()`メソッドの代わりに`PartialHelper`の`get_partial()`と`get_component()`関数を使う必要があります。
+
+ドキュメントを入手する
+----------------------
+
+SwiftMailerのウェブサイトは[ドキュメント](http://swiftmailer.org/wikidocs/#the_connections "SwiftMailer Documentation")と[チュートリアル](http://swiftmailer.org/wikidocs/#tutorials "SwiftMailer Tutorials")の金鉱です。
+
+そしてもちろん、必要であれば[完全なAPIリファレンス](http://www.swiftmailer.org/api/php5/index.html)が利用できます。
