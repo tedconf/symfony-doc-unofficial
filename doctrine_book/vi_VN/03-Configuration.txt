@@ -3,13 +3,13 @@ Chương 3 - Cấu hình
 
 ## Attribute
 
-Doctrine quản lý các tính năng và cấu hình thông qua các attribute. Các attribute có thể được xác định ở các mức khác nhau và thừa kế lẫn nhau. Một số attribute có thể được xác định ở tất cả các mức, một số thì không. Dưới đây miêu tả cách xác định các attribute ở mỗi mức. Attribute có thể xác định ở toàn cục, cho từng connection, hay mỗi model riêng biệt.
+Doctrine được cấu hình thông qua attribute. Các attribute có thể được thiết lập ở các mức khác nhau và thừa kế lẫn nhau. Một số attribute có thể được thiết lập ở tất cả các mức, một số thì không. Dưới đây miêu tả cách thiết lập các attribute ở mỗi mức. Attribute có thể xác định ở toàn cục, cho từng connection, hay mỗi model riêng biệt.
 
-Trong symfony bạn có thể quản lý cấu hình Doctrine trong file `config/ProjectConfiguration.class.php` hoặc `apps/appname/config/appnameConfiguration.class.php`
+Trong symfony, cấu hình Doctrine được lưu ở `config/ProjectConfiguration.class.php` hoặc `apps/appname/config/appnameConfiguration.class.php`
 
 ### Toàn cục
 
-Bạn có thể quản lý global attribute bằng cách tạo một `configureDoctrine()` trong file cấu hình. Tất cả các global attribute được thiết lập với singleton instance của `Doctrine_Manager` . Phương thức này được gọi khi `sfDoctrinePlugin` `config.php` được load. Đó là trước khi bất kì kết nối nào tồn tại do đó chỉ có `Doctrine_Manager` attribute được quản lý ở thời điểm này.
+Bạn có thể thiết lập global attribute bằng cách tạo phương thức `configureDoctrine()` trong file cấu hình. Tất cả các global attribute được thiết lập với singleton instance của `Doctrine_Manager` . Phương thức này được gọi khi `sfDoctrinePlugin` `config.php` được load. Ở thời điểm này chưa có bất kì kết nối nào tồn tại, do đó attribute được quản lý bởi `Doctrine_Manager`.
 
     [php]
     public function configureDoctrine(Doctrine_Manager $manager)
@@ -20,7 +20,7 @@ Bạn có thể quản lý global attribute bằng cách tạo một `configureD
 
 ### Tất cả kết nối
 
-Bạn có thể quản lý các attribute của từng connection bằng cách tạo một `configureDoctrineConnection()` trong lớp cấu hình. Phương thức này được gọi trong `sfDoctrineDatabase` khi mỗi kết nối được symfony tạo theo thứ tự trong file `config/databases.yml`.
+Bạn có thể quản lý các attribute của từng kết nối bằng cách tạo phương thức `configureDoctrineConnection()` trong lớp cấu hình. Phương thức này được gọi trong `sfDoctrineDatabase` khi mỗi kết nối được symfony tạo theo thứ tự trong file `config/databases.yml`.
 
     [php]
     public function configureDoctrineConnection(Doctrine_Connection $connection)
@@ -29,7 +29,7 @@ Bạn có thể quản lý các attribute của từng connection bằng cách t
       $connection->setAttribute('use_native_enum', true);
     }
 
-Bạn cũng có thể xác định các attribute cho connection trực tiếp trong file cấu hình `config/doctrine/databases.yml`:
+Bạn có thể xác định các attribute cho kết nối trực tiếp trong file cấu hình `config/doctrine/databases.yml`:
 
     [yml]
     doctrine:
@@ -42,7 +42,7 @@ Bạn cũng có thể xác định các attribute cho connection trực tiếp t
            use_dql_callbacks: true
            use_native_enum:  true
 
-Bạn cũng có thể cấu hình khác nhau cho mỗi connection bằng cách tạo một function ứng với mỗi connection. Nếu bạn có một connection tên `master` thì bạn cần tạo một function tên `configureDoctrineConnectionMaster()` trong file `config/ProjectConfiguration.class.php`.
+Bạn cũng có thể cấu hình khác nhau cho mỗi kết nối bằng cách tạo một phương thức ứng với mỗi kết nối. Nếu bạn có một kết nối tên `master` thì bạn cần tạo một function tên `configureDoctrineConnectionMaster()` trong file `config/ProjectConfiguration.class.php`.
 
     [php]
     public function configureDoctrineConnectionMaster(Doctrine_Connection $connection)
@@ -51,11 +51,11 @@ Bạn cũng có thể cấu hình khác nhau cho mỗi connection bằng cách t
       $connection->setAttribute('use_native_enum', false);
     }
 
-Trong ví dụ trên chúng ta đã thiết lập `use_dql_callbacks` và `use_native_enum` cho tất cả các connection ngoại trừ kết nối có tên `doctrine`.
+Trong ví dụ trên chúng ta đã thiết lập `use_dql_callbacks` và `use_native_enum` cho tất cả các kết nối ngoại trừ kết nối có tên `doctrine`.
 
 ### Model
 
-Mức cấu hình cuối cùng của Doctrine là model. Attribute có thể được xác định trực tiết trong file YAML xác định model.
+Mức cấu hình cuối cùng của Doctrine là model. Attribute có thể được xác định trực tiếp trong file YAML mô tả model.
 
     [yml]
     Store:
@@ -66,7 +66,7 @@ Mức cấu hình cuối cùng của Doctrine là model. Attribute có thể đ�
         name: string(255)
         description: string(500)
 
-Bạn cũng có thể thiết lập các attribute sử dụng code php trong các lớp model được tạo ra trong thư mục `lib/model/doctrine`. Mở file `lib/model/doctrine/Store.class.php` và override phương thức `setTableDefinition()` để thêm một số attribute. 
+Bạn cũng có thể thiết lập các attribute trong các lớp được tạo ra ở thư mục `lib/model/doctrine`. Mở file `lib/model/doctrine/Store.class.php` và override phương thức `setTableDefinition()` để thêm attribute. 
 
     [php]
     public function setTableDefinition()
@@ -77,9 +77,9 @@ Bạn cũng có thể thiết lập các attribute sử dụng code php trong c�
 
 ## Cấu hình quá trình tạo Model
 
-sfDoctrinePlugin cung cấp khả năng override một số lựa chọn để build model. Những thiết lập này có thể điều khiển bằng lớp `sfConfig` sử dụng tham số `doctrine_model_builder_options`.
+sfDoctrinePlugin cung cấp khả năng override một số lựa chọn để tạo model. Những thiết lập này có thể điều khiển bằng lớp `sfConfig` sử dụng tham số `doctrine_model_builder_options`.
 
-Dưới đây là ví dụ cách thay đổi tên base class khi tạo models. Bạn có thể thiết lập để đổi nó thành `myDoctrineRecord` hay bất cứ gì bạn muốn.
+Dưới đây là ví dụ cách đổi tên lớp base khi tạo models. Bạn có thể thiết lập để đổi nó thành `myDoctrineRecord` hay bất cứ gì bạn muốn.
 
     [php]
     public function configureDoctrine(Doctrine_Manager $manager)
@@ -95,7 +95,7 @@ Bạn cần tạo thêm một lớp, ở đây là `sfproject/lib/myDoctrineReco
     {
     }
 
-Bây giờ hãy generate model, tất cả các lớp sẽ extend từ `myDoctrineRecord` thay vì `sfDoctrineRecord` do đó bạn có thể thêm các chỉnh sửa cho tất cả các model của mình.
+Bây giờ hãy generate model, tất cả các lớp sẽ extend từ `myDoctrineRecord` thay vì `sfDoctrineRecord`, do đó bạn có thể thêm các chỉnh sửa cho tất cả các model của mình.
 
 Dưới đây là danh sách tất cả các option bạn có thể thay đổi thành giá trị khác trong quá trình tạo model.
 
@@ -109,15 +109,15 @@ Dưới đây là danh sách tất cả các option bạn có thể thay đổi 
 | baseClassName        | Lớp cha của các model                     | sfDoctrineRecord |
 
 >**TIP**
->Bạn có thể tìm hiểu thêm về cấu hình trong Doctrine Manual [ở đây](http://www.doctrine-project.org/documentation/manual/1_0/en/configuration).
+>Bạn có thể tìm hiểu thêm về cấu hình ở [Doctrine Manual](http://www.doctrine-project.org/documentation/manual/1_0/en/configuration).
 
 ## Chỉnh sửa đường dẫn tới thư viện Doctrine
 
-Với `sfDoctrinePlugin` thật dễ dàng để thêm một phiên bản mới của Doctrine bằng thay đổi một giá trị trong file cấu hình.
+Với `sfDoctrinePlugin` thật dễ dàng để thêm một phiên bản mới của Doctrine bằng thay đổi giá trị cấu hình.
 
-Dưới đây bạn sẽ tìm được ví dụ về cách cấu hình `sfDoctrinePlugin` để sử dụng một phiên bản khác của Doctrine, ví dụ 1.1.
+Dưới đây là ví dụ về cách cấu hình `sfDoctrinePlugin` để sử dụng một phiên bản khác của Doctrine, ví dụ 1.1.
 
-Đầu tiên chúng ta cần thêm phiên bản của Doctrine chúng ta muốn sử dụng vào trong `lib/vendor/doctrine`:
+Đầu tiên chúng ta cần thêm phiên bản của Doctrine chúng ta muốn sử dụng vào thư mục `lib/vendor/doctrine`:
 
     $ mkdir lib/vendor
     $ cd lib/vendor
