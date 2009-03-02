@@ -1,0 +1,225 @@
+モデルの単体テストを行う
+========================
+
+PropelもしくはDoctrineモデルのための単体テストを書くのは極めて簡単です。
+このチュートリアルでは、モデル用のベターなテストを書くための
+重要なティップスとベストプラクティスを学びます。
+
+データベースの接続
+------------------
+
+Propelのモデルクラスをテストするには、データベースが必要です。
+開発用のものが既にありますが、
+テスト専用のものを常に作っておくことは良い習慣です。
+
+すべてのテストは`test`環境下で実行されるので、
+`config/databases.yml`設定ファイルを編集して
+`test`環境用のデフォルト設定を上書きする必要があるだけです:
+
+    [yml]
+    test:
+      propel:
+        param:
+          dsn:  mysql:dbname=myproject_test;host=localhost
+
+    dev:
+      # dev configuration
+
+    all:
+      propel:
+        class: sfPropelDatabase
+        param:
+          dsn:        mysql:dbname=myproject;host=localhost
+          username:   someuser
+          password:   somepa$$word
+          encoding:   utf8
+          persistent: true
+          pooling:    true
+          classname:  PropelPDO
+
+このケースにおいて、データベースの名前だけを変更しましたが、
+データベースのエンジンを変更して例えばSQLiteを利用することもできます。
+
+データベースを設定したので、`propel:insert-sql`タスクを使って
+テーブルを作ることができます:
+
+    $ php symfony propel:insert-sql --env=test
+
+テストデータ
+------------
+
+テスト用の専用データベースがあるので、単体テストを立ち上げるたびに
+テストデータ(フィクスチャ)をロードする方法が必要です。
+これはテストを実行するたびにデータベースを同じ状態にしたいからです。
+
+`sfData`クラスのおかげでこれを実現する方法はとても簡単です:
+
+    [php]
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+
+`loadData()`メソッドは1番目の引数としてディレクトリもしくはファイルを受け取ります。
+共通の`fixtures`ディレクトリは次の通りです:
+
+    test/
+      fixtures/
+        10_categories.yml
+        20_articles.yml
+        30_comments.yml
+
+すべてのファイルの接頭辞として数字が追加されていることに注目して下さい。
+これはデータをロードする順序をコントロールするための簡単な方法です。
+プロジェクトで後からフィクスチャデータを差し込む必要がある場合、既存の数字の間に好きな数字を入れます:
+
+    test/
+      fixtures/
+        10_categories.yml
+        15_must_be_laoded_between_categories_and_articles.yml
+        20_articles.yml
+        30_comments.yml
+
+賢明な読者はsymfony bookではこれらのフィクスチャが`data/`ディレクトリに設置することを推奨されているのに対して、
+筆者がフィクスチャを`test/`ディレクトリに設置したことに注目するでしょう。
+これは本当に好みの問題ですが、筆者はこれらの2つのディレクトリの中でフィクスチャを編成することを好みます。
+フィクスチャを2つの異なるグループに分類できるからです:
+
+  * `data/fixtures`: アプリケーションを実際に稼働させるために必要なすべての初期データを含む
+  * `test/fixtures`: (単体と機能)テストによって必要なすべてのデータを含む
+
+テストデータの一式が小さいときはこのシンプルなスキーマは立派に機能しますが、
+
+モデルが成長し、もっとたくさんのフィクスチャを持つようになったら、データベースの中でそれらをロードする時間が重大になる可能性があります。
+
+ですので、テストデータのサブセットだけをロードする方法が必要です。
+これを行う1つの方法は主要な機能ごとにサブディレクトリを作ることで下位のテストデータの分類を行うことです:
+
+    test/
+      fixtures/
+        10_cms/
+          10_categories.yml
+          20_articles.yml
+          30_comments.yml
+        20_forum/
+          10_threads.yml
+
+これでメインの`fixtures`ディレクトリをロードする代わりに、
+テストしたいモデルクラスに対応したサブディレクトリの1つだけをロードできます。
+しかし大抵の場合、ユーザーのように共有データをロードすることも必要です:
+
+    test/
+      fixtures/
+        00_common/
+          10_users.yml
+        10_cms/
+          10_categories.yml
+          20_articles.yml
+          30_comments.yml
+        20_forum/
+          10_threads.yml
+
+このユースケースを簡単にするために、
+`loadData()`メソッドはディレクトリかつ/もしくはファイルの配列を取ることができます:
+
+    [php]
+    // ユーザーとCMSのすべてのデータをロードする
+    $loader = new sfPropelData();
+    $loader->loadData(array(
+      sfConfig::get('sf_test_dir').'/fixtures/00_common/10_users.yml',
+      sfConfig::get('sf_test_dir').'/fixtures/10_cms',
+    ));
+
+これによって`10_users.yml`フィクスチャファイルはロードされ
+すべてのフィクスチャファイルは`10_cms`ディレクトリの中で見つかります。
+
+単体テストを書く
+----------------
+
+専用データベースを既知の状態にする方法があるので、
+`Article`モデル用の単体テストを作りましょう。
+
+ファイルをブートストラップするPropelの典型的な単体テストは次の通りです:
+
+    [php]
+    // test/unit/model/ArticlePeerTest.php
+    include(dirname(__FILE__).'/../../bootstrap/unit.php');
+
+    $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'test', true);
+
+    new sfDatabaseManager($configuration);
+
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+
+    $t = new lime_test(1, new lime_output_color());
+
+    $t->diag('::retrieveBySlug()');
+    $article = ArticlePeer::retrieveBySlug('the-best-framework-ever');
+    $t->is($article->getTitle(), 'The Best Framework Ever', '->retrieveBySlug()は特定のスラグにマッチする記事を返す');
+
+このスクリプトの内容は一目瞭然です:
+
+  * 単体テストに関して、ブートストラップファイルを含みます。
+
+        [php]
+        include(dirname(__FILE__).'/../../bootstrap/unit.php');
+
+  * `test`環境のための設定オブジェクトを作り
+     デバッグ機能を有効にします:
+
+        [php]
+        $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'test', true);
+
+    これによってPropelのクラスのオートローディングも初期化されます。
+
+  * データベースマネージャを作ります。
+    これは`databases.yml`設定ファイルをロードすることでPropelの接続を初期化します:
+
+        [php]
+        new sfDatabaseManager($configuration);
+
+  * `sfPropelData`を利用することでテストデータをロードします:
+
+        [php]
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+
+  * すべての準備が整ったので、モデルオブジェクトのテストを始めることができます。
+
+単体テストを書くことに慣れていないのであれば、最初は怖いかもしれません。
+
+筆者がテストする必要があることを知るためにいつも使ういくつかのティップスは次の通りです:
+
+  * 1回につき1つのクラスの1つのメソッドをテストする
+  * 特定の1つの入力に対して、メソッドの出力が期待するものと同じであることをテストする
+  * メソッドのコードを読み、存在するであろうすべてのビジネスルールをテストする
+  * 明らかなことや別のメソッドによって行われることはテストしない
+
+筆者のテストファイルは同じパターンで常に構造化されます:
+
+    [php]
+    // テストするメソッドでメッセージを出力する(->はインスタンスメソッドに対して、::はクラスメソッドに対して)
+    $t->diag('->methodName()');
+
+    // 1回につきシンプルなセンテンスで表現できる1つのことをテストする
+    // センテンスは常にメソッドの名前で始まる
+    // 動詞はしなければならないこと、どのように振る舞わなければならないことなどを表現する
+    $t->is($object->methodName(), 1, '->methodName()は引数が渡されていない場合は1を返す');
+
+コードカバレージ
+----------------
+
+テストを書くとき、複雑なコードの条件をテストすることは忘れがちです。
+
+symfony 1.2は`test:coverage`というコードカバレージをテストするための小型で手軽なタスクを搭載しています。
+
+ですので、筆者は特定のクラスに対してテストを書いた後に、すべてのテストを実行したことを確認するために
+常に`test:coverage`タスクを起動させます:
+
+    $ php symfony test:coverage test/unit/model/ArticleTest.php lib/model/Article.php
+
+最初の引数はテスト用のファイルもしくはディレクトリです。
+2番目の引数はコードカバレージを知りたいファイルもしくはディレクトリです。
+
+どの行がカバーされていないのか知りたければ、`--detailed`オプションを追加します:
+
+    $ php symfony test:coverage --detailed test/unit/model/ArticleTest.php lib/model/Article.php
