@@ -1,0 +1,263 @@
+代替構文でPropelスキーマを書く方法
+==================================
+
+概要
+----
+
+symfony 1.1に関しては、新しいYAML構文でモデルのリレーショナル構造を記述することを選べます。symfonyはsymfony bookの8章で説明された構文とこのチュートリアルで説明されている構文の両方の`schema.yml`ファイルを認識します。代替構文はよりオブジェクト指向で、複数のスキーマのマージプロセスがよりわかりやすいです。
+
+基本的な例
+----------
+
+現在の構文を利用した、次のスキーマを考えてみましょう:
+
+    propel:
+      _attributes:      { noXsd: false, defaultIdMethod: none, package: lib.model }
+      ab_group:
+        _attributes:    { phpName: Group, package: foo.bar.lib.model }
+        id:
+        name:           varchar(50)
+    
+      cd_user:
+        _attributes:    { phpName: User, isI18N: true, i18nTable: cd_user_i18n }
+        first_name:     { type: varchar, size: 255, default: "Anonymous" }
+        last_name:      varchar(50)
+        age:            { type: integer, required: true, index: true }
+        ab_group_id:
+        created_at:
+  
+      cd_user_i18n:
+        description:    longvarchar
+    
+      ef_article:
+        title:          { type: longvarchar, required: true, index: unique }
+        stripped_title: { type: longvarchar, required: true, primaryKey: true, sequence: my_custom_sequence_name }
+        user_id:
+        my_group:       { type: integer, foreignTable: ab_group, foreignReference: id, onDelete: setnull }
+        created_at:     timestamp
+        updated_at:
+
+      ij_article:
+        _attributes:    { phpName: Article }
+        title:          varchar(50)
+        user_id:        { type: integer }
+        _foreignKeys:
+          -
+            foreignTable: cd_user
+            onDelete:     cascade
+            references:
+              - { local: user_id, foreign: id }
+        created_at:
+        _indexes:
+          my_index:       [title, user_id]
+        _uniques:
+          my_other_index: [created_at]
+        _behaviors:
+          paranoid:     { column: deleted_at }
+  
+      ab_group_i18n:
+        motto:            longvarchar
+
+代替構文
+--------
+
+### 代替構文による基本的な例
+
+上記のものとまったく同じ構造を代替構文で書く方法は次の通りです:
+
+    connection:           propel
+    noXsd:                false
+    defaultIdMethod:      none
+    package:              lib.model
+
+    classes:
+      Group:
+        tableName:        ab_group
+        package:          foo.bar.lib.model
+        columns:
+          id:
+          name:           varchar(50)
+  
+      User:
+        tableName:        cd_user
+        isI18N:           true
+        i18nTable:        cd_user_i18n
+        columns:
+          first_name:     { type: varchar, size: 255, default: "Anonymous" }
+          last_name:      varchar(50)
+          age:            { type: integer, required: true, index: true }
+          ab_group_id:
+          created_at:
+  
+      CdUserI18n:
+        columns:
+          description:    longvarchar
+  
+      EfArticle:
+        columns:
+          title:          { type: longvarchar, required: true, index: unique }
+          stripped_title: { type: longvarchar, required: true, primaryKey: true, sequence: my_custom_sequence_name }
+          user_id:
+          my_group:       { type: integer, foreignClass: Group, foreignReference: id, onDelete: setnull }
+          created_at:     timestamp
+          updated_at:
+  
+      Article:
+        tableName:        ij_article
+        columns:
+          title:          varchar(50)
+          user_id:        { type: integer }
+          created_at:
+        foreignKeys:
+          -
+            foreignTable: cd_user
+            onDelete:     cascade
+            references:
+              - { local: user_id, foreign: id }
+        indexes:
+          my_index:       [title, user_id]
+        uniques:
+          my_other_index: [created_at]
+        behaviors:
+          paranoid:     { column: deleted_at }
+  
+      AbGroupI18n:
+        columns:
+          motto:          longvarchar
+
+主な違いは`phpName`テーブルをキーとして利用することで、テーブルではなくクラスを宣言することです。
+
+`classes`と`columns`用のエントリを作らなければならないので、この代替構文はより明確です。
+現在の構文の醜い`_attributes`ハックを取り除いたので、`schema.yml`はXML構文を模倣しようとはしません。
+
+言い忘れていましたが、古典的な構文のすべての'マジック'は健在です(主キー、外部キー、国際化テーブルなどの自動定義)。
+
+### 接続設定
+
+接続の`_attributes`として定義する代わりに、接続の名前に加えて、接続はすべてレベル1のキーです:
+
+    connection:           propel
+    noXsd:                false
+    defaultIdMethod:      none
+    package:              lib.model
+
+`connection`のキーを含めて、これらのキーすべてはオプションです。設定されていない場合、
+symfonyは`propel`をデフォルトの値として取ります。
+
+### クラス
+
+クラスの定義はデータベースのテーブル名、カラム、外部キー、自然のキー/値構文でのインデックスとビヘイビアを並べたものです:
+
+    Article:
+      tableName:        ij_article
+      columns:
+        title:          varchar(50)
+        user_id:        { type: integer }
+        created_at:
+      foreignKeys:
+        -
+          foreignTable: cd_user
+          onDelete:     cascade
+          references:
+            - { local: user_id, foreign: id }
+      indexes:
+        my_index:       [title, user_id]
+      uniques:
+        my_other_index: [created_at]
+      behaviors:
+        paranoid:     { column: deleted_at }
+
+テーブルの名前を要求する通常の`foreignTable`属性もしくは新しいクラスの名前を要求する`foreignClass`属性のどちらかで外部キーを定義できることに留意して下さい。
+
+混合型スキーマ
+---------------
+
+プロジェクトにおいて、現在と代替構文の両方を混合させたスキーマを利用できます。
+
+symfony bookの17章で説明されているように、オリジナルのスキーマ構文とカスタムのスキーマ構文であってもスキーマ拡張システムは機能します。このことは代替構文を持つカスタムスキーマを利用して古典的な構文を持つ既存のスキーマをカスタマイズできることを意味します。そして逆も可能です。マージを常にできるようにsymfonyは内部で変換を行います。
+
+オリジナルとカスタムスキーマの両方の代替構文を考慮する際にスキーママージは理解しやすいです。
+実際には、これはsymfony内部で使われるマージ用のフォーマットです。次の一連のコードはスキーマがマージされる方法を示しています:
+
+    # plugins/myPlugin/config/schema.ymlの、オリジナルのスキーマ
+    classes:
+      User:
+        tableName:        cd_user
+        columns:
+          first_name:     { type: varchar, size: 255, default: "Anonymous" }
+          last_name:      varchar(50)
+          age:            { type: integer, required: true, index: true }
+          created_at:
+  
+      Article:
+        tableName:        ij_article
+        columns:
+          title:          varchar(50)
+          user_id:        { type: integer }
+          created_at:
+        foreignKeys:
+          -
+            foreignTable: cd_user
+            onDelete:     cascade
+            references:
+              - { local: user_id, foreign: id }
+
+    # myPlugin_schema.custom.ymlの、カスタムスキーマ
+    connection: myConnection
+    classes:
+      Group:
+        tableName:        ab_group
+        package:          foo.bar.lib.model
+        behaviors:        [paranoid]
+        columns:
+          id:
+          name:           varchar(50)
+
+      User:
+        tableName:        ef_user
+        isI18N:           true
+        i18nTable:        cd_user_i18n
+        columns:
+          ab_group_id:
+  
+      Article:
+        columns:
+          updated_at:
+
+    # 結果のスキーマ、内部でマージされてモデルとSQLの生成に使われる
+    connection: myConnection
+    classes:
+      Group:
+        tableName:        ab_group
+        package:          foo.bar.lib.model
+        behaviors:        [paranoid]
+        columns:
+          id:
+          name:           varchar(50)
+  
+      User:
+        tableName:        cd_user
+        isI18N:           true
+        i18nTable:        cd_user_i18n
+        columns:
+          first_name:     { type: varchar, size: 255, default: "Anonymous" }
+          last_name:      varchar(50)
+          age:            { type: integer, required: true, index: true }
+          ab_group_id:
+          created_at:
+  
+      Article:
+        tableName:        ij_article
+        columns:
+          title:          varchar(50)
+          user_id:        { type: integer }
+          created_at:
+          updated_at:
+        foreignKeys:
+          -
+            foreignTable: cd_user
+            onDelete:     cascade
+            references:
+              - { local: user_id, foreign: id }
+
+より明らかにするために、代替構文をできる限りたくさん使うことが推奨されます。
