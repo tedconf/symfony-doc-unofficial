@@ -1,0 +1,515 @@
+データをDoctrineで読み取る
+===========================
+
+スキーマファイルとデータフィクスチャ
+------------------------------------
+
+クエリをテストするためにいくつかのスキーマとデータフィクスチャを最初に定義する必要があります。
+
+スキーマファイル
+----------------
+
+    [yml]
+    User:
+      actAs: [Timestampable]
+      columns:
+        username:
+          type: string(255)
+        password:
+          type: string(255)
+        last_login:
+          type: timestamp
+      relations:
+        Friends:
+          class: User
+          refClass: UserFriend
+          local: user_id1
+          foreign: user_id2
+        Groups:
+          class: Group
+          refClass: UserGroup
+          foreignAlias: Users
+        Permissions:
+          class: Permission
+          refClass: UserPermission
+          foreignAlias: Users
+
+    Group:
+      tableName: groups
+      columns:
+        name: string(255)
+      relations:
+        Permissions:
+          class: Permission
+          refClass: GroupPermission
+          foreignAlias: Groups
+
+    Permission:
+      columns:
+        name: string(255)
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(55)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          onDelete: CASCADE
+
+    Profile:
+      columns:
+        user_id: integer
+        first_name: string(255)
+        last_name: string(255)
+        email_address: string(255)
+      relations:
+        User:
+          foreignType: one
+          onDelete: CASCADE
+
+    UserFriend:
+      columns:
+        user_id1:
+          type: integer
+          primary: true
+        user_id2:
+          type: integer
+          primary: true
+      relations:
+        User1:
+          class: User
+          local: user_id1
+          foreignAlias: UserFriends
+          onDelete: CASCADE
+        User2:
+          class: User
+          local: user_id2
+          foreignAlias: UserFriends
+          onDelete: CASCADE
+
+    UserGroup:
+      columns:
+        user_id:
+          type: integer
+          primary: true
+        group_id:
+          type: integer
+          primary: true
+      relations:
+        User:
+          foreignAlias: UserGroups
+          onDelete: CASCADE
+        Group:
+          foreignAlias: UserGroups
+          onDelete: CASCADE
+
+    UserPermission:
+      columns:
+        user_id:
+          type: integer
+          primary: true
+        permission_id:
+          type: integer
+          primary: true
+      relations:
+        User:
+          foreignAlias: UserPermissions
+          onDelete: CASCADE
+        Permission:
+          foreignAlias: UserPermissions
+          onDelete: CASCADE
+
+    GroupPermission:
+      columns:
+        group_id:
+          type: integer
+          primary: true
+        permission_id:
+          type: integer
+          primary: true
+      relations:
+        Group:
+          foreignAlias: GroupPermissions
+          onDelete: CASCADE
+        Permission:
+          foreignAlias: GroupPermissions
+          onDelete: CASCADE
+
+    BlogPost:
+      actAs:
+        Timestampable:
+        Sluggable:
+          fields: [title]
+      columns:
+        user_id: integer
+        title: string(255)
+        body: clob
+      relations:
+        Author:
+          class: User
+          foreignAlias: BlogPosts
+          onDelete: CASCADE
+        Tags:
+          class: Tag
+          refClass: BlogPostTag
+          foreignAlias: BlogPosts
+        Comments:
+          class: Comment
+          refClass: BlogPostComment
+          foreignAlias: BlogPosts
+
+    Tag:
+      columns:
+        name: string(255)
+
+    Comment:
+      columns:
+        title: string(255)
+        body: clob
+
+    Page:
+      actAs:
+        Timestampable:
+        Sluggable:
+          fields: [title]
+      columns:
+        title: string(255)
+        body: clob
+
+    BlogPostTag:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          foreignAlias: BlogPostTags
+          onDelete: CASCADE
+        Tag:
+          foreignAlias: BlogPostTags
+          onDelete: CASCADE
+
+    BlogPostComment:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        comment_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          foreignAlias: BlogPostComments
+          onDelete: CASCADE
+        Comment:
+          foreignAlias: BlogPostComments
+          onDelete: CASCADE
+
+データフィクスチャ
+------------------
+
+    [yml]
+    User:
+      jwage:
+        username: jwage
+        password: changeme
+        Profile:
+          first_name: Jonathan
+          last_name: Wage
+          email_address: jonwage@gmail.com
+        Groups: [Administrator]
+        Friends: [fabpot, joeblow]
+        Phonenumbers:
+          Phonenumber_1:
+            phonenumber: 6155139185
+      fabpot:
+        username: fabpot
+        password: changeme
+        Profile:
+          first_name: Fabien
+          last_name: Potencier
+          email_address: fabien.potencier@symfony-project.com
+        Groups: [ContentEditor]
+        Friends: [jwage]
+      joeblow:
+        username: joeblow
+        password: changeme
+        Profile:
+          first_name: Joe
+          last_name: Blow
+          email_address: jowblow@gmail.com
+        Groups: [Registered]
+        Friends: [jwage, fabpot]
+
+    Group:
+      Administrator:
+        name: Administrator
+        Permissions: [EditPages, EditBlog, EditUsers, EditPages, Frontend]
+      Blogger:
+        name: Blogger
+        Permissions: [EditBlog, Frontend]
+      Moderator:
+        name: Moderator
+        Permissions: [EditUsers, EditComments, Frontend]
+      ContentEditor:
+        name: Content Editor
+        Permissions: [EditPages, EditBlog, Frontend]
+      Registered:
+        name: Registered
+        Permissions: [Frontend]
+
+    Permission:
+      EditPages:
+        name: Edit Pages
+      EditBlog:
+        name: Edit Blog
+      EditUsers:
+        name: Edit Users
+      EditPages:
+        name: Edit Pages
+      EditComments:
+        name: Edit Comments
+      Frontend:
+        name: Frontend
+
+    BlogPost:
+      BlogPost_1:
+        Author: jwage
+        title: Sample Blog Post
+        body: This is a sample blog post
+        Tags: [symfony, doctrine, php, mvc]
+        Comments:
+          Comment_1:
+            title: This is a bad blog post
+            body: Yes this is indeed a horrible blog post
+          Comment_2:
+            title: I think this is awesome
+            body: This is an awesome blog post, what are you talking about?!?!?!
+
+    Tag:
+      symfony:
+        name: symfony
+      php:
+        name: PHP
+      doctrine:
+        name: Doctrine
+      mvc:
+        name: MVC
+
+    Page:
+      home:
+        title: Home
+        body: This is the content of the home page
+      about:
+        title: About
+        body: This is the content of the about page
+      faq:
+        title: F.A.Q.
+        body: This is the content of the frequently asked questions page
+
+Selectクエリ
+============
+
+DBMS関数
+--------
+
+最初にクエリでDBMS関数を使う方法を示します。例えばblogのすべての投稿を読み取る際にそれぞれのblogの投稿のコメント数をカウントしたい場合は次のように書きます。
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->select('p.*, COUNT(c.id) as num_comments')
+      ->from('BlogPost p')
+      ->leftJoin('p.Comments c')
+      ->groupBy('p.id');
+    $results = $q->execute();
+    echo $results[0]['num_comments'];
+
+任意の組み合わせの関数を使うことが可能で望む深さだけ入れ子にすることができます。
+
+複数のJoin
+----------
+
+Doctrineで複数のテーブルからデータを読み取るのは簡単です。この例ではユーザーに割り当てられたグループも含めてすべてのパーミッションを読み取ることができます。
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Permissions p')
+      ->leftJoin('u.Groups g')
+      ->leftJoin('g.Permissions p2')
+      ->where('u.id = ?', 1);
+    $user = $q->fetchOne();
+
+ユーザーが持つ`Permission`の`Doctrine_Collection`をビルドできます。
+
+    [php]
+    $permissions = new Doctrine_Collection('Permission');
+    foreach ($user['Groups'] as $group)
+    {
+      foreach ($group['Permissions'] as $permission)
+      {
+        $permissions[] = $permission;
+      }
+    }
+    foreach ($user['Permissions'] as $permission)
+    {
+      $permissions[] = $permission;
+    }
+
+blogのアプリケーションにおいて、関連した`Author`、`Comments`と`Tags`を持つ`BlogPost`を1つのクエリで読み取ることは共通のニーズです。Doctrineでは次のように簡単にできます。
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('BlogPost p')
+      ->leftJoin('p.Author a')
+      ->leftJoin('p.Comments c')
+      ->leftJoin('p.Tags t')
+      ->where('p.id = ?', 1);
+
+サブクエリ
+----------
+
+どの`Permission`レコードを読み取るのかを知っているサブクエリを利用して同じ`Doctrine_Collection`の`Permission`を直接読み取ることができます。
+
+    [php]
+    $userId = 1;
+    $q = Doctrine_Query::create()
+      ->from('Permission p');
+
+    $q2 = $q->createSubquery()
+      ->select('p2.permission_id')
+      ->from('UserPermission p2')
+      ->where('p2.user_id = ?');
+
+    $q3 = $q->createSubquery()
+      ->select('p3.id')
+      ->from('Permission p3')
+      ->leftJoin('p3.GroupPermissions gp')
+      ->leftJoin('gp.Group g')
+      ->leftJoin('g.Users u')
+      ->where('u.id = ?');
+
+    $q->where('p.id IN (' . $q2->getDql() . ')')
+      ->orWhere('p.id IN (' . $q3->getDql() . ')');
+
+    $permissions = $q->execute(array($userId, $userId));
+
+Left Joinの省略記法
+--------------------
+
+Doctrineのとても便利な機能の1つは省略記法でjoinを指定できることです。これによってクエリが占めるコードの行数を大いに減らすことができます。joinを指定するために`from()`の部分でモデルを変更することができます。 `leftJoin()`を利用して同じこともできます。
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u, u.Profile p, u.Groups g');
+
+上記のコードは下記のコードと等しいです:
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Profile p')
+      ->leftJoin('u.Groups g');
+
+DeleteとUpdateクエリ
+====================
+
+`Doctrine_Query`は`update()`もしくは`delete()`メソッドを利用して`UPDATE`と`DELETE`クエリを指定するために使います。用例は次の通りです。
+
+Deleteクエリ
+------------
+
+この用例ではユーザーの名前でユーザーを削除します。
+
+    [php]
+    Doctrine_Query::create()
+      ->delete()
+      ->from('User u')
+      ->where('u.username = ?', 'jwage')
+      ->execute();
+
+Updateクエリ
+------------
+
+この用例では、ユーザーのパスワードを更新します。
+
+    [php]
+    Doctrine_Query::create()
+      ->update('User u')
+      ->set('u.password', '?', 'newpassword')
+      ->where('u.username = ?', 'jwage')
+      ->execute();
+
+`set()`メソッドは3つの引数を受け取ります。1番目は設定したフィールドの名前で、2番目はPDOにそのまま渡される部分で3番目はパラメータ/値です。
+
+次の用例ではDBMS関数でタイムスタンプフィールドを設定します。PDOに`NOW()`をそのまま渡したいので3番目の引数は使いません。
+
+    [php]
+    Doctrine_Query::create()
+      ->update('User u')
+      ->set('u.last_login', 'NOW()')
+      ->where('u.username = ?', 'jwage')
+      ->execute();
+
+DQLのupdateとdeleteを使う利点は望むことを実現するために1つのクエリだけしか必要としないことです。オブジェクトを使う場合は最初にオブジェクトの読み取りを行わなければならず、更新もしくは削除は2つの個別のクエリを意味します。
+
+手書きのDQL
+-----------
+
+SQLマニアのあなたを忘れていませんよ。オプションとしてDQLクエリを手書きして実行するために`Doctrine_Query`インスタンスで解析できます。
+
+    [php]
+    $dql = "FROM User u, u.Phonenumbers p";
+    $q = Doctrine_Query::create()->parseQuery($dql);
+
+もしくは`Doctrine_Query`の`query()`メソッドを使ってこれらを実行することもできます。
+
+    [php]
+    $dql = "FROM User u, u.Phonenumbers p";
+    $q = Doctrine_Query::create()->query($dql);
+
+クエリを実行する
+================
+
+上記のすべての用例ではクエリの作り方が示されましたが、これらを実行するにはどうしたらよいでしょうか？Doctrineはクエリを実行する方法とデータをハイドレートする方法をそれぞれ少しずつ提供します。Doctrineはデータをオブジェクト、PHP配列としてハイドレートします。これらはオブジェクトを利用するよりもはるかに速いです。もしくはハイドレーションプロセスを一度にスキップすることもできます。
+
+配列のハイドレーション
+----------------------
+
+配列のハイドレーションを実行する例は次の通りです。
+
+    [php]
+    $results = $q->execute($params, Doctrine::HYDRATE_ARRAY);
+
+`fetchArray()`と呼ばれるコンビニエンスメソッドが存在します。
+
+    [php]
+    $results = $q->fetchArray($params);
+
+レコードのハイドレーション
+--------------------------
+
+    [php]
+    $results = $q->execute($params, Doctrine::HYDRATE_RECORD);
+
+レコードのハイドレーションはデフォルトなので2番目の引数は省略できます。
+
+ハイドレーションを使わない
+--------------------------
+
+ハイドレーションプロセスを完全にスキップしてPDOによる結果を返すことができます。データの列とカラムがそれぞれ1つづつしかないような場合のみに役立ちます。データは数値のキーを持つ配列として返されるので他の事例ではあまり便利ではありません。
+
+    [php]
+    $results = $q->execute($params, Doctrine::HYDRATE_NONE);
+
+1つのレコードを取得する
+-----------------------
+
+制限を自動的に追加して複数ではなく単独の結果を返すためには`fetchOne()`コンビニエンスメソッドを利用できます。
+
+    [php]
+    $result = $q->fetchOne($params, Doctrine::HYDRATE_ARRAY);
