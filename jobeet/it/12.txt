@@ -117,7 +117,7 @@ Immediatamente potete usare i moduli generati:
     http://jobeet.localhost/backend_dev.php/category
 
 I moduli di amministrazione hanno molte più feature di quelli più semplici 
-generati nei giorni scorsi. Senza scrivere una riga di PHP ogni modulo 
+generati nei giorni scorsi. Senza scrivere una riga di PHP, ogni modulo 
 mette a disposizione queste grandi funzionalità:
 
   * La lista degli oggetti è **paginata**
@@ -132,7 +132,7 @@ mette a disposizione queste grandi funzionalità:
 L'admin generator offre tutte le funzionalità di cui avete bisogno per
 creare un'interfaccia di backend semplice da configurare.
 
-Per rendere migliore la user experience il layout di default del backend può
+Per rendere migliore la user experience, il layout di default del backend può
 essere personalizzato. Abbiamo inoltre aggiunto un semplice menù per rendere
 più semplice la navigazione tra i differenti moduli
 
@@ -155,7 +155,7 @@ Rimpiazzate il contenuto del file di default `~layout.php~` con il seguente:
           <div id="header">
             <h1>
               <a href="<?php echo url_for('@homepage') ?>">
-                <img src="/images/jobeet.gif" alt="Jobeet Job Board" />
+                <img src="/images/logo.jpg" alt="Jobeet Job Board" />
               </a>
             </h1>
           </div>
@@ -197,9 +197,9 @@ Alla fine cambiate l'~homepage~ di default nel file `routing.yml`:
 La Cache di symfony 
 -------------------
 
-Se siete abbastanza curiosi avrete probabilmente già aperto i file generati
+Se siete abbastanza curiosi, avrete probabilmente già aperto i file generati
 dai task che trovate nella cartella `apps/backend/modules/`. Se non l'avete
-fatto apriteli ora. Sorpresa! Le cartelle dei `templates` sono vuote ed i 
+fatto, apriteli ora. Sorpresa! Le cartelle dei `templates` sono vuote ed i 
 file `actions.class.php` sono anch'essi quasi vuoti:
 
     [php]
@@ -211,10 +211,10 @@ file `actions.class.php` sono anch'essi quasi vuoti:
     {
     }
 
-Come fa a funzionare? Se guardate più attentamente noterete che la classe
+Come fa a funzionare? Se guardate più attentamente, noterete che la classe
 `jobActions` estende `autoJobActions`. La classe `autoJobActions` è generata
-automaticamente da symfony se non esiste. La trovate nella cartella 
-`cache/backend/dev/modules/autoJob/` che contiene il "vero" modulo:
+automaticamente da symfony, se non esiste. La trovate nella cartella 
+`cache/backend/dev/modules/autoJob/`, che contiene il "vero" modulo:
 
     [php]
     // cache/backend/dev/modules/autoJob/actions/actions.class.php
@@ -233,9 +233,9 @@ automaticamente da symfony se non esiste. La trovate nella cartella
 
 Il modo di lavorare dell'admin generator dovrebbe farvi tornare in mente qualcosa
 di già visto. Infatti è abbastanza simile a quanto abbiamo imparato sul modello
-e sulle classi dei form. Basandosi sullo schema del modello symfony genera le classi
+e sulle classi dei form. Basandosi sullo schema del modello, symfony genera le classi
 del modello e dei form. Per l'admin generator i moduli generati possono essere 
-configurati editando il file `config/~generator.yml~` che trovate nel modulo:
+configurati modificando il file `config/~generator.yml~` che trovate nel modulo:
 
     [yml]
     # apps/backend/modules/job/config/generator.yml
@@ -260,8 +260,8 @@ configurati editando il file `config/~generator.yml~` che trovate nel modulo:
           edit:    ~
           new:     ~
 
-Ogni volta che aggiornate il file `generator.yml` symfony rigenera la cache.
-Come vedremo oggi personalizzare i moduli generati dall'admin generator
+Ogni volta che aggiornate il file `generator.yml`, symfony rigenera la cache.
+Come vedremo oggi, personalizzare i moduli generati dall'admin generator
 è facile, veloce e divertente.
 
 >**NOTE**
@@ -272,7 +272,7 @@ Come vedremo oggi personalizzare i moduli generati dall'admin generator
 Configurazione del Backend
 --------------------------
 
-Un modulo di amministrazione può venir personalizzato modificando la valore di
+Un modulo di amministrazione può essere personalizzato modificando la valore di
 `config` del file `generator.yml`. La configurazione è organizzata in sette sezioni:
 
   * `actions`: La configurazione di default per le azioni trovate nella lista e nei form
@@ -288,7 +288,7 @@ Iniziamo la personalizzazione.
 Configurazione del titolo
 -------------------------
 
-I titolo delle sezioni `list`, `edit`, e `new` del modulo `category` possono venir
+I titolo delle sezioni `list`, `edit`, e `new` del modulo `category` possono essere
 personalizzati definendo l'opzione `title`:
 
     [yml]
@@ -689,44 +689,54 @@ Questo è un altro grande esempio della riusabilità fornita dal pattern MVC.
 </doctrine>
 
 Il numero di richieste al database necessarie per mostrare la pagina della
-lista dei lavori è 13, come mostrato dalla ~web debug toolbar~.
-
-![Numero di richieste prima](http://www.symfony-project.org/images/jobeet/1_2/12/web_debug_before.png)
+lista dei lavori è 14, come mostrato dalla ~web debug toolbar~.
 
 Se si clicca sul numero, si vedrà che la maggior parte delle richieste
 è per recuperare il nome della categoria per ogni lavoro.
 
-<propel>
+![Numero di richieste prima](http://www.symfony-project.org/images/jobeet/1_2/12/web_debug_before.png)
+
 Per ridurre il numero di richieste, possiamo cambiare il metodo di default
-usato per recuperare i lavori, usando l'opzione `~peer_method~`:
+usato per recuperare i lavori, usando l'opzione
+<propel>
+`~peer_method~`:
+</propel>
+<doctrine>
+`~table_method~`:
+</doctrine>
 
     [yml]
     config:
       list:
+<propel>      
         peer_method: doSelectJoinJobeetCategory
 
-Il metodo `doSelectJoinJobeetCategory()` aggiunge una join tra le tabelle
+Il metodo `doSelectJoinJobeetCategory()` aggiunge una ~join~ tra le tabelle
 `job` e `category` e crea automaticamente l'oggetto categoria associato ad
 ogni lavoro.
 </propel>
 <doctrine>
-Per ridurre il numero di richieste, possiamo ridefinire il metodo
-`getPager()` per modificare la query ed aggiungere una join tra le tabelle
-`job` e `category`.
+        table_method: retrieveBackendJobList
+
+Ora si deve creare il metodo retrieveBackendJobList` in `JobeetJobTable`,
+che si trova in `lib/model/doctrine/JobeetJobTable.class.php`.
 
     [php]
-    protected function getPager()
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
     {
-      $q = $this->buildQuery();
-      $q->leftJoin($q->getRootAlias() . '.JobeetCategory c');
+      public function retrieveBackendJobList(Doctrine_Query $q)
+      {
+        $rootAlias = $q->getRootAlias();
+        $q->leftJoin($rootAlias . '.JobeetCategory c');
+        return $q;
+      }
 
-      $pager = $this->configuration->getPager('JobeetJob');
-      $pager->setQuery($q);
-      $pager->setPage($this->getPage());
-      $pager->init();
+      // ...
 
-      return $pager;
-    }
+Il metodo `retrieveBackendJobList()` aggiunge una ~join~ tra le tabelle
+`job` e `category` e crea automaticamente l'oggetto categoria associato
+ad ogni lavoro.
 </doctrine>
 
 Il numero di richieste ora è ridotto a quattro:
@@ -790,7 +800,7 @@ relazione in questa pagina, rimuoviamolo:
 ### Colonne "Virtuali"
 
 Nelle opzioni `display` per la form del lavoro, il campo `_generated_token`
-inizia con un trattino basso (`_`). Questo significa che il rendering per
+inizia con un trattino basso (`_`). Questo significa che la resa per
 questo campo è gestito da un ~partial~ personalizzato chiamato
 `_generated_token.php`:
 
@@ -807,7 +817,7 @@ Nel partial si ha accesso al form corrente (`$form`) ed agli oggetti relativi,
 tramite il metodo `getObject()`.
 
 >**NOTE**
->È possibile delegare il rendering di un componente anteponendo al nome
+>È possibile delegare la resa di un componente anteponendo al nome
 >del campo una tilde (`~`).
 
 ### `class`
@@ -913,21 +923,21 @@ semplice widget per l'upload di file:
     }
 
 Il widget `sfWidgetFormInputFileEditable` accetta diverse opzioni per modificare
-le sue caratteristiche e il suo rendering:
+le sue caratteristiche e la sua resa:
 
-  * `file_src`:    Il percorso web ai file caricati
-  * `is_image`:    Se `true`, il file verrà renderizzato come un'immagine
-  * `edit_mode`:   Se il form è in edit mode o no
+  * `file_src`:    Il percorso web del file caricato
+  * `is_image`:    Se `true`, il file verrà reso come un'immagine
+  * `edit_mode`:   Se il form è in modalità di modifica o meno
   * `with_delete`: Se visualizzare il checkbox per la cancellazione
-  * `template`:    Il template da usare per il visualizzare del widget
+  * `template`:    Il template da usare per rendere il widget
 
 ![Invio di file](http://www.symfony-project.org/images/jobeet/1_2/12/file_upload.png)
 
 >**TIP**
->L'aspetto dell' admin generator può essere modificato veramente facilmente dato che
+>L'aspetto dell'admin generator può essere modificato in modo veramente facile, dato che
 >il template generato contiene molti attributi `class` e `id`. Per esempio,
 >il campo del logo può esser modificato utilizzando la classe `sf_admin_form_field_logo`.
->Ogni campo ha una classe che dipende dal tipo di campo come `sf_admin_text` o
+>Ogni campo ha una classe che dipende dal tipo di campo, come `sf_admin_text` o
 >`sf_admin_boolean`.
 
 <propel>
@@ -946,7 +956,7 @@ Configurazione dei filtri
 -------------------------
 
 Configurare i filtri è praticamente identico al configurare le viste per i form.
-Come dato di fatto i filtri sono esattamente dei form. E come per i form, le relative
+Come dato di fatto, i filtri sono esattamente dei form. E come per i form, le relative
 classi sono state generate dal task `propel:build-all`. 
 I filtri possono essere rigenerati con il task `propel:build-filters`.
 
@@ -995,15 +1005,15 @@ anche possibile sovrascrivere i metodi generati:
  | `processForm()`        | Processa il form Job
  | `getFilters()`         | Restituisce i filtri correnti
  | `setFilters()`         | Imposta i filtri
- | `getPager()`           | Restituisce la lista dei pager
- | `getPage()`            | Restituisce la pagina dei pager
- | `setPage()`            | Imposta la pagina dei pager
+ | `getPager()`           | Restituisce la lista del paginatore
+ | `getPage()`            | Restituisce la pagina del paginatore
+ | `setPage()`            | Imposta la pagina del paginatore
  | `buildCriteria()`      | Costruisce i `Criteria` per la lista
  | `addSortCriteria()`    | Aggiunge i `Criteria` di ordinamento per la lista
  | `getSort()`            | Restituisce la colonna di ordinamento corrente
  | `setSort()`            | Imposta la colonna di ordinamento corrente
 
-Come ogni metodo generato eseguono solo una cosa, ed è semplice cambiarne un 
+Siccome ogni metodo generato esegue solo una cosa, è semplice cambiarne un 
 comportamento senza dover copiare e incollare troppo codice.
 
 Personalizzazione dei Template
