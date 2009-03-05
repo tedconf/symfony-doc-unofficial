@@ -1,0 +1,396 @@
+Validatori
+==========
+
+Introduzione
+------------
+
+Il form framework di symfony viene rilasciato con un gran
+numero di validatori utili. Questi validatori coprono le
+maggior parte delle necessità di molti progetti. Questo capitolo
+descrive i validatori standard distribuiti con symfony.
+Abbiamo anche incluso i validatori dai plugin `sfPropelPlugin`
+e `sfDoctrinePlugin`, in quanto questi plugin sono supportati
+dal team ufficiale e contengono alcuni validatori molto utili.
+
+>**TIP**
+>Anche se non usate il framework MVC di symfony, potete usare
+>i validatori definiti nei plugin 
+>[`sfFormExtraPlugin`](http://svn.symfony-project.com/plugins/sfFormExtraPlugin),
+>`sfPropelPlugin` e `sfDoctrinePlugin` inserendo le carelle
+>`validator/` nel vostro progetto.
+
+Prima di approfondire ogni validatore in dettaglio, vediamo cosa
+hanno tutti i validatori in comune.
+
+### La classe `sfValidatorBase`
+
+Tutti i validatori di symfony ereditano dalla classe base `sfValidator`,
+che mette a disposizione alcune funzionalità standard.
+
+I validatori hanno due scopi: pulire e validare un valore grezzo.
+
+Quando create un validatore, potete opzionalmente passare opzioni e
+messaggi di errore come argomenti:
+
+    [php]
+    $v = new sfValidatorString(
+      array('required' => true),
+      array('required' => 'Questo valore è necessario.')
+    );
+
+Opzioni e messaggi di errore possono essere anche settati usando i
+metodi `setOptions()` e `setMessages()`:
+
+    [php]
+    $v = new sfValidatorString();
+    $v->setOptions(array('required' => true));
+    $v->setMessages(array('required' => 'Questo valore è necessario.'));
+
+I metodi `setOption()` e `setMessage()` permettono di settare una
+singola opzione o un singolo messaggio di errore:
+
+    [php]
+    $v = new sfValidatorString();
+    $v->setOption('required', true);
+    $v->setMessage('required', 'Questo valore è necessario.');
+
+Un valore grezzo può essere validato invocando il metodo `clean()`:
+
+    [php]
+    $cleaned = $v->clean('name', 'value', array('class' => 'foo'));
+
+Il metodo `clean()` accetta i valori grezzi come argomenti e restituisce
+i valori ripuliti. Se avviene un errore di validazione, è restituito un
+errore di tipo `sfValidatorError`.
+
+>**NOTA**
+>I validatori sono stateless, il che significa che una singola istanza
+>di un validatore può controllare tutti i valori di input che volete.
+
+Le opzioni definite di default da `sfValidatorBase` sono le seguenti:
+
+| Opzione       | Errore     | Descrizione
+| ------------- | ---------- | -----------
+| `required`    | `required` | `true` se il valore è obbligatorio, `false` altrimenti (`true` di default)
+| `trim`        | n/a        | `true` se il valore deve essere trimmed, `false` altrimenti (`false` di default)
+| `empty_value` | n/a        | restituisce una stringa vuota e i valore non è richiesto
+
+I messaggi di errore di default definiti da `sfValidatorBase` sono i seguenti:
+
+| Errore     | Descrizione
+| ---------- | -----------
+| `required` | Il messaggio di errore usato quando il valore grezzo è vuoto e richiesto (`Required.` di default).
+| `invalid`  | Un messaggio di errore generico restituito quando un errore viene riconosciuto (`Invalid.` di default).
+
+Potete cambiare le stringhe di default sate per gli errori di `required`
+e `invalid` invocando rispettivamente i metodi `setRequiredMessage()` e
+`setInvalidMessage()`:
+
+    [php]
+    sfValidatorBase::setRequiredMessage('Questo valore è necessario.');
+    sfValidatorBase::setInvalidMessage('Questo valore non è valido.');
+
+I messaggi di errore possono contenere dei segnaposto. Questi sono
+delle stringhe di testo racchiuse tra il carattere `%`. 
+I segnaposto sono sostituiti a runtime. Tutti i messaggi di errore
+hanno accesso alle variabili grezze usando il segnaposto `%value%`. 
+Ogni messaggio di errore può, inoltre, definire un segnaposto specifico.
+
+>**NOTA**
+>Nella seguente sezione, il segnaposto predefinito `%value%` non
+>è menzionato in quanto è sempre disponibile.
+
+Per validatori è necessario sapere qual'è il charset utilizzato dai
+valori grezzi. Normalmente il charset usato è `UTF-8`, ma può essere
+sostituito usando il metodo `setCharset()`:
+
+    [php]
+    sfValidatorBase::setCharset('ISO-8859-1');
+
+>**NOTA**
+>Se state usando i validatori all'interno del framework MVC di symfony,
+>il charset è configurato automaticamente con quello definito nel file
+>`settings.yml`.
+
+### Validator Schema
+
+Un validator schema è un contenitore di validatori che può ospitare
+uno o più validatori differenti.
+
+Quando viene intercettato un errore, il validator schema restituisce
+un'eccezione `sfValidatorErrorSchema`.
+
+
+Nelle prossime sezioni i validatori saranno raggruppati in categorie.
+
+<div class="pagebreak"></div>
+
+Validatori
+----------
+
+ * [`sfValidatorString`](#chapter_b_sub_sfvalidatorstring)
+ * [`sfValidatorRegex`](#chapter_b_sub_sfvalidatorregex)
+ * [`sfValidatorEmail`](#chapter_b_sub_sfvalidatoremail)
+ * [`sfValidatorUrl`](#chapter_b_sub_sfvalidatorurl)
+ * [`sfValidatorInteger`](#chapter_b_sub_sfvalidatorinteger)
+ * [`sfValidatorNumber`](#chapter_b_sub_sfvalidatornumber)
+ * [`sfValidatorBoolean`](#chapter_b_sub_sfvalidatorboolean)
+ * [`sfValidatorChoice`](#chapter_b_sub_sfvalidatorchoice)
+ * [`sfValidatorPass`](#chapter_b_sub_sfvalidatorpass)
+ * [`sfValidatorCallback`](#chapter_b_sub_sfvalidatorcallback)
+ * [`sfValidatorDate`](#chapter_b_sub_sfvalidatordate)
+ * [`sfValidatorTime`](#chapter_b_sub_sfvalidatortime)
+ * [`sfValidatorDateTime`](#chapter_b_sub_sfvalidatordatetime)
+ * [`sfValidatorDateRange`](#chapter_b_sub_sfvalidatordaterange)
+ * [`sfValidatorFile`](#chapter_b_sub_sfvalidatorfile)
+ * [`sfValidatorAnd`](#chapter_b_sub_sfvalidatorand)
+ * [`sfValidatorOr`](#chapter_b_sub_sfvalidatoror)
+ * [`sfValidatorSchema`](#chapter_b_sub_sfvalidatorschema)
+ * [`sfValidatorSchemaCompare`](#chapter_b_sub_sfvalidatorschemacompare)
+ * [`sfValidatorSchemaFilter`](#chapter_b_sub_sfvalidatorschemafilter)
+ * [`sfValidatorI18nChoiceCountry`](#chapter_b_sub_sfvalidatori18nchoicecountry)
+ * [`sfValidatorI18nChoiceLanguage`](#chapter_b_sub_sfvalidatori18nchoicelanguage)
+ * [`sfValidatorPropelChoice`](#chapter_b_sub_sfvalidatorpropelchoice)
+ * [`sfValidatorPropelChoiceMany`](#chapter_b_sub_sfvalidatorpropelchoicemany)
+ * [`sfValidatorPropelUnique`](#chapter_b_sub_sfvalidatorpropelunique)
+ * [`sfValidatorDoctrineChoice`](#chapter_b_sub_sfvalidatordoctrinechoice)
+ * [`sfValidatorDoctrineChoiceMany`](#chapter_b_sub_sfvalidatordoctrinechoicemany)
+ * [`sfValidatorDoctrineUnique`](#chapter_b_sub_sfvalidatordoctrineunique)
+
+<div class="pagebreak"></div>
+
+Validatori semplici
+-----------------
+
+### `sfValidatorString`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorString` controlla una variabile grezza affinché
+sia una stringa e la restituisce come tale.
+
+| Opzione      | Errore       | Descrizione
+| ------------ | ------------ | -----------
+| `max_length` | `max_length` | La lunghezza massima della stringa
+| `min_length` | `min_length` | La lunghezza minima della stringa
+
+| Errore       | Segnaposti   | Valori predefiniti
+| ------------ | ------------ | ------------------
+| `max_length` | `max_length` | "%value%" is too long (%max_length% characters max).
+| `min_length` | `min_length` | "%value%" is too short (%min_length% characters min).
+
+>**ATTENZIONE**
+>Questo validatore necessita che l'estensione di PHP `mb_string` sia
+>installata per poter funzionare correttamente. Se installata, la
+>lunghezza della stringa verrà calcolata usando la funzione
+>`mb_strlen()`; altrimenti verrà utilizzata la funzione `strlen()`,
+>che non restituisce la reale lunghezza se all'interno della stringa
+>sono presenti caratteri non-ASCII.
+
+### `sfValidatorRegex`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorRegex` controlla che una stringa verifichi
+una certa espressione regolare.
+
+| Opzione   | Errore    | Descrizione
+| --------- | --------- | -----------
+| `pattern` | `invalid` | Un pattern di espressione regolare PCRE
+
+### `sfValidatorEmail`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorEmail` può controllare gli indirizzi email
+ed eredita da `sfValidatorRegex`.
+
+### `sfValidatorUrl`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorEmail` può validare indirizzi, URL HTTP
+ed URL FTP. Eredita da `sfValidatorRegex`.
+
+### `sfValidatorInteger`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorInteger` controlla che il valore immesso
+sia di tipo integer e lo converte come tale.
+
+| Opzione | Errore | Descrizione
+| ------  | ------ | -----------
+| `max`   | `max`  | Il massimo numero da accettabile
+| `min`   | `min`  | Il minimo numero accettabile
+
+| Errore | Segnaposti | Valori predefiniti
+| ------ | ---------- | -------------
+| `max`  | `max`      | "%value%" must be less than %max%.
+| `min`  | `min`      | "%value%" must be greater than %min%.
+
+Il messaggio di errore predefinito per `invalid` è `"%value%" is
+not an integer.`.
+
+### `sfValidatorNumber`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorNumber` controlla un numero (o una stringa
+che PHP possa tradurre tramite la funzione [`floatval()`](www.php.net/floatval))
+e lo converte in un tipo float.
+
+| Opzione | Errore | Descrizione
+| ------- | ------ | -----------
+| `max`   | `max`  | Il massimo numero da accettabile
+| `min`   | `min`  | Il minimo numero accettabile
+
+| Errore | Segnaposti | Valori predefiniti
+| ----- | ----------- | -------------
+| `max` | `max`       | "%value%" must be less than %max%.
+| `min` | `min`       | "%value%" must be greater than %min%.
+
+Il messaggio di errore predefinito per `invalid` è `"%value%" is not a number.`.
+
+### `sfValidatorBoolean`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorBoolean` controlla che il dato inserito sia
+di tipo Boolean e restituisce i valori `true` o `false`.
+
+| Opzione        | Errore | Descrizione
+| -------------  | ------ | -----------
+| `true_values`  | n/a    | La lista dei valori considerati veri (di default: `true`, `t`, `yes`, `y`, `on`, `1`)
+| `false_values` | n/a    | La lista dei valori considerati falsi (di default: `false`, `f`, `no`, `n`, `off`, `0`)
+
+### `sfValidatorChoice`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorChoice` controlla se i valori inseriti
+appartengono ad una lista di valori definiti.
+
+| Opzione     | Errore | Descrizione
+| ----------  | ------ | -----------
+| `choices`   | n/a    | L'array dei valori definiti (required)
+| `multiple`  | n/a    | `true` se il tag select deve permettere la spunta di valori diversi contemporaneamente
+
+>**NOTA**
+>Il confronto è fatto dopo che i valori grezzi sono stati trasformati
+>in stringhe.
+
+### `sfValidatorPass`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorPass` è un validatore fittizio che restituisce
+i valori di input così come sono.
+
+### `sfValidatorCallback`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorCallback` delega il controllo usando un callback
+di PHP.
+
+Al callback sono passati come argomenti l'istanza del validatore, i valori
+grezzi e un array di argomenti (dall'opzione `arguments`):
+
+    [php]
+    function constant_validator_callback($validator, $value, $arguments)
+    {
+      if ($value != $arguments['constant'])
+      {
+        throw new sfValidatorError($validator, 'invalid');
+      }
+
+      return $value;
+    }
+
+    $v = new sfValidatorCallback(array(
+      'callback'  => 'constant_validator_callback',
+      'arguments' => array('constant' => 'foo'),
+    ));
+
+| Opzione     | Errore | Descrizione
+| ----------- | ------ | -----------
+| `callback`  | n/a    | Un callback valido di PHP callback (obbligatorio)
+| `arguments` | n/a    | Un array di argomenti da passare al callback
+
+Validatori di date
+---------------
+
+### `sfValidatorDate`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorDate` controlla date semplici e con orari (le
+date con orari sono abilitate con l'opzione `with_time`). 
+Oltre che controllare la validità del formato della data può forzare un
+intervallo di date su cui controllare.
+
+Il validatore accetta diversi tipi di parametri:
+
+ * un array composto dalle seguenti chiavi: `year`, `month`, `day`, `hour`,
+   `minute` e `second`
+ * una stringa che combacia con l'estpressione regolare `date_format`, se passata
+ * una stringa che può essere utilizzata dalla funzione `strtotime()` di PHP
+ * un intero che rappresenta un timestamp
+
+I valori grezzi sono convertiti in una data utilizzando il formato
+specificato nei parametri `date_output` o `datetime_output`.
+
+| Opzione                   | Errore       | Descrizione
+| ------------------------- | ------------ | -----------
+| `date_format`             | `bad_format` | Un'espressione regolare con cui le date inserite devono combaciare
+| `with_time`               | n/a          | `true` se il validatore deve restituire un orario, altrimenti `false`
+| `date_output`             | n/a          | Il formato da usare quando l'output deve essere una data (il valore predefinito è `Y-m-d`)
+| `datetime_output`         | n/a          | Il formato da usare quando l'output deve essere una data con orario (il valore predefinito è `Y-m-d H:i:s`)
+| `date_format_error`       | n/a          | Il formato data da utilizzare quando viene mostrato il messaggio d'errore `bad_format` (usa `date_format` se non specificato)
+| `max`                     | `max`        | La massima data permessa (come timestamp)
+| `min`                     | `min`        | La minima data permessa (come timestamp)
+| `date_format_range_error` | n/a          | Il formato data da utilizzare quando viene mostrato il messaggio d'errore per min/max (il valore predefinito è `d/m/Y H:i:s`)
+
+>**NOTA**
+>Le opzioni di `date_output` e `datetime_output` possono usare qualsiasi
+>formato riconosciuto dalla funzione `date()` di PHP.
+
+| Errore       | Segnaposti    | Valori predefiniti
+| ------------ | ------------- | -------------
+| `bad_format` | `date_format` | "%value%" does not match the date format (%date_format%).
+| `min`        | `min`         | The date must be after %min%.
+| `max`        | `max`         | The date must be before %max%.
+
+### `sfValidatorTime`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorTime` controlla i formati orario.
+
+Il validatore accetta diverse tipologie di input:
+
+ * un array composto dalle seguenti chiavi: `hour`, `minute` e `second`
+ * una stringa che combacia con l'estpressione regolare `time_format`, se passata
+ * una stringa che può essere utilizzata dalla funzione `strtotime()` di PHP
+ * un intero che rappresenta un timestamp
+
+I valori grezzi sono convertiti in una data utilizzando il formato specificato
+nei parametri `date_output` o `datetime_output`.
+
+| Opzione             | Errore       | Descrizione
+| ------------------- | ------------ | -----------
+| `time_format`       | `bad_format` | Un'espressione regolare con cui le date inserite devono combaciare
+| `time_output`       | n/a          | Il formato da usare quando l'output deve essere una data (il valore predefinito è `Y-m-d`)
+| `time_format_error` | n/a          | Il formato data da utilizzare quando viene mostrato il messaggio d'errore `bad_format` (usa `date_format` se non specificato)
+
+>**NOTA**
+>Le opzioni di `time_output` può usare qualsiasi
+>formato riconosciuto dalla funzione `date()` di PHP.
+
+| Errore       | Segnaposti    | Valori predefiniti
+| ------------ | ------------- | -------------
+| `bad_format` | `date_format` | "%value%" does not match the time format (%time_format%).
+
+
+(DA COMPLETARE...)
