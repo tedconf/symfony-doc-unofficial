@@ -319,7 +319,7 @@ grezzi e un array di argomenti (dall'opzione `arguments`):
 | `arguments` | n/a    | Un array di argomenti da passare al callback
 
 Validatori di date
----------------
+------------------
 
 ### `sfValidatorDate`
 
@@ -392,5 +392,396 @@ nei parametri `date_output` o `datetime_output`.
 | ------------ | ------------- | -------------
 | `bad_format` | `date_format` | "%value%" does not match the time format (%time_format%).
 
+### `sfValidatorDateTime`
 
-(DA COMPLETARE...)
+*Schema validator*: No
+
+Il validatore `sfValidatorDateTime` controlla le date con gli orari.
+
+E' una scorciatoia per:
+
+    [php]
+    $v = new sfValidatorDate(array('with_time' => true));
+
+### `sfValidatorDateRange`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorDateTime` controlla intervalli di date.
+
+| Opzione     | Errore    | Descrizione
+| ----------- | --------- | -----------
+| `from_date` | `invalid` | Il validatore dalla data (obbligatorio)
+| `to_date`   | `invalid` | Il validatore alla data (obbligatorio)
+
+I validatori `from_date` e `to_date` devono essere istanze della classe
+`sfValidatorDate`.
+
+Il messaggio di errore `invalid` è `"%value%" does not match the time format
+(%time_format%).`.
+
+Validatore di file
+------------------
+
+### `sfValidatorFile`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorFile` controlla i file caricati.
+
+Il validatore converte i file caricati in un'istanza della classe
+`sfValidatedFile`, o dell'opzione `validated_file_class` se è impostata.
+
+| Opzione                | Errore       | Descrizione
+| ---------------------- | ------------ | -----------
+| `max_size`             | `max_size`   | La dimensione massima del file
+| `mime_types`           | `mime_types` | Array di mime types permessi o categoria (categorie disponibili: `web_images`)
+| `mime_type_guessers`   | n/a          | Un array di mime type guesser PHP callables (deve restituire un mime type o `null`)
+| `mime_categories`      | n/a          | Un array di categorie mime type (`web_images` è definita di default)
+| `path`                 | n/a          | Il path dove salvere il file - come utilizzato dalla classe `sfValidatedFile` (opzionale)
+| `validated_file_class` | n/a          | Nome della classe che gestisce il file caricato (opzionale)
+
+La categoria mime-type `web_images`  contiene i seguenti mime-types:
+
+ * `image/jpeg`
+ * `image/pjpeg`
+ * `image/png`
+ * `image/x-png`
+ * `image/gif`
+
+Se l'opzione `mime_types` è impostata, il validatore ha bisogno di un sistema per testare il
+mime-type del file caricato. Il validatore offre tre modi per fare questo:
+
+ * `guessFromFileinfo`:        Usa la funzione `finfo_open()` (dall'estansione PECL `Fileinfo`)
+ * `guessFromMimeContentType`: Usa la funzione `mime_content_type()` (deprecata)
+ * `guessFromFileBinary`:      Usa il file binary (funziona solo sui sitemi *nix)
+
+| Errore       | Segnaposti                    | Valori predefiniti
+| ------------ | ----------------------------- | -------------
+| `max_size`   | `%size%`, `%max_size%`        | Il file è troppo grande (il massimo è %max_size% bytes).
+| `mime_types` | `%mime_types%`, `%mime_type%` | Mime type non valido (%mime_type%).
+| `partial`    |                               | Il file è stato caricato solo parzialmente.
+| `no_tmp_dir` |                               | Manca una directory temporanea.
+| `cant_write` |                               | Errore nella scrittura su disco.
+| `extension`  |                               | Caricamento del file interrotto dall'estensione.
+
+Il validatore mappa gli errori PHP nel modo seguente:
+
+  * `UPLOAD_ERR_INI_SIZE`:   `max_size`
+  * `UPLOAD_ERR_FORM_SIZE`:  `max_size`
+  * `UPLOAD_ERR_PARTIAL`:    `partial`
+  * `UPLOAD_ERR_NO_TMP_DIR`: `no_tmp_dir`
+  * `UPLOAD_ERR_CANT_WRITE`: `cant_write`
+  * `UPLOAD_ERR_EXTENSION`:  `extension`
+
+Validatori logici
+------------------
+
+### `sfValidatorAnd`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorAnd` controlla un valore gresso se passa una lista di validatori.
+
+Il costruttore di `sfValidatorAnd` accetta una lista di validatori come prima argomento:
+
+    [php]
+    $v = new sfValidatorAnd(
+      array(
+        new sfValidatorString(array('max' => 255)),
+        new sfValidatorEmail(),
+      ),
+      array('halt_on_error' => true),
+      array('invalid' => 'The input value must be an email with less than 255 characters.')
+    );
+
+Di default, il validatore lancia un array di messaggi d'errore lanciati da tutti
+i validatori inclusi. Può inoltre lanciare un singolo messaggio d'errore se il messaggio
+d'errore `invalid` è impostato ad una stringa non vuota, come mostrato nell'esempio
+precedente.
+
+| Opzione         | Errore | Descrizione
+| --------------- | ------ | -----------
+| `halt_on_error` | `n/a`  | Indica se fermarsi al primo errore o meno (`false` di default)
+
+L'ordine dei validatori è importante se l'opzione `halt_on_error` è impostata a 
+`true`.
+
+La lista di validatori inclusi può essere inoltre gestita usando i metodi
+`getValidators()` e `addValidator()`.
+
+### `sfValidatorOr`
+
+*Schema validator*: No
+
+Il validatore `sfValidatorOr` controlla un valore grezzo se passa almeno un validatore
+in una lista.
+
+Il costruttore `sfValidatorOr` accetta una lista di validatori come primo argomento:
+
+    [php]
+    $v = new sfValidatorOr(
+      array(
+        new sfValidatorRegex(array('pattern' => '/\.com$/')),
+        new sfValidatorEmail(),
+      ),
+      array(),
+      array('invalid' => 'The input value a .com domain or a valid email address.')
+    );
+
+Di default il validatore lancia un array di messaggi d'errore lanciati da tutti i
+validatori inclusi. Può inoltre lanciare un singolo messaggio d'errore se il messaggio
+d'errore `invalid` è impostato ad una stringa non vuota, come mostrato nell'esempio
+precedente.
+
+La lista di validatori inclusi può essere inoltre gestita usando i metodi
+`getValidators()` e `addValidator()`.
+
+### `sfValidatorSchema`
+
+*Schema validator*: Yes
+
+Il validatore `sfValidatorSchema` rappresenta un validatore composto da diversi campi.
+Un campo è semplicemente un validatore a cui è assegnato un come:
+
+    [php]
+    $v = new sfValidatorSchema(array(
+      'name'    => new sfValidatorString(),
+      'country' => new sfValidatorI18nChoiceCountry(),
+    ));
+
+>**NOTE**
+>Una form è definita dallo schema del validatore della classe `sfValidatorSchema`.
+
+Questo validatore accetta solamente un array come valore di input e lancia una 
+`InvalidArgumentException` se questo non si verifica.
+
+Il validatore può avere un pre-validatore, che viene eseguito prima di tutti gli 
+altri validatori, e un post-validatore, che viene eseguito sui valori puliti dopo 
+tutti gli altri validatori.
+
+I validatori pre-validatore e post-validatore sono validatori schema a loro volta
+che ricevono tutti i valori. Essi possono essere impostati con i metodi 
+`setPreValidator()` e `setPostValidator()`:
+
+    [php]
+    $v->setPostValidator(
+      new sfValidatorCompare('password', '==', 'password_again')
+    );
+
+| Opzione               | Errore         | Descrizione
+| --------------------- | -------------- | -----------
+| `allow_extra_fields`  | `extra_fields` | se `false`, il validatore aggiunge un errore se campi extra vengono inseriti nell'array dei valori di input (default impostato a `false`)
+| `filter_extra_fields` | n/a            | se `true`, il validatore filtra i campi extra dall'array resituito con i valori puliti (default impostato a `true`)
+
+| Errore         | Segnaposti   | Valori predefiniti
+| -------------- | ------------ | -------------
+| `extra_fields` | `%field%`    | Campo extra inaspettato di nome "%field%".
+
+Il `sfValidatorSchema` può essere usato come un array per accedere ai validatori
+inclusi:
+
+    [php]
+    $vs = new sfValidatorSchema(array('name' => new sfValidatorString()));
+
+    $nameValidator = $vs['name'];
+
+    unset($vs['name']);
+
+Si può accedere allo schema dei validatori contenuti usanto la notazione degli 
+array:
+
+    [php]
+    $vs['author']['first_name']->setMessage('invalid', 'The first name is invalid.');
+
+### `sfValidatorSchemaCompare`
+
+*Schema validator*: Yes
+
+Il validatore `sfValidatorSchemaCompare` compara diversi valori dell'array di dati grezzi
+passato:
+
+    [php]
+    $v = new sfValidatorCompare('password', '==', 'password_again');
+
+| Opzione              | Errore | Descrizione
+| -------------------- | ------ | -----------
+| `left_field`         | n/a    | Il nome del campo a sinistra
+| `operator`           | n/a    | L'operatore di comparazione
+| `right_field`        | n/a    | Il nome del campo a destra
+| `throw_global_error` | n/a    | Se lanciare un errore globale (`false` di default) o un errore legao al campo a sinistra
+
+**DA COMPLETARE**
+
+The available operators are the followings:
+
+ * `sfValidatorSchemaCompare::EQUAL` or `==`
+ * `sfValidatorSchemaCompare::NOT_EQUAL` or `!=`
+ * `sfValidatorSchemaCompare::LESS_THAN` or `<`
+ * `sfValidatorSchemaCompare::LESS_THAN_EQUAL` or `<=`
+ * `sfValidatorSchemaCompare::GREATER_THAN` or `>`
+ * `sfValidatorSchemaCompare::GREATER_THAN_EQUAL` or `>=`
+
+By default, the validator throws a global error. If the `throw_global_error`
+is set to `true`, an error for the left field is thrown.
+
+The `invalid` error messages accepts the following values: `%left_field%`,
+`right_field`, and `operator`.
+
+### `sfValidatorSchemaFilter`
+
+*Schema validator*: Yes
+
+The `sfValidatorSchemaFilter` validator convert a non-schema validator to a
+schema validator. It is sometimes useful in a post validator context:
+
+    [php]
+    $v = new sfValidatorSchema();
+    $v->setPostValidator(
+      new sfValidatorSchemaFilter('email', new sfValidatorEmail())
+    );
+
+I18n Validators
+---------------
+
+### `sfValidatorI18nChoiceCountry`
+
+*Schema validator*: No
+
+The `sfValidatorI18nChoiceCountry` validates that the tainted value is a valid
+country ISO 3166 code.
+
+| Option      | Error     | Description
+| ----------- | --------- | -----------
+| `countries` | `invalid` | An array of country codes to use (ISO 3166)
+
+### `sfValidatorI18nChoiceLanguage`
+
+*Schema validator*: No
+
+The `sfValidatorI18nChoiceLanguage` validates that the tainted value is a
+valid country ISO 639-1 code.
+
+| Option      | Error     | Description
+| ----------- | --------- | -----------
+| `languages` | `invalid` | An array of language codes to use (ISO 639-1)
+
+Propel Validators
+-----------------
+
+### `sfValidatorPropelChoice`
+
+*Schema validator*: No
+
+The `sfValidatorPropelChoice` validator validates that the tainted value is
+among the list of records of a given Propel model.
+
+The list of records can be restricted by using the `criteria` option.
+
+The tainted value must be the primary key of records. This can be changed by
+passing the `column` option.
+
+| Option       | Error | Description
+| ------------ | ----- | -----------
+| `model`      | n/a   | The model class (required)
+| `criteria`   | n/a   | A criteria to use when retrieving objects
+| `column`     | n/a   | The column name (null by default which means the primary key is used) - must be in field name format
+| `connection` | n/a   | The Propel connection to use (`null` by default)
+| `multiple`   | n/a   | `true` if the select tag must allow multiple selections
+
+>**NOTE**
+>This validator does not work for model with a composite primary key.
+
+### `sfValidatorPropelChoiceMany`
+
+*Schema validator*: No
+
+The `sfValidatorPropelChoiceMany` validator validates that the tainted values
+is among the list of records of a given Propel model.
+
+>**NOTE**
+>This validator expects an array as an input value. If a string is
+>passed, it is converted to an array automatically.
+
+This validator is a shortcut for:
+
+    [php]
+    $v = new sfValidatorPropelChoice(array('multiple' => true));
+
+### `sfValidatorPropelUnique`
+
+*Schema validator*: Yes
+
+The `sfValidatorPropelUnique` validator validates that the uniqueness of a
+column or a group of columns (`column` option) for a Propel model.
+
+If the uniqueness is on several columns, the error can be thrown globally by
+setting the `throw_global_error` option.
+
+| Option               | Error | Description
+| -------------------- | ----- | -----------
+| `model`              | n/a   | The model class (required)
+| `column`             | n/a   | The unique column name in Propel field name format (required). If the uniquess is for several columns, you can pass an array of field names
+| `field`              | n/a   | Field name used by the form, other than the column name
+| `primary_key`        | n/a   | The primary key column name in Propel field name format (optional, will be introspected if not provided). You can also pass an array if the table has several primary keys
+| `connection`         | n/a   | The Propel connection to use (`null` by default)
+| `throw_global_error` | n/a   | Whether to throw a global error (`false` by default) or an error tied to the first field related to the column option array
+
+Doctrine Validators
+-------------------
+
+### `sfValidatorDoctrineChoice`
+
+*Schema validator*: No
+
+The `sfValidatorDoctrineChoice` validator validates that the tainted value is
+among the list of records of a given Doctrine model.
+
+The list of records can be restricted by using the `query` option.
+
+The tainted value must be the primary key of records. This can be changed by
+passing the `column` option.
+
+| Option       | Error | Description
+| ------------ | ----- | -----------
+| `model`      | n/a   | The model class (required)
+| `alias`      | n/a   | The alias of the root component used in the query
+| `query`      | n/a   | A query to use when retrieving objects
+| `column`     | n/a   | The column name (`null` by default which means the primary key is used) - must be in field name format
+| `connection` | n/a   | The Doctrine connection to use (`null` by default)
+
+>**NOTE**
+>This validator does not work for model with a composite primary key.
+
+### `sfValidatorDoctrineChoiceMany`
+
+*Schema validator*: No
+
+The `sfValidatorDoctrineChoiceMany` validator validates that the tainted
+values is among the list of records of a given Doctrine model.
+
+>**NOTE**
+>This validator expects an array as an input value. If a string is
+>passed, it is converted to an array automatically.
+
+This validator inherits all the options from the `sfValidatorDoctrineChoice`
+validator.
+
+### `sfValidatorDoctrineUnique`
+
+*Schema validator*: Yes
+
+The `sfValidatorDoctrineUnique` validator validates that the uniqueness of a
+column or a group of columns (`column` option) for a Doctrine model.
+
+If the uniqueness is on several columns, the error can be thrown globally by
+setting the `throw_global_error` option.
+
+| Option               | Error | Description
+| -------------------- | ----- | -----------
+| `model`              | n/a   | The model class (required)
+| `column`             | n/a   | The unique column name in Doctrine field name format (required). If the uniquess is for several columns, you can pass an array of field names
+| `primary_key`        | n/a   | The primary key column name in Doctrine field name format (optional, will be introspected if not provided). You can also pass an array if the table has several primary keys
+| `connection`         | n/a   | The Doctrine connection to use (`null` by default)
+| `throw_global_error` | n/a   | Whether to throw a global error (`false` by default) or an error tied to the first field related to the column option array
+
