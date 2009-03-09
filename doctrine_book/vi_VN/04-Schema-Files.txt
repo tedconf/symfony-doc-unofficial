@@ -1,0 +1,636 @@
+Chương 4 - File Schema
+=======================
+
+Trong những chương trước bạn đã gặp một số cấu trúc để mô tả thông tin về schema trong file YAML ở thư mục `config/doctrine`. Chương này sẽ nói về cấu trúc và cách xác định các schema meta data theo định dạng YAML.
+
+## Kiểu dữ liệu
+
+Doctrine hỗ trợ các kiểu dữ liệu khác nhau. Khi bạn xác định một kiểu dữ liệu trong Doctrine nó sẽ được tự động chuyển sang kiểu tương ứng với DBMS mà bạn sử dụng. Dưới đây là danh sách các kiểu dữ liệu bạn có thể sử dụng và kiểu tương ứng trong MySQL DBMS engine.
+
+>**NOTE**
+>Kiểu dữ liệu trong Doctrine là standard là không phụ thuộc vào DBMS. Với những kiểu DBMS không hỗ trợ, Doctrine có khả năng chuyển dữ liệu vào và lấy ra từ CSDL. Ví dụ với kiểu dữ liệu `array` và `object` Doctrine sử dụng `serialized()` khi lưu vào và `unserialized()` khi lấy ra.
+
+| Kiểu        | Kiểu ở MySQL |
+|-------------|--------------|
+| integer     | integer      |
+| float       | double       |
+| decimal     | decimal      |
+| string      | varchar      |
+| array       | text         |
+| object      | text         |
+| blob        | longblob     |
+| clob        | longtext     |
+| timestamp   | datetime     |
+| time        | time         |
+| date        | date         |
+| enum        | varchar/enum |
+| gzip        | text         |
+
+>**SIDEBAR**
+>Kiểu `enum` của Doctrine có thể được mô phỏng hoặc sử dụng đúng kiểu enum nếu DBMS hỗ trợ. Mặc định nó bị tắt nên bạn cần enable một attribute để có thể sử dụng enums.
+>
+>Khi chúng ta chưa enable attribute, Doctrine sẽ tạo câu lệnh SQL như dưới đây và mô phỏng kiểu enum và sẽ đảm bảo rằng giá trị bạn xác định là một trong những giá trị hợp lệ.
+>
+>     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+>
+>Bây giờ hãy khai báo attribute `use_native_enum` ở kết nối để Doctrine tạo kiểu enum trong câu sql cho DBMS của bạn.
+>
+>     [yml]
+>     all:
+>       doctrine:
+>         class: sfDoctrineDatabase
+>         param:
+>           dsn: 'mysql:host=localhost;dbname=symfony12doctrine'
+>           username: user
+>           attributes:
+>             use_native_enum: true
+>
+>Bây giờ câu SQL sinh ra như sau (MySQL):
+>
+>     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type ENUM('Normal', 'Administrator'), PRIMARY KEY(id)) ENGINE = INNODB;
+
+Dưới đây là file yaml schema mẫu mô tả các kiểu dữ liệu khác nhau.
+
+    [yml]
+    User:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        username: string(255)
+        password: string(255)
+        latitude: float
+        longitude: float
+        hourly_rate:
+          type: decimal
+          scale: 2
+        groups_array: array
+        session_object: object
+        description: clob
+        profile_image_binary_data: blob
+        created_at: timestamp
+        time_last_available: time
+        date_last_available: date
+        roles:
+          type: enum
+          values: [administrator, moderator, normal]
+          default: normal
+        html_header: gzip
+
+Câu SQL tương ứng trong MySQL:
+
+    CREATE TABLE user (id INT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), latitude DOUBLE, longitude DOUBLE, hourly_rate DECIMAL(18,2), groups_array TEXT, session_object TEXT, description LONGTEXT, profile_image_binary_data LONGBLOB, created_at DATETIME, time_last_available TIME, date_last_available DATE, roles ENUM('administrator', 'moderator', 'normal') DEFAULT 'normal', html_header TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
+
+## Option
+
+Thường bạn cần thiết lập một số lựa chọn cho bảng như charset, collation và kiểu của bảng trong mysql. Chúng có thể điều khiển dễ dàng với option.
+
+    [yml]
+    User:
+      options:
+        type: MyISAM
+        collate: utf8_unicode_ci
+        charset: utf8
+      columns:
+        username: string(255)
+        password: string(255)
+
+Câu lệnh SQL tương ứng trong MySQL:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = MyISAM;
+
+## Index
+
+Bạn có thể tối ưu cơ sở dữ liệu của mình bằng cách tạo chỉ mục cho cột mà bạn sử dụng làm điều kiện trong câu truy vấn. Dưới đây là ví dụ đánh chỉ mục cột username của bảng user ta thường xuyên tìm kiếm user theo username.
+
+    [yml]
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+      indexes:
+        username_index:
+          fields: [username]
+          type: unique
+
+Câu lệnh SQL tương ứng trong MySQL:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), UNIQUE INDEX username_indext_idx (username), PRIMARY KEY(id)) ENGINE = INNODB;
+
+Bạn cũng có thể xác định option unique trực tiếp trong cột.
+
+    [yml]
+    User:
+      columns:
+        username:
+          type: string(255)
+          unique: true
+        password: string(255)
+
+Câu lệnh SQL tương ứng trong MySQL:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255) UNIQUE, password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+>**Note**
+>Index sẽ tự động được tạo với khóa ngoài của bảng khi quan hệ được xác định. Mục tiếp theo sẽ giải thích cách xác định quan hệ khóa ngoài giữa các bảng.
+
+## Quan hệ giữa các bảng
+
+Doctrine hỗ trợ khả năng tạo chuyển quan hệ giữa các bảng từ database sang ORM do đó bạn có thể dễ dàng làm việc với dữ liệu.
+
+### một-một
+
+Dưới đây là ví dụ cách xác định quan hệ một-một giữa model User và Profile.
+
+    [yml]
+    Profile:
+      columns:
+        user_id: integer
+        name: string(255)
+        email_address:
+          type: string(255)
+          email: true
+      relations:
+        User:
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: one
+
+Câu SQL tương ứng trong MySQL:
+
+    CREATE TABLE profile (id BIGINT AUTO_INCREMENT, user_id BIGINT, name VARCHAR(255), email_address VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE profile ADD FOREIGN KEY (user_id) REFERENCES user(id);
+
+### một-nhiều
+
+Dưới đây là ví dụ cách xác định quan hệ một-nhiều giữa model User và Phonenumber.
+
+    [yml]
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+
+Câu SQL tương ứng trong MySQL:
+
+    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id);
+
+### nhiều-nhiều
+
+Dưới đây là ví dụ cách xác định quan hệ nhiều-nhiều giữa model BlogPost và Tag.
+
+    [yml]
+    BlogPost:
+      columns:
+        user_id: integer
+        title: string(255)
+        body: clob
+      relations:
+        User:
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: one
+          foreignAlias: BlogPosts
+        Tags:
+          class: Tag
+          foreignAlias: BlogPosts
+          refClass: BlogPostTag
+          local: blog_post_id
+          foreign: tag_id
+
+    Tag:
+      columns:
+        name: string(255)
+
+    BlogPostTag:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          local: blog_post_id
+          foreign: id
+          foreignAlias: BlogPostTags
+        Tag:
+          local: tag_id
+          foreign: id
+          foreignAlias: BlogPostTags
+
+Câu SQL tương ứng trong MySQL:
+
+    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE blog_post_tag (blog_post_id BIGINT, tag_id BIGINT, PRIMARY KEY(blog_post_id, tag_id)) ENGINE = INNODB;
+    CREATE TABLE tag (id BIGINT AUTO_INCREMENT, name VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE blog_post ADD FOREIGN KEY (user_id) REFERENCES user(id);
+    ALTER TABLE blog_post_tag ADD FOREIGN KEY (tag_id) REFERENCES tag(id);
+    ALTER TABLE blog_post_tag ADD FOREIGN KEY (blog_post_id) REFERENCES blog_post(id);
+
+## Operation Cascade
+
+Khi lưu object trong Doctrine, mặc định nó được cascade với object tương ứng. Việc delete thì có chút khác biệt nhỏ. Doctrine có khả năng thực hiện cascading delete ở cả mức application và database level.
+
+### Mức Database
+
+Doctrine có khả năng taok operation cascade ở mức database. Dưới đây là một ví dụ các thiết lập model với lựa chọn cascade.
+
+    [yml]
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+          onDelete: CASCADE
+
+Câu SQL tương ứng trong MySQL:
+
+    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE;
+
+>**NOTE**
+>Cascade ở mức database được xác định khi có khóa ngoài.
+
+### Mức Application
+
+Unlike the `save()` operations the `delete()` cascading needs to be turned on explicitly. Here is an example:
+
+>**NOTE**
+>Application level cascading `save()` and `delete()` does not apply when doing DQL update and delete statements, only when calling `save()` and `delete()` on your objects.
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+      relations:
+        Phonenumbers:
+          class: Phonenumber
+          local: id
+          foreign: id
+          type: many
+          foreignType: one
+          cascade: [delete]
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+
+>**NOTE**
+>Application level cascading deletes differ from database level in that they are defined on the side where the relationship you wish to cascade on is defined. This is different than database level cascades where you always specify it on the side where the foreign key lives.
+
+## Behaviors
+
+Một trong những tính năng tuyệt vời của Doctrine là khả năng thêm các behavior. Bạn có thể dễ dàng thêm các behavior vào model của mình để sử dụng những chức năng của nó.
+
+### Các Behavior chính
+
+Dưới đây là danh sách các behavior có sẵn trong Doctrine. Bạn có thể sử dụng bất kì behavior nào trong model của mình mà không cần phải viết dòng code nào.
+
+| Tên            | Mô tả                              |
+|----------------|------------------------------------|
+| Geographical   | Thêm vĩ độ và kinh độ vào model và cung cấp functional tính toán miles/kilometers giữa các record. |
+| I18n           | Thêm internationalization vapf model. |
+| NestedSet      | Chuyển model thành dạng cây. |
+| Searchable     | Đánh chỉ mục dữ liệu trong model để dễ tìm kiếm. |
+| Sluggable      | Thêm một trường `slug` vào model và tự động tạo slug dựa trên cấu hình của bạn. |
+| SoftDelete     | Không thực sự xóa một bản ghi. Đơn giản là thiết lập một cờ xóa và khi truy vấn bỏ qua tất cả các bản ghi được đánh dấu là xóa. |
+| Timestampable  | Thêm cột `created_at` và `updated_at` vào model và Doctrine tự động cập nhật chúng khi thực hiện câu truy vấn insert và update. |
+| Versionable    | Thêm vào model của bạn khả năng ghi nhận các thay đổi. Điều này giúp cho việc khôi phục lại phiên bản cũ trở nên dễ dàng. |
+
+Bạn có thể dễ dàng enable một behavior bằng cách sử dụng chức năng actAs. Dưới đây là ví dụ cách sử dụng behavior Sluggable.
+
+    BlogPost:
+      actAs:
+        Sluggable:
+          fields: [title]
+          unique: true
+      columns:
+        user_id: integer
+        title: string(255)
+        body: clob
+
+Ví dụ trên sẽ tự động thêm cột slug vào model và thiết lập giá trị của cột slug dựa trên giá trị của cột title và đảm bảo rằng giá trị đó là duy nhất. Nếu một slug đã có trong database thì nó sẽ được thêm giá trị 1, 2, 3, ... vào cuối.
+
+Câu SQL tương ứng trong MySQL:
+
+    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, slug VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+
+>**NOTE**
+>Bạn có thể tự viết behavior của mình. Xem mã nguồn của các behavior đã có để xem cách nó làm việc. Chúng nằm trong thư mục `SF_ROOT/plugins/sfDoctrinePlugin/lib/doctrine/Doctrine/Template`. Và bạn có thể tìm hiểu thêm về Doctrine behaviors ở [manual](http://www.doctrine-project.org/documentation/manual/1_0?one-page#behaviors).
+
+## Behavior lồng vào nhau
+
+Doctrine hỗ trợ khả năng nest behaviors. Ví dụ bạn muốn có một behavior `Sluggable` khi bạn tự động tạo model với behavior `I18n`.
+
+    [yml]
+    Gallery:
+      actAs:
+        I18n:
+          fields: [title, description]
+          actAs:
+            Sluggable:
+              fields:  [title]
+      columns:
+        title: string(255)
+        description: clob
+
+Bây giờ model `GalleryTranslation` được tạo ra sẽ có cột `slug` với giá trị được tạo tự động dựa trên giá trị cột title đã được dịch. Bạn có thể trộn các behavior với nhau nhưng hãy nhớ rằng một số behavior ko thể kết hợp với nhau do chúng được phát triển độc lập.
+
+## Thừa kế
+
+Một tính năng tuyệt vời khác của Doctrine là khả năng sử dụng native PHP OOP inheritance với model của bạn. Nó hỗ trợ 3 cách thừa kế khác nhau có thể sử dụng độc lập hoặc kết hợp với nhau. Dưới đây là ví dụ các cách thừa kế khác nhau.
+
+**Các kiểu thừa kế**
+
+| Tên                 | Mô tả                                      |
+|---------------------|--------------------------------------------|
+| Concrete            | Mỗi lớp con là một bảng riêng có tất cả các cột của lớp cha |
+| Simple              | Các lớp con chia sẻ cùng bảng và cột với lớp cha |
+| Column Aggregation  | Tất cả các cột được xác định trong lớp cha và mỗi lớp con được xác định bởi cột `type` |
+
+Dưới đây là một số ví dụ về 3 kiểu thừa kế được Doctrine hỗ trợ.
+
+### Kiểu thừa kế Concrete
+
+Kiểu thừa kế Concrete tạo ra các bảng khác nhau cho mỗi lớp con. Bảng tạo ra chứa các cột thừa kế và các cột mới.
+
+    TextItem:
+      columns:
+        topic: string(100)
+
+    Comment:
+      inheritance:
+        extends: TextItem
+        type: concrete
+      columns:
+        content: string(300)
+
+Câu lệnh SQL tương ứng trong MySQL:
+
+    CREATE TABLE text_item (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE comment (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), content TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
+
+### Kiểu thừa kế Simple
+
+Kiểu thừa kế Simple là kiểu thừa kế đơn giản nhất. Tất cả các lớp con đều dùng chung cột với lớp cha.
+
+    Entity:
+      columns:
+        name: string(30)
+        username: string(20)
+        password: string(16)
+        created: integer(11)
+
+    User:
+      inheritance:
+        extends: Entity
+        type: simple
+
+    Group:
+      inheritance:
+        extends: Entity
+        type: simple
+
+Câu lệnh SQL tương ứng trong MySQL:
+
+    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, PRIMARY KEY(id)) ENGINE = INNODB;
+
+### Kiểu thừa kế Column Aggregation
+
+Trong ví dụ dưới đây, chúng ta có một bảng entity. Users và groups đều là các entities và chúng dùng chung một bảng.
+
+Bảng entity được tự động thêm vào một cột để xác định entity là group hay user.
+
+    Entity:
+      columns:
+        name: string(30)
+        username: string(20)
+        password: string(16)
+        created: integer(11)
+
+    User:
+      inheritance:
+        extends: Entity
+        type: column_aggregation
+
+    Group:
+      inheritance:
+        extends: Entity
+        type: column_aggregation
+
+Câu SQL tương ứng trong MySQL:
+
+    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+## Global Schema Information
+
+Doctrine schemas cho phép bạn xác định một số cấu hình cho toàn bộ model trong file schema. Dưới đây là một số ví dụ cách thiết lập các tham số toàn cục cho file schema.
+
+Danh sách các tham số toàn cục:
+
+| Tên         | Mô tả   |
+|-------------|---------------|
+| connection  | Tên của kết nối gắn với model |
+| attributes  | Mảng các attribute dùng cho model |
+| actAs       | Mảng các actAs behavior và option để enable ở model |
+| options     | Mảng các option của bảng dùng cho model |
+| inheritance | Các lựa chọn thừa kế dùng cho model |
+
+Dưới đây là ví dụ file schema thực thi một số global schema information:
+
+    [yml]
+    connection: conn_name1
+    actAs: [Timestampable]
+    options:
+      type: INNODB
+
+    User:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        contact_id:
+          type: integer(4)
+        username:
+          type: string(255)
+        password:
+          type: string(255)
+      relations:
+        Contact:
+          foreignType: one
+
+    Contact:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        name:
+          type: string(255)
+
+Câu SQL tương ứng trong MySQL:
+
+    CREATE TABLE contact (id INT AUTO_INCREMENT, name VARCHAR(255), created_at DATETIME, updated_at DATETIME, PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE user (id INT AUTO_INCREMENT, contact_id INT, username VARCHAR(255), password VARCHAR(255), created_at DATETIME, updated_at DATETIME, INDEX contact_id_idx (contact_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE user ADD FOREIGN KEY (contact_id) REFERENCES contact(id);
+
+Tất cả các thiết lập ở trên sẽ áp dụng cho tất cả các model xác định trong file yaml đó.
+
+## Plugin Schemas
+
+Với symfony plugins, Doctrine schemas được chứa trong thư mục `config/doctrine`.
+
+Models, forms, filters, ... được tạo ra trong thư mục con của plugin để việc tổ chức và bảo trì model được thuận tiện. Ví dụ `sfDoctrineGuardPlugin` `sfGuardUser` được tạo ra như sau.
+
+    lib/
+      model/
+       doctrine/
+         sfDoctrineGuardPlugin/
+           sfGuardUser.class.php
+           sfGuardUserTable.class.php
+           base
+             BasesfGuardUser.class.php
+      form/
+        doctrine/
+          BaseFormDoctrine.class.php
+          sfDoctrineGuardPlugin/
+            sfGuardUserForm.class.php
+            base
+              BasesfGuardUserForm.class.php
+    plugins/
+      sfDoctrineGuardPlugin/
+        lib/
+          model/
+            doctrine/
+              PluginsfGuardUser.class.php
+              PluginsfGuardUserTable.class.php
+          form/
+            doctrine/
+              PluginsfGuardUserForm.class.php
+
+Sự thừa kế của các lớp được tạo ra như sau.
+
+| Tên                    | Thừa kế từ             | Mô tả                              |
+|------------------------|------------------------|------------------------------------|
+| sfGuardUser            | PluginsfGuardUser      | Top level model class for all your custom project functionality. |
+| PluginsfGuardUser      | BasesfGuardUser        | Plugin level model class for functionality bundled with the plugin. |
+| BasesfGuardUser        | sfDoctrineRecord       | Generated base model class containing schema meta data. |
+| sfGuardUserTable       | PluginsfGuardUserTable | Top level table class for custom project functionality. |
+| PluginsfGuardUserTable | Doctrine_Table         | Plugin level table class for functionality bundled with the plugin. |
+| sfGuardUserForm        | PluginsfGuardUserForm  | Top level form class for all your custom project functionality. |
+| PluginsfGuardUserForm  | BasesfGuardUserForm    | Plugin level form class for functionality bundled with the plugin. |
+| BasesfGuardUserForm    | BaseFormDoctrine       | Generated base form class containing form widgets and validators. |
+| BaseFormDoctrine       | sfFormDoctrine         | Generated base form class which all generated forms extend. |
+
+## Element Definitions
+
+Dưới đây là danh sách tất cả các element kèm mô tả.
+
+### Root Elements
+
+| Name         | Description                |
+|--------------|----------------------------|
+| abstract     | Whether or not to make the generated class abstract. Defaults to false. When a class is abstract it is not exported to the database. |
+| className    | Name of the class to generate |
+| tableName    | Name of the table in your DBMS to use. |
+| connection   | Name of the `Doctrine_Connection` instance to bind the model to. |
+| columns      | Column definitions. |
+| relations    | Relationship definitions. |
+| indexes      | Index definitions. |
+| attributes   | Attribute definitions. |
+| actAs        | ActAs definitions. |
+| options      | Option definitions. |
+| inheritance  | Array for inheritance definition |
+| listeners    | Array defining listeners to attach |
+| checks       | Checks to run at application level as well as exporting to your DBMS |
+
+### Columns
+
+| Name         | Description                |
+|--------------|----------------------------|
+| name         | Name of the column.        |
+| fixed        | Whether or not the column is fixed. |
+| primary      | Whether or not the column is a part of the primary key. |
+| autoincrement| Whether or not the column is an autoincrement column. |
+| type         | Doctrine data type of the column |
+| length       | Length of the column |
+| default      | Default value of the column |
+| scale        | Scale of the column. Used for the `decimal` type. |
+| values       | List of values for the `enum` type. |
+| comment      | Comment for the column. |
+| sequence     | Sequence definition for column. |
+| zerofill     | Whether or not to make the column fill empty characters with zeros |
+| extra        | Array of extra information to store with the column definition |
+
+### Relations
+
+| Name         | Description                |
+|--------------|----------------------------|
+| class        | Name of class to use for relationship. |
+| alias        | Alias to use to identify relationship. |
+| type         | The relationship type. Value can be either `one` or `many` and it defaults to `one`. |
+| refClass     | Middle reference class to use for many to many relationships. |
+| local        | The local field name used in the relationship. |
+| foreign      | the foreign field name used in the relationship. |
+| foreignAlias | The alias of the opposite end of the relationship. Only allowed when `autoComplete` is set to `true`. |
+| foreignType  | The type of the opposite end of the relationship. Only allowed when `autoComplete` is set to `true`. |
+| autoComplete | Whether or not to add the relationship to the opposite end making it bi-directional. Defaults to true. |
+| cascade      | Application level cascading options. |
+| onDelete     | Database level cascading delete value. |
+| onUpdate     | Database level cascading update value. |
+| equal        | Whether or not the relationship is a equal nested many to many. |
+| owningSide   | - |
+| refClassRelationAlias | - |
+
+### Inheritance
+
+| Name         | Description                |
+|--------------|----------------------------|
+| type         | Type of inheritance to use. Allowed values are `concrete`, `column_aggregation`, and `simple`. |
+| extends      | Name of the class to extend. |
+| keyField     | Name of the field to use as the key for `column_aggregation` inheritance. |
+| keyValue     | Value to fill the `keyField` with for `column_aggregation` inheritance. |
+
+### Index
+
+| Tên          | Mô tả                       |
+|--------------|-----------------------------|
+| name         | Name of the index to create.|
+| fields       | Array of fields to use in the index. |
+| unique       | Whether or not the index is unique. |
+
+>**TIP**
+>Bạn có thể tìm hiểu thêm về schema file trong Doctrine Manual [ở đây](http://www.doctrine-project.org/documentation/manual/1_0/en/schema-files).
