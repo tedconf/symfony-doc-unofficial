@@ -8,7 +8,7 @@ Trong những chương trước bạn đã gặp một số cấu trúc để m�
 Doctrine hỗ trợ các kiểu dữ liệu khác nhau. Khi bạn xác định một kiểu dữ liệu trong Doctrine nó sẽ được tự động chuyển sang kiểu tương ứng với DBMS mà bạn sử dụng. Dưới đây là danh sách các kiểu dữ liệu bạn có thể sử dụng và kiểu tương ứng trong MySQL DBMS engine.
 
 >**NOTE**
->Kiểu dữ liệu trong Doctrine là standard là không phụ thuộc vào DBMS. Với những kiểu DBMS không hỗ trợ, Doctrine có khả năng chuyển dữ liệu vào và lấy ra từ CSDL. Ví dụ với kiểu dữ liệu `array` và `object` Doctrine sử dụng `serialized()` khi lưu vào và `unserialized()` khi lấy ra.
+>Kiểu dữ liệu trong Doctrine là standard là không phụ thuộc vào DBMS. Với những kiểu DBMS không hỗ trợ, Doctrine hỗ trợ việc chuyển sang kiểu dữ liệu tương ứng khi lưu dữ liệu vào và lấy ra từ CSDL. Ví dụ với kiểu dữ liệu `array` và `object`, Doctrine sử dụng `serialized()` khi lưu vào và `unserialized()` khi lấy ra.
 
 | Kiểu        | Kiểu ở MySQL |
 |-------------|--------------|
@@ -29,7 +29,7 @@ Doctrine hỗ trợ các kiểu dữ liệu khác nhau. Khi bạn xác định m
 >**SIDEBAR**
 >Kiểu `enum` của Doctrine có thể được mô phỏng hoặc sử dụng đúng kiểu enum nếu DBMS hỗ trợ. Mặc định nó bị tắt nên bạn cần enable một attribute để có thể sử dụng enums.
 >
->Khi chúng ta chưa enable attribute, Doctrine sẽ tạo câu lệnh SQL như dưới đây và mô phỏng kiểu enum và sẽ đảm bảo rằng giá trị bạn xác định là một trong những giá trị hợp lệ.
+>Khi chúng ta chưa enable attribute, Doctrine sẽ tạo câu lệnh SQL như dưới đây và mô phỏng kiểu enum để đảm bảo rằng giá trị bạn đưa vào là một trong những giá trị hợp lệ.
 >
 >     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
 >
@@ -84,7 +84,7 @@ Câu SQL tương ứng trong MySQL:
 
 ## Option
 
-Thường bạn cần thiết lập một số lựa chọn cho bảng như charset, collation và kiểu của bảng trong mysql. Chúng có thể điều khiển dễ dàng với option.
+Thường bạn cần thiết lập một số lựa chọn cho bảng như charset, collation và kiểu của bảng trong mysql. Ta có thể thiết lập dễ dàng trong mục options.
 
     [yml]
     User:
@@ -102,7 +102,7 @@ Câu lệnh SQL tương ứng trong MySQL:
 
 ## Index
 
-Bạn có thể tối ưu cơ sở dữ liệu của mình bằng cách tạo chỉ mục cho cột mà bạn sử dụng làm điều kiện trong câu truy vấn. Dưới đây là ví dụ đánh chỉ mục cột username của bảng user ta thường xuyên tìm kiếm user theo username.
+Bạn có thể tối ưu cơ sở dữ liệu của mình bằng cách tạo chỉ mục cho cột mà bạn dùng làm điều kiện trong câu truy vấn. Dưới đây là ví dụ đánh chỉ mục cột username của bảng user do ta thường xuyên tìm kiếm user theo username.
 
     [yml]
     User:
@@ -137,9 +137,9 @@ Câu lệnh SQL tương ứng trong MySQL:
 
 ## Quan hệ giữa các bảng
 
-Doctrine hỗ trợ khả năng tạo chuyển quan hệ giữa các bảng từ database sang ORM do đó bạn có thể dễ dàng làm việc với dữ liệu.
+Doctrine hỗ trợ khả năng chuyển quan hệ giữa các bảng sang ORM, do đó bạn có thể dễ dàng làm việc với dữ liệu.
 
-### một-một
+### Quan hệ một-một
 
 Dưới đây là ví dụ cách xác định quan hệ một-một giữa model User và Profile.
 
@@ -163,7 +163,7 @@ Câu SQL tương ứng trong MySQL:
     CREATE TABLE profile (id BIGINT AUTO_INCREMENT, user_id BIGINT, name VARCHAR(255), email_address VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
     ALTER TABLE profile ADD FOREIGN KEY (user_id) REFERENCES user(id);
 
-### một-nhiều
+### Quan hệ một-nhiều
 
 Dưới đây là ví dụ cách xác định quan hệ một-nhiều giữa model User và Phonenumber.
 
@@ -185,7 +185,7 @@ Câu SQL tương ứng trong MySQL:
     CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
     ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id);
 
-### nhiều-nhiều
+### Quan hệ nhiều-nhiều
 
 Dưới đây là ví dụ cách xác định quan hệ nhiều-nhiều giữa model BlogPost và Tag.
 
@@ -242,11 +242,11 @@ Câu SQL tương ứng trong MySQL:
 
 ## Operation Cascade
 
-Khi lưu object trong Doctrine, mặc định nó được cascade với object tương ứng. Việc delete thì có chút khác biệt nhỏ. Doctrine có khả năng thực hiện cascading delete ở cả mức application và database level.
+Khi lưu object trong Doctrine, mặc định nó được cascade với object tương ứng. Doctrine có khả năng thực hiện cascading delete ở cả mức application và database.
 
 ### Mức Database
 
-Doctrine có khả năng taok operation cascade ở mức database. Dưới đây là một ví dụ các thiết lập model với lựa chọn cascade.
+Dưới đây là ví dụ cách thiết lập model với lựa chọn cascade.
 
     [yml]
     User:
@@ -310,9 +310,9 @@ Unlike the `save()` operations the `delete()` cascading needs to be turned on ex
 >**NOTE**
 >Application level cascading deletes differ from database level in that they are defined on the side where the relationship you wish to cascade on is defined. This is different than database level cascades where you always specify it on the side where the foreign key lives.
 
-## Behaviors
+## Behavior
 
-Một trong những tính năng tuyệt vời của Doctrine là khả năng thêm các behavior. Bạn có thể dễ dàng thêm các behavior vào model của mình để sử dụng những chức năng của nó.
+Một trong những tính năng tuyệt vời của Doctrine là khả năng thêm các behavior. Bạn có thể dễ dàng thêm các behavior vào model của mình để sử dụng những chức năng sẵn có của nó.
 
 ### Các Behavior chính
 
@@ -321,10 +321,10 @@ Dưới đây là danh sách các behavior có sẵn trong Doctrine. Bạn có t
 | Tên            | Mô tả                              |
 |----------------|------------------------------------|
 | Geographical   | Thêm vĩ độ và kinh độ vào model và cung cấp functional tính toán miles/kilometers giữa các record. |
-| I18n           | Thêm internationalization vapf model. |
+| I18n           | Thêm internationalization vào model. |
 | NestedSet      | Chuyển model thành dạng cây. |
 | Searchable     | Đánh chỉ mục dữ liệu trong model để dễ tìm kiếm. |
-| Sluggable      | Thêm một trường `slug` vào model và tự động tạo slug dựa trên cấu hình của bạn. |
+| Sluggable      | Thêm một trường `slug` vào model và tự động tạo giá trị slug. |
 | SoftDelete     | Không thực sự xóa một bản ghi. Đơn giản là thiết lập một cờ xóa và khi truy vấn bỏ qua tất cả các bản ghi được đánh dấu là xóa. |
 | Timestampable  | Thêm cột `created_at` và `updated_at` vào model và Doctrine tự động cập nhật chúng khi thực hiện câu truy vấn insert và update. |
 | Versionable    | Thêm vào model của bạn khả năng ghi nhận các thay đổi. Điều này giúp cho việc khôi phục lại phiên bản cũ trở nên dễ dàng. |
@@ -350,9 +350,9 @@ Câu SQL tương ứng trong MySQL:
 >**NOTE**
 >Bạn có thể tự viết behavior của mình. Xem mã nguồn của các behavior đã có để xem cách nó làm việc. Chúng nằm trong thư mục `SF_ROOT/plugins/sfDoctrinePlugin/lib/doctrine/Doctrine/Template`. Và bạn có thể tìm hiểu thêm về Doctrine behaviors ở [manual](http://www.doctrine-project.org/documentation/manual/1_0?one-page#behaviors).
 
-## Behavior lồng vào nhau
+## Các behavior lồng vào nhau
 
-Doctrine hỗ trợ khả năng nest behaviors. Ví dụ bạn muốn có một behavior `Sluggable` khi bạn tự động tạo model với behavior `I18n`.
+Doctrine hỗ trợ khả năng nest behavior. Ví dụ bạn muốn có một behavior `Sluggable` khi bạn tự động tạo model với behavior `I18n`.
 
     [yml]
     Gallery:
@@ -370,17 +370,17 @@ Bây giờ model `GalleryTranslation` được tạo ra sẽ có cột `slug` v�
 
 ## Thừa kế
 
-Một tính năng tuyệt vời khác của Doctrine là khả năng sử dụng native PHP OOP inheritance với model của bạn. Nó hỗ trợ 3 cách thừa kế khác nhau có thể sử dụng độc lập hoặc kết hợp với nhau. Dưới đây là ví dụ các cách thừa kế khác nhau.
+Một tính năng tuyệt vời khác của Doctrine là khả năng sử dụng native PHP OOP inheritance với model của bạn. Doctrine hỗ trợ 3 cách thừa kế khác nhau có thể sử dụng độc lập hoặc kết hợp với nhau. Dưới đây là ví dụ các cách thừa kế khác nhau.
 
 **Các kiểu thừa kế**
 
 | Tên                 | Mô tả                                      |
 |---------------------|--------------------------------------------|
-| Concrete            | Mỗi lớp con là một bảng riêng có tất cả các cột của lớp cha |
+| Concrete            | Mỗi lớp con là một bảng riêng chứa tất cả các cột của lớp cha |
 | Simple              | Các lớp con chia sẻ cùng bảng và cột với lớp cha |
 | Column Aggregation  | Tất cả các cột được xác định trong lớp cha và mỗi lớp con được xác định bởi cột `type` |
 
-Dưới đây là một số ví dụ về 3 kiểu thừa kế được Doctrine hỗ trợ.
+Dưới đây là ví dụ về 3 kiểu thừa kế được Doctrine hỗ trợ.
 
 ### Kiểu thừa kế Concrete
 
@@ -456,17 +456,17 @@ Câu SQL tương ứng trong MySQL:
 
 ## Global Schema Information
 
-Doctrine schemas cho phép bạn xác định một số cấu hình cho toàn bộ model trong file schema. Dưới đây là một số ví dụ cách thiết lập các tham số toàn cục cho file schema.
+Doctrine schemas cho phép bạn xác định một số cấu hình cho toàn bộ model trong file schema.
 
 Danh sách các tham số toàn cục:
 
 | Tên         | Mô tả   |
 |-------------|---------------|
 | connection  | Tên của kết nối gắn với model |
-| attributes  | Mảng các attribute dùng cho model |
+| attributes  | Mảng các attribute áp dụng cho model |
 | actAs       | Mảng các actAs behavior và option để enable ở model |
-| options     | Mảng các option của bảng dùng cho model |
-| inheritance | Các lựa chọn thừa kế dùng cho model |
+| options     | Mảng các option của bảng áp dụng cho model |
+| inheritance | Các lựa chọn thừa kế áp dụng cho model |
 
 Dưới đây là ví dụ file schema thực thi một số global schema information:
 
@@ -513,7 +513,7 @@ Tất cả các thiết lập ở trên sẽ áp dụng cho tất cả các mode
 
 Với symfony plugins, Doctrine schemas được chứa trong thư mục `config/doctrine`.
 
-Models, forms, filters, ... được tạo ra trong thư mục con của plugin để việc tổ chức và bảo trì model được thuận tiện. Ví dụ `sfDoctrineGuardPlugin` `sfGuardUser` được tạo ra như sau.
+Models, forms, filters, ... được tạo ra trong thư mục con của plugin để việc tổ chức và bảo trì model được thuận tiện. Ví dụ với `sfDoctrineGuardPlugin`, `sfGuardUser` được tạo ra như sau.
 
     lib/
       model/
@@ -541,7 +541,7 @@ Models, forms, filters, ... được tạo ra trong thư mục con của plugin 
             doctrine/
               PluginsfGuardUserForm.class.php
 
-Sự thừa kế của các lớp được tạo ra như sau.
+Quan hệ giữa các lớp được tạo ra như sau.
 
 | Tên                    | Thừa kế từ             | Mô tả                              |
 |------------------------|------------------------|------------------------------------|

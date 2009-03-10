@@ -1,0 +1,493 @@
+Chương 6 - Làm việc với dữ liệu
+================================
+
+## Lấy dữ liệu
+
+Trong Doctrine bạn có thể lấy một kết quả phức tạp từ RDBMS và chuyển chúng vào một mảng hay object mô tả cấu trúc quan hệ của bạn. Điều này được thực hiện với Doctrine Query Language. Đó là cách tốt nhất để lấy dữ liệu với ít câu truy vấn nhất.
+### DQL
+
+Doctrine sử dụng DQL để lấy dữ liệu và cung cấp một `Doctrine_Query` API hoàn chỉnh để xây dựng chúng. Dưới đây bạn sẽ tìm thấy danh sách đầy đủ các phương thức được sử dụng kèm ví dụ.
+
+#### Query API
+
+**Các API thông dụng**
+
+| Tên hàm                                | SQL                           | Appends | Mô tả          |
+|----------------------------------------|-------------------------------|---------|------------------|
+| where('u.username = ?', 'jwage')       | u.username = ?                | No      | Set the `WHERE` and override any existing `WHERE` conditions |
+| andWhere('u.username = ?', 'jwage')    | AND u.username = ?            | Yes     | Add a `WHERE` condition that is appended with an `AND` |
+| whereIn('u.id', array(1, 2, 3))        | AND u.id IN (?, ?, ?)         | Yes     | Add a `AND` `IN` `WHERE` condition that is appended |
+| andWhereIn('u.id', array(1, 2, 3))     | ^                             | Yes     | Convenience/proxy method for `whereIn()` |
+| orWhereIn('u.id', array(1, 2, 3))      | OR u.id IN (?, ?, ?)          | Yes     | Add a `OR` `IN` `WHERE` condition that is appended |
+| whereNotIn('u.id', array(1, 2, 3))     | AND u.id NOT IN (?, ?, ?)     | Yes     | Add a `AND` `NOT IN` `WHERE` condition that is appended |
+| andWhereNotIn('u.id', array(1, 2, 3))  | ^                             | Yes     | Convenience/proxy method for `whereNotIn()` |
+| orWhereNotIn('u.id', array(1, 2, 3))   | OR u.id NOT IN (?, ?, ?)      | Yes     | Add a `OR` `NOT IN` `WHERE` condition that is appended |
+| orWhere('u.username = ?', 'jwage')     | OR u.username = ?             | Yes     | Add a `OR` `WHERE` condition that is appended |
+| groupBy('u.id')                        | GROUP BY u.id, u.username     | No      | Set the `GROUP BY` and override any existing `GROUP BY` |
+| addGroupBy('u.username')               | GROUP BY u.username           | Yes     | Add a `GROUP BY` that is appended |
+| having('num_phonenumbers > 0')         | HAVING `num_phonenumbers` > 0 | No      | Set the `HAVING` and override any existing `HAVING` |
+| addHaving('u.username = ?', 'jwage')   | HAVING u.username = ?         | Yes     | Add a `HAVING` that is appended |
+
+**Select API**
+
+| Tên hàm                                                     | Mô tả                          |
+|-------------------------------------------------------------|--------------------------------------|
+| distinct($flag = true)                                      | Set the flag to be a distinct select |
+| select('u.id, u.username, COUNT(p.id) as num_phonenumbers') | Set the `SELECT` and override any existing select |
+| addSelect('u.email_address')                                | Add a select that is appended |
+| from('User u, u.Phonenumber p')                             | Set the `FROM` and override any existing `FROM` and joins |
+| leftJoin('u.Phonenumber p')                                 | Add a `LEFT JOIN` that is appended to the `FROM` |
+| innerJoin('u.Profile p')                                    | Add a `INNER JOIN` that is appended to the `FROM` |
+| addFrom('u.Phonenumber p')                                  | Add a `FROM` join that is appended to the `FROM` |
+| orderBy('u.username')                                       | Set the `ORDER BY` and override any existing `ORDER BY` |
+| addOrderBy('u.is_active = ?', 1)                            | Add a `ORDER BY` that is appended |
+| limit(20)                                                   | Set the number of records to limit the result set to |
+| offset(5)                                                   | Set the number to offset the limit of records from |
+
+**Update API**
+
+| Tên hàm                          | Mô tả                                 |
+|----------------------------------|---------------------------------------|
+| forUpdate($flag = true)          | Change a query to use `FOR UPDATE` |
+| update('User u')                 | Specify the model name to `UPDATE` |
+| set('u.username', '?', 'jwage')  | Set new values for the `UPDATE` query. The first argument is the data to modify, the second is the expression to put directly in the DQL string(can be `?` or a DBMS function), and the third is the new value. |
+
+**Delete API**
+
+| Tên hàm       | Mô tả                         |
+|---------------|-------------------------------|
+| delete()      | Change a query to be a delete |
+
+#### Tạo câu truy vấn
+
+Tạo câu truy vấn từ Doctrine_Table instance.
+
+    [php]
+    $q = Doctrine::getTable('User')->createQuery('u')
+      ->where('u.username = ?', 'jwage');
+
+Tạo câu truy vấn theo cách bình thường
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username = ?', 'jwage');
+
+>**NOTE**
+>2 cách truy vấn trên là như nhau, cách thứ nhất sẽ được tự động chuyển sang cách thứ 2.
+
+#### Các ví dụ truy vấn
+
+Dưới đây là ví dụ một số truy vấn để giúp bạn tìm hiểu cacshh lấy dữ liệu với Doctrine.
+
+**Tính số cột**
+
+When using DBMS functions to calculate columns, they are hydrated in to the component/model that is the first involved in the expression. In the example below, the model is hydrated in to the `Phonenumber` relation because it is the first component encountered in the query.
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->select('u.*, COUNT(DISTINCT p.id) AS num_phonenumbers')
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p')
+      ->groupBy('u.id');
+
+    $users = $q->fetchArray();
+
+    echo $users[0]['num_phonenumbers'];
+
+**Lấy Users và các Groups liên quan**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Groups g');
+
+    $users = $q->fetchArray();
+
+    foreach ($users[0]['Groups'] as $group) {
+        echo $group['name'];
+    }
+
+**WHERE với 1 tham số**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username = ?', 'jwage');
+
+    $users = $q->fetchArray();
+
+**WHERE với nhiều tham số**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.is_active = ? AND u.is_online = ?', array(1, 1));
+
+    $users = $q->fetchArray();
+
+    // You can also optionally use the andWhere() to add to the existing where parts
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.is_active = ?', 1)
+      ->andWhere('u.is_online = ?', 1);
+
+    $users = $q->fetchArray();
+
+**whereIn()**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->whereIn('u.id', array(1, 2, 3));
+
+    $users = $q->fetchArray();
+
+    // This is the same as above
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.id IN (1, 2, 3)');
+
+    $users = $q->fetchArray();
+
+**Dùng DBMS function trong mệnh đề WHERE**
+
+    [php]
+    $userEncryptedKey = 'a157a558ac00449c92294c7fab684ae0';
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where("MD5(CONCAT(u.username, 'secret_user_key')) = ?", $userEncryptedKey);
+
+    $user = $q->fetchOne();
+
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('LOWER(u.username) = LOWER(?)', 'jwage');
+
+    $user = $q->fetchOne();
+
+**groupBy**
+
+    [php]
+    // Users with more than 1 phonenumber
+    $q = Doctrine_Query::create()
+      ->select('u.*, COUNT(DISTINCT p.id) AS num_phonenumbers')
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p')
+      ->having('num_phonenumbers > 1')
+      ->groupBy('u.id');
+
+    $users = $q->fetchArray();
+
+**Chỉ Join với primary phonenumbers sử dụng WITH**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p WITH p.primary_num = ?', true);
+
+    $users = $q->fetchArray();
+
+**Override JOIN dùng ON**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p ON u.id = p.user_id AND p.primary_num = ?', true);
+
+    $users = $q->fetchArray();
+
+**Chỉ lấy các cột cần thiết**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->select('u.username, p.phone')
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p');
+
+    $users = $q->fetchArray();
+
+**Lấy tất cả các cột**
+
+    [php]
+    // Select all User columns but only the phone phonenumber column
+    $q = Doctrine_Query::create()
+      ->select('u.*, p.phone')
+      ->from('User u')
+      ->leftJoin('u.Phonenumbers p');
+
+    $users = $q->fetchArray();
+
+**DQL delete với WHERE**
+
+    [php]
+    // Delete phonenumbers for user id = 5
+    $deleted = Doctrine_Query::create()
+      ->delete()
+      ->from('Phonenumber')
+      ->andWhere('user_id = 5')
+      ->execute();
+
+**DQL update 1 cột**
+
+    [php]
+    // Set user id = 1 to active
+    Doctrine_Query::create()
+      ->update('User u')
+      ->set('u.is_active', '?', true)
+      ->where('u.id = ?', 1)
+      ->execute();
+
+**DQL update với hàm của DBMS**
+
+    [php]
+    // Make all usernames lowercase
+    Doctrine_Query::create()
+      ->update('User u')
+      ->set('u.username', 'LOWER(u.username)')
+      ->execute();
+
+**Dùng LIKE của mysql để tìm bản ghi**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username LIKE ?', '%jwage%');
+
+    $users = $q->fetchArray();
+
+**Dùng INDEXBY để xác định key cho mảng trả về**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u INDEXBY u.username');
+
+    $users = $q->fetchArray();
+    print_r($users['jwage']); // Will print the user with the username of jwage
+
+**Dùng positional & named parameter**
+
+    [php]
+    // Positional parameters
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username = ?', array('Arnold'));
+
+    $users = $q->fetchArray();
+
+    // Named parameters
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.username = :username', array(':username' => 'Arnold'));
+
+    $users = $q->fetchArray();
+
+**Dùng subquery trong mệnh đề WHERE**
+
+    [php]
+    // Find uers not in group named Group 2
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->where('u.id NOT IN (SELECT u.id FROM User u2 INNER JOIN u2.Groups g WHERE g.name = ?)', 'Group 2');
+
+    $users = $q->fetchArray();
+
+    // You can accomplish this without subqueries like the 2 below
+    // This is similar as above
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->innerJoin('u.Groups g WITH g.name != ?', 'Group 2')
+
+    $users = $q->fetchArray();
+
+    // or this
+    $q = Doctrine_Query::create()
+      ->from('User u')
+      ->leftJoin('u.Groups g')
+      ->where('g.name != ?', 'Group 2');
+
+    $users = $q->fetchArray();
+
+**Doctrine có nhiều cách khác nhau đề thực thi câu truy vấn và trả về dữ liệu. Dưới đây là danh sách tất cả các cách để thực thi câu truy vấn.**
+
+    [php]
+    $q = Doctrine_Query::create()
+      ->from('User u');
+
+    // Array hydration
+    $users = $q->fetchArray();                                         // Fetch the results as a hydrated array
+    $users = $q->execute(array(), Doctrine::HYDRATE_ARRAY);            // This is the same as above
+    $users = $q->setHydrationMode(Doctrine::HYDRATE_ARRAY)->execute(); // So is this
+
+    // No hydration
+    $users = $q->execute(array(), Doctrine::HYDRATE_NONE);             // Execute the query with plain PDO and no hydration
+    $users = $q->setHydrationMode(Doctrine::HYDRATE_NONE)->execute();  // This is the same as above
+
+    // Fetch one
+    $user = $q->fetchOne();
+
+    // Fetch all and get the first from collection
+    $user = $q->execute()->getFirst();
+
+### Finders
+
+Doctrine cung cấp một số phương thức finder đơn giản, tự động tạo Doctrine_Query object. Dưới đây là một số ví dụ cách sử dụng những phương thức này.
+
+**Phương thức Find By**
+
+Bạn có thể sử dụng `findBy*()` và `findOneBy*()` để tìm bản ghi theo giá trị của một trường nào đó.
+
+    [php]
+    $user = Doctrine::getTable('User')->findOneByUsername('jwage');
+    $users = Doctrine::getTable('User')->findByIsActive(1);
+
+**Tìm theo khóa chính**
+
+Phương thức Doctrine_Table::find() giúp tìm bản ghi theo khóa chính. Nó làm việc với cả model có khóa chính hỗn hợp.
+
+    [php]
+    $user = Doctrine::getTable('User')->find(1);
+    $userGroup = Doctrine::getTable('UserGroup')->find(array(1, 2));
+
+## Cập nhât dữ liệu
+
+Với Doctrine bạn có thể cập nhật dữ liệu bằng cách sử dụng trực tiếp DQL update và delete hoặc bạn có thể lấy các object, sửa đổi các property của nó rồi lưu lại. Duwosi đây là ví dụ theo các cách trên.
+
+### Các property của Object
+
+Doctrine hỗ trợ 3 cách để sửa đổi properties của  object và sfDoctrinePlugin thêm một cách thứ 4 (mô phỏng propel). Đó là object access, array access, function access và propel style access.
+
+    [php]
+    $user = new User();
+    $user->username = 'jwage';        // Object
+    $user['username'] = 'jwage';      // Array
+    $user->set('username', 'jwage');  // Function
+    $user->setUsername('jwage');      // Propel access
+    $user->save();
+
+### Overriding Accessors & Mutators
+
+    [php]
+    class User extends BaseUser
+    {
+      public function setPassword($password)
+      {
+        return $this->_set('password', md5($password));
+      }
+
+      public function getUsername()
+      {
+        return 'PREFIX_' . $this->_get('username');
+      }
+    }
+
+    $user = new User();
+    $user->username = 'jwage';
+    $user->password = 'changeme'; // Invokes setPassword()
+    echo $user->username; // Invokes getPassword() and returns PREFIX_jwage
+
+### Dữ liệu quan hệ
+
+Với Doctrine thật dễ dàng để thao tác với dữ liệu thông qua PHP objects.
+
+**User hasOne Profile**
+
+    [php]
+    $user = new User();
+    $user->username = 'jwage';
+    $user->password = 'changeme';
+    $user->Profile->name = 'Jonathan H. Wage';
+    $user->Profile->about = 'His name is Jonathan';
+    $user->save();
+
+**User hasMany Phonenumber as Phonenumbers**
+
+    [php]
+    $user = new User();
+    $user->username = 'jwage';
+    $user->password = 'changeme';
+    $user->Phonenumbers[]->phonenumber = '6155139185';
+    $user->Phonenumbers[]->phonenumber = '1234567890';
+    $phonenumber = $user->Phonenumbers[2];
+    $phonenumber->phonenumber = '0987654321';
+
+**BlogPost hasMany Tag as Tags**
+
+    [php]
+    $blogPost = new BlogPost();
+    $blogPost->title = 'Test blog post';
+    $blogPost->body = 'This is the content of the test blog post';
+    $tag = Doctrine::getTable('Tag')->findOneByName('doctrine');
+    if ( ! $tag) {
+      $blogPost->Tags[] = $tag;
+    }
+    $blogPost->Tags[] = $tag;
+
+Code trên chưa được tốt lắm, chúng ta có thể thay đổi lại bằng cách thêm vào lớp `BlogPostTable` ở `lib/model/doctrine/BlogPostTable.class.php`.
+
+    [php]
+    class TagTable extends Doctrine_Table
+    {
+      public function findOneByName($name)
+      {
+        $tag = $this->findOneBy('name', $name);
+        if ( ! $tag) {
+          $tag = new Tag();
+          $tag->name = $name;
+        }
+        return $tag;
+      }
+    }
+
+Code bên trên trở thành.
+
+    [php]
+    $blogPost = new BlogPost();
+    $blogPost->title = 'Test blog post';
+    $blogPost->body = 'This is the content of the test blog post';
+    $tag = Doctrine::getTable('Tag')->findOneByName('doctrine');
+    $blogPost->Tags[] = $tag;
+
+Chúng ta cũng nên override `Tag` `name` mutator bằng cách tạo phương thức `setName()` trong lớp `Tag` ở `lib/model/doctrine/Tag.class.php`.
+
+    [php]
+    class Tag extends BaseTag
+    {
+      public function setName($name)
+      {
+        $tag = Doctrine::getTable('Tag')->findOneByName($name);
+        if ($tag) {
+          $this->assignIdentifier($tag->identifier());
+        } else {
+          $this->_set('name', $name);
+        }
+      }
+    }
+
+Bây giờ code trở nên đơn giản hơn để chắc rằng ta ko lưu vào database các tag giống nhau.
+
+    [php]
+    $blogPost = new BlogPost();
+    $blogPost->title = 'Test blog post';
+    $blogPost->body = 'This is the content of the test blog post';
+    $blogPost->Tags[]->name = 'doctrine';
+
+## Xóa dữ liệu
+
+Có 2 cách để xóa dữ liệu. Lấy object rồi gọi phương thức `Doctrine_Record::delete()` hoặc thực hiện câu truy vấn DQL delete.
+
+    [php]
+    $user = Doctrine::getTable('User')->find(1);
+    $user->delete();
+
+Sử dụng câu truy vấn DQL delete hiệu quả hơn do chỉ sử dụng một câu query.
+
+    [php]
+    $deleted = Doctrine_Query::create()
+      ->delete()
+      ->from('User u')
+      ->where('u.id = ?', 1)
+      ->execute();
+
+>**TIP**
+>Bạn có thể tìm hiểu thêm về cách tương tác với dữ liệu trong Doctrine Manual [ở đây](http://www.doctrine-project.org/documentation/manual/1_0/en/working-with-objects).
