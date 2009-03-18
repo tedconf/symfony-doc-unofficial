@@ -66,7 +66,12 @@ Per far sembrare le cose un po' più semplici, cambiamo il formato a `job[%s]`
 aggiungendo il seguente codice alla fine del metodo `configure()` del `JobeetJobForm`:
 
     [php]
+<propel>
     // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
     $this->widgetSchema->setNameFormat('job[%s]');
 
 Dopo questa modifica, il nome del campo `company` dovrebbe essere `job[company]`.
@@ -177,7 +182,12 @@ Il tester ##ORM## offre il metodo `check()` per verificare che uno o più oggett
 nel database corrispondano al criterio passato come argomento.
 
     [php]
+<propel>
     with('propel')->begin()->
+</propel>
+<doctrine>
+    with('doctrine')->begin()->
+</doctrine>
       check('JobeetJob', array(
         'location'     => 'Atlanta, USA',
         'is_activated' => false,
@@ -443,7 +453,12 @@ metodo `extend`:
     [yml]
     # apps/frontend/config/routing.yml
     job:
+<propel>
       class:   sfPropelRouteCollection
+</propel>
+<doctrine>
+      class:   sfDoctrineRouteCollection
+</doctrine>
       options:
         model:          JobeetJob
         column:         token
@@ -738,9 +753,14 @@ regolarmente in un cron job.
       {
         $databaseManager = new sfDatabaseManager($this->configuration);
 
+<propel>
         $nb = JobeetJobPeer::cleanup($options['days']);
-
         $this->logSection('propel', sprintf('Removed %d stale jobs', $nb));
+</propel>
+<doctrine>
+        $nb = Doctrine::getTable('JobeetJob')->cleanup($options['days']);
+        $this->logSection('doctrine', sprintf('Removed %d stale jobs', $nb));
+</doctrine>
       }
     }
 
