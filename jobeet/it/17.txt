@@ -138,13 +138,13 @@ E create il metodo `updateLuceneIndex()` che fa il vero lavoro:
       $index = $this->getTable()->getLuceneIndex();
 </doctrine>
 
-      // remove an existing entry
+      // cancella una voce esistente
       if ($hit = $index->find('pk:'.$this->getId()))
       {
         $index->delete($hit->id);
       }
 
-      // don't index expired and non-activated jobs
+      // non indicizzare lavori scaduti o non attivati
       if ($this->isExpired() || !$this->getIsActivated())
       {
         return;
@@ -152,16 +152,16 @@ E create il metodo `updateLuceneIndex()` che fa il vero lavoro:
 
       $doc = new Zend_Search_Lucene_Document();
 
-      // store job primary key URL to identify it in the search results
+      // salva la chiave primaria dell'URL di un lavoro, per identificarlo nei risultati della ricerca
       $doc->addField(Zend_Search_Lucene_Field::UnIndexed('pk', $this->getId()));
 
-      // index job fields
+      // campi dell'indice dei lavori
       $doc->addField(Zend_Search_Lucene_Field::UnStored('position', $this->getPosition(), 'utf-8'));
       $doc->addField(Zend_Search_Lucene_Field::UnStored('company', $this->getCompany(), 'utf-8'));
       $doc->addField(Zend_Search_Lucene_Field::UnStored('location', $this->getLocation(), 'utf-8'));
       $doc->addField(Zend_Search_Lucene_Field::UnStored('description', $this->getDescription(), 'utf-8'));
 
-      // add job to the index
+      // aggiunge il lavoro all'indice
       $index->addDocument($doc);
       $index->commit();
     }
@@ -171,16 +171,16 @@ prima rimosso se il lavoro esiste già nell'indice.
 
 Indicizzare il lavoro stesso è semplice: la chiave primaria è salvata per future
 referenze durante le ricerche, e le colonne principali (`position`, `company`,
-`location`, e `description`) sono indicizzate ma non salvate nell'indice dato che
+`location`, e `description`) sono indicizzate ma non salvate nell'indice, dato che
 useremo i veri oggetti per visualizzare i risultati.
 
 ### Transazioni ##ORM##
 
-Cosa succederebbe se ci fosse un problema indicizzato un lavoro, oppure il lavoro
+Cosa succederebbe se ci fosse un problema durante l'indicizzazione di un lavoro, oppure il lavoro
 non venisse salvato nel database? Sia ##ORM## che Zend Lucene genereranno un'eccezione.
-Ma in alcune circostanze, potremmo avere un lavoro salvato nel database ma senza
+Ma, in alcune circostanze, potremmo avere un lavoro salvato nel database ma senza
 il corrispondente indice. Per prevenirlo, possiamo inserire i due aggiornamenti
-all'interno di una transazione, ed annullarli in caso di errore:
+all'interno di una transazione ed annullarli in caso di errore:
 
 <propel>
     [php]
@@ -306,7 +306,7 @@ Ora che abbiamo tutto al suo posto, possiamo ricaricare le fixture per indicizza
     $ php symfony propel:data-load --env=dev
 
 Questo processo viene eseguito con l'opzione `--env`, dato che l'indice dipende
-dall'ambiente, e l'ambiente di default per i processi è `cli`.
+dall'ambiente e l'ambiente di default per i processi è `cli`.
 
 >**TIP**
 >Per gli utenti di sistemi Unix-like: dato che l'indice è modificato sia dalla
@@ -488,7 +488,7 @@ con queste nuove caratteristiche:
       $databaseManager = new sfDatabaseManager($this->configuration);
 
 <propel>
-      // cleanup Lucene index
+      // pulisce l'indice di Lucene
       $index = JobeetJobPeer::getLuceneIndex();
 
       $criteria = new Criteria();
@@ -496,7 +496,7 @@ con queste nuove caratteristiche:
       $jobs = JobeetJobPeer::doSelect($criteria);
 </propel>
 <doctrine>
-      // cleanup Lucene index
+      // pulisce l'indice di Lucene
       $index = Doctrine::getTable('JobeetJob')->getLuceneIndex();
 
       $q = Doctrine_Query::create()
@@ -517,7 +517,7 @@ con queste nuove caratteristiche:
 
       $this->logSection('lucene', 'Cleaned up and optimized the job index');
 
-      // Remove stale jobs
+      // Rimuove i lavori scaduti
 <propel>
       $nb = JobeetJobPeer::cleanup($options['days']);
 
