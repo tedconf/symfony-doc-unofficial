@@ -1,0 +1,359 @@
+symfony アドベントカレンダー 5日目: フォームとページャ
+======================================================
+
+復習
+----
+
+長い[4日目](4.txt)において、コードのチャンクをより性質に関連した他のファイルに移動させることで、アプリケーションをリファクタリングすることに慣れました。モデルの修正も学んだので、アクションコードからデータに関連した共通のメソッドを取り出すことができるようになりました。
+
+開発はクリーンですが、多くの機能はまだ貧弱です。askeetサイトとユーザの間に少しのインタラクティビティを持たせましょう。HTMLの基礎となるものは -ハイパーリンクに加えて -フォームです。
+
+今日の目的はユーザがログインとホームページの質問リストのパジネートすることができるようにすることです。開発は速くなりますが、あなたが昨日のことを思い出すのに手助けとなるでしょう。
+
+ログインフォーム
+----------------
+
+テストデータにユーザがありますが、アプリケーションが認識する方法がありません。 アプリケーションのすべてのページからログインできるようにしましょう。グローバルレイアウトの `askeet/appas/frontend/templates/layout.php`を開いて、`about`へのリンクの前に次の行を追加します:
+
+    [php]
+    <li><?php echo link_to('sign in', 'user/login') ?></li>
+
+>**Note**: 現在のレイアウトではこのリンクはウェブデバッグツールバーの後ろに設置されています。見えるようにするために、 'Sf' アイコンをクリックしてツールバーを折り畳んで下さい。
+
+userモジュールを作成しましょう。2日目にquestionモジュールが生成されましたが、今回はsymfonyにモジュールスケルトンを作成するように求めコードは私達自身が書くことにします。
+
+    $ symfony init-module frontend user
+
+>**Note**: スケルトンはデフォルトの`index`アクションと `indexSuccess.php`テンプレートを含みます。必要がないので両方とも削除して下さい。
+
+### user/loginアクションを作成する
+
+`user/actions/action.class.php` ファイル(新しい `askeet/apps/frontend/modules/` ディレクトリの下)において、次の `login` アクションを追加します:
+
+    [php]
+    public function executeLogin()
+    {
+      $this->getRequest()->setAttribute('referer', $this->getRequest()->getReferer());
+  
+      return sfView::SUCCESS;
+    }
+
+アクションはリクエスト属性のリファラを保存します。非表示フィールドが設置されているテンプレートに利用可能になるので、ログイン成功後にフォームのターゲットアクションがオリジナルのリファラにリダイレクトできます。
+
+`sfView::SUCCESS`のリターンは`loginSuccess.php`テンプレートへのアクションの結果を渡します。このステートメントはリターンステートメントを含まないアクションに含まれています。アクションのデフォルトテンプレートが `actionnameSuccess.php`と呼ばれるのはそういうわけです。
+
+アクションに取り組む前に、テンプレートを見てみましょう。
+
+### loginSuccess.phpテンプレートを作成する
+
+多くのウェブ上のヒューマンコンピュータはフォームを使用し、symfonyは**フォームヘルパ**のセットを提供することによってフォームの作成と管理を円滑にします。
+
+`askeet/apps/frontend/modules/user/templates/`ディレクトリにおいて、次の `loginSuccess.php`テンプレートを作成してください:
+
+    [php]
+    <?php echo form_tag('user/login') ?>
+    
+      <fieldset>
+    
+      <div class="form-row">
+        <label for="nickname">nickname:</label>
+        <?php echo input_tag('nickname', $sf_params->get('nickname')) ?>
+      </div>
+    
+      <div class="form-row">
+        <label for="password">password:</label>
+        <?php echo input_password_tag('password') ?>
+      </div>
+    
+      </fieldset>
+      
+      <?php echo input_hidden_tag('referer', $sf_request->getAttribute('referer')) ?>
+      <?php echo submit_tag('sign in') ?>
+    
+    </form>
+
+このテンプレートはあなたのフォームヘルパへの最初のイントロダクションです。これらのsymfonyの機能はフォームタグの書き込みを自動化することを手助けします。`form_tag()` ヘルパはデフォルトのPOSTの振る舞いによってフォームを開き、与えられた引数としてアクションを指し示します。`input_tag()`ヘルパは自動的に最初の引数として与えられた名前を基準とした`id`属性を追加することで`<input>`タグ(驚きでしょう)を作成します; デフォルトの値は二番目の引数から選択されます。 symfonyブックの[関連した章](http://www.symfony-project.com/book/1_0/10-Forms)でフォームヘルパと生成されたHTMLコードを見ることが出来ます。
+
+ここでの本質的なことは、フォームが投稿されたとき(`form_tag()`の引数)に呼び出されたアクションが表示するために使用される`login`アクションと同じであることです。それではアクションに戻りましょう。
+
+### ログインフォーム投稿の取り扱い
+
+先ほど書いた`login`アクションを次のコードで置き換えて下さい:
+
+    [php]
+    public function executeLogin()
+    {
+      if ($this->getRequest()->getMethod() != sfRequest::POST)
+      {
+        // フォームを表示する
+        $this->getRequest()->setAttribute('referer', $this->getRequest()->getReferer());
+      }
+      else
+      {
+        // フォーム投稿を取り扱う
+        $nickname = $this->getRequestParameter('nickname');
+  
+        $c = new Criteria();
+        $c->add(UserPeer::NICKNAME, $nickname);
+        $user = UserPeer::doSelectOne($c);
+      
+        // nicknameが存在するか？
+        if ($user)
+        {
+          // passwordがOKか?
+          if (true)
+          {
+            $this->getUser()->setAuthenticated(true);
+            $this->getUser()->addCredential('subscriber');
+    
+            $this->getUser()->setAttribute('subscriber_id', $user->getId(), 'subscriber');
+            $this->getUser()->setAttribute('nickname', $user->getNickname(), 'subscriber');
+  
+            // 最後のページにリダイレクトする
+            return $this->redirect($this->getRequestParameter('referer', '@homepage'));
+          }
+        }
+      }
+    }
+
+ログインアクションはログインフォームを表示することと処理することの両方に使用されます。結果として、どちらのコンテキストで呼び出されたのかを知る必要があります。アクションがPOSTモードで呼び出されていないのであれば、リンクからリクエストされたからです。先ほど私達が話した前者のケースです。リクエストがPOSTモードであるならば、アクションはフォームから呼び出され、操作する段階にあります。
+
+アクションはリクエストパラメータから`nickname`フィールドの値を得て、データベースにこのユーザが存在するか `User` テーブルをリクエストします。
+
+それから、近い将来に、ユーザに認証を与えるパスワードのコントロールが存在するようになります。今の時点で、このアクションが行う唯一のことはセッション属性に`id`とユーザの`nickname`を蓄積することです。結局のところ、アクションはリクエストパラメータとして通過した隠し`referer`フィールドのおかげでオリジナルリファラにリダイレクトします。このフィールドが空の場合、デフォルトの値が代わりに使われます(`@homepage`は`question/list`のためのルーティングルールの名前です)。
+
+この例における属性セットの二つのタイプの間の違いに注目して下さい。**request属性** (`$this->getRequest()->setAttribute()`) はテンプレートのために保持され、回答がリファラに送られると同時に忘れます。**session属性** (`$this->getUser()->setAttribute()`)はユーザセッションの寿命の間に保持され、他のアクションは将来に対してアクセスできるようになります。属性についてもっと知りたいのでしたら、symfonyブックの[パラメータホルダの章](http://www.symfony-project.com/book/1_0/02-Exploring-Symfony-s-Code)をご覧下さい。
+
+### 特権を与える
+
+ユーザがaskeetウェブサイトにログインすることができるのはよいことです。しかし、それだけではユーザは面白くないです。ログインは新しい質問を投稿すること、質問に対する関心を示すこと、コメントを評価することが求められます。すべての他のアクションは記録されていないユーザに対しても開かれています。
+
+認証されたユーザとして設定するためには`sfUser`オブジェクトの`->setAuthenticated()`メソッドを呼び出す必要があります。このオブジェクトはプロファイルに従って洗練されたアクセス制限をするためにクレデンシャルメカニズム(`->addCredential())`も提供します。symfonyブックの[ユーザクレデンシャルの章](http://www.symfony-project.com/book/1_0/06-Inside-the-Controller-Layer)で詳細にこのことが説明されています。
+
+二行のコードの目的はそういうわけです:
+
+    [php]
+    $this->getContext()->getUser()->setAuthenticated(true);
+    $this->getContext()->getUser()->addCredential('subscriber');
+
+nicknameが承認されたとき、session属性に格納されたユーザのデータだけでなくユーザもサイトの制限された部分へのアクセス権が与えられます。明日は認証されたユーザへのアプリケーションの部分のアクセスを制限をどのようにするのか見ます。
+
+### user/logoutアクションを追加する
+
+`->setAttribute()`メソッドについて最後のトリックです。最後の引数(上の例の `subscriber`)は属性が蓄積される名前空間を定義します。名前空間は属性に与えられた他の名前空間に既に存在する名前を許可するだけでなく一つのコマンドですべての属性の素早い除去も可能にします:
+
+    [php]
+    public function executeLogout()
+    {
+      $this->getUser()->setAuthenticated(false);
+      $this->getUser()->clearCredentials();
+    
+      $this->getUser()->getAttributeHolder()->removeNamespace('subscriber');
+    
+      $this->redirect('@homepage');
+    }
+
+名前空間の使用は二つの属性を一つ一つ除去することから私達を救ってくれます。一行以下のコードです。怠けるとはまさにこのことです!
+
+### レイアウトをアップデートする
+
+レイアウトはユーザが既にログインしてもまだ'login'リンクを表示したままです。すぐに直しましょう。`askeet/apps/frontend/templates/layout.php`において、今日のチュートリアルの始めに追加した行を変更して下さい:
+
+    [php]
+    <?php if ($sf_user->isAuthenticated()): ?>
+      <li><?php echo link_to('sign out', 'user/logout') ?></li>
+      <li><?php echo link_to($sf_user->getAttribute('nickname', '', 'subscriber').' profile', 'user/profile') ?></li>
+    <?php else: ?>
+      <li><?php echo link_to('sign in/register', 'user/login') ?></li>
+    <?php endif ?>
+
+アプリケーションのページを表示をし、'login'をクリックし、有効なニックネーム("anonymous"はトリックを行います)を入力し、バリデートすることで、すべてのテストする段階に来ました。ウィンドウのトップ上の'login'リンクが'sign out'に変わったら、あなたのしたことはすべて正しいです。最終的には'login'リンクが再び現れるかチェックするためにログアウトを試して下さい。
+
+![logged](/images/askeet/logged_day5.gif)
+
+symfonyブックの[ユーザセッションの章](http://www.symfony-project.com/book/1_0/06-Inside-the-Controller-Layer) においてユーザセッション属性の操作の情報をより多く見ることが出来ます。
+
+質問ページャ
+------------
+
+大勢のsymfonyの熱狂的なユーザがaskeetサイトに押し寄せます。ホームページに表示された質問リストがとても長く成長することがとても有望視されています。遅いリクエストと過剰なスクロールを避けるために、質問リストをパジネートすることが必要です。
+
+symfonyはそのためにオブジェクトを提供します: `sfPropelPager`です。現在のページを表示するためのレコードだけがリクエストされるようにデータベースへのリクエストをカプセル化します。例えば、10レコードを表示するためにページャが初期化されたとしたら、データベースへのリクエストの結果は10まで制限され、オフセットがページランクにマッチするように設定されます。
+
+### question/listアクションを修正する 
+
+[3日目](3.txt)において、私達は`question`モジュールの`list`アクションがきわめて簡潔であることを見ました:
+
+    [php]
+    public function executeList ()
+    {
+      $this->questions = QuestionPeer::doSelect(new Criteria());
+    }
+
+配列の代わりに`sfPropelPager`オブジェクトをテンプレートに渡すためにこのアクションを修正しようとしています。同時に、私達は多くの関心によって質問を順序付けようとしています:
+
+    [php]
+    public function executeList ()
+    {
+      $pager = new sfPropelPager('Question', 2);
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(QuestionPeer::INTERESTED_USERS);
+      $pager->setCriteria($c);
+      $pager->setPage($this->getRequestParameter('page', 1));
+      $pager->setPeerMethod('doSelectJoinUser');
+      $pager->init();
+  
+      $this->question_pager = $pager;
+    }
+
+`sfPropelPager`オブジェクトの初期化はどのオブジェクトのクラスが含むか、ページに加えられるオブジェクトの最大数(この例では2)かを特定します。 `->setPage()`メソッドは現在のページを設定するリクエストパラメータを使用します。例えば、この`page`パラメータが`2`の値を持っているとき、 `sfPropelPager`は3から5の結果を返します。デフォルトの`page`リクエストパラメータの値は`1`で、このページャはデフォルトで1から2の値を返します。 `sfPropelPager` オブジェクトとそのメソッドに関するより詳しい情報はsymfonyブックの[ページャの章](http://www.symfony-project.com/book/1_0/08-Inside-the-Model-Layer)で見ることが出来ます。
+
+### カスタムパラメータを使用する
+
+設定ファイルに定数を使うことは常によいアイディアです。例えば、ページごとの結果数(この例では`2`)はあなた独自のアプリケーションの設定パラメータによって置き換えられる可能性があります。 `new sfPropelPager`の上記の行を変更して下さい:
+
+    [php]
+    ...
+      $pager = new sfPropelPager('Question', sfConfig::get('app_pager_homepage_max'));
+
+カスタムアプリケーションの設定ファイル (`askeet/apps/frontend/config/app.yml`)を開き、次のコードを追加して下さい:
+
+    all:
+      pager:
+        homepage_max: 2
+
+ここでの`pager`キーは名前空間として使用されます。パラメータネームにおいても現れる理由です。symfonyブックの[設定の章](http://www.symfony-project.com/book/1_0/05-Configuring-Symfony) において、カスタム設定とカスタムパラメータの命名ルールについて詳しい情報があります。
+
+### listSuccess.phpテンプレートを修正する
+
+`listSuccess.php` において、ページがページャにおいてストアされたリストの結果を表示できるように
+
+    [php]
+    <?php foreach($questions as $question): ?>
+
+を 
+
+    [php]
+    <?php foreach($question_pager->getResults() as $question): ?>
+
+に置き換えて下さい。
+
+### ページのナビゲーションを追加する
+
+このテンプレートを追加するためにもう少しやることがあります。ページナビゲーションです。今現在、テンプレートが行うべきことは最初の２つの質問を表示するですが、我々は次のページへ移動する機能および前のページへ移動する機能を追加した方がいいでしょう:
+
+    [php]
+    <div id="question_pager">
+    <?php if ($question_pager->haveToPaginate()): ?>
+      <?php echo link_to('&laquo;', 'question/list?page=1') ?>
+      <?php echo link_to('&lt;', 'question/list?page='.$question_pager->getPreviousPage()) ?>
+    
+      <?php foreach ($question_pager->getLinks() as $page): ?>
+        <?php echo link_to_unless($page == $question_pager->getPage(), $page, 'question/list?page='.$page) ?>
+        <?php echo ($page != $question_pager->getCurrentMaxLink()) ? '-' : '' ?>
+      <?php endforeach; ?>
+    
+      <?php echo link_to('&gt;', 'question/list?page='.$question_pager->getNextPage()) ?>
+      <?php echo link_to('&raquo;', 'question/list?page='.$question_pager->getLastPage()) ?>
+    <?php endif; ?>
+    </div>
+
+このコードは`sfPropelPager`オブジェクトの様々なメソッドを利用します`->haveToPaginate()`はリクエストへの結果の数字がページサイズを超えるときのみ `true` をリターンします; `->getPreviousPage()``->getNextPage()`と `->getLastPage()`は明らかな意味を持ちます; `->getLinks()`はページ番号の配列を提供します; そして`->getCurrentMaxLink()`は最後のページ番号を返します。
+
+この例は1つの手軽なsymfonyのリンクヘルパも示します: 最初の引数が `false` である場合にテストが与えられたのであれば、`link_to_unless()`は通常の `link_to()` を出力し、そうではなければ、シンプルな`<span>`で囲まれたリンク無しでテキストが出力されます。
+
+ページャをテストしましたか？ した方がいいでしょう。修正はあなた自身の目で検証しない限り終わりません。そのためには、3日目に作成されたテストデータファイルを開き、現れるページナビゲーションのために新しい質問を追加して下さい。インポートデータバッチを再び立ち上げ、ホームページを再びリクエストして下さい。ほら。
+
+![パジネートされたリスト](/images/askeet/pager_day5.gif)
+
+### 次のページのルーティング・ルールを追加する
+
+デフォルトでは、ページのURLは次のようになります:
+
+    http://askeet/frontend_dev.php/question/list/page/XX
+    
+これらのページを理解させるためにルーティングルールを利用しましょう:
+
+    http://askeet/frontend_dev.php/index/XX
+    
+`apps/frontend/config/routing.yml`ファイルを開き、一番上に次のコードを追加して下さい:
+
+    popular_questions: 
+      url:   /index/:page 
+      param: { module: question, action: list } 
+      
+私達がそれを目指している間に、ログインページのための他のルーティングルールを追加して下さい:
+
+    login: 
+      url:   /login 
+      param: { module: user, action: login } 
+
+リファクタリング
+----------------
+
+### モデル
+
+`question/list`アクションはモデルと緊密な関係にあるコードを実行します。このコードをモデルに移動するのはそういうわけです。`question/list`アクションを置き換えて下さい:
+
+    [php]
+    public function executeList () 
+    { 
+      $this->question_pager = QuestionPeer::getHomepagePager($this->getRequestParameter('page', 1)); 
+    }
+    
+...次のメソッドを`lib/model`にある`QuestionPeer.php`クラスに追加して下さい:
+
+    [php] 
+    public static function getHomepagePager($page)
+    {
+      $pager = new sfPropelPager('Question', sfConfig::get('app_pager_homepage_max'));
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(self::INTERESTED_USERS);
+      $pager->setCriteria($c);
+      $pager->setPage($page);
+      $pager->setPeerMethod('doSelectJoinUser');
+      $pager->init();
+  
+      return $pager;
+    }
+
+同じアイディアを昨日書いた`question/show`アクションに応用します。ストリップされたタイトルから質問を取り出すためのPropelオブジェクトの使用はモデルに所属する必要があります。そこで`question/show`アクションを変更して下さい:
+
+    [php]
+    public function executeShow()
+    {
+      $this->question = QuestionPeer::getQuestionFromTitle($this->getRequestParameter('stripped_title'));
+  
+      $this->forward404Unless($this->question);
+    }
+
+`QuestionPeer.php`に追加して下さい:
+
+    [php]
+    public static function getQuestionFromTitle($title)
+    {
+      $c = new Criteria();
+      $c->add(QuestionPeer::STRIPPED_TITLE, $title);
+
+      return self::doSelectOne($c); 
+    }
+
+### テンプレート
+
+`question/templates/listSuccess.php`に表示された質問リストはそのうちどこかで再利用されます。そこで、質問リストを表示するためにテンプレートコードを `_list.php`フラグメントに加え、`listSuccess.php`を単純に置き換えます:
+
+    [php]
+    <h1>popular questions</h1> 
+    
+    <?php echo include_partial('list', array('question_pager' => $question_pager)) ?> 
+    
+`_list.php` フラグメントの内容は[askeetのSVNリポジトリ](http://svn.askeet.com/tags/release_day_5/frontend/modules/question/templates/_question_list.php) で見ることが出来ます。
+
+それではまた明日
+----------------
+
+ログインフォームとリストページャは最近のほとんどすべてのウェブアプリケーションで使用されています。 それらをsymfonyできわめて簡単に開発できることを今日理解しました。
+
+今日はもう一度リファクタリングで終わりました。最初に大きな図面をデザインすることなく、少しずつあなたのアプリケーションを構築するために支払う代償です。
+
+明日は、登録ユーザがサイトのいくつかの部分へアクセスする権限を制限することで、ログインプロセスに取り組み続けます。 また不正な投稿を避けるためにフォームのバリデーションを行います。

@@ -1,0 +1,270 @@
+symfony アドベントカレンダー 18日目: フィルタ
+=============================================
+
+復習
+----
+
+私達はXMLのAPIを通してaskeetのサービスを利用できるようにする方法を見ました。今日のプログラムはフィルタに焦点を当てます。サブドメインをaskeetに作成することでこれらの利用方法を説明します。例えば、'php.askeet.com'はPHPとタグ付けされた質問だけを表示し、このドメインに投稿された質問はすべて'php'とタグ付けされます。この新しい機能を'askeet universe'と呼ぶことにして、すぐに開発しましょう。
+
+設定可能な機能
+--------------
+
+最初に、この新しい機能はオプションでなければなりません。askeetはどんな構成でもインストールできるソフトウェアのピースであることが前提としています。例えば企業のイントラネットでサブドメインの許可を望まないかもしれません。
+
+ですのでアプリケーションの設定に新しいパラメータを追加します。universe機能を有効にするために、`on`に設定しなければなりません。カスタムパラメータを追加するために、`askeet/apps/frontend/confg/app.yml`ファイルを開き、次のコードを追加します:
+
+    all:
+      .global:
+        universe: on
+
+このパラメータはあなたのアプリケーションのすべてのアクションで利用可能です。値を得るために、`sfConfig::get('app_universe')`コールを使用します。
+
+symfonyブックの[設定の章](http://www.symfony-project.com/book/1_0/05-Configuring-Symfony)でカスタムの設定方法を調べることができます。
+
+フィルタを作成する
+------------------
+
+フィルタはすべてのアクションの前に実行されるコードのピースです。ドメインにおいてタグ名を検索するときに、すべてのアクションより先にホストネームを検査するために必要なものです。
+
+`askeet/apps/frontend/config/filters.yml`ファイルにおいて、実行される特別な設定ファイルで宣言されなければなりません。このファイルはアプリケーションを初期化するとき、空のときにデフォルトで作成されます。開いて次のコードを追加して下さい:
+
+    myTagFilter:
+      class: myTagFilter
+
+新しい`myTagFilter`フィルタを宣言してください。全体の`frontend`のアプリケーションを利用可能にするために`myTagFilter.class.php`クラスファイルを作成して下さい:
+
+    [php]
+    <?php
+    
+    class myTagFilter extends sfFilter
+    {
+      public function execute ($filterChain)
+      {    
+        // 一度だけこのフィルタを行う
+        if (sfConfig::get('app_universe') && $this->isFirstCall())
+        {
+          // 何かを行う
+        }
+    
+        // 次のフィルタを実行する
+        $filterChain->execute();
+      }
+    }
+    
+    ?>
+
+これはフィルタの一般的な構造です。`app_universe`パラメータが`on`に設定されていない場合、フィルタは実行されません。私達が一つのリクエストごとに一回だけ実行されることを望んでいるので、(forwardsを使用しているので、一つのリクエストごとに一つのアクション以上かもしれませんが)`->isFirstCall()`メソッドをチェックします。与えられたパラメータで実行された最初の時のみ、`true`です。
+
+`filterChain`オブジェクトについての一つの単語です: リクエストの実行のすべてのステップ(アクションの前の実行)はフィルタのチェインです。チェインフィルタの他のステップの実行をブレークする必要はありません。カスタムフィルタが常に`$filterChain->execute()`によって終了するのはそういうわけです。あなた自身の方法でフィルタパラメータを処理する必要がある場合、あなたのカスタムフィルタにオーバーライドすることができます
+
+>**Note**: `sfFilter`クラスはフィルタオブジェクトが作成されたときに実行される`initialize()`メソッドがあります。あなた自身の方法でフィルタパラメータを処理する必要がある場合、あなたのカスタムフィルタにオーバーライドすることができます。
+
+ドメイン名からパーマネントタグを取得する
+----------------------------------------
+
+タグがあるであろうサブドメインを含むかチェックをするためにホストネームを検査したいです。'www'や'askeet'のようなタグは無視されなければなりません。加えて、私達は無視するサブドメインのルールを修正することができるようにしたいです。例えば、'www'や'www2'といった代替のドメインネームでロードバランサ技術を使うかです。これが`filters.yml`設定ファイルのパラメータに無視するuniverseのルールを設定することを決めた理由です:
+
+    myTagFilter:
+      class: myTagFilter
+      param:
+        host_exclude_regex: /^(www|askeet)/
+    
+フィルタの`execute()`アクションの内容を見る段階です(`// do things`コメントを置き換えます):
+
+    [php]
+    // ホスト名の中にタグが存在するか？
+    $hostname = $this->getContext()->getRequest()->getHost();
+    if (!preg_match($this->getParameter('host_exclude_regex'), $hostname) && $pos = strpos($hostname, '.'))
+    {
+      $tag = Tag::normalize(substr($hostname, 0, $pos));
+
+      // パーマネントタグのカスタム設定パラメータを追加する
+      sfConfig::set('app_permanent_tag', $tag);
+
+      // カスタムのスタイルシートを追加する
+      $this->getContext()->getResponse()->addStylesheet($tag);
+    }
+    
+フィルタはURIにおいておそらく継続的なタグを探します。1つが見つかった場合、カスタムパラメータとして追加され、カスタムスタイルシートはビューに追加されます。では、例です:
+
+    // PHP universeを表示するために下記のURIを呼び出す
+    http://php.askeet.com
+
+    // 定数を作る
+    sfConfig::set('app_permanent_tag', 'php');
+
+    // カスタムのスタイルシートをビューにインクルードする
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/php.css" />
+ 
+>**Note**: カスタムフィルタの実行はビューの設定のパーシングよりもフィルタチェインでかなり初期に行われますので、他のスタイルシートの前にカスタムスタイルシートはアウトプットのHTMLファイルに出現します。カスタムスタイルシートにおいてメインのaskeetサイトのスタイル設定をオーバーライドしなければならないとき、これらの設定は`!important`を宣言する必要があります。
+
+モデルの修正
+------------
+
+パーマーネントタグを考慮にいれるアクションとモデルメソッドを修正する必要があります。モデルロジックをモデルレイヤ内部にとどめたいのとリファクタリングは本当に必要になるので、アクションからPropelリクエストを取得するためにパーマネントタグの修正を利用します。[askeet のtrac](http://trac.askeet.com/trac/changeset/40)において今日のリリースのための修正リストを見ましたら、いくつかの新しいモデルのメソッドが作成され、アクションがそれら自身による`doSelect()`を行う代わりにそれらのメソッドをコールします:
+
+    [php]
+    Answer->getRecent()
+    Question->getPopularAnswers()
+    QuestionPeer::getPopular()
+    QuestionPeer::getRecent()
+    QuestionTagPeer::getForUserLike()
+
+### パーマネントタグに従うフィルタリスト
+
+質問リスト、タグ、回答がaskeet universeに表示されたとき、すべてのリクエストは新しいサーチパラメータを考慮に入れなければなりません。symfonyにおいて、サーチパラメータは`Criteria`オブジェクトの`->add()`メソッドのコールです。
+
+`QuestionPeer`と`AnswerPeer`クラスに次のメソッドを追加して下さい:
+
+    [php]
+    private static function addPermanentTagToCriteria($criteria) 
+    { 
+      if (sfConfig::get('app_permanent_tag')) 
+      { 
+        $criteria->addJoin(self::ID, QuestionTagPeer::QUESTION_ID, Criteria::LEFT_JOIN); 
+        $criteria->add(QuestionTagPeer::NORMALIZED_TAG, sfConfig::get('app_permanent_tag')); 
+        $criteria->setDistinct(); 
+      } 
+      
+      return $criteria; 
+    }  
+
+universeでフィルタされなければならないリストを返すすべてのモデルメソッドを探す必要があります。そして`Criteria`の定義を次の行に追加します:
+
+    [php]
+    $c = self::addPermanentTagToCriteria($c);
+
+例えば、`QuestionPeer::getHomepagePager()`はこのように修正されます:
+
+    [php]
+    public static function getHomepagePager($page)
+    {
+      $pager = new sfPropelPager('Question', sfConfig::get('app_pager_homepage_max'));
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(self::INTERESTED_USERS);
+      
+      // 下記の行を追加する
+      $c = self::addPermanentTagToCriteria($c);
+      
+      $pager->setCriteria($c);
+      $pager->setPage($page);
+      $pager->setPeerMethod('doSelectJoinUser');
+      $pager->init();
+    
+      return $pager;
+    }
+  
+同じ修正は次のメソッドにおいて、数回ほど繰り返されなければなりません:
+
+    [php]
+    QuestionPeer::getHomepagePager()
+    QuestionPeer::getPopular()
+    QuestionPeer::getPopular()
+    QuestionPeer::getRecentPager()
+    QuestionPeer::getRecent()
+    AnswerPeer::getPager()
+    AnswerPeer::getRecentPager()
+    AnswerPeer::getRecent()
+
+複雑なリクエストのために`Criterita`オブジェクトを使用せず、私達はパーマメントタグをSQLコードの`WHERE`ステートメントとして追加する必要があります。[askeet のtrac](http://trac.askeet.com/trac/browser/trunk/lib/model/QuestionTagPeer.php?rev=40)もしくは[SVNリポジトリ](http://svn.askeet.com/tags/release_day_18/)で、`QuesitonTagPeer::getPopularTags()`と`QuestionTagPeer::getPopularTagsFor()`メソッドのために私達がどのようにするのかチェックして下さい。
+
+### 質問もしくはユーザのためのタグのリスト
+
+すべての 'PHP'のuniverseの質問は'php'とタグ付けされています。しかし、ユーザが 'PHP 'universeで質問をブラウジングしている場合、'php'タグはタグリストに表示されてはなりません。埋め込まれているので。universeで質問またはユーザのためにタグリストの出力をしているとき、パーマネントタグは削除されなければなりません。ループ、例えば、`Question->getTags()`メソッドなどにおける回避によって簡単に行うことができます:
+
+    [php]
+    public function getTags()
+    {
+      $c = new Criteria();
+      $c->add(QuestionTagPeer::QUESTION_ID, $this->getId());
+      $c->addGroupByColumn(QuestionTagPeer::NORMALIZED_TAG);
+      $c->setDistinct();
+      $c->addAscendingOrderByColumn(QuestionTagPeer::NORMALIZED_TAG);
+    
+      $tags = array();
+      foreach (QuestionTagPeer::doSelect($c) as $tag)
+      {
+        if (sfConfig::get('app_permanent_tag') == $tag)
+        {
+          continue;
+        }
+    
+        $tags[] = $tag->getNormalizedTag();
+      }
+    
+      return $tags;
+    }
+
+同じ種類のテクニックは次のメソッドで使用されます:
+
+    [php]
+    Question->getTags()
+    Question->getPopularTags()
+    User->getTagsFor()
+    User->getPopularTags()
+
+### パーマネントタグを新しい質問に付け足す
+
+質問がaskeetのuniverseに作成されたとき、ユーザによって入力されたタグに加え、パーマネントタグがタグ付けされなければなりません。リマインダとして、`quesiton/add`メソッド、`Question->addTagsForUser()`メソッドがコールされます:
+
+    [php]
+    $question->addTagsForUser($this->getRequestParameter('tag'), $sf_user->getId());
+
+`tag`リクエストパラメータはユーザによって入力されたタグを含まれるところは、空白によって分割されます。(私達はこれを'phrase'と読んでいます。)phraseへのパーマネントタグを`addTagsForUser`メソッドの最初のラインに追加します:
+
+    [php]
+    public function addTagsForUser($phrase, $userId)
+    {
+      // フレーズを個別のタグに分割する
+      $tags = Tag::splitPhrase($phrase.(sfConfig::get('app_permanent_tag') ? ' '.sfConfig::get('app_permanent_tag') : ''));
+    
+      // タグを追加する
+      foreach ($tags as $tag)
+      {
+        $questionTag = new QuestionTag();
+        $questionTag->setQuestionId($this->getId());
+        $questionTag->setUserId($userId);
+        $questionTag->setTag($tag);
+        $questionTag->save();
+      }
+    }
+
+これです: ユーザがまだ、パーマネントタグを含んでいなかった場合、新しい質問へ与えられたタグリストに追加されます。
+
+サーバの構成
+------------
+
+新しいドメインを利用可能にするためには、ウェブサーバの設定を修正する必要があります。
+
+ローカルにおいて、すなわち、askeetサイトのDNSをコントロールしない場合、それぞれの新しいuniverseのために新しいホストを追加して下さい(Linuxの場合は`/etc/hosts`ファイル、Windowsの場合は`C:\WINDOWS\system32\drivers\etc\hosts`ファイルです):
+
+    127.0.0.1         php.askeet
+    127.0.0.1         senseoflife.askeet
+    127.0.0.1         women.askeet
+
+>**Note**: これを行うためには管理者権限が必要です。
+
+すべてのケースにおいて、サーバのエイリアスをバーチャルホストの設定(Apacheの`httpd.conf`ファイル)に追加する必要があります:
+
+    <VirtualHost *:80>
+      ServerName askeet
+      ServerAlias *.askeet
+      DocumentRoot "/home/sfprojects/askeet/web"
+      DirectoryIndex index.php
+      Alias /sf /usr/local/lib/php/data/symfony/web/sf
+    
+      <Directory "/home/sfprojects/askeet/web">
+       AllowOverride All
+      </Directory>
+    </VirtualHost>
+
+ウェブサーバを再起動した後で、例えば、リクエストによってuniverseの1つをテストできます:
+
+    http://php.askeet/
+
+それではまた明日
+----------------
+
+フィルタは強力で、あらゆる種類のことのために使われます。タグによって特定のテーマに沿ってコンテンツをカスタマイズできるようになります。タグとフィルタの組み合わせはaskeetをいくつかのuniverseに分割するための手助けになります。特化したaskeetサイト(music.askeet.com、programming.askeet.comやdoityourself.askeet.comを考えて下さい)の実現方法は無数にあります。これらすべてのサイトは異なるスキン(外観)にすることが可能で、特化したサイトのコンテンツは依然としてグローバルなaskeetサイトでも見えるので、askeetはベストなコミュニティベースのウェブアプリケーションを上回ります。universeはコミュニティの構築をするために十分な最小限の規模を持ち、そしてグローバルサイトはあらゆる種類の質問への回答を探すのに最良の場所となります。
+
+明日は、パフォーマンスに焦点を当てて、HTMLキャッシュが複雑なページの配信時間を押し上げる方法を理解します。秘密の機能は3日以内にやってきます。ベストなアイディアを投票する時間はまだありますよ。[askeetのフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)に訪問して、askeetのWebサイトが[オンライン](http://www.askeet.com/)上でどのように動作するのか見ることができます。

@@ -1,0 +1,217 @@
+symfony アドベントカレンダー 23日目: 国際化
+===========================================
+
+復習
+----
+
+いまや、symfonyのアプリケーションを本番ホストに転送する方法を学び、askeetのアプリケーションはどこでも動作します。しかし英語を話さない国、例えばフランスで使うことを決めたとしたらどうします？
+
+askeetはオープンソースのプロジェクトで、私達は世界中の人々がすぐに使ってくれることを望んでおります。すべてのプロジェクトのファイルのエンコーディングが[utf-8](http://en.wikipedia.org/wiki/UTF-8)であるだけでなく、アプリケーションも多言語インタフェースとローカライゼーションのコンテンツを持っていなければなりません。
+
+多国籍企業がナレッジマネジメントの基地とするためにインターネットの公開サイトにaskeetをインストールしようとしていることを考えて下さい。 その企業が一つの言語ごとに一つのsymfonyをインストールするよりもユーザが表示言語もしくはコンテンツを切り替えることができることを絶対的に必要です。 幸運にも、18日にuniversesを埋め込んだ選択が私達の多くの作業を楽にし、 symfonyは国際化インタフェースのためのネイティブなサポートを持っています。
+
+ローカライゼーション
+--------------------
+
+次のようなアドレスへのコールがありましたらどうしますか:
+
+    http://fr.askeet.com/
+    
+...フランス語の質問だけで表示されたらどうします？これはとても簡単です。なぜなら[18日](18.txt)以降、このようなURIはuniverseとして理解されるからです。
+
+### 内容
+
+universeランゲージに質問を作成することで自動的にランゲージタグ(ここでは: 'fr ')タグ付けされます。そして、'fr 'universeをブラウザで見れば、 'fr 'タグでタグ付けされた質問のみ現れます。
+
+universeフィルタは内容のローカライゼーションを既に処理します。
+
+### ルックアンドフィール
+
+univereseは彼ら自身のスタイルシートを持っています。ローカライズされたaskeetのルックアンドフィールは容易に採用されます。次の同じメカニズムと同様です。
+
+### 言語依存の機能
+
+[21日目](http://www.symfony-project.com/askeet/22)に構築されたシステムをインデックス化するデータベースは言語に依存する語幹アルゴリズムに依存します。ローカライズ版においても採用されなければなりません。
+
+PHPの英語版以外の他の言語のための利用可能な語幹ライブラリはありません。しかし、存在した場合、誰かが[Perlのステミングライブラリ](http://search.cpan.org/search?query=stem&mode=all)をPHPに移植したとしたらどうします？
+
+それから`myTools::stemPhrase()`メソッドにおいて、単純なPorterStemmer(練習として残されています)の代わりに、[ファクトリーメソッド](http://en.wikipedia.org/wiki/Factory_method_pattern)を呼びます。
+
+### データベースの内容
+
+世界中のホテルのリストを提供する国際的なウェブサイトを想像して下さい。それぞれのホテルについてテキストによる部屋、サービスと営業時間の記述が示されます。何千ものホテルがあるので、この内容はデータベースに蓄積されます。問題はサイトの翻訳があるように、たくさんの記述のバージョンが無ければならないことです。
+
+symfonyはそのようなケースを処理するためにデータを構造化する方法を提供します。上の例では、料金、アドレス、未翻訳なコンテンツのための`Hotel`クラス、ローカライズされたコンテンツのための`HotelI18n`クラスです。Propelアクセサがこの分離を抽出するので、`HotelI18n`テーブルに`description`が設置されていたとしても、まだ簡単にアクセスすることができます:
+
+    [php]
+    $description = $hotel->getDescription();
+
+動作がどのようにして動作するのか理解したい場合は、symfonyブックの[i18nの章](http://www.symfony-project.com/book/1_0/13-I18n-and-L10n)を参照して下さい。
+
+幸いにも、askeetユニバースのフィルタシステムはコンテンツ適応のための必要なことを置き換えます。なのでここで使わないことにします..
+
+国際化
+------
+
+長い言葉なので、しばしば開発者は国際化([internationalization](http://en.wikipedia.org/wiki/Internationalization_and_localization))をi18nと呼びます。なぜそのように縮めるのかわからない方のために、 'internationalization 'の文字数を数えてみれば、localizationを 'l10n 'と呼ぶのかも理解することができます。ウェブアプリケーションの開発において、たいていの場合、i18nはテキストの内容の翻訳とインタフェースのためのローカルフォーマットの使用にかかわります。
+
+### cultureを設定する
+
+symfonyの組み込みの国際化機能の多くは**culture**と呼ばれるユーザセッションのパラメータに基づいています。cultureはユーザの国と言語の組み合わせで、どのようにしてテキストと文化に依存する情報が表示されるのかを決めます。
+
+askeetアプリケーションはローカライゼーションとしてユニバースを認識したとき、対応するcultureに設定しなければなりません。ローカライゼーションとしてパーマメントタグが認識されるのはいつでしょう？翻訳されたインタフェースのためのものだけを許可することにします。(下を見て下さい)ユニバースはローカライゼーションという事実はプロジェクトの`i18n/`ディレクトリにおいてXMLの翻訳ファイルの存在によって決定されます。
+
+ユニバースは次の`askeet/apps/frontend/lib/myTagFilter.class.php`フィルタで見つかります。少し修正する必要があります:
+
+    [php]
+    public function execute ($filterChain)
+    {
+      ...
+      // ホスト名の中にタグが存在するか？
+      $request  = $this->getContext()->getRequest();
+      $hostname = $request->getHost();
+      if (!preg_match($this->getParameter('host_exclude_regex'), $hostname) && $pos = strpos($hostname, '.'))
+      {
+        $tag = Tag::normalize(substr($hostname, 0, $pos));
+   
+        // パーマネントタグの定数を追加する
+        sfConfig::set('app_permanent_tag', $tag);
+   
+        // カスタムのスタイルシートを追加する
+        $request->setAttribute('app/tag_filter', $tag, 'helper/asset/auto/stylesheet');
+     
+        // タグがcultureであるか？
+        if (is_readable(sfConfig::get('sf_app_i18n_dir').'/global/messages.'.strtolower($tag).'.xml'))
+        {
+          $this->getContext()->getUser()->setCulture(strtolower($tag));
+        }
+        else
+        {
+          $this->getContext()->getUser()->setCulture('en');
+        }
+      }
+      ...
+    }
+
+>**Note**: 認識される言語タグは[ISO 639-1標準](http://www.w3.org/WAI/ER/IG/ert/iso639.htm)(例えば`fr`はフランス語です)で記述された小文字によってコーディングされます。国際化を取り扱うとき、常に国と言語のためのISOコードが望ましいです。あなたのコードが国際標準に従い、外国語の開発者によって理解されます。
+
+symfonyブックの[国際化の章](http://www.symfony-project.com/book/1_0/13-I18n-and-L10n)で国際化とcultureについてもっと詳しい情報を見ることが出来ます。
+
+### 日付、時間、数字、通貨、計量
+
+フランスでデータを表示する方法はUSとは違います。アメリカ人ならこう書くでしょう;
+
+    December 16, 2005 9:26 PM
+   
+...フランス語では次のように書かれています
+
+    16 décembre 2005 21:26
+
+よく覚えているのであれば、askeetテンプレートに日付を表示しなければならないたびに、`format_date()`ヘルパを使いました。このヘルパはユーザのcultureに基づいてパラメータとして与えられたdateをフォーマットします。cultureは`myTagFilter.class.php`フィルタに設定され、dateフォーマティングは自動的に行われます。
+
+![フランス語のaskeet内の日付フォーマット](/images/askeet/french_date.gif)
+
+国際化のための他のグッドプラクティスです。日付、時間、ナンバー、通貨もしくは計量を出力しなければならないときは、常に国際化ヘルパを使用します。symfonyはそれらのほとんどを提供します。(symfonyブックの[i18nヘルパの章](http://www.symfony-project.com/book/1_0/13-I18n-and-L10n)を見て下さい。)
+
+### インタフェース翻訳
+
+askeetプロジェクトのインタフェースはテキストを含みます。ローカライズされたバージョンにおいて、インタフェースのテキストはユーザのcultureの言語に表示されなければなりません。
+
+インタフェース翻訳を有効にするためには、すべてのaskeetテンプレートのテキストが特別なi18nヘルパ、`__()`によってエンクローズされていなければなりません。加えて、ヘルパはテンプレートのトップで宣言されなければなりません。例えば、ホームページにおいてインタフェース翻訳を有効にするためには`askeet/aaps/frontend/modules/question/templates/listSuccess.php`テンプレートを開き、変更して下さい:
+
+    [php]
+    <?php use_helper('I18N') ?>
+    
+    <h1><?php echo __('popular questions') ?></h1>
+    
+    <?php include_partial('list', array('question_pager' => $question_pager)) ?>
+
+>**Note**: それぞれのテンプレートのトップに`i18n`ヘルパの代わりに、`askeet/appss/frontend.config/`の`settings.yml`に一回追加するだけで済みます:
+>
+>     all:
+>       .settings:
+>    
+>         standard_helpers:       Partial,Cache,Form,I18N
+>
+
+インタフェースが翻訳されている各言語のために、`messages.xx.xml`ファイルが`askeet/apps/frontend/i18n/`ディレクトリに作成されなければなりません。`xx`は翻訳言語です。このXMLファイルは[XLIFF](http://www.xliff.org/)ディレクトリで、ソース言語(askeetのための英語)からテキストの翻訳されたバージョンを表示します。
+
+例えば、フランス語の翻訳を有効するためには、次の内容の`messeages.fr.xml`を作成しなければなりません:
+
+    [xml]
+    <?xml version="1.0" ?>
+    <xliff version="1.0">
+      <file orginal="global" source-language="en_US" datatype="plaintext">
+        <body>  
+          <trans-unit id="1">
+            <source>popular questions</source>
+            <target>questions populaires</target>
+          </trans-unit>             
+        </body>
+      </file>
+    </xliff>
+
+XLIFFの構文ファイルはsymfonyブックの[国際化の章](http://www.symfony-project.com/book/1_0/13-I18n-and-L10n)に詳しく説明されています。
+
+仕事の大きな部分は、翻訳すべきテキストを見つける為にすべてのテンプレート(とテンプレートフラグメント)をブラウザで見ることです。文を見つけるたびに、`<?php echo __('` and` ') ?>`の間に取り込み、`messages.fr.xml`ファイルに新しい`<trans-unit>`タグを作成します。幸運にも、symfonyプロジェクトのすべてのテンプレートは`templates/`ディレクトリにローカライズされているので、あなたのプロジェクトのすべてのファイルをブラウザで見る必要はありません。
+
+>**Note**: 翻訳ファイルが全文を含む場合のみ翻訳は意味をなします。しかしながら、テキストにおいてフォーマティングもしくは変数を持つときは 代わりに第二の引数を`__()`ヘルパに追加します。例えば次のテンプレートテキストをマークします:
+>
+>     [php]
+>     There are <?php echo count_logged() ?> persons logged.
+>
+>...文章をそれら自身が理解できない2つの部分へ分割することを避けるため、`__()`コールのみ使って下さい:
+>
+>     [php]
+>     <?php echo __('There are %1% persons logged', array('%1%' => count_logged())) ?>
+>
+
+最後に自動翻訳を有効にするために、アプリケーションの`settings.yml`の`i18n`パラメータを`on`に設定しなければなりません:
+
+    all:
+      .settings:
+    
+        i18n:                on
+
+そして`fr.askeet.com`が翻訳されたインタフェースになっているかご覧下さい:
+
+![フランス語のaskeet](/images/askeet/askeet_fr.gif)
+
+### 自動化翻訳
+
+ソーステキストを含むこととと`messages.xx.xml`を作成することのタスクを自動化するいくつかのツールが存在します。残念ながら、あなたがしたようにエンクロージングすることができるようにした人はいません。あなたが決定できることはスタートする場所と`__()`コールを終わらせる場所を決めることです。しかしながら、私達は使いません、自動翻訳ツールにいてリソースを見つけることができるウェブサイトへのリンクを提供します:
+
+* [GNUのgetText](http://en.wikipedia.org/wiki/Gettext)ツールからの`xgettext`コマンドはPHPコードからテキストを抽出する方法を提供します。`.po`ファイルのシリーズに変化させることができる`.pot`ファイル(用語リスト)を作成します。
+* (一つの言語に翻訳された用語集)[XLIFFツール](http://xliff-tools.freedesktop.org/wiki/Projects/XliffPoTools)からの`po2xliff`コマンドは`.po`ファイルを`messages.xx.xml` XLIFFファイルに変換します。
+* Windowsユーザのために、[Okapiフレームワーク](http://okapi.sourceforge.net/)はよい代替物を提供することができます。
+* 翻訳ファイルを編集するために、[poedit](http://www.poedit.org/index.php)は直感的なインタフェースを提案します。(これはとりわけ役に立ちます。大抵の人間の翻訳者はXMLもしくは`.po`ファイルを理解しないので。)
+
+### お忘れなく
+
+テンプレートからのテキストが翻訳のためにマークされると、検査が行われたクローズなコードがまだ残ります。当然のことながら、テキストメッセージはあなたのアプリケーションの予期しない部分において隠れます。次の"hidden"テキストを見つけるために登録して下さい:
+
+* イメージフォルダ(イメージはテキストを含むことが出来ます)
+ 
+  イメージをローカライズする必要がある場合、cultureに対応したサブディレクトリに設置して、cultureに`image_tag()`ヘルパコールを追加して下さい:
+ 
+          [php]
+           <?php echo image_tag($sf_user->getCulture().'/myimage.png') ?>
+
+* `<?php` and `?>`インストラクションのパラメータである画像、ボタンラベルとすべてののテキストメッセージのための代替テキスト。
+
+* JavaScriptメッセージは(`link_to('click', '@rule', 'confirm=Are you sure?')`のように)ヘルパ内、テンプレート内のJavaScriptタグ、もしくはインクルードされた`.js`ファイルに設置可能です
+
+すべてにおいて、始めから国際化を考慮したアプリケーションを開発しない場合、どこかで未翻訳のテキストを忘れるリスクが高いです。最良のアドバイスは開発を始める前に国際化を考え、アプリケーションがおそらく翻訳されていることがわかっている場合、エンドユーザに表示するテキストを書くたびに`__('')`を使うことを留意します。
+
+>**Note**: 隠しテキストメッセージがフォームが適切にバリデートされなかったときに現れるモジュールの`validate/`ディレクトリにあります。クールなことはXLIFF翻訳に現れた場合、これらのテキストを特別扱いする必要がないことです。symfonyは`<trans-unit>`ノードにある翻訳を自動的に見つけ、YAMLファイルのオリジナルテキストの代わりに使用します。
+
+![エラーメッセージ](/images/askeet/error_fr.gif)
+
+それではまた明日
+----------------
+
+[askeet](http://www.askeet.com/)は本当に有用なオープンソースのアプリケーションを作成する方法を作成します。国際化の互換性があるアプリケーションとして、英語を母語としない人(大まかに世界の人口の90％)に利用可能です。
+
+国際化も含むアプリケーションの修正されたコードは[SVN リポジトリ](http://svn.askeet.com/tags/release_day_23/)で利用可能で[askeet trac](http://trac.askeet.com/trac/browser/tags/release_day_23)から直接ブラウズできます。あなたの[フォーラム](http://www.symfony-project.com/forum/index.php/f/8/)へのコメントを歓迎します。
+
+明日は、既にsymfonyアドベント　カレンダーシリーズの最終日です。お見逃しなく。

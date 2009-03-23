@@ -1,0 +1,488 @@
+symfony アドベントカレンダー 15日目: 単体テスト
+===============================================
+
+復習
+----
+
+[昨日](14.txt)に追加したコミュニティのタギング機能のおかげで、askeetのウェブサイトのquestionsはよく組織化 されました。
+
+Webアプリケーションの寿命において重要であるにもかかわらず、今まで語られなかったことがあります。 [単体テスト][1](ユニットテスト)はオブジェクト指向以降の最も偉大な進歩の一つです。 ユニットテストによって安全な開発プロセスを行い、恐れることなくリファクタリングができます。アプリケーションが何をするのかはっきりと記述することができるので、時にドキュメントに置き換えるができます。 symfonyはユニットテストをサポートし推薦し、そのためのツールを提供します。 これらのツールの概要 - askeetのいくつかのユニットテストの追加 - は今日のチュートリアルの多くの時間を占めます。
+
+Simple test
+-----------
+
+PHPの世界において大抵が[Junit][11]に基づいた単体テストフレームワークがたくさんあります。私達はsymfonyのために別の物を開発しません。しかし、かわりにそれらの中でもっとも完成されているものを統合しました。[Simple Test][2]です。安定しており、十分なドキュメントが作成され、symfonyを含む、すべてのPHPプロジェクトのための重要な価値がある多くの機能を提供します。まだ知らないのでしたら、それらの明快で進歩的な[ドキュメント][3]を見ることを強くお勧めいたします。
+
+Simple Testはsymfonyにバンドルされていませんが、インストールすることは簡単です。最初に[SourceForge][4]のPEARでインストール可能なアーカイブのSimple Testをダウンロードします。pear経由でインストールします:
+
+    $ pear install simpletest_1.0.0.tgz
+
+Simple Testライブラリを使ったバッチスクリプトを書きたい場合、あなたがすべことはスクリプトのトップにわずかなコードを挿入するだけです:
+
+    [php]
+    <?php
+    
+    require_once('simpletest/unit_tester.php');
+    require_once('simpletest/reporter.php');
+    
+    ?>
+
+symfonyはテストのコマンドラインを使うかどうかをしてくれます; 手短に説明します。
+
+>**Note**: PHP5.0.5において後方互換性がない変更のため、Simple TestはPHP 5.0.4以上の場合は現在動作しません。短く変更されるのですが、(この問題に取り組んだアルファバージョンは利用可能です) 不幸なことに、このチュートリアルの残りは後のバージョンである場合はおそらく動作しません。
+
+symfonyプロジェクトで単体テスト
+-------------------------------
+
+### デフォルトの単体テスト
+
+symfonyプロジェクトはアプリケーションサブディレクトリに分割された`test/`ディレクトリを持っています。askeetの場合、`askeet/test/functional/frontend/`ディレクトリをブラウジングする場合、すでにいくつのファイルが存在していることを確認できます:
+
+    answerActionsTest.php
+    feedActionsTest.php
+    mailActionsTest.php
+    sidebarActionsTest.php
+    userActionsTest.php
+
+これらはすべて同じイニシャルコードを持ちます:
+
+    [php]
+    <?php
+    
+    class answerActionsWebBrowserTest extends UnitTestCase
+    {
+      private
+        $browser = null;
+    
+      public function setUp ()
+      {
+        // 新しいテストブラウザを作成する
+        $this->browser = new sfTestBrowser();
+        $this->browser->initialize('hostname');
+      }
+    
+      public function tearDown ()
+      {
+        $this->browser->shutdown();
+      }
+    
+      public function test_simple()
+      {
+        $url = '/answer/index';
+        $html = $this->browser->get($url);
+        $this->assertWantedPattern('/answer/', $html);
+      }
+    }
+    
+    ?>
+
+`UnitTestCase`はSimple Testの単体テストの中心的なクラスです。`setUp()`メソッドはそれぞれのテストメソッドの前に動作し、`tearDown()`はそれぞれのテストメソッドの後に動作します。実際のテストメソッドは'test'という言葉で動作を始めます。コードのピースがあなたの期待通りに動作するのか、確認するためには何がtrueなのか確認するメソッドコールであるアサーションを使います。Simple Testにおいてアサーションは`assert`で始まります。この例の場合、一つの単体テストは埋め込まれ、モジュールのデフォルトページにおいて「user」を探します。この自動生成されたファイルはあなたが始めるためのスタブです。
+
+実際のところ、`synmfony init-module`を呼び出すたびにsymfonyは作成されたモジュールに関連した単体テストを蓄積するために`test/[appname]/`ディレクトリにスケルトンを作成します。問題はデフォルトのテンプレートを修正するとすぐに、スタブテストがもはやパスしなくなることです。('module $modulename'であるページのデフォルトタイトルをチェックして下さい)これらのファイルを削除し、私達自身のテストケースを動作させます。
+
+### 単体テストを追加する
+
+[13日目](13.txt)に、タグの操作に関連する2つの関数を使い`Tag.class.php`ファイルを作成しました。私達のTagライブラリのためにいくつかのユニットテストを追加します。 
+
+`TagTest.php`ファイルを作成して下さい(すべてのテストケースファイルはSimple Testが見つけられるように`Test`で終わらなければなりません):
+
+    [php]
+    <?php
+    
+    require_once('Tag.class.php');
+    
+    class TagTest extends UnitTestCase
+    {
+      public function test_normalize()
+      {
+        $tests = array(
+          'FOO'       => 'foo',
+          '   foo'    => 'foo',
+          'foo  '     => 'foo',
+          ' foo '     => 'foo',
+          'foo-bar'   => 'foobar',
+        );
+    
+        foreach ($tests as $tag => $normalized_tag)
+        {
+          $this->assertEqual($normalized_tag, Tag::normalize($tag));
+        }
+      }
+    }
+    
+    ?>
+
+私達が埋め込む最初のテストケースは`Tag::normalize()`メソッドに関連します。単体テストは一回に一つのケースをテストするになっているので、私達は期待されるテキストメソッドの結果を基本ケースに分解します。`Tag::normalize()`メソッドはスペースがない -引数の前と後ろの両方 -　と特別な文字がない　小文字の引数のバージョンを返します。5つのテストケースは`$test`配列において定義され、テストするのに十分な量です。
+
+それぞれのエレメンタリーテストケースにおいて、期待した結果と`->asssertEqual()`メソッドへのコールでインプットのノーマライズバージョンをユニットテストの核心です。失敗したら、テストスウィートが実行されたときにテストケースが出力されます。パスしたテストのナンバーを単純に追加します。
+
+`'FOo-bar'`で最後のテストを追加することができますが、エレメンタリーケースをミックスします。このテストが失敗した場合、問題の正確な原因のはっきりしたアイディアを思いつかないでしょうし、もっと調査をする必要があります。エレメンタリーケースを使うことで、簡単に突き止められるエラーの保証をします。
+ 
+>**Note**: `assert`メソッドの大規模なリストは[Simple Testのドキュメント][3]で見つけることが出来ます。
+
+### 単体テストを動作させる
+
+symfonyコマンドラインによって一つのコマンドですぐにすべてのテストを動作させることができます(あなたのプロジェクトのrootディレクトリからコールしていることを覚えておいて下さい):
+
+    $ symfony test-functional frontend
+
+このコマンドをコールすることはすべての`test/functional/frontend/`ディレクトリのテストを実行し、私達の新しい`TagTest.php`セットのまとまりだけでもあります。これらのテストはパスしコマンドラインは次のように示します:
+
+    $ symfony test-functional frontend
+    Test suite in (test/frontend)
+    OK
+    Test cases run: 1/1, Passes: 5, Failures: 0, Exceptions: 0
+
+>**Note**: symfonyコマンドで立ち上げたテストはSimple Testライブラリを含みません。(`unit_tester.php`と`reporter.php`は自動的に含まれます。)
+
+### あべこべ
+
+ユニットテストの最大の恩恵は[テスト駆動開発][9]をしているときに経験されます。この方法論において、関数が書かれる前にテストが書かれます。
+
+上記の例では、空の`Tag::Normalize()`メソッドを書き、最初のテストケース('Foo'/'foo')を書き、テストスウィートを動作させます。テストは失敗します。それから`Tag::normalize()`メソッドにおいて、引数を小文字に変換してリターンするのに必要なコードを追加し、またテストを動作させます。テストは今度はパスします。
+
+空白のためのテストを追加し、動作させ、失敗を確認し、空白を除去するコードを追加し、テストを再び行い、パスするのを確認します。それから、特別文字のためにも同じことをします。
+
+テストを最初に書くことは実際に開発する前に関数がなにをすべきなのかについて焦点を当てることを手助けします。[エクストリームプログラミング][10]のような推奨される他の方法論と同様、グッドプラクティスです。加えて、あなたがユニットテストを書いていない場合、決してそれらを書かないという否定できない事実を考慮にいれます。 
+
+最後のお勧めです。あなたのユニットテストはここに記述されたものと同じぐらいシンプルに保つことです。テスト駆動方法論によるアプリケーションの構築は実際のコードとテストコードが同じぐらいで終わります。だから、あなたはテストケースをデバッギングするのに時間を費やしたくないです...
+
+### テストが失敗したとき
+
+`Tag`オブジェクトのセカンドメソッドをチェックするためのテストを追加します。`Tag`オブジェクトは文字列で構成されるいくつかのタグをタグの配列に分割します。次のメソッドを`TagTest`クラスに追加して下さい:
+
+    [php]
+    public function test_splitPhrase()
+    {
+      $tests = array(
+        'foo'              => array('foo'),
+        'foo bar'          => array('foo', 'bar'),
+        '  foo    bar  '   => array('foo', 'bar'),
+        '"foo bar" askeet' => array('foo bar', 'askeet'),
+        "'foo bar' askeet" => array('foo bar', 'askeet'),
+      );
+  
+      foreach ($tests as $tag => $tags)
+      {
+        $this->assertEqual($tags, Tag::splitPhrase($tag));
+      }
+    }
+
+>**Note**: グッドプラクティスとして、テストすることになっているクラスからテストファイルを命名、テストケースはこれからテスト使用としているメソッドから命名することをお勧めいたします。あなたの`test/`ディレクトリは間もなく、多くのファイルを含み、あなたがしないのであれば、テストを見つけることは長期的に難しいことがわかります。
+
+テストを再び動作させようとすると、失敗します:
+
+    $ symfony test-functional frontend
+    Test suite in (test/frontend)
+    1) Equal expectation fails as key list [0, 1] does not match key list [0, 1, 2] at line [35]
+            in test_splitPhrase
+            in TagTest
+            in /home/production/askeet/test/functional/frontend/TagTest.php
+    FAILURES!!!
+    Test cases run: 1/1, Passes: 9, Failures: 1, Exceptions: 0
+
+大丈夫です。`test_splitPhrase`のテストケースの一つが失敗しました。どれなのかを検出するために、テストがパスしたときに一度除去する必要があります。今回、シングルクォートの処理をテストするとき、最後のものです。現在の`Tag::splitPhrase()`メソッドはこの文字を適切に変換しないです。宿題の一部として、明日、訂正をする必要があります。
+
+配列にあなたが多くのエレメンタリーテストケースを積み上げすぎた場合、失敗を発見することは難しいという事実を明らかにします。Simple Testはテストがどこで失敗したのかメソッド名を記載するので、長いテストケースをメソッドに分割にするのは常に望ましいです。
+
+ウェブブラウザセッションをシミュレートする
+------------------------------------------
+
+ウェブアプリケーションは多かれ少なかれ関数のように動作するオブジェクトのすべてではありません。複雑なページリクエストのメカニズム、HTMLの出力結果とブラウザとのインタラクションはsymfonyウェブアプリケーションのための完全な単体テストのセットをビルドするまえに、より多くのことに直面します。
+
+シンプルなウェブアプリケーションテストを埋め込むために3つの異なる方法を検査します。テストは最初の質問の詳細をリクエストしなければならないのと、回答のテキストが存在することを前提としています。このテストを`askeet/test/functional/frontend/`ディレクトリに設置された`QuestionTest.php`ファイルに入れます。
+
+### `sfTestBrowser`オブジェクト
+
+symfonyは`sfTestBrowser`と呼ばれるオブジェクトを用意しています。これはブラウザ無しでブラウジングをシミュレートし、もっと重要なことは、ウェブサーバ無しでできることです。フレームワーク内部にあることで、このオブジェクトがhttpトランスポートレイヤーを完全にバイパスすることができるようにします。このことは`sfTestBrowser`によってシミュレートされたブラウジングは速く、サーバを使用しないのでサーバの設定から独立しています。
+
+このオブジェクトでページをリクエストをどのようにするのか見てみましょう:
+
+    [php]
+    $browser = new sfTestBrowser();
+    $browser->initialize();
+    $html = $browser->get('uri');
+    
+    // $html上でいくつかのテストを行う
+    
+    $browser->shutdown();
+
+`get()`リクエストはパラメータ(内部のURIではなく)として、routeされたURIを取得し、生のHTMLページ(文字列)をリターンします。`UnitTestCase`オブジェクトの`assert*()`メソッドを使用して、このページについてあらゆる種類のテストを続行することができます。
+
+あなたのURLバーのブラウジングしたものとして、パラメータをあなたのコールに渡すことができます:
+
+    $html = $browser->get('/frontend_test.php/question/what-can-i-offer-to-my-stepmother');
+    
+特別のフロントコントローラ(`frontend_test.php`)を使用する理由は次のセクションで説明されます。
+
+`sfTestBrowser`はクッキーをシミュレートします。単独の`sfTestBrowser`オブジェクトで、次から次へといくつかのページを要求することができ、フレームワークによってシングルセッションの一部とみなされます。加えて、`sfTestBrowser`は内部URLの代わりにルーテッドURIを使用するという事実はルーティングエンジンをテストすることが可能ということです。
+
+私達のウェブテストを埋め込むために、`test_QuestionShow()`メソッドは次のようにビルドされなければなりません:
+
+    [php]
+    <?php
+    
+    class QuestionTest extends UnitTestCase
+    {
+      public function test_QuestionShow()
+      {
+        $browser = new sfTestBrowser();
+        $browser->initialize();
+        $html = $browser->get('frontend_test.php/question/what-can-i-offer-to-my-step-mother');
+        $this->assertWantedPattern('/My stepmother has everything a stepmother is usually offered/', $html);
+        $browser->shutdown();
+      }
+    }
+
+すべてのウェブユニットテストは新しい`sfTestBrowser`を必要とします。コードの一部分を`->setUp()`メソッドと`->tearDown()`メソッドに移動させた方がよりベターです:
+
+    [php]
+    <?php 
+    
+    class QuestionTest extends UnitTestCase
+    {
+      private $browser = null;
+
+      public function setUp()
+      {
+        $this->browser = new sfTestBrowser();
+        $this->browser->initialize();
+      }
+      
+      public function tearDown()
+      {
+        $this->browser->shutdown();
+      }
+      
+      public function test_QuestionShow()
+      {
+        $html = $this->browser->get('frontend_test.php/question/what-can-i-offer-to-my-step-mother');
+        $this->assertWantedPattern('/My stepmother has everything a stepmother is usually offered/', $html);
+      }
+    }
+
+あなたが追加したすべての新しい`test`はクリーンな`sfTestBrowser`オブジェクトを持っています。このチュートリアルの最初で触れられた自動生成テストケースを認識しているかもしれません。
+
+### WebTestCaseオブジェクト 
+
+ナビゲーション、内容とクッキーチェックとフォームハンドリングのための機能を含むSimple Testは`WebTestCase`クラスを搭載しています。このクラスを拡張するテストによってhttpトランスポートレイヤーによるブラウジングセッションをシミュレートすることができます。繰り返しますが、[Simple Testのドキュメント][5]においてこのクラスをどのように使うのかが詳しく説明されています。
+
+ウェブサーバはすべてのリクエストの中心にあるので、`WebTestCase`によってビルドされたテストは`sfTestBrwoser`でビルドされたものよりも遅いです。ウェブサーバ構成を動作させることも必要です。しかしながら、`WebTestCase`オブジェクトは`assert*()`メソッドに加えて数多くのナビゲーションメソッドが付属しています。これらのメソッドを使うことで、複雑なブラウジングセッションをシミュレートすることが可能です。これが`WebTestCase`ナビゲーションメソッドのサブセットです:
+
+-                         | -                            | -
+------------------------- | ---------------------------- | --------------------------------
+`get($url, $parameters)`  | `setField($name, $value)`    | `authenticate($name, $password)` 
+`post($url, $parameters)` | `clickSubmit($label)`        | `restart()`                      
+`back()`                  | `clickImage($label, $x, $y)` | `getCookie($name)`               
+`forward()`               | `clickLink($label, $index)`  | `ageCookies($interval)`          
+
+私達は`WebTestCase`によって以前と同じテストケースを容易に行うことができます。ウェブサーバがリクエストするので、フルURIを入力する必要があります:
+
+    [php]
+    require_once('simpletest/web_tester.php');
+    
+    class QuestionTest extends WebTestCase
+    { 
+      public function test_QuestionShow()
+      {
+        $this->get('http://askeet/frontend_test.php/question/what-can-i-offer-to-my-step-mother');
+        $this->assertWantedPattern('/My stepmother has everything a stepmother is usually offered/');
+      }
+    }
+
+このオブジェクトの追加的なメソッドはどのように投稿されたフォームがハンドルされたのかをテストすることを手助けしてくれます。例えば、ログインプロセスのユニットテストです:
+
+    [php]
+    public function test_QuestionAdd()
+    {
+      $this->get('http://askeet/frontend_dev.php/');
+      $this->assertLink('sign in/register');
+      $this->clickLink('sign in/register');
+      $this->assertWantedPattern('/nickname:/');
+      $this->setField('nickname', 'fabpot');
+      $this->setField('password', 'symfony');
+      $this->clickSubmit('sign in');
+      $this->assertWantedPattern('/fabpot profile/');      
+    }
+
+手動でフィールドのための値を設定することが扱いやすくなります。`POST`リクエストをすることでシミュレートをしなければならない場合(`->post($uri, $parameters)`をコールすることで可能です。)、多くの埋め込みに依存しているので、テストファンクション、アクションのターゲットとアクションのターゲットに書く必要があります。Simple Testによるフォームテストについてもっと詳しい情報は[Simple Testのドキュメント](http://www.lastcraft.com/form_testing_documentation.php)の関連章を読んで下さい。
+
+### Selenium
+
+`sfTestBrowser`と`WebTestCase`テストの主な欠点はJavaScriptをシミュレートすることができないことです。とても複雑なインターアクション、例えばAJAXインターアクションのために、ユーザが行うマウスとキーボードを正確に再現できることが必要です。通常は、これらのテストは手動で再現されますが、とても時間がかかり、失敗しがちです。
+
+今回の解決方法はJavaScriptの世界から由来します。[Selenium][6]と呼ばれ、[Selenium Recorder extension for Firefox][7]が採用されたときはよりベターです。Seleniumは現在のブラウザウィンドウを使用して通常のユーザ世界と同じようにページのアクションのセットを実行します。
+
+Seleniumはsymfonyにデフォルトでバンドルされていません。インストールするためには、`web/`ディレクトリに新しい`selenium/`ディレクトリを作成する必要があります。そして、[Seleniumアーカイブ][8]の中身をそこに解凍します。SeleniumがJavaScriptに依存するためで、大抵のブラウザのセキュリティ設定のスタンダードではあなたのアプリケーションが同じホストとポートで利用可能ではない限り、実行できません。
+
+>**Note**: 外部からアクセスできるので、あなたのプロダクションホストに`slenium/`ディレクトリを転送しないことを意識して下さい。
+
+SeleniumテストはHTMLで書かれ、`selenium/tests/`ディレクトリに蓄積されます。例えば、question detailについてのsimple unit testを実行するために、次の`testQuestion.html`と呼ばれるファイルを作成して下さい:
+
+    [php]
+    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+    <html>
+    <head>
+      <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+      <title>Question tests</title>
+    </head>
+    <body>
+    <table cellspacing="0">
+    <tbody>
+      <tr><td colspan="3">First step</td></tr>
+    
+      <tr>
+        <td>open</td>
+        <td>/frontend_test.php/</td>
+        <td>&nbsp;</td>
+      </tr>
+      
+      <tr>
+        <td>clickAndWait</td>
+        <td>link=What can I offer to my step mother?</td>
+        <td>&nbsp;</td>
+      </tr>
+
+      <tr>
+        <td>assertTextPresent</td>
+        <td>My stepmother has everything a stepmother is usually offered</td>
+        <td>&nbsp;</td>
+      </tr>
+    
+    </tbody>
+    </table>
+    </body>
+    </html>
+ 
+テストケースは3つのカラムのテーブルを含むHTMLドキュメントによって表現されます: コマンド、ターゲット、値です。しかしながら、すべてのコマンドは値を取得しません。このケースの場合、カラムを空白しておくか、テーブルをより見やすくするために`&nbsp;`を使用します。
+
+同じディレクトリに設定された`TestSuite.html`ファイルのテーブルに新しい行を挿入することで、グローバルテストスウィートにこのテストを追加する必要もあります:
+
+    [php]
+    ...
+    <tr><td><a href='./testQuestion.html'>My First Test</a></td></tr>
+    ...
+
+テストを動作させるために、次のURLをブラウズして下さい
+
+    http://askeet/selenium/index.html
+
+すべてのテストを動作させるためにボタンをクリックするよりも、'Main Test Suite'を選択して、あなたが指定したステップを再現するのかあなたのブラウザで見て下さい。一つのブラウザであなたのテストをビルドして、一つのリクエストであなたのサイトが動作するのかテストしてください。 
+
+![Seleniumにおけるテストスィート](/images/askeet/selenium.gif)
+
+>**Note**: Seleniumテストは実際のブラウザで動作させることができるので、ブラウザの不整合をテストすることを可能にします。1つのブラウザであなたのテストをビルドし、1つのリクエストであなたのサイトが動作するのかをテストして下さい。
+
+SeleniumテストがHTMLで書かれているという事実はSeleniumテストを書くことをやっかいにすることもあります。しかし、Firefox Seleniumエクステンションのおかげで、記録されたセッションでテストを1回実行するために、一つのテストを作成するだけで済みます。レコーディングセッションにおけるナビゲーションにおいて、ブラウザのウィンドウ内で右クリックすること、およびポップアップメニューにあるAppend Selenium Commandの元で適切なチェックを選択することで、アサートタイプのテストを追加することができます。
+
+例えば、次のSelenium testはAJAXの質問レーティングをチェックします。ユーザの'fabpot'はログインし、これまでのところ興味のないページだけにアクセスするために質問のセカンドページを表示し、それから'interested?'リンクをクリックし、'?'を'!'に変更します。Firefoxエクステンションによってすべて記録され、30秒もかかりません:
+
+    [php]
+    <html>
+    <head><title>New Test</title></head>
+    <body>
+    <table cellpadding="1" cellspacing="1" border="1">
+    <thead>
+    <tr><td rowspan="1" colspan="3">New Test</td></tr>
+    </thead><tbody>
+    <tr>
+    	<td>open</td>
+    	<td>/frontend_dev.php/</td>
+    	<td></td>
+    </tr>
+    <tr>
+    	<td>clickAndWait</td>
+    	<td>link=sign in/register</td>
+    	<td></td>
+    </tr>
+    <tr>
+    	<td>type</td>
+    	<td>//div/input[@value="" and @id="nickname" and @name="nickname"]</td>
+    	<td>fabpot</td>
+    </tr>
+    <tr>
+    	<td>type</td>
+    	<td>//div/input[@value="" and @id="password" and @name="password"]</td>
+    	<td>symfony</td>
+    </tr>
+    <tr>
+    	<td>clickAndWait</td>
+    	<td>//input[@type='submit' and @value='sign in']</td>
+    	<td></td>
+    </tr>
+    <tr>
+    	<td>clickAndWait</td>
+    	<td>link=2</td>
+    	<td></td>
+    </tr>
+    <tr>
+    	<td>click</td>
+    	<td>link=interested?</td>
+    	<td></td>
+    </tr>
+    <tr>
+    	<td>pause</td>
+    	<td>3000</td>
+    	<td></td>
+    </tr>
+    <tr>
+    	<td>verifyTextPresent</td>
+    	<td>interested!</td>
+    	<td></td>
+    </tr>
+    <tr>
+    	<td>clickAndWait</td>
+    	<td>link=sign out</td>
+    	<td></td>
+    </tr>
+
+    </tbody></table>
+    </body>
+    </html>
+
+Seleniumテストを立ち上げる前に、テストデータを再初期化することを忘れないで下さい。(`batch/load_data.php`でコールします。)
+
+>**Note**: Seleniumが動作しないので、AJAXリンクをクリックした後に手動でポーズアクションを追加しなければなりませんでした。これがSeleniumでAJAXインタラクションをテスティングするための一般的なアドバイスです。
+
+あなたのアプリケーションにTest SuiteをビルドするためにHTMLのテストファイルを保存することができます。Firefoxエクステンションはあなたが記録したSeleniumテストを動作させることもできます。
+
+環境についていくつかの説明
+--------------------------
+
+ウェブテストはフロントコントローラを使わなければなりません。同様に特別な環境(すなわち設定)を使うことができます。symfonyはデフォルトですべてのアプリケーションのためのテスト環境を提供します。とりわけ、単体テストがあります。あなたのアプリケーションの`config/`ディレクトリに設定のカスタムセットを定義することができます。デフォルトの設定パラメータは次の通りです(`askeet/apps/frontend/config/settings.yml`から抽出したものです):
+
+    test:
+      .settings:
+        # E_ALL | E_STRICT & ~E_NOTICE = 2047
+        error_reporting:        2047
+        cache:                  off
+        stats:                  off
+        web_debug:              off
+
+cache、statsとweb_debugツールバーはオフに設定されています。しかしながら、コードの実行はまだログファイルにトレースされています。(`askeet/log/frontend_test.log`)特定のデータベースの接続設定を使用できます。例えばテストデートで他のデータベースを使用するためなどです。
+
+上で言及されたすべての外部URIが`frontend_test.php`を表示するのはそういうわけです。`test`フロントコントローラは特定されなければなりません。さもなければ、デフォルトの`index.php`プロダクションコントローラが使われます。そして、異なったデータベースを使用する、またはユニットテストのための個々のログを持つことはできません。
+
+>**Note**: ウェブテストはプロダクションにおいては立ち上がりません。これらは開発ツールで、そういうものとして、ホストサーバではなく開発者のコンピュータで動作しなければなりません。
+
+それではまた明日
+----------------
+
+symfonyで構築されたPHPアプリケーションをユニットテストする完璧なソリューションは存在しません。今日のそれぞれの3つのソリューションは大きなアドバンテージを持ちますが、広範囲におよぶユニットテストのアプローチがあったとしたら、おそらくそれら3つすべてが必要になるでしょう。 askeetに関しては、ユニットテストはSVNソースに少しづつ追加されます。 しばしば、チェックするか、アプリケーションの堅牢性を増やすためにあなた自身のものを提案してください。
+
+ユニットテストはリグレッションを避けるためにも使われます。 メソッドをリファクタリングすることは以前現れなかった新たなバグを作り出します。 プロダクションにおいてアプリケーションの新しいリリースをデプロイする前になぜすべてのユニットテストを実行するのかという理由です。このテストのことを[リグレッションテスト][12]と呼ばれます。 アプリケーションの開発を取り扱うときにおいて、もう少し話します。
+
+明日は...、明日は明日の風が吹きます。今日のチュートリアルについて質問がありましたら、[askeetフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)で質問して下さい。
+
+[1]: http://en.wikipedia.org/wiki/Unit_test                          "Unit test definition at Wikipedia"
+[2]: http://www.lastcraft.com/simple_test.php                        "Simple test"
+[3]: http://www.lastcraft.com/unit_test_documentation.php            "Simple test documentation"
+[4]: https://sourceforge.net/project/showfiles.php?group_id=76550    "Simple Test at SourceForge"
+[5]: http://www.lastcraft.com/web_tester_documentation.php           "Web test documentation"
+[6]: http://selenium.thoughtworks.com/                               "Selenium"
+[7]: http://seleniumrecorder.mozdev.org/                             "Selenium Recorder for Firefox"
+[8]: http://www.openqa.org/selenium/download.action                  "Download Selenium"
+[9]: http://en.wikipedia.org/wiki/Test_driven_development            "Test Driven Development definition at Wikipedia"
+[10]: http://en.wikipedia.org/wiki/Extreme_Programming               "eXtreme Programming definition at Wikipedia"
+[11]: http://junit.org                                               "JUnit"
+[12]: http://en.wikipedia.org/wiki/Regression_testing                "Regression testing definition at Wikipedia"

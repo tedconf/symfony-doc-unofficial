@@ -1,0 +1,213 @@
+symfony アドベントカレンダー 11日目: シンジケーションフィード
+=============================================================
+
+復習
+----
+
+askeetアプリケーションは(初期の)ベータの段階で立ち上げる準備ができています。 当然のことですが、中核的な機能(質問をする、回答を読む、新しい回答を投稿する)が構築されているので、多くのユーザを引き寄せるのかもしれません。 問題は継続的ユーザがaskeetのWebサイト上の最新イベントについてゆくのが難しいと思うことです。 労することなくユーザにフレッシュなニュースを提供する必要があります。そのためのメディアがあります: ニュースフィードです。 今日はaskeetにニュースフィードを追加しましょう。
+
+人気のある質問フィード
+----------------------
+
+### ヘッドでフィードへのリンク
+
+私達が欲しいのは`<head>`にあるグローバルレイアウトに挿入された人気のある質問の[RSS][1]フィードです。HTMLの結果は次のようになります:
+
+    [php]
+    <link rel="alternate" type="application/rss+xml" title="Popular questions on askeet" href="http://askeet/frontend_dev.php/feed/popular" />
+    
+これを行うためには、`layout.php`を開き、`<head>`に追加して下さい:
+
+    [php]
+    <?php echo auto_discovery_link_tag('rss', 'feed/popular') ?>
+
+これですべてです。`auto_discovery_link_tag`ヘルパ(オートロードされた`AssetHelper.php`ヘルパ)は`module/action`をルーティングルールに私ながらサイトのURIに変形します。
+
+### プラグインのインストール
+
+symfonyは大抵のフィード生成を自動化する`sfFeed`プラグインを提供します。インストールするためには、symfonyコマンドラインを使います。
+
+    $ symfony plugin-install http://plugins.symfony-project.com/sfFeedPlugin
+    $ symfony clear-cache
+    
+このコマンドは`askeet/lib/symfony/plugins/`ディレクトリにプラグインのクラスをインストールします。
+
+プラグインについて、どのようにフレームワークを拡張し、どのようにしてあなたがいくつかのプロジェクトを通して使うことが出来る機能をパッケージにすることができるのか、などのことをもう少し学びたいのでしたら、symfonyブックの[プラグインの章](http://www.symfony-project.com/book/1_0/17-Extending-Symfony)を読んで下さい。
+
+プロジェクトの`lib/`フォルダがプラグインのために変更されたので、キャッシュのクリアを忘れないで下さい。ところで、`plugin-install`コマンドで問題を経験しましたら、それはおそらくPEARでインストールしていないからです。
+
+`sfFeed`クラスについては後で話します。しかし、最初は少しの行のコードを書く必要があります。
+
+### アクションを作成する
+
+フィードは`feed`アクションの`popular`アクションを指し示します。作成するために次のコマンドを打って下さい:
+
+    $ symfony init-module frontend feed
+    
+それから`askeet/apps/frontend/modules/feed/actions/action.class.php`を編集し、次のメソッドを追加して下さい:
+
+    [php]
+    public function executePopular()
+    {
+      // 質問
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(QuestionPeer::INTERESTED_USERS);
+      $c->setLimit(sfConfig::get('app_feed_max'));
+      $questions = QuestionPeer::doSelectJoinUser($c);
+
+      $feed = sfFeed::newInstance('rss201rev2');
+
+      // チャンネル
+      $feed->setTitle('Popular questions on askeet');
+      $feed->setLink('@homepage');
+      $feed->setDescription('A list of the most popular questions asked on the askeet site, rated by the community.');
+
+      // 項目
+      $feed->setFeedItemsRouteName('@question');
+      $feed->setItems($questions);
+
+      $this->feed = $feed;
+    }
+
+それから`askeet/apps/frontend/modules/feed/actions/action.class.php`を編集し、次のメソッドを追加して下さい:
+
+    all:
+      feed:
+        max: 10
+
+### ビューの構成を変更する
+
+デフォルトでは、`feed/popular`アクションの結果はレイアウトによってデコレートされ、`text/html` content-typeを持ちますが、私達が欲しいのはそれではありません。そこで、`askeet/apps/frontend/modules/feed/config/`ディレクトリに含まれている`view.yml`を作成して下さい:
+
+    all:
+      has_layout: off
+      template:   feed
+    
+これはデコレータの動作を停止し、アクションが何であれ、アウトプットテンプレートを`feedSuccess.php`に強制します。
+
+### テンプレートを書く
+
+テンプレートがとてもシンプルで他のフィードに再利用が可能であるのはそういうわけです。このシンプルな`askeet/apps/frontend/modules/feed/templates/feedSuccess.php`テンプレートを書いてみて下さい:
+
+    [php]
+    <?php echo $feed->getFeed() ?>
+    
+### テストする
+
+キャッシュをクリアして(コンフィギュレーションが変更されたからです)、サイトのどのページもリフレッシュして、あなたの好きなウェブブラウザのフィードアイコンを通知して下さい。手動でリクエストしてフィードをチェックして下さい:
+
+    http://askeet/feed/popular
+
+結果は次の通りです:
+
+    [xml]
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <rss version="2.0">
+      <channel>
+      <title>Popular questions on askeet</title>
+      <link>http://askeet/frontend_dev.php/</link>
+      <description>A list of the most popular questions asked on the askeet site, rated by the community.</description>
+      <language>en</language>
+    <item>
+
+      <title>What can I offer to my step mother?</title>
+      <description>My stepmother has everything a stepmother is usually offered
+    (watch, vacuum cleaner, earrings, [del.icio.us](http://del.icio.us) account).
+    Her birthday comes next week, I am broke, and I know that
+    if I don't offer her something *sweet*, my girlfriend
+    won't look at me in the eyes for another month.</description>
+      <link>http://askeet/frontend_dev.php/question/what-can-i-offer-to-my-step-mother</link>
+      <guid>11</guid>
+      <pubDate>Sat, 10 Dec 2005 09:44:11 +0100</pubDate>
+    </item>
+    <item>
+
+      <title>What shall I do tonight with my girlfriend?</title>
+      <description>We shall meet in front of the __Dunkin'Donuts__ before dinner,
+    and I haven't the slightest idea of what I can do with her.
+    She's not interested in _programming_, _space opera movies_ nor _insects_.
+    She's kinda cute, so I __really__ need to find something
+    that will keep her to my side for another evening.</description>
+      <link>http://askeet/frontend_dev.php/question/what-shall-i-do-tonight-with-my-girlfriend</link>
+      <guid>10</guid>
+      <author>fp@example.com (Fabien Potencier)</author>
+      <pubDate>Sat, 10 Dec 2005 09:44:11 +0100</pubDate>
+
+    </item>
+    <item>
+      <title>How can I generate traffic to my blog?</title>
+      <description>I have a very swell blog that talks
+    about my class and mates and pets and favorite movies.</description>
+      <link>http://askeet/frontend_dev.php/question/how-can-i-generate-traffic-to-my-blog</link>
+      <guid>12</guid>
+      <author>fz@example.com (François Zaninotto)</author>
+
+      <pubDate>Sat, 10 Dec 2005 09:44:12 +0100</pubDate>
+    </item>
+      </channel>
+    </rss>
+
+速いですか？
+
+マジック
+--------
+
+あなたはこう言うかもしれません: symfonyはどのようにして質問の著者、彼または彼女のEメールを見つけ、どのようにしてsymfonyは質問の詳細へのURIについて推測するのですかと？回答はこの通りです。マジックです。
+
+マジックを信じないのでしたら、カーテンを越えて、`sfFeed`クラスに会って下さい。このクラスはパラメータとして`->setItems()`メソッドに渡されたオブジェクトのメソッドの名前を解釈します。`Question`オブジェクトは`getUser()`メソッドを持ち、質問の著者を見つけるのに使用されます。`User`オブジェクトは`->getEmail()`メソッドは持っているので、これは著者のEメールを判断することにも使用されます。-`>setFeedItemsRouteName()`メソッドに渡されたルール名は次の通りです：
+
+    question:
+      url:   /question/:stripped_title
+      param: { module: question, action: show }
+ 
+`stripped_title`パラメータを含みますので、`Quesiton`オブジェクトの`->getStrippedTitle()`メソッドは質問URIを判定するのにコールされます。
+
+getterメソッドのネームは意味をなすので、すべてが発生します - `sfFeed`クラスはそのようにデザインされたオブジェクトを理解するからです。このクラスの推定メカニズムがどのようにして求めるのかはsymfonyブックの[フィードの章](http://www.symfony-project.com/cookbook/1_0/syndication)に詳細が記述されています。例えば、`->getEmail()`メソッドがオブジェクトのために存在したとしても、Eメールアドレスを伴わないフィードです。
+
+>**Note**: フィードのビューはXML content-typeを持ちますので、symfonyはそれにウェブデバッグツールバーに追加するほど賢くありません。(さもなければXMLはもはやバリッドではなくなるでしょう) ウェブデバッグツールバーを手動で無効にする必要がある場合、常に次のコードを呼ぶことが出来ます:
+>
+>        sfConfig::set('sf_web_debug', false);
+>
+>(symfonyブックの[デバッグの章](http://www.symfony-project.com/book/1_0/16-Application-Management-Tools)でウェブデバッグツールバーについてより多くの情報を見つけることができます。)
+
+インタフェースの改善
+----------------------
+
+### ルーティング
+
+フィードのURLはいつものものと重要です。`routing.yml`に次のコードを付加して下さい:
+
+    # フィード
+    feed_popular_questions:
+      url:   /feed/popular
+      param: { module: feed, action: popular }
+
+### RSSイメージ
+
+リストへのリンクが一致するフィールドを持つときはいつでも、RSSへのリンクと一緒に素晴らしいRSSアイコンが表示されます。少しの時間しかかからないので、`GlobalHelper.php`の`link_to_feed()`関数を作成して下さい:
+
+    [php]
+    function link_to_feed($name, $uri)
+  	{
+  	  return link_to(image_tag('feed.gif', array('alt' => $name, 'title' => $name, 'align' => 'absmiddle')), $uri);
+  	}
+
+SVNリポジトリで`feed.gif`イメージを見つけることができます。
+
+`modules/sidebar/templates/defaultSuccess.php`を次のように編集して下さい:
+
+    [php]
+    <li><?php echo link_to('popular questions', '@popular_questions') ?> <?php echo link_to_feed('popular questions', '@feed_popular_questions') ?></li>
+
+それではまた明日
+----------------
+
+このチュートリアルは最後の一時間の予定で、15分しか過ぎていませんでした。 困りませんでしたか？アジャイルプログラミングのレッスンの他のものです。 あなたの問題に対して、とてもシンプルなソリューションを見つけたら、おそらくはそれは正しいものです。既に動作しているのであれば、機能を開発するのに多くの時間をかける必要はありません。今や、15分でセットアップしてテストとRSSフィードを立ち上げることができることを知っています。要するにsymfonyは無精な人のためのプロフェッショナルなWebツールを提供しますので、今日は自由な時間をエンジョイして、コンピュータから離れましょう。
+
+symfonyの素材が欲しいのでしたら、最新の質問、一般での最新の回答と、特別領域での質問への最新の回答などのために新しいフィードを作ってみて下さい。15分以上はかかりませんので、`release_day_11`とタグ付けされた[askeet SVNリポジトリ](http://svn.askeet.com/tags/release_day_11/)からフルコードをダウンロードしてよくできたかチェックする時間があります。隠された困難は1つしかありません - 最新のコメントのフィードのために使用されるルーティングルールに注意を払って下さい。
+
+まだ時間が残っているのでしたら、[askeetフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)に行って、語って下さい。
+
+明日、symfonyでEメールを送ります。アクセスコードを忘れるユーザがいるからです。それまではぐっすりお休みして下さい。
+
+[1]: http://blogs.law.harvard.edu/tech/rss  "RSS 2.01 specifications"

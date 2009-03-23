@@ -1,0 +1,290 @@
+symfony アドベントカレンダー 22日目: 本番環境への移転
+=====================================================
+
+復習
+----
+
+昨日はaskeetにバックオフィスを追加しました。 アプリケーションを実際に動作させてインターネットにリリースする準備がすべて整いました。(ところで、既にオンラインに'''ある'''なら、まだやったことがないのでしたら、[www.askeet.com](http://www.askeet.com)にブラウザでアクセスしてみて下さい。) あなたのコンピュータ上でaskeetを開発し、インターネットに接続され、おそらくは開発マシンと異なったサーバでホストするので、二つのサーバの同期化に関連するテクニックに焦点を当てるパーフェクトな瞬間が来ました。
+
+同期化
+------
+
+### グッドプラクティス
+
+ウェブサイトのための2つの環境を同期させる方法はたくさんあります。[FTP](http://en.wikipedia.org/wiki/Ftp)接続によってベーシックファイルの転送はアーカイブされます。 しかし、この解決方法に２つの大きな欠点があります。第一に、セキュアではなく、データストリームは平文でインターネットに転送され、インターセプトされる可能性があります。第二に、FTPによるrootプロジェクトディレクトリを送信することは最初の移転でかまいませんが、よいことでも速い方法でもありません。アップロードに時間がかかる全体のプロジェクトを再び転送します、もしくはおなじファイルが変更されたことを知っているディレクトリを見ることになります。異なった修正データのみを転送します。これでは長時間の仕事になり、エラーになってしまいます。加えて、転送時間の間、ウェブサイトは利用できなくなる、動作がおかしくなることもありえます。
+
+symfonyによってサポートされた解決方法は**SSH**レイヤを通した**rsync**同期化です。
+
+[rsync](http://samba.anu.edu.au/rsync/)は速いインクリメンタルファイル転送を提供するコマンドラインユーティリティでオープンソースです。 'incremental 'によって、修正データのみが転送されます。ファイルが変更されなかった場合、ホストに送りません。ファイルが部分的のみ変更された場合、差分のみが送られます。主要な利点はrsync同期化は少量のデータしか転送しないことととても速いことです。
+
+symfonyはデータ転送をセキュアにするrsyncのトップに[SSH](http://en.wikipedia.org/wiki/Secure_Shell)を追加します。より多くの商用ホストがファイルアップロードをセキュアにするためにSSHトンネルをサポートしています。これはsymfonyが推奨しているグッドプラクティスです。
+
+rsyncとSSHをLinuxにインストールするために、関連したウェブサイトのインストラクションを読んで下さい。Windowsユーザのためには[cwRsync](http://www.itefix.no/phpws/index.php?module=pagemaster&PAGE_user_op=view_page&PAGE_id=6&MMN_position=23:23)と呼ばれる代替のオープンソースがあり、手動でバイナリをインストールを試すことが出来ます。(インストラクションも[そこ](http://optics.ph.unimelb.edu.au/help/rsync/rsync_pc1.html)で見つかります。)もちろん、統合サーバとホストサーバの間のSSHトンネルをセットアップするためにはSSHサービスがインストールされ、両方のコンピュータで動いていなければなりません。
+
+### symfony syncコマンド
+
+SSHを通したrsyncを行うことはいくつかのコマンドが必要で、同期化はアプリケーションに寿命において多くの時間を占めます。幸運にもsymfonyはこのプロセスを一つのコマンドで自動化します:
+
+    $ symfony sync production
+
+このコマンドは、symfonyプロジェクトのrootディレクトリから呼び出され、`production`でホストされたサーバでプロジェクトコードの同期化を立ち上げます。このサーバの詳細な接続はプロジェクトの`properties.ini`に書かれ、`askeet/config/`に書かれています:
+
+    [symfony]
+      name=askeet
+    
+    [production]
+      host=myaskeetprodserver.com
+      port=22
+      user=myuser
+      dir=/home/myaccount/askeet/
+
+この接続設定はsymfony `sync`コマンドラインに含まれるSSHクライアントコールによって使用されます。
+
+上記のようなsymfony syncをコールする場合、rsyncユーティリティはデフォルトでdryモード(`--dry-run`)で動作します。すなわち、*実際に同期化させることなく*、どのファイルが同期化されるべきなのかを表示します。同期化が行われることを望む場合、明示的に示さなければなりません:
+
+    $ symfony sync production go
+
+### 無関係なファイルを無視する
+
+本番ホストでsymfonyプロジェクトを同期化する場合、転送すべきでないいくつかのファイルとディレクトリがあります:
+
+* すべての`.svn`ディレクトリとそれの内容です: これはソースバージョンコントロール情報を含みます。開発と統合のためにのみ必要です
+* `askeet/web/fronted_dev.php`を開発統合するためだけに必要です: 開発環境のためのウェブフロントコントローラはファイナルユーザに利用可能ではあってはいけません。デバッギングとロギングツールはフロントコントローラを通してアプリケーションを使用していることがアプリケーションの動作を遅くするときに利用可能で、アクションのコア変数についての情報を与えます。ホストサーバでオフにしておくものがあります。
+* あなたが同期化を行うたびにプロジェクトの`cache/`ディレクトリと`log/`ディレクトリはホストサーバによって削除されてはいけません。これらのディレクトリは同様に無視されるべきです。`stats/`ディレクトリがありましたら、おそらくは同じように取り扱われます。
+* ユーザによってアップロードされたファイルについて。symfonyプロジェクトのグッドプラクティスの1つはアップロードされたファイルを`web/uploads/`ディレクトリに蓄積することです。このことによって一つのディレクトリを指定することですべてのこれらのファイルを除外することができます。
+
+rsync同期化からファイルを無視するためには、`askeet/config/`ディレクトリ下にある`rsync_exclude.txt`ファイルを開き編集してください。それぞれのラインはファイル、ディレクトリ、パターンを含みます:
+
+    .svn
+    web/frontend_dev.php
+    cache
+    log
+    stats
+    web/uploads
+
+symfonyのファイル構造のおかげで、同期化から手動で除外すべき多すぎるファイルやディレクトリの多くをもちません。symfonyプロジェクトにおいて、ファイルの組織化についてもっと学びたいのであれば、symfonyの[ファイル構造の章](http://www.symfony-project.com/book/1_0/04-The-Basics-of-Page-Creation) を読んで下さい。
+
+>**Note**: `cache/`と`log/`ディレクトリは開発環境と同期化されてはなりません。しかし、少なくとも、プロダクションサーバには存在すべきです。askeetプロジェクトの木構造がそれらを含んでいない場合は手動で作成して下さい。
+
+本番サーバの構成
+------------------
+
+本番サーバであなたのプロジェクトを動作させるために、symfonyフレームワークはホストにインストールされなければなりません。
+
+### 本番サーバにsymfonyをインストールする
+
+symfonyをサーバにインストールするための方法はいくつかありますが、本番環境にすべて採用されません。例えば、PEARインストールはディレクトリに管理者権限を必要で、シェアサーバを利用している場合は利用できません。
+
+プロダクションウェブサーバにおいてsymfonyを使用したおそらくはいくつかのプロジェクトをホストするという原則に基づけば、symfonyの推奨インストール方法は特別なディレクトリにフレームワークを展開することです。本番サーバにおいて`lib/`と`data/`ディレクトリだけが必要なので、他のファイルを除去することができます。(rootディレクトリからの`bin/`、`doc/`、`test/`とファイル)。
+
+ファイル構造を次のように終わらせる必要があります:
+
+    /home/myaccount/    
+      symfony/
+        lib/
+        data/
+      askeet/
+        apps/
+          frontend/
+        batch/
+        cache/
+        config/
+        data/
+        doc/
+        lib/
+        log/
+        test/
+        web/
+        
+symfonyのクラスを使用するaskeetプロジェクトのために、アプリケーションの`lib/symfony`と`data/symfony`間と`symfony`インストールの関連ディレクトリにシンボリックリンクをセットアップしなければなりません:
+
+    $ cd /home/myaccount/askeet
+    $ ln -sf /home/myaccount/symfony/lib lib/symfony
+    $ ln -sf /home/myaccount/symfony/data data/symfony
+
+代替方法として、コマンドラインアクセスを持っていなかったら、フレームワークのファイルをプロジェクトの`lib/`と`data/`ディレクトリにコピーされることができます:
+
+    copy /home/myaccount/symfony/lib/*   into /home/myaccount/askeet/lib/symfony
+    copy /home/myaccount/symfony/data/*  into /home/myaccount/askeet/data/symfony
+    
+この場合、フレームワークを更新するたびに、あなたはすべてのプロジェクトでもしなければならないことに気を付けて下さい。
+
+もっと詳しい情報は、symfonyをインストールするすべての方法はsymfonyブックの[インストールの章](http://www.symfony-project.com/book/1_0/02-Exploring-Symfony-s-Code)に記述されています。
+
+### 本番環境でsymfonyコマンドにアクセスする
+
+開発をしている間によい習慣を身につけましょう:
+
+    $ symfony clear-cache
+
+...構成もしくはプロジェクトのオブジェクトモデルを変更するたびにです。プロダクションのプロジェクトの新しいバージョンをアップロードしたとき、アプリケーションを動作させることを望むのであれば、キャッシュがクリアされることも必要です。`askeet/cache/`ディレクトリの全内容を削除をすることで簡単に行うことが出来ます。(FTPもしくはSSHコンソールで)代替的には、少し長い時間のインストールを代償にsymfonyのコマンドラインの力を使うことが出来ます。
+
+コマンドラインを利用するためには[pakeユーティリティ](http://www.pake-project.org)をインストールする必要があります。Pakeはmakeコマンドと似たPHP製のツールです。`pakefile.php`と呼ばれる特別な構成ファイルによって管理者タスクを自動化します。symfonyコマンドラインはpakeユーティリティを使用し、あなたが`symfony`を入力するたびに`symfony/bin/`ディレクトリに設置された特別な`pakefile.php`で実際に`pake`をコールします。(pakeについての詳しい情報はsymfonyブックの[プロジェクト作成](http://www.symfony-project.com/book/1_0/03-Running-Symfony)にあります。)PEARを通してsymfonyをインストールする場合、pakeは構成物としてインストールされます。通常はまったく見ないことはありませんし、次に何が来るのかについて悩む必要がありません。しかし、手動でインストールを行った場合、プロダクションサーバのあなたのディレクトリにpakeディレクトリに展開しなければなりません。(symfonyをPEARインストールで入手、もしくはpakeのサイトから[ダウンロード](http://www.pake-project.org/download.html)します)symfonyのライブラリと同じように、symfonyがpakeを使用できるようにシンボリックリンクも追加しなければなりません:
+
+    $ ln -sf /home/myaccount/pake/lib lib/pake
+
+次のようなコードで終わらなければなりません:
+
+    /home/myaccount/
+      pake/
+        lib/
+      symfony/
+        lib/
+        data/
+      askeet/
+        apps/
+          frontend/
+        batch/
+        cache/
+        config/
+        data/
+          symfony/ -> /home/myaccount/symfony/data
+        doc/
+        lib/
+          symfony/ -> /home/myaccount/symfony/lib
+          pake     -> /home/myaccount/pake/data
+        log/
+        test/
+        web/
+
+clear-cacheを行うsymfonyコマンドをコールするために、次のことが必要です:
+
+    $ cd /home/myaccount/askeet/
+    $ php lib/pake/bin/pake.php -f lib/symfony/data/symfony/bin/pakefile.php clear-cache
+
+代替的に、`home/myaccount/askeet/`に`symfony`にコールされるファイルを作成することができます:
+
+    #!/bin/sh
+    
+    php lib/pake/bin/pake.php -f lib/symfony/data/symfony/bin/pakefile.php $@
+
+それからあなたがキャッシュをクリアするために必要なことは前と同じです
+
+    $ symfony clear-cache
+
+### Webコマンド
+
+コマンドラインのアクセス無しでpakeユーティリティのパワーが欲しいときは、`clear-cache`コマンドのためのウェブアクセスを作成することもできます。
+
+例えば、`webpake.php`を次の`/home/myaccount/askeet/web/`ディレクトリに保存します:
+
+    [php]
+    <?php
+    
+    // web/ディレクトリにいるので、プロジェクトのrootにたどり着くために1つの上のレベルに上がる必要がある
+    chdir(dirname(__FILE__).DIRECTORY_SEPARATOR.'..');
+    
+    include_once('/lib/symfony/pake/bin/pake.php');
+    
+    $pake = pakeApp::get_instance();
+    try
+    {
+      $ret = $pake->run('/data/symfony/bin/pakefile.php', 'clear-cache');
+    }
+    catch (pakeException $e)
+    {
+      print "<strong>ERROR</strong>: ".$e->getMessage();
+    }
+    
+    ?>
+
+それからナビゲーションによって、キャッシュをクリアすることができます:
+
+    http://myaskeetprodserver.com/webpake.php
+    
+>**Note**: 管理者ツールへのウェブアクセスを許可することで、あなたのウェブサイトのセキュリティを妥協することができることを注意して下さい。
+
+アプリケーションをアップグレードする
+------------------------------------
+
+アプリケーションの２つのバージョンを切り替える必要があるとき、あなたのプロジェクト期間において時間があります。バグを訂正するため、もしくは新しい機能をアップロードするためです。データベースの２つのバージョンの切り替え問題に直面することもあり得ます。グッドプラクティスに従えば、これらのアクションは簡単で無害なことがわかります。
+
+### 利用不可能のお知らせをする
+
+データ転送とキャッシュをクリアする瞬間の間(設定もしくはデータモデルを修正)、ときに数秒以上の遅延があります。その瞬間、サイトを見ようとするユーザに利用できないことを通知することを計画しなければなりません。
+
+アプリケーションの`setttings.yml`において、`unavailable_module`と`unavailable_action`の設定を定義して下さい:
+
+    all:
+      .settings:
+        unavailable_module:     content
+        unavailable_action:     unavailable
+
+空の`content/unavailable`アクションと`unavailableSuccess.php`テンプレートを作成して下さい:
+
+    [php]
+    // askeet/apps/frontend/modules/content/actions/actions.class.php
+    public function executeUnavailable()
+    {
+      $this->setTitle('askeet! &raquo; maintenance');
+    }
+
+    // askeet/apps/frontend/modules/content/templates/unavailableSuccess.php
+    <h1>Askeet: Site maintenance</h1>
+    
+    <p>askeetのウェブサイトは現在更新されている最中です。</p>
+    
+    <p>数分後に再度アクセスして頂けるようお願いします。</p>
+    
+    <p><i>askeet開発チーム</i></p>
+
+アプリケーションが利用不可能にすることを望むたびに、`available`設定を変更して下さい:
+
+    all:
+
+      .settings:
+    
+        available:              off
+
+設定ファイルの変更のために、あなたがキャッシュをクリアすることが必要なプロダクションを考慮にいれることを忘れないで下さい。
+
+>**Note**: 全体のアプリケーションが1つのパラメータによってオフにされるという事実はおそらくsymfonyアプリケーションが単独のエントリーポイント、フロントウェブコントローラを使用するからです。symfonyブックの[コントローラの章](http://www.symfony-project.com/book/1_0/06-Inside-the-Controller-Layer)についてもっと詳しい情報があります。
+
+### アプリケーションの2つのバージョンを使う
+
+利用不可能を避けるためのよい方法はシンボリックリンクとしてプロジェクトのrootフォルダを設定することです。例えば、現在、あなたがアプリケーションのバージョン123を使用していて、バージョン134に切り替えたいということを想像して下さい。ウェブサーバが`/home/myaccount/askeet/web/`に設定され、次のようなプロダクションフォルダの場合です:
+
+    /home/myaccount/
+      pake/
+        lib/      
+      symfony/
+        lib/
+        data/
+      askeet/     -> /home/production/askeet.123/
+      askeet.123/
+      askeet.134/
+
+それから、シンボリックリンクを変更することで２つのバージョンを即座に切り替えることができます:
+
+    $ ln -sf /home/myaccount/askeet/ /home/myaccount/askeet.134/
+
+ユーザが中断を見ることなく、まだシンボリックの変更のあとに使われたすべてのファイルが新しいリリースのものです。加えて、リリース134の`cache/`フォルダを空にした場合、アプリケーションを切り替えしたあとにclear-cacheを立ち上げる必要がありません。
+
+### データベースを切り替える
+
+データベースを切り替えるテクニックを推定することができます。アプリケーションによって使用されているデータベースのアドレスは`databases.yml`設定ファイルに定義されます。新しい名前でデータベースのコピーを作成する場合、例えば`askeet.134`は`askeet.134/apps/frontend/config/databases.yml`を書くことが必要です:
+
+    all:
+      propel:
+        class:          sfPropelDatabase
+        param:
+          phptype:      mysql
+          hostspec:     localhost
+          database:     askeet.134
+          username:     myuser
+          password:     mypassword
+          compat_assoc_lower:  true
+          compat_rtrim_string: true
+
+`databases.yml`はアプリケーション自身によって同時に切り替えられ、あなたのaskeetは即座に新しいデータベースへのクエリを始めます。
+ 
+アプリケーションが大きなトラフィックを持っていて、あなたがサービスの中断をする余裕がない場合、このテクニックはとりわけ有効です。
+
+それではまた明日
+----------------
+
+同期化はハイトラフィックなウェブサイトではしばし大きな問題です。しかし、symfonyプロジェクトのファイル構造のおかげで、askeetには大きな問題は作られないでしょう。
+
+明日は、askeetに他の言語を採用する方法を方法について話します。 気の長い人は*internationalization(国際化)*と呼び、他の人は*i18n*と略して言います。 symfonyは多言語サイトのためのサポートが組み込まれており、大きな問題ではないです。
+
+[askeetフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)に質問と提案を投稿することができます。 それで真新しい[askeetウェブサイト](http://www.askeet.com)で頼むことができましたか？
