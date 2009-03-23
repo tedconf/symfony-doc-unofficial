@@ -1,0 +1,954 @@
+10日目: フォーム
+================
+
+Jobeetの2週目はsymfonyのテストフレームワークの導入で好調な滑り出しを始めました。
+今日はフォームフレームワークに焦点を当てます。
+
+フォームフレームワーク
+----------------------
+
+どのウェブサイトも~フォーム~; シンプルな連絡フォームからたくさんのフィールドを持つ複雑なもの
+を持ちます。ウェブ開発者にとってフォームを書く作業は最も複雑なことの1つで退屈なタスクです: 
+HTMLフォームを書き、それぞれのフィールド用のバリデーションルールを実装し、
+データベースに保存する値を処理し、エラーメッセージを表示し、
+エラーの場合フィールドを再投入することなどが必要です。
+
+もちろん、何度も車輪の再発明をする代わりに、
+symfonyはフォームの管理を簡単にするフレームワークを提供します。
+フォームフレームワークは3つの部分で構成されます:
+
+  * **~バリデーション~**: バリデーションサブフレームワークは入力(整数、文字列、Eメールアドレス・・・)
+                          をバリデートするクラスを提供します。
+  * **~ウィジェット~**:   ウィジェットサブフレームワークはHTMLフィールド(入力、テキストエリア、選択・・・)
+                          を出力するクラスを提供します。
+  * **フォーム**:         フォームクラスはウィジェットとバリデータで構成されるフォームを表し
+                          フォームの管理を手助けするメソッドを提供します。
+                          それぞれのフォームフィールドは独自のバリデータとウィジェットを持ちます。
+
+フォーム
+--------
+
+symfonyのフォームはフィールドから構成されるクラスです。
+それぞれのフィールドは名前、~バリデータ~と~ウィジェット~を持ちます。シンプルな`ContactForm`は次のクラスで定義できます:
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'email'   => new sfWidgetFormInput(),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+
+        $this->setValidators(array(
+          'email'   => new sfValidatorEmail(),
+          'message' => new sfValidatorString(array('max_length' => 255)),
+        ));
+      }
+    }
+
+`setValidators()`と`setWidgets()`メソッドを使うことで
+フォームフィールドは`configure()`メソッドで定義されます。
+
+>**TIP**
+>フォームフレームワークは
+>[ウィジェット](http://www.symfony-project.org/api/1_2/widget)と
+>[バリデータ](http://www.symfony-project.org/api/1_2/validator)が
+>が搭載されています。
+>APIはすべてのオプション、エラー、とデフォルトエラーメッセージなどを
+>広範囲にわたって説明をしています。
+
+ウィジェットとバリデータクラスの名前はきわめて明確です: 
+`email`フィールドはHTMLの`<input>`タグとしてレンダリングされ(`sfWidgetFormInput`)、
+Eメールアドレスとしてバリデートされます(`sfValidatorEmail`)。
+`message`フィールドは`<textarea>`タグとしてレンダリングされ(`sfWidgetFormTextarea`)、
+255文字以下の文字列でなければなりません(`sfValidatorString`).
+`required`オプションに対するデフォルトの値は`true`なので、デフォルトではすべてのフィールドは~必須~です。
+ですので、`email`用のバリデーションの定義は
+`new sfValidatorEmail(array('required' => true))`と同等です。
+
+>**TIP**
+>`mergeForm()`メソッドを利用してフォームを別のフォームにマージする
+>もしくは`embedForm()`メソッドを利用して埋め込みできます:
+>
+>     [php]
+>     $this->mergeForm(new AnotherForm());
+>     $this->embedForm('name', new AnotherForm());
+
+##ORM## フォーム
+----------------
+
+大抵の場合、データベースに保存するためにフォームをシリアライズしなければなりません。
+symfonyは既にデータベースモデルに関するすべての内容を知っているので、
+この情報に基づいて生成フォームを自動的に生成できます。
+実際、3日目の間に`propel:build-all`タスクを起動したとき、
+symfonyは自動的に`propel:build-forms`タスクを呼び出しました:
+
+    $ php symfony propel:build-forms
+
+`propel:build-forms`タスクは`lib/form/`ディレクトリにフォームクラスを生成します。
+これらの生成ファイルの編成は`lib/model/`のものと似ています。
+それぞれのモデルクラスは関連するフォームクラスを持ちます
+(例えば`JobeetJob`は`JobeetJobForm`を持つ)。
+これは基底クラスから継承するのでデフォルトは空です:
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+      }
+    }
+
+<propel>
+>**TIP**
+>`lib/form/base/`サブディレクトリの元で生成ファイルを眺めると、
+>symfony組み込みのウィジェットとバリデータの素晴らしい使い方の例が
+>たくさん見つかります。
+</propel>
+<doctrine>
+>**TIP**
+>`lib/form/doctrine/base/`サブディレクトリの元で生成ファイルを眺めると、
+>symfony組み込みのウィジェットとバリデータの素晴らしい使い方の例が
+>たくさん見つかります。
+</doctrine>
+
+### 求人フォームをカスタマイズする
+
+求人フォームは~フォームのカスタマイズ~を学ぶための完璧な例です。
+段階的にカスタマイズする方法を見てみましょう。
+
+最初、ブラウザで直接変更をチェックできるように
+レイアウトの"Post a Job"リンクを変更します:
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <a href="<?php echo url_for('@job_new') ?>">Post a Job</a>
+
+デフォルトでは、 ##ORM## フォームはすべてのテーブルカラム用のフォールドを表示します。
+求人フォームに関して、これらの中にはエンドユーザーが編集してはならないものがあります。
+フォームからフィールドを削除するにはこれらの設定を解除するだけです:
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['expires_at'], $this['is_activated']
+        );
+      }
+    }
+
+フィールドの設定を解除することはフィールドウィジェットとバリデータの両方が削除されることを意味します。
+
+時にフォームの設定はデータベーススキーマからイントロスペクトできる内容より
+正確でなければならないことがあります。
+例えば、`email`カラムはスキーマの`varchar`ですが、このカラムをEメールとしてバリデートする必要があります。
+デフォルトの`sfValidatorString`を`sfValidatorEmail`に変更してみましょう:
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    public function configure()
+    {
+      // ...
+
+      $this->validatorSchema['email'] = new sfValidatorEmail();
+    }
+
+`type`カラムがスキーマの`varchar`でもある場合、
+値を選択リスト: フルタイム、パートタイム、もしくはフリーランスに制限することを考えます
+
+<propel>
+最初に、`JobeetJobPeer`で利用可能な値を定義してみましょう:
+
+    [php]
+    // lib/model/JobeetJobPeer.php
+    class JobeetJobPeer extends BaseJobeetJobPeer
+    {
+      static public $types = array(
+        'full-time' => 'Full time',
+        'part-time' => 'Part time',
+        'freelance' => 'Freelance',
+      );
+
+      // ...
+    }
+</propel>
+<doctrine>
+最初に、`JobeetJobTable`で利用可能な値を定義しましょう:
+
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      static public $types = array(
+        'full-time' => 'Full time',
+        'part-time' => 'Part time',
+        'freelance' => 'Freelance',
+      );
+
+      public function getTypes()
+      {
+        return self::$types;
+      }
+
+      // ...
+    }
+</doctrine>
+
+`type`ウィジェットに対して`sfWidgetFormChoice`を使います:
+
+    [php]
+    $this->widgetSchema['type'] = new sfWidgetFormChoice(array(
+<propel>
+      'choices'  => JobeetJobPeer::$types,
+</propel>
+<doctrine>
+      'choices'  => Doctrine::getTable('JobeetJob')->getTypes(),
+</doctrine>
+      'expanded' => true,
+    ));
+
+`sfWidgetFormChoice`は
+異なるウィジェット設定オプション(`expanded`と`multiple`)でレンダリングできる
+~選択ウィジェット~を表します:
+
+ * ドロップダウンリスト(`<select>`): `array('multiple' => false, 'expanded' => false)`
+ * ドロップダウンボックス(`<select multiple="multiple">`): `array('multiple' => true, 'expanded' => false)`
+ * ラジオボタンのリスト: `array('multiple' => false, 'expanded' => true)`
+ * チェックボックスのリスト: `array('multiple' => true, 'expanded' => true)`
+
+>**NOTE**
+>If you want one of the ~ラジオボタン~ to be selected by default (例えば`full-time`
+>), データベーススキーマのデフォルト値を変更できます。
+
+有効ではない値を誰も投稿できないと考えるとしても、
+ハッカーは[curl](http://curl.haxx.se/)もしくは
+[Firefox Web Developer Toolbar](http://chrispederick.com/work/web-developer/)のようなツールを利用してウィジェットの選択を簡単に回避できます。
+利用可能な選択を制限するためにバリデータを変更しましょう:
+
+<propel>
+    [php]
+    $this->validatorSchema['type'] = new sfValidatorChoice(array(
+      'choices' => array_keys(JobeetJobPeer::$types),
+    ));
+</propel>
+<doctrine>
+    [php]
+    $this->validatorSchema['type'] = new sfValidatorChoice(array(
+      'choices' => array_keys(Doctrine::getTable('JobeetJob')->getTypes()),
+    ));
+</doctrine>
+
+`logo`カラムは求人に関連したロゴのファイル名を保存するので、
+ウィジェットを~ファイル入力~タグに変更する必要があります:
+
+    [php]
+    $this->widgetSchema['logo'] = new sfWidgetFormInputFile(array(
+      'label' => 'Company logo',
+    ));
+
+それぞれのフィールドに対して、symfonyは~ラベル~ (レンダリングされた`<label>`タグに使われる)
+を自動的に生成します。これは`label`オプションで変更できます。
+
+ウィジェット配列の`setLabels()`メソッドで
+バッチのラベルを変更することもできます:
+
+    [php]
+    $this->widgetSchema->setLabels(array(
+      'category_id'    => 'Category',
+      'is_public'      => 'Public?',
+      'how_to_apply'   => 'How to apply?',
+    ));
+
+デフォルトのバリデータを変更する必要もあります:
+
+    [php]
+    $this->validatorSchema['logo'] = new sfValidatorFile(array(
+      'required'   => false,
+      'path'       => sfConfig::get('sf_upload_dir').'/jobs',
+      'mime_types' => 'web_images',
+    ));
+
+`sfValidatorFile`はたくさんのことをこなすのでとても面白いです:
+
+ * アップロードされたファイルがウェブフォーマットであることをバリデートする(`mime_types`)
+ * ファイルをユニークな名前にリネームする
+ * Stores the file in the given `path`
+ * 生成された名前で`logo`カラムを更新する
+
+>**NOTE**
+>ロゴのディレクトリ(`web/uploads/jobs/`)を作り
+>ウェブサーバーによって書き込み可能であることをチェックします。
+
+バリデータはデータベースで相対パスを保存するので、
+`showSuccess`テンプレートで使われているパスを変更します:
+
+    [php]
+    // apps/frontend/modules/job/templates/showSuccess.php
+    <img src="/uploads/jobs/<?php echo $job->getLogo() ?>" alt="<?php echo $job->getCompany() ?> logo" />
+
+>**TIP**
+>`generateLogoFilename()`メソッドはモデルの中に存在するので、
+>バリデータによって呼び出され結果はデフォルトの生成された`logo`ファイルの名前を上書きします。
+>メソッドは`sfValidatedFile`オブジェクトに引数として渡されます。
+
+フィールドの生成ラベルを上書きできるように、
+~ヘルプメッセージ~も定義できます。
+よりわかりやすく重要性を説明するために`is_public`カラムに追加してみましょう:
+
+    [php]
+    $this->widgetSchema->setHelp('is_public', 'Whether the job can also be published on affiliate websites or not.');
+
+最後の`JobeetJobForm`クラスは次のように読みます:
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['expires_at'], $this['is_activated']
+        );
+
+        $this->validatorSchema['email'] = new sfValidatorEmail();
+
+        $this->widgetSchema['type'] = new sfWidgetFormChoice(array(
+<propel>
+          'choices' => JobeetJobPeer::$types,
+</propel>
+<doctrine>
+          'choices'  => Doctrine::getTable('JobeetJob')->getTypes(),
+</doctrine>
+          'expanded' => true,
+        ));
+        $this->validatorSchema['type'] = new sfValidatorChoice(array(
+<propel>
+          'choices' => array_keys(JobeetJobPeer::$types),
+</propel>
+<doctrine>
+          'choices' => array_keys(Doctrine::getTable('JobeetJob')->getTypes()),
+</doctrine>
+        ));
+
+        $this->widgetSchema['logo'] = new sfWidgetFormInputFile(array(
+          'label' => 'Company logo',
+        ));
+
+        $this->widgetSchema->setLabels(array(
+          'category_id'    => 'Category',
+          'is_public'      => 'Public?',
+          'how_to_apply'   => 'How to apply?',
+        ));
+
+        $this->validatorSchema['logo'] = new sfValidatorFile(array(
+          'required'   => false,
+          'path'       => sfConfig::get('sf_upload_dir').'/jobs',
+          'mime_types' => 'web_images',
+        ));
+
+        $this->widgetSchema->setHelp('is_public', 'Whether the job can also be published on affiliate websites or not.');
+      }
+    }
+
+### フォームのテンプレート
+
+フォームがカスタマイズされたので、表示する必要があります。
+フォーム用の~テンプレート~は新しい求人を作るもしくは既存のものを作りたい場合は同じです。
+実際、`newSuccess.php`と`editSuccess.php`テンプレートの両方は
+とても似通っています:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/newSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
+
+    <h1>Post a Job</h1>
+
+    <?php include_partial('form', array('form' => $form)) ?>
+
+>**NOTE**
+>まだ`job`スタイルシートを追加していないので、
+>両方のテンプレートに追加しましょう(`<?php use_stylesheet('job.css') ?>`)。
+
+フォーム自身は`_form` ~パーシャル~でレンダリングされます。 
+生成された`_form`パーシャルの内容を次のコードで置き換えます:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/_form.php -->
+    <?php include_stylesheets_for_form($form) ?>
+    <?php include_javascripts_for_form($form) ?>
+
+    <?php echo form_tag_for($form, '@job') ?>
+      <table id="job_form">
+        <tfoot>
+          <tr>
+            <td colspan="2">
+              <input type="submit" value="Preview your job" />
+            </td>
+          </tr>
+        </tfoot>
+        <tbody>
+          <?php echo $form ?>
+        </tbody>
+      </table>
+    </form>
+
+`~include_javascripts_for_form()~`と`~include_stylesheets_for_form()~`ヘルパーは
+フォームウィジェットに
+必要なJavaScriptとスタイルシートをインクルードします。
+
+>**TIP**
+>求人フォームがJavaScriptもしくはスタイルシートを必要としなくても、
+>これらのヘルパーを"万が一"に備えておくのは良い習慣です。
+>~JavaScript~もしくは固有の~スタイルシート~を必要とするウィジェットを変更する場合、
+>後で時間の節約になります。
+
+`~form_tag_for()~`ヘルパーは渡されたフォームとルート用の`<form>`タグを生成し 
+オブジェクトが新しいかそうではないかによって
+`POST`もしくは`PUT`への~HTTPメソッド~を変更します。
+フォームがファイル入力タグを持つ場合これは`~multipart~`属性も考慮します。
+
+結局のところ、`<?php echo $form ?>`はフォームウィジェットをレンダリングします。
+
+>**SIDEBAR**
+>フォームの外見をカスタマイズする
+>
+>デフォルトでは、`<?php echo $form ?>`はフォームウィジェットをテーブルの列としてレンダリングします。
+>
+>大抵の場合、フォームのレイアウトをカスタマイズすることが必要になります。
+>フォームオブジェクトはこれを~カスタマイズ~するために多くの便利なメソッドを提供します:
+>
+> | メソッド               | 説明
+> | ---------------------- | -------------------------------------------------
+> | `render()`             | フォームをレンダリングする
+> |                        | (`echo $form`の出力と同等)
+> | `renderHiddenFields()` | 隠しフィールドをレンダリングする
+> | `hasErrors()`          | フォームにエラーがある場合`true`を返す
+> | `hasGlobalErrors()`    | フォームがグローバルエラーーを持つ場合`true`を返す
+> | `getGlobalErrors()`    | グローバルエラーの配列を返す
+> | `renderGlobalErrors()` | グローバルエラーの配列をレンダリングする
+>
+>フォームはフィールドの配列のようにも振る舞います。
+>`$form['company']`で`company`フィールドにアクセスできます。
+>返されたオブジェクトはフィールドのそれぞれの要素をレンダリングするメソッドを提供します:
+>
+> | メソッド        | 説明
+> | --------------- | ---------------------------------------
+> | `renderRow()`   | フィールドの列をレンダリングする
+> | `render()`      | フィールドウィジェットをレンダリングする
+> | `renderLabel()` | フィールドラベルをレンダリングする
+> | `renderError()` | 存在するフィールドエラーメッセージをレンダリングする
+> | `renderHelp()`  | フィールドヘルプメッセージをレンダリングする
+>
+>`echo $form`ステートメントは次のコードと同等です:
+>
+>     [php]
+>     <?php foreach ($form as $widget): ?>
+>       <?php echo $widget->renderRow() ?>
+>     <?php endforeach; ?>
+
+### フォームのアクション
+
+フォームクラスをこれをレンダリングするテンプレートが用意されました。
+では、これを~アクション~と実際に連携させてみましょう。
+
+求人のフォームは`job`モジュールの5つのメソッドで管理されます:
+
+  * **new**:         新しい求人を作成する空白のフォームを表示する
+  * **edit**:        既存の求人を編集するフォームを表示する
+  * **create**:      ユーザー投稿の値で新しい求人を作成する
+  * **update**:      ユーザー投稿の値で既存の求人を更新する
+  * **processForm**: `create`と`update`によって呼び出されフォームを処理する
+                     (バリデーション、フォームの再投入、
+                     とデータベースへのシリアライズ)
+
+すべてのフォームには次のようなライフサイクルがあります:
+
+![フォームのフロー](http://www.symfony-project.org/images/jobeet/1_2/10/form_flow.png)
+
+5日前に`job`モジュールに対して ##ORM## ルートコレクションを作ったので、
+フォーム管理メソッド用のコードを簡素化できます:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeNew(sfWebRequest $request)
+    {
+      $this->form = new JobeetJobForm();
+    }
+
+    public function executeCreate(sfWebRequest $request)
+    {
+      $this->form = new JobeetJobForm();
+      $this->processForm($request, $this->form);
+      $this->setTemplate('new');
+    }
+
+    public function executeEdit(sfWebRequest $request)
+    {
+      $this->form = new JobeetJobForm($this->getRoute()->getObject());
+    }
+
+    public function executeUpdate(sfWebRequest $request)
+    {
+      $this->form = new JobeetJobForm($this->getRoute()->getObject());
+      $this->processForm($request, $this->form);
+      $this->setTemplate('edit');
+    }
+
+    public function executeDelete(sfWebRequest $request)
+    {
+      $request->checkCSRFProtection();
+
+      $job = $this->getRoute()->getObject();
+      $job->delete();
+
+      $this->redirect('job/index');
+    }
+
+    protected function processForm(sfWebRequest $request, sfForm $form)
+    {
+      $form->bind(
+        $request->getParameter($form->getName()),
+        $request->getFiles($form->getName())
+      );
+
+      if ($form->isValid())
+      {
+        $job = $form->save();
+
+        $this->redirect($this->generateUrl('job_show', $job));
+      }
+    }
+
+`/job/new`ページを眺めるとき、新しい~form~インスタンスが作成され
+テンプレートに渡されます(`new`アクション)。
+
+ユーザーがフォームを投稿するとき(`create`アクション)、
+フォームがユーザー投稿の値にバインドされ(`bind()`メソッド)バリデーションが実行されます。
+
+フォームがバインドされると、`isValid()`メソッドを利用して有効性をチェックできます: 
+フォームが有効な場合(`true`を返す)、求人がデータベースに保存され(`$form->save()`)、
+ユーザーが求人のプレビューページに~リダイレクト~されます; 
+そうでなければ、`newSuccess.php`テンプレートが
+ユーザー投稿の値と関連したエラーメッセージを伴って再表示されます。
+
+>**TIP**
+>`setTemplate()`メソッドは渡されたアクション用に使われる~テンプレート~を変更します。
+>投稿されたフォームが有効でなければ、`create`と`update`メソッドは
+>エラーメッセージを伴うフォームを再表示するために
+>それぞれ`new`と`edit`アクションと同じテンプレートを使います。
+
+既存の求人の修正はとても似ています。
+`new`と`edit`アクションの唯一の違いは修正されるjobオブジェクトが
+フォームコンストラクタの最初の引数として渡されることです。
+このオブジェクトはテンプレートのデフォルトウィジェットの値に対して使われます
+(デフォルトの値は##ORM##フォーム用のオブジェクトですが、シンプルなフォーム用のプレーンな配列です)。
+
+作成フォーム用にもデフォルト値を定義できます。
+1つのやり方はデータベーススキーマで値を宣言することです。
+別のやり方は前もって修正された`Job`オブジェクトをフォームコンストラクタに渡すことです。
+
+`type`カラムに対してデフォルトの値として`full-time`を定義するために
+`executeNew()`メソッドを変更します:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeNew(sfWebRequest $request)
+    {
+      $job = new JobeetJob();
+      $job->setType('full-time');
+
+      $this->form = new JobeetJobForm($job);
+    }
+
+>**NOTE**
+>フォームがバインドされるとき、デフォルトの値はユーザー投稿の値に置き換えられます。
+>バリデーションエラーの場合にフォームが再表示されるとき、
+>ユーザー投稿の値がフォームの再投入に使われます。
+
+### トークンで求人フォームを保護する
+
+すべてがうまくゆかなければなりません。今のところ、ユーザーは求人用のトークンを入力しなければなりません。
+ユニークなトークンを提供するためにユーザーに依存したくないので、
+新しい求人が作られるときにjobトークンは自動的に生成されなければなりません。
+
+
+新しい求人が保存される前にトークンを生成するロジックを追加するために`JobeetJob`の`save()`メソッドを更新します:
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+    public function save(PropelPDO $con = null)
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+    public function save(Doctrine_Connection $con = null)
+</doctrine>
+    {
+      // ...
+
+      if (!$this->getToken())
+      {
+        $this->setToken(sha1($this->getEmail().rand(11111, 99999)));
+      }
+
+<propel>
+      return parent::save($con);
+</propel>
+<doctrine>
+      return parent::save($conn);
+</doctrine>
+    }
+
+フォームから`token`フィールドを取り除くことができます:
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['expires_at'], $this['is_activated'],
+          $this['token']
+        );
+
+        // ...
+      }
+
+      // ...
+    }
+
+2日目のユーザーストーリーを覚えているのであれば、
+ユーザーが関連トークンを知っている場合のみ求人を編集できます。
+今すぐに、URLを推測することでjobを編集もしくは削除するのはきわめて簡単です。
+編集URLは`/job/ID/edit`で`ID`はjobの~主キー~のようになるからです。
+
+デフォルトでは、`~sfPropelRouteCollection~`ルートは
+主キーを伴うURLを生成しますが
+`column`オプションを渡すことでユニークカラムに変更できます:
+
+    [yml]
+    # apps/frontend/config/~routing~.yml
+    job:
+      class:        sfPropelRouteCollection
+      options:      { model: JobeetJob, column: token }
+      requirements: { token: \w+ }
+
+ユニークキーに対するsymfonyのデフォルトの~requirements~が`\d+`なので文字列にマッチさせるために
+`token`パラメータのrequirementsも変更したことに注意して下さい。
+
+jobに関連したすべてのルートは、`job_show_user`のものを除いて、トークンを埋め込みます。
+例えば、jobを編集するルートは次のパターンで構成されます:
+
+    http://jobeet.localhost/job/TOKEN/edit
+
+`showSuccess`テンプレートの"Edit"リンクを変更することも必要があります:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <a href="<?php echo url_for('job_edit', $job) ?>">Edit</a>
+
+プレビューページ
+----------------
+
+以前のページはjobページの表示と同じです。~ルーティング~のおかげで、
+ユーザーが正しいトークンと同伴してくれば、`token`リクエストパラメータにアクセスできます。
+
+ユーザーがトークン化されたURLでくる場合、トップに管理バーを追加します。
+`showSuccess`テンプレートの始めで、
+管理バーをホストして底の部分の`edit`リンクを取り除くために
+パーシャルを追加します:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <?php if ($sf_request->getParameter('token') == $job->getToken()): ?>
+      <?php include_partial('job/admin', array('job' => $job)) ?>
+    <?php endif; ?>
+
+それから、`_admin`パーシャルを作ります:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/_admin.php -->
+    <div id="job_actions">
+      <h3>Admin</h3>
+      <ul>
+        <?php if (!$job->getIsActivated()): ?>
+          <li><?php echo link_to('Edit', 'job_edit', $job) ?></li>
+          <li><?php echo link_to('Publish', 'job_edit', $job) ?></li>
+        <?php endif; ?>
+        <li><?php echo link_to('Delete', 'job_delete', $job, array('method' => 'delete', 'confirm' => 'Are you sure?')) ?></li>
+        <?php if ($job->getIsActivated()): ?>
+          <li<?php $job->expiresSoon() and print ' class="expires_soon"' ?>>
+            <?php if ($job->isExpired()): ?>
+              Expired
+            <?php else: ?>
+              Expires in <strong><?php echo $job->getDaysBeforeExpires() ?></strong> days
+            <?php endif; ?>
+
+            <?php if ($job->expiresSoon()): ?>
+             - <a href="">Extend</a> for another <?php echo sfConfig::get('app_active_days') ?> days
+            <?php endif; ?>
+          </li>
+        <?php else: ?>
+          <li>
+            [Bookmark this <?php echo link_to('URL', 'job_show', $job, true) ?> to manage this job in the future.]
+          </li>
+        <?php endif; ?>
+      </ul>
+    </div>
+
+たくさんのコードがありますが、大抵のコードはシンプルで理解できます。
+
+テンプレートを読みやすくするために、
+`JobeetJob`クラスに一連のショートカットメソッドを追加しました:
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    public function getTypeName()
+    {
+<propel>
+      return $this->getType() ? JobeetJobPeer::$types[$this->getType()] : '';
+</propel>
+<doctrine>
+      $types = Doctrine::getTable('JobeetJob')->getTypes();
+      return $this->getType() ? $types[$this->getType()] : '';
+</doctrine>
+    }
+
+    public function isExpired()
+    {
+      return $this->getDaysBeforeExpires() < 0;
+    }
+
+    public function expiresSoon()
+    {
+      return $this->getDaysBeforeExpires() < 5;
+    }
+
+    public function getDaysBeforeExpires()
+    {
+<propel>
+      return floor(($this->getExpiresAt('U') - time()) / 86400);
+</propel>
+<doctrine>
+      return floor((strtotime($this->getExpiresAt()) - time()) / 86400);
+</doctrine>
+    }
+
+管理バーは求人のステータスに合わせて異なるアクションを表示します:
+
+![有効にされていない求人](http://www.symfony-project.org/images/jobeet/1_2/10/not_activated.png)
+
+![有効にされた求人](http://www.symfony-project.org/images/jobeet/1_2/10/activated.png)
+
+>**NOTE**
+>次のセクションの後で"activated"バーを見ることができます。
+
+求人の有効と公開
+----------------
+
+前のセクションでは、求人を公開するリンクがあります。
+新しい`publish`アクションを指し示すようにリンクを変更する必要があります。
+新しい~ルート~を作る代わりに、既存の`job`ルートを設定できます:
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    job:
+      class:   sfPropelRouteCollection
+      options:
+        model:          JobeetJob
+        column:         token
+        object_actions: { publish: put }
+      requirements:
+        token: \w+
+
+`object_actions`は与えられたオブジェクト用の追加アクションの配列を取ります。
+"Publish"リンクを変更できます:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/_admin.php -->
+    <li>
+      <?php echo link_to('Publish', 'job_publish', $job, array('method' => 'put')) ?>
+    </li>
+
+最後のステップは`publish`アクションを作ることです:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executePublish(sfWebRequest $request)
+    {
+      $request->checkCSRFProtection();
+
+      $job = $this->getRoute()->getObject();
+      $job->publish();
+
+      $this->getUser()->setFlash('notice', sprintf('Your job is now online for %s days.', sfConfig::get('app_active_days')));
+
+      $this->redirect($this->generateUrl('job_show_user', $job));
+    }
+
+賢明な読者は"Publish"リンクがHTTP PUTメソッドで投稿されることにお気づきでしょう。
+putメソッドをシミュレートするために、
+リンクがクリックされるときにフォームに自動的に変換されます。
+
+~CSRF~の保護を有効にしたので、`link_to()`ヘルパーはリンクのCSRFトークンを埋め込み
+リクエストオブジェクトの`checkCSRFProtection()`メソッドは
+投稿の投稿上のそれらの有効性をチェックします。
+
+`executePublish()`メソッドは次のように定義される
+新しい`publish()`メソッドを使います:
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    public function publish()
+    {
+      $this->setIsActivated(true);
+      $this->save();
+    }
+
+ブラウザで新しい公開機能をテストできます。
+
+<propel>
+But we still have something to fix. The non-activated jobs must not be
+accessible, which means that they must not show up on the Jobeet homepage, and
+must not be accessible by their URL. As we have created an
+`addActiveJobsCriteria()` method to restrict a `Criteria` to active jobs, we
+can just edit it and add the new requirements at the end:
+</propel>
+<doctrine>
+But we still have something to fix. The non-activated jobs must not be
+accessible, which means that they must not show up on the Jobeet homepage, and
+must not be accessible by their URL. As we have created an
+`addActiveJobsQuery()` method to restrict a `Doctrine_Query` to active jobs, we
+can just edit it and add the new requirements at the end:
+</doctrine>
+
+<propel>
+    [php]
+    // lib/model/JobeetJobPeer.php
+    static public function addActiveJobsCriteria(Criteria $criteria = null)
+    {
+      // ...
+
+      $criteria->add(self::IS_ACTIVATED, true);
+
+      return $criteria;
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    public function addActiveJobsQuery(Doctrine_Query $q = null)
+    {
+      // ...
+
+      $q->andWhere($alias . '.is_activated = ?', 1);
+
+      return $q;
+    }
+</doctrine>
+
+これでお終いです。ブラウザでテストできます。
+すべてのアクティブではないjobはホームページから消えました; 
+それらのURLを知っていても、 これらはもはやアクセスできません。
+しかしながら、これらはjobのトークURLを知っていればアクセスできます。
+この場合、jobのプレビューは管理バーで表示されます。
+
+これまでのところこれがMVCパターンとリファクタリングの大きな利点の1つです。
+新しいrequirementsを追加するために1つのメソッドで1つの変更だけが必要でした。
+
+>**NOTE**
+>`getWithJobs()`メソッドを作成したとき、`addActiveJobsCriteria()`メソッドを使うのを忘れていました。
+>ですのでこれを編集して
+>新しいrequirementsを追加する必要があります:
+
+</propel>
+<doctrine>
+>When we created the `getWithJobs()` method, we forgot to use the
+>`addActiveJobsQuery()` method. So, we need to edit it and add the new
+>requirement:
+</doctrine>
+>
+<propel>
+>     [php]
+>     class JobeetCategoryPeer extends BaseJobeetCategoryPeer
+>     {
+>       static public function getWithJobs()
+>       {
+>         // ...
+>
+>         $criteria->add(JobeetJobPeer::IS_ACTIVATED, true);
+>
+>         return $criteria;
+>       }
+</propel>
+<doctrine>
+>     [php]
+>     class JobeetCategoryTable extends Doctrine_Table
+>     {
+>       public function getWithJobs()
+>       {
+>         // ...
+>
+>         $q->andWhere('j.is_activated = ?', 1);
+>
+>         return $q->execute();
+>       }
+</doctrine>
+
+また明日
+--------
+
+今日のチュートリアルにはたくさんの新しい情報が詰め込まれていましたが、
+symfonyのフォームフレームワークをより理解して頂けることを望んでおります。
+
+今日我々が忘れたことにお気づきの方がいらっしゃることをわかっていますよ。
+W新しい機能に対してテストを実装しませんでした。
+テストを書くことはアプリケーションの開発の重要な部分なので、 
+これは明日の最初に行います。
+
+__ORM__

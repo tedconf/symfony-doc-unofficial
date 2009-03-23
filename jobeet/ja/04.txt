@@ -1,0 +1,855 @@
+4日目: コントローラとビュー
+===========================
+
+昨日はsymfonyがどうやってデータベースエンジン間の違いを吸収していたり、
+オブジェクト指向クラスに変換しているかを見ました。
+そして##ORM##でデータベーススキーマを記述したり
+テーブルを作成したり
+初期データをデータベースに投入したりしました。
+
+今日は昨日作った`job`モジュールの基本的なカスタマイズをやっていきます。
+`job`モジュールはもうJobeetに組み込まれ必要なものになってます:
+
+ * 仕事の一覧ページ
+ * 新しく仕事を投稿するページ
+ * 投稿した仕事を更新するページ
+ * 仕事を削除するページ
+
+コードの準備が既にできてるのでモックアップに近づくように
+リファクタリングしていきます。
+
+~MVC~アーキテクチャ
+----------------------
+
+
+もしフレームワーク無しでPHPでWebサイトの開発を行うならば、
+大抵1HTMLページに1つのPHPファイルを使います。
+これらのPHPファイルは同じ種類の構造を含んでます。
+それは初期化、全体設定、ページリクエストのためのビジネスロジックや
+データベースからレコードの取得、最終的にはページを生成するためのHTMLコードを含んでいます。
+
+HTMLからロジックを分離するためにテンプレートエンジンを利用しているかもしれません。
+ビジネスロジックからモデルのインタラクションを分離するために
+データベース抽象化レイヤーを利用しているでしょう。 
+しかし大抵の場合、維持するのが悪夢になるたくさんのコードで終わることになります。 
+早く作れますが、時間が経つにつれて、とりわけ変更するのが難しくなります。
+どのように作りどのように動作するのかあなた以外は誰も理解できないからです。
+
+これら全ての問題に対し、良い解決方法があります。
+Web開発の分野では近年コーディングのため最適な解として認識されているのは[**MVCデザインパターン**](http://en.wikipedia.org/wiki/Model-view-controller)です。
+手短に言えば、MVCデザインパターンはコードの性質ごとに体系化する方法を定義しています。
+このパターンは**3つのレイヤ**に分けられます。
+
+  * **モデル(Model)**レイヤーはビジネスロジックを定義します(データベースはこのレイヤーに所属する)。
+    ご存じの通り、symfonyはモデルに関連したすべてのクラスとファイルを
+    `lib/model/`ディレクトリに保存します。
+
+  * **ビュー(View)**はユーザーがインタラクトするレイヤーです(テンプレートエンジンはこのレイヤーの一部)。
+    symfonyにおいて、ビューレイヤーは主にPHPテンプレートで構成されます。
+    今日の後で見るようにこれらは`templates/`ディレクトリに
+    保存されます。
+
+  * **コントローラ(Controller)**はモデルからデータを取得し、クライアントへ表示するためビューにデータを渡す処理を担当します。
+symfonyをインストールした初日に、
+全てのリクエストはフロントコントローラ（`index.php`と`frontend_dev.php`）によって管理されているのを見ました。
+
+これらフロントコントローラは実際の動作は**アクション**で行われます。
+昨日見たようにこれらアクションは**モジュール**で論理的にグループ化されます。
+
+![MVC](http://www.symfony-project.org/images/jobeet/1_2/04/mvc.png)
+
+今日は、ホームページと求人ページをカスタマイズするために2日目で定義したモックアップを使います。
+これらを動的なものにもします。
+この先、symfonyのディレクトリを構造とレイヤーの間でコードを分離する
+方法を示すためたくさんの異なるファイルで多くのことを調整します。
+
+レイアウト
+----------
+
+まず、モックアップをじっと見てみると各ページのほとんどが同じ部品であることに気づくでしょう。PHPやHTMLであろうとなかろうと、コードの重複は悪いことです。だからコードが重複しているビュー要素を抑える方法が必要となります。
+
+この問題を解決する1つの方法として各テンプレートでヘッダーとフッターを定義するやり方があります。:
+
+![ヘッダーとフッター](http://www.symfony-project.org/images/jobeet/1_2/04/header_footer.png)
+
+しかしこの場合ヘッダーやフッターは有効なHTMLを含んでいません。
+良い方法であることは違いありません。
+車輪の再発明をする代わりに
+この問題を解決するため別のデザインパターンを使うことにします。
+それはデコレータデザインパターンです。
+デコレータデザインパターンは別のやり方で問題を解決します。
+
+グローバルテンプレートによって表示されたコンテンツの後に
+装飾されたテンプレートを使います。
+
+symfonyではグローバルテンプレートを**レイアウト**と呼びます:
+
+![Layout](http://www.symfony-project.org/images/jobeet/1_2/04/layout.png)
+
+アプリケーションのデフォルトテンプレートとして`layout.php`が呼ばれます。
+それは`apps/frontend/templates`ディレクトリにあります。
+このディレクトリにはアプリケーションのグローバルテンプレート全てが置かれます。
+
+symfonyのデフォルトレイアウトを下記コードに置き換えましょう。:
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+      <head>
+        <title>Jobeet - Your best job board</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <?php include_javascripts() ?>
+        <?php include_stylesheets() ?>
+      </head>
+      <body>
+        <div id="container">
+          <div id="header">
+            <div class="content">
+              <h1><a href="/job">
+                <img src="/images/logo.jpg" alt="Jobeet Job Board" />
+              </a></h1>
+
+              <div id="sub_header">
+                <div class="post">
+                  <h2>Ask for people</h2>
+                  <div>
+                    <a href="/job/new">Post a Job</a>
+                  </div>
+                </div>
+
+                <div class="search">
+                  <h2>Ask for a job</h2>
+                  <form action="" method="get">
+                    <input type="text" name="keywords"
+                      id="search_keywords" />
+                    <input type="submit" value="search" />
+                    <div class="help">
+                      Enter some keywords (city, country, position, ...)
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="content">
+            <?php if ($sf_user->hasFlash('notice')): ?>
+              <div class="flash_notice">
+                <?php echo $sf_user->getFlash('notice') ?>
+              </div>
+            <?php endif; ?>
+
+            <?php if ($sf_user->hasFlash('error')): ?>
+              <div class="flash_error">
+                <?php echo $sf_user->getFlash('error') ?>
+              </div>
+            <?php endif; ?>
+
+            <div class="content">
+              <?php echo $sf_content ?>
+            </div>
+          </div>
+
+          <div id="footer">
+            <div class="content">
+              <span class="symfony">
+                <img src="/images/jobeet-mini.png" />
+                powered by <a href="http://www.symfony-project.org/">
+                <img src="/images/symfony.gif" alt="symfony framework" />
+                </a>
+              </span>
+              <ul>
+                <li><a href="">About Jobeet</a></li>
+                <li class="feed"><a href="">Full feed</a></li>
+                <li><a href="">Jobeet API</a></li>
+                <li class="last"><a href="">Affiliates</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+
+symfonyのテンプレートは単なるプレーンなPHPファイルです。
+レイアウトテンプレートにおいて、PHP関数のコールとPHP変数への参照が見られます。
+`$sf_content`は最も興味深い変数です: 
+この変数はsymfonyによって定義されアクションによって生成されるHTMLを格納します。
+
+`job`モジュール(`http://jobeet.localhost/frontend_dev.php/job`)を見ると、
+すべてのアクションがレイアウトによってデコレートされていることがわかります。
+
+スタイルシート、画像、JavaScript
+--------------------------------
+
+このチュートリアルの目的はウェブデザインではないので、
+Jobeetで必要なすべてのアセットは既に用意されています:
+[画像ファイルをダウンロードして](http://www.symfony-project.org/get/jobeet/images.zip)
+`web/images/`ディレクトリに設置します;
+[スタイルシートファイルをダウンロードして](http://www.symfony-project.org/get/jobeet/css.zip)
+`web/css/`ディレクトリに設置します。
+
+>**NOTE**
+>レイアウトにおいて、*ファビコン*を含めることができます。
+>[Jobeetのファビコンをダウンロードして](http://www.symfony-project.org/get/jobeet/favicon.ico)
+>`web/`ディレクトリに設置します。
+
+![レイアウトとアセット付きのjobモジュール](http://www.symfony-project.org/images/jobeet/1_2/04/job_layout_assets.png)
+
+>**TIP**
+>標準では、`generate:project`タスクはプロジェクトのアセットとして3つのディレクトリを生成します。
+>`web/images`は画像用、`web/css`はスタイルシート用、`web/js`はJavaScript用です。
+>これはsymfonyで定義される多くの仕様の1つですが、
+>もちろん`web`ディレクトリ下であれば
+>どこにでも置くことはできます。
+
+鋭い読者なら`main.css`がデフォルトレイアウトのどこにも記述されていないということに気づくでしょう。
+`main.css`は生成されたHTMLの中に確かに含まれています。
+しかしどこにも見当たりません。どうやって可能にしているんでしょうか？
+
+スタイルシートはレイアウトの`<head>`タグブロックで見つかる`include_stylesheets()`関数の呼び出しによって
+インクルードされました。
+`include_stylesheets()`関数は**ヘルパー(helper)**と呼ばれます。
+ヘルパーはsymfonyによって定義される関数で、パラメータを受け取りHTMLコードを返します。
+大抵の場合、ヘルパーによって時間が節約され、
+テンプレートで頻繁に使われるコードスニペットをパッケージにします。
+
+`include_stylesheets()`ヘルパーはスタイルシート用に`<link>`タグを生成します。
+
+しかしヘルパーはどうやって含むべきスタイルシートを知るのでしょうか？
+
+ビューレイヤはアプリケーションの設定ファイルである`view.yml`を編集することで設定することができます。`generate:app`タスクがデフォルトで生成する`view.yml`は以下になります。:
+
+    [yml]
+    # apps/frontend/config/view.yml
+    default:
+      http_metas:
+        content-type: text/html
+
+      metas:
+        #title:        symfony project
+        #description:  symfony project
+        #keywords:     symfony, project
+        #language:     en
+        #robots:       index, follow
+
+      stylesheets:    [main.css]
+
+      javascripts:    []
+
+      has_layout:     on
+      layout:         layout
+
+`view.yml`ファイルはアプリケーションの全てのテンプレートの`default`を設定します。
+例えば、`stylesheets`エントリはアプリケーション全てのページに含むための
+スタイルシートファイルの配列が定義されます
+(含めたファイルは `include_stylesheets()`ヘルパーから呼び出されます)。
+
+>**NOTE**
+>標準の`view.yml`ファイルには、参照ファイルとして`main.css`が設定されており、`/css/main.css`ではありません。
+>実際のところ、両方の定義はsymfonyによって
+>`/css/`相対パスがプレフィックスとして付けられます。
+
+もし多くのファイルを定義するなら、
+symfonyは下記のような定義となります:
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css]
+
+`media` 属性を変更し、`.css`を省略することもできます。:
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css, print: { media: print }]
+
+この設定では下記のような表示となります。:
+
+    [php]
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/jobs.css" />
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/job.css" />
+    <link rel="stylesheet" type="text/css" media="print"
+      href="/css/print.css" />
+
+>**TIP**
+>`view.yml`設定ファイルはアプリケーションによって使われるデフォルトのレイアウトも定義します。
+>デフォルトでは、名前は`layout`で、symfonyはすべてのページを`layout.php`ファイルでデコレートします。
+>`has_layout`エントリを`false`に切り替えることで
+>デコレーションプロレスを無効にすることもできます。
+
+`jobs.css` ファイルはホームページに必要とされるときだけ読み込まれ、`job.css`ファイルは仕事ページだけに適用されます。
+`view.yml`ファイルは単一モジュール単位で
+カスタマイズすることができます。
+アプリケーションの`view.yml`ファイルは`main.css`だけを持つように変更します。:
+
+    [yml]
+    # apps/frontend/config/view.yml
+    stylesheets:    [main.css]
+
+`job` モジュールのビューをカスタマイズするには、
+`apps/frontend/modules/job/config`ディレクトリで`view.yml` ファイルを生成します:
+
+    [yml]
+    # apps/frontend/modules/job/config/view.yml
+    indexSuccess:
+      stylesheets: [jobs.css]
+
+    showSuccess:
+      stylesheets: [job.css]
+
+`indexSuccess`と`showSuccess`セクション
+(`index`と`show`アクションで使われるテンプレート名であり、後で出てきます)の下で、
+アプリケーション`view.yml`のデフォルトセクションで見たようなエントリを使ってカスタマイズできます。
+全ての固有のエントリはアプリケーション設定としてマージされます。
+`all`セクションを使えば、
+モジュールの全てのアクションに対して設定を定義することができます。
+
+>**SIDEBAR**
+>symfonyの設定の原理
+>
+>symfonyの多くの設定ファイル間では、
+>異なったレベル単位で同じ設定が定義できます。:
+>
+>  * デフォルト設定はフレームワーク内にあります
+>  * プロジェクトに対応するグローバル設定は `config` ディレクトリにあります
+>  * アプリケーションに対応するローカル設定は `apps/APP/config` ディレクトリにあります
+>  * モジュールにだけ適用されるローカル設定は `apps/APP/modules/MODULE/config` ディレクトリにあります
+>
+>実行時には、設定システムはファイルが存在するかキャッシュを見つけると全ての値をマージしようとします。
+
+経験上、設定ファイル経由で変更可能なのは、
+PHPコードで完成するのと同じことです。
+例として`job`モジュールに`view.yml`ファイルを作る代わりに
+テンプレートからスタイルシートを呼ぶための
+`use_stylesheet()`ヘルパーを使うこともできます:
+
+
+    [php]
+    <?php use_stylesheet('main.css') ?>
+
+スタイルシートを全体に含めるため、レイアウト内で上記ヘルパーを使うことも可能です。
+
+このメソッドもしくは他のメソッドを選ぶのは本当に好みの問題です。
+`view.yml`ファイルはモジュールのすべてのアクション用の内容を定義する方法を提供します。
+これはテンプレートでは定義できませんが、設定はとても静的です。
+一方で、`use_stylesheet()`ヘルパーを利用すればより柔軟になり、
+さらに、同じ場所ですべての内容: スタイルシートの定義とHTMLコードを同じ位置で定義されます。
+Jobeetに関しては、`use_stylesheet()`ヘルパーを使うので、
+先ほど作成した`view.yml`を削除して
+`use_stylesheet()`を呼び出して`job`テンプレートを更新できます:
+
+    [php]
+    <!-- apps/frontend/modules/job/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <!-- apps/frontend/modules/job/showSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
+
+>**NOTE**
+>対称的に、JavaScriptの設定も`view.yml`のjavascriptsエントリを使ったり、
+>テンプレート内から`use_javascript()`ヘルパーで
+>呼び出したりできます。
+
+Jobホームページ
+----------------
+
+3日目に見たように、ホームページは`job`モジュールの`index`アクションで作られています。
+`index`アクションはページコントローラで、
+関連するテンプレートは`indexSuccess.php`がビューの部分です:
+
+    apps/
+      frontend/
+        modules/
+          job/
+            actions/
+              actions.class.php
+            templates/
+              indexSuccess.php
+
+### アクション
+
+各アクションはクラスメソッドで表されます。
+ホームページでは`jobActions`(モジュール名の末尾に`Actions`を添加したもの)クラスと
+`executeIndex`(`execute`の末尾にアクション名を添加したもの)メソッドが使われます。
+データベースから全て仕事を取得します:
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    class jobActions extends sfActions
+    {
+      public function executeIndex(sfWebRequest $request)
+      {
+<propel>
+        $this->jobeet_job_list = JobeetJobPeer::doSelect(new Criteria());
+</propel>
+<doctrine>
+        $this->jobeet_job_list = Doctrine::getTable('JobeetJob')
+          ->createQuery('a')
+          ->execute();
+</doctrine>
+      }
+
+      // ...
+    }
+
+<propel>
+コードをよく見てみましょう: `executeIndex()`メソッド(コントローラ)は
+すべてのjobを読み取るためにモデルの`JobeetJobPeer`を呼び出します(`new Criteria()`)。
+これは`jobeet_job_list`オブジェクトプロパティに割り当てられた
+`JobeetJob`オブジェクトの配列を返します
+</propel>
+<doctrine>
+コードをよく見てみましょう: すべてのjobを読みとるクエリを作るために
+`executeIndex()`メソッド(コントローラ)はテーブルの`JobeetJob`を呼び出します。
+`jobeet_job_list`オブジェクトプロパティに割り当てられた
+`JobeetJob`オブジェクトの`Doctrine_Collection`を返します。
+</doctrine>
+このような全てオブジェクトプロパティは
+自動的にテンプレート(ビュー)に渡されます。
+コントローラからビューへデータを渡すには、
+下記のように新しいプロパティを作ります:
+
+    [php]
+    public function executeFooBar(sfWebRequest $request)
+    {
+      $this->foo = 'bar';
+      $this->bar = array('bar', 'baz');
+    }
+
+このコードはテンプレートからアクセス可能な `$foo` と$ `bar` 変数を定義しています。
+
+### テンプレート
+
+デフォルトでは、アクションに関連したテンプレートはsymfonyによって推測されます
+(`Success`を接尾辞として持つアクションの名前)。
+
+`indexSuccess.php`テンプレートはすべてのjob用にHTMLテーブルを生成します。
+現在のテンプレートコードは次の通りです:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <h1>Job List</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Category</th>
+          <th>Type</th>
+    <!-- more columns here -->
+          <th>Created at</th>
+          <th>Updated at</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($jobeet_job_list as $jobeet_job): ?>
+        <tr>
+          <td>
+            <a href="<?php echo url_for('job/show?id='.$jobeet_job->getId()) ?>">
+              <?php echo $jobeet_job->getId() ?>
+            </a>
+          </td>
+          <td><?php echo $jobeet_job->getCategoryId() ?></td>
+          <td><?php echo $jobeet_job->getType() ?></td>
+    <!-- more columns here -->
+          <td><?php echo $jobeet_job->getCreatedAt() ?></td>
+          <td><?php echo $jobeet_job->getUpdatedAt() ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+
+    <a href="<?php echo url_for('job/new') ?>">New</a>
+
+テンプレートコード内では`foreach`と`Job`オブジェクト(`$jobeet_job_list`)のリストを繰り返し取得して、
+各仕事ごとのカラムごとに出力させます。
+覚えておいて欲しいのは、
+カラムの値は`get`から始まりカラム名のキャメルケースになっているアクセサメソッドが呼び出されていることです
+(例えば、`getCreatedAt()`メソッドは`create_at`カラムからデータを取得します)。
+
+利用できるカラムのみを表示するように整理してみましょう:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <div id="jobs">
+      <table class="jobs">
+        <?php foreach ($jobeet_job_list as $i => $job): ?>
+          <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
+            <td class="location"><?php echo $job->getLocation() ?></td>
+            <td class="position">
+              <a href="<?php echo url_for('job/show?id='.$job->getId()) ?>">
+                <?php echo $job->getPosition() ?>
+              </a>
+            </td>
+            <td class="company"><?php echo $job->getCompany() ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+    </div>
+
+![ホームページ](http://www.symfony-project.org/images/jobeet/1_2/04/homepage.png)
+
+テンプレートの中で呼び出されている`url_for()`関数は
+symfonyのヘルパーで、明日詳しく説明します。
+
+Jobページテンプレート
+---------------------
+
+仕事ページのテンプレートをカスタマイズしましょう。
+`showSuccess.php`ファイルを開いて、下記コードに置き換えてください:
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
+    <?php use_helper('Text') ?>
+
+    <div id="job">
+      <h1><?php echo $job->getCompany() ?></h1>
+      <h2><?php echo $job->getLocation() ?></h2>
+      <h3>
+        <?php echo $job->getPosition() ?>
+        <small> - <?php echo $job->getType() ?></small>
+      </h3>
+
+      <?php if ($job->getLogo()): ?>
+        <div class="logo">
+          <a href="<?php echo $job->getUrl() ?>">
+            <img src="/uploads/jobs/<?php echo $job->getLogo() ?>"
+              alt="<?php echo $job->getCompany() ?> logo" />
+          </a>
+        </div>
+      <?php endif; ?>
+
+      <div class="description">
+        <?php echo simple_format_text($job->getDescription()) ?>
+      </div>
+
+      <h4>How to apply?</h4>
+
+      <p class="how_to_apply"><?php echo $job->getHowToApply() ?></p>
+
+      <div class="meta">
+<propel>
+        <small>posted on <?php echo $job->getCreatedAt('m/d/Y') ?></small>
+</propel>
+<doctrine>
+        <small>posted on <?php echo date('m/d/Y', strtotime($job->getCreatedAt())) ?></small>
+</doctrine>
+      </div>
+
+      <div style="padding: 20px 0">
+        <a href="<?php echo url_for('job/edit?id='.$job->getId()) ?>">
+          Edit
+        </a>
+      </div>
+    </div>
+
+テンプレートは仕事の情報を表示するためアクションから渡された`$job`変数を使います。
+テンプレートへ渡す変数を`$jobeet_job`から`$job`へリネームするので、
+`show`アクションの該当箇所を変更してください
+(変数が２カ所にあることに注意してください):
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeShow(sfWebRequest $request)
+    {
+<propel>
+      $this->job =
+       ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+      $this->job = Doctrine::getTable('JobeetJob')->
+       ➥ find($request->getParameter('id'));
+</doctrine>
+      $this->forward404Unless($this->job);
+    }
+
+<propel>
+Propelアクセサの中には引数を取るものがあることに注意して下さい。
+`created_at`カラムをタイムスタンプとして定義したので、
+`getCreatedAt()`アクセサは最初の引数として日付の整形パターンを受け取ります:
+
+    [php]
+    $job->getCreatedAt('m/d/Y');
+</propel>
+
+>**NOTE**
+>仕事の説明文で使われている`simple_format_text()`ヘルパーはHTMLを整形します。
+例えば、改行を`<br />`へ置き換えます。
+>このヘルパーは`Text`ヘルパーグループに属しており、
+>デフォルトではロードされないので`use_helper()`ヘルパーを使って手動でロードさせています。
+
+![Jobページ](http://www.symfony-project.org/images/jobeet/1_2/04/job.png)
+
+~スロット~
+----------
+
+今のところ、全てのページのタイトルは
+レイアウトの`<title>`タグで定義されています:
+
+    [php]
+    <title>Jobeet - Your best job board</title>
+
+しかし仕事のページでは会社名や役職のような
+もっと有用な情報を提供したいと考えます。
+
+symfonyではレイアウトの領域が表示されるテンプレートに依存するとき、
+スロットを定義する必要があります:
+
+![スロット](http://www.symfony-project.org/images/jobeet/1_2/04/layout_slots.png)
+
+動的にタイトルを変更させるためレイアウトにスロットを追加します。:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <title><?php include_slot('title') ?></title>
+
+各スロットは(`title`)という名前で定義され、`include_slot()`ヘルパーで表示されます。
+今から`showSuccess.php`テンプレートの始めに
+仕事ページのコンテンツについて定義した`slot()`ヘルパーを
+使うようにします:
+
+    [php]
+    // apps/frontend/modules/job/templates/showSuccess.php
+    <?php slot(
+      'title',
+      sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()))
+    ?>
+
+もしタイトルが複雑なら、
+`slot()`ヘルパーをコードブロックで使うこともできます:
+
+    [php]
+    // apps/frontend/modules/job/templates/showSuccess.php
+    <?php slot('title') ?>
+      <?php echo sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()) ?>
+    <?php end_slot(); ?>
+
+（ホームページのような）ページの中には、一般的なタイトルが必要となる場合があります。
+テンプレート内で同じタイトルを何回も繰り返す代わりに、
+レイアウトでデフォルトのタイトルを定義します:
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <title>
+      <?php if (!include_slot('title')): ?>
+        Jobeet - Your best job board
+      <?php endif; ?>
+    </title>
+
+`include_slot()`ヘルパーはスロットが定義されていれば`true`を返します。
+よって、テンプレートコンテンツ内に`title`スロットが定義されていればそれを使い、
+なければデフォルトタイトルを使うようになります:
+
+>**TIP**
+>ごくわずかですが`include_`で始まるヘルパーを見てきました。
+>これらのヘルパーはHTMLを出力し、大抵の場合、内容を返すためだけに
+>`get_`ヘルパーに対応するものを持ちます:
+>
+>     [php]
+>     <?php include_slot('title') ?>
+>     <?php echo get_slot('title') ?>
+>
+>     <?php include_stylesheets() ?>
+>     <?php echo get_stylesheets() ?>
+
+Jobページアクション
+-------------------
+
+仕事のページはjobモジュールの`executeShow()`メソッドで
+定義される`show`アクションで生成されます:
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+<propel>
+        $this->job =
+         ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+        $this->job = Doctrine::getTable('JobeetJob')->
+         ➥ find($request->getParameter('id'));
+</doctrine>
+        $this->forward404Unless($this->job);
+      }
+
+      // ...
+    }
+
+<propel>
+`index`アクションに関しては、今回の場合、`JobeetJobPeer`クラスは
+`retrieveByPk()`メソッドを利用してjobを読み取るために使われます。
+このメソッドのパラメータはjob、主キーのユニークな識別子です。
+次のセクションでは`$request->getParameter('id')`ステートメントが
+jobの主キーを返す理由を説明します。
+</propel>
+<doctrine>
+`index`アクションに関しては、今回の場合、`JobeetJob`テーブルクラスは
+`find()`メソッドを利用してjobを読み取るために使われます。
+このメソッドのパラメータはjob、主キーのユニークな識別子です。 
+次のセクションでは`$request->getParameter('id')`ステートメントが
+jobの主キーを返す理由を説明します。
+</doctrine>
+
+<propel>
+>**TIP**
+>生成されたモデルクラスはプロジェクトのオブジェクトとインタラクトするためにたくさんの便利なコードを含みます。
+>`lib/om/`ディレクトリに設置されたコードを見る時間をとり、
+>これらのクラスに埋め込まれたすべての力を発見して下さい。
+</propel>
+
+もし仕事のデータがデータベースに存在しなければ、
+ユーザーを404ページに転送させたいと考えます、
+それはまさしく `forward404Unless()` メソッドが実行します。
+第1引数のBooleanをチェックして、trueでなければ現在実行中のフローを中止します。
+転送メソッドは実行中のアクションを`sfError404Exception`に投げて、
+すぐに中止させるのでアフターワードは必要ありません。
+
+例外が流れた場合、`prod`環境と`dev`環境で異なったページが
+表示されます:
+
+
+
+
+![dev環境の404エラー](http://www.symfony-project.org/images/jobeet/1_2/05/404_dev.png)
+
+![prod環境の404エラー](http://www.symfony-project.org/images/jobeet/1_2/05/404_prod.png)
+
+>**NOTE**
+>Jobeetのウェブサイトを本番サーバーにデプロイする前に、
+>デフォルトの404エラーページをカスタマイズする方法を学びます。
+
+-
+
+>**SIDEBAR**
+>"forward"メソッドファミリ
+>
+>`forward404Unless`コールは実際には次のコードと同等です:
+>
+>     [php]
+>     $this->forward404If(!$this->job);
+>
+>また次のコードとも同等です:
+>
+>     [php]
+>     if (!$this->job)
+>     {
+>       $this->forward404();
+>     }
+>
+>`forward404()`メソッド自身は次のコードのショートカットにすぎません:
+>
+>     [php]
+>     $this->forward('default', '404');
+>
+>`forward()`メソッドは同じアプリケーションの別のアクションに転送;
+>前の例では`default`モジュールの`404`アクションに転送します。
+>`default`モジュールはsymfonyに搭載されており
+>デフォルトのアクションを提供します。
+リクエストとレスポンス
+----------------------
+
+`/job`ページや`/job/show/id/1`ページをブラウザ上で見る際、データがWebサーバーの間を往復し始めます。
+ブラウザは**リクエスト**を送り、サーバーは**レスポンス**を返します。
+
+すでにsymfonyがリクエストを`sfWebRequest`オブジェクトで
+カプセル化されるのは見ました(`executeShow()`メソッドを見てください)。
+symfonyはオブジェクト指向フレームワークであるのでレスポンスもオブジェクトです。
+それは `sfWebResponse`クラスです。
+`$this->getResponse()`メソッドを呼び出すことで
+アクション内からレスポンスオブジェクトに
+アクセスすることができます。
+
+これらオブジェクトは
+PHP関数やグローバル変数から情報を受け取るために便利なメソッドをたくさん提供します。
+
+>**NOTE**
+>なぜsymfonyは既存のPHP機能をラップしているのでしょうか？
+>第一に、symfonyのメソッドはPHP標準のものより強力です。
+>そして、アプリケーションのテストをするときは、グローバル変数をあれこれいじりまくったり、
+>マジックのような`header()`関数を使うよりも
+>リクエストやレスポンスオブジェクトを使えばもっと簡単になります。
+
+### リクエスト
+
+`sfWebRequest`クラスは`$_SERVER`、`$_COOKIE`、`$_GET`、`$_POST`、`$_FILES`といった
+PHPグローバル変数をラップしています:
+
+ メソッドの名前       | 対応するPHPグローバル変数
+ -------------------- | --------------------------------------------------
+ `getMethod()`        | `$_SERVER['REQUEST_METHOD']`
+ `getUri()`           | `$_SERVER['REQUEST_URI']`
+ `getReferer()`       | `$_SERVER['HTTP_REFERER']`
+ `getHost()`          | `$_SERVER['HTTP_HOST']`
+ `getLanguages()`     | `$_SERVER['HTTP_ACCEPT_LANGUAGE']`
+ `getCharsets()`      | `$_SERVER['HTTP_ACCEPT_CHARSET']`
+ `isXmlHttpRequest()` | `$_SERVER['X_REQUESTED_WITH'] == 'XMLHttpRequest'`
+ `getHttpHeader()`    | `$_SERVER`
+ `getCookie()`        | `$_COOKIE`
+ `isSecure()`         | `$_SERVER['HTTPS']`
+ `getFiles()`         | `$_FILES`
+ `getGetParameter()`  | `$_GET`
+ `getPostParameter()` | `$_POST`
+ `getUrlParameter()`  | `$_SERVER['PATH_INFO']`
+ `getRemoteAddress()` | `$_SERVER['REMOTE_ADDR']`
+
+既に`getParameter()`メソッドを使ってリクエストパラメータにアクセスしたことがあります。
+このメソッドは`$_GET`または`$_POST`グローバル変数や`PATH_INFO`変数から値を返します。
+
+もしこれらの中の特定の1つを取得できるようにしたいならば、
+
+`getGetParameter()`や`getPostParameter()`や
+`getUrlParameter()`メソッドを利用する必要があります。
+
+>**NOTE**
+>個別のメソッドによりアクションに制限をかけたい場合、
+>例えばフォームからの`POST`リクエストだけを受けるようにするには
+>`isMethod()`メソッドを`$this->forwardUnless($request->isMethod('POST'));`のように利用することができます
+
+### レスポンス
+
+`sfWebResponse`クラスはPHP関数の
+`header()`と`setrawcookie()`をラップします:
+
+ メソッドの名前                | 対応するPHP関数
+ ----------------------------- | ----------------
+ `setCookie()`                 | `setrawcookie()`
+ `setStatusCode()`             | `header()`
+ `setHttpHeader()`             | `header()`
+ `setContentType()`            | `header()`
+ `addVaryHttpHeader()`         | `header()`
+ `addCacheControlHttpHeader()` | `header()`
+
+もちろん`sfWebResponse`クラスはレスポンスのコンテンツをセットする方法(`setContent()`)と
+ブラウザへレスポンスを送る方法(`send()`)も提供します。
+
+本日のチュートリアルの最初の方で`view.yml`とテンプレートの両方でスタイルシートやJavaScriptを管理するやり方を見ました。
+結局2つのテクニックとも
+レスポンスオブジェクトの`addStylesheet()`と`addJavascript()`メソッドを使います。
+
+>**TIP**
+>[`sfAction`](http://www.symfony-project.org/api/1_2/sfAction), >[`sfRequest`](http://www.symfony-project.org/api/1_2/sfRequest), [`sfResponse`](http://www.symfony-project.org/api/1_2/sfResponse)クラスもたくさんの有用なメソッドを提供します。
+>[APIドキュメント](http://www.symfony-project.org/api/1_2/)を
+>読んでsymfonyの内部クラスについてもっと学習しましょう。
+
+また明日
+----------------
+
+今日はsymfonyで使われているデザインパターンについて説明しました。
+願わくばプロジェクトのディレクトリ構成についても感づいて欲しいです。
+レイアウトとテンプレートファイルを操作することでテンプレートをいろいろ触れようになっています。
+そしてスロットとアクションを利用することで少し動的にすることもできます。
+
+明日は、今日使った`url_for()`ヘルパーと
+ルーティングサブフレームワークについて学びます。
+
+__ORM__
