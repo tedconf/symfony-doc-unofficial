@@ -1,0 +1,418 @@
+ソート可能なリストを作る方法
+============================
+
+概要
+----
+
+多くのウェブアプリケーションはアイテムを並び替えるインターフェイスを提供する必要があります。weblogのカテゴリ、CMSの記事、Eコマースウェブサイトのウィッシュリストなどを考えてみましょう。旧式の方法はリストで1つのアイテムを上げ下げする矢印を提供することです。AJAXによる方法はサーバーのサポートで直接ドラッグアンドドロップをして並び替えできることです。このチュートリアルでは、オブジェクトモデルを強化する方法とCreoleを使って複雑なクエリを行う方法の両方といくつかのティップを説明します。
+
+![古典的でAJAXなソート可能なリスト](/images/book/lists.gif)
+
+あなたが必要なもの
+------------------
+
+### データ構造
+
+この記事のために、使用される例では`Item`テーブルが未定義で、テーブルの名前は好きなように付けて下さい。ソート可能にするために、レコードは少なくとも`rank`フィールドが必要です、ソートはコンピュータではなくユーザーによって行われるのでここでは[ヒープ]は必要ありません。データ構造([`schema.yml`](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer#chapter_08_symfony_s_database_schema)で書かれています)はシンプルです:
+
+    propel:
+      test_item:
+        _attributes: { phpName: Item }
+        id:
+        name:        varchar(255)
+        rank:        { type: integer, required: true }
+
+データ構造が定義されたらコマンドラインインターフェイスでモデルを必ずビルドして下さい:
+
+    $ symfony propel-build-model
+
+同じ構造を持つデータベースも1つ必要です。最速の方法は次のコマンドを実行することです:
+
+    $ symfony propel-build-sql
+    $ symfony propel-insert-sql
+
+### モデルを拡張する
+
+ユーザーインターフェイスを考える前に、`lib/model/ItemPeer.php`に次のメソッドを追加することで、ランクによってアイテムを取得する、ランクによって並べ替えられたアイテムのリストを取得する、現在の最高ランクを取得する方法があることを確認して下さい:
+
+    [php]
+    static function retrieveByRank($rank = 1)
+    {
+      $c = new Criteria;
+      $c->add(self::RANK, $rank);
+      return self::doSelectOne($c); 
+    }
+    
+    static function getAllByRank()
+    {
+      $c = new Criteria;
+      $c->addAscendingOrderByColumn(self::RANK);
+      return self::doSelect($c); 
+    }
+
+    static function getMaxRank()
+    {
+      $con = Propel::getConnection(self::DATABASE_NAME);
+      $sql = 'SELECT MAX('.self::RANK.') AS max FROM '.self::TABLE_NAME; 
+      $stmt = $con->prepareStatement($sql);
+      $rs = $stmt->executeQuery();
+    
+      $rs->next();
+      return $rs->getInt('max');
+    }
+    
+これらのメソッドは両方のソート機能のインターフェイスのために多いに役立ちます。オブジェクトモデルがデータベースを扱う方法に関してもっと詳しい情報が必要でしたら、Propelの[基本的なCRUDの章](http://propel.phpdb.org/trac/wiki/Ja/Users/Documentation/1.3/BasicCRUD)を確認して下さい。
+
+`lib/model/Item.php`に追加する必要のあるメソッドがさらに2つあります。これらはここでは必要ありませんが、テーブルにアイテムを追加したり削除する実在のアプリケーションではおそらく必要でしょう:
+
+    [php]
+    public function save($con = null)
+    {
+      // 新しいレコードは rank = maxRank +1 で初期化する必要がある
+      if(!$this->getId())
+      {
+        $con = Propel::getConnection(ItemPeer::DATABASE_NAME);
+        try
+        {
+          $con->begin();
+       
+          $this->setRank(ItemPeer::getMaxRank()+1);
+          parent::save();
+       
+          $con->commit();
+        }
+        catch (Exception $e)
+        {
+          $con->rollback();
+          throw $e;
+        }
+      }
+      else
+      {
+        parent::save(); 
+      }
+    } 
+  
+    public function delete($con = null)
+    {  
+      $con = Propel::getConnection(PagePeer::DATABASE_NAME);
+      try
+      {
+        $con->begin();
+  
+        // より高いランクで同じカテゴリのページレコードのランクのすべてを減らす
+        $sql = 'UPDATE '.ItemPeer::TABLE_NAME.' SET '.ItemPeer::RANK.' = '.ItemPeer::RANK.' - 1 WHERE '.ItemPeer::RANK.' > '.$this->getRank();
+        $con->executeQuery($sql);
+        // アイテムを削除する
+        parent::delete();
+  
+        $con->commit();
+      }
+      catch (Exception $e)
+      {
+        $con->rollback();
+        throw $e;
+      }
+    }
+
+レコードの追加と削除は`rank`フィールドの整合性のために注意深く管理されなければなりません。専用の`save()`と`delete()`メソッドがあるのはそういうわけです。これらのメソッドは複雑な読み込み/書き込みの実行を行い、同時並行処理の問題を作るので、これらの実行は[トランザクション](http://en.wikipedia.org/wiki/Database_transaction)で行われます(symfonyにおけるトランザクションについての詳細な情報は[Propelのドキュメント](http://propel.phpdb.org/trac/wiki/Ja/Users/Documentation/1.3/HowTos/Transactions)を参照して下さい)。
+
+### モデルを準備する
+
+このチュートリアルで説明されたインタラクションは`item`モジュールで行われます。次のコードを呼び出して初期化します(`frontend`アプリケーションであることを前提とします):
+
+    $ symfony init-module frontend item
+
+好きなブラウザを通して新しいモジュールへのアクセスをテストしてウェブサーバーの環境設定がうまくいっていることを確認します。サンドボックスでこのチュートリアルに従った場合に確認するURLは以下の通りです:
+
+    http://localhost/sf_sandbox/web/frontend_dev.php/item
+
+最後に、アイテムの並べ替えをテストしたいのであれば、アイテムが必要です。。[CRUDインターフェイス](http://www.symfony-project.org/book/1_1/14-Generators#Scaffolding)もしくは[投入ファイル](http://www.symfony-project.org/book/1_1/16-Application-Management-Tools#Populating%20a%20Database)を通して一連のテスト項目を作ります。
+
+すべての準備が整いました。始めましょう。
+
+ソート可能で古典的なリスト
+---------------------------
+
+ソート可能で古典的なリストは順序を変更するためにコントロール機能を持つリストです。最初に、リストを表示するアクションとテンプレートを作ります:
+
+    [php]
+    // modules/item/actions/actions.class.phpに追加する
+    public function executeList()
+    {
+      $this->items = ItemPeer::getAllByRank();
+      $this->max_rank = ItemPeer::getMaxRank();
+    }
+    
+    // modules/item/templates/にあるlistSuccess.phpテンプレートを作る
+    <h1>Ordered list of items</h1>
+    <ul>
+    <?php foreach($items as $item): ?>
+      <li>
+        <?php 
+          echo $item->getName().' ';
+          if($item->getRank() > 0): 
+            echo link_to('Move up ', 'item/up?id='.$item->getId()); 
+          endif;
+          if($item->getRank() != $max_rank):
+            echo link_to('Move down', 'item/down?id='.$item->getId());
+          endif;
+        ?>
+      </li>
+    <?php endforeach ?>
+    </ul>
+    
+アイテムを上げ下げするリンクは再度並び替えが可能であるときのみ表示されます。このことは最初のアイテムをさらに上げることができず、最後のアイテムはさらに下げることはできないことを意味します。正しくページが表示されるか確認して下さい:
+
+    http://localhost/sf_sandbox/web/frontend_dev.php/item/list
+
+では、`item/up`と`item/down`アクションを見てましょう。`up`アクションはパラメータとして渡されるページのランクを減らし、以前のページのランクを増やします。`down`アクションはパラメータとして渡されるページのランクを増やし、次のページのランクを減らします。両方ともデータベースで2つの書き込み実行を行うので、これらのアクションはトランザクションを使用します。
+
+２つのアクションはとても似たようなロジックを持ち、[D.R.Y](http://c2.com/cgi/wiki?DontRepeatYourself)を保ちたい場合、コードを繰り返さずに書くスマートな方法が見つかります。これは`Item.php`モデルクラスに`swapWith()`メソッドを追加することです:
+
+    [php]
+    public function swapWith($item)
+    {
+      $con = Propel::getConnection(ItemPeer::DATABASE_NAME);
+      try
+      {
+        $con->begin();
+
+        $rank = $this->getRank();  
+        $this->setRank($item->getRank());
+        $this->save();
+        $item->setRank($rank);
+        $item->save();
+     
+        $con->commit();
+      }
+      catch (Exception $e)
+      {
+        $con->rollback();
+        throw $e;
+      }
+    } 
+
+そして、`up`と`down`アクションはとてもシンプルです:
+
+    [php]
+    public function executeUp()
+    {
+      $item = ItemPeer::retrieveByPk($this->getRequestParameter('id'));
+      $this->forward404Unless($item);
+      $previous_item = ItemPeer::retrieveByRank($item->getRank() - 1);
+      $this->forward404Unless($previous_item);
+      $item->swapWith($previous_item);
+  
+      $this->redirect('item/list');
+    }  
+
+    public function executeDown()
+    {
+      $item = ItemPeer::retrieveByPk($this->getRequestParameter('id'));
+      $this->forward404Unless($item);
+      $next_item = ItemPeer::retrieveByRank($item->getRank() + 1);
+      $this->forward404Unless($next_item);
+      $item->swapWith($next_item);
+  
+      $this->redirect('item/list');
+    }
+    
+セキュリティのために`forward404Unless()`へのコールによってチェックが行われない場合、これらのアクションはよりシンプルになりますが、間違ったリクエスト - URLを直接入力することで行われます - に対してアプリケーションを守らなければなりません。
+
+リストはこれで十分に機能します。リストのアイテム宇を上げ下げしてみて下さい。
+
+AJAXによるソート可能なリスト
+-----------------------------
+
+### 基本
+
+Ajaxによる基本的なソート可能なリストの開発は古典的なリストよりも難しくありません。大抵の仕事は`sortable_element()`と呼ばれる特別なJavaScriptヘルパーによって取り扱われます:
+
+    [php]
+    // modules/item/actions/actions.class.phpに追加する
+    public function executeAjaxList()
+    {
+      $this->items = ItemPeer::getAllByRank();
+    }
+    
+    // modules/item/templates/にajaxListSuccess.phpテンプレートを作成する
+    <?php use_helper('Javascript') ?>
+    <style>
+      .sortable { cursor: move; }
+    </style>
+    <h1>Ordered list of items - AJAX enabled</h1>
+    <ul id="order">
+      <?php foreach($items as $item): ?>
+      <li id="item_<?php echo $item->getId() ?>" class="sortable">
+        <?php echo $item->getName() ?>
+      </li>
+      <?php endforeach ?>
+    </ul>
+    <div id="feedback"></div>
+    <?php echo sortable_element('order', array(
+      'url'    => 'item/sort',
+      'update' => 'feedback',
+    )) ?>
+
+次のURLを入力して結果を確認します:
+
+    http://localhost/sf_sandbox/web/frontend_dev.php/item/ajaxlist
+
+`sortable_element()` JavaScriptヘルパーのマジックによって、`<ul>`要素はソート可能になります。このことはその子要素はドラッグドロップによって再度並べ替えできることを意味します。ユーザーがリストを並べ替えするためにアイテムをドラッグして放すたびに、AJAXリクエストが次のパラメータで行われます:
+
+    POST /sf_sandbox/web/frontend_dev.php/item/sort HTTP/1.1
+      order[]=1&order[]=3&order[]=2&order[]=4&order[]=5&order[]=6&_=
+
+並べ替えられたリストのすべては配列として渡されます(`id`プロパティのリスト要素にあるアンダースコア(`_`)の後で来たものに基づいて0と`$id`で始まる`order[$rank]=$id`、`$order`のフォーマット)。ソート可能な要素(この例では`order`)の`id`プロパティはパラメータの配列を命名するために使用されます。JavaScriptヘルパーはXMLHttpRequestを`url`アクション(例では`item/sort`)に変え、POSTモードで並べられたリストを渡し、id `update`(この例では`feedback`div)の要素を更新するアクションの結果を使用します。
+
+### AJAXリクエストを扱う
+
+`item/sort`アクションを書き、アイテムのリストの並べ替えがどのように行われるのか見てみましょう:
+
+    [php]
+    // modules/item/actions/actions.class.phpに追加する
+    public function executeSort()
+    {
+      $order = $this->getRequestParameter('order');
+      $flag = ItemPeer::doSort($order);
+      return $flag ? sfView::SUCCESS : sfView::ERROR;
+    }
+
+リスト全体を並べ替える機能はモデルの一部です。`ItemPeer`クラスのスタティックメソッドが実行される理由はそういうわけです。繰り返しますが、このメソッドが`item`テーブルの多くのレコードを更新するという事実があるのでデータベーストランザクションで更新を含めることが必要です。
+
+    [php]
+    static function doSort($order)
+    {
+      $con = Propel::getConnection(self::DATABASE_NAME);
+      try 
+      {
+        $con->begin();
+
+        foreach ($order as $rank => $id) 
+        {
+          $item = ItemPeer::retrieveByPk($id);
+          if($item->getRank() != $rank)
+          {
+            $item->setRank($rank);
+            $item->save();
+          }
+        }
+
+        $con->commit();
+        return true;    
+      }
+      catch (Exception $e)
+      {
+        $con->rollback();
+        return false;
+      }
+    }
+
+このメソッドによって返された値はアクションが表示するテンプレートを決定します。`modules/item/templates/`フォルダに次のテンプレートを追加します:
+
+    [php]
+    // sortSuccess.php
+    Ok
+    
+    // sortError.php
+    <strong>A problem occurred. Please refresh and try again.</strong>
+    
+リストを並べ替えた後にF5を押してサーバーのハンドリングをテストします。サーバーが理解しAJAXリクエストが送信した内容を正しく保存したのであれば、順序は変更されません。
+
+### `sortable_element()`オプションに注目する
+
+[JavaScriptヘルパーの章](http://www.symfony-project.org/book/1_1/11-Ajax-Integration#Remote%20Call%20Parameters)はリモート機能のコールの一般的なオプションを説明していますが、この例は`sortable_element()`の詳細を見る良い機会です。
+
+`hoverclass`パラメータでホーバーされたリストの要素に他の要素をドラッグしているとき**異なる外見**を定義できます:
+
+    [php]
+    <?php use_helper('Javascript') ?>
+    <style>
+      .sortable { cursor: move; }
+      .hovered  { font-weight: bold; }
+    </style>
+    ...
+    <?php echo sortable_element('order', array(
+      'url'        => 'item/sort',
+      'hoverclass' => 'hovered',
+    )) ?>
+
+リストに**ソートできない要素**を追加し`only`パラメータによってのみ単独のクラスにドラッグアンドドロップの振る舞いを制限することができます:
+
+    [php]
+    ...
+    <ul id="order">
+      <?php foreach($items as $item): ?>
+      <li id="item_<?php echo $item->getId() ?>" class="sortable">
+        <?php echo $item->getName() ?>
+      </li>
+      <?php endforeach ?>
+      <li>This element is not part of the ordered list</li>
+    </ul>
+    <?php echo sortable_element('order', array(
+      'url'    => 'item/sort',
+      'only'   => 'sortable',
+    )) ?>
+
+前の例においてリスト要素が上下に表示されない場合、`overlap`パラメータを`horizontal`に設定しなければなりません:
+
+    [php]
+    <?php use_helper('Javascript') ?>
+    <style>
+      .sortable { cursor: move; float: left; }
+    </style>
+    ...
+    <?php echo sortable_element('order', array(
+      'url'     => 'item/sort',
+      'overlap' => 'horizontal',
+    )) ?>
+
+並べ替えるリストが`<li>`要素のセットではない場合、ドラッグ可能にするソート可能な要素の子要素を定義しなければなりません:
+
+    [php]
+    ...
+    <div id="order">
+      <?php foreach($items as $item): ?>
+      <div id="item_<?php echo $item->getId() ?>" class="sortable">
+        <?php echo $item->getName() ?>
+      </div>
+      <?php endforeach ?>
+      <p>This cannot be dragged</p>
+    </div>
+    <?php echo sortable_element('order', array(
+      'url'    => 'item/sort',
+      'tag'    => 'div',
+    )) ?>
+
+すべてのAJAXアクションのために、バックグラウンドの活動とリクエストの成功を**可視化するフィードバック**を用意するのは良いことです:
+
+    [php]
+    <div id="feedback"></div>
+    <div id="indicator" style="display:none;"><img src="/images/activity_indicator.gif" style="display:none;"/></div>
+    <?php echo sortable_element('order', array(
+      'url'      => 'item/sort',
+      'update'   => 'feedback',
+      'loading'  => "Element.show('indicator')",
+      'complete' => "Element.hide('indicator')",
+      'success'  => visual_effect('highlight', 'feedback'),
+    )) ?>
+
+これらのパラメータについて詳細な内容とここでは説明していないその他の内容については、[script.aculo.us Sortable manual](http://wiki.script.aculo.us/scriptaculous/show/Sortable.create)を参照して下さい。
+
+比較
+----
+
+リストを並べ替えるために2つの方法の両方が効果的ですが、制限と欠点があります。
+
+アイテムの大きな配列のために、おそらくはページ分割されたリストが必要です。古典的な方法はページ単位のリストで立派に動作しますが、AJAXによる方法では適用が必要で、独自ページの外側から要素を再び並べ替えることが不可能です。AJAXの並べ替えインターフェイスに加えて'アイテムを位置に移動させる'機能を提供するのはそういうわけです。
+
+古典的なアクションと同様にAJAXアクションは間違ったリクエストに対して保護されません。データベースの矛盾のリスクを避けるために、`itemActions`クラスに`validateSort()`メソッドを追加します。このメソッドはすべてのアイテムの`id`とそれらだけが、受け取る配列に一度だけ登場することをチェックします。
+
+AJAXソート機能で使用される`ItemPeer::doSort()`メソッドの欠点の一つはリストを並べ替えるときに必要なクエリの回数です。n個のアイテムにおいてそれぞれの活動によって少なくともデータベースにn+2回のクエリが行われます。AJAXリストは長いリストに適用されないので、主要な問題ではないのかもしれませんが、パフォーマンスが問題になる場合、例えば、`UPDATE table SET CASE/WHEN` SQL構文を使用するといった一つのクエリだけでランクを更新するようにこのメソッドをリファクタリングしなければなりません。
+
+２つの動作の間のサーバーのリフレッシュは義務ではないので、AJAXインターフェイスはとりわけ長いタスクの並べ替えといったことにとてもユーザーフレンドリです。しかし、要素をドラッグする機能はウェブインターフェイスでは新しく、その機能を使っていないユーザーは驚くかもしれません。さらに、AJAXインターフェイスを選ぶ場合、ドラッグ可能な要素のサイズについて考えなければならない場合(それらは掴むのに十分な大きさが必要です)、それらの外見、運動の自由度・・・古典的な方法で解決する必要が無かった多くの人間とコンピュータの間のインタラクションの問題があります。
+
+ターゲットとしているユーザーがブラウザでJavaScriptsをオフにしている場合はAJAXインタラクションには常に問題があります。JavaScriptインターフェイスのデザインに加えて、フェイルセーフのために(degraces gracefully)代替の古典的なインターフェイスを提供しなければなりません。
+
+すべてにおいて、AJAXバージョンは本当にルックアンドフィールが優れますが、少なくとも開発期間は2倍長くなります。

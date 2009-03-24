@@ -1,0 +1,69 @@
+Propel 1.3を使う方法
+====================
+
+*by Carl Vondrick*
+
+symfony 1.1でプロジェクトを始める場合、速度の改善、入れ子集合の実装、オブジェクトプーリングなどを利用するために、[Propel 1.3](http://propel.phpdb.org/trac/wiki/Ja/Users/Documentation/1.3)を簡単に使うことができます。Propel 1.3はDBAL(データベース抽象化レイヤー)としてCreoleの代わりにPDOを利用するので、これらの機能の中で最も重要なのは、パフォーマンスの顕著な押し上げがあることです。
+
+Propel 1.3をインストールする作業は数分で終わります。行わなければならないのはプラグインをインストールして2つの設定ファイルを修正することです。方法を次の通りです。
+
+  * symfonyのリポジトリからPropel 1.3プラグインをインストールします:
+
+        $ cd /path/to/project/root/
+        $ svn co http://svn.symfony-project.com/plugins/sfPropelPlugin/branches/1.3/ plugins/sfPropelPlugin
+
+  * Propel 1.3は新しい接続フォーマットを使うのでそれにあわせて`databases.yml`を更新しなければなりません。必要な変更を行うには、次のように`config/databases.yml`を変更します:
+
+        [yml]
+        dev:
+          propel:
+            param: 
+              classname: DebugPDO
+
+        all:
+          propel:
+            class: sfPropelDatabase
+            param:
+              dsn: mysql:dbname=mydb;host=localhost 
+              username: username
+              password: password
+              encoding: utf8
+              persistent: true
+              pooling: false
+              classname: PropelPDO
+
+        DSNをアップグレードするためには、[PDOのマニュアル](http://jp.php.net/manual/ja/pdo.drivers.php)をご覧下さい。
+
+  * 設定を一致させるために`propel.ini`も更新しなければなりません。`config/propel.ini`の始めの三行を見てそれらを削除します:
+
+        [ini]
+        propel.database            = mysql
+        propel.database.createUrl  = mysql://root@localhost/
+        propel.database.url        = mysql://root@localhost/myproject
+
+    これらの場所に、次の内容を挿入します:
+
+        [ini]
+        propel.database            = mysql
+        propel.database.driver     = mysql
+        propel.database.createUrl  = mysql://localhost/
+        propel.database.url        = mysql:dbname=mydb;host=localhost
+        propel.database.user       = username
+        propel.database.password   = password
+        propel.database.encoding   = utf8
+
+    `propel.database.url`がステップ2のDSNと一致していることを確認します。
+
+  * symfonyの内部キャッシュをクリアします:
+
+        $ symfony cache:clear
+
+  * Propel 1.3は改善されたオブジェクトモデルを持つので、モデルをリビルドしなければなりません:
+
+        $ symfony propel:build-model
+
+これが新しいプロジェクトでしたら、Propel 1.3のセットアップが成功しました。おめでとう！`schema.yml`の構文はPropel 1.2のものとまったく同じです。新しいAPIは大きく変更されていません; 実際、大部分のAPIはまったく同じです。
+
+プロジェクトをアップグレードする場合、少し作業を行う必要があるかもしれませんが、大抵のプロジェクトではうまくゆきます。コードの中でトランザクションもしくはCreoleを直接利用している場合、手動でPDOにアップグレードしなければなりません。Propelのプロジェクトには[便利なアップグレードガイド](http://propel.phpdb.org/trac/wiki/Ja/Users/Documentation/1.3/Upgrading)があります。これが新しいプロジェクトだとしても、すべての新しい機能を学ぶために一目見れば役に立つことがわかるでしょう。
+
+symfony 1.1はコアシステムを分離するので、望むORMレイヤーを使うことは簡単にはなりません。Propelではうまく行かないのであれば、 [sfDoctrinePlugin](http://www.symfony-project.org/plugins/sfDoctrinePlugin)を試して下さい。これはPropel代替のORMでPropel 1.3のパフォーマンスのレベルを満たします。symfony 1.1のおかげで、開発者は1.3の改善されたパフォーマンスを享受できます。確固たる安定性が必要な場合はPropel 1.2を利用します。

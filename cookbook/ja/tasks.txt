@@ -1,0 +1,147 @@
+タスクの作り方
+==============
+
+どのウェブアプリケーションであれ、プロジェクトには反復的なメンテナンスタスク、データベースオペレーション、もしくは定常業務で実行される他のコンソールスクリプトがあります。
+
+Symfony 1.1は1.0のpakeタスクを拡張します。これによってプロジェクトのために強力で一貫したコマンドラインユーティリティを作り、symfonyコマンドラインインターフェイス(CLI - Command Line Interface)に完全に統合することができます。
+
+  * **アクセシビリティ**: 構文、説明、利用可能なオプションなどを調べるためのhelpパラメータがタスクに追加されます。誰でもあなたのタスクを実行できるようになります。
+  * **ユーザービリティ**: symfony CLIを実行すればタスクの一覧が表示され、開発者でなくてもそれを実行する方法を簡単に学ぶことができます。
+  * **統一性**: すべてのオプションとパラメータを明示的に記述すればsymfony CLIがこれらを解析するので、$argvを解析するための面倒で反復的なタスクを気にしなくて済みます。間違った構文を使ったりパラメータが見つからなければ自動的に警告が表示されます。
+  * **環境**: 新しいProjectConfigurationクラスとApplicationConfigurationクラスのおかげで、コンテキストは完全にコントロールされます。決め打ちされた環境もしくはデバッグの設定に悩まなくて済みます。
+  * **可読性**: ソースコードを調べれば期待される入力とタスクの目的の説明を読むことができます。メンテナンスのために理解してとデバッグする時間は大いに減ります。
+
+最初のタスクを書いてみましょう
+------------------------------
+
+symfony 1.1のプロジェクトディレクトリを開き次のコマンドを入力します:
+
+    $ php symfony generate:task doNothing
+
+このコマンドを実行すれば`lib/task/doNothingTask.class.php`の中に空のタスクが作成されます。少し調整してみましょう。
+
+    [php]
+    class doNothingTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->namespace        = 'project';
+        $this->name             = 'do-nothing';
+        $this->briefDescription = 'Does strictly nothing';
+   
+        $this->detailedDescription = <<<EOF
+    This task is completely useless, and should be run as often as possible.
+    EOF;
+      }
+   
+      protected function execute($arguments = array(), $options = array())
+      {
+        $this->logSection('do-nothing', 'I did nothing successfully!');
+      }
+    }
+
+このタスクの内容は多くないですが、最初の基本概念を説明してくれます:
+
+  * `configure()`メソッドはタスクの内容、起動名、スコープ、構文、ヘルプ、オプションと引数などを記述します。
+  * `execute()`メソッドはすべてのジョブを実際に実行し、タスクが実行されるときに呼び出されます。
+  * `logSection()`メソッドはメッセージをコンソールに出力するために使われます。
+
+これで少し遊んでみましょう:
+
+    $ php symfony help project:do-nothing
+    $ php symfony project:do-nothing
+
+いくつかのコマンドラインインタラクション
+-----------------------------------------
+
+引数とオプションはタスクにパラメータを渡す手段です。
+
+    $ php symfony project:hello-world --name="Romain"
+
+上記の例では`name`オプションに`Romain`をセットして`project:hello-world`タスクを実行しています
+
+    $ php symfony project:hello-world Hi
+
+今の例では、最初の引数を`Hi`にセットして同じタスクを実行しました。
+
+オプションと引数はオプションもしくは必須のデフォルト値を持ちタスク構文に表示される目的を埋め込むことができます。
+
+`project:hello-world`タスクを書いてみましょう:
+
+    [php]
+    class doHelloWorldTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->addArgument('verb', sfCommandArgument::OPTIONAL, 'Customize the verb used to say hello', 'hello');
+        $this->addOption('name', null, sfCommandOption::PARAMETER_OPTIONAL, 'Customize the person to say hello to', 'world');
+    
+        $this->namespace        = 'project';
+        $this->name             = 'hello-world';
+        $this->briefDescription = 'Spread the (hello) world';
+    
+        $this->detailedDescription = <<<EOF
+    Runs an evolved hello world display, with customisable name and word.
+    EOF;
+      }
+    
+      protected function execute($arguments = array(), $options = array())
+      {
+        $this->logSection('do', ucfirst($arguments['verb']).' '.ucfirst($options['name']));
+      }
+    }
+
+新しいタスクの使い方がわからないユーザーのためにヘルプが表示されるか確認してみます:
+
+    $ php symfony project:hello-world invalid arguments given
+    $ php symfony help project:hello-world
+
+そしてタスクで少し遊んでみます:
+
+    $ php symfony project:hello-world
+    $ php symfony project:hello-world --name="romain"
+    $ php symfony project:hello-world --name=romain hi
+    $ php symfony project:hello-world hi --name=romain
+
+他の便利な機能
+---------------
+
+  * **データベースレイヤーは必要ですか？**
+
+    データベースマネージャーを読み取るには、アプリケーションのコンテキストの中にいることが必要です。これは特別な引数`application`を追加することで簡単に実現できます。
+
+        [php]
+        protected function configure()
+        {
+          // ...
+
+          $this->addArgument('application', sfCommandArgument::REQUIRED, 'Changes the application context of the task');
+
+          // ...
+        }
+
+    クラスプロパティ`$this->configuration`はデフォルトの`sfProjectConfiguration`の代わりに`sfApplicationConfiguration`のインスタンスを格納したので、
+    データベースマネージャーを初期化するためにこのプロパティを使うことがができます:
+
+        [php]
+        protected function execute($arguments = array(), $options = array())
+        {
+          $databaseManager = new sfDatabaseManager($this->configuration);
+       
+          // ...
+        }
+
+  * **タスクの範囲内で別のタスクを実行するには？**
+
+        [php]
+        $myOtherTask = new myOtherTask($this->dispatcher, $this->formatter);
+        $myOtherTask->run($arguments = array('foo' => 'bar'), $options = array('far' => 'boo'));
+
+  * **デフォルトの環境を提供する一方で、ユーザーが環境を選べる必要がある場合は？**
+
+   `::configure()`メソッドに`env`オプションを追加するだけでsymfonyはその値を環境として使用します。
+
+        [php]
+        $this->addOption('env', null, sfCommandOption::PARAMETER_OPTIONAL, 'Changes the environment this task is run in', 'prod');
+
+どう思います？ケーキのチェリー、もしくは例えばsymfonyを越えたジャズ風のコーラスのように見えませんか？

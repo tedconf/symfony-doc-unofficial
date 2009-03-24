@@ -1,0 +1,282 @@
+リストをページ分割する方法
+==========================
+
+概要
+----
+
+symfonyはページャコンポーネント: `sfPropelPager`を提供します(`Criteria`クラスの)criteriaオブジェクトからの結果のリストを表示のためにページのセットに分割し、ページと結果オブジェクトにアクセスするメソッドを提供します。
+
+`sfPropelPager`オブジェクト
+---------------------------
+
+`sfPropelPager`クラスは[モデル](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer)の章で説明されているPropel抽象化レイヤーを使用します。
+
+このチュートリアルでは`sfPropelPager`メソッドを使用して10×10の記事リストを表示するシンプルな例を説明します。`Article`オブジェクトは`getPublished()`、`getTitle()`、`getOverview()`、`getContent()`アクセサメソッドを持ちます。
+
+ページ分割されていないcriteriaリクエストの結果が欲しい場合、次の内容が必要になります:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeList()
+      {
+        ...
+        $c = new Criteria();
+        $c->add(ArticlePeer::PUBLISHED, true);
+        $articles = ArticlePeer::doSelect($c);
+        $this->articles = $articles;
+        ...
+      }
+    }
+
+変数`$articles`は、テンプレートからアクセス可能で、リクエストにマッチする`Article`オブジェクトの配列を含みます。
+
+ページ分割されたリストを取得するには、微妙に異なるアプローチが必要です; 配列の代わりに`sfPropelPager`オブジェクトに結果が収納されなければなりません:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeList()
+      {
+        ...
+        $c = new Criteria();
+        $c->add(ArticlePeer::PUBLISHED, true);
+        $pager = new sfPropelPager('Article', 10);
+        $pager->setCriteria($c);
+        $pager->setPage($this->getRequestParameter('page', 1));
+        $pager->init();
+        $this->pager = $pager;
+        ...
+      }
+    }
+
+このアクションの後で、criteriaの定義の違いの後が違います:
+
+*   10×10の`Article`オブジェクトをページ分割するために新しいページャを作成する
+*   criteriaからページャへ影響を与える
+*   現在のページをリクエストされたページもしくは最初のものに設定する
+*   ページャを初期化する(すなわち、criteriaに関連したリクエストを実行する)
+*   変数`$pager`経由でテンプレートにページャを渡す
+
+`listSuccess.php`テンプレートは`sfPropelPager`オブジェクトにアクセスできます。このオブジェクトは現在のページとすべてのページのリストを知っています。このオブジェクトはページとページのオブジェクトをアクセスするメソッドを持ちます。操作する方法を見てみましょう。
+
+結果全体の数字を表示するために、`getNbResults()`メソッドを使います:
+
+    [php]
+    <?php echo $pager->getNbResults() ?> results found.<br />
+    Displaying results <?php echo $pager->getFirstIndice() ?> to  <?php echo $pager->getLastIndice() ?>.
+
+リクエストされたページの記事を表示するために、ページのオブジェクトを取得する`pager`オブジェクトの`getResults()`メソッドを使用して下さい:
+
+    [php]
+    <?php foreach ($pager->getResults() as $article): ?>
+      <?php echo link_to($article->getTitle(), 'article/read?id='.$article->getId()) ?>
+      <?php echo $article->getOverview() ?>
+    <?php endforeach ?>
+
+複数のページを移動する
+----------------------
+
+`haveToPaginate()`メソッドのおかげでページャオブジェクトは1つのページ(例では10)に表示される結果数が最大値を超えているかを知っています。
+
+(« < > »)リストの底でナビゲーションリンクを追加するには、`getfirstPage()`、`getPreviousPage()`と`getLastPage()`などのナビゲーションメソッドを使います。現在のページは`getPage()`によって与えられます。これらすべてのメソッドは整数: リクエストされたページのランクを返します。
+
+特定のページを指定するために、`getLinks()`メソッドへのコールによって取得されるリンクのコレクションを通してループを使います:
+
+    [php]
+    <?php if ($pager->haveToPaginate()): ?>
+      <?php echo link_to('&laquo;', 'article/list?page='.$pager->getFirstPage()) ?>
+      <?php echo link_to('&lt;', 'article/list?page='.$pager->getPreviousPage()) ?>
+      <?php $links = $pager->getLinks(); foreach ($links as $page): ?>
+        <?php echo ($page == $pager->getPage()) ? $page : link_to($page, 'article/list?page='.$page) ?>
+        <?php if ($page != $pager->getCurrentMaxLink()): ?> - <?php endif ?>
+      <?php endforeach ?>
+      <?php echo link_to('&gt;', 'article/list?page='.$pager->getNextPage()) ?>
+      <?php echo link_to('&raquo;', 'article/list?page='.$pager->getLastPage()) ?>
+    <?php endif ?>
+
+これは次のようにレンダリングされます:
+
+&nbsp;&nbsp;&nbsp;[&laquo;](#) [&lt;](#) [1](#) - 2 - [3](#) - [4](#) - [5](#) [&gt;](#) [&raquo;](#)
+
+記事が一旦表示されると、ページ分割されたリストに戻ることなく前か次の記事に直接移動できるので、カーソルが必要になります。
+
+>**Tip**: 上記のコードは`sfPagerNavigation`プラグインで自動化されます。インストールと使い方についてもっと詳しい情報は[説明ページ](http://www.symfony-project.org/plugins/sfPagerNavigationPlugin)を参照して下さい。
+
+複数のオブジェクトでのナビゲーション
+------------------------------------
+
+リストの範囲内にあるページ単位のナビゲーションは簡単ですが、ユーザーはオブジェクト単位で進むリストに戻ることは望まないでしょう。`sfPropelPager`オブジェクトの`cursor`属性は現在のオブジェクトのオフセットを保持します。
+
+これによって`readSuccess.php`テンプレートで記事単位のナビゲーションが可能になります。最初に、`listSuccess.php`テンプレートのコードを少し修正します:
+
+    [php]
+    <?php $cursor = $pager->getFirstIndice(); foreach ($pager->getResults() as $article): ?>
+      <?php echo link_to($article->getTitle(), 'article/read?cursor='.$cursor) ?>
+      <?php echo $article->getOverview() ?>
+    <?php ++$cursor; endforeach ?>
+
+`read`アクションは`cursor`パラメータを扱う方法を知る必要があります:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeRead()
+      {
+        ...
+        if ($this->getRequestParameter('cursor'))
+        {
+          $article = $pager->getObjectByCursor($this->getRequestParameter('cursor'));
+        }
+        else if ($this->getRequestParameter('id'))
+        {
+          $article = ArticlePeer::retrieveByPK($this->getRequestParameter('id'));
+        }
+
+        // エラー
+        $this->forward404Unless($article);
+      }
+    }
+
+`getObjectByCursor($cursor)`メソッドは指定したポジションでカーソルを設定し、その位置でオブジェクトを返します。
+
+`setCursor($cursor)`メソッドを使ってオブジェクトの取得と結果無しでカーソルを設定できます。カーソルが一旦設定されると、この位置(`getCurrent()`)での現在のオブジェクトだけでなく、前のもの(`getPrevious()`)と次のもの(`getCurrent()`)を取得できます。
+
+このことは少しの修正で記事単位のナビべーション用に必要なテンプレートに`read`アクションが移動できることを意味します:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeRead()
+      {
+        ...
+        if ($this->getRequestParameter('cursor'))
+        {
+          $pager->setCursor($this->getRequestParameter('cursor'));
+          $previous_article = $pager->getPrevious();
+          $article = $pager->getCurrent();
+          $next_article = $pager->getNext();
+        }
+        else if ($this->getRequestParameter('id'))
+        {
+          $article = ArticlePeer::retrieveByPK($this->getRequestParameter('id'));
+        }
+
+        // エラー
+        $this->forward404Unless($article);
+      }
+    }
+
+>**Note**: 前もしくは次のオブジェクトが存在しない場合は`getPrevious()`と`getNext()`メソッドは`null`を返します。
+
+`readSuccess.php`テンプレートは次のように見えます:
+
+    [php]
+    <h1><?php echo $article->getTitle() ?></h1>
+    <p class="overview"><?php echo $article->getOverview() ?></p>
+    <div class="content">
+      <?php echo $article->getContent() ?>
+    </div>
+    &lt; <?php echo link_to_if($previous_article, $previous_article->getTitle(), 'article/read?id='.$previous_article->getId()) ?>
+    -
+    &gt; <?php echo link_to_if($next_article, $next_article->getTitle(), 'article/read?id='.$next_article->getId()) ?>
+
+ソートの順序を変更する
+-----------------------
+
+`sfPropelPager`オブジェクトは`Criteria`オブジェクトに依存するので、ページャオブジェクトにソートが割り当てられる前に、criteriaでソートを指定することでページャの順序を変更する作業が行われます。
+
+例えば、リストナビゲーションインターフェイスにソートカラムの選択を追加できます:
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeList()
+      {
+        ...
+        $c = new Criteria();
+        $c->add(ArticlePeer::PUBLISHED, true);
+        if ($this->getRequestParameter('sort'))
+        {
+          $c->addAscendingOrderByColumn(ArticlePeer::translateFieldName($this->getRequestParameter('sort'), BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_COLNAME));
+        }
+        else
+        {
+          // デフォルトで日付によってソートされる
+          $c->addAscendingOrderByColumn(ArticlePeer::UPDATED_AT);
+        }
+        $pager = new sfPropelPager('Article', 10);
+        $pager->setCriteria($c);
+        $pager->init();
+        $this->pager = $pager;
+        ...
+      }
+    }
+
+`listSuccess.php`テンプレートに次のコードを追加します:
+
+    [php]
+    Sort by : <?php echo link_to('Title', 'article/list?sort=title') ?> - <?php echo link_to('Id', 'article/list?sort=Id') ?>
+
+ページごとの結果数を変更する
+----------------------------
+
+`setMaxPerPage($max)`メソッドはページャを再処理する必要無しに(`init()`を再び呼び出す必要がない)ページごとに表示される結果数を変更します。パラメータとして`0`の値を渡す場合、ページャは単独のページですべての結果を表示します。
+
+    [php]
+    class articleActions extends sfActions
+    {
+      public function executeList()
+      {
+        ...
+        $c = new Criteria();
+        $c->add(ArticlePeer::PUBLISHED, true);
+        $pager = new sfPropelPager('Article', 10);
+        $pager->setCriteria($c);
+        if ($this->getRequestParameter('maxperpage'))
+        {
+          $pager->setMaxPerPage($this->getRequestParameter('maxperpage'));
+        }
+        $pager->init();
+        $this->pager = $pager;
+        ...
+      }
+    }
+
+`listSuccess.php`テンプレートに次のコードを追加します:
+
+    [php]
+    Display : <?php echo link_to('10', 'article/list?maxperpage=10') ?> - <?php echo link_to('20', 'article/list?maxperpage=20') ?> results per page
+
+selectメソッドを変更する
+--------------------------
+
+`sfPropelPager`に依存するアクションのパフォーマンスを最適化する必要がある場合、シンプルな`doSelect()`の代わりに`doSelectJoinXXX()`を使用するページャを強制したいことがあります。`sfPropelPager`オブジェクトの`setPeerMethod()`メソッドによって簡単に実現できます:
+
+    [php]
+    $pager->setPeerMethod('doSelectJoinUser');
+
+ページを表示する際にページャは実際に`doSelect()`クエリを処理することに注意して下さい。最初のクエリ(`$pager->init()`によって起動される)は`doCount`を行うだけですが、次のコードを呼び出すことでこのメソッドをカスタマイズできます:
+
+    [php]
+    $pager->setPeerCountMethod('doCountJoinUser');
+
+ページャで追加情報を保存する
+----------------------------
+
+ページャオブジェクトの中で特定のコンテキストを保存する必要があるかもしれません。`sfPropelPager`クラスが通常の方法で*パラメータ*を処理できるのはそういうわけです:
+
+    [php]
+    $pager->setParameter('foo', 'bar');
+
+    if ($pager->hasParameter('foo'))
+    {
+      $pager->getParameter('foo');
+      $pager->getParameterHolder()->removeParameter('foo');
+    }
+
+    $pager->getParameterHolder()->clearParameters();
+
+これらのパラメータはけっしてページャによって直接使用されません。
+
+カスタムパラメータをもっと学びたいのであれば、[2章](http://www.symfony-project.org/book/1_2/02-Exploring-Symfony-s-Code#chapter_02_sub_parameter_holders)を参照して下さい。

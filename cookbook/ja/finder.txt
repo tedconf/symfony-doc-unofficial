@@ -1,0 +1,175 @@
+ファイルを見つける方法
+======================
+
+概要
+--------
+
+アプリケーションのスクリプトの中には必ずしもどこにあるのか知らないままアクセスする必要があります。bashコマンドを使用しているのであれば、それらを見つけるために`find`が利用できます。symfonyでは、`sfFinder`クラスが利用できます。複雑な検索を行うことは新しい検索基準の問題であり、ファイルパスであれば結果はシンプルな配列です。
+
+`sfFinder`クラス
+----------------
+
+`sfFinder`クラスはPerlの[`File::Find::Rule`](http://search.cpan.org/~rclamp/File-Find-Rule/)モジュールに基づいたファイルファインダクラスです。ファイルもしくはディレクトリ(もしくは両方)を見つけることが可能で、ユーザー定義の_ルール_の設定で検索をフィルタリングできます。基本的な使い方は以下の通りです:
+
+1. `type`クラスメソッドを呼び出して`sfFinder`オブジェクトを作成します。何の結果を期待しているのかを正確に記述しなければなりません(`file`、`dir`もしくは`any`のどれか)
+
+        [php]
+        $finder = sfFinder::type('file');
+        
+2. 検索方法を洗練させて結果数を減らすためにルールを追加します
+
+        [php]
+        $finder = $finder->name('*.php');
+        
+3. `in()`メソッドを呼び出すことで検索機能を起動させ、検索のrootディレクトリを引数として設定します
+
+        [php]
+        $files = $finder->in('/home/production/myproject');
+        
+読みやすくするためにメソッドチェーンが利用できます:
+
+    [php]
+    $files = sfFinder::type('file')->name('*.php')->in('/home/production/myproject');
+    // 次のように読むことができる
+    // '/home/production/myproject'ディレクトリで'*.php'にマッチするファイルを見つける
+
+`in()`メソッドはファイル操作を簡単に利用できるようにファイルの配列を返します:
+
+    [php]
+    foreach ($files as $file)
+    {
+      $handle = fopen($file, "r");
+      ...
+    }
+
+>**Note**: `sfFinder`クラスはオートロードされるのでrequireする必要はありません。
+
+ルールの原則
+------------
+
+検索を洗練させるために使用されるルールは`sfFinder`オブジェクトのメソッドコールとして書かれます。すべてのメソッドは簡単なメソッドチェーンを実現するために現在の`sfFinder`オブジェクトを返します。
+
+    [php]
+    $finder1 = sfFinder::type('file')->name('*.php');                   // はsfFinderオブジェクト
+    $finder2 = sfFinder::type('file')->name('*.php')->size('> 10K');    // もsfFinderオブジェクト
+    $files = $finder1->in('/home/production/myproject');                // ファイルパスの配列
+
+`in()`メソッドを除いて、すべてのルールは何度も起動することがあります。
+
+累積するルール(例えば`name`)や破壊なルール(`macdepth()`など)があります。破壊的なルールに対しては、最新のメソッドコールだけがカウントします:
+
+    [php]
+    // これは両方の条件を満たすファイルの名前をフィルタリングする
+    $finder = sfFinder::type('file')->name('*.php')->name('*Success.*');
+    // 同じ
+    $finder = sfFinder::type('file')->name('*Success.php');
+    
+    // ここでは最後のコールだけが考慮される
+    $finder = sfFinder::type('file')->maxdepth(5)->maxdepth(3);
+    // 同じ
+    $finder = sfFinder::type('file')->maxdepth(3);
+
+フィルタのルール
+----------------
+        
+### 名前によるフィルタ
+
+ファイルの名前の結果をフィルタリングするために、[glob][1]もしくは[正規表現][2]のパターンで`name()`メソッドへのコールを追加します:
+
+    [php]
+    $finder = sfFinder::type('file')->name('*.php');
+    $finder = sfFinder::type('file')->name('/.*\.php/');
+
+`not_name()`メソッドでネガティブフィルタリングをすることで、結果から特定のファイルの名前を排除できます:
+
+    [php]
+    $finder = sfFinder::type('file')->not_name('Base*');
+    $finder = sfFinder::type('file')->name('/^Base.*$/');
+
+### サイズによるフィルタ
+
+引数として比較を含む文字列を要求する`size()`メソッドを呼び出すことでファイルサイズ上の検索をフィルタリングできます。メソッドは規模も理解します:
+
+    [php]
+    // 10キロバイトよりも大きいファイルだけを検索する
+    $finder = sfFinder::type('file')->size('> 10K');
+    // 1キロバイト以下のファイルだけを検索する
+    $finder = sfFinder::type('file')->size('<= 1Ki');
+    // 123バイトのサイズのファイルだけを検索する
+    $finder = sfFinder::type('file')->size(123);
+   
+規模のために使用されるシンボルはユニットの内部システムで定義された[2進接頭辞(binary prefix)][3]です。
+
+### 検索の深さを制限する
+
+デフォルトでは、`sfFinder`オブジェクトによって行われる検索は再帰的ですべてのサブディレクトリを走査します。フィルタツリー構造で検索の最大の深さを設定する`maxdepth()`メソッドを使用することでこのデフォルトの振る舞いをオーバーライドできます:
+
+    [php]
+    // ディレクトリとサブディレクトリを検索する
+    $finder = sfFinder::type('file');
+    // in()メソッドに渡されたディレクトリのみを検索し
+    // サブディレクトリは検索しない
+    $finder = sfFinder::type('file')->maxdepth(1);
+    
+もちろん、`mindepth`メソッドを呼び出すことで最小の深さを指定できます。
+
+デフォルトでは、最小の深さは0で最大の深さは無限です(もしくは無限に近い)。
+
+### ディレクトリを除外する
+
+検索からディレクトリを除外したい場合、２つのメソッドが使えます:
+
+- `prune()`メソッドは引数として与えられたパターンが見つかるツリー構造の部分で検索を停止させます。ディレクトリに何があるのかを調べることを停止させる条件と見て下さい:
+
+        [php]
+        // '.svn'フォルダの内容を無視する
+        $finder = sfFinder::type('any')->prune('.svn');
+
+    ファインダは`.svn`フォルダの奧には進みませんが、`.svn`フォルダ自身はまだ結果の部分です。
+    
+- `discard()`メソッドは結果から引数をマッチするファイルもしくはフォルダを除外しますが、ツリー構造の調査は止めません。
+
+        [php]
+        // 結果から'.svn'フォルダを除外する
+        $finder = sfFinder::type('any')->discard('.svn');
+
+ディレクトリ_と_その内容が検索から除外する必要があるとき、これら2つのメソッドはしばし混同されます:
+
+    [php]
+    // 結果から'.svn'フォルダとその内容を除外する
+    $finder = sfFinder::type('any')->prune('.svn')->discard('.svn');
+    
+>**Tip**: バージョンコントロールプログラムによって追加されるファイルとディレクトリを除外するために、`sfFinder`はショートカットメソッド: `ignore_version_control()`を提供します。`.svn`、`CVS`、`_darcs`、`.arch-params`、`.monotone`、と`.bzr`のようなディレクトリとファイルをすべて取り除きます。
+
+### 検索の起点
+
+`in()`メソッドは`sfFinder`がファイルもしくはディレクトリを探さなければならない場所を指定するために使用されます。引数としてファイルパスもしくはファイルパスの配列を受け取ります:
+
+    [php]
+    // 単独の場所を検索する
+    $files = $finder->in('/home/production/myproject');
+    // 複数の場所を検索する
+    $files = $finder->in(array('/home/production/myproject', '/home/production/myotherproject'));
+    
+絶対もしくは相対パスのどちらかを受け取ることができます:
+
+    [php]
+    // 絶対パス
+    $files = $finder->in('/home/production/myproject');
+    // 相対パス
+    $files = $finder->in('../projects/myproject');
+    
+
+### 相対パスを返す
+デフォルトでは、`in()`メソッドによって返されるパスは絶対パスです。`in()`メソッドを呼び出す前に`relative()`メソッドへのコールを連結することで、相対パスの配列を受け取ることを選択できます:
+
+    [php]
+    // パスの結果はrootディレクトリに対して相対的である
+    $files = $finder->in('/home/production/myproject');
+    // パスの結果は現在のディレクトリに対して相対的である
+    // すなわち現在のスクリプトのディレクトリ
+    $files = $finder->relative()->in('/home/production/myproject');
+
+[1]: http://en.wikipedia.org/wiki/Glob                "glob definition at Wikipedia"
+[2]: http://en.wikipedia.org/wiki/Regular_expression  "regular expression definition at Wikipedia"
+[3]: http://en.wikipedia.org/wiki/Binary_prefix       "binary prefix definition at Wikipedia"
