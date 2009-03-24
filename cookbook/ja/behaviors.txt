@@ -1,0 +1,367 @@
+Propelのビヘイビアの書き方
+==========================
+
+概要
+----
+
+Propelオブジェクトのモデルの2つのクラスに対して同じメソッドを2回書く場合、**ビヘイビア**(behavior)を考えるときです。既存のメソッドを変更するもしくは新しいメソッドを追加することで、ビヘイビアは同じ方法で複数のモデルクラスを拡張するシンプルな方法を提供します。既存のビヘイビアの使い方はとてもシンプルです: symfony bookの8章の関連した箇所を読み、それぞれのビヘイビアに添付された`README`ファイルに書かれた手引きに従って下さい。しかし新しいビヘイビアを作りたいのであれば、これらの動作方法を理解する必要があります。
+
+基本的な例
+----------
+
+ビヘイビアを作る手順を説明するために、既に拡張されたモデルで始めます。例えば、セキュリティの理由から`article`テーブルのレコードがデータベースから削除されてはならない場合を想像してみましょう。レコードが`ArticlePeer::doSelect()`へのコールによって返されないように`$article->delete()`メソッドはレコードをマークしなければなりませんが、内在するデータは削除されてはなりません。このルールを実装するためにPropelモデルを拡張する方法は次の通りです:
+
+    [php]
+    // lib/model/Article.phpの中で
+    class Article extends BaseArticle()
+    {
+      public function delete($con = null)
+      {
+        $this->setDeletedAt(time());
+        $this->save($con);
+      }
+    }
+
+    // lib/model/ArticlePeer.phpの中で
+    class ArticlePeer extends BaseArticlePeer()
+    {
+      public function doSelectRS(Criteria $criteria, $con = null)
+      {
+        $criteria->add(self::DELETED_AT, null, Criteria::ISNULL);
+        
+        return parent::doSelectRS($criteria, $con);
+      }
+    }
+
+もちろん、`article`テーブルに`deleted_at`と呼ばれる新しいタイムスタンプのフィールドを追加することを含みます。
+
+>**Note**: `doSelect()`の代わりに`doSelectRS()`を適用する理由は前者が`doSelect()`だけでなく`doCount()`にも使われるからです。
+
+新しいフィールドと変更されたメソッドの組み合わせによって`Article`オブジェクトに"paranoid"ビヘイビアを渡します。差し当たり、"ビヘイビア"という言葉はメソッドの一式を指し示します。
+
+ミックスインを使う
+------------------
+
+では、`comment`テーブルの削除されたレコードも保持する必要がある場合を想像してみましょう。[D.R.Y.](http://en.wikipedia.org/wiki/Don't_repeat_yourself)ではない、上記の2つのメソッドを`Comment`と`CommentPeer`クラスにコピーする作業の代わりに、新しいクラスで1回以上使われるコードをリファクタリングして、*ミックスイン*システムを通して投入します。下記のコードを理解するにはミックスインと`sfMixer`クラスの概念に慣れていなければなりませんので、これが何を言っているのかわからないのであれば、symfony bookの[17章](http://www.symfony-project.org/book/1_0/17-Extending-Symfony#Mixins)を参照して下さい。
+
+最初のステップは、拡張できるようにモデルクラスからコードを取り除きそれらにフックを追加することです。
+
+    [php]
+    // ステップ1
+    // lib/model/Article.phpの中で
+    class Article extends BaseArticle()
+    {
+      public function delete($con = null)
+      {
+        foreach (sfMixer::getCallables('Article:delete:pre') as $callable)
+        {
+          $ret = call_user_func($callable, $this, $con);
+          if ($ret)
+          {
+            return;
+          }
+        }
+        
+        return parent::delete($con);
+    }
+
+    // lib/model/ArticlePeer.phpの中で
+    class ArticlePeer extends BaseArticlePeer()
+    {
+      public function doSelectRS(Criteria $criteria, $con = null)
+      {
+        foreach (sfMixer::getCallables('ArticlePeer:doSelectRS:doSelectRS') as $callable)
+        {
+          call_user_func($callable, 'ArticlePeer', $criteria, $con);
+        }
+        
+        return parent::doSelectRS($criteria, $con);
+      }
+    }
+    
+    // lib/model/Comment.phpの中で
+    class Comment extends BaseComment()
+    {
+      public function delete($con = null)
+      {
+        foreach (sfMixer::getCallables('Comment:delete:pre') as $callable)
+        {
+          $ret = call_user_func($callable, $this, $con);
+          if ($ret)
+          {
+            return;
+          }
+        }
+        
+        return parent::delete($con);
+    }
+    
+    // lib/model/CommentPeer.phpの中で
+    class CommentPeer extends BaseCommentPeer()
+    {
+      public function doSelectRS(Criteria $criteria, $con = null)
+      {
+        foreach (sfMixer::getCallables('CommentPeer:doSelectRS:doSelectRS') as $callable)
+        {
+          call_user_func($callable, 'CommentPeer', $criteria, $con);
+        }
+        
+        return parent::doSelectRS($criteria, $con);
+      }
+    }
+
+次に、新しいコードにビヘイビアのコードを追加し、オートロードされるディレクトリにこのクラスを設置します:
+
+    [php]
+    // ステップ 2
+    // lib/ParanoidBehavior.phpの中で
+    class ParanoidBehavior
+    {
+      public function preDelete($object, $con)
+      {
+        $object->setDeletedAt(time());
+        $object->save($con);
+        
+        return true;
+      }
+      
+      public function doSelectRS($class, Criteria $criteria, $con = null)
+      {
+        $criteria->add(constant("$class::DELETED_AT"), null, Criteria::ISNULL);
+      }
+    }
+
+最後に、`Article`と`Comment`クラスのフックに新しい`ParanoidBehavior`クラスのメソッドを登録しなければなりません:
+
+    [php]
+    // ステップ 3
+    // config/config.phpの中で
+    sfMixer::register('Article:delete:pre', array('ParanoidBehavior', 'preDelete'));
+    sfMixer::register('ArticlePeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+    sfMixer::register('Comment:delete:pre', array('ParanoidBehavior', 'preDelete'));
+    sfMixer::register('CommentPeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+
+ミックスインの力によって、複数のモデルオブジェクトにまたがってビヘイビアのコードを再利用できます。
+
+しかしフックをモデルクラスに追加しメソッドを登録する作業はコードの単なるコピーよりも作業時間が長くなります...。この問題に対してsymfonyの**ビヘイビア**が大きな手助けになります。
+
+モデルフックを自動追加する
+--------------------------
+
+symfonyはフックをモデルに自動追加できます。これらのフックを有効にするにに、次のように、`propel.ini`ファイルの`AddBehaviors`プロパティを`true`に設定します:
+
+    [php]
+    propel.builder.AddBehaviors = true     // デフォルトの値はfalse
+
+生成されたモデルクラスにフックが挿入されるようにモデルをリビルドする必要があります:
+
+    [php]
+    $ php symfony propel-build-model
+
+`Base`クラスにフックは追加され、これらのクラスは`lib/model/om/`ディレクトリの中にあります。例えば、フックが有効である`BaseArticlePeer`生成クラスの抜粋内容は下記の通りです:
+
+    [php]
+    public static function doSelectRS(Criteria $criteria, $con = null)
+    {
+      foreach (sfMixer::getCallables('BaseArticlePeer:doSelectRS:doSelectRS') as $callable)
+      {
+        call_user_func($callable, 'BaseArticlePeer', $criteria, $con);
+      }
+      
+      // コードの残り
+    }
+
+これはステップ1の間にカスタムの`ArticlePeer`に手作業で追加した内容とほとんど同じフックです。違いは登録されたフックの名前が`ArticlePeer:doSelectRS:doSelectRS`の代わりに`BaseArticlePeer:doSelectRS:doSelectRS`であることです。ですのでステップ1の間に追加されたカスタムクラスを除去できます。このことはビヘイビアが`propel.ini`で有効になったとき、もはやフックを手動でモデルクラス内部に追加する必要がないことを意味します。
+
+フックの名前が変更されたので(これはすべて接頭辞が`Base`)、ステップ3のParanoidビヘイビアのメソッドの登録方法を変更しなければなりません。それを行う前に、追加されたフックの完全なリストを見てみましょう:
+
+    // 基底オブジェクトクラスに追加されたフック
+    [className]:delete:pre     // 削除前
+    [className]:delete:post    // 削除後
+    [className]:save:pre       // 保存前
+    [className]:save:post      // 保存後
+    [className]:[methodName]   // __call()内部 (新しいメソッドを許可する)
+    // Peer基底クラスに追加されたフック
+    [PeerClassName]:doSelectRS:doSelectRS
+    [PeerClassName]:doSelectJoin:doSelectJoin
+    [PeerClassName]:doSelectJoinAll:doSelectJoinAll
+    [PeerClassName]:doSelectJoinAllExcept:doSelectJoinAllExcept
+    [PeerClassName]:doUpdate:pre
+    [PeerClassName]:doUpdate:post
+    [PeerClassName]:doInsert:pre
+    [PeerClassName]:doInsert:post
+
+>**Note**: symfony 1.0に関して、上で説明した4つのフックの代わりに、`doSelect`メソッドに関連したフックは1つのみです。このことはビヘイビアの中にはsymfony 1.1でのみ動作して、ビヘイビアのサポートが不完全であるsymfony 1.0では動作しないものがあることの説明になります。
+
+新しいメソッドを追加する
+------------------------
+
+オブジェクトクラスの新しいメソッドを可能にするフックの1つをじっくり見てみましょう。`propel.ini`でビヘイビアが有効な場合、生成されたすべての基底クラスは下記のコードのような`__call()`メソッドを含みます:
+
+    [php]
+    // lib/model/om/BaseArticle.phpの中で
+    public function __call($method, $arguments)
+    {
+      if (!$callable = sfMixer::getCallable('BaseArticle:'.$method))
+      {
+        throw new sfException(sprintf('Call to undefined method BaseArticle::%s', $method));
+      }
+
+      array_unshift($arguments, $this);
+
+      return call_user_func_array($callable, $arguments);
+    }
+
+symfony bookの[17章](http://www.symfony-project.org/book/1_0/17-Extending-Symfony#Mixins)で説明されているように、`__call()`に設置されたフックは実行時に利用可能な新しいメソッドを追加します。例えば、`deleted_at`フラグをリセットできるようにするために`undelete()`メソッドを`Article`クラスに追加したい場合、Behaviorクラスに次のようなコードを追加することから始めます:
+
+    [php]
+    // lib/ParanoidBehavior.phpの中で
+    public function undelete($object, $con)
+    {
+      $object->setDeletedAt(null);
+      $object->save($con);
+    }
+
+それから、次のような新しいメソッドを追加します:
+
+    [php]
+    // config/config.phpの中で
+    sfMixer::register('BaseArticle:undelete', array('ParanoidBehavior', 'undelete'));
+    // 別のフック
+
+これで`$article->undelete()`へのすべてのコールは `ParanoidBehavior::undelete($article)`を呼び出します。
+
+>**Note**: 不幸なことに、PHP5に関して、スタティックメソッドのコールは`__call()`によって捕捉できません。このことはsymfonyのビヘイビアはPeerクラスに新しいメソッドを追加できないことを意味します。
+
+フックを単独のステップに登録する
+--------------------------------
+
+`Article`と`Comment`クラスの両方に対して、`Base`フックの名前を使うために他のフックの登録も書き換える必要があります。この作業は次のようなものになります:
+
+    [php]
+    // ステップ 3
+    // config/config.phpの中で
+    sfMixer::register('BaseArticle:undelete', array('ParanoidBehavior', 'undelete'));
+    sfMixer::register('BaseArticle:delete:pre', array('ParanoidBehavior', 'preDelete'));
+    sfMixer::register('BaseArticlePeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+
+    sfMixer::register('BaseComment:undelete', array('ParanoidBehavior', 'undelete'));
+    sfMixer::register('BaseComment:delete:pre', array('ParanoidBehavior', 'preDelete'));
+    sfMixer::register('BaseCommentPeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+
+しかしながらこのコードはあまりD.R.Y.ではありません。それぞれのクラスに対してメソッドのリスト全体を繰り返す必要があるからです。ビヘイビアが何十ダースのメソッドを提供する場合に感じる苦痛を想像して下さい！2つのフェーズで登録処理を分離できれば作業ははるかに効率的になります:
+
+1. ビヘイビアのメソッドをclass-agnosticフックの一覧に登録する。
+2. それぞれのクラスに対して、クラスを認識できない(class-agnostic)フックを実際のフックに変換し、ミックスインシステムを利用してそれらを登録する。
+
+symfonyはあなたに変わってこの作業をしてくれる、`sfPropelBehavior`と呼ばれるユーティリティクラスを提供します。このクラスを利用するためにステップ3を書き換える方法は下記の通りです:
+
+    [php]
+    // フェーズ 1
+    // config/config.phpの中で
+    sfPropelBehavior::registerMethods('paranoid', array(
+      array('ParanoidBehavior', 'undelete')
+    ));
+    sfPropelBehavior::registerHooks('paranoid', array(
+      ':delete:pre'                => array('ParanoidBehavior', 'preDelete'),
+      'Peer:doSelectRS:doSelectRS' => array('ParanoidBehavior', 'doSelectRS')
+    ));
+    
+    // フェーズ2
+    // in lib/model/Article.php
+    sfPropelBehavior::add('Article', array('paranoid'));
+    
+    // lib/model/Comment.phpの中で
+    sfPropelBehavior::add('Comment', array('paranoid'));
+
+`registerMethods`と`registerHooks`のメソッドは両方ともフックの名前のリストを最初の引数として要求します。モデルクラスにビヘイビアメソッドが追加されるときこの名前はショートカットとして使われます。`registerHooks`を呼び出すときに使われるフックの名前が特定のモデルの名前への参照を持たないことに注意して下さい(フックの名前の`BaseArticle`の一部は取り除かれました。
+
+また、`registerMethods`の方法で追加されたメソッドんためにメソッドの名前を指定する必要はありません。ビヘイビアクラスのメソッドの名前がデフォルトで使われます。
+
+`sfPropelBehavior::add()`ステートメントが実行されるときのみフックは本当のフックの名前で`sfMixer`クラスに登録されます。このコールの最初のパラメータはモデルクラスなので、`sfPropelBehavior`はフックの完全な名前を再現するすべての要素を持ちます(この場合、モデルクラスの名前とビヘイビアのフックの名前に`Base`の文字列を連結させる)。
+
+ビヘイビアプラグインのパッケージを作成する
+-------------------------------------------
+
+本当に再利用可能なコードのピースとしてビヘイビアのパッケージを作るための最良の方法はプラグインを作ることです。
+
+ビヘイビアプラグインの名前に関して文章で書かれた慣習はありません。これらはこのPropel対してのみ動作するので、これらの接頭辞は'Propel'でなければなりません。またこれらの接尾辞は'BehaviorPlugin'でなければなりません。ですので我々のParanoidビヘイビア用の良い名前は'myPropelParanoidBehaviorPlugin'となります。
+
+今のところ、プラグインに設置するファイルは2つ: `ParanoidBehavior`クラス、とビヘイビアメソッドとフックを登録するために`config/config.php`に書かれたコードだけです。[17章](http://www.symfony-project.org/book/1_0/17-Extending-Symfony#chapter_17_plug_ins)はプラグインのツリー構造でこれらのファイルを編成する方法を説明します:
+
+    plugins/
+      myPropelParanoidBehaviorPlugin/
+        lib/
+          ParanoidBehavior.php    // ミックスインされるメソッドを含むクラス
+        config/
+          config.php              // ビヘイビアメソッドの登録
+
+プロジェクトにインストールされるすべてのプラグインの`config.php`ファイルはそれぞれのリクエストごとに実行されるので、これはビヘイビアのメソッドを登録するための完全な場所です。
+
+プラグイン作成作業を完了させるには、プラグインのrootディレクトリにインストール方法と使い方の手引きを記した`README`ファイルを追加しなければなりません。最良のビヘイビアは単体テストも含みます。
+
+結局の所、`package.xml`を追加し(手動もしくは[sfPackageMakerPlugin](http://www.symfony-project.org/plugins/sfPackageMakerPlugin)を利用する)、PEARでパッケージを作成すれば、再利用する準備ができています。これをsymfony公式サイトに投稿することもできます。
+
+パラメータをビヘイビアに渡す
+----------------------------
+
+良く設計されたビヘイビアは決め打ちされた値に依存しません。上記のParanoidビヘイビアの例の場合、`deleted_at`カラムが決め打ちされ、パラメータに変換されます。
+
+ビヘイビアにパラメータを渡すには、2番目のパラメータに`sfPropelBehavior::add()`へのコールとして通常の配列の代わりに連想配列を次のように使います:
+
+    [php]
+    sfPropelBehavior::add('Article', array('paranoid' => array(
+      'column' => 'deleted_at'
+    )));
+
+それから、ビヘイビアクラスのこのパラメータの値を取得するには、`sfConfig`レジストリを使用しなければなりません。パラメータは次の内容で構成される`sfConfig`キーに保存されます:
+
+    [php]
+    'propel_behavior_' . [BehaviorName] . '_' . [ClassName] . '_' . [ParameterName]
+    // 上記の例において、次のコードで'deleted_at'の値を取得する
+    sfConfig::get('propel_behavior_paranoid_Article_column')
+
+問題はビヘイビアメソッドはカラムの名前だけを使うわけではないということです。これらは実現するオペレーションに従ってこれらの様々なバージョンの名前を使います:
+
+    フォーマットの名前          | 例            | 使われる場所
+    ----------------------------|---------------|-----------
+    `BasePeer::TYPE_FIELDNAME`  | `deleted_at`  | schema.yml
+    `BasePeer::TYPE_PHPNAME`    | `DeletedAt`   | メソッドの名前
+    `BasePeer::TYPE_COLNAME`    | `DELETED_AT`  | Criteriaパラメータ
+    
+ですのでビヘイビアクラスはフィールドの名前に関して特定のフォーマットから別のフォーマットに変換する方法が必要になります。幸いにして、すべてのモデルのPeer生成基底クラスは`translateFieldName()`スタティックメソッドを提供します。この構文はきわめてシンプルです:
+
+    [php]
+    // translateFieldName($name, $origin_format, $dest_format) 
+    // 例
+    $name = ArticlePeer::translateFieldName('deleted_at', BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_COLNAME);
+
+これで`column`パラメータを考慮に入れるために`ParanoidBehavior`クラスを書き直す準備ができています:
+
+    [php]
+    class sfPropelParanoidBehavior
+    {
+      public function preDelete($object, $con = null)
+      {
+        $class = get_class($object);
+        $peerClass = get_class($object->getPeer());
+
+        $columnName = sfConfig::get('propel_behavior_paranoid_'.$class.'_column', 'deleted_at');
+        $method = 'set'.call_user_func(array($peerClass, 'translateFieldName'), $columnName, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME);
+        $object->$method(time());
+        $object->save();
+
+        return true;
+      }
+      
+      public function doSelectRS($class, $criteria, $con = null)
+      {
+        $columnName = sfConfig::get('propel_behavior_paranoid_'.$class.'_column', 'deleted_at');
+        $criteria->add(call_user_func(array($class, 'translateFieldName'), $columnName, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_COLNAME), null, Criteria::ISNULL);
+      }
+    }
+
+まとめ
+------
+
+Propelのビヘイビアは予め定義されているフックのセットと、単独のステートメントで複数のフックの登録を円滑にするために設計されたヘルパークラスにすぎません。ミックスインを理解していれば、独自のビヘイビアを編集することはそれほど難しくありません。独自のビヘイビアを書き始める前に[既存のビヘイビアプラグイン](http://trac.symfony-project.org/wiki/SymfonyPlugins#Propelbehaviorplugins)を必ず確認して下さい: これらはビヘイビアの構文の実践的な例です。

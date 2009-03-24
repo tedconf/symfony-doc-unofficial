@@ -1,0 +1,303 @@
+Eメールを送信する
+=================
+
+概要
+----
+
+ウェブアプリケーションからのメールの送信はありふれたタスクです。慣れ親しんだ方法(MVC分離)でこのタスクを自動化しEメール固有の問題(複数のmimeタイプ、同封メディア、添付)を対処するためにsymfonyは自身のアーキテクチャを利用します
+
+紹介
+----
+
+symfonyはウェブアプリケーションからEメールを送信する2つの方法を提供します: 
+
+- `sfMail`クラス経由で。これは[PHPMailer](http://phpmailer.sourceforge.net/)のインターフェイスを提供するプロキシクラスです。この解決方法はシンプルで早いですが、MVC分離を提供せずほとんど国際化できません。`sfMail`クラス単独で複雑なEメールを組み立てるのも難しいです。
+
+- 特定のアクションとテンプレート経由で。この解決方法はとても融通が利き、Eメール特有の対処方法に加えて通常のページと同じようにEメールを扱います。導入作業も長いですが、最初の方法よりもはるかに強力です。
+
+両方の解決方法の実装は同じ例を通して説明されます: パスワードを忘れたユーザーにリクエストされてパスワードを送信するものです。
+
+`sfMail`を直接利用する
+----------------------
+
+`sfMail`クラスは`PHPMailer`クラスを知っている人になじみやすいです。これはsymfonyの構文を利用する`PHPMailer`のシンプルなプロキシクラスです。`PHPMailer`クラスはsymfonyのパッケージに含まれるので、追加のインストール作業は必要ありません。
+
+顧客にパスワードを含むEメールを送信するには、アクションの内容は次のようになります:
+
+    [php]
+    public function executePasswordRequest()
+    {
+      // リクエストパラメータの'id'からカスタマーを決定する
+      $customer = CustomerPeer::retrieveByPk($this->getRequestParameter('id'));
+      
+      // オブジェクトの初期化
+      $mail = new sfMail();
+      $mail->initialize();
+      $mail->setMailer('sendmail');
+      $mail->setCharset('utf-8');
+      
+      // 必要なパラメータの定義
+      $mail->setSender('webmaster@my-company.com', 'My Company webmaster');
+      $mail->setFrom('info@my-company.com', 'My Company');
+      $mail->addReplyTo('webmaster_copy@my-company.com');
+  
+      $mail->addAddress($customer->getEmail());
+  
+      $mail->setSubject('Your password request');
+      $mail->setBody('
+      Dear customer,
+      
+      You are so absentminded. Next time, try to remember your password:
+      '.$customer->getPassword().'
+      
+      Regards,
+      The My Company webmaster');
+      
+      // Eメールを送信する
+      $mail->send();
+    }
+  
+代替アクションの使用
+--------------------
+
+多くの場合、他の何かを行うアクションのロジックにおいてEメールの送信プロセスは単なる回り道なので、これは別のアクションに委譲されることがよくあります。方法は次の通りです:
+
+    [php]
+    public function executePasswordRequest()
+    {
+      // Eメールを送信する
+      $raw_email = $this->sendEmail('mail', 'sendPassword');  
+      
+      // Eメールをログに記録する
+      $this->logMessage($raw_email, 'debug');
+    }
+
+Eメールの送信処理は`mail`モジュールの`sendPassword`アクションに委譲されます。`sfAction`クラスの`sendEmail()`メソッドは特別な種類の`forward()`で別のアクションを実行しますが後で戻ります(このメソッドは現在のアクションの実行を止めません)。加えて、このメソッドはログファイルに書き込むことができる生のEメールを返します([16章](http://www.symfony-project.org/book/1_0/16-Application-Management-Tools#Debugging)でログの詳細情報が見つかります)。
+
+`mail/sendPassword`は`sfMail`オブジェクトを扱いますが、メーラーを定義したり(設定ファイルから取得されます)初期化する必要はありません:
+
+    [php]
+    public function executeSendPassword()
+    {
+      // リクエストパラメータの'id'からカスタマーを決定する
+      $customer = CustomerPeer::retrieveByPk($this->getRequestParameter('id'));
+      
+      // オブジェクトの初期化
+      $mail = new sfMail();
+      $mail->setCharset('utf-8');      
+      
+      // 必要なパラメータの定義
+      $mail->setSender('webmaster@my-company.com', 'My Company webmaster');
+      $mail->setFrom('webmaster@my-company.com', 'My Company webmaster');
+      $mail->addReplyTo('webmaster_copy@my-company.com');
+  
+      $mail->addAddress($customer->getEmail());
+  
+      $mail->setSubject('Your password request');
+      
+      $this->password = $customer->getPassword();
+      $this->mail = $mail;    
+    }
+    
+`sfMail`オブジェクトのために`send()`メソッドを呼び出す必要がないことに注目して下さい; `sendEmail()`によって呼び出されることで、`$this->mail` `sfMail`オブジェクトを送り出すことで終わらせる必要があることをアクションは知ります。さてメールはどこでしょうか？これがMVC分離の美しさです: メールのボディ自身はテンプレートの`sendPasswordSuccess.php`に書き込まれます:
+
+    [php]
+    Dear customer,
+    
+    You are so absentminded. Next time, try to remember your password:
+    <?php echo $password ?>
+    
+    Regards,
+    The My Company webmaster
+
+>**Note**: `sendPassword`アクションがEメールを送信する必要ないことを決定する場合、通常のアクションのように`sfView::NONE`を返すことでEメール送信処理を停止できます。
+
+メーラーの設定
+--------------
+
+代替のアクションメソッドを使う場合、設定ファイルを通してメーラーを設定して環境ごとに有効にできます。
+
+`modules/mail/config/`ディレクトリで次の内容を持つ`mailer.yml`設定ファイルを作ります:
+
+    dev:
+      deliver:    off
+    
+    all:
+      mailer:     sendmail
+
+これはメール送信に使うメーラープログラムを規定し、開発環境ではメールの送信を無効にします。
+
+HTML Eメールを送信する
+----------------------
+
+大抵の場合、EメールはHTMLフォーマットもしくはmultipartフォーマット(HTMLとtextフォーマットの同封)で送信されます。`sfMail`オブジェクトで直接処理するには、`setContentType()`メソッドを使い代替のボディを指定します:
+
+    [php]
+    $mail->setContentType('text/html');
+    $mail->setBody('
+    <p>Dear customer</p>,
+    <p>
+      You are so <i>absentminded</i>. Next time, try to remember your password:<br>
+      <b>'.$customer->getPassword().'</b>
+    </p>
+    <p>
+      Regards,<br>
+      The My Company webmaster
+    </p>');    
+    $mail->setAltBody('
+    Dear customer,
+    
+    You are so absentminded. Next time, try to remember your password:
+    '.$customer->getPassword().'
+    
+    Regards,
+    The My Company webmaster');    
+
+代替のアクションを使う場合、`.altbody.php`で終わる代替テンプレートを使うことだけが必要になります。symfonyはこれを代替ボディとして自動的に追加します:
+
+    [php]
+    // sendPasswordSuccess.phpにて
+    <p>Dear customer</p>,
+    <p>
+      You are so <i>absentminded</i>. Next time, try to remember your password:<br>
+      <b><?php echo $password ?></b>
+    </p>
+    <p>
+      Regards,<br>
+      The My Company webmaster
+    </p>
+        
+    // sendPasswordSuccess.altbody.phpにて
+    Dear customer,
+    
+    You are so absentminded. Next time, try to remember your password:
+    <?php echo $password ?>
+    
+    Regards,
+    The My Company webmaster
+
+>**Note**: altbodyテンプレート無しのHTMLバージョンだけを使いたいのであれば、`sendPassword`アクションでcontent-typeを`text/html`に設定することが必要になります。
+
+埋め込み画像
+------------
+
+HTML Eメールは画像を直接ボディに埋め込むことができます。埋め込み画像を追加するには、`sfMail`オブジェクトの`addEmbeddedImage()`メソッドを使います:
+
+    [php]
+    $mail->addEmbeddedImage(sfConfig::get('sf_web_dir').'/images/my_company_logo.gif', 'CID1', 'My Company Logo', 'base64', 'image/gif');
+
+最初の引数は画像へのパスで、2番目は画像を埋め込むテンプレートで使用できる画像のリファレンスです:
+
+    [php]
+    // sendPasswordSuccess.phpにて
+    <p>Dear customer</p>,
+    <p>
+      You are so <i>absentminded</i>. Next time, try to remember your password:<br>
+      <b><?php echo $password ?></b>
+    </p>
+    <p>
+      Regards,<br>
+      The My Company webmaster
+      <img src="cid:CID1" />
+    </p>
+    
+>**Tip**: アクションのコード無しで、テンプレートから画像を埋め込むこともできます。[コードスニペットのセクション](http://www.symfony-project.org/snippets/snippet/27)で説明されている`embedded_image()`ヘルパーを参照して下さい。
+
+添付
+----
+
+メールにドキュメントを添付するコードはご想像の通りシンプルです:
+
+    [php]
+    // ドキュメントの添付
+    $mail->addAttachment(sfConfig::get('sf_data_dir').'/MyDocument.doc');
+    // 文字列の添付
+    $mail->addStringAttachment('this is some cool text to embed', 'file.txt');
+
+Eメールアドレスの高度な構文
+---------------------------
+
+受信者に加えて、carbon copy ('cc:')もしくはblind carbon copy ('bcc:')としてEメールを送信する機能が必要なことがよくあります。`sfMail`でこれを実現する方法は次の通りです:
+
+    [php]
+    $mail->addAddress($customer->getEmail());
+    $mail->addCc('carbon_copy@my-companyt.com ');    
+    $mail->addBcc('blind_carbon_copy@my-company.com');
+
+Eメールを設定するために使われる`sfMail`のメソッド(`setSender()`、`setFrom()`、`addReplyTo()`、`addAddress()`、 `addCc()`、`addBcc()`)は2つの構文を持ちます:
+
+    [php]
+    $mail->setFrom('me@symfony-project.com', 'Symfony');
+    // は下記と同等
+    $mail->setFrom('me@symfony-project.com <Symfony>');
+
+加えて、複数の受取人の場合にコードを最小にするために、`sfMail`は`addAddresses()`メソッドを持ちます:
+
+    [php]
+    $mail->addAddress('client1@client.com <Jules>');
+    $mail->addAddress('client2@client.com <Jim>');
+    // is equivalent to
+    $mail->addAddresses(array('client1@client.com <Jules>', 'client2@client.com <Jim>'));
+    
+`sfMail`のメソッド
+------------------
+
+`sfMail`オブジェクトを構築したら、その内容を確認するとよいでしょう。幸いにして、上述のすべてのセッターメソッドは対応するゲッターメソッドを持ち、以前設定したプロパティをクリアできます:
+
+    [php]
+    setCharset($charset)
+    getCharset()
+    setContentType($content_type)
+    getContentType()
+    setPriority($priority)
+    getPriority()
+    setEncoding($encoding)
+    getEncoding()
+    setSubject($subject)
+    getSubject()
+    setBody($body)
+    getBody()
+    setAltBody($text)
+    getAltBody()
+    setMailer($type = 'mail')
+    getMailer()
+    setSender($address, $name = null)
+    getSender()
+    setFrom($address, $name = null)
+    getFrom()
+    addAddresses($addresses)
+    addAddress($address, $name = null)
+    addCc($address, $name = null)
+    addBcc($address, $name = null)
+    addReplyTo($address, $name = null)
+    clearAddresses()
+    clearCcs()
+    clearBccs()
+    clearReplyTos()
+    clearAllRecipients()
+    addAttachment($path, $name = '', $encoding = 'base64', $type = 'application/octet-stream')
+    addStringAttachment($string, $filename, $encoding = 'base64', $type = 'application/octet-stream')
+    addEmbeddedImage($path, $cid, $name = '', $encoding = 'base64', $type = 'application/octet-stream')
+    setAttachments($attachments)
+    clearAttachments()
+    addCustomHeader($name, $value)
+    clearCustomHeaders()
+    setWordWrap($wordWrap)
+    getWordWrap()
+    
+アクションの外部からEメールを送信する
+-------------------------------------
+
+アクションの外部からEメールを送信したい場合(例えばバッチプロセス)、`sendEmail()`メソッドを呼び出すアクションオブジェクトはありません。幸いにして、このメソッドは`sfController` オブジェクトでも利用できます。バッチスクリプトでEメールの送信アクションを呼び出す方法は次の通りです:
+
+    [php]
+    <?php
+
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
+    define('SF_APP',         'myapp');
+    define('SF_ENVIRONMENT', 'test');
+    define('SF_DEBUG',       false);
+
+    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
+
+    $raw_email = sfContext::getInstance()->getController()->sendEmail('mail', 'sendPassword');
