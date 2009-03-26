@@ -297,7 +297,7 @@ and remove the content of the `executeIndex()` method as follows:
      *
      * @param sfRequest $request A request object
      */
-    public function executeIndex($request)
+    public function executeIndex(sfWebRequest $request)
     {
     }
 
@@ -340,7 +340,7 @@ In symfony, this kind of logic is kept in **actions**. Edit the actions file
 the `executeShow()` method by adding the four last lines:
 
     [php]
-    public function executeShow($request)
+    public function executeShow(sfWebRequest $request)
     {
       $this->blog_post = BlogPostPeer::retrieveByPk($request->getParameter('id'));
       $this->forward404Unless($this->blog_post);
@@ -399,7 +399,7 @@ the comment editing facility, so let's arrange that first. In the
 `sf_sandbox/apps/frontend/modules/post/templates/showSuccess.php` template, add this line at the bottom:
 
     [php]
-    <?php echo link_to('Add a comment', 'comment/edit?post_id='.$blog_post->getId()) ?>
+    <?php echo link_to('Add a comment', 'comment/new?post_id='.$blog_post->getId()) ?>
 
 The `link_to()` helper creates a hyperlink pointing to the
 `edit` action of the `comment` module, so you can add a comment directly from the post
@@ -425,6 +425,21 @@ make our changes. The file is located under the `sf_sandbox/lib/form/` directory
 
 >**Note**: For more details on the form framework, you are advised to read the
 [Forms Book](http://www.symfony-project.org/book/forms/1_2/en/).
+
+Then, the post id has to be automatically set from the request parameter passed in the URL. This 
+can be done by replacing the `executeNew()` method of the `comment` module by the following one.
+
+    [php]
+    class commentActions extends sfActions
+    {
+      public function executeNew(sfWebRequest $request)
+      {
+        $this->form = new BlogCommentForm();
+        $this->form->setDefault('blog_post_id', $request->getParameter('post_id'));
+      }
+
+      // ...
+    }
 
 After you have made this change, you will now be able to add a comment directly to a
 post without having to explicitly specify the post to attach it to:
