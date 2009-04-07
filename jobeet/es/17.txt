@@ -1,46 +1,46 @@
-DÃ­a 17: El Motor de Busqueda
+Día 17: El Motor de Busqueda
 ============================
 
-Hace dos dÃ­as, hemos aÃ±adido algunos feeds para mantener a los usuarios Jobeet actualizados con los nuevos puestos de trabajo. Hoy, vamos a seguir mejorando la experiencia del usuario mediante la implementaciÃ³n de la Ãºltima caracterÃ­stica principal del sitio web Jobeet: el motor de bÃºsqueda.
+Hace dos días, hemos añadido algunos feeds para mantener a los usuarios Jobeet actualizados con los nuevos puestos de trabajo. Hoy, vamos a seguir mejorando la experiencia del usuario mediante la implementación de la última característica principal del sitio web Jobeet: el motor de búsqueda.
 
-La TecnologÃ­a
+La Tecnología
 -------------
 
-Antes de saltar de cabeza, en primer lugar, hablemos un poco sobre la historia de Symfony. Abogamos por un montÃ³n de buenas prÃ¡cticas, como pruebas y refactoring, y tambiÃ©n tratamos de aplicarlas al framework mismo. Por ejemplo, nos gusta el famoso lema "No reinventar la rueda". 
+Antes de saltar de cabeza, en primer lugar, hablemos un poco sobre la historia de Symfony. Abogamos por un montón de buenas prácticas, como pruebas y refactoring, y también tratamos de aplicarlas al framework mismo. Por ejemplo, nos gusta el famoso lema "No reinventar la rueda". 
 
-Como cuestiÃ³n de hecho, el framework Symfony comenzÃ³ su vida hace cuatro aÃ±os como la uniÃ³n entre dos existentes softwares Open-Source: Mojavi y Propel. Y cada vez que necesitamos hacer frente a un nuevo problema, buscamos una biblioteca que haga el trabajo mucho antes de hacer la codificaciÃ³n uno mismo desde cero.
+Como cuestión de hecho, el framework Symfony comenzó su vida hace cuatro años como la unión entre dos existentes softwares Open-Source: Mojavi y Propel. Y cada vez que necesitamos hacer frente a un nuevo problema, buscamos una biblioteca que haga el trabajo mucho antes de hacer la codificación uno mismo desde cero.
 
-Hoy, queremos aÃ±adir un motor de bÃºsqueda para Jobeet, y el Zend Framework ofrece una gran biblioteca, llamada [Zend Lucene](http://framework.zend.com/manual/en/zend.search.lucene.html),
-la cual es un port del bien conocido proyecto Java Lucene. En lugar de crear un nuevo motor de bÃºsqueda para Jobeet, lo cual es una tarea compleja, vamos a utilizar Zend Lucene.
+Hoy, queremos añadir un motor de búsqueda para Jobeet, y el Zend Framework ofrece una gran biblioteca, llamada [Zend Lucene](http://framework.zend.com/manual/en/zend.search.lucene.html),
+la cual es un port del bien conocido proyecto Java Lucene. En lugar de crear un nuevo motor de búsqueda para Jobeet, lo cual es una tarea compleja, vamos a utilizar Zend Lucene.
 
-En la pÃ¡gina de la documentaciÃ³n de Zend Lucene, la biblioteca se describe de la siguiente manera:
+En la página de la documentación de Zend Lucene, la biblioteca se describe de la siguiente manera:
 
->... un  motor de bÃºsqueda textual de propÃ³sito general escrito Ã­ntegramente en PHP 5. Como
->almacena sus Ã­ndices en el sistema de archivos y no requiere de un 
->servidor de bases de datos, Ã©ste puede aÃ±adir capacidades de bÃºsqueda a casi cualquier sitio web PHP. Zend_Search_Lucene soporta las siguientes caracterÃ­sticas:
+>... un  motor de búsqueda textual de propósito general escrito íntegramente en PHP 5. Como
+>almacena sus índices en el sistema de archivos y no requiere de un 
+>servidor de bases de datos, éste puede añadir capacidades de búsqueda a casi cualquier sitio web PHP. Zend_Search_Lucene soporta las siguientes características:
 >
->  * BÃºsqueda por Ranking - mostrarÃ¡ al principio los mejores resultados
+>  * Búsqueda por Ranking - mostrará al principio los mejores resultados
 >  * Muchos tipos de consultas poderosas: consultas de tipo textual, booleaneas, wildcard
 >    por proximidad, rangos y muchas otras
->  * BÃºsqueda por un campo especÃ­fico (e.g., tÃ­tulo, autor, contenidos)
+>  * Búsqueda por un campo específico (e.g., título, autor, contenidos)
 
 -
 
 >**NOTE**
->Este capÃ­tulo no es un tutorial sobre la biblioteca Zend Lucene, sino
->como integrarla en el sitio web Jobeet; o mÃ¡s en general, la forma de integrar
->bibliotecas de terceros en un proyecto symfony. Si deseas mÃ¡s informaciÃ³n
->sobre esta tecnologÃ­a, por favor visita la
->[DocumentaciÃ³n de Zend Lucene](http://framework.zend.com/manual/en/zend.search.lucene.html).
+>Este capítulo no es un tutorial sobre la biblioteca Zend Lucene, sino
+>como integrarla en el sitio web Jobeet; o más en general, la forma de integrar
+>bibliotecas de terceros en un proyecto symfony. Si deseas más información
+>sobre esta tecnología, por favor visita la
+>[Documentación de Zend Lucene](http://framework.zend.com/manual/en/zend.search.lucene.html).
 
-Zend Lucene ya se ha instalado ayer como parte de la instalaciÃ³n del Zend Framework que hicimos para el envÃ­o de mensajes de correo electrÃ³nico.
+Zend Lucene ya se ha instalado ayer como parte de la instalación del Zend Framework que hicimos para el envío de mensajes de correo electrónico.
 
-IndexaciÃ³n
+Indexación
 ----------
 
-El motor de bÃºsqueda de Jobeet deberÃ­a ser capaz de devolver todos los puestos que corresponden a palabras clave introducidas por el usuario. Antes de ser capaz de buscar cualquier cosa, un Ã­ndice debe ser construÃ­do para los puestos de trabajo; para Jobeet, se almacenarÃ¡n en el directorio `data/`.
+El motor de búsqueda de Jobeet debería ser capaz de devolver todos los puestos que corresponden a palabras clave introducidas por el usuario. Antes de ser capaz de buscar cualquier cosa, un índice debe ser construído para los puestos de trabajo; para Jobeet, se almacenarán en el directorio `data/`.
 
-Zend Lucene proporciona dos mÃ©todos para recuperar un Ã­ndice en funciÃ³n de si ya existe uno o no. Vamos a crear un mÃ©todo helper en la clase `JobeetJobPeer` que devuelve un Ã­ndice existente o crea uno nuevo para nosotros:
+Zend Lucene proporciona dos métodos para recuperar un índice en función de si ya existe uno o no. Vamos a crear un método helper en la clase <propel>`JobeetJobPeer`</propel><doctrine>`JobeetJobTable`</doctrine> que devuelve un índice existente o crea uno nuevo para nosotros:
 
     [php]
 <propel>
@@ -69,10 +69,10 @@ Zend Lucene proporciona dos mÃ©todos para recuperar un Ã­ndice en funciÃ³n de si
       return sfConfig::get('sf_data_dir').'/job.'.sfConfig::get('sf_environment').'.index';
     }
 
-### El MÃ©todo `save()` 
+### El Método `save()` 
 
-Cada vez que se crea un puesto de trabajo, es actualizado o borrado, el Ã­ndice debe ser actualizado.
-Edita `JobeetJob` para actualizar el Ã­ndice cada vez que un trabajo es guardado en la base de datos:
+Cada vez que se crea un puesto de trabajo, es actualizado o borrado, el índice debe ser actualizado.
+Edita `JobeetJob` para actualizar el índice cada vez que un trabajo es guardado en la base de datos:
 
 <propel>
     [php]
@@ -99,9 +99,10 @@ Edita `JobeetJob` para actualizar el Ã­ndice cada vez que un trabajo es guardado
       $this->updateLuceneIndex();
 
       return $ret;
+    }
 </doctrine>
 
-Y crear el mÃ©todo `updateLuceneIndex()` que hace el trabajo:
+Y crear el método `updateLuceneIndex()` que hace el trabajo:
 
     [php]
 <propel>
@@ -148,14 +149,14 @@ Y crear el mÃ©todo `updateLuceneIndex()` que hace el trabajo:
     }
 
 
-Como Zend Lucene no es capaz de actualizar una entrada existente, Ã©sta se elimina primero si el puesto de trabajo (job) ya existe en el Ã­ndice.
+Como Zend Lucene no es capaz de actualizar una entrada existente, ésta se elimina primero si el puesto de trabajo (job) ya existe en el índice.
 
-La IndexaciÃ³n de los puestos de trabajo en sÃ­ es muy sencilla: la clave primaria se almacena para futuras referencias cuando hacemos bÃºsquedas de puestos de trabajo y las principales columnas (`position`, `company`,
-`location`, y `description`) se indexan pero no se almacena en el Ã­ndice ya que vamos a utilizar los objetos reales para mostrar los resultados.
+La Indexación de los puestos de trabajo en sí es muy sencilla: la clave primaria se almacena para futuras referencias cuando hacemos búsquedas de puestos de trabajo y las principales columnas (`position`, `company`,
+`location`, y `description`) se indexan pero no se almacena en el índice ya que vamos a utilizar los objetos reales para mostrar los resultados.
 
 ### Transacciones ##ORM## 
 
-Â¿QuÃ© pasa si hay un problema cuando procede la indexaciÃ³n de un puesto de trabajo (job) o si el puesto de trabajo (job) no se guarda en la base de datos? Ambas herramientas ##ORM## y Zend Lucene arrojarÃ¡n una excepciÃ³n. Pero en algunas circunstancias, podrÃ­amos tener un puesto de trabajo (job) guardado en la base de datos sin la correspondiente indexaciÃ³n. Para evitar que esto ocurra, podemos envolver los dos actualizaciones en una transacciÃ³n y anularlas en caso de haber un error:
+¿Qué pasa si hay un problema cuando procede la indexación de un puesto de trabajo (job) o si el puesto de trabajo (job) no se guarda en la base de datos? Ambas herramientas ##ORM## y Zend Lucene arrojarán una excepción. Pero en algunas circunstancias, podríamos tener un puesto de trabajo (job) guardado en la base de datos sin la correspondiente indexación. Para evitar que esto ocurra, podemos envolver los dos actualizaciones en una transacción y anularlas en caso de haber un error:
 
 <propel>
     [php]
@@ -216,7 +217,7 @@ La IndexaciÃ³n de los puestos de trabajo en sÃ­ es muy sencilla: la clave primar
 
 ### `delete()`
 
-TambiÃ©n tenemos que sobreescribir el mÃ©todo `delete()` para eliminar la entrada del puesto de trabajo (job) eliminado a partir del Ã­ndice:
+También tenemos que sobreescribir el método `delete()` para eliminar la entrada del puesto de trabajo (job) eliminado a partir del índice:
 
 <propel>
     [php]
@@ -253,7 +254,7 @@ TambiÃ©n tenemos que sobreescribir el mÃ©todo `delete()` para eliminar la entrad
 
 ### Borrado Masivo
 
-Siempre que cargues los datos con la tarea `propel:data-load`, Symfony elimina todos los registros jobs existentes llamando al mÃ©todo `JobeetJobPeer::doDeleteAll()`. Vamos a redefinir el comportamiento por defecto para eliminar tambiÃ©n el Ã­ndice:
+Siempre que cargues los datos con la tarea `propel:data-load`, Symfony elimina todos los registros jobs existentes llamando al método `JobeetJobPeer::doDeleteAll()`. Vamos a redefinir el comportamiento por defecto para eliminar también el índice:
 
     [php]
     // lib/model/JobeetJobPeer.php
@@ -269,20 +270,20 @@ Siempre que cargues los datos con la tarea `propel:data-load`, Symfony elimina t
     }
 </propel>
 
-BÃºsqueda
+Búsqueda
 --------
 
 Ahora que tenemos todo en su lugar, puedes recargar los datos para indexarlos:
 
     $ php symfony propel:data-load --env=dev
 
-La tarea se ejecuta con la opciÃ³n `--env` ya que el Ã­ndice es dependiente del entorno y el entorno por defecto para las tareas es `cli`.
+La tarea se ejecuta con la opción `--env` ya que el índice es dependiente del entorno y el entorno por defecto para las tareas es `cli`.
 
 >**TIP**
->Para usuarios tipo Unix: ya que el Ã­ndice se modifica desde la lÃ­nea de comandos y tambiÃ©n
->desde el web, debe cambiar el Ã­ndice de permisos de directorio segÃºn
->tu configuraciÃ³n: comprobar que tanto desde la lÃ­nea de comandos
->y desde el servidor web el usuario pueda escribir el Ã­ndice del directorio.
+>Para usuarios tipo Unix: ya que el índice se modifica desde la línea de comandos y también
+>desde el web, debe cambiar el índice de permisos de directorio según
+>tu configuración: comprobar que tanto desde la línea de comandos
+>y desde el servidor web el usuario pueda escribir el índice del directorio.
 
 -
 
@@ -291,14 +292,14 @@ La tarea se ejecuta con la opciÃ³n `--env` ya que el Ã­ndice es dependiente del 
 >la extension `zip` compilada en tu PHP. Es un fallo conocido de la clase 
 >`Zend_Loader`.
 
-Implementar la bÃºsqueda en el frontend es pan comido. En primer lugar, crea una ruta:
+Implementar la búsqueda en el frontend es pan comido. En primer lugar, crea una ruta:
 
     [yml]
     job_search:
       url:   /search
       param: { module: job, action: search }
 
-Y la acciÃ³n correspondiente:
+Y la acción correspondiente:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -322,7 +323,7 @@ Y la acciÃ³n correspondiente:
       // ...
     }
 
-La plantilla es tambiÃ©n muy sencilla:
+La plantilla es también muy sencilla:
 
     [php]
     // apps/frontend/modules/job/templates/searchSuccess.php
@@ -332,7 +333,7 @@ La plantilla es tambiÃ©n muy sencilla:
       <?php include_partial('job/list', array('jobs' => $jobs)) ?>
     </div>
 
-La bÃºsqueda en sÃ­ misma se delega en el mÃ©todo `getForLuceneQuery()`:
+La búsqueda en sí misma se delega en el método `getForLuceneQuery()`:
 
 <propel>
     [php]
@@ -381,7 +382,7 @@ La bÃºsqueda en sÃ­ misma se delega en el mÃ©todo `getForLuceneQuery()`:
     }
 </doctrine>
 
-DespuÃ©s de obtener todos los resultados del Ã­ndice Lucene, vamos a filtrar los puestos de trabajo inactivos, y limitar el nÃºmero de resultados a `20`.
+Después de obtener todos los resultados del índice Lucene, vamos a filtrar los puestos de trabajo inactivos, y limitar el número de resultados a `20`.
 
 Para que funcione, actualiza el layout:
 
@@ -398,16 +399,16 @@ Para que funcione, actualiza el layout:
 
 >**NOTE**
 >Zend Lucene define un lenguaje de consulta poderoso que soporta operaciones como
->Booleans, wildcards, fuzzy search,y mucho mÃ¡s. Todo estÃ¡ documentado
+>Booleans, wildcards, fuzzy search,y mucho más. Todo está documentado
 >en el
 >[Zend Lucene manual](http://framework.zend.com/manual/en/zend.search.lucene.query-api.html)
 
 Las Pruebas Unitarias
 ---------------------
 
-Â¿QuÃ© tipo de Pruebas unitarias tenemos que crear para probar el motor de bÃºsqueda? Evidentemente, no probaremos la biblioteca Zend Lucene en sÃ­, sino su integraciÃ³n con la clase `JobeetJob`.
+¿Qué tipo de Pruebas unitarias tenemos que crear para probar el motor de búsqueda? Evidentemente, no probaremos la biblioteca Zend Lucene en sí, sino su integración con la clase `JobeetJob`.
 
-AÃ±ade las siguientes pruebas al final del archivo `JobeetJobTest.php` y no te olvides de actualizar el nÃºmero de pruebas al principio del archivo a `7`:
+Añade las siguientes pruebas al final del archivo `JobeetJobTest.php` y no te olvides de actualizar el número de pruebas al principio del archivo a `7`:
 
     [php]
     // test/unit/model/JobeetJobTest.php
@@ -442,13 +443,13 @@ AÃ±ade las siguientes pruebas al final del archivo `JobeetJobTest.php` y no te o
 </doctrine>
     $t->is(count($jobs), 0, '::getForLuceneQuery() does not return deleted jobs');
 
-Probamos que ningun puesto de trabajo inactivo, o borrado aparezca en los resultados de la bÃºsqueda; tambiÃ©n comprobamos que los puestos se corresponden al criterio dado para aparecer en los resultados.
+Probamos que ningun puesto de trabajo inactivo, o borrado aparezca en los resultados de la búsqueda; también comprobamos que los puestos se corresponden al criterio dado para aparecer en los resultados.
 
 Las Tareas
 ----------
 
-Finalmente, tenemos que crear una tarea de limpieza para el Ã­ndice de todos los registros obsoletos
-(cuando expira un puesto, por ejemplo,) y optimizar el Ã­ndice de vez en cuando. Como ya tenemos una tarea de limpieza, vamos a actualizarla para aÃ±adirle esas caracterÃ­sticas:
+Finalmente, tenemos que crear una tarea de limpieza para el índice de todos los registros obsoletos
+(cuando expira un puesto, por ejemplo,) y optimizar el índice de vez en cuando. Como ya tenemos una tarea de limpieza, vamos a actualizarla para añadirle esas características:
 
     [php]
     // lib/task/JobeetCleanupTask.class.php
@@ -499,23 +500,23 @@ Finalmente, tenemos que crear una tarea de limpieza para el Ã­ndice de todos los
 </doctrine>
     }
 
-La tarea remueve todos los puestos de trabajo vencidos del Ã­ndice y, a continuaciÃ³n, se lo optimiza gracias al mÃ©todo nativo `optimize()` de Zend Lucene.
+La tarea remueve todos los puestos de trabajo vencidos del índice y, a continuación, se lo optimiza gracias al método nativo `optimize()` de Zend Lucene.
 
-Nos vemos maÃ±ana
+Nos vemos mañana
 ----------------
 
-Hoy, hemos implementado un completo motor de bÃºsqueda con muchas caracterÃ­sticas en menos de una hora. Cada vez que desees aÃ±adir una nueva funciÃ³n para tus proyectos, debes comprobar que todavÃ­a no se haya resuelto en algÃºn otro lugar. En primer lugar, comprobar si es algo que no se haya implementado de forma nativa en el [framework Symfony](http://www.symfony-project.org/api/1_2/). Luego, busca en los 
+Hoy, hemos implementado un completo motor de búsqueda con muchas características en menos de una hora. Cada vez que desees añadir una nueva función para tus proyectos, debes comprobar que todavía no se haya resuelto en algún otro lugar. En primer lugar, comprobar si es algo que no se haya implementado de forma nativa en el [framework Symfony](http://www.symfony-project.org/api/1_2/). Luego, busca en los 
 [plugins symfony](http://www.symfony-project.org/plugins/). Y no olvides visitar las [bibliotecas del Zend Framework ](http://framework.zend.com/manual/en/)
-y los [ezComponent](http://ezcomponents.org/docs) tambiÃ©n.
+y los [ezComponent](http://ezcomponents.org/docs) también.
 
-MaÃ±ana, vamos a utilizar algunos JavaScripts para mejorar la capacidad de respuesta del motor de bÃºsqueda mediante la actualizaciÃ³n de los resultados en tiempo real cuando el usuario escribe en el cuadro de bÃºsqueda. Por supuesto, esta serÃ¡ la ocasiÃ³n para hablar acerca de cÃ³mo utilizar AJAX con Symfony.
+Mañana, vamos a utilizar algunos JavaScripts para mejorar la capacidad de respuesta del motor de búsqueda mediante la actualización de los resultados en tiempo real cuando el usuario escribe en el cuadro de búsqueda. Por supuesto, esta será la ocasión para hablar acerca de cómo utilizar AJAX con Symfony.
 
 Feedback
 --------
 
 >**Tip**
->Este capÃ­tulo ha sido traducido por **Roberto GermÃ¡n Puentes DÃ­az**. 
->Si encuentras algÃºn error que deseas corregir o realizar algÃºn comentario,
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
 >no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
 
 __ORM__
