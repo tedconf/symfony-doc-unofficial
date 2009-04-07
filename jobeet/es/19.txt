@@ -529,7 +529,7 @@ Cada traducción es administrada por una etiqueta `trans-unit` que tiene un úni
 El principio fundamental detrás de la internacionalización es traducir frases. Sin embargo, algunas frases incluyen valores dinámicos. En Jobeet, este es el caso en la página de inicio para el enlace "and X more...":
 
     [php]
-    // apps/frontend/modules/job/templates/indexSuccess.php
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
     <div class="more_jobs">
       and <?php echo link_to($count, 'category', $category) ?> more...
     </div>
@@ -537,7 +537,7 @@ El principio fundamental detrás de la internacionalización es traducir frases.
 El número de puestos de trabajo es una variable que debe ser utilizada para la traducción:
 
     [php]
-    // apps/frontend/modules/job/templates/indexSuccess.php
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
     <div class="more_jobs">
       <?php echo __('and %count% more...', array('%count%' => link_to($count, 'category', $category))) ?>
     </div>
@@ -563,7 +563,7 @@ Algunas otras cadenas son aún más complejas ya que implican plurales. Según a
 En la página de categoría, el número de puestos de trabajo en la categoría actual se muestra:
 
     [php]
-    // apps/frontend/modules/category/templates/showSuccess.php
+    <!-- apps/frontend/modules/category/templates/showSuccess.php -->
     <strong><?php echo $pager->getNbResults() ?></strong> jobs in this category
 
 Cuando una oración tiene diferentes traducciones de acuerdo con un número, el helper `format_number_choice()` debe utilizarse:
@@ -659,7 +659,7 @@ Y actualiza los archivos de datos para las categorías:
 
 Reconstruye el modelo para crear las clase relacionadas `i18n`:
 
-    $ php symfony propel:build-all-load --no-confirmation
+    $ php symfony propel:build-all-reload --no-confirmation
     $ php symfony cc
 
 Como las columnas `name` y `slug` se han trasladado a la tabla i18n, mueve el método `setName()` de `JobeetCategory` a `JobeetCategoryI18n`:
@@ -788,7 +788,7 @@ Cuando usamos el comportamieto `I18n`, proxis son creados entre el objeto `Jobee
     $category->setName('foo'); // sets the name for the current culture
     $category->getName(); // gets the name for the current culture
 
-    $this->setCulture('fr'); // from your actions class
+    $this->getUser()->setCulture('fr'); // from your actions class
 
     $category->setName('foo'); // sets the name for French
     echo $category->getName(); // gets the name for French
@@ -846,10 +846,10 @@ vamos a crear un método que se encargará de la recuperación del objeto:
 
         return self::doSelectOne($criteria);
       }
+    }
 </propel>
-
 <doctrine>
-Puesto que ya sobreescribimos el `findOneBySlug()` vamos a refactorizar un poco más estos métodos para que pueden ser compartidos. Vamos a crear un nuevo `findOneBySlugAndCulture()`
+Puesto que ya sobreescribimos el `findOneBySlug()` vamos a refactorizar un poco más estos métodos para que pueden ser compartidos. Vamos a crear un nuevos métodos `findOneBySlugAndCulture()`
 y `doSelectForSlug()` y cambiar el `findOneBySlug()` para simplemente usar el `findOneBySlugAndCulture()`.
 
     [php]
@@ -874,8 +874,6 @@ y `doSelectForSlug()` y cambiar el `findOneBySlug()` para simplemente usar el `f
     }
 
 </doctrine>
-    // ...
-  }
 
 A continuación, utiliza la opción `method` para decirle a la ruta `category` que use el método 
 `doSelectForSlug()` para recuperar el objeto:
@@ -946,7 +944,7 @@ Viene con traducciones a más de 20 idiomas, y es muy fácil de añadir uno nuev
 </doctrine>
 en el dir `i18n`. Como el archivo en tu aplicación se fusionará con el de symfony, mantiene sólo las cadenas modificadas en el archivo de la aplicación.
 
-Notarás que los traducciones del  admin generator se nombran como `sf_admin.fr.xml`, en lugar de `fr/messages.xml`. Como cuestión de hecho, `messages` es el nombre del catálogo, y que puede ser modificado para permitir una mejor separación entre las distintas partes de tu aplicación. Usar un catálogo que no sea el predeterminado require que lo especifique cuando usas el helper `__()`:
+Notarás que los traducciones del  admin generator se nombran como `sf_admin.fr.xml`, en lugar de `fr/messages.xml`. Como cuestión de hecho, `messages` es el nombre del catálogo por defecto usado por Symfony, y que puede ser modificado para permitir una mejor separación entre las distintas partes de tu aplicación. Usar un catálogo que no sea el predeterminado require que lo especifique cuando usas el helper `__()`:
 
     [php]
     <?php echo __('About Jobeet', array(), 'jobeet') ?>
@@ -995,6 +993,10 @@ En el grupo de helper [`Date`](http://www.symfony-project.org/api/1_2/DateHelper
  | ------------------- | ----------------- |
  | `format_date()`     | Formatos de fecha |
  | `format_datetime()` | Formatos de fecha |
+ | `time_ago_in_words_()`         | Muestra el tiempo transcurrido entre una fecha y ahora en palabras  |
+ | `distance_of_time_in_words()`  | Muestra el tiempo transcurrido entre dos fechas en palabras         |
+ | `format_daterange()`           | Formatos de un rango de fechas                                      |
+ 
 
 En el grupo de helper [`Number`](http://www.symfony-project.org/api/1_2/NumberHelper) :
 
