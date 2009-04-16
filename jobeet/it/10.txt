@@ -342,11 +342,25 @@ La versione finale della classe `JobeetJobForm` sarà come la seguente:
         $this->validatorSchema['email'] = new sfValidatorEmail();
 
         $this->widgetSchema['type'] = new sfWidgetFormChoice(array(
+<propel>
           'choices' => JobeetJobPeer::$types,
+</propel>
+<doctrine>
+          'choices'  => Doctrine::getTable('JobeetJob')->getTypes(),
+</doctrine>
           'expanded' => true,
         ));
         $this->validatorSchema['type'] = new sfValidatorChoice(array(
+<propel>
           'choices' => array_keys(JobeetJobPeer::$types),
+</propel>
+<doctrine>
+          'choices' => array_keys(Doctrine::getTable('JobeetJob')->getTypes()),
+</doctrine>
+        ));
+
+        $this->widgetSchema['logo'] = new sfWidgetFormInputFile(array(
+          'label' => 'Company logo',
         ));
 
         $this->widgetSchema->setLabels(array(
@@ -355,9 +369,6 @@ La versione finale della classe `JobeetJobForm` sarà come la seguente:
           'how_to_apply'   => 'How to apply?',
         ));
 
-        $this->widgetSchema['logo'] = new sfWidgetFormInputFile(array(
-          'label' => 'Company logo',
-        ));
         $this->validatorSchema['logo'] = new sfValidatorFile(array(
           'required'   => false,
           'path'       => sfConfig::get('sf_upload_dir').'/jobs',
