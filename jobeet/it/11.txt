@@ -779,6 +779,7 @@ Eseguire il task è simile ad eseguire ogni altro task predefinito di symfony:
 
     $ php symfony jobeet:cleanup --days=10 --env=dev
 
+<propel>
 Come sempre, il codice pulito per il database è stato fattorizzato nella
 classe `JobeetJobPeer`:
 
@@ -795,6 +796,23 @@ classe `JobeetJobPeer`:
 
 Il metodo `doDelete()` rimuove dal database le righe che corrispondono all'
 oggetto `Criteria` dato. Può anche accettare un array di chiavi primarie.
+</propel>
+<doctrine>
+Come sempre, il codice pulito per il database è stato fattorizzato nella
+classe `JobeetJobTable`:
+
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    public function cleanup($days)
+    {
+      $q = $this->createQuery('a')
+        ->delete()
+        ->andWhere('a.is_activated = ?', 0)
+        ->andWhere('a.created_at < ?', date('Y-m-d', time() - 86400 * $days));
+
+      return $q->execute();
+    }
+</doctrine>
 
 >**NOTE**
 >I task di symfony si comportano bene con i loro ambienti, perché restituiscono
