@@ -1,40 +1,40 @@
-DÃ­a 5: El Enrutamiento
+Día 5: El Enrutamiento
 ======================
 
-Si has completado el dÃ­a 4, ahora deberÃ­as estar familiarizado con el patrÃ³n MVC y deberÃ­as sentir mÃ¡s y mÃ¡s natural esta forma de codificaciÃ³n. Dedica un poco mÃ¡s de tiempo con esto para no tener que volver y mirar hacia atrÃ¡s. Para practicar un poco el dÃ­a de ayer, hemos personalizado la pÃ¡ginas Jobeet y en el proceso, tambiÃ©n examinamos varios conceptos de Symfony, como el layout, los helpers, y los slots.
+Si has completado el día 4, ahora deberías estar familiarizado con el patrón MVC y deberías sentir más y más natural esta forma de codificación. Dedica un poco más de tiempo con esto para no tener que volver y mirar hacia atrás. Para practicar un poco el día de ayer, hemos personalizado la páginas Jobeet y en el proceso, también examinamos varios conceptos de Symfony, como el layout, los helpers, y los slots.
 
 Hoy nos sumergiremos en el maravilloso mundo del Framework de Enrutamiento de Symfony .
 
 Las URLs
 --------
 
-Si haces clic en un puesto de trabajo en la pÃ¡gina principal Jobeet, la URL se parece a esto:
-`/job/show/id/1`. Si ya has desarrollado sitios web PHP, probablemente estÃ©s mÃ¡s acostumbrados a las URL como `/job.php?id=1`. Â¿CÃ³mo Symfony hace para que funcione? Â¿CÃ³mo Symfony determina la acciÃ³n a llamar basÃ¡ndose en esta URL?
-Â¿PorquÃ© el `id` de un job se obtiene con `$request->getParameter('id')`?
+Si haces clic en un puesto de trabajo en la página principal Jobeet, la URL se parece a esto:
+`/job/show/id/1`. Si ya has desarrollado sitios web PHP, probablemente estés más acostumbrados a las URL como `/job.php?id=1`. ¿Cómo Symfony hace para que funcione? ¿Cómo Symfony determina la acción a llamar basándose en esta URL?
+¿Porqué el `id` de un job se obtiene con `$request->getParameter('id')`?
 Hoy, vamos a responder a todas estas preguntas.
 
-Pero primero, vamos a hablar acerca de las URL y exactamente que son ellas. En un contexto web, una URL es el identificador Ãºnico de un recurso web. Cuando accedes a una URL, estÃ¡s pidiendo al navegador obtener un recurso identificado por esa URL. Por lo tanto, como la direcciÃ³n URL es la interfaz entre la pÃ¡gina web y el usuario, debe transmitir informaciÃ³n significativa sobre algÃºn recurso al que hace referencia. Pero las "tradicionales" URLs realmente no describen al recurso, sino que exponen la estructura interna de la aplicaciÃ³n. Al usuario no le importa que tu sitio web sea desarrollado con el lenguaje PHP o que el puesto de trabajo tiene un cierto identificador en la base de datos.
-Exponer el funcionamiento interno de tu aplicaciÃ³n es tambiÃ©n es bastante malo en lo que medida de seguridad se refiere: Â¿QuÃ© pasa si el usuario intenta adivinar la direcciÃ³n URL de los recursos que no tienen acceso? AsÃ­ es, el desarrollador debe asegurarlos de la manera adecuada, pero mÃ¡s te vale ocultar la informaciÃ³n sensible.
+Pero primero, vamos a hablar acerca de las URL y exactamente que son ellas. En un contexto web, una URL es el identificador único de un recurso web. Cuando accedes a una URL, estás pidiendo al navegador obtener un recurso identificado por esa URL. Por lo tanto, como la dirección URL es la interfaz entre la página web y el usuario, debe transmitir información significativa sobre algún recurso al que hace referencia. Pero las "tradicionales" URLs realmente no describen al recurso, sino que exponen la estructura interna de la aplicación. Al usuario no le importa que tu sitio web sea desarrollado con el lenguaje PHP o que el puesto de trabajo tiene un cierto identificador en la base de datos.
+Exponer el funcionamiento interno de tu aplicación es también es bastante malo en lo que medida de seguridad se refiere: ¿Qué pasa si el usuario intenta adivinar la dirección URL de los recursos que no tienen acceso? Así es, el desarrollador debe asegurarlos de la manera adecuada, pero más te vale ocultar la información sensible.
 
-Las URL son tan importantes en Symfony que tiene todo un framework dedicado a su gestiÃ³n: el framework de **enrutamiento**. El enrutamiento gestiona el URI interno y la URL externa. Cuando una peticiÃ³n llega, el enrutamiento analiza la URL y la convierte en un URI interno.
+Las URL son tan importantes en Symfony que tiene todo un framework dedicado a su gestión: el framework de **enrutamiento**. El enrutamiento gestiona el URI interno y la URL externa. Cuando una petición llega, el enrutamiento analiza la URL y la convierte en un URI interno.
 
-Ya has visto el URI interno de la pÃ¡gina de puestos de trabajo en la plantilla `showSuccess.php`:
+Ya has visto el URI interno de la página de puestos de trabajo en la plantilla `showSuccess.php`:
 
     'job/show?id='.$job->getId()
 
-El helper `url_for()` convierte Ã©ste URI interno a una correcta URL:
+El helper `url_for()` convierte éste URI interno a una correcta URL:
 
     /job/show/id/1
 
-El URI interno estÃ¡ hecho de varias partes: `job` es el mÃ³dulo, `show` es la acciÃ³n y la cadena de consulta aÃ±ade los parÃ¡metros a pasar a la acciÃ³n. El modelo genÃ©rico para los URIs internos es:
+El URI interno está hecho de varias partes: `job` es el módulo, `show` es la acción y la cadena de consulta añade los parámetros a pasar a la acción. El modelo genérico para los URIs internos es:
 
-    MÃ“DULO/ACCIÃ“N?clave=valor&clave_1=valor_1&...
-Como el enrutamiento de Symfony es un proceso bidireccional, puedes cambiar las URLs sin cambiar la implementaciÃ³n tÃ©cnica. Esta es una de las principales ventajas del patrÃ³n de diseÃ±o sobre controlador frontal.
+    MÓDULO/ACCIÓN?clave=valor&clave_1=valor_1&...
+Como el enrutamiento de Symfony es un proceso bidireccional, puedes cambiar las URLs sin cambiar la implementación técnica. Esta es una de las principales ventajas del patrón de diseño sobre controlador frontal.
 
-La ConfiguraciÃ³n del Enrutamiento
+La Configuración del Enrutamiento
 ---------------------------------
 
-El mapeo entre los URIs internos y las URLs externas esta listo en el archivo de configuraciÃ³n `routing.yml`:
+El mapeo entre los URIs internos y las URLs externas esta listo en el archivo de configuración `routing.yml`:
 
     [yml]
     # apps/frontend/config/routing.yml
@@ -49,40 +49,40 @@ El mapeo entre los URIs internos y las URLs externas esta listo en el archivo de
     default:
       url:   /:module/:action/*
 
-El archivo `routing.yml` describe las rutas. Una ruta tiene un nombre (`homepage`), un patrÃ³n (`/:module/:action/*`), y algunos parÃ¡metros (bajo la clave `param`).
+El archivo `routing.yml` describe las rutas. Una ruta tiene un nombre (`homepage`), un patrón (`/:module/:action/*`), y algunos parámetros (bajo la clave `param`).
 
-Cuando una peticiÃ³n llega, el Enrutamiento trata de hacerla coincidir la URL con un patrÃ³n dado. La primera ruta que coincida gana, por lo tanto el orden en `routing.yml` es importante. Echemos un vistazo a algunos ejemplos para comprender mejor cÃ³mo funciona esto.
+Cuando una petición llega, el Enrutamiento trata de hacerla coincidir la URL con un patrón dado. La primera ruta que coincida gana, por lo tanto el orden en `routing.yml` es importante. Echemos un vistazo a algunos ejemplos para comprender mejor cómo funciona esto.
 
-Cuando solicitas la pÃ¡gina de inicio Jobeet, la cual tiene la URL `/job`, la primera ruta que coincide es con `default_index`. En un patrÃ³n, una palabra con un prefijo dos puntos (`:`) es una variable, por eso el patrÃ³n `/:module` significa: Concidir con un `/` seguida por cualquier cosa. En nuestro ejemplo, la variable `module` serÃ¡ `job` como su valor. Este valor puede ser obtenido con `$request->getParameter('module')`. Esta ruta tambiÃ©n define un valor por defecto para la variable `action`. Por eso, para todas las URLs que coincidan con esta ruta, la peticiÃ³n tambiÃ©n tendrÃ¡ un parÃ¡metro `action`  con `index` como su valor.
+Cuando solicitas la página de inicio Jobeet, la cual tiene la URL `/job`, la primera ruta que coincide es con `default_index`. En un patrón, una palabra con un prefijo dos puntos (`:`) es una variable, por eso el patrón `/:module` significa: Concidir con un `/` seguida por cualquier cosa. En nuestro ejemplo, la variable `module` será `job` como su valor. Este valor puede ser obtenido con `$request->getParameter('module')`. Esta ruta también define un valor por defecto para la variable `action`. Por eso, para todas las URLs que coincidan con esta ruta, la petición también tendrá un parámetro `action`  con `index` como su valor.
 
-Si solicitas la pÃ¡gina `/job/show/id/1`, Symfony coincidirÃ¡ con el Ãºltimo patrÃ³n: `/:module/:action/*`. En un patrÃ³n, un asterisco (`*`) coincide con una colecciÃ³n de pares variable/valor separados por una barra (`/`):
+Si solicitas la página `/job/show/id/1`, Symfony coincidirá con el último patrón: `/:module/:action/*`. En un patrón, un asterisco (`*`) coincide con una colección de pares variable/valor separados por una barra (`/`):
 
-  | ParÃ¡metro de peticiÃ³n | Valor |
+  | Parámetro de petición | Valor |
   | -----------------     | ----- |
-  | mÃ³dulo                | job   |
-  | acciÃ³n                | show  |
+  | módulo                | job   |
+  | acción                | show  |
   | id                    | 1     |
 
 >**NOTE**
->Las variables `mÃ³dulo` y `acciÃ³n` son especiales ya que son utilizados por Symfony 
->para determinar la acciÃ³n a ejecutar.
+>Las variables `módulo` y `acción` son especiales ya que son utilizados por Symfony 
+>para determinar la acción a ejecutar.
 
 La URL `/job/show/id/1` se pueden crear desde una plantilla utilizando la siguiente llamada al helper `url_for()`:
 
     [php]
     url_for('job/show?id='.$job->getId())
 
-TambiÃ©n puedes usar el nombre de la ruta gracias al prefijo `@`:
+También puedes usar el nombre de la ruta gracias al prefijo `@`:
 
     [php]
     url_for('@default?module=job&action=show&id='.$job->getId())
 
-Ambas llamadas son equivalentes, pero esta Ãºltima es mucho mÃ¡s rÃ¡pido ya que el enrutamiento no tiene que analizar todas las rutas para encontrar el mejor patrÃ³n coincidente, y es menos complicado su implementaciÃ³n (los nombres del mÃ³dulo y la acciÃ³n no estÃ¡n presentes en el URI interno).
+Ambas llamadas son equivalentes, pero esta última es mucho más rápido ya que el enrutamiento no tiene que analizar todas las rutas para encontrar el mejor patrón coincidente, y es menos complicado su implementación (los nombres del módulo y la acción no están presentes en el URI interno).
 
 Personalizaciones del Enrutamiento
 ----------------------------------
 
-Por el momento, cuando la solicitas la URL `/` en un navegador, tienes por defecto la pÃ¡gina de felicitaciones de Symfony. Esto se debe a que esta URL coincide con la ruta `homepage`. Pero tiene sentido cambiarla para que no sea la pÃ¡gina de inicio de Jobeet. Para hacer el cambio, modifica la variable `module` de la ruta `homepage` a `job`:
+Por el momento, cuando la solicitas la URL `/` en un navegador, tienes por defecto la página de felicitaciones de Symfony. Esto se debe a que esta URL coincide con la ruta `homepage`. Pero tiene sentido cambiarla para que no sea la página de inicio de Jobeet. Para hacer el cambio, modifica la variable `module` de la ruta `homepage` a `job`:
 
     [php]
     # apps/frontend/config/routing.yml
@@ -101,18 +101,25 @@ Puedes ahora cambiar el enlace al logo de Jobeet en el layout para usar la ruta
       </a>
     </h1>
 
-Eso fue fÃ¡cil! Para algo un poco mÃ¡s aplicado, vamos a cambiar el la URL de la pÃ¡gina job a algo mÃ¡s significativo:
+Eso fue fácil! 
+
+>**TIP**
+>Cuando se actualiza la configuración del enrutamiento, los cambios son immediatamente
+>tomados en cuenta en el entorno de desarrollo. Pero para hacerlos que 
+>tambien funcionen en el entorno de producción, necesitas limpiar el cache.
+
+Para algo un poco más aplicado, vamos a cambiar el la URL de la página job a algo más significativo:
 
     /job/sensio-labs/paris-france/1/web-developer
 
-Sin saber nada acerca de Jobeet, y sin mirar en la pÃ¡gina, se puede entender a partir de la URL que Sensio Labs estÃ¡ buscando un Web developer para trabajar en Paris, France.
+Sin saber nada acerca de Jobeet, y sin mirar en la página, se puede entender a partir de la URL que Sensio Labs está buscando un Web developer para trabajar en Paris, France.
 
 >**NOTE**
->Las URLs amigables son importantes porque ellas transmiten informaciÃ³n al usuario. Es
->tambiÃ©n Ãºtil cuando copias y pegas la URL en un email o para optimizar
->tu sitio web para los motores de bÃºsqueda.
+>Las URLs amigables son importantes porque ellas transmiten información al usuario. Es
+>también útil cuando copias y pegas la URL en un email o para optimizar
+>tu sitio web para los motores de búsqueda.
 
-El siguiente patrÃ³n coincide con esta URL:
+El siguiente patrón coincide con esta URL:
 
     /job/:company/:location/:id/:position
 
@@ -123,13 +130,13 @@ Edita el archivo `routing.yml` y agrega la ruta `job_show_user` al principio del
       url:   /job/:company/:location/:id/:position
       param: { module: job, action: show }
 
-Si actualizas la pÃ¡gina de inicio Jobeet, los enlaces a jobs no han cambiado. Esto se debe a que para generar una ruta, necesitas pasar todas las variables requeridas. Por eso, necesitas cambiar la llamada a `url_for()` en `indexSuccess.php` a:
+Si actualizas la página de inicio Jobeet, los enlaces a jobs no han cambiado. Esto se debe a que para generar una ruta, necesitas pasar todas las variables requeridas. Por eso, necesitas cambiar la llamada a `url_for()` en `indexSuccess.php` a:
 
     [php]
     url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().
       '&location='.$job->getLocation().'&position='.$job->getPosition())
 
-Un URI interno tambiÃ©n puede ser expresado como un array:
+Un URI interno también puede ser expresado como un array:
 
     [php]
     url_for(array(
@@ -144,7 +151,7 @@ Un URI interno tambiÃ©n puede ser expresado como un array:
 Los Requisitos
 --------------
 
-Durante el primer dÃ­a de tutorÃ­a, hemos hablado de la validaciÃ³n y manejo de errores por una buena razÃ³n. El sistema de enrutamiento tiene incorporada una funciÃ³n de validaciÃ³n. Cada variable patrÃ³n pueda ser validada por una expresiÃ³n regular definida utilizando la linea `requirements` en la definiciÃ³n de la ruta:
+Durante el primer día de tutoría, hemos hablado de la validación y manejo de errores por una buena razón. El sistema de enrutamiento tiene incorporada una función de validación. Cada variable patrón pueda ser validada por una expresión regular definida utilizando la linea `requirements` en la definición de la ruta:
 
     [yml]
     job_show_user:
@@ -153,16 +160,16 @@ Durante el primer dÃ­a de tutorÃ­a, hemos hablado de la validaciÃ³n y manejo de 
       requirements:
         id: \d+
 
-La anterior linea `requirements` fuerza a que el `id` sea un valor numÃ©rico. Sino lo es, la ruta no coincide.
+La anterior linea `requirements` fuerza a que el `id` sea un valor numérico. Sino lo es, la ruta no coincide.
 
 La Clase Route
 --------------
 
-Cada ruta definida en `routing.yml` es internamente convertida en un objecto de la clase [`sfRoute`](http://www.symfony-project.org/api/1_2/sfRoute). Esta clase se puede cambiar mediante una linea `class` en la definiciÃ³n de la ruta. Si estÃ¡s familiarizado con el protocolo HTTP, sabes que Ã©ste define varios "mÃ©todos",
+Cada ruta definida en `routing.yml` es internamente convertida en un objecto de la clase [`sfRoute`](http://www.symfony-project.org/api/1_2/sfRoute). Esta clase se puede cambiar mediante una linea `class` en la definición de la ruta. Si estás familiarizado con el protocolo HTTP, sabes que éste define varios "métodos",
 como `GET`, `POST`, `HEAD`, `DELETE`, y `PUT`. Los tres primeros cuentan con soporte en todos los navegadores, mientras que los otros dos no.
 
-Para restringir una ruta a sÃ³lo la coincidencia con algunos mÃ©todos, puedes modificar la clase de enrutamiento a
-[`sfRequestRoute`](http://www.symfony-project.org/api/1_2/sfRequestRoute) y aÃ±adir un requisito para la variable virtual `sf_method`:
+Para restringir una ruta a sólo la coincidencia con algunos métodos, puedes modificar la clase de enrutamiento a
+[`sfRequestRoute`](http://www.symfony-project.org/api/1_2/sfRequestRoute) y añadir un requisito para la variable virtual `sf_method`:
 
     [yml]
     job_show_user:
@@ -174,15 +181,15 @@ Para restringir una ruta a sÃ³lo la coincidencia con algunos mÃ©todos, puedes mo
         sf_method: [get]
 
 >**NOTE**
->Exigir una ruta para solo algunos mÃ©todos HTTP no es totalmente 
+>Exigir una ruta para solo algunos métodos HTTP no es totalmente 
 >equivalente a usar `sfWebRequest::isMethod()` en tus acciones.
->Eso es porque el enrutamiento continuarÃ¡ buscando por una ruta coincidente
->si el mÃ©todo no coincide con el esperado
+>Eso es porque el enrutamiento continuará buscando por una ruta coincidente
+>si el método no coincide con el esperado
 
 El Objecto de la Clase Route
 ----------------------------
 
-La nuevo URI interno para un puesto de trabajo es bastante largo y tedioso de escribir, (`url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().'&location='.$job->getLocation().'&position='.$job->getPosition())`), pero como acabamos de aprender en la secciÃ³n anterior, la clase route puede ser modificada. Para la ruta `job_show_user`, es mejor utilizar [`sfPropelRoute`](http://www.symfony-project.org/api/1_2/sfPropelRoute) ya que la clase estÃ¡ optimizada para las rutas que representan objetos ##ORM## o colecciones de objetos ##ORM##:
+La nuevo URI interno para un puesto de trabajo es bastante largo y tedioso de escribir, (`url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().'&location='.$job->getLocation().'&position='.$job->getPosition())`), pero como acabamos de aprender en la sección anterior, la clase route puede ser modificada. Para la ruta `job_show_user`, es mejor utilizar [`sfPropelRoute`](http://www.symfony-project.org/api/1_2/sfPropelRoute) ya que la clase está optimizada para las rutas que representan objetos ##ORM## o colecciones de objetos ##ORM##:
 
     [yml]
     job_show_user:
@@ -194,9 +201,9 @@ La nuevo URI interno para un puesto de trabajo es bastante largo y tedioso de es
         id: \d+
         sf_method: [get]
 
-La linea `options` personaliza el comportamiento de la ruta. AquÃ­, la opciÃ³n `model` define la clase del mÃ³delo ##ORM## (`JobeetJob`) relacionada a la ruta, y la opciÃ³n `type` define que esta ruta estÃ¡ vinculada a un objeto (tambiÃ©n puedes utilizar `list` si una ruta representa una colecciÃ³n de objetos).
+La linea `options` personaliza el comportamiento de la ruta. Aquí, la opción `model` define la clase del módelo ##ORM## (`JobeetJob`) relacionada a la ruta, y la opción `type` define que esta ruta está vinculada a un objeto (también puedes utilizar `list` si una ruta representa una colección de objetos).
 
-La ruta `job_show_user` es ahora consciente de su relaciÃ³n con `JobeetJob` y asÃ­ podemos simplificar la llamada `url_for()` a:
+La ruta `job_show_user` es ahora consciente de su relación con `JobeetJob` y así podemos simplificar la llamada `url_for()` a:
 
     [php]
     url_for(array('sf_route' => 'job_show_user', 'sf_subject' => $job))
@@ -207,15 +214,15 @@ o solo:
     url_for('job_show_user', $job)
 
 >**NOTE**
->El primer ejemplo es muy Ãºtil cuando necesitas pasar mÃ¡s argumentos que sÃ³lo un objeto.
+>El primer ejemplo es muy útil cuando necesitas pasar más argumentos que sólo un objeto.
 
-Funciona porque todas las variables en la ruta tiene su mÃ©todo correspondiente en la clase `JobeetJob` (por ejemplo, la variable `company` es reemplazada con el valor de `getCompany()`).
+Funciona porque todas las variables en la ruta tiene su método correspondiente en la clase `JobeetJob` (por ejemplo, la variable `company` es reemplazada con el valor de `getCompany()`).
 
-Si hechas una mirada a las URL generadas, no son todavÃ­a bastantes amigables como queremos que sean:
+Si hechas una mirada a las URL generadas, no son todavía bastantes amigables como queremos que sean:
 
     http://jobeet.localhost/frontend_dev.php/job/Sensio+Labs/Paris%2C+France/1/Web+Developer
 
-Tenemos que "slugear" los valores de columna mediante la sustituciÃ³n de todos los caracteres no ASCII por un `-`. Abre el archivo `JobeetJob` y aÃ±ade los siguientes mÃ©todos para la clase:
+Tenemos que "slugear" los valores de columna mediante la sustitución de todos los caracteres no ASCII por un `-`. Abre el archivo `JobeetJob` y añade los siguientes métodos para la clase:
 
     [php]
 <propel>
@@ -239,7 +246,7 @@ Tenemos que "slugear" los valores de columna mediante la sustituciÃ³n de todos l
       return Jobeet::slugify($this->getLocation());
     }
 
-A continuaciÃ³n, crea el archivo `lib/Jobeet.class.php` y aÃ±adir el mÃ©todo `slugify` en Ã©l:
+A continuación, crea el archivo `lib/Jobeet.class.php` y añadir el método `slugify` en él:
 
     [php]
     // lib/Jobeet.class.php
@@ -259,11 +266,11 @@ A continuaciÃ³n, crea el archivo `lib/Jobeet.class.php` y aÃ±adir el mÃ©todo `sl
 
 >**NOTE**
 >En este tutorial, nunca mostramos la sentencia de apertura `<?php`
->en los ejemplos de cÃ³digo que solo tienen cÃ³digo PHP puro para optimizar el espacio.
->DeberÃ­as obviamente recordar agregarlos cuando creas un nuevo archivo PHP.
+>en los ejemplos de código que solo tienen código PHP puro para optimizar el espacio.
+>Deberías obviamente recordar agregarlos cuando creas un nuevo archivo PHP.
 
-Tenemos definidos tres nuevos mÃ©todos "virtuales" : `getCompanySlug()`,
-`getPositionSlug()`, y `getLocationSlug()`. Ellos devuelven sus correspondiente valor de columna despuÃ©s de pasalos por el mÃ©todo `slugify()`. Ahora, puedes sustituir los nombres de las columas reales por sus virtuales en la ruta `job_show_user`:
+Tenemos definidos tres nuevos métodos "virtuales" : `getCompanySlug()`,
+`getPositionSlug()`, y `getLocationSlug()`. Ellos devuelven sus correspondiente valor de columna después de pasalos por el método `slugify()`. Ahora, puedes sustituir los nombres de las columas reales por sus virtuales en la ruta `job_show_user`:
 
     [yml]
     job_show_user:
@@ -275,15 +282,15 @@ Tenemos definidos tres nuevos mÃ©todos "virtuales" : `getCompanySlug()`,
         id: \d+
         sf_method: [get]
 
-Antes de actualizar la pÃ¡gina principal Jobeet, es necesario vaciar la cachÃ©, como hemos aÃ±adido una nueva clase (`Jobeet`):
+Antes de actualizar la página principal Jobeet, es necesario vaciar la caché, como hemos añadido una nueva clase (`Jobeet`):
 
     $ php symfony cc
 
-TendrÃ¡s ahora las URLs esperadas:
+Tendrás ahora las URLs esperadas:
 
     http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/1/web-developer
 
-Pero esa es sÃ³lo la mitad de la historia. La ruta es capaz de generar una URL sobre la base de un objeto, pero tambiÃ©n es capaz de encontrar el objeto en relaciÃ³n con una determinada URL. Los objetos pueden ser recuperados con el mÃ©todo `getObject()` de la ruta. Al analizar una peticiÃ³n, el enrutamiento guarda la ruta del objeto coincidentes para que la uses en las acciones. Por lo tanto, cambia el mÃ©todo `executeShow()` para utilizar el objeto route para obtener el objeto `Jobeet`:
+Pero esa es sólo la mitad de la historia. La ruta es capaz de generar una URL sobre la base de un objeto, pero también es capaz de encontrar el objeto en relación con una determinada URL. Los objetos pueden ser recuperados con el método `getObject()` de la ruta. Al analizar una petición, el enrutamiento guarda la ruta del objeto coincidentes para que la uses en las acciones. Por lo tanto, cambia el método `executeShow()` para utilizar el objeto route para obtener el objeto `Jobeet`:
 
     [php]
     class jobActions extends sfActions
@@ -298,12 +305,12 @@ Pero esa es sÃ³lo la mitad de la historia. La ruta es capaz de generar una URL s
       // ...
     }
 
-Si intentas obtener un job para un desconocido `id`, verÃ¡s una pÃ¡gina de error 404 pero el mensaje de error ha cambiado:
+Si intentas obtener un job para un desconocido `id`, verás una página de error 404 pero el mensaje de error ha cambiado:
 
 ![404 with sfPropelRoute](http://www.symfony-project.org/images/jobeet/1_2/05/404_propel_route.png)
 
-Esto es asÃ­ porque el error 404 ha sido lanzado de forma automÃ¡tica por el mÃ©todo
-`getRoute()`. AsÃ­, podemos simplificar el mÃ©todo `executeShow` aÃºn mÃ¡s:
+Esto es así porque el error 404 ha sido lanzado de forma automática por el método
+`getRoute()`. Así, podemos simplificar el método `executeShow` aún más:
 
     [php]
     class jobActions extends sfActions
@@ -317,66 +324,66 @@ Esto es asÃ­ porque el error 404 ha sido lanzado de forma automÃ¡tica por el mÃ©
     }
 
 >**TIP**
->Si no deseas que la ruta genere un error 404, puede establecer la opciÃ³n 
+>Si no deseas que la ruta genere un error 404, puede establecer la opción 
 >`allow_empty` a `true`.
 
 -
 
 >**NOTE**
 >El objeto relacionado de una ruta es cargado ligeramente. Este es obtenido desde
->la base de datos solo si llamas al mÃ©todo `getRoute()`.
+>la base de datos solo si llamas al método `getRoute()`.
 
 
 El Enrutamiento en Acciones y Plantillas
 ----------------------------------------
 
-En una plantilla, el helper `url_for()` convierte una URI interna a una URL external. Algunos otros helpers symfony tambiÃ©n toman una URI interna como un argumento, como el helper 
+En una plantilla, el helper `url_for()` convierte una URI interna a una URL external. Algunos otros helpers symfony también toman una URI interna como un argumento, como el helper 
 `link_to()` el cual genera una etiqueta `<a>`:
 
     [php]
     <?php echo link_to($job->getPosition(), 'job_show_user', $job) ?>
 
-Genera el siguiente cÃ³digo HTML:
+Genera el siguiente código HTML:
 
     [php]
     <a href="/job/sensio-labs/paris-france/1/web-developer">Web Developer</a>
 
-Para ambos `url_for()` y `link_to()` tambiÃ©n pueden generar URL absoluta:
+Para ambos `url_for()` y `link_to()` también pueden generar URL absoluta:
 
     [php]
     url_for('job_show_user', $job, true);
 
     link_to($job->getPosition(), 'job_show_user', $job, true);
 
-Si deseas generar una URL desde una acciÃ³n, puedes usar el mÃ©todo `generateUrl()`:
+Si deseas generar una URL desde una acción, puedes usar el método `generateUrl()`:
 
     [php]
     $this->redirect($this->generateUrl('job_show_user', $job));
 
 >**SIDEBAR**
->La Familia de MÃ©todos "redirect"
+>La Familia de Métodos "redirect"
 >
->En el tutorial de ayer, hablamos acerca del mÃ©todo "forward". Estos mÃ©todos
->envÃ­an l apeticiÃ³n actual a otra acciÃ³n sin regresar al navegador.
+>En el tutorial de ayer, hablamos acerca del método "forward". Estos métodos
+>envían l apetición actual a otra acción sin regresar al navegador.
 >
->El mÃ©todo "redirect" redirige al usuario a otra URL. Al igual que con forward,
->puedes utilizar el mÃ©todo `redirect()`, o los mÃ©todos `redirectIf()` y
+>El método "redirect" redirige al usuario a otra URL. Al igual que con forward,
+>puedes utilizar el método `redirect()`, o los métodos `redirectIf()` y
 >`redirectUnless()`.
 
-La Clase de ColecciÃ³n de Rutas
+La Clase de Colección de Rutas
 ------------------------------
 
-Para el mÃ³dulo `job`, ya tenemos personalizado la ruta de la acciÃ³n `show`, pero
-las URLs para los otros mÃ©todos (`index`, `new`, `edit`, `create`, `update`,
-and `delete`) estÃ¡n aun gestionadas por la ruta `default`:
+Para el módulo `job`, ya tenemos personalizado la ruta de la acción `show`, pero
+las URLs para los otros métodos (`index`, `new`, `edit`, `create`, `update`,
+and `delete`) están aun gestionadas por la ruta `default`:
 
     [yml]
     default:
       url: /:module/:action/*
 
-La ruta `default` es una gran manera de comenzar la codificaciÃ³n sin definir demasiadas rutas. Pero como la ruta actÃºa como un "catch-all", no puede ser configurada para necesidades especÃ­ficas.
+La ruta `default` es una gran manera de comenzar la codificación sin definir demasiadas rutas. Pero como la ruta actúa como un "catch-all", no puede ser configurada para necesidades específicas.
 
-Como todas las acciones `job` estÃ¡n relacionadas con el modelo de la clase `JobeetJob`, podemos facilmente definir una ruta particular `sfPropelRoute` para cada uno de ellas como ya lo hemos hecho para la acciÃ³n `show`. Sin embargo, como el mÃ³dulo `job` define las clÃ¡sicas siete posibles acciones para un modelo, tambiÃ©n podemos utilizar la clase [`sfPropelRouteCollection`](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection). Abre el archivo `routing.yml` y modificalo para que se lea como sigue:
+Como todas las acciones `job` están relacionadas con el modelo de la clase `JobeetJob`, podemos facilmente definir una ruta particular `sfPropelRoute` para cada uno de ellas como ya lo hemos hecho para la acción `show`. Sin embargo, como el módulo `job` define las clásicas siete posibles acciones para un modelo, también podemos utilizar la clase [`sfPropelRouteCollection`](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection). Abre el archivo `routing.yml` y modificalo para que se lea como sigue:
 
     [yml]
     # apps/frontend/config/routing.yml
@@ -405,7 +412,7 @@ Como todas las acciones `job` estÃ¡n relacionadas con el modelo de la clase `Job
     default:
       url:   /:module/:action/*
 
-La ruta `job` anterior es en realidad un acceso directo que generarÃ¡ automÃ¡ticamente las siguientes siete rutas `sfPropelRoute`:
+La ruta `job` anterior es en realidad un acceso directo que generará automáticamente las siguientes siete rutas `sfPropelRoute`:
 
     [yml]
     job:
@@ -460,10 +467,10 @@ La ruta `job` anterior es en realidad un acceso directo que generarÃ¡ automÃ¡tic
 
 >**NOTE**
 >Algunas rutas generadas por `sfPropelRouteCollection` tienen la misma URL. El
->enrutamiento estÃ¡ aÃºn disponible para usarlas porque todas ellas tienen diferentes 
->parÃ¡metro en el mÃ©todo HTTP.
+>enrutamiento está aún disponible para usarlas porque todas ellas tienen diferentes 
+>parámetro en el método HTTP.
 
-Las rutas `job_delete` y `job_update` require mÃ©todos HTTP que no son compatibles con los navegadores (`DELETE` y `PUT` respectivamente). Esto funciona porque los simula Symfony. Abre la plantilla `_form.php` Para ver un ejemplo:
+Las rutas `job_delete` y `job_update` require métodos HTTP que no son compatibles con los navegadores (`DELETE` y `PUT` respectivamente). Esto funciona porque los simula Symfony. Abre la plantilla `_form.php` Para ver un ejemplo:
 
     [php]
     // apps/frontend/modules/job/templates/_form.php
@@ -478,30 +485,30 @@ Las rutas `job_delete` y `job_update` require mÃ©todos HTTP que no son compatibl
       array('method' => 'delete', 'confirm' => 'Are you sure?')
     ) ?>
 
-Todos los helpers symfony pueden ser invocados para simular cualquier mÃ©todo HTTP que desea pasando el parÃ¡metro especial `sf_method`.
+Todos los helpers symfony pueden ser invocados para simular cualquier método HTTP que desea pasando el parámetro especial `sf_method`.
 
 >**NOTE**
->Symfony tiene otros parÃ¡metros especiales como `sf_method`, todo lo que inicie con el prefijo
+>Symfony tiene otros parámetros especiales como `sf_method`, todo lo que inicie con el prefijo
 >`sf_`. En las rutas generadas antes, se puede ver otro:
->`sf_format`, que se explicarÃ¡ en los prÃ³ximos dÃ­as.
+>`sf_format`, que se explicará en los próximos días.
 
 Debugeando la Ruta
 ------------------
 
-Cuando se utiliza una colecciÃ³n de rutas, a veces es Ãºtil listar de rutas generadas. La tarea `app:routes` muestra todas las rutas para una aplicaciÃ³n determinada:
+Cuando se utiliza una colección de rutas, a veces es útil listar de rutas generadas. La tarea `app:routes` muestra todas las rutas para una aplicación determinada:
 
     $ php symfony app:routes frontend
 
-TambiÃ©n puedes tener una gran cantidad de informaciÃ³n de depuraciÃ³n para una ruta pasando su nombre como un argumento adicional:
+También puedes tener una gran cantidad de información de depuración para una ruta pasando su nombre como un argumento adicional:
 
     $ php symfony app:routes frontend job_edit
 
 Las Rutas por defecto
 ---------------------
 
-Es una buena prÃ¡ctica definir las rutas para todas tus URLs. Ya que la ruta `job` 
-define todas las rutas necesarias para describir la aplicaciÃ³n Jobeet, sigue adelante y 
-quita o comenta las rutas por defecto del archivo de configuraciÃ³n `routing.yml`:
+Es una buena práctica definir las rutas para todas tus URLs. Ya que la ruta `job` 
+define todas las rutas necesarias para describir la aplicación Jobeet, sigue adelante y 
+quita o comenta las rutas por defecto del archivo de configuración `routing.yml`:
 
     [yml]
     # apps/frontend/config/routing.yml
@@ -512,22 +519,22 @@ quita o comenta las rutas por defecto del archivo de configuraciÃ³n `routing.yml
     #default:
     #  url:   /:module/:action/*
 
-La aplicaciÃ³n Jobeet debe seguir funcionando como antes.
+La aplicación Jobeet debe seguir funcionando como antes.
 
 
-Nos vemos maÃ±ana
+Nos vemos mañana
 ----------------
 
-Hoy estuvo lleno de una gran cantidad informaciÃ³n nueva. Ya has aprendido cÃ³mo utilizar el framework de Enrutamiento de Symfony y como desacoplar tus URLs desde la implmentaciÃ³n tÃ©cnica.
+Hoy estuvo lleno de una gran cantidad información nueva. Ya has aprendido cómo utilizar el framework de Enrutamiento de Symfony y como desacoplar tus URLs desde la implmentación técnica.
 
-MaÃ±ana, no introducieremos ningÃºn concepto nuevo, sino mÃ¡s bien pasar tiempo profundizando lo que hemos cubierto hasta ahora.
+Mañana, no introducieremos ningún concepto nuevo, sino más bien pasar tiempo profundizando lo que hemos cubierto hasta ahora.
 
 >**Note**
->Si deseas comprobar el cÃ³digo del dÃ­a de hoy, o de cualquier otro dÃ­a, el cÃ³digo esta
->disponible dÃ­a a dÃ­a en el repositorio SVN oficial de Jobeet
+>Si deseas comprobar el código del día de hoy, o de cualquier otro día, el código esta
+>disponible día a día en el repositorio SVN oficial de Jobeet
 >(`http://svn.jobeet.org/##ORM_LOWER##/`).
 >
->Por ejemplo, puedes obtener el cÃ³digo de hoy de la
+>Por ejemplo, puedes obtener el código de hoy de la
 >etiqueta `release_day_05`:
 >
 >       $ svn co http://svn.jobeet.org/##ORM_LOWER##/tags/release_day_05/ jobeet/
@@ -537,8 +544,8 @@ Feedback
 --------
 
 >**Tip**
->Este capÃ­tulo ha sido traducido por **Roberto GermÃ¡n Puentes DÃ­az**. 
->Si encuentras algÃºn error que deseas corregir o realizar algÃºn comentario,
+>Este capítulo ha sido traducido por **Roberto Germán Puentes Díaz**. 
+>Si encuentras algún error que deseas corregir o realizar algún comentario,
 >no dudes en enviarlo por correo a **puentesdiaz [arroba] gmail.com**
 
 __ORM__
