@@ -5,8 +5,8 @@ With the addition we made yesterday on Jobeet, the frontend application is now
 fully useable by job seekers and job posters. It's time to talk a bit about
 the backend application.
 
-Today, thanks to the ~admin generator~ functionality of symfony, we will develop
-a complete backend interface for Jobeet in just one hour.
+Today, thanks to the ~admin generator|Admin Generator~ functionality of symfony, 
+we will develop a complete backend interface for Jobeet in just one hour.
 
 Backend Creation
 ----------------
@@ -39,7 +39,7 @@ The backend application is now available at
 
 If you try to reload the data fixtures with the `propel:data-load` task, it
 won't work anymore. That's because the `JobeetJob::save()` method needs
-access to the `~app.yml~` configuration file from the `frontend` application.
+access to the ~`app.yml`~ configuration file from the `frontend` application.
 As we have now two applications, symfony uses the first it finds, which is now
 the `backend` one.
 
@@ -81,7 +81,7 @@ Behind the scenes, the task has also created a custom route for each module:
     [yml]
     # apps/backend/config/routing.yml
     jobeet_job:
-      class: ~sfPropelRouteCollection~
+      class: sfPropelRouteCollection
       options:
         model:                JobeetJob
         module:               job
@@ -89,9 +89,9 @@ Behind the scenes, the task has also created a custom route for each module:
         column:               id
         with_wildcard_routes: true
 
-It should come as no surprise that the route class used by the ~admin generator~
-is `sfPropelRouteCollection`, as the main goal of an admin interface is the
-management of the life-cycle of model objets.
+It should come as no surprise that the route class used by the 
+~admin generator|Admin Generator~ is `sfPropelRouteCollection`, as the main 
+goal of an admin interface is the management of the life-cycle of model objets.
 
 The route definition also defines some options we have not seen before:
 
@@ -244,7 +244,7 @@ The way the admin generator works should remind you of some known behavior. In
 fact, it is quite similar to what we have already learned about the model and
 form classes. Based on the model schema definition, symfony generates the
 model and form classes. For the admin generator, the generated module can be
-configured by editing the `config/~generator.yml~` file found in the module:
+configured by editing the `config/generator.yml` file found in the module:
 
     [yml]
     # apps/backend/modules/job/config/generator.yml
@@ -346,7 +346,7 @@ Fields Configuration
 --------------------
 
 The different views (`list`, `new`, and `edit`) are composed of ~fields|Fields~. A
-field can be a column of the model class, or a ~virtual column~ as we will see
+field can be a column of the model class, or a virtual column as we will see
 later on.
 
 The default fields configuration can be customized with the `fields` section:
@@ -365,7 +365,7 @@ means that the `label` for the `is_activated` field will be changed for the
 `list`, `edit`, and `new` views.
 
 The admin generator configuration is based on a configuration cascade
-principle. For instance, if you want to change a ~label|Labels~ for the `list` view
+principle. For instance, if you want to change a ~label|Forms Labels~ for the `list` view
 only, define a `fields` option under the `list` section:
 
     [yml]
@@ -394,7 +394,7 @@ List View Configuration
 
 By default, the columns of the list view are all the columns of the model, in
 the order of the schema file. The `display` option overrides the default by
-defining the ~ordered|Ordering~ columns to be displayed:
+defining the ordered columns to be displayed:
 
     [yml]
     # apps/backend/modules/category/config/generator.yml
@@ -471,7 +471,7 @@ that converts the object to a string.
 ### `sort`
 
 As an administrator, you will be probably more interested in seeing the latest
-posted jobs. You can configure the default ~sort|Sorting~ column by adding a `sort` option:
+posted jobs. You can configure the default sort column by adding a `sort` option:
 
     [yml]
     # apps/backend/modules/job/config/generator.yml
@@ -505,7 +505,7 @@ not needed for the `category` module, so, let's remove them:
 
 ![Remove the batch actions](http://www.symfony-project.org/images/jobeet/1_2/12/no_batch_actions.png)
 
-The `~batch_actions~` option defines the list of batch actions. The empty array
+The `batch_actions` option defines the list of batch actions. The empty array
 allows the removal of the feature.
 
 By default, each module has a `delete` batch action defined by the framework,
@@ -555,9 +555,9 @@ method:
       }
     }
 
-The selected ~primary key~s are stored in the `ids` request parameter. For each
-selected job, the `JobeetJob::extend()` method is called with an extra
-argument to bypass the expiration check.
+The selected ~primary keys|Primary Key~ are stored in the `ids` request 
+parameter. For each selected job, the `JobeetJob::extend()` method is called 
+with an extra argument to bypass the expiration check.
 
 Update the `extend()` method to take this new argument into account:
 
@@ -722,7 +722,7 @@ another great example of the reusability provided by the MVC pattern.
 </doctrine>
 
 The number of database requests needed to display the job list page is 14, as
-shown by the ~web debug toolbar~.
+shown by the ~web debug toolbar|Web Debug Toolbar~.
 
 If you click on that number, you will see that most requests are to retrieve
 the category name for each job:
@@ -731,10 +731,10 @@ the category name for each job:
 
 To reduce the number of requests, we can change the default method used to get
 <propel>
-the jobs by using the `~peer_method~` option:
+the jobs by using the `peer_method` option:
 </propel>
 <doctrine>
-the jobs by using the `~table_method~` option:
+the jobs by using the `table_method` option:
 </doctrine>
 
     [yml]
@@ -840,7 +840,7 @@ this relation on this page, let's remove it:
 
 In the `display` options for the job form, the `_generated_token` field starts
 with an underscore (`_`). This means that the rendering for this field will be
-handled by a custom ~partial|Partial templates~ named `_generated_token.php`
+handled by a custom ~partial|Partial Templates~ named `_generated_token.php`
 
 Create this partial with the following content:
 
@@ -920,7 +920,7 @@ method that will be overridden in `BackendJobeetJobForm`:
       }
     }
 
-The default ~form class~ used by the admin generator can be overridden by
+The default ~form class|Forms (Classes)~ used by the admin generator can be overridden by
 setting the `class` option:
 
     [yml]
@@ -1001,9 +1001,9 @@ matter of fact, filters are just forms. And as for the forms, the classes have
 been generated by the `propel:build-all` task. You can also re-generate them
 with the `propel:build-filters` task.
 
-The ~form filter~ classes are located under the `lib/filter/` directory and each
-model class has an associated filter form class (`JobeetJobFormFilter` for
-`JobeetJobForm`).
+The ~form filter|Forms (Filter Classes)~ classes are located under the 
+`lib/filter/` directory and each model class has an associated filter form 
+class (`JobeetJobFormFilter` for `JobeetJobForm`).
 
 Let's remove them completely for the `category` module:
 

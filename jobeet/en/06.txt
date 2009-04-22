@@ -222,7 +222,7 @@ model class:
     }
 </doctrine>
 
-The `~isNew()~` method returns `true` when the object has not been serialized
+The `isNew()` method returns `true` when the object has not been serialized
 yet in the database, and `false` otherwise.
 
 Now, let's change the action to use the `expires_at` column instead of the
@@ -301,8 +301,10 @@ fixtures to add a job that is already expired:
 >Be careful when you copy and paste code in a ~fixture|Fixtures~ file to not break the
 >indentation. The `expired_job` must only have two spaces before it.
 
-Reload the fixtures and refresh your browser to ensure that the old job does
-not show up:
+As you can see in the job we have added in the fixture file, the `created_at`
+column value can be defined even if it is automatically filled by ##ORM##. The
+defined value will override the default one. Reload the fixtures and refresh
+your browser to ensure that the old job does not show up:
 
     $ php symfony propel:data-load
 
@@ -318,7 +320,7 @@ Custom Configuration
 In the `JobeetJob::save()` method, we have hardcoded the number of days for
 the job to expire. It would have been better to make the 30 days configurable.
 The symfony framework provides a built-in configuration file for ~application|Application~
-specific ~settings|Settings~, the `~app.yml~` file. This YAML file can contain any setting
+specific ~settings|Settings~, the ~`app.yml`~ file. This YAML file can contain any setting
 you want:
 
     [yml]
@@ -326,7 +328,7 @@ you want:
     all:
       active_days: 30
 
-In the application, these settings are available through the global `~sfConfig~`
+In the application, these settings are available through the global ~`sfConfig`~
 class:
 
     [php]
@@ -365,11 +367,12 @@ Let's update the code to take this new setting into account:
     }
 </doctrine>
 
-The `app.yml` configuration file is a great way to centralize ~global settings~
-for your application.
+The ~`app.yml`~ configuration file is a great way to centralize 
+~global settings|Global Settings~ for your application.
 
-Last, if you need ~project-wide settings~, just create a new `app.yml` file in 
-the `config` folder at the root of your symfony project. 
+Last, if you need ~project-wide settings|Global Configuration~, just create 
+a new `app.yml` file in the `config` folder at the root of your symfony 
+project. 
 
 Refactoring
 -----------
@@ -380,16 +383,16 @@ you spot the problem?
 <propel>
 The `Criteria` code does not belong to the action (the Controller layer), it
 belongs to the Model layer. In the ~MVC~ model, the Model defines all the
-~business logic~, and the Controller only calls the Model to retrieve data from
-it. As the code returns a collection of jobs, let's move the code to the
-`JobeetJobPeer` class and create a `getActiveJobs()` method:
+~business logic|Business Logic~, and the Controller only calls the Model to 
+retrieve data from it. As the code returns a collection of jobs, let's move 
+the code to the `JobeetJobPeer` class and create a `getActiveJobs()` method:
 </propel>
 <doctrine>
 The `Doctrine_Query` code does not belong to the action (the Controller
 layer), it belongs to the Model layer. In the ~MVC~ model, the Model defines
-all the ~business logic~, and the Controller only calls the Model to retrieve
-data from it. As the code returns a collection of jobs, let's move the code to
-the `JobeetJobTable` class and create a `getActiveJobs()` method:
+all the ~business logic|Business Logic~, and the Controller only calls the Model 
+to retrieve data from it. As the code returns a collection of jobs, let's move 
+the code to the `JobeetJobTable` class and create a `getActiveJobs()` method:
 </doctrine>
 
 <propel>
@@ -551,7 +554,7 @@ In the template, we need to iterate through all categories and display the
 active jobs:
 
     [php]
-    // apps/frontend/modules/job/templates/indexSuccess.php
+    // apps/frontend/modules/job/indexSuccess.php
     <?php use_stylesheet('jobs.css') ?>
 
     <div id="jobs">
@@ -714,12 +717,12 @@ That's simple enough to add to the `getActiveJobs()` method:
     }
 </doctrine>
 
-The appropriate `~LIMIT~` clause is now hard-coded into the Model, but it is
+The appropriate ~`LIMIT`~ clause is now hard-coded into the Model, but it is
 better for this value to be configurable. Change the template to pass a
 maximum number of jobs set in `app.yml`:
 
     [php]
-    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <!-- apps/frontend/modules/job/indexSuccess.php -->
     <?php foreach ($category->getActiveJobs(sfConfig::get('app_max_jobs_on_homepage')) as $i => $job): ?>
 
 and add a new setting in `app.yml`:
@@ -801,7 +804,7 @@ Instead of displaying the job, we need to forward the user to a 404 page.
 But how can we do this as the job is retrieved automatically by the route?
 
 <propel>
-By default, the `~sfPropelRoute~` uses the standard `doSelectOne()` method to
+By default, the ~`sfPropelRoute`~ uses the standard `doSelectOne()` method to
 retrieve the object, but you can change it by providing a
 `~method_for_criteria~` option in the ~route|Route~ configuration:
 </propel>
