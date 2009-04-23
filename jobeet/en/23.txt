@@ -2,7 +2,7 @@ Day 23: The Deployment
 ======================
 
 With the configuration of the cache system yesterday, the Jobeet website is
-ready to be deployed on the production servers.
+ready to be ~deployed|Deployment~ on the production servers.
 
 During twenty-two days, we have developed Jobeet on a development machine, and
 for most of you, it probably means your local machine; except if you develop
@@ -10,11 +10,11 @@ on the production server directly, which is of course a very bad idea. Now, it
 is time to move the website to a production server.
 
 Today, we will see what needs to be done before going to production, what kind
-of deploying strategies you can use, and also the tools you need for a
-successful deployment.
+of ~deploying strategies|Deploying Strategies~ you can use, and also the tools 
+you need for a successful deployment.
 
-Preparing the Production Server
--------------------------------
+Preparing the Production ~Server|Web Server~
+--------------------------------------------
 
 Before deploying the project to production, we need to be sure the production
 server is configured correctly. You can re-read day 1, where we explained how to
@@ -45,7 +45,7 @@ from the command line:
 Fix any fatal error the script finds and repeat the process until everything
 works fine in **both** environments.
 
-### PHP Accelerator
+### PHP ~Accelerator~
 
 For the production server, you probably want the best performance possible.
 Installing a [PHP accelerator](http://en.wikipedia.org/wiki/PHP_accelerator)
@@ -56,7 +56,7 @@ will give you the best improvement for your money.
 >PHP scripts to avoid the overhead of parsing and compiling source code on
 >each request.
 
-[APC](http://www.php.net/apc) is one of the most popular one, and it is quite
+[~APC~](http://www.php.net/apc) is one of the most popular one, and it is quite
 simple to install it:
 
     $ pecl install APC
@@ -89,7 +89,7 @@ autoloader:
     // config/ProjectConfiguration.class.php
     require_once dirname(__FILE__).'/../lib/vendor/symfony/lib/autoload/sfCoreAutoload.class.php';
 
-### Upgrading symfony
+### ~Upgrading~ symfony
 
 Even if everything is self-contained in a single directory, upgrading symfony
 to a newer release is nonetheless insanely easy.
@@ -105,7 +105,7 @@ Upgrading symfony is as simple as changing the content of the
 `lib/vendor/symfony/` directory. If you have installed symfony with the
 archive, remove the current files and replace them with the newest ones.
 
-If you use Subversion for your project, you can also link your project to the
+If you use ~Subversion~ for your project, you can also link your project to the
 latest symfony 1.2 tag:
 
     $ svn propedit svn:externals lib/vendor/
@@ -139,8 +139,8 @@ instance), change the path in the `ProjectConfiguration` class, clear the
 cache, and you are done. Rollbacking is as simple as removing the directory,
 and change back the path in `ProjectConfiguration`.
 
-Tweaking the Configuration
---------------------------
+Tweaking the ~Configuration~
+----------------------------
 
 ### Database Configuration
 
@@ -153,18 +153,19 @@ different configuration for the production database:
 
 You can also edit the `databases.yml` configuration file directly.
 
-### Assets
+### ~Assets~
 
-As Jobeet uses plugins that embed assets, symfony created relative symbolic
-links in the `web/` directory. The `plugin:publish-assets` task regenerates or
-create them if you install plugins without the `plugin:install` task:
+As Jobeet uses ~plugins|Plugins Assets~ that embed assets, symfony created relative 
+symbolic links in the `web/` directory. The `plugin:publish-assets` task regenerates 
+or create them if you install plugins without the `plugin:install` task:
 
     $ php symfony plugin:publish-assets
 
-### Customizing Error Pages
+### ~Customizing|Customization~ ~Error Pages~
 
-Before going to production, it is better to customize default symfony pages,
-like the "Page Not Found" page, or the default exception page.
+Before going to production, it is better to customize 
+~default symfony pages|Default symfony Pages~, like the 
+"~Page Not Found|404 Error~" page, or the default exception page.
 
 We have already configured the error page for the `YAML` format during day 16,
 by creating an `error.yaml.php` and an `exception.yaml.php` files in the
@@ -172,8 +173,9 @@ by creating an `error.yaml.php` and an `exception.yaml.php` files in the
 in the `prod` environment, whereas `exception.yaml.php` is used in the `dev`
 environment.
 
-So, to customize the default exception page for the HTML format, create two
-files: `config/error/error.html.php` and `config/error/exception.html.php`.
+So, to customize the default ~exception|Exception Handling~ page for the HTML 
+~format|Formats~, create two files: `config/error/error.html.php` and 
+`config/error/exception.html.php`.
 
 The `404` page (page not found) can be customized by changing the
 `error_404_module` and `error_404_action` settings:
@@ -185,8 +187,8 @@ The `404` page (page not found) can be customized by changing the
         error_404_module: default
         error_404_action: error404
 
-Customizing the Directory Structure
------------------------------------
+Customizing the Directory ~Structure~
+-------------------------------------
 
 To better structure and standardize your code, symfony has a default directory
 structure with pre-defined names. But sometimes, you don't have the choice but
@@ -195,7 +197,7 @@ to change the structure because of some external constraints.
 Configuring the directory names can be done in the
 `config/ProjectConfiguration.class.php` class.
 
-### The Web Root Directory
+### The ~Web Root Directory~
 
 On some web hosts, you cannot change the web root directory name. Let's say
 that on your web host, it is named `public_html/` instead of `web/`:
@@ -218,12 +220,12 @@ are still valid:
     [php]
     require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
 
-### The Cache and Log Directory
+### The ~Cache~ and ~Log|Logging~ Directory
 
 The symfony framework only writes in two directories: `cache/` and `log/`. For
-security reasons, some web hosts do not set write permissions in the main
-directory. If this is the case, you can move these directories elsewhere on the
-filesystem:
+~security|Security~ reasons, some web hosts do not set 
+~write permissions|Write Permissions~ in the main directory. If this is the case, 
+you can move these directories elsewhere on the filesystem:
 
     [php]
     // config/ProjectConfiguration.class.php
@@ -239,15 +241,15 @@ filesystem:
 As for the `setWebDir()` method, `setCacheDir()` and `setLogDir()` take an
 absolute path to the `cache/` and `log/` directories respectively.
 
-The Factories
--------------
+The ~Factories~
+---------------
 
 During the Jobeet tutorial, we talked about symfony core objects like
 `sfUser`, `sfRequest`, `sfResponse`, `sfI18N`, `sfRouting`, and so on. These
 objects are automatically created, configured, and managed by the symfony
-framework. They are always accessible from the `sfContext` object, and like
+framework. They are always accessible from the ~`sfContext`~ object, and like
 many things in the framework, they are configurable via a configuration file:
-`factories.yml`. This file is configurable by environment.
+~`factories.yml`~. This file is configurable by environment.
 
 When the `sfContext` initializes the core factories, it reads the
 `factories.yml` file for the class names (`class`) and the parameters
@@ -269,11 +271,12 @@ default behavior of these classes by changing the parameters send to them.
 
 Let's take a look at some classic customizations you may want to do.
 
-### Cookie Name
+### ~Cookie|Cookies~ Name
 
-To handle the user session, symfony uses a cookie. This cookie has a default
-name of `symfony`, which can be changed in `factories.yml`. Under the `all`
-key, add the following configuration to change the cookie name to `jobeet`:
+To handle the ~user session|Session~, symfony uses a cookie. This cookie has a 
+default name of `symfony`, which can be changed in `factories.yml`. Under the 
+`all` key, add the following configuration to change the cookie name to 
+`jobeet`:
 
     [yml]
     # apps/frontend/config/factories.yml
@@ -282,7 +285,7 @@ key, add the following configuration to change the cookie name to `jobeet`:
       param:
         session_name: jobeet
 
-### Session Storage
+### ~Session|Session (Storage)~ ~Storage|Storages~
 
 The default session storage class is `sfSessionStorage`. It uses the
 filesystem to store the session information. If you have several web servers,
@@ -308,8 +311,8 @@ table:
 
 ### Session Timeout
 
-By default, the user session timeout if `1800` seconds. This can be changed by
-editing the `user` entry:
+By default, the user ~session timeout|Session (Timeout)~ if `1800` seconds. 
+This can be changed by editing the `user` entry:
 
     [yml]
     # apps/frontend/config/factories.yml
@@ -318,10 +321,10 @@ editing the `user` entry:
       param:
         timeout: 1800
 
-### Logging
+### ~Logging~
 
-By default, there is no logging in the `prod` environment because the logger
-class name is `sfNoLogger`:
+By default, there is no logging in the `prod` ~environment|Environments~ because 
+the logger class name is `sfNoLogger`:
 
     [yml]
     # apps/frontend/config/factories.yml
@@ -351,8 +354,8 @@ class name to `sfFileLogger`:
 >very useful when you need to reference a path in a configuration file without
 >hardcoding the path (`SF_ROOT_DIR`, `SF_WEB_DIR`, ...).
 
-Deploying
----------
+~Deploying~
+-----------
 
 ### What to deploy?
 
@@ -375,8 +378,8 @@ server(s). If you can only access the server with a FTP account, the only
 deployment solution possible is to transfer all files every time you deploy.
 
 The simplest way to deploy your website is to use the built-in `project:deploy`
-task. It uses `SSH` and `rsync` to connect and transfer the files from one computer
-to another one.
+~task|Tasks~. It uses ~`SSH`~ and ~`rsync`~ to connect and transfer the files 
+from one computer to another one.
 
 Servers for the `project:deploy` task can be configured in the
 `config/properties.ini` configuration file:
