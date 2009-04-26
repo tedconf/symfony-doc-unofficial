@@ -5,13 +5,13 @@ Con l'aggiunta fatta ieri su Jobeet, l'applicazione frontend è ora totalmente
 utilizzabile da chi cerca e da chi offre lavoro. È giunto il momento di parlare
 un po' dell'applicazione backend.
 
-Oggi, grazie alla funzionalità di symfony rappresentata dall'~admin generator~, 
+Oggi, grazie alla funzionalità di symfony rappresentata dall'~admin generator|Admin generator~, 
 svilupperemo un'interfaccia di backend completa per Jobeet in una sola ora.
 
 Creazione del Backend
 ---------------------
 
-Il primissimo passo è creare l'applicazione ~backend~. Se la vostra memoria
+Il primissimo passo è creare l'applicazione ~backend|Backend~. Se la vostra memoria
 funziona bene, dovreste ricordare come farlo con il task `generate:app`:
 
     $ php symfony generate:app --escaping-strategy=on
@@ -39,7 +39,7 @@ L'applicazione backend è ora disponibile all'indirizzo
 
 Se provate a ricaricare i dati delle fixture con il task `propel:data-load`,
 non funzionerà ancora. Questo è dovuto al fatto che il metodo `JobeetJob::save()`
-necessita di accedere al file di configurazione `~app.yml~` dall'applicazione
+necessita di accedere al file di configurazione ~`app.yml`~ dall'applicazione
 `frontend`. Visto che abbiamo ora due applicazioni, symfony utilizza la prima che
 trova, che attualmente è quella di backend`.
 
@@ -52,7 +52,7 @@ delle variabili definite in `app.yml` nell'applicazione backend.
 
 >**TIP**
 >Il task `propel:data-load` considera anche l'opzione `--application`. Quindi,
->se avete bisogno di qualche impostazione particolare da un'~applicazione~ 
+>se avete bisogno di qualche impostazione particolare da un'~applicazione|Applicazione~ 
 >piuttosto che un'altra, la strada da usare è la seguente:
 >
 >     $ php symfony propel:data-load --application=frontend
@@ -68,7 +68,7 @@ completamente funzionante per il modello di una classe:
     $ php symfony propel:generate-admin backend JobeetJob --module=job
     $ php symfony propel:generate-admin backend JobeetCategory --module=category
 
-Questi due comandi creano un ~modulo~ `job` ed un modulo `category` per
+Questi due comandi creano un ~modulo|Modulo~ `job` ed un modulo `category` per
 i modelli `JobeetJob` e `JobeetCategory`.
 
 Dietro le quinte il task ha creato anche una rotta personalizzata per ogni modulo:
@@ -84,7 +84,7 @@ Dietro le quinte il task ha creato anche una rotta personalizzata per ogni modul
         column:               id
         with_wildcard_routes: true
 
-Non dovrebbe sorprendere che la classe usata per la rotta dall'~admin generator~
+Non dovrebbe sorprendere che la classe usata per la rotta dall'~admin generator|Admin generator~
 sia `sfPropelRouteCollection` dato che il principale obiettivo dell'interfaccia
 di admin è la gestione del ciclo di vita degli oggetti del modello.
 
@@ -136,7 +136,7 @@ Per rendere migliore la user experience, il layout di default del backend può
 essere personalizzato. Abbiamo inoltre aggiunto un semplice menù per rendere
 più semplice la navigazione tra i differenti moduli
 
-Rimpiazzate il contenuto del file di default `~layout.php~` con il seguente:
+Rimpiazzate il contenuto del file di default `~layout.php|Layout~` con il seguente:
 
     [php]
     // apps/backend/templates/layout.php
@@ -186,7 +186,7 @@ stile durante il giorno 4.
 
 ![aspetto admin generator](http://www.symfony-project.org/images/jobeet/1_2/12/look_and_feel.png)
 
-Alla fine cambiate l'~homepage~ di default nel file `routing.yml`:
+Alla fine cambiate l'~homepage|Homepage~ di default nel file `routing.yml`:
 
     [yml]
     # apps/backend/config/routing.yml
@@ -235,7 +235,7 @@ Il modo di lavorare dell'admin generator dovrebbe farvi tornare in mente qualcos
 di già visto. Infatti è abbastanza simile a quanto abbiamo imparato sul modello
 e sulle classi dei form. Basandosi sullo schema del modello, symfony genera le classi
 del modello e dei form. Per l'admin generator i moduli generati possono essere 
-configurati modificando il file `config/~generator.yml~` che trovate nel modulo:
+configurati modificando il file `config/generator.yml` che trovate nel modulo:
 
     [yml]
     # apps/backend/modules/job/config/generator.yml
@@ -270,7 +270,7 @@ Come vedremo oggi, personalizzare i moduli generati dall'admin generator
 è facile, veloce e divertente.
 
 >**NOTE**
->La rigenerazione automatica dei file di ~cache~ avviene solamente nell'ambiente
+>La rigenerazione automatica dei file di ~cache|Cache~ avviene solamente nell'ambiente
 >di sviluppo. In quello di produzione avrete bisogno di ripulire la cache manualmente
 >con il task `cache:clear`.
 
@@ -332,8 +332,8 @@ La configurazione per il modulo `job` è simile:
 Configurazione Campi
 --------------------
 
-Le viste sono composte da ~campi~. Un campo può essere una colonna di un modello,
-o una ~colonna virtuale~, come vedremo in seguito.
+Le viste sono composte da ~campi|Campi~. Un campo può essere una colonna di un modello,
+o una colonna virtuale, come vedremo in seguito.
 
 La configurazione dei campi di default può essere personalizzata nella sezione `fields`:
 
@@ -343,12 +343,14 @@ La configurazione dei campi di default può essere personalizzata nella sezione 
         is_activated: { label: Activated?, help: Whether the user has activated the job, or not }
         is_public:    { label: Public? }
 
+![Configurazione dei campi](http://www.symfony-project.org/images/jobeet/1_2/12/fields.png)
+
 La sezione `fields` sovrascrive la configurazione dei campi per tutte le viste,
 ciò significa che la `label` per il campo `is_activated` sarà cambiata per le
 viste `list`, `edit` e `new`.
 
 La configurazione dell'admin generator è basata su un principio di configurazione
-a cascata. Per esempio, se si vuol cambiare una ~label~ solo per la vista `list`,
+a cascata. Per esempio, se si vuol cambiare una ~label|Label~ solo per la vista `list`,
 definire un'opzione `fields` sotto la sezione `list`:
 
     [yml]
@@ -377,7 +379,7 @@ Configurazione della lista
 Di default, le colonne della vista della lista sono tutte le colonne del
 Modello, nello stesso ordine del file di schema. L'opzione `display`
 sovrascrive quella di default, definendo le colonne da visualizzare ed
-il loro ~ordine~:
+il loro ordine:
 
     [yml]
     config:
@@ -386,7 +388,7 @@ il loro ~ordine~:
         display: [=name, slug]
 
 Il segno `=` prima della colonna `name` è una convenzione per convertire la stringa
-in un link.
+in un ~link|Link~.
 
 ![Tabella della lista](http://www.symfony-project.org/images/jobeet/1_2/12/list_columns.png)
 
@@ -400,10 +402,10 @@ Facciamo lo stesso per rendere il modulo `job` più leggibile:
 
 ### `layout`
 
-La lista può venir visualizzata da differenti ~layout~. Di default, il layout è
-`~tabular~`, ciò significa che il valore di ogni colonna è nella corrispondente
+La lista può venir visualizzata da differenti ~layout|Layout~. Di default, il layout è
+`~tabular|Layout tabulare~`, ciò significa che il valore di ogni colonna è nella corrispondente
 colonna della tabella. Ma per il modulo `job`, sarebbe meglio usare il layout
-`~stacked~`, che è l'altro layout a disposizione:
+`~stacked|Layout impilato~`, che è l'altro layout a disposizione:
 
     [yml]
     config:
@@ -449,7 +451,7 @@ l'oggetto in una stringa.
 ### `sort`
 
 Come amministratore, sarà probabilmente più interessante vedere gli ultimi
-lavori inseriti. Si può configurare l'~ordinamento~ di default con l'opzione `sort`:
+lavori inseriti. Si può configurare l'ordinamento di default con l'opzione `sort`:
 
     [yml]
     config:
@@ -458,7 +460,7 @@ lavori inseriti. Si può configurare l'~ordinamento~ di default con l'opzione `s
 
 ### `max_per_page`
 
-Di default, la lista è ~paginata~ ed ogni pagina contiene 20 oggetti. Questo
+Di default, la lista è ~paginata|Paginazione~ ed ogni pagina contiene 20 oggetti. Questo
 può essere modificato con l'opzione `~max_per_page~`:
 
     [yml]
@@ -480,7 +482,7 @@ non sono necessarie per il modulo `category`, così rimuoviamole:
 
 ![Rimuovere le azioni batch](http://www.symfony-project.org/images/jobeet/1_2/12/no_batch_actions.png)
 
-L'opzione `~batch_actions~` definisce la lista di azioni batch. Un array vuoto
+L'opzione `batch_actions` definisce la lista di azioni batch. Un array vuoto
 rimuoverà questa opzione.
 
 Di default, ogni modulo ha un'azione `delete` definita da framework, ma per il
@@ -530,7 +532,7 @@ un'eccezione dicendo di creare il metodo `executeBatchExtend()`:
       }
     }
 
-La ~chiave primaria~ selezionata sarà immagazzinata nel parametro `ids`. Per ogni
+La ~chiave primaria|Chiave primaria~ selezionata sarà immagazzinata nel parametro `ids`. Per ogni
 lavoro selezionato, il metodo `JobeetJob::extend()` sarà chiamato con un parametro
 ulteriore per aggirare alcuni controlli nel metodo. Abbiamo bisogno di aggiornare il
 metodo `extend()` per utilizzare questo nuovo parametro:
@@ -634,7 +636,7 @@ che non sono stati attivati dal relativo utente per oltre 60 giorni:
 Finora, tutte le azioni che abbiamo definito avevano un `~`, che vuol
 dire che symfony configura automaticamente l'azione. Ogni azione può
 essere personalizzata definendo un array di parametri. L'opzione
-`label` sovrascrive la ~label~ generata da symfony.
+`label` sovrascrive la ~label|Label~ generata da symfony.
 
 Di default, l'azione eseguita al click sul link è il nome dell'azione
 preceduto da `list`.
@@ -694,7 +696,7 @@ Questo è un altro grande esempio della riusabilità fornita dal pattern MVC.
 </doctrine>
 
 Il numero di richieste al database necessarie per mostrare la pagina della
-lista dei lavori è 14, come mostrato dalla ~web debug toolbar~.
+lista dei lavori è 14, come mostrato dalla ~web debug toolbar|Web debug toolbar~.
 
 Se si clicca sul numero, si vedrà che la maggior parte delle richieste
 è per recuperare il nome della categoria per ogni lavoro.
@@ -704,10 +706,10 @@ Se si clicca sul numero, si vedrà che la maggior parte delle richieste
 Per ridurre il numero di richieste, possiamo cambiare il metodo di default
 usato per recuperare i lavori, usando l'opzione
 <propel>
-`~peer_method~`:
+`peer_method`:
 </propel>
 <doctrine>
-`~table_method~`:
+`table_method`:
 </doctrine>
 
     [yml]
@@ -806,7 +808,7 @@ relazione in questa pagina, rimuoviamolo:
 
 Nelle opzioni `display` per la form del lavoro, il campo `_generated_token`
 inizia con un trattino basso (`_`). Questo significa che la resa per
-questo campo è gestita da un ~partial~ personalizzato chiamato
+questo campo è gestita da un ~partial|Partial~ personalizzato chiamato
 `_generated_token.php`:
 
 Creiamo questo partial con il seguente contenuto:
@@ -965,7 +967,7 @@ Come dato di fatto, i filtri sono esattamente dei form. E come per i form, le re
 classi sono state generate dal task `propel:build-all`. 
 I filtri possono essere rigenerati con il task `propel:build-filters`.
 
-Le ~classi dei filtri~ per i form sono posizionate nella cartella `lib/filter` e
+Le ~classi dei filtri|Form (classi dei filtri)~ per i form sono posizionate nella cartella `lib/filter` e
 ad ogni classe del modello è associata una classe filtro per il form 
 (`JobeetJobFormFilter` per `JobeetJobForm`).
 
@@ -1024,7 +1026,7 @@ comportamento senza dover copiare e incollare troppo codice.
 Personalizzazione dei Template
 ------------------------------
 
-Abbiamo visto come sia possibile personalizzare i ~template~ generati grazie
+Abbiamo visto come sia possibile personalizzare i ~template|Template~ generati grazie
 agli attributi `class` e `id` aggiunti nel codice HTML dall'admin generator.
 
 Come per le classi, è anche possibile sovrascrivere i template originali.

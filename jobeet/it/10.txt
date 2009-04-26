@@ -7,7 +7,7 @@ l'introduzione del symfony test framework. Continueremo oggi con il framework de
 Il Framework dei form
 ---------------------
 
-Ogni sito web ha dei ~form~; dal semplice form di contatto a quelli più completi con
+Ogni sito web ha dei ~form|Form~; dal semplice form di contatto a quelli più completi con
 decine di campi. Scrivere form è uno dei compiti più complessi e noiosi per uno
 sviluppatore web: deve scrivere il form HTML, implementare le regole per la 
 validazione di ogni campo, processare i valori per salvarli nel database, visualizzare
@@ -17,20 +17,20 @@ Invece di reinventare la ruota più e più volte symfony mette a disposizione un
 framework per una semplice gestione dei form. Il framework dei form è costituito da
 tre parti:
 
-  * **~validazione~**: Il sub-framework per la validazione offre diverse classi
+  * **validazione**:   Il sub-framework per la ~validazione|Validazione~ offre diverse classi
                        per la validazione dell'input (intero, stringa, email, ...)
-  * **~widget~**:      Il sub-framework dei widget offre le classi per l'output
-                       dell'HTML dei campi (input, textarea, select, ...)
-  * **form**:          Le classi dei form rappresentano i form costituiti da
-                       widget e validatori ed offrono i metodi per aiutare nella
-                       gestione dei form. Ogni campo di un form ha il suo validatore
-                       ed il suo widget.
+  * **widget**:  Il sub-framework dei ~widget|Widget~ offre le classi per l'output
+                 dell'HTML dei campi (input, textarea, select, ...)
+  * **form**:   Le classi dei ~form|Form~ rappresentano i form costituiti da
+                widget e validatori ed offrono i metodi per aiutare nella
+                gestione dei form. Ogni campo di un form ha il suo validatore
+                ed il suo widget.
 
 Form
 ----
 
 Un form in symfony è una classe costituita da campi. Ogni campo ha un nome, un
-~validatore~ ed un ~widget~. Un semplice `ContactForm` può essere
+~validatore|Validatori~ ed un ~widget|Widget~. Un semplice `ContactForm` può essere
 definito con la seguente classe:
 
     [php]
@@ -67,7 +67,7 @@ un tag di tipo `<textarea>` (`sfWidgetFormTextarea`) e dovrà essere una stringa
 di non più di 255 caratteri (`sfValidatorString`).
 
 Di default tutti i campi sono obbligatori, visto che il valore impostato per
-l'opzione `~required~` è impostata a `true`. Quindi la definizione della validazione
+l'opzione `~required|Campi di form obbligatori~` è impostata a `true`. Quindi la definizione della validazione
 per `email` è equivalente a `new sfValidatorEmail(array('required' => true))`.
 
 >**TIP**
@@ -123,7 +123,7 @@ classe base dei form:
 ### Personalizzare il Form per il lavoro
 
 Il form per il lavoro è un esempio perfetto per imparare a
-~personalizzare i form~. Vediamo come personalizzarlo passo passo.
+~personalizzare i form|Form (Personalizzazione)~. Vediamo come personalizzarlo passo passo.
 
 Come prima cosa cambiamo il link "Post a Job" nel layout ,per avere la possibilità
 di verificare i cambiamenti direttamente nel browser:
@@ -239,7 +239,7 @@ creato da un widget diverso in accordo ad alcune opzioni di configurazione
  * Lista di checkbox: `array('multiple' => true, 'expanded' => true)`
 
 >**NOTE**
->Se volete che una voce dell'elenco dei ~radiobutton~ sia selezionata di default
+>Se volete che una voce dell'elenco dei radiobutton sia selezionata di default
 >(`full-time` per esempio), potete cambiare il valore di default nello schema
 > del database.
 
@@ -262,18 +262,18 @@ Cambiamo il validatore per restringere le possibilità di scelta:
 </doctrine>
 
 Siccome la colonna `logo` dovrà memorizzare il nome del file del logo associato
-all'offerta di lavoro, abbiamo bisogno di cambiare il widget per l'input di un
-file:
+all'offerta di lavoro, abbiamo bisogno di cambiare il widget per
+l'~input di un file|Input file~:
 
     [php]
     $this->widgetSchema['logo'] = new sfWidgetFormInputFile(array(
       'label' => 'Company logo',
     ));
 
-Per ogni campo symfony genera automaticamente un'~etichetta~ (che verrà usata per
+Per ogni campo symfony genera automaticamente una ~label|Label~ (che verrà usata per
 generare il tag `<label>`). Questa può essere cambiata con l'opzione `label`.
 
-Si possono cambiare le etichette anche con il metodo `setLabels()` del widget array:
+Si possono cambiare le label anche con il metodo `setLabels()` del widget array:
 
     [php]
     $this->widgetSchema->setLabels(array(
@@ -315,7 +315,7 @@ cambiamo il percorso utilizzato nel template `showSuccess`:
 >Al metodo viene passato l'oggetto `sfValidatedFile` come parametro.
 
 Come già potete sovrascrivere l'etichetta generata per ogni campo, potete anche
-definire un ~messaggio d'aiuto~. Aggiungiamone uno per la colonna `is_public`,
+definire un ~messaggio d'aiuto|Form (Aiuto)~. Aggiungiamone uno per la colonna `is_public`,
 per spiegare meglio il suo significato:
 
     [php]
@@ -382,7 +382,7 @@ La versione finale della classe `JobeetJobForm` sarà come la seguente:
 ### Il template del form
 
 Ora che la classe del form è stata personalizzata, abbiamo bisogno di
-visualizzarla. Il ~template~ per il form è lo stesso sia voi vogliate creare
+visualizzarla. Il ~template|Template~ per il form è lo stesso sia voi vogliate creare
 un nuovo lavoro, sia vogliate modificarlo. Infatti i template `newSuccess.php`
 e `editSuccess.php` sono abbastanza simili:
 
@@ -398,7 +398,7 @@ e `editSuccess.php` sono abbastanza simili:
 >Se non avete ancora aggiunto il foglio di stile `job`, è ora di farlo
 >in entrambi i template (`<?php use_stylesheet('job.css') ?>`).
 
-Il form stesso è visualizzato nel ~partial~ `_form`. Sostituite
+Il form stesso è visualizzato nel ~partial|Partial~ `_form`. Sostituite
 il contenuto generato nel partial `_form' con il codice seguente:
 
     [php]
@@ -428,11 +428,11 @@ aggiungeranno le dipendenze JavaScript e CSS necessarie per i widget.
 >Anche se il form per il lavoro non necessita di alcun file JavaScript o CSS, è
 >una buona abitudine mantenere questi helper "giusto nel caso". Potranno essere
 >d'aiuto se in seguito deciderete di cambiare un widget con uno che necessita di
->JavaScript o di un foglio di stile specifico.
+>JavaScript o di un ~foglio di stile|Fogli di stile~ specifico.
 
-L'helper `form_tag_for()` genera un tag `<form>` per il form e la rotta dati
-e cambia il metodo HTTP a `POST` o `PUT` a seconda che l'oggetto sia
-nuovo o no. Inoltre si occupa di aggiungere l'attributo `multipart` se il form
+L'helper ~`form_tag_for()`~ genera un ~tag|Form (HTML)~ `<form>` per il form e la rotta dati
+e cambia il ~metodo HTTP|Metodo HTTP~ a `POST` o `PUT` a seconda che l'oggetto sia
+nuovo o no. Inoltre si occupa di aggiungere l'attributo ~`multipart`|Form (Multipart)~ se il form
 ha qualche tag `input` con `type="file"`.
 
 Infine, l'istruzione `<?php echo $form ?>` visualizza i widget del form.
@@ -444,7 +444,7 @@ Infine, l'istruzione `<?php echo $form ?>` visualizza i widget del form.
 >di una tabella.
 >
 >Spesso si avrà bisogno di personalizzare il layout dei propri form. L'oggetto form
->fornisce altri utili metodi per la personalizzazione:
+>fornisce altri utili metodi per la ~personalizzazione|Personalizzazione~:
 >
 > | Metodo                 | Descrizione
 > | ---------------------- | -------------------------------------------------
@@ -477,7 +477,7 @@ Infine, l'istruzione `<?php echo $form ?>` visualizza i widget del form.
 ### L'azione del form
 
 Abbiamo ora una classe per il form ed un template che lo visualizza. Ora è tempo
-di farlo funzionare con delle azioni.
+di farlo funzionare con delle ~azioni|Azione~.
 
 Il form del lavoro è gestito da cinque metodi del modulo `job`:
 
@@ -554,12 +554,12 @@ con i dati inseriti dall'utente e la validazione viene effettuata.
 
 Dopo che il form è stato riempito, è possibile controllare la sua validità
 utilizzando il metodo `isValid()`: se il form è valido (restituisce `true`),
-il lavoro è salvato nel database (`$form->save()`), e l'utente è reindirizzato
+il lavoro è salvato nel database (`$form->save()`), e l'utente è ~rinviato|Rinvio~
 alla pagina di anteprima; se non è validato, il template `newSuccess.php` è
 visualizzato di nuovo, con i dati inseriti ed i messaggi d'errore associati.
 
 >**TIP**
->Il metodo `setTemplate()` cambia il template utilizzato per una data azione.
+>Il metodo `setTemplate()` cambia il ~template|Template~ utilizzato per una data azione.
 >Se il form inserito non è valido, i metodi `create` e `update` utilizzano
 >lo stesso template, dato che i template `new` e `edit` visualizzano il
 >form con i messaggi d'errore.
@@ -657,7 +657,7 @@ Possiamo ora rimuovere il campo `token` dal form:
 Se vi ricordate il giorno 2, un lavoro può venir modificato solo se l'utente
 ha il token associato. Finora, è semplice modificare o eliminare un lavoro,
 semplicemente indovinando l'URL. Questo perché l'URL per la modifica è simile
-a `/job/ID/edit`, dove `ID` è la chiave primaria del lavoro.
+a `/job/ID/edit`, dove `ID` è la ~chiave primaria|Chiave primaria~ del lavoro.
 
 Di default, una rotta `sfPropelRouteConnection` genera URL con la chiave primaria,
 ma può venir cambiato con ogni colonna unica passando l'opzione `column`:
@@ -694,7 +694,7 @@ La pagina di anteprima
 ----------------------
 
 La pagina di anteprima è la stessa che mostra la pagina del lavoro. Grazie al
-routing, se l'utente arriva con il token giusto, sarà accessibile nel
+~routing|Routing~, se l'utente arriva con il token giusto, sarà accessibile nel
 parametro di richiesta `token`.
 
 Se l'utente arriva con un URL con token, aggiungeremo una barra di amministrazione
@@ -792,7 +792,7 @@ Attivazione e pubblicazione di un lavoro
 
 Nella sezione precedente, c'è un link per pubblicare il lavoro. Il link
 deve essere cambiato per puntare ad una nuova azione `publish`.
-Invece di creare una nuova rotta, possiamo semplicemente configurare la
+Invece di creare una nuova ~rotta|Rotta~, possiamo semplicemente configurare la
 rotta `job` esistente:
 
     [yml]

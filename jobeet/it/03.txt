@@ -1,5 +1,5 @@
-Giorno 3: Il modello dei dati
-=============================
+Giorno 3: Il ~Modello dei dati~
+===============================
 
 Quelli di voi che non vedono l'ora di aprire l'editor di testo e scrivere
 un po' di PHP saranno contenti di sapere che il tutorial di oggi darà la
@@ -36,14 +36,14 @@ Se si preferisce mantenere tutti i plugin abilitati, si può fare così:
 
 >**NOTE**
 >Dopo questo cambiamenti, si avrà un errore, finché non si configurerà il file
->`config/~databases~.yml`, in un passo successivo, per usare `sfDoctrineDatabase`.
+>`config/databases.yml`, in un passo successivo, per usare `sfDoctrineDatabase`.
 
 Dopo questi cambiamenti, assicurarsi di pulire la cache.
 
     $ php symfony cc
 
 Come vedremo più avanti in questo tutorial, ogni plugin può includere
-delle ~risorse~ (immagini, fogli di stile, e JavaScript.). Quando si installa o si
+delle ~risorse|Risorse~ (immagini, fogli di stile, e JavaScript.). Quando si installa o si
 abilita un nuovo plugin, occorre installare tali risorse tramite il
 task `plugin:publish-assets`:
 
@@ -85,7 +85,7 @@ Per memorizzare gli annunci di lavoro, gli affiliati e le categorie abbiamo
 ovviamente bisogno di un database relazionale.
 
 Dato che symfony è un framework orientato agli oggetti, ci farebbe piacere manipolare
-~oggetti~ il più possibile. Per esempio, invece che scrivere query SQL per ottenere
+~oggetti|OOP~ il più possibile. Per esempio, invece che scrivere query SQL per ottenere
 record dal database, preferiamo utilizzare gli oggetti.
 
 Le informazioni del database relazionale devono essere mappate da un modello ad
@@ -107,7 +107,7 @@ descrittivo: analizzando un database esistente o creandone uno a mano.
 
 Siccome il database non esiste ancora e non vogliamo prendere decisioni su 
 di esso (come realizzarlo), creeremo lo schema a mano modificando un file vuoto
-`config/schema.yml`:
+~`config/schema.yml`|Schema del database~:
 
     [yml]
     # config/schema.yml
@@ -159,7 +159,6 @@ di esso (come realizzarlo), creeremo lo schema a mano modificando un file vuoto
 
     [yml]
     # config/doctrine/schema.yml
-
     JobeetCategory:
       actAs:
         Timestampable: ~
@@ -300,7 +299,7 @@ formato YAML.
 >
 >C'è una cosa importante da ricordare quando si modifica un file
 >YAML: **l'indentazione deve essere fatta con uno o più spazi, mai
->con le tabulazioni**.
+>con le ~tabulazioni|Formattazione del codice~**.
 
 Il file `schema.yml` contiene la descrizione di tutte le tabelle e delle loro
 colonne. Ogni colonna è descritta con le seguenti informazioni:
@@ -310,11 +309,11 @@ colonne. Ogni colonna è descritta con le seguenti informazioni:
     `bigint`, `double`, `float`, `real`, `decimal`, `char`, `varchar(size)`,
      `longvarchar`, `date`, `time`, `timestamp`, `blob`, e `clob`)
   * `required`: Impostarlo a `true` se la colonna è obbligatoria (not null)
-  * `~index~`: Impostarlo a `true` se si vuole creare un indice per la colonna o
-     a `unique` se si vuole una chiave univoca per la colonna.
-  * `primaryKey`: Definisce una colonna come ~chiave primaria~ per la tabella.
-  * `foreignTable`, `foreignReference`: Definisce una colonna come ~chiave
-     esterna~ verso un'altra tabella.
+  * `~index|Indici del database~`: Impostarlo a `true` se si vuole creare un indice per 
+     la colonna o a `unique` se si vuole una chiave univoca per la colonna.
+  * `primaryKey`: Definisce una colonna come ~chiave primaria|Chiave primaria~ per la tabella.
+  * `foreignTable`, `foreignReference`: Definisce una colonna come
+     ~chiave esterna|Chiave esterna~ verso un'altra tabella.
 
 Per le colonne impostate a `~`, che in YAML significa `null`,
 (`id`, `created_at`, e `updated_at`) symfony deciderà la migliore
@@ -322,8 +321,8 @@ configurazione (chiave primaria per `id` e timestamp per
 `created_at` e `updated_at`).
 
 >**NOTE**
->L'attributo `onDelete` definisce il ~comportamento~ `ON DELETE` delle chiavi esterne,
->Propel supporta `CASCADE`, `SETNULL` e `RESTRICT`. Per esempio quando un 
+>L'attributo `onDelete` definisce il ~comportamento|Vincoli di integrità~ `ON DELETE`
+>delle chiavi esterne, Propel supporta `CASCADE`, `SETNULL` e `RESTRICT`. Per esempio quando un 
 >record `job` viene eliminato, tutti i record `jobeet_category_affiliate`
 >associati verranno automaticamente eliminati dal database, o da Propel se 
 >il sottostante engine non dovesse supportare tale funzionalità.
@@ -349,7 +348,8 @@ Il ~Database~
 
 Il framework symfony supporta tutti i database supportati da PDO
 (MySQL, PostgreSQL, SQLite, Oracle, MSSQL, ...). [~PDO~](http://www.php.net/PDO)
-è il ~livello di astrazione~ per database incluso di default in PHP.
+è il ~livello di astrazione|Livello di astrazione del database~ per database
+incluso di default in PHP.
 
 Per questo tutorial useremo ~MySQL~.
 
@@ -357,9 +357,9 @@ Per questo tutorial useremo ~MySQL~.
     Enter password: mYsEcret ## La password sarà mostrata come ********
 
 >**NOTE**
->Sentitevi liberi di utilizzare un altro ~database engine~, se volete.
->Non sarà difficile adattare il codice che scriveremo, dato che l'ORM scriverà
->il codice SQL al nostro posto.
+>Sentitevi liberi di utilizzare un altro ~tipo di database|Tipo di database~,
+>se volete. Non sarà difficile adattare il codice che scriveremo, dato
+>che l'ORM scriverà il codice SQL al nostro posto.
 
 Dobbiamo dire a symfony di usare questo database per Jobeet:
 
@@ -384,28 +384,28 @@ del database per Doctrine:
 </doctrine>
 
 Il task `configure:database` accetta tre parametri: il
-[DSN di PDO](http://www.php.net/manual/en/pdo.drivers.php), il nome utente
+[~DSN di PDO~](http://www.php.net/manual/it/pdo.drivers.php), il nome utente
 e la password per accedere al database. Se non si ha bisogno di password 
 per accedere al database nel server di sviluppo, basta
 omettere il terzo parametro.
 
 >**NOTE**
->Il task `configure:database` salva la configurazione all'interno del file
->config/databases.yml. Al posto di usare questo task, si può modificare questo
->file a mano.
+>Il ~task|Task~ `configure:database` salva la ~configurazione|Configurazione del database~
+>all'interno del file config/databases.yml. Invece di usare questo task,
+>si può modificare il file a mano.
 
 -
 
 >**CAUTION**
 >Passare la password del database nella linea di comando è comodo, ma
->[non sicuro](http://dev.mysql.com/doc/refman/5.1/en/password-security.html).
+>[~non sicuro|Sicurezza~](http://dev.mysql.com/doc/refman/5.1/en/password-security.html).
 >A seconda di chi accede al vostro ambiente, potrebbe essere meglio
 >modificare `config/databases.yml` per cambiare la password. Ovviamente,
 >per mantenere la password al sicuro, l'accesso al file di configurazione
 >dovrebbe essere ristretto.
 
-L'ORM
------
+L'~ORM~
+-------
 
 Grazie alla descrizione del database nel file `schema.yml`, possiamo usare
 alcuni dei task integrati di ##ORM## per generare l'~SQL~ necessario alla creazione
@@ -459,14 +459,14 @@ essere utile durante l'esecuzione di un processo batch non interattivo.
 </propel>
 
 >**TIP**
->Come ogni tool da ~riga di comando~, symfony può accettare parametri ed opzioni.
+>Come ogni tool da ~riga di comando|Riga di comando~, symfony accetta parametri ed opzioni.
 >Ogni task ha un messaggio d'aiuto che può essere visualizzato utilizzando il
 >task `help`:
 >
 >     $ php symfony help propel:insert-sql
 >
->Il messaggio di help elenca tutti i possibili argomenti ed opzioni, mostra i
->valori di default per ognuno di essi, e fornisce degli utili esempi.
+>Il messaggio d'aiuto elenca tutti i possibili parametri ed opzioni, mostra i
+>valori di default per ognuno di essi e fornisce degli utili esempi.
 
 L'ORM genera anche le classi PHP per mappare i record delle tabelle all'interno
 di oggetti.
@@ -478,9 +478,10 @@ Il task `propel:build-model` genera i file PHP all'interno della cartella
 
 <propel>
 Curiosando tra i file generati, probabilmente noterete che Propel genera quattro
-classi per ogni ~tabella~. Per la tabella `jobeet_job`:
+classi per ogni ~tabella|Tabella (Database)~. Per la tabella `jobeet_job`:
 
-  * `JobeetJob`: Un oggetto di questa classe **rappresenta un singolo ~record~**
+  * `JobeetJob`: Un oggetto di questa classe **rappresenta un singolo
+     ~record|Record~**
      della tabella `jobeet_job`. La classe è vuota di default.
   * `BaseJobeetJob`: La classe estesa da `JobeetJob`. Ogni volta che si esegue
      `propel:build-model`, questa classe è sovrascritta, per cui
@@ -502,7 +503,7 @@ classi per ogni tabella. Per la tabella `jobeet_job`:
      tabella `jobeet_job`. La classe è vuota di default.
   * `BaseJobeetJob`: La classe estesa da `JobeetJob`. Ogni volta che si esegue
      `doctrine:build-model`, questa classe è sovrascritta, per cui
-     le ~personalizzazioni~ dovranno essere eseguite nella classe
+     le ~personalizzazioni|Personalizzazione~ dovranno essere eseguite nella classe
      `JobeetJob`.
   * `JobeetJobTable`: La classe definisce i metodi che di solito restituiscono
      insiemi di oggetti `JobeetJob`. Questa classe è vuota di default.
@@ -522,7 +523,7 @@ del modello, utilizzando dei getter (metodi `get*()`) e dei setter (metodi `set*
 
     $job->delete();
 
-Si possono inoltre definire ~chiavi esterne~ direttamente collegando
+Si possono inoltre definire ~chiavi esterne|Chiave esterna~ direttamente collegando
 oggetti tra loro:
 
     [php]
@@ -545,17 +546,17 @@ discussi nel dettaglio nel giorno 10.
 >Il task `propel:build-all-load` è una scorciatoia per il task
 >`propel:build-all` seguito dal task `propel:data-load`.
 
-Come vedremo in seguito, symfony carica automaticamente le classi per noi, ciò
+Come vedremo in seguito, symfony ~carica automaticamente|Autoload~ le classi per noi, ciò
 significa che non si avrà mai bisogno di usare un `require` nel codice. È una
 delle numerose funzionalità che symfony automatizza per lo sviluppatore, ma
 purtroppo questo implica il dover svuotare la cache ogni volta si aggiunge una
 nuova classe. Dato che `propel:build-model` ha creato molte nuove classi,
-puliamo la ~cache~:
+puliamo la ~cache|Cache~:
 
      $ php symfony cache:clear
 
 >**TIP**
->Un ~task~ di symfony è composto da un namespace e da un nome. Ognuno può essere
+>Un ~task|Task~ di symfony è composto da un namespace e da un nome. Ognuno può essere
 >accorciato se non c'è ambiguità con altri task. Per cui il seguente comando è
 >equivalente a `cache:clear`:
 >
@@ -579,10 +580,10 @@ Per ogni applicazione web, ci sono tre tipi da dati:
                        inserire un annuncio. Abbiamo inoltre bisogno di un utente
                        amministratore, per eseguire il login al backend.
 
-  * **Dati per il test**: I ~dati per il test~ sono necessari alle applicazioni
-                          per venire testate. Come sviluppatore, si scriveranno dei
+  * **Dati per i test**:  I ~dati per i test|Dati per i test~ sono necessari alle applicazioni
+                          per essere testate. Come sviluppatore, si scriveranno dei
                           test per assicurarsi che Jobeet si comporti come
-                          descritto nelle previsioni, ed il modo migliore è
+                          descritto nelle previsioni ed il modo migliore è
                           scrivere dei test automatizzati. Così, ogni volta che
                           eseguiremo un test, avremo bisogno di un database pulito
                           con dei dati da testare.
@@ -597,7 +598,7 @@ script PHP o eseguire delle query con il programma `mysql`. Ma dato che questo
 creare dei file YAML nella cartella `data/fixtures/` ed usare il task
 `propel:data-load` per caricarli nel database.
 
-Prima, creiamo i seguenti file di ~fixture~:
+Prima, creiamo i seguenti file di ~fixture|Fixture~:
 
 <propel>
     [yml]
@@ -733,7 +734,7 @@ Un file fixture è scritto in YAML e definisce gli oggetti del modello,
 etichettati con un nome univoco (ad esempio, abbiamo definito due lavori
 etichettati come `job_sensio_labs` e `job_extreme_sensio`). Questa
 etichetta è molto utile per collegare gli oggetti correlati senza
-dover definire delle ~chiavi primarie~ (che sono spesso degli
+dover definire delle ~chiavi primarie|Chiave primaria~ (che sono spesso degli
 auto-increment e quindi non possono essere impostate). Per esempio,
 la categoria `job_sensio_labs` è `programming`, che è l'etichetta
 assegnata alla categoria 'Programming'.
@@ -750,8 +751,8 @@ di Jobeet.
 
 <propel>
 >**TIP**
->Notate i numeri che precedono i nomi dei file. Questo è un modo semplice per controllare
->l'ordine del caricamento dei dati. Più avanti nel progetto, se avremo bisogno di inserire
+>Notate i numeri che ~precedono|Prefisso~ i nomi dei file. Questo è un modo semplice per controllare
+>l'ordine di caricamento dei dati. Più avanti nel progetto, se avremo bisogno di inserire
 >nuovi file fixture, sarà facile perché avremo alcuni numeri liberi tra quelli
 >esistenti.
 </propel>
@@ -766,7 +767,7 @@ di Jobeet.
 In un file fixture, non si ha bisogno di definire tutti i valori delle colonne.
 Se non lo si fa, symfony userà i valori di default definiti nello schema del
 database. E siccome symfony usa ##ORM## per caricare i dati nel database,
-tutti i comportamenti predefiniti (come impostare automaticamente le
+tutti i ~comportamenti|Comportamenti (ORM)~ predefiniti (come impostare automaticamente le
 colonne `created_at` o `updated_at`), ed i comportamenti personalizzati che
 potreste aver aggiunto alle classi del modello saranno attivati.
 
@@ -817,7 +818,7 @@ stati creati per voi sotto la cartella `apps/frontend/modules/job/`:
  | actions/   | Le azioni del modulo
  | templates/ | I template del modulo
 
-Il file `actions/actions.class.php` definisce tutte le **~azioni~**
+Il file `actions/actions.class.php` definisce tutte le **~azioni|Azione~**
 disponibili per il modulo `job`:
 
  | Nome azione  | Descrizione
@@ -854,7 +855,7 @@ classe del modello `JobeetCategory`:
     }
 
 Ora ogni volta che symfony ha bisogno della rappresentazione testuale di una categoria,
-chiama il metodo `__toString()` che restituisce il nome della categoria. Siccome abbiamo
+chiama il metodo ~`__toString()`~, che restituisce il nome della categoria. Siccome abbiamo
 bisogno di una rappresentazione testuale di tutte le classi del modello in un punto o
 nell'altro, definiamo un metodo `__toString()` per ogni classe del modello:
 </propel>
