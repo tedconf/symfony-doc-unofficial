@@ -175,6 +175,39 @@ Let's change the default `sfValidatorString` to a `sfValidatorEmail`:
       $this->validatorSchema['email'] = new sfValidatorEmail();
     }
 
+Replacing the default validator is not always the best solution, as the
+default validation rules introspected from the database schema are loosed
+(`new sfValidatorString(array('max_length' => 255))`). It is almost always
+better to add the new validator to the existing ones by using the special
+`sfValidatorAnd` validator:
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    public function configure()
+    {
+      // ...
+
+      $this->validatorSchema['email'] = new sfValidatorAnd(array(
+        $this->validatorSchema['email'],
+        new sfValidatorEmail(),
+      ));
+    }
+
+The `sfValidatorAnd` validator takes an array of validators that must pass for
+the value to be valid. The trick here is to reference the current validator
+($this->validatorSchema['email']), and to add the new one.
+
+>**NOTE**
+>You can also use the `sfValidatorOr` validator to force a value to
+>pass at least one validator. And of course, you can mix and match
+>`sfValidatorAnd` and `sfValidatorOr` validators to create complex
+>boolean based validators.
+
 Even if the `type` column is also a `varchar` in the schema, we want its value
 to be restricted to a list of choices: full time, part time, or freelance.
 
@@ -338,7 +371,10 @@ The final `JobeetJobForm` class reads as follows:
           $this['expires_at'], $this['is_activated']
         );
 
-        $this->validatorSchema['email'] = new sfValidatorEmail();
+        $this->validatorSchema['email'] = new sfValidatorAnd(array(
+          $this->validatorSchema['email'],
+          new sfValidatorEmail(),
+        ));
 
         $this->widgetSchema['type'] = new sfWidgetFormChoice(array(
 <propel>
