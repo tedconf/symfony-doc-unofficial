@@ -145,8 +145,8 @@ And create the `updateLuceneIndex()` method that does the actual work:
       $index = $this->getTable()->getLuceneIndex();
 </doctrine>
 
-      // remove an existing entry
-      if ($hit = $index->find('pk:'.$this->getId()))
+      // remove existing entries
+      foreach ($index->find('pk:'.$this->getId()) as $hit)
       {
         $index->delete($hit->id);
       }
@@ -159,8 +159,8 @@ And create the `updateLuceneIndex()` method that does the actual work:
 
       $doc = new Zend_Search_Lucene_Document();
 
-      // store job primary key URL to identify it in the search results
-      $doc->addField(Zend_Search_Lucene_Field::UnIndexed('pk', $this->getId()));
+      // store job primary key to identify it in the search results
+      $doc->addField(Zend_Search_Lucene_Field::Keyword('pk', $this->getId()));
 
       // index job fields
       $doc->addField(Zend_Search_Lucene_Field::UnStored('position', $this->getPosition(), 'utf-8'));
