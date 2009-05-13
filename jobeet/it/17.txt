@@ -140,7 +140,7 @@ E create il metodo `updateLuceneIndex()` che fa il vero lavoro:
 </doctrine>
 
       // cancella una voce esistente
-      if ($hit = $index->find('pk:'.$this->getId()))
+      foreach ($index->find('pk:'.$this->getId()) as $hit)
       {
         $index->delete($hit->id);
       }
@@ -154,7 +154,7 @@ E create il metodo `updateLuceneIndex()` che fa il vero lavoro:
       $doc = new Zend_Search_Lucene_Document();
 
       // salva la chiave primaria dell'URL di un lavoro, per identificarlo nei risultati della ricerca
-      $doc->addField(Zend_Search_Lucene_Field::UnIndexed('pk', $this->getId()));
+      $doc->addField(Zend_Search_Lucene_Field::Keyword('pk', $this->getId()));
 
       // campi dell'indice dei lavori
       $doc->addField(Zend_Search_Lucene_Field::UnStored('position', $this->getPosition(), 'utf-8'));
