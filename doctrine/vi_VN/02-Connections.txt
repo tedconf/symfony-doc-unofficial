@@ -3,7 +3,7 @@ Chương 2 - Kết nối
 
 ## Giới thiệu
 
-Trong chương này chúng ta sẽ đề cập đến vài vấn đề về Doctrine connection, cách cấu hình cho multiple connection, kết nối với model, cách tạo và xóa database.
+Trong chương này chúng ta sẽ đề cập về kết nối trong Doctrine, cách cấu hình nhiều kết nối, liên kết với model, cách tạo và xóa database.
 
 File cấu hình mặc định `config/databases.yml` thường như sau:
 
@@ -17,13 +17,13 @@ File cấu hình mặc định `config/databases.yml` thường như sau:
 Chỉ có một sự khác nhau giữa cấu hình Propel và Doctrine là ta dùng class `sfDoctrineDatabase` thay cho `sfPropelDatabase` và tên connection là doctrine thay vì propel. Cả Doctrine và Propel đều dùng PHP Data Objects (PDO) cho tầng database abstraction.
 
 >**NOTE**
->Trong khi Propel yêu cầu ít nhất phải có một connection có tên `propel`, Doctrine không bắt buộc rằng tên connection phải là `doctrine` do đó bạn có thể đặt là gì tùy thích.
+>Trong khi Propel yêu cầu ít nhất phải có một connection có tên `propel`, với Doctrine điều này không bắt buộc và bạn có thể đặt tùy thích.
 
-Bạn có thể cấu hình connections trong `config/databases.yml` từ dòng lệnh với lệnh `configure:database`
+Bạn có thể cấu hình connection trong `config/databases.yml` thông qua lệnh `configure:database`
 
     $ ./symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=dbname" user secret
 
-Bạn sẽ thấy một connection mới được tạo ra:
+Một connection mới được tạo:
 
     doctrine:
       class: sfDoctrineDatabase
@@ -35,19 +35,19 @@ Bạn sẽ thấy một connection mới được tạo ra:
 >**NOTE**
 >Bạn cần xóa bỏ tất cả những thứ liên quan đến propel trong `config/databases.yml` nếu bạn đã disable sfPropelPlugin.
 
-## Các Driver hỗ trợ
+## Các Driver Doctrine hỗ trợ
 
-Doctrine hỗ trợ tất cả các driver có hỗ trợ PDO. PHP phải bật extention PDO và PDO_* ứng với driver bạn muốn dùng. Dưới đây là danh sách các databases PDO .
+Doctrine hỗ trợ tất cả các driver có hỗ trợ PDO. PHP phải bật extention PDO và PDO_* ứng với driver bạn muốn dùng. Dưới đây là danh sách các database PDO .
 
 | Tên               | Mô tả                                                |
 |-------------------|------------------------------------------------------|
-| MS SQL Server     | Microsoft SQL Server and Sybase Functions (PDO_DBLIB)|
+| MS SQL Server     | Microsoft SQL Server & Sybase Functions (PDO_DBLIB)|
 | Firebird/Interbase| Firebird/Interbase Functions (PDO_FIREBIRD)          |
 | IBM               | IBM Functions (PDO_IBM)                              |
 | Informix          | Informix Functions (PDO_INFORMIX)                    |
 | MySQL             | MySQL Functions (PDO_MYSQL)                          |
 | Oracle            | Oracle Functions (PDO_OCI)                           |
-| ODBC and DB2      | ODBC and DB2 Functions (PDO_ODBC)                    |
+| ODBC and DB2      | ODBC & DB2 Functions (PDO_ODBC)                    |
 | PostgreSQL        | PostgreSQL Functions (PDO_PGSQL)                     |
 | SQLite            | SQLite Functions (PDO_SQLITE)                        |
 
@@ -56,7 +56,7 @@ Doctrine hỗ trợ tất cả các driver có hỗ trợ PDO. PHP phải bật 
 
 ## Data Source Name(DSN)
 
-Doctrine cung cấp 2 cách đề khai báo thông tin về DSN. Bạn có thể viết theo cách của Doctrine hoặc dùng theo cách viết của PDO.
+Doctrine cung cấp 2 cách để khai báo thông tin về DSN. Bạn có thể viết theo cách của Doctrine hoặc dùng theo cách viết của PDO.
 
 ### Doctrine Style
 
@@ -70,7 +70,7 @@ Doctrine có cấu trúc DSN dựa trên PEAR MDB2.
 
 ### PDO Style
 
-Bạn có thể khai báo thông tin về DSN theo cấu trúc PDO style.
+Bạn có thể khai báo thông tin về DSN theo cấu trúc của PDO.
 
     all:
       doctrine:
@@ -81,17 +81,17 @@ Bạn có thể khai báo thông tin về DSN theo cấu trúc PDO style.
           password:     password
 
 >**TIP**
->Dùng cấu trúc PDO style thường mềm dẻo hơn và có thể cung cấp các thông tin non-standard về connection của bạn với PDO. Ví dụ, khi cần chỉ ra một non-standard về đường dẫn unix_socket hoặc cổng (port) dùng để connect, khi đó cấu trúc theo kiểu của PDO dễ viết hơn. Lệnh `configure:database` chỉ tạo ra thông tin theo cấu trúc PDO style.
+>Cấu trúc của PDO thường mềm dẻo hơn và có thể cung cấp các thông tin non-standard về connection của bạn với PDO. Ví dụ, khi cần cung cấp thông tin về đường dẫn unix_socket hoặc cổng (port) dùng để kết nối, cấu trúc theo kiểu PDO dễ viết hơn. Lệnh `configure:database` tạo ra thông tin theo cấu trúc của PDO.
 
-## Import from Database
+## Import từ Database
 
-Doctrine có thể tạo ra file schema `config/doctrine/schema.yml` từ một database có sẵn. Hãy cấu hình Doctrine connection tới database bạn muốn import và chạy lệnh sau.
+Doctrine có thể tạo ra file schema `config/doctrine/schema.yml` từ database có sẵn. Hãy cấu hình Doctrine connection tới database bạn muốn import và chạy lệnh sau.
 
     $ ./symfony doctrine:build-schema
     >> doctrine  generating yaml schema from database
 
 >**NOTE**
->Có một cách khá tiện lợi là chuyển từ Propel schema sang Doctrine. Tạo  database sử dụng propel, sau đó dùng lệnh để chuyển schema sang Doctrine.
+>Doctrine cũng hỗ trợ khả năng chuyển file schema của Propel sang Doctrine.
 
 Bây giờ file `config/doctrine/schema.yml` đã chứa thông tin về database theo cấu trúc yaml. Trong ví dụ này chúng ta có một bảng user.
 
@@ -110,9 +110,9 @@ Bảng trên sẽ tạo ra file yaml schema tương ứng trong `config/doctrine
         username: string(255)
         password: string(255)
 
-## Multiple Connection
+## Nhiều kết nối 
 
-Doctrine hỗ trợ multiple connection. Bạn có thể dễ dàng xác định model kết nối nhờ đó câu truy vấn có thể thực hiện trên kết nối phù hợp. Đầu tiên, chúng ta cần thêm multiple connection với lệnh `configure:database`:
+Doctrine hỗ trợ multiple connection. Đầu tiên, chúng ta cần thêm multiple connection với lệnh `configure:database`:
 
     $ ./symfony configure:database --name=master --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" user secret
     $ ./symfony configure:database --name=client --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" user secret
