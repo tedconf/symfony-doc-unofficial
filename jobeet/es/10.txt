@@ -143,6 +143,38 @@ Vamos a cambiar el valor por defecto `sfValidatorString` a `sfValidatorEmail`:
 
       $this->validatorSchema['email'] = new sfValidatorEmail();
     }
+    
+Reemplar el validador por defecto no siempre es la mejor solución, ya que las 
+reglas de validación por defecto inferidas del esquema de la base de datos se pierden
+(`new sfValidatorString(array('max_length' => 255))`). Es casi siempre mejor para
+agregar un nuevo validador a uno existente usar el validador especial `sfValidatorAnd`:
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    public function configure()
+    {
+      // ...
+
+      $this->validatorSchema['email'] = new sfValidatorAnd(array(
+        $this->validatorSchema['email'],
+        new sfValidatorEmail(),
+      ));
+    }
+
+El validador `sfValidatorAnd` toma un arreglo o array de validadores que deben 
+pasarse para que el aor sea válido. El truco aquí es referenciar al actual validador
+($this->validatorSchema['email']), y añadirle uno nuevo.
+
+>**NOTE**
+>También puede usar el validador `sfValidatorOr` para forzar un valor a
+>pasar al menos un validador. Y por supuesto, puedes mezclar y coinicidir
+>los validadores `sfValidatorAnd` y `sfValidatorOr` para crear complejos
+>validadores basados en boleanos.    
 
 Incluso si el `type` de la columna es también un `varchar` en el esquema, queremos que su valor este restringido a una lista de opciones: full time, part time, o freelance.
 
@@ -298,7 +330,10 @@ La clase final `JobeetJobForm` se lee como sigue:
           $this['expires_at'], $this['is_activated']
         );
 
-        $this->validatorSchema['email'] = new sfValidatorEmail();
+        $this->validatorSchema['email'] = new sfValidatorAnd(array(
+          $this->validatorSchema['email'],
+          new sfValidatorEmail(),
+        ));
 
         $this->widgetSchema['type'] = new sfWidgetFormChoice(array(
 <propel>
