@@ -1,60 +1,60 @@
 4日目: リファクタリング
 ======================
 
-前回までのsymfony
----------------------
+復習
+----
 
 [３日目](3.txt)までは、MVC構造の全てのレイヤーを紹介し、トップページに質問のリストを表示するように変更を加えました。アプリケーションとしては良くなってきましたが、まだまだ内容が足りません。
 
-４日目の目標は、質問への答えのリストを表示すること、質問の詳細へのもっと良いURLの設定、カスタムクラスの追加、重複したコードの塊をあるべき場所へ移動すること。これによってテンプレート、モデル、ルーティングポリシー、リファクタリングの概要を理解できます。数日しかたってないコードを変更するにはちょっと早すぎるのでは？と思うかもしれませんが、今日の終わりにはその理由が分かるでしょう。
+４日目の目標は、質問への答えのリストを表示すること、質問の詳細へのもっと良いURLの設定、カスタムクラスの追加、重複したコードの塊をあるべき場所へ移動することです。これらによってテンプレート、モデル、ルーティングポリシー、リファクタリングの概要を理解できます。数日しか経っていないコードを変更するにはちょっと早すぎるのでは？と思うかもしれませんが、今日の終わりにはその理由が分かるでしょう。
 
-このチュートリアルを読む為には、[symfonyでのMVC適用概念](http://www.symfony-project.com/book/1_0/02-Exploring-Symfony-s-Code)を良く理解しておく必要があります。 [アジャイル開発][1] についての理解もあるとよりよいかと思います。
+このチュートリアルを読むには、[symfonyのMVCの実装方法](http://www.symfony-project.org/book/1_0/02-Exploring-Symfony-s-Code)を良く理解しておく必要があります。 [アジャイル開発][1] についての理解もあるとよりよいかと思います。
 
 質問に対しての回答の表示
-------------------------------
+-----------------------
 
-まず始めに、[２日目](2.txt) の`Question` CRUDで生成したテンプレートから続けていきましょう。
+まず始めに、[２日目](2.txt) の`Question`CRUDで生成したテンプレートから続けましょう。
 
-`question/show` アクションは、`id`を渡すことによって質問の詳細を表示します。 テストするには、以下のように呼び出すだけです :
+`question/show`アクションは、`id`を渡すことによって質問の詳細を表示します。テストするには、次のコードを呼び出すだけです(`2`をテーブルに実在する質問`id`に変更しなければなりません):
 
-    http://askeet/frontend_dev.php/question/show/id/1
+    http://askeet/frontend_dev.php/question/show/id/2
 
-![question detail](/images/askeet/question_day4.gif)
+![質問の詳細](/images/askeet/question_day4.gif)
 
-前にちょっと触ったことがある人ならこの `show` ページを見たことがあるかもしれません。 ここが質問に対する答えを追加する場所になります。
+前にちょっと触ったことがある人ならこの`show`ページを見たことがあるかもしれません。ここが質問に対する答えを追加する場所になります。
 
 ### このアクションについて少し
 
-それではちょっと `askeet/apps/frontend/modules/question/actions/actions.class.php` ファイルにあるこの `show` アクションを見てみましょう:
+それでは`askeet/apps/frontend/modules/question/actions/actions.class.php`ファイルにあるこの`show`アクションを見てみましょう:
 
     [php]
     public function executeShow()
-     {
-       $this->question = QuestionPeer::retrieveByPk($this->getRequestParameter('id'));
-       $this->forward404Unless($this->question);
-     }
+    {
+      $this->question = QuestionPeer::retrieveByPk($this->getRequestParameter('id'));
+      $this->forward404Unless($this->question);
+    }
 
-Propelを知っている人なら、ここでは `Question` テーブルに対して簡単なリクエストが発行されていると分かるかもしれません。ここではリクエストでの `id` 引数をプライマリーキーとする、ユニークなレコードを取得しようとしています。先程の例でのURLでは、 `id` 引数は `1` であり、`QuestionPeer` クラスの `->retrieveByPk()` メソッドは、プライマリーキーを `1` とする `Question` クラスを返すことになります。Propelにあまり詳しくない人は、Propelのサイトにある[ドキュメント][2] を読んでみてください。
+Propelを知っている人なら、ここでは`Question`テーブルに対して簡単なリクエストが発行されていると分かるかもしれません。ここではリクエストでの`id`引数を主キーとする、ユニークなレコードを取得しようとしています。先程の例でのURLでは、`id`引数は`1`であり、`QuestionPeer`クラスの`->retrieveByPk()`メソッドは、主キーを`1`とする`Question`クラスを返すことになります。Propelにあまり詳しくない人は、Propelのサイトにある[ドキュメント][2] を読んでみてください。
 
-このリクエストの結果は `$question` 変数を通して `showSuccess.php` テンプレートに渡されます。
+このリクエストの結果は`$question`変数を通して`showSuccess.php`テンプレートに渡されます。
 
-`sfAction` オブジェクトの `->getRequestParameter('id')` メソッドは、  GET / POST に関わらず `id` という引数を受け取ります。例えば、下のように呼んだ場合:
+`sfAction`オブジェクトの`->getRequestParameter('id')`メソッドは、GET/POSTに関わらず`id`という引数を受け取ります。例えば、下のように呼んだ場合:
 
     http://askeet/frontend_dev.php/question/show/id/1/myparam/myvalue
 
-`show` アクションでは、`$this->getRequestParameter('myparam')` と書くことで `myvalue` を受け取ることができます。
+`show`アクションでは、`$this->getRequestParameter('myparam')`と書くことで`myvalue`を受け取ることができます。
 
->**注意**: `forward404Unless()` メソッドはデータベースに特定のレコードが存在しない場合、404ページを表示します。実行時に発生するこのようなエラーケースに対応することは良い習慣で、symfonyではこれを簡単に実践できるようにシンプルなメソッドが用意されています。
+>**Note**:`forward404Unless()`メソッドはデータベースに特定のレコードが存在しない場合、404ページを表示します。実行時に発生するこのようなエラーケースに対応するのは良い習慣で、symfonyではこれを簡単に実践できるようにシンプルなメソッドが用意されています。
 
-### `showSuccess.php` テンプレートの変更
+### showSuccess.phpテンプレートの変更
 
-生成された `showSuccess.php` テンプレートは、今自分たちが必要な形ではないので、完全に書き換えてしまいます。 `frontend/modules/question/templates/showSuccess.php` ファイルを開いて、内容を以下のものに変えてください:
+生成された`showSuccess.php`テンプレートは、今自分たちが必要な形ではないので、完全に書き換えてしまいます。`frontend/modules/question/templates/showSuccess.php`ファイルを開いて、内容を以下のものに変えてください:
 
     [php]
     <?php use_helper('Date') ?>
     
     <div class="interested_block">
-      <div class="interested_mark">
+      <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
         <?php echo count($question->getInterests()) ?>
       </div>
     </div>
@@ -77,17 +77,17 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
     <?php endforeach; ?>
     </div>
 
-ここで昨日 `listSuccess.php` テンプレートにあった `interested_block` div に気づくかもしれません。これは特定の質問に対しての関心を示しているユーザーの数を表示するだけです。それ以外でHTML自体は、タイトルに `link_to` が無いだけで `list` のような内容です。これはただ質問に対しての必要な情報だけを表示する初期のコードを書き換えただけです。
+ここで昨日`listSuccess.php`テンプレートにあったdiv要素の`interested_block`に気づくかもしれません。これは特定の質問に対しての関心を示しているユーザーの数を表示するだけです。それ以外でHTML自体は、タイトルに`link_to`が無いだけで`list`のような内容です。これはただ質問に対しての必要な情報だけを表示する初期のコードを書き換えただけです。
 
-新しい部分は `answers` divです。 ここは質問に対しての全ての回答を表示し(Propelの `$question->getAnswers()` メソッドを使用)、その個々で、信頼性の合計、回答した人の名前、日付、内容が表示されます。（訳注：「信頼性の合計」はコード中にないと思う SVNを見るとある）
+新しい部分はdiv要素の`answers`です。ここは質問に対しての全ての回答を表示し(Propelの`$question->getAnswers()`メソッドを使用)、その個々で、信頼性の合計、回答した人の名前、日付、内容が表示されます(訳注：「信頼性の合計」はコード中にないと思う SVNを見るとある)。
 
-`format_date()` は初期宣言が必要なテンプレートヘルパーのもう一つの使用例です。ヘルパーの文法やその他のヘルパーについては、symfonyブックの [国際化ヘルパーの章](http://www.symfony-project.com/book/1_0/13-I18n-and-L10n) (これらのヘルパーは面倒な日付のフォーマットを楽にしてくれます) を参照してください。
+`format_date()`は初期宣言が必要なテンプレートヘルパーのもう一つの使用例です。ヘルパーの文法やその他のヘルパーについては、symfony bookの[国際化ヘルパーの章](http://www.symfony-project.org/book/1_0/13-I18n-and-L10n)(これらのヘルパーは面倒な日付のフォーマットを楽にしてくれます)を参照してください。
 
->**注意**: Propelでは関連性のあるテーブルの取得用メソッド名には、テーブル名の後に 's' を付けるだけになっています。この為、 `->getRelevancys()` というような変なメソッド名になっていますが、このメソッドを使えば長いSQLコードを書かなくても良くなるので大目に見てください。（訳注：中学で習う「yをiに変えてes」の基本がなってないと言うこと）
+>**Note**: Propelでは関連するテーブルの取得用メソッド名には、テーブル名の後に's'を付けるだけになっています。このため、`->getRelevancys()`というような変な名前のメソッドになっていますが、このメソッドを使えば長いSQLコードを書かなくても良くなるので大目に見てください(訳注：中学で習う「yをiに変えてes」の基本がなってないと言うこと)。
 
 ### テストデータの追加
 
-それでは `data/fixtures/test_data.yml` の最後の行から `answer` と `relevancy` テーブルのデータを追加してみましょう (その他独自のデータを入れても構いませんよ):
+それでは`data/fixtures/test_data.yml`の最後の行から`answer`と`relevancy`テーブルのデータを追加してみましょう(その他独自のデータを入れても構いませんよ):
 
     Answer:
       a1_q1:
@@ -121,20 +121,20 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
 
     $ php batch/load_data.php
 
-変更がうまくいったか質問を表示するアクションに行ってみましょう:
+変更がうまくいったか質問を表示するアクションにアクセスしましょう:
 
     http://askeet/frontend_dev.php/question/show/id/XX
 
->**注意**: XX は、リロードされた現在の `id` にしてください。
+>**Note**: XX は、リロードされた現在の`id`にしてください。
 
-![question answers](/images/askeet/answers_day4.gif)
+![質問の回答](/images/askeet/answers_day4.gif)
 
 質問に加え回答も表示され、なかなか良い感じになりましたね。
 
 モデルの変更 パート１
-------------------------
+--------------------
 
-このアプリケーションとして、書き込みをした人のフルネームをまたどこかで使うことはほぼ確実です。また、フルネームと言うだけに `User` オブジェクトの属性の一部になると考えられます。この事からするとアクション内でフルネームを組み立てるのではなく、 `User` モデルにフルネームを取得することができるメソッドがあるべき姿のようです。それでは書いてみましょう。`askeet/lib/model/User.php` を開いて下のメソッドを追加してください:
+このアプリケーションとして、書き込みをした人のフルネームをまたどこかで使うことはほぼ確実です。また、フルネームと言うだけに`User`オブジェクトの属性の一部になると考えられます。この事からするとアクション内でフルネームを組み立てるのではなく、`User`モデルにフルネームを取得することができるメソッドがあるべき姿のようです。それでは書いてみましょう。`askeet/lib/model/User.php`を開いて下のメソッドを追加してください:
 
     [php]
     public function __toString()
@@ -142,12 +142,12 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
       return $this->getFirstName().' '.$this->getLastName();
     }
 
-なんでこのメソッドは `getFullName()` みたいなものではなくて `__toString()` なのでしょう？それは `__toString()` メソッドはPHP5において、オブジェクトを文字として表現する為に使われるデフォルトメソッドだからです。ということは同じ結果を表示するにも
+なぜこのメソッドは`getFullName()`みたいなものではなくて`__toString()`なのでしょう？PHP5において、`__toString()`メソッドはオブジェクトを文字として表現するために使われるデフォルトのメソッドだからです。ということは同じ結果を表示するにも
 
     [php]
     posted by <?php echo $answer->getUser()->getFirstName().' '.$answer->getUser()->getLastName() ?> 
 
-`askeet/apps/frontend/modules/question/templates/showSuccess.php` テンプレートのこの行は
+`askeet/apps/frontend/modules/question/templates/showSuccess.php`テンプレートのこの行は
 
     [php]
     posted by <?php echo $answer->getUser() ?> 
@@ -157,78 +157,78 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
 同じことは繰り返さない
 ---------------------
 
-アジャイルな開発で重複するコードは避けるという良い教訓があります。これは "Don't Repeat Yourself" (D.R.Y.)（訳注：同じことは繰り返さない）と言われています。重複されたコードはカプセル化されたコードを使うより、レビューするにも、変更するにも、テストするにも、確認するにも２倍かかってしまいますし、アプリケーションのメンテナンス性も下げます。また、今日のチュートリアルの最後の部分を見てみると、昨日書かれた `listSuccess.php` テンプレートと `showSuccess.php` には、重複した部分があることに気づくと思います:
+アジャイルな開発で重複するコードは避けるという良い教訓があります。これは "Don't Repeat Yourself" (D.R.Y.)(訳注：同じことは繰り返さない)と言われています。重複されたコードはカプセル化されたコードを使うより、レビューするにも、変更するにも、テストするにも、確認するにも２倍かかってしまいますし、アプリケーションのメンテナンス性も下げます。また、今日のチュートリアルの最後の部分を見てみると、昨日書かれた`listSuccess.php`テンプレートと`showSuccess.php`には、重複部分があることに気づくと思います:
 
     [php]
     <div class="interested_block">
-      <div class="interested_mark">
+      <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
         <?php echo count($question->getInterests()) ?>
       </div>
     </div>
 
-よって最初の [リファクタリング](http://en.wikipedia.org/wiki/Refactoring) は、この２つのテンプレートから重複する部分を抜き出し、**フラグメント（コードの破片）** 又は再利用可能なコード にしていきます。`_interested_user.php` というファイルを `askeet/apps/frontend/modules/question/template/` ディレクトリに作り、下のコードを書いてください:
+よって最初の [リファクタリング](http://en.wikipedia.org/wiki/Refactoring) は、この２つのテンプレートから重複する部分を抜き出し、**フラグメント(コードの破片)** 又は再利用可能なコードにしていきます。`_interested_user.php`というファイルを`askeet/apps/frontend/modules/question/template/`ディレクトリに作り、下のコードを書いてください:
 
     [php]
-    <div class="interested_mark">
+    <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
       <?php echo count($question->getInterests()) ?>
     </div>
 
-そして、元の (`listSuccess.php` と `showSuccess.php`) で、抜き出した場所を下のように変更してください:
+そして、元の (`listSuccess.php`と`showSuccess.php`) で、抜き出した場所を下のように変更してください:
 
     [php]
     <div class="interested_block">
       <?php include_partial('interested_user', array('question' => $question)) ?>
     </div>
 
-フラグメントはオブジェクトに対するアクセスを持っていません。このフラグメントでは `$question` 変数を使っているので、 `include_partial` の呼び出しで定義されなくてはいけません。また、フラグメントのファイル名にある `_` は、 `template/` ディレクトリにおいてフラグメントとそうでないものとを区別する為に使われています。フラグメントについて詳しくは、symfonyブックの [ビューの章](http://www.symfony-project.com/book/1_0/07-Inside-the-View-Layer) を読んでください。
+フラグメントはオブジェクトに対するアクセスを持っていません。このフラグメントでは`$question`変数を使っているので、`include_partial`の呼び出しで定義されなくてはいけません。また、フラグメントのファイル名にある`_`は、`template/`ディレクトリにおいてフラグメントとそうでないものとを区別するために使われています。フラグメントについて詳しくは、symfonyブックの [ビューの章](http://www.symfony-project.org/book/1_0/07-Inside-the-View-Layer) を読んでください。
 
 モデルの変更 パート２
 -------------------------
 
-新しく作ったこのフラグメントで `$question->getInterests()` はデータベースにリクエストを発行し、 `Interest` クラスのオブジェクト配列を返します。これでは関心のある人の数を持ってくるだけにしてはかなり重い処理で、データベースへの処理もかなりのものになってしまいます。 `listSuccess.php` テンプレートでも同じ事をして、しかも質問のリスト内でのループです。ちょっと最適化が必要ですね。
+新しく作ったこのフラグメントで`$question->getInterests()`はデータベースにリクエストを発行し、`Interest`クラスのオブジェクト配列を返します。これでは関心のある人の数を持ってくるだけにしてはかなり重い処理で、データベースへの処理もかなりのものになってしまいます。`listSuccess.php`テンプレートでも同じ事をして、しかも質問のリスト内でのループです。ちょっと最適化が必要ですね。
 
-良い方法としては、 `Question` テーブルに `interested_users` という項目を持たせ、この項目を質問に対する関心データが作られる度に更新すればいいかもしれません。
+良い方法としては、`Question`テーブルに`interested_users`という項目を持たせ、この項目を質問に対する関心データが作られる度に更新すればいいかもしれません。
 
->**注意**: `Interest` レコードを現状のaskeetを通して追加する方法がない為に、明確なテストの方法なしに何かを変更しようとしています。通常では、テストできる手段がない場合は、何かを変更すると言うことはあってはいけません。
+>**Note**:`Interest`レコードを現状のaskeetを通して追加する方法がないために、明確なテストの方法なしに何かを変更しようとしています。通常では、テストできる手段がない場合は、何かを変更すると言うことはあってはいけません。
 >
 >幸いにも今回この変更においては、後に分かると思いますがテストする方法があります。
 
-### `User` オブジェクトモデルへの項目の追加
+### Userオブジェクトモデルへの項目の追加
 
-それではどーんと `askeet/config/schema.xml` データモデルの `ask_question` テーブルに下の行を追加して変更してみましょう:
+それではどーんと`askeet/config/schema.xml`データモデルの`ask_question`テーブルに次の行を追加して変更してみましょう:
 
     [xml]
     <column name="interested_users" type="integer" default="0" />
 
-で、モデルの再構成:
+で、モデルの再設定:
 
     $ symfony propel-build-model
 
-そうです。現状の変更点に構わず、もういきなり再構成します。 `User` クラスに書き込んだ変更は `askeet/lib/model/User.php` にあり、これはPropelで生成した `askeet/lib/model/om/BaseUser.php` を継承しています。だから `askeet/lib/model/om/` ディレクトリに変更を加えてはいけないんですね: このディレクトリのクラスは `build-model` が実行されるたびに上書きされてしまうからです。Symfonyでは、ウェブプロジェクトの初期に通常起こるこのような変更に柔軟に対応するよう作られています。
+そうです。現状の変更点に構わず、いきなり再設定します。`User`クラスに書き込んだ変更は`askeet/lib/model/User.php`にあり、これはPropelで生成した`askeet/lib/model/om/BaseUser.php`を継承しています。だから`askeet/lib/model/om/`ディレクトリに変更を加えてはいけないんですね: このディレクトリのクラスは`build-model`が実行されるたびに上書きされてしまうからです。Symfonyでは、ウェブプロジェクトの初期に通常起こるこのような変更に柔軟に対応するよう作られています。
 
-これに加えて、実際のデータベースにも変更が必要です。SQLをわざわざ書かない為にも、SQLスキーマを再構成し、テストデータをロードしましょう:
+これに加えて、実際のデータベースにも変更が必要です。SQLをわざわざ書かないためにも、SQLスキーマを再設定し、テストデータをロードしましょう:
 
     $ symfony propel-build-sql
     $ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
     $ php batch/load_data.php
 
->**注意**: TIMTOWTDI: There is more than one way to do it. （訳注：TIMTOWTDIは「There is more than one way to do it」の頭文字を取ったもの。意味としては「方法は１つだけじゃない」）データベースを再構成する代わりに、MySQLのテーブルに手で直接新しい項目を追加することもできます:
+>**Note**: TIMTOWTDI: There is more than one way to do it.(訳注：TIMTOWTDIは「There is more than one way to do it」の頭文字を取ったもの。意味としては「方法は１つだけじゃない」)データベースを再設定する代わりに、MySQLのテーブルに手で直接新しい項目を追加することもできます:
 >
 >     $ mysql -u youruser -p askeet -e "alter table ask_question add interested_users int default '0'"
 >
 
-### `Interest` オブジェクトの `save()` メソッドの変更
+### Interestオブジェクトのsave()メソッドの変更
 
-この新しい項目の値は、ユーザーが質問に対して関心を付ける度に更新されなければなりません。例えるならば、 `Interest` テーブルにレコードが追加される度です。MySQLのトリガーでも同じ事はできますが、これだとデータベース依存になってしまいますし、データベースを変更する場合には足かせになってしまいます。
+この新しい項目の値は、ユーザーが質問に対して関心を付ける度に更新されなければなりません。例えるならば、`Interest`テーブルにレコードが追加されるごとにです。MySQLのトリガーでも同じ事はできますが、これでもデータベース依存になってしまいますし、データベースを変更する場合には足かせになってしまいます。
 
-一番良い方法としては、`Interest` オブジェクトが新たに作られるたびに呼ばれる `save()` メソッドをオーバーライドし変更を加えることです。 それでは `askeet/lib/model/Interest.php` ファイルを開いて下のコードを加えてください:
+一番良い方法としては、`Interest`オブジェクトが新たに作られるたびに呼び出される`save()`メソッドをオーバーライドし変更を加えることです。 それでは`askeet/lib/model/Interest.php`ファイルを開いて下のコードを加えてください:
 
     [php]
     public function save($con = null)
     {  
         $ret = parent::save($con);
         
-        // update interested_users in question table
+        // questionテーブルのinterested_usersを更新する
         $question = $this->getQuestion();
         $interested_users = $question->getInterestedUsers();
         $question->setInterestedUsers($interested_users + 1);
@@ -237,15 +237,15 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
         return $ret;
     }
 
-この `save()` メソッドでは関係している質問を取得し、 `interested_users` 項目をカウントアップします。その後は通常通りに `save()` をします。しかし `$this->save();` としてしまうと永久ループになってしまうので、クラスメソッドである `parent::save()` を代わりに使用しています。（訳注： `$ret = parent::save($con);` の位置は言っている位置と逆）
+この`save()`メソッドでは関連する質問を取得し、`interested_users`項目をカウントアップします。その後は通常通りに`save()`を行います。しかし`$this->save();`としてしまうと無限ループになってしまうので、クラスメソッドである`parent::save()`を代わりに使用しています(訳注：`$ret = parent::save($con);`の位置は言っている位置と逆）。
 
 ### トランザクションで更新を安全に
 
-`Question` と `Interest` オブジェクトの更新の間にデータベースで何か起こったらどうなるでしょう？ 整合性のないデータになってしまうかもしれません。これは、銀行での”最初にある口座からある額が引き落とされ、もう一つの口座の額を増やす”送金処理で起こりえる問題と同じです。
+`Question`と`Interest`オブジェクトの更新の間にデータベースで何か起こったらどうなるでしょう？ 整合性のないデータになってしまうかもしれません。これは、銀行での”最初にある口座からある額が引き落とされ、もう一つの口座の額を増やす”送金処理で起こりえる問題と同じです。
 
 もし２つのリクエストが互いに依存しているのであれば、**トランザクション**を使って安全に実行すべきです。トランザクションは片方だけのリクエストが成功するということがないことを保証してくれます。トランザクション中のリクエストで何か起こった場合、それ以前に成功していたようなリクエストがあったとしてもこれをキャンセルし、データベースをトランザクションが開始される前の状態に戻すことができます。
 
-`save()` メソッドは、symfonyにおいてのこのトランザクションを説明する良い材料なので、先程のコードを下のように変更してみましょう:
+`save()`メソッドは、symfonyにおいてのこのトランザクションを説明する良い材料なので、先程のコードを下のように変更してみましょう:
 
     [php]
     public function save($con = null)
@@ -257,7 +257,7 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
   
         $ret = parent::save($con);
   
-        // update interested_users in question table
+        // questionテーブルのinterested_usersを更新する
         $question = $this->getQuestion();
         $interested_users = $question->getInterestedUsers();
         $question->setInterestedUsers($interested_users + 1);
@@ -274,11 +274,11 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
       }
     }
 
-まず始めにCreole経由でのデータベースコネクションを直にオープンします。 `->begin()` と `->commit()` 宣言の間は、トランザクションが全ての処理の成功を保証します。何か失敗するようなことがあれば、例外が投げられ以前の状態に戻す為にロールバック処理がデータベースで実行されます。
+まず始めにCreole経由でのデータベース接続を直にオープンします。`->begin()`と`->commit()`宣言の間は、トランザクションが全ての処理の成功を保証します。何か失敗するようなことがあれば、例外が投げられ以前の状態に戻す為にロールバック処理がデータベースで実行されます。
 
 ### テンプレートの変更
 
-`Question` オブジェクトの `->getInterestedUsers()` メソッドには問題はありませんが、 `_interested_user.php` フラグメントを変える準備はできているので、次の部分を変更しましょう:
+`Question`オブジェクトの`->getInterestedUsers()`メソッドには問題はありませんが、`_interested_user.php`フラグメントを変える準備はできているので、次の部分を変更しましょう:
 
     [php]
     <?php echo count($question->getInterests()) ?>
@@ -288,21 +288,21 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
     [php]
     <?php echo $question->getInterestedUsers() ?>
 
->**注意**: テンプレート内に重複したコードで散らかす代わりにフラグメントを使うと言うことで、この変更が１回で済んでしまいました。フラグメントを使ってなかったら `listSuccess.php` と `showSuccess.php` テンプレートの２つを変更しなければならず、面倒くさがりな自分たちにはやる気すら無くさせたでしょう。
+>**Note**: テンプレート内に重複コードで散らかす代わりにフラグメントを使うと言うことで、この変更が１回で済んでしまいました。フラグメントを使ってなかったら`listSuccess.php`と`showSuccess.php`テンプレートの2つを変更しなければならず、面倒くさがりな自分たちにはやる気すら無くさせたでしょう。
 
 リクエスト、実行回数の数を考えてもこの方が良いですね。ウェブデバッガーツールバーにあるデータベースアクセス回数を見ても一目瞭然です。また、データベースアイコンをクリックすると現在のページでの実行されたSQLの詳細が確認できます:
 
-![database queries before refactoring](/images/askeet/debug_before_day4.gif)
-![database queries after refactoring](/images/askeet/debug_after_day4.gif)
+![リファクタリング以前のデータベースクエリ](/images/askeet/debug_before_day4.gif)
+![リファクタリング後のデータベースクエリ](/images/askeet/debug_after_day4.gif)
 
 ### 変更点の正当性テスト
 
-`show` アクションを呼んで何も変わってないか確認してみましょう。でもちょっとその前に、昨日書いたバッチを走らせてデータを再設定してみましょう:
+`show`アクションを呼んで何も変わってないか確認してみましょう。でもちょっとその前に、昨日書いたバッチを走らせてデータを再設定してみましょう:
 
     $ cd /home/sfprojects/askeet/batch
     $ php load_data.php
 
-`Interest` テーブルにレコードを作る時、 `sfPropelData` オブジェクトはオーバーライドされた `save()` メソッドを使い、関連を持つ `User` レコードをちゃんと更新するはずです。`Interest` オブジェクト用のCRUDインターフェースはまだありませんが、これは今回の変更をテストする為に使えます。
+`Interest`テーブルにレコードを作るとき、`sfPropelData`オブジェクトはオーバーライドされた`save()`メソッドを使い、関連を持つ`User`レコードをちゃんと更新するはずです。`Interest`オブジェクト用のCRUDインターフェースはまだありませんが、これは今回の変更をテストするために使えます。
 
 トップページと質問を呼んでみて確認してみましょう:
 
@@ -312,23 +312,23 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
 関心のあるユーザーの数は変わってませんね？変更はうまくいきました。
 
 回答にも同じ事を
---------------------
+----------------
 
-`count($question->getInterests())` にしたことは、 `count($answer->getRelevancys())` にも適用できます。違いといえば、質問には”関心”という一つの票があるだけですが、回答にはプラスとマイナスな票があるということです。既にどうやってモデルに変更を加えるか分かっているので、サクッと説明します。一応下がその変更点です。[askeet SVN リポジトリ](http://svn.askeet.com/tags/release_day_4/) を使ってコピーすれば、わざわざ手でかく必要もありません。
+`count($question->getInterests())`にしたことは、`count($answer->getRelevancys())`にも適用できます。違いといえば、質問には”関心”という一つの票があるだけですが、回答にはプラスとマイナスな票があるということです。既にどうやってモデルに変更を加えるか分かっているので、サクッと説明します。一応下がその変更点です。[askeet SVN リポジトリ](http://svn.askeet.com/tags/release_day_4/) を使ってコピーすれば、わざわざ手でかく必要もありません。
 
-* `schema.xml` の `answer` テーブルに下の項目を追加
+*`schema.xml`の`answer`テーブルに下の項目を追加
 
         [xml]
         <column name="relevancy_up" type="integer" default="0" />
         <column name="relevancy_down" type="integer" default="0" />
 
-* モデルを再構成して、データベースを更新します
+* モデルを再設定して、データベースを更新します
 
         $ symfony propel-build-model
         $ symfony propel-build-sql
         $ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
         
-* `lib/model/Relevancy.php` にある `Relevancy` クラスの `->save()` メソッドをオーバーライドします 
+*`lib/model/Relevancy.php`にある`Relevancy`クラスの`->save()`メソッドをオーバーライドします 
 
         [php]
         public function save($con = null)
@@ -340,7 +340,7 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
       
             $ret = parent::save();
       
-            // update relevancy in answer table
+            // answerテーブルのrelevancyを更新する
             $answer = $this->getAnswer();
             if ($this->getScore() == 1)
             {
@@ -363,7 +363,7 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
           }
         }
 
-* `Answer` クラスに以下の２つのメソッドを追加:
+*`Answer`クラスに次の2つのメソッドを追加:
 
         [php]
         public function getRelevancyUpPercent()
@@ -380,7 +380,7 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
           return $total ? sprintf('%.0f', $this->getRelevancyDown() * 100 / $total) : 0;
         }
 
-* `question/templates/showSuccess.php` の回答に関する部分を以下のように変更:
+*`question/templates/showSuccess.php`の回答に関する部分を以下のように変更します:
 
         [php]
         <div id="answers">
@@ -396,7 +396,7 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
         <?php endforeach; ?>
         </div>
 
-* fixturesにテストデータの追加
+* フィクスチャにテストデータを追加する
 
         Relevancy:
           rel1:
@@ -409,14 +409,14 @@ Propelを知っている人なら、ここでは `Question` テーブルに対�
             user_id:   francois
             score:     -1
     
-* バッチを走らせて
+* バッチを走らせる
 
-* `question/show` ページを確認
+*`question/show`ページを確認する
 
-![relevancies on answers](/images/askeet/home_day4.gif)
+![回答の関連性](/images/askeet/home_day4.gif)
 
 ルーティング
--------
+-----------
 
 チュートリアルが始まってから、ずっと下のようなURLを使ってきました
 
@@ -426,15 +426,15 @@ symfonyではデフォルトのルーティングルールとしてこのリク�
 
     http://askeet/frontend_dev.php?module=question&action=show&id=XX
 
-でもルーティングシステムによってもっと別な可能性が見えてきます。同じページを表示するにも質問のタイトルをURLの一部に出来たりします。
+でもルーティングシステムによってもっと別な可能性が見えてきます。同じページを表示するにも質問のタイトルをURLの一部にも使えます。
 
     http://askeet/frontend_dev.php/question/what-shall-i-do-tonight-with-my-girlfriend
 
-これによってSEO対策が出来たり、URLとしてはより意味のあるものに出来たりします。
+これによってSEO対策ができたり、URLとしてはより意味のあるものとして表示できます。
 
 ### タイトルの別バージョンを作る
 
-始めに、URLとして使えるようにタイトルの変換されたバージョン（ストリップされたもの）が必要です。（訳注：ストリップとは「丸裸」という意味ではなく「列になった 列なった」という意味だと思う） [There's more than one way to do it 方法は１つだけじゃない](http://en.wikipedia.org/wiki/Perl) また、この変換されたタイトルは `Question` テーブルの項目に保存するようにします。 `schema.xml` の `Question` テーブルに下の行を追加してください:
+始めに、URLとして使えるようにタイトルの変換バージョン(ストリップバージョン - カスタムクラスのセクションを確認)が必要です。[There's more than one way to do it 方法は１つだけじゃない](http://en.wikipedia.org/wiki/Perl) また、この変換されたタイトルは`Question`テーブルの項目に保存するようにします。`schema.xml`の`Question`テーブルに下の行を追加してください:
 
     [xml]
     <column name="stripped_title" type="varchar" size="255" />
@@ -442,19 +442,19 @@ symfonyではデフォルトのルーティングルールとしてこのリク�
       <unique-column name="stripped_title" />
     </unique>
 
-で、いつものようにモデルを再構成して、データベースを更新して:
+そして、いつものようにモデルを再設定および、データベースを更新します:
 
     $ symfony propel-build-model
     $ symfony propel-build-sql
     $ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
 
-ストリップされたタイトルが同時に設定されるように出来るよう `Question` オブジェクトの `setTitle()` メソッドをオーバーライドしていきます。
+ストリップされたタイトルが同時に設定されるように`Question`オブジェクトの`setTitle()`メソッドをオーバーライドしていきます。
 
 ### カスタムクラス
 
-と、その前にタイトルをストリップされたものに変換するカスタムクラスを作ります。カスタムクラスにする理由は、 `Question` オブジェクト自体には関係のない機能だからです(どのみち `Answer` オブジェクトにも使うでしょうし)。
+と、その前にタイトルをストリップバージョンに変換するカスタムクラスを作ります。カスタムクラスにする理由は、`Question`オブジェクト自体には関係のない機能だからです(どのみち`Answer`オブジェクトにも使うでしょうし)。
 
-`askeet/lib/` ディレクトリに `myTools.class.php` ファイルを作ってください:
+`askeet/lib/`ディレクトリに`myTools.class.php`ファイルを作ってください:
 
     [php]
     <?php
@@ -465,13 +465,13 @@ symfonyではデフォルトのルーティングルールとしてこのリク�
       {
         $text = strtolower($text);
     
-        // strip all non word chars
+        // すべての非単語を剥ぎ取る
         $text = preg_replace('/\W/', ' ', $text);
     
-        // replace all white space sections with a dash
+        // すべての空白文字のセクションをダッシュに置き換える
         $text = preg_replace('/\ +/', '-', $text);
     
-        // trim dashes
+        // ダッシュをトリムする
         $text = preg_replace('/\-$/', '', $text);
         $text = preg_replace('/^\-/', '', $text);
     
@@ -479,7 +479,7 @@ symfonyではデフォルトのルーティングルールとしてこのリク�
       }
     }
 
-`askeet/lib/model/Question.php` クラスを開いて下のコードを追加してください:
+`askeet/lib/model/Question.php`クラスを開いて下のコードを追加してください:
 
     [php]
     public function setTitle($v)
@@ -489,28 +489,28 @@ symfonyではデフォルトのルーティングルールとしてこのリク�
       $this->setStrippedTitle(myTools::stripText($v));
     }
 
-`myTools` カスタムクラスの宣言が無いのに気づきましたか？: symfonyでは `lib/` ディレクトリにあるものは、必要な時に自動的に読み込んでくれるからです。
+`myTools`カスタムクラスの宣言が無いのに気づきましたか？: symfonyでは`lib/`ディレクトリにあるものは、必要な時に自動的に読み込んでくれるからです。
 
 それではテストデータのリロードをしてみましょう:
 
     $ symfony cc
     $ php batch/load_data.php
 
-カスタムクラスやカスタムヘルパーについての詳しい情報は、symfonyブックの [拡張の章](http://www.symfony-project.com/book/1_0/07-Inside-the-View-Layer) を読んでください。
+カスタムクラスやカスタムヘルパーについての詳しい情報は、symfony bookの[拡張の章](http://www.symfony-project.com/book/1_0/07-Inside-the-View-Layer)を読んでください。
 
-### `show` アクションへのリンクを変更
+### showアクションへのリンクを変更する
 
-`listSuccess.php` テンプレートで下の行を
+`listSuccess.php`テンプレートで下の行を
 
     [php]
     <h2><?php echo link_to($question->getTitle(), 'question/show?id='.$question->getId()) ?></h2>
 
-このように変更してください
+次のように変更してください
 
     [php]
     <h2><?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?></h2>
 
-`question` モジュールの `actions.class.php` を開いて、 `show` アクションを下のように変更してください:
+`question`モジュールの`actions.class.php`を開いて、`show`アクションを次のように変更してください:
 
     [php]
     public function executeShow()
@@ -522,44 +522,44 @@ symfonyではデフォルトのルーティングルールとしてこのリク�
       $this->forward404Unless($this->question);
     }
 
-トップページを更新し、質問のタイトルをクリックしてそれぞれに行けるか確認してください:
+トップページを更新し、質問のタイトルをクリックしてそれぞれにアクセスできるか確認してください:
 
     http://askeet/frontend_dev.php/
     
-URLは質問のタイトルで、ストリップされたものが表示されているはずです:
+URLは質問のタイトルで、ストリップバージョンが表示されているはずです:
 
     http://askeet/frontend_dev.php/question/show/stripped-title/what-shall-i-do-tonight-with-my-girlfriend
 
 ### ルーティングルールの変更
 
-でもこれが表示したいURLの形ではありません。それではルーティングルールを編集してみましょう。 `routing.yml` 設定ファイルを開いて ( `askeet/apps/frontend/config/` ディレクトリにあります) 、次のルールをファイルの一番上に追加してください:
+でもこれが表示したいURLの形ではありません。それではルーティングルールを編集してみましょう。`routing.yml`設定ファイルを開いて(`askeet/apps/frontend/config/`ディレクトリにあります)、ファイルの一番上に次のルールを追加してください:
 
     question:
       url:   /question/:stripped_title
       param: { module: question, action: show }
 
-`url` の行で `question` という文字は最終的なURLに表示されるカスタムテキストです。 `stripped_title` は引数となります (`:` で始まっています)。 `link_to()` ヘルパーをテンプレートに使っていることによって、symfonyルーティングシステムがこの同じ **パターン** を `question/show` アクションでのリンクに適用しています。
+`url`の行で`question`という文字は最終的なURLに表示されるカスタムテキストです。`stripped_title`は引数となります (`:`で始まっています)。`link_to()`ヘルパーをテンプレートに使っていることによって、symfonyルーティングシステムがこの同じ **パターン** を`question/show`アクションでのリンクに適用しています。
 
 それでは最終テストです: トップページを表示し、質問のタイトルをクリックしてください。質問が表示されるだけでなく (何もおかしなところはなく)、ブラウザのアドレスバーには下のように表示されていると思います:
 
     http://askeet/frontend_dev.php/question/what-shall-i-do-tonight-with-my-girlfriend
 
-ルーティング機能についての詳しい情報は、symfonyブックの [ルーティングポリシーの章](http://www.symfony-project.com/book/1_0/09-Links-and-the-Routing-System) を読んでください。
+ルーティング機能についての詳しい情報は、symfony bookの[ルーティングポリシーの章](http://www.symfony-project.org/book/1_0/09-Links-and-the-Routing-System) を読んでください。
 
 それではまた明日
 ----------------
 
 今日はウェブサイト自体への新しい機能はあまりありませんでした。でもテンプレートのコーディングの仕方、モデルの変更の仕方を勉強し、いろんな場所をリファクタリングしていきました。
 
-symfonyプロジェクトでは、このようなことは常に起こります: 再利用可能なコードはフラグメントに落とし込んだり、カスタムクラスにしたり、アクションやテンプレートに書かれたようなコードで実際はモデルにあるべきものはモデルに移動されます。コード自体は至る所に散らばってしまいますが、メンテナンスや変更はより簡単になります。付け加えれば、symfonyプロジェクトのファイル構造においては、コードの破片がどこにあるか簡単に見つけることが出来るようになっています(ヘルパー、モデル、テンプレート、カスタムクラス、その他)。
+symfonyプロジェクトでは、このようなことは常に起こります: 再利用可能なコードはフラグメントに落とし込んだり、カスタムクラスにしたり、アクションやテンプレートに書かれたようなコードで実際はモデルにあるべきものはモデルに移動されます。コード自体は至る所に散らばってしまいますが、メンテナンスや変更はより簡単になります。付け加えれば、symfonyプロジェクトのファイル構造においては、コードフラグメントがどこにあるか簡単に見つけられるようになっています(ヘルパー、モデル、テンプレート、カスタムクラス、その他)。
 
-今日やったリファクタリングで今後の開発がよりスピーディーになります。今のやり方（後に発生するサイトとしての機能にはあまり心配せず、今要る機能を盛り込んでいくやり方）においては、定期的にこのようなリファクタリングは繰り返していきます。
+今日やったリファクタリングで今後の開発がよりスピーディーになります。今のやり方(後に発生するサイトとしての機能にはあまり心配せず、今要る機能を盛り込んでいくやり方)においては、定期的にこのようなリファクタリングは繰り返していきます。
 
-明日は？フォームに話を移して、フォームからの変数のやりとりを見ていきます。また、トップページの質問のリストを複数のページに分けていきます。それまでは今日のコードをSVN リポジトリ (release_day_4 タグ) からダウロードしてみてください:
+明日は？フォームに話を移して、フォームからの変数のやりとりを見ていきます。また、トップページの質問のリストを複数のページに分けていきます。それまでは今日のコードをSVN リポジトリ(release_day_4 タグ)からダウロードしてみてください:
 
     http://svn.askeet.com/tags/release_day_4/
     
-質問も大歓迎です [askeet メーリングリスト](mailto:askeet-subscribe@symfony-project.com) や [フォーラム](http://www.symfony-project.com/forum/index.php/f/8/) まで。
+質問も大歓迎です [askeet メーリングリスト](mailto:askeet-subscribe@symfony-project.com)や[フォーラム](http://www.symfony-project.com/forum/index.php/f/8/)まで。
 
 [1]: http://en.wikipedia.org/wiki/Agile_software_development  "Agile Software development definition at Wikipedia"
 [2]: http://propel.phpdb.org/docs/user_guide/                 "Propel documentation"
