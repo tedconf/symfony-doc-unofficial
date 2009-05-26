@@ -12,6 +12,13 @@ configured with some sensible defaults. It is a great way to experiment
 symfony without the hassle of a proper installation that respects the web best
 practices.
 
+>**CAUTION**
+>As the sandbox is pre-configured to use SQLite as a database
+>engine, you need to check that your PHP supports SQLite (see the
+>[Prerequisites](#chapter_02-Prerequisites) chapter). You can also
+>read the [Configuring the Database](#chapter_05-Project-Setup_sub_configuring_the_database)
+>section to learn how to change the database used by the sandbox.
+
 You can download the symfony sandbox in the `.tgz` or `.zip` format from the
 symfony [installation page](http://www.symfony-project.org/installation/1_2)
 or at the following URL:

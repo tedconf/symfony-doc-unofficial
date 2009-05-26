@@ -104,3 +104,46 @@ so that your web server can write to them:
 >`cache/` and `log/`. The content of these directories should be ignored
 >by your SCM (by editing the `svn:ignore` property if you use Subversion
 >for instance).
+
+### Configuring the Database
+
+One of the first thing you might want to do is to configure the database
+connection for your project. The symfony framework supports all
+[PDO]((http://www.php.net/PDO))-supported databases (MySQL, PostgreSQL,
+SQLite, Oracle, MSSQL, ...). On top of PDO, symfony comes bundled with two ORM
+tools: Propel and Doctrine. Propel is the default one, but switching to
+Doctrine is quite easy (see the next section for more information).
+
+Configuring the database is as simple as using the `configure:database` task:
+
+    $ php symfony configure:database "mysql:host=localhost;dbname=dbname" root mYsEcret
+
+The `configure:database` task takes three arguments: the
+[~PDO DSN~](http://www.php.net/manual/en/pdo.drivers.php), the username, and
+the password to access the database. If you don't need a password to access
+your database on the development server, just omit the third argument.
+
+### Switching to Doctrine
+
+If you decide to use Doctrine instead of Propel, you need to first enable
+`sfDoctrinePlugin` and disable `sfPropelPlugin`. This can be done by changing
+the following code in your `config/ProjectConfiguration.class.php`:
+
+    [php]
+    public function setup()
+    {
+      $this->enableAllPluginsExcept(array('sf#PropelPlugin', 'sfCompat10Plugin'));
+    }
+
+After making these changes, launch these commands:
+
+    $ php symfony plugin:publish-assets
+    $ php symfony cc
+    $ rm web/sfPropelPlugin
+    $ rm config/propel.ini
+    $ rm config/schema.yml
+    $ rm config/databases.yml
+
+Then, run the following command to configure your database for Doctrine:
+
+    $ php symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=jobeet" root mYsEcret
