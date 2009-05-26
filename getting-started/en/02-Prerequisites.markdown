@@ -1,0 +1,65 @@
+Prerequisites
+=============
+
+Before installing symfony, you need to check that your computer has everything
+installed and configured correctly. Take the time to conscientiously read this
+chapter and follow all the steps required to check your configuration as it
+may save your day further down the road.
+
+Softwares
+---------
+
+First of all, you need to check that your computer has a friendly working
+environment for web development. At a minimum, you need a web server (Apache
+for instance), a database engine (MySQL, PostgreSQL, SQLite, or any
+PDO-compatible database engine), and PHP 5.2.4 or later.
+
+Command Line Interface
+----------------------
+
+The symfony framework comes bundled with a command line tool that automates a
+lot of work for you. If you are a Unix-like OS users, you will feel right at
+home. If you run a Windows system, it will also work fine, you will just have
+to type a few commands in the `cmd` prompt.
+
+>**Note**
+>Unix shell commands can come in handy in a Windows environment.
+>If you would like to use tools like `tar`, `gzip`, or `grep` on Windows you
+>can install [Cygwin](http://cygwin.com/).  The official docs are a little
+>sparse, so a good installation guide can be found
+>[here](http://www.soe.ucsc.edu/~you/notes/cygwin-install.html).
+>The adventurous may also like to try Microsoft's
+>[Windows Services for Unix](http://technet.microsoft.com/en-gb/interopmigration/bb380242.aspx).
+
+PHP Configuration
+-----------------
+
+As PHP configurations can vary a lot from one OS to another, or even between
+different Linux distributions, you need to check that your PHP configuration
+meets the symfony minimum requirements.
+
+First, ensure that you have PHP 5.2.4 at a minimum installed by using the
+`phpinfo()` built-in function or by running `php -v` on the command line. Be
+aware that on some configurations, you might have two different PHP versions
+installed: one for the command line, and another for the web.
+
+Then, download the symfony configuration checker script at the following URL:
+
+    http://sf-to.org/1.2/check.php
+
+Save the script somewhere under your current web root directory.
+
+Launch the configuration checker script from the command line:
+
+    $ php check_configuration.php
+
+If there is a problem with your PHP current configuration, the output of the
+command will give you hints on what to fix and how to fix it.
+
+You should also execute the checker from a browser and fix the issues it might
+discover. That's because PHP can have a distinct `php.ini` configuration file
+for these two environments, with different settings.
+
+>**NOTE**
+>Don't forget to remove the file from your web root directory
+>afterwards.
