@@ -59,8 +59,14 @@ Jobeet検索エンジンはユーザーが入力するキーワードにマッ�
 検索できるようにする前に、求人情報用にインデックスをビルドしなければなりません; 
 Jobeetに関して、it will be stored in the `data/`ディレクトリに保存されます。
 
+<propel>
 Zend Luceneはインデックスの存在の有無に対応してインデックスを検索するために2つのメソッドを提供します。
-既存のインデックスを返すもしくは新しいものを返す`JobeetJobPeer`クラスのヘルパーメソッドを作りましょう:
+`JobeetJobPeer`クラスで既存のインデックスを返すもしくは新しいものを返すヘルパーメソッドを作りましょう:
+</propel>
+<doctrine>
+Zend Luceneはインデックスの存在の有無に対応してインデックスを検索するために2つのメソッドを提供します。
+`JobeetJobTable`クラスで既存のインデックスを返すもしくは新しいものを返すヘルパーメソッドを作りましょう:
+</doctrine>
 
     [php]
 <propel>
@@ -119,6 +125,7 @@ Zend Luceneはインデックスの存在の有無に対応してインデック
       $this->updateLuceneIndex();
 
       return $ret;
+    }
 </doctrine>
 
 実際の作業を行う`updateLuceneIndex()`メソッドを作ります:
@@ -139,13 +146,13 @@ Zend Luceneはインデックスの存在の有無に対応してインデック
       $index = $this->getTable()->getLuceneIndex();
 </doctrine>
 
-      // remove an existing entry
-      if ($hit = $index->find('pk:'.$this->getId()))
+      // 既存のエントリを削除する
+      foreach ($index->find('pk:'.$this->getId()) as $hit)
       {
         $index->delete($hit->id);
       }
 
-      // don't index expired and non-activated jobs
+      // 期限切れおよびアクティブではない求人をインデックスに登録しない
       if ($this->isExpired() || !$this->getIsActivated())
       {
         return;
@@ -153,16 +160,16 @@ Zend Luceneはインデックスの存在の有無に対応してインデック
 
       $doc = new Zend_Search_Lucene_Document();
 
-      // store job primary key URL to identify it in the search results
-      $doc->addField(Zend_Search_Lucene_Field::UnIndexed('pk', $this->getId()));
+      // 検索結果で区別できるようにjobの主キーを保存する
+      $doc->addField(Zend_Search_Lucene_Field::Keyword('pk', $this->getId()));
 
-      // index job fields
+      // jobフィールドをインデックスに登録する
       $doc->addField(Zend_Search_Lucene_Field::UnStored('position', $this->getPosition(), 'utf-8'));
       $doc->addField(Zend_Search_Lucene_Field::UnStored('company', $this->getCompany(), 'utf-8'));
       $doc->addField(Zend_Search_Lucene_Field::UnStored('location', $this->getLocation(), 'utf-8'));
       $doc->addField(Zend_Search_Lucene_Field::UnStored('description', $this->getDescription(), 'utf-8'));
 
-      // add job to the index
+      // インデックスにjobを追加する
       $index->addDocument($doc);
       $index->commit();
     }
@@ -252,7 +259,7 @@ Zend Luceneは既存のエントリを更新できないので、
     {
       $index = JobeetJobPeer::getLuceneIndex();
 
-      if ($hit = $index->find('pk:'.$this->getId()))
+      foreach ($index->find('pk:'.$this->getId()) as $hit)
       {
         $index->delete($hit->id);
       }

@@ -482,8 +482,9 @@ XMLフォーマットに対して404 XMLページ、JSONフォーマットに対
 ![404エラー](http://www.symfony-project.org/images/jobeet/1_2/16/404.png)
 
 >**TIP**
->組み込みのテンプレートの404エラーと例外をオーバーライドするには
->`config/error/`ディレクトリにファイルを作ります。
+>組み込みのテンプレートの404エラーと例外をオーバーライドするのは
+>簡単で`config/error/`ディレクトリに
+>ファイルを作ります。
 
 ウェブサービスのテスト
 ----------------------
@@ -644,7 +645,7 @@ XMLフォーマットに対して404 XMLページ、JSONフォーマットに対
 フォームをカスタマイズするために`JobeetAffiliateForm`ファイルを開きます:
 
     [php]
-    // lib/form/JobeetAffiliateForm.class.php
+    // lib/form/doctrine/JobeetAffiliateForm.class.php 
     class JobeetAffiliateForm extends BaseJobeetAffiliateForm
     {
       public function configure()
@@ -781,14 +782,16 @@ EメールとURLはinputタグのデフォルトサイズよりも長くなり�
     [php]
     <!-- apps/backend/templates/layout.php -->
     <li>
-      <a href="<?php echo url_for('@jobeet_affiliate') ?>">
 <propel>
+      <a href="<?php echo url_for('@jobeet_affiliate') ?>">
         Affiliates - <strong><?php echo JobeetAffiliatePeer::countToBeActivated() ?></strong>
+      </a>
 </propel>
 <doctrine>
+      <a href="<?php echo url_for('@jobeet_affiliate_affiliate') ?>">
         Affiliates - <strong><?php echo Doctrine::getTable('JobeetAffiliate')->countToBeActivated() ?></strong>
-</doctrine>
       </a>
+</doctrine>
     </li>
 
 <propel>
@@ -857,7 +860,7 @@ listビューからアカウントを直接アクティベイトするリンク�
       }
     }
 
-他に書く必要のあるコードは`activate`、`deactivate`アクションに対するもののみです:
+書く必要があるのは`activate`、`deactivate`アクションに対するコードだけです:
 
     [php]
     // apps/backend/modules/affiliate/actions/actions.class.php
@@ -867,14 +870,24 @@ listビューからアカウントを直接アクティベイトするリンク�
       {
         $this->getRoute()->getObject()->activate();
 
+<propel>
         $this->redirect('@jobeet_affiliate');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_affiliate_affiliate');
+</doctrine>
       }
 
       public function executeListDeactivate()
       {
         $this->getRoute()->getObject()->deactivate();
 
+<propel>
         $this->redirect('@jobeet_affiliate');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_affiliate_affiliate');
+</doctrine>
       }
 
       public function executeBatchActivate(sfWebRequest $request)
@@ -895,7 +908,12 @@ listビューからアカウントを直接アクティベイトするリンク�
           $affiliate->activate();
         }
 
+<propel>
         $this->redirect('@jobeet_affiliate');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_affiliate_affiliate');
+</doctrine>
       }
 
       public function executeBatchDeactivate(sfWebRequest $request)
@@ -916,7 +934,12 @@ listビューからアカウントを直接アクティベイトするリンク�
           $affiliate->deactivate();
         }
 
+<propel>
         $this->redirect('@jobeet_affiliate');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_affiliate_affiliate');
+</doctrine>
       }
     }
 
@@ -967,9 +990,14 @@ Zend Frameworkからすべては必要ないので
 symfonyフレームワーク自身と並行して
 必要なパーツだけを`lib/vendor/`ディレクトリにインストールします。
 
-最初に、[Zend Framework](http://framework.zend.com/download/overview)をダウンロードして
-`lib/vendor/Zend/`ディレクトリを用意できるように
-ファイルを解凍します。
+最初に、
+[Zend Framework](http://framework.zend.com/download/overview)をダウンロードして
+`lib/vendor/Zend/`ディレクトリがあるようにファイルを解凍します。
+
+>**NOTE**
+>次の説明はZend Framework 1.8.0で
+>テストされました。
+
 次のファイルとディレクトリ以外のすべてを削除して
 ディレクトリをクリーンナップします:
 
@@ -1003,8 +1031,8 @@ symfonyフレームワーク自身と並行して
         }
 
         set_include_path(sfConfig::get('sf_lib_dir').'/vendor'.PATH_SEPARATOR.get_include_path());
-        require_once sfConfig::get('sf_lib_dir').'/vendor/Zend/Loader.php';
-        Zend_Loader::registerAutoload();
+        require_once sfConfig::get('sf_lib_dir').'/vendor/Zend/Loader/Autoloader.php';
+        Zend_Loader_Autoloader::getInstance();
         self::$zendLoaded = true;
       }
 
@@ -1025,7 +1053,7 @@ symfonyフレームワーク自身と並行して
         $affiliate = $this->getRoute()->getObject();
         $affiliate->activate();
 
-        // send an email to the affiliate
+        // アフィリエイトにEメールを送信する
         ProjectConfiguration::registerZend();
         $mail = new Zend_Mail();
         $mail->setBodyText(<<<EOF
@@ -1041,7 +1069,12 @@ symfonyフレームワーク自身と並行して
         $mail->setSubject('Jobeet affiliate token');
         $mail->send();
 
+<propel>
         $this->redirect('@jobeet_affiliate');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_affiliate_affiliate');
+</doctrine>
       }
 
       // ...

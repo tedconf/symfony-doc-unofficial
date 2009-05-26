@@ -17,9 +17,9 @@ HTMLフォームを書き、それぞれのフィールド用のバリデーシ�
 symfonyはフォームの管理を簡単にするフレームワークを提供します。
 フォームフレームワークは3つの部分で構成されます:
 
-  * **~バリデーション~**: バリデーションサブフレームワークは入力(整数、文字列、Eメールアドレス・・・)
+  * **バリデーション**: バリデーションサブフレームワークは入力(整数、文字列、Eメールアドレス・・・)
                           をバリデートするクラスを提供します。
-  * **~ウィジェット~**:   ウィジェットサブフレームワークはHTMLフィールド(入力、テキストエリア、選択・・・)
+  * **ウィジェット**:   ウィジェットサブフレームワークはHTMLフィールド(入力、テキストエリア、選択・・・)
                           を出力するクラスを提供します。
   * **フォーム**:         フォームクラスはウィジェットとバリデータで構成されるフォームを表し
                           フォームの管理を手助けするメソッドを提供します。
@@ -125,7 +125,7 @@ symfonyは自動的に`propel:build-forms`タスクを呼び出しました:
 求人フォームは~フォームのカスタマイズ~を学ぶための完璧な例です。
 段階的にカスタマイズする方法を見てみましょう。
 
-最初、ブラウザで直接変更をチェックできるように
+最初は、ブラウザで直接変更をチェックできるように
 レイアウトの"Post a Job"リンクを変更します:
 
     [php]
@@ -175,8 +175,42 @@ symfonyは自動的に`propel:build-forms`タスクを呼び出しました:
       $this->validatorSchema['email'] = new sfValidatorEmail();
     }
 
-`type`カラムがスキーマの`varchar`でもある場合、
-値を選択リスト: フルタイム、パートタイム、もしくはフリーランスに制限することを考えます
+デフォルトのバリデータを置き換えるのは常にベストソリューションです。
+データベーススキーマからイントロスペクトされるデフォルトのバリデーションルールが
+緩和されるからです(`new sfValidatorString(array('max_length' => 255))`)。
+特別な`sfValidatorAnd`バリデータを使用して既存のバリデータに
+新しいバリデータを追加するのは常に良いことです:
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    public function configure()
+    {
+      // ...
+
+      $this->validatorSchema['email'] = new sfValidatorAnd(array(
+        $this->validatorSchema['email'],
+        new sfValidatorEmail(),
+      ));
+    }
+
+`sfValidatorAnd`バリデータは有効な値に対してパスするバリデータの配列を受けとります。
+ここでの仕掛けは現在のバリデータ
+($this->validatorSchema['email'])への参照と、と新しいバリデータを追加することです。
+
+>**NOTE**
+>>値に少なくとも1つのバリデータを渡すことを強制させるために
+>`sfValidatorOr`バリデータも使うことができます。そしてもちろん、
+>バリデータに基づいた複雑な論理値を作成するために
+>`sfValidatorAnd`と`sfValidatorOr`バリデータのミックスとマッチができます。
+
+スキーマで`type`カラムが`varchar`である場合でも、値を選択肢のリスト:
+フルタイム、パートタイム、もしくはフリーランスに制限したい場合を考えてみましょう
+
 
 <propel>
 最初に、`JobeetJobPeer`で利用可能な値を定義してみましょう:
@@ -239,8 +273,8 @@ symfonyは自動的に`propel:build-forms`タスクを呼び出しました:
  * チェックボックスのリスト: `array('multiple' => true, 'expanded' => true)`
 
 >**NOTE**
->If you want one of the ~ラジオボタン~ to be selected by default (例えば`full-time`
->), データベーススキーマのデフォルト値を変更できます。
+>デフォルトでラジオボタンの1つを選択した状態にしたい場合(例えば`full-time`
+>)、データベーススキーマのデフォルト値を変更できます。
 
 有効ではない値を誰も投稿できないと考えるとしても、
 ハッカーは[curl](http://curl.haxx.se/)もしくは
@@ -314,7 +348,7 @@ symfonyは自動的に`propel:build-forms`タスクを呼び出しました:
 >メソッドは`sfValidatedFile`オブジェクトに引数として渡されます。
 
 フィールドの生成ラベルを上書きできるように、
-~ヘルプメッセージ~も定義できます。
+ヘルプメッセージも定義できます。
 よりわかりやすく重要性を説明するために`is_public`カラムに追加してみましょう:
 
     [php]
@@ -671,7 +705,7 @@ symfonyは自動的に`propel:build-forms`タスクを呼び出しました:
 ユニークキーに対するsymfonyのデフォルトの~requirements~が`\d+`なので文字列にマッチさせるために
 `token`パラメータのrequirementsも変更したことに注意して下さい。
 
-jobに関連したすべてのルートは、`job_show_user`のものを除いて、トークンを埋め込みます。
+jobに関連するすべてのルートは、`job_show_user`のものを除いて、トークンを埋め込みます。
 例えば、jobを編集するルートは次のパターンで構成されます:
 
     http://jobeet.localhost/job/TOKEN/edit
@@ -788,10 +822,10 @@ jobに関連したすべてのルートは、`job_show_user`のものを除い�
 
 前のセクションでは、求人を公開するリンクがあります。
 新しい`publish`アクションを指し示すようにリンクを変更する必要があります。
-新しい~ルート~を作る代わりに、既存の`job`ルートを設定できます:
+新しいルートを作る代わりに、既存の`job`ルートを設定できます:
 
     [yml]
-    # apps/frontend/config/routing.yml
+    # apps/frontend/config/~routing|Routing~.yml 
     job:
       class:   sfPropelRouteCollection
       options:

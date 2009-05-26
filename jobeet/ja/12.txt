@@ -70,7 +70,7 @@ adminジェネレータでモデルクラスを広範囲で使うので、今変
        ➥ --module=category
 
 これら2つのコマンドは`JobeetJob`と`JobeetCategory`モデルクラスに対して
-それぞれ`job`と`category` ~モジュール~を作成します。
+それぞれ`job`と`category`モジュールを作成します。
 
 `--module`オプションを追加するとタスクによってデフォルトで生成される
 `module`の名前を上書きします(そうでなければ
@@ -170,10 +170,20 @@ adminジェネレータはパッケージを設定するシンプルな
           <div id="menu">
             <ul>
               <li>
+<propel>
                 <?php echo link_to('Jobs', '@jobeet_job') ?>
+</propel>
+<doctrine>
+                <?php echo link_to('Jobs', '@jobeet_job_job') ?>
+</doctrine>
               </li>
               <li>
+<propel>
                 <?php echo link_to('Categories', '@jobeet_category') ?>
+</propel>
+<doctrine>
+                <?php echo link_to('Categories', '@jobeet_category_category') ?>
+</doctrine>
               </li>
             </ul>
           </div>
@@ -191,7 +201,7 @@ adminジェネレータはパッケージを設定するシンプルな
       </body>
     </html>
 
-レイアウトは`admin.css`スタイルシートを使います。日目の間にこれは他のスタイルシートと一緒に
+レイアウトは`admin.css`スタイルシートを使います。4日目の間にこれは他のスタイルシートと一緒に
 インストールしたので、このファイルは`web/css/`の中に存在しなければなりません。
 
 ![adminジェネレータの外見](http://www.symfony-project.org/images/jobeet/1_2/12/look_and_feel.png)
@@ -209,7 +219,7 @@ symfonyのキャッシュ
 
 十分な好奇心があれば、`apps/backend/modules/`ディレクトリの元で
 タスクによって生成されたファイルを既に開いているかもしれません。
-そうでなければ、今ファイルを開いて下さい。驚くべきことに、
+そうでなければ、今ファイルを開いてください。驚くべきことに、
 `templates`ディレクトリは空で、`actions.class.php`ファイルも同じように空です:
 
     [php]
@@ -347,7 +357,7 @@ adminモジュールは`generator.yml`ファイルの`config`キーを編集す�
 フィールドの構成
 ----------------
 
-異なるビュー(`list`、`new`、と`edit`)は~フィールド~で構成されます。
+異なるビュー(`list`、`new`、と`edit`)はフィールドで構成されます。
 フィールドはモデルクラスのカラムもしくは
 後で見る~バーチャルカラム~になります。
 
@@ -358,7 +368,7 @@ adminモジュールは`generator.yml`ファイルの`config`キーを編集す�
     config:
       fields:
         is_activated: { label: Activated?, help: Whether the user has activated the job, or not }
-        is_public:    { label: Public? }
+        is_public:    { label: Public?, help: Whether the job can also be published on affiliate websites, or not }
 
 ![フィールドの構成](http://www.symfony-project.org/images/jobeet/1_2/12/fields.png)
 
@@ -639,7 +649,12 @@ listにおいて、単独のオブジェクトで実行できるアクション�
 
         $this->getUser()->setFlash('notice', 'The selected jobs have been extended successfully.');
 
+<propel>
         $this->redirect('@jobeet_job');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_job_job');
+</doctrine>
       }
 
       // ...
@@ -694,7 +709,12 @@ listにおいて、単独のオブジェクトで実行できるアクション�
           $this->getUser()->setFlash('notice', 'No job to delete.');
         }
 
+<propel>
         $this->redirect('@jobeet_job');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_job_job');
+</doctrine>
       }
 
       // ...
@@ -885,7 +905,10 @@ jobフォーム用の`display`オプションにおいて、
       {
         $this->removeFields();
 
-        $this->validatorSchema['email'] = new sfValidatorEmail();
+        $this->validatorSchema['email'] = new sfValidatorAnd(array(
+          $this->validatorSchema['email'],
+          new sfValidatorEmail(),
+        ));
 
         // ...
       }
@@ -932,7 +955,7 @@ adminジェネレータによって使用されるデフォルトの~フォー�
         class: BackendJobeetJobForm
 
 >**NOTE**
->新しいクラスを作成したので、キャッシュをクリアすることを忘れないで下さい。
+>新しいクラスを作成したので、キャッシュをクリアすることを忘れないでください。
 
 `edit`フォームは小さな問題を抱えています。
 現在の~アップロード~されたロゴはどこにも表示されないので現在のものを削除できません。
@@ -1219,7 +1242,7 @@ Jobeet用の素晴らしいバックエンドインターフェイスを短時�
 >これによってYAMLファイルと同じオプションをPHPで与えてくれます。
 >メソッドの名前を学ぶには、
 >`cache/backend/dev/modules/autoJob/lib/BaseJobGeneratorConfiguration.class.php`
->の生成された基底クラスを見て下さい。
+>の生成された基底クラスを見てください。
 
 また明日
 --------

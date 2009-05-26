@@ -145,7 +145,8 @@ Details"昨日を使う場合、
     with('request')->begin()->
       isParameter('module', 'job')->
       isParameter('action', 'show')->
-    end()->
+      end()
+    ;
 
 `isRedirected()`はページがリダイレクトされるかどうかをテストし
 `followRedirect()`メソッドはリダイレクトをフォローします。
@@ -203,10 +204,10 @@ criteriaは上記のような値の配列もしくは
 (デフォルトは`true`)、もしくは整数として渡されることでマッチするオブジェクトの数をテストできます。
 </doctrine>
 
-~エラー~をテストする
---------------------
+エラーをテストする
+-----------------
 
-有効な値を投稿するときにjob ~フォーム~ 作成は期待通りに動作します。
+有効な値を投稿するときに求人フォーム作成は期待通りに動作します。
 有効ではないデータを投稿するときに振る舞いをチェックするテストを追加してみましょう:
 
     [php]
@@ -597,7 +598,6 @@ jobが5日以内に期限切れするとき、もしくは既に期限切れし�
 例えば、フォームをデータベースにシリアライズするに
 `$form->save()`を呼び出すだけです。
 
-
 しかしどのように動作するのでしょうか？基本的に、`save()`メソッドは次のステップに従います:
 
  * トランザクションを始める(入れ子の ##ORM## フォームは一度に
@@ -615,7 +615,7 @@ jobが5日以内に期限切れするとき、もしくは既に期限切れし�
 認証されていない人がカラムに対して値を投稿しようとしたらどうなるでしょうか？
 例えば、`token`カラムを強制できるでしょうか？
 
-`token`フィールドでjobの投稿をシミュレートするテストを書いてみましょう:
+`token`フィールドで求人投稿をシミュレートするテストを書いてみましょう:
 
     [php]
     // test/functional/frontend/jobActionsTest.php
@@ -666,7 +666,7 @@ jobが5日以内に期限切れするとき、もしくは既に期限切れし�
 >テストはsymfonyの機能をバリデートする必要がないので
 >これらをJobeetプロジェクトから削除できます。
 
-### ~XSS~と~CSRF~の保護
+### XSSとCSRFの保護
 
 1日目において、次のコマンドラインで
 `frontend`アプリケーションを作成しました:
@@ -764,10 +764,11 @@ symfonyコマンドラインで使われるツールはフレームワークで�
 
     $ php symfony jobeet:cleanup --days=10 --env=dev
 
+<propel>
+
 常に、データベースのクリーンナップは
 `JobeetJobPeer`クラスで行われます:
 
-<propel>
     [php]
     // lib/model/JobeetJobPeer.php
     static public function cleanup($days)
@@ -783,6 +784,9 @@ symfonyコマンドラインで使われるツールはフレームワークで�
 このメソッドは主キーの配列を受け取ることもできます。
 </propel>
 <doctrine>
+常に、データベースのクリーンナップコードは
+`JobeetJobTable`クラスで取り除かれてきました:
+
     [php]
     // lib/model/doctrine/JobeetJobTable.class.php
     public function cleanup($days)
