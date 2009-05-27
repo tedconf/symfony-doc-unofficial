@@ -66,7 +66,7 @@ renamed the directory to `symfony`, there should be a directory named
 Check that symfony is correctly installed by using the symfony command line to
 display the symfony version (note the capital `V`):
 
-    $ php ../..
+    $ cd ../..
     $ php lib/vendor/symfony/data/bin/symfony -V
 
 On Windows:
