@@ -65,7 +65,7 @@ rinominato la directory a `symfony` dovrebbe esserci una directory chiamata
 Verificare che symfony sia correttamente installato utilizzando la riga di comando
 per visualizzare la versione di symfony (attenzione alla `V` maiuscola):
 
-    $ php ../..
+    $ cd ../..
     $ php lib/vendor/symfony/data/bin/symfony -V
 
 Su Windows:
