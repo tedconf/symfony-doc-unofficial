@@ -1,35 +1,36 @@
 Prerequisitos
 =============
 
-Before installing symfony, you need to check that your computer has everything
-installed and configured correctly. Take the time to conscientiously read this
-chapter and follow all the steps required to check your configuration as it
-may save your day further down the road.
+Antes de instalar symfony, necesitas comprobar que tu equipo tiene todo instalado 
+y configurado correctamente. Tóma un tiempo para leer este capítulo a conciencia
+y sigue todos los pasos necesarios para verificar tu configuración, ya que puede 
+salvar tu día en el proceso.
 
 Softwares
 ---------
 
-First of all, you need to check that your computer has a friendly working
-environment for web development. At a minimum, you need a web server (Apache
-for instance), a database engine (MySQL, PostgreSQL, SQLite, or any
-PDO-compatible database engine), and PHP 5.2.4 or later.
+En primer lugar, necesitas comprobar que tu equipo tiene un entorno de trabajo 
+favorable para el desarrollo web. Como mínimo, necesitas un servidor web (Apache, 
+por ejemplo), un motor de base de datos (MySQL, PostgreSQL, SQLite, o cualquier 
+motor de base de datos compatible con PDO), y PHP 5.2.4 o posterior.
 
 Interfaz de Linea de Comandos
 -----------------------------
 
-The symfony framework comes bundled with a command line tool that automates a
-lot of work for you. If you are a Unix-like OS users, you will feel right at
-home. If you run a Windows system, it will also work fine, you will just have
-to type a few commands in the `cmd` prompt.
+El framework Symfony viene con una herramienta de línea de comandos que automatiza 
+una gran cantidad de trabajo por tí. Si eres usuario de sistemas operativos tipo 
+Unix, te sentirás como en casa. Si ejecutas un sistema Windows, también funcionará 
+bien, sólo tendrás que escribir algunos comandos en el prompt `cmd`.
 
 >**Note**
->Unix shell commands can come in handy in a Windows environment.
->If you would like to use tools like `tar`, `gzip`, or `grep` on Windows you
->can install [Cygwin](http://cygwin.com/).  The official docs are a little
->sparse, so a good installation guide can be found
->[here](http://www.soe.ucsc.edu/~you/notes/cygwin-install.html).
->The adventurous may also like to try Microsoft's
+>Los comandos del shell Unix puede ser usados en un entorno Windows.
+>Si deseas usar herramientas como like `tar`, `gzip`, o `grep` en Windows 
+>puedes instalar [Cygwin](http://cygwin.com/).  La documentación oficial está 
+>un poco dispersa, por lo que una buena guía de instalación puede hallarse 
+>[aquí](http://www.soe.ucsc.edu/~you/notes/cygwin-install.html).
+>Los aventureros pueden también tratar con el 
 >[Windows Services for Unix](http://technet.microsoft.com/en-gb/interopmigration/bb380242.aspx).
+>de Microsoft.
 
 Configuración PHP
 -----------------
@@ -45,21 +46,31 @@ installed: one for the command line, and another for the web.
 
 Then, download the symfony configuration checker script at the following URL:
 
+Como las configuraciones de PHP pueden variar mucho de un SO a otro, o incluso 
+entre las diferentes distribuciones de Linux, tienes que comprobar que tu 
+configuración de PHP cumple los requisitos mínimos de symfony. 
+
+En primer lugar, asegúrate de que tienes instalado PHP 5.2.4, como mínimo, 
+mediante el uso de la función incorporada `phpinfo()` o ejecutando `php -v` en 
+la línea de comandos. Ten en cuenta que en algunas configuraciones, puedes tener 
+dos versiones de PHP instalado: una para la línea de comandos, y otro para la web. 
+
+Descarga el script symfony para comprobar la configuración en la siguiente URL:
+
     http://sf-to.org/1.2/check.php
 
-Save the script somewhere under your current web root directory.
+Guarda el script en algun lugar del directorio web raíz.
 
-Launch the configuration checker script from the command line:
+Lanza el script de comprobación de configuración en la línea de comandos:
 
     $ php check_configuration.php
 
-If there is a problem with your PHP current configuration, the output of the
-command will give you hints on what to fix and how to fix it.
+Si hay un problema con la configuración actual de PHP, la salida del comando te 
+dará pistas sobre lo que hay para arreglar y cómo solucionarlo. 
 
-You should also execute the checker from a browser and fix the issues it might
-discover. That's because PHP can have a distinct `php.ini` configuration file
-for these two environments, with different settings.
+También debes ejecutar el comprobador desde un navegador y solucionar los problemas 
+que podrías descubrir. Esto se debe a que PHP puede tener un archivo de configuración 
+`php.ini` distinto para estos dos entornos, con diferentes configuraciones.
 
 >**NOTE**
->Don't forget to remove the file from your web root directory
->afterwards.
+>No olvides de eliminar el archivo de tu directorio web raíz después.
