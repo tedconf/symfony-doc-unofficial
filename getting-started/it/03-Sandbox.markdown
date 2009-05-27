@@ -1,0 +1,50 @@
+La Sandbox
+===========
+
+Se il vostro obiettivo è provare symfony per qualche ora, continuate a leggere questo
+capitolo e vi mostreremo il modo più veloce per iniziare. Se invece intendete avviare
+un progetto reale, potete tranquillamente saltare questo capitolo e
+[andare](#chapter_04-Symfony-Installation) direttamente al prossimo.
+
+Il modo più veloce per sperimentare symfony è installare la symfony sandbox. La
+sandbox è un modo facilissimo per installare un progetto symfony pronto all'uso, già
+configurato con alcuni pratici default. Questa è un ottima modalità per sperimentare symfony 
+senza doversi preoccupare delle problematiche di una installazione che rispetti le best practice
+dello sviluppo web.
+
+>**CAUTION**
+>La sandbox è preconfigurata per utilizzare SQLite come database
+>engine, dovete quindi verificare che il vostro PHP supporti SQLite (vedere il
+>capitolo [Prerequisites](#chapter_02-Prerequisites) ). Potete anche
+>leggere la sezione [Configuring the Database](#chapter_05-Project-Setup_sub_configuring_the_database)
+>per imparare come cambiare il database utilizzato nella sandbox.
+
+Potete effettuare il download della symfony sandbox nei formati `.tgz` o `.zip` dalla
+[pagina di installazione](http://www.symfony-project.org/installation/1_2) di symfony
+oppure direttamente ai seguenti URL:
+
+    http://www.symfony-project.org/get/sf_sandbox_1_2.tgz
+
+    http://www.symfony-project.org/get/sf_sandbox_1_2.zip
+
+Scompattate i file da qualche parte nella vostra cartella radice del web e tutto è pronto.
+Il vostro progetto symfony è ora accessibile richiedendo lo script `web/index.php`
+dal browser.
+
+>**CAUTION**
+>Mantenere tutti i file di symfony nella cartella radice del web va bene per
+>testare symfony in locale, ma è veramente una pessima idea su
+>un server di produzione visto che rende tutti i meccanismi interni della vostra
+>applicazione potenzialmente visibili agli utenti finali.
+
+Ora potete completare la vostra installazione leggendo i capitoli
+[Web Server Configuration](#chapter_06-Web-Server-Configuration)
+e [Environments](#chapter_07-Environments).
+
+>**NOTE**
+>Dato che la sandbox è un normale progetto symfony dove sono stati eseguiti
+>per voi alcuni task e modificate alcune configurazioni, è abbastanza facile
+>utilizzarla come punto di partenza per un nuovo progetto.
+>Ma tenete a mente che probabilmente dovrete adattare la configurazione; ad esempio
+>cambiando i settaggi relativi alla sicurezza (vedere la configurazione di XSS
+>e CSRF più avanti in questo tutorial).
