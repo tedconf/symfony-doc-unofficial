@@ -4,45 +4,46 @@ Configuración del Servidor Web
 La Manera fea
 -------------
 
-In the previous chapters, you have created a directory that hosts the project.
-If you have created it somewhere under the web root directory of your web
-server, you can already access the project in a web browser.
+En la sección anterior, un directorio se ha creado para alojar el proyecto.
+Si lo creaste bajo el directorio web raíz de tu servidor web, ya puedes acceder
+al proyecto en un navegador web.
 
-Of course, as there is no configuration, if it is very fast to set up, but try
-to access the `config/databases.yml` file in your browser to understand the
-bad consequences of such a lazy attitude. If the user knows that your
-website is developed with symfony, he will have access to a lot of sensitive
-files.
+Por supuesto, como no hay ninguna configuración, es muy rápido para establecer,
+pero intenta tener acceso al archivo `config/databases.yml` en tu navegador y
+comprederás las malas consecuencias de esta actitud perezosa. Si el usuario
+conoce que tu sitio web esta desarrollado con Symfony, él tendrá acceso a un
+montón de archivos delicados.
 
-**Never ever use this setup on a production server** and read the next section
-to learn how to configure your web server properly.
+**Nunca uses esta configuración en un servidor de producción**, lee la siguiente
+sección para aprender cómo configurar su servidor web correctamente.
+
 
 La Manera segura
 ----------------
 
-A good web practice is to put under the web root directory only the files that
-need to be accessed by a web browser like stylesheets, JavaScripts, and
-images. And by default, we recommend to store these files under the `web/`
-sub-directory of a symfony project.
+Una buena práctica web es poner bajo el directorio web raíz sólo los archivos a
+los que necesita tener acceso el navegador web: las hojas de estilo, JavaScripts,
+o imágenes. Te recomendamos almacenar estos archivos en el subdirectorio `web`
+de un proyecto symfony.
 
-If you have a look at this directory, you will find some sub-directories for
-web assets (`css/` and `images/`) and the two front controller files. The
-front controllers are the only PHP files that need to be under the web root
-directory. All other PHP files can be hidden from the browser, which is a good
-idea as far as security is concerned.
+Si echas un vistazo a este directorio, encontrarás algunos sub-directorios para
+los recursos web y los dos archivos de los controladores frontales. Los
+controladores frontales son los únicos archivos PHP que necesitan estar bajo el
+directorio web raíz. Todos los demás archivos PHP se pueden ocultar del navegador,
+la cual es una buena idea en lo que respecta a seguridad.
 
 ### Configuración del Servidor Web
 
-Now it is time to change your Apache configuration to make the new project
-accessible to the world.
+Ahora es el momento de cambiar tu configuración de Apache para que el nuevo
+proyecto sea accesible para el mundo.
 
-Locate and open the `httpd.conf` configuration file and add the following
-configuration at the end:
+Busca y abre el archivo de configuración `httpd.conf` y añade la siguiente
+configuración al final:
 
-    # Be sure to only have this line once in your configuration
+    # Asegúrate de tener sólo una vez esta línea en su configuración
     NameVirtualHost 127.0.0.1:8080
 
-    # This is the configuration for your project
+    # Esta es la configuración de tu proyecto
     Listen 127.0.0.1:8080
 
     <VirtualHost 127.0.0.1:8080>
@@ -60,33 +61,34 @@ configuration at the end:
       </Directory>
     </VirtualHost>
 
->**NOTE**
->The `/sf` alias gives you access to images and javascript files needed
->to properly display default symfony pages and the web debug toolbar.
+>**NOTE**:
+>El alias `/sf` le da acceso a las imágenes y los archivos JavaScript
+>necesarios para adecuadamente mostrar las páginas symfony por defecto y la
+>barra de herramientas de depuración web.
 >
->On Windows, you need to replace the `Alias` line with something like:
+>En Windows, es necesario sustituir la linea `Alias` con algo como:
 >
 >     Alias /sf "c:\dev\sfproject\lib\vendor\symfony\data\web\sf"
 >
->And `/home/sfproject/web` should be replaced with:
+>Y `/home/sfprojects/web` debería ser sustituida por:
 >
 >     c:\dev\sfproject\web
 
-This configuration makes Apache listen to port `8080` on your machine, so
-the website will be accessible at the following URL:
+En esta configuración, Apache escucha en el puerto `8080` de tu máquina, por lo
+que el sitio web será accesible en la siguiente URL:
 
     http://localhost:8080/
 
-You can change `8080` by any number but prefer numbers greater than `1024` as
-they do not require administrator rights.
+Puedes cambiar `8080` por cualquier número mayor que 1024, ya que no se requieren
+derechos de administrador en esos puertos.
 
 >**SIDEBAR**
 >Configurar un Nombre de Dominio dedicado
 >
->If you are an administrator on your machine, it is better to setup
->virtual hosts instead of adding a new port each time you start a new
->project. Instead of choosing a port and add a `Listen` statement,
->choose a domain name and add a `ServerName` statement:
+>Si eres el administrador de tu equipo, es mejor configurar un virtual host en
+>lugar de añadir un nuevo puerto cada vez que se inicia un nuevo proyecto.
+>En lugar de añadir un puerto y agregar una declaración `Listen`, elige un nombre
+>de dominio y añade la declaración `ServerName`:
 >
 >     # This is the configuration for your project
 >     <VirtualHost 127.0.0.1:80>
@@ -94,41 +96,47 @@ they do not require administrator rights.
 >       <!-- same configuration as before -->
 >     </VirtualHost>
 >
->The domain name `sfproject.localhost` used in the Apache configuration
->has to be declared locally. If you run a Linux system, it has to be
->done in the `/etc/hosts` file. If you run Windows XP, this file is
->located in the `C:\WINDOWS\system32\drivers\etc\` directory.
+>El nombre de dominio `sfproject.localhost` usado en Apache tiene que ser
+>declarado localmente. Si ejecutaa un sistema Linux, esto tiene que hacerse en
+>el archivo `/etc/hosts`. Si ejecuta Windows XP, este archivo se encuentra en el
+>directorio `C:\WINDOWS\system32\drivers\etc\`.
 >
->Add in the following line:
+>Añade la siguiente línea:
 >
 >     127.0.0.1 sfproject.localhost
 
+>**Tip**
+>**Nota del Traductor**
+>Cuando se complican con estos pasos, los usuarios de Distribuciones Linux, como [Ubuntu](http://www.ubuntu.com), pueden usar una herramienta gráfica que simplique aún más esta configuración. [Rapache](http://launchpad.net/rapache), es un software para sistemas Gnome que hace la configuración básica y necesaria, en los archivos `/etc/hosts` y `httpd.conf`, en un solo paso además de permitir el reinicio de Apache con un clic.
+
 ### Probar la Nueva Configuración
 
-Restart Apache, and check that you now have access to the new application by
-opening a browser and typing `http://localhost:8080/index.php/`, or
-`http://sfproject.localhost/index.php/` depending on the Apache configuration
-you chose in the previous section.
+Reinicia Apache, y comprueba que ahora tienes acceso a la nueva aplicación
+abriendo un navegador y escribiendo `http://localhost:8080/index.php/`, o
+`http://jobeet.localhost/index.php/` dependiendo de la configuración de Apache
+que has elegido en la sección anterior.
 
-![Congratulations](http://www.symfony-project.org/images/jobeet/1_2/01/congratulations.png)
+![Felicitaciones](http://www.symfony-project.org/images/jobeet/1_2/01/congratulations.png)
 
 >**TIP**
->If you have the Apache `mod_rewrite` module installed, you can remove
->the `index.php/` part of the URL. This is possible thanks to the
->rewriting rules configured in the `web/.htaccess` file.
+>Si tienes el módulo Apache `mod_rewrite` instalado, puedes remover la parte
+>/index.php/ de la URL. Esto es posible gracias a las reglas de reescritura
+>configuradas en el archivo `web/.htaccess`.
 
-You should also try to access the application in the development environment
-(see the next section for more information about environments). Type in the
-following URL:
+Deberías tratar de acceder a la aplicación en el entorno de desarrollo. (mira la
+seccion siguiente para más información acerca de los entornos). Escribe la
+siguiente URL:
 
     http://sfproject.localhost/frontend_dev.php/
 
-The web debug toolbar should show on the top right corner, including small
-icons proving that your `sf/` alias configuration is correct.
+La web debug toolbar o barra de herramientas de depuración web debería mostrarse
+en la esquina superior derecha, incluidos los iconos, demostrando que tu
+configuración alias `sf/` es correcta.
+
 
 ![web debug toolbar](http://www.symfony-project.org/images/jobeet/1_2/01/web_debug_toolbar.png)
 
 >**Note**
->The setup is a little different if you want to run symfony on an IIS server in
->a Windows environment. Find how to configure it in the
->[related tutorial](http://www.symfony-project.com/cookbook/1_0/web_server_iis).
+>La configuración es un poco diferente si quieres ejecutar Symfony sobre un
+>servidor IIS server en un sistema Windows. Busca la manera de configurarlo en
+>el [tutorial](http://www.symfony-project.com/cookbook/1_0/web_server_iis).

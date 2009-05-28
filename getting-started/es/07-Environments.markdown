@@ -1,46 +1,45 @@
 Los Entornos
 ============
 
-If you have a look at the `web/` directory, you will find two PHP files:
-`index.php` and `frontend_dev.php`. These files are called front controllers:
-all requests to the application are made through them. But why do we have two
-front controllers for each application?
+Si echas un vistazo al directorio `web/`, encontrarás dos archivos PHP:
+`index.php` y `frontend_dev.php`. Estos archivos se llaman controladores frontales:
+todas las solicitudes a la aplicación se realizan a través de ellos. Pero,
+¿por qué tenemos dos controladores frontalespara cada aplicación?
 
-Both files point to the same application but for different environments.
-When you develop an application, except if you develop directly on the
-production server, you need several **environments**:
+Ambos archivos apuntan a la misma aplicación pero para diferentes entornos.
+Cuando desarrollas una aplicación, excepto si desarrollas directamente en el
+servidor de producción, necesitas  varios **entornos**:
 
-  * The **development environment**: This is the environment used by **web
-    developers** when they work on the application to add new features, fix
-    bugs, ...
-  * The **test environment**: This environment is used to automatically test
-    the application.
-  * The **staging environment**: This environment is used by the **customer**
-    to test the application and report bugs or missing features.
-  * The **production environment**: This is the environment **end users**
-    interact with.
+  * El **entorno de desarrollo**: Este es el ambiente utilizado por
+    **desarrolladores web** para añadir nuevas funciones, corregir los errores, ...
+  * El **entorno de prueba**: Este entorno se utiliza para probar automáticamente
+    la aplicación.
+  * El **entorno staging**: Este entorno es utilizado por el **cliente** para
+    poner a prueba la aplicación e informar errores o características faltantes.
+  * El **entorno de producción**: Este es el entorno donde un **usuario final**
+    interactúa.
 
-What makes an environment unique? In the development environment for instance,
-the application needs to log all the details of a request to ease the
-debugging, but the cache system must be disabled as all changes made to the
-code must be taken into account right away. So, the development environment
-must be optimized for the developer. The best example is certainly when an
-exception occurs. To help the developer debug the issue faster, symfony
-displays the exception with all the information it has about the current
-request right into the browser:
+¿Qué hace que un entorno sea único? En el entorno de desarrollo, la aplicación
+necesita registrar todos los detalles de una petición para facilitar la depuración,
+debe mostrar la excepción en el navegador, pero la cache debe ser deshabilitada
+para que todos los cambios realizados al código se tengan en cuenta de inmediato.
+El entorno de desarrollo debe ser optimizado para el desarrollador. El mejor
+ejemplo es cuando ocurre una excepción. Para ayudar al desarrollador a depurar
+rápidametne, symfony muestra la excepción con toda la información que tenga acerca
+de la petición en el navegador:
 
 ![An exception in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/01/exception_dev.png)
 
-But on the production environment, the cache layer must be activated and of
-course, the application must display customized error messages instead of raw
-exceptions. So, the production environment must be optimized for performance
-and the user experience.
+Pero en el entorno de la producción, la capa del cache debe estar activada y por
+supuesto, la aplicación deberá mostrar los mensajes de error personalizados en
+lugar de excepciones. Por eso, el entorno de producción debe ser optimizado para
+el rendimiento y la experiencia del usuario final.
 
 ![An exception in the prod environment](http://www.symfony-project.org/images/jobeet/1_2/01/exception_prod.png)
 
 >**TIP**
->If you open the front controller files, you will see that their content is
->the same except for the environment setting:
+>Si abres los archivos de los controladores frontales, verás que su contenido es
+>el mismo salvo por el entorno:
 >
 >     [php]
 >     // web/index.php
@@ -51,9 +50,8 @@ and the user experience.
 >     $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'prod', false);
 >     sfContext::createInstance($configuration)->dispatch();
 
-The web debug toolbar is also a great example of the usage of environment. It
-is present on all pages in the development environment and gives you access to
-a lot of information by clicking on the different tabs: the current
-application configuration, the logs for the current request, the SQL
-statements executed on the database engine, memory information, and time
-information.
+La web debug toolbar o barra de herramientas de depuración web es una gran ejemplo
+del uso del entorno. Está presente en todas las páginas en el entorno de desarrollo
+y te da acceso a la configuración de la aplicación, los registros logs de la
+petición actual, las sentencias SQL ejecutadas en el motor de la base de datos,
+información de la memoria, e información de tiempos.
