@@ -1,50 +1,50 @@
 El Sandbox
 ===========
 
-If your goal is to give symfony a try for a few hours, keep reading this
-chapter as we will show you the fastest way to get you started. If you want to
-bootstrap a real world project, you can safely skip this chapter, and
-[jump](#chapter_04-Symfony-Installation) to the next one right away.
+Si tu objetivo es probar symfony por unas horas, sigue leyendo este capítulo,
+ya que te mostraremos la manera más rápida de empezar. Si desea arrancar un
+proyecto en el mundo real, puedes saltarte este capítulo, y [pasar](#chapter_04-Symfony-Installation)
+al siguiente ya mismo.
 
-The fastest way to experiment symfony is to install the symfony sandbox. The
-sandbox is a dead-easy to install pre-packaged symfony project, already
-configured with some sensible defaults. It is a great way to experiment
-symfony without the hassle of a proper installation that respects the web best
-practices.
+La forma más rápida de experimentar con symfony es instalar el sandbox symfony
+(la caja de arena). El sandbox es la forma fácil de instalar un proyecto symfony
+pre-empaquetado, ya configurado con algunos valores predeterminados razonables.
+Es una gran manera de experimentar con symfony sin la molestia de hacer una
+instalación adecuada que respete las mejores prácticas de la web.
 
 >**CAUTION**
->As the sandbox is pre-configured to use SQLite as a database
->engine, you need to check that your PHP supports SQLite (see the
->[Prerequisites](#chapter_02-Prerequisites) chapter). You can also
->read the [Configuring the Database](#chapter_05-Project-Setup_sub_configuring_the_database)
->section to learn how to change the database used by the sandbox.
+>Ya que el sandbox está pre-configurado para usar SQLite como motor de base de
+>datos, necesitas comprobar que PHP tiene soporte SQLite (mira el capítulo de
+>[Prerequisitos](#chapter_02-Prerequisites) ). También puedes leer la sección
+>[Configurando la Base de Datos](#chapter_05-Project-Setup_sub_configuring_the_database)
+> para aprender como se cambia la base de datos usada por el sandbox.
 
-You can download the symfony sandbox in the `.tgz` or `.zip` format from the
-symfony [installation page](http://www.symfony-project.org/installation/1_2)
-or at the following URL:
+Puedes descargar el sandbox symfony en formato `.tgz` o `.zip` de la
+[página de instalación](http://www.symfony-project.org/installation/1_2) de
+symfony o de la siguiente URL:
 
     http://www.symfony-project.org/get/sf_sandbox_1_2.tgz
 
     http://www.symfony-project.org/get/sf_sandbox_1_2.zip
 
-Un-archive the files somewhere under your web root directory, and you are
-done. Your symfony project is now accessible by requesting the `web/index.php`
-script from a browser.
+Descomprime los archivos en algún lugar de tu directorio web raíz, y listo.
+Tu proyecto symfony está ahora accesible mediante la petición del navegador al
+script `web/index.php`.
 
 >**CAUTION**
->Having all the symfony files under the web root directory is fine for
->testing symfony on your local computer, but is a really bad idea for
->a production server as it potentially makes all the internals of your
->application visible to end users.
+>Tener todos los archivos de symfony en el directorio web raís está bien para
+>probarlos en tu equipo local, pero es realmente una mala idea para un servidor
+>de producción ya que potencialmente hace visible a los usuarios finales toda
+>la aplicación interna.
 
-You can now finish your installation by reading the
-[Web Server Configuration](#chapter_06-Web-Server-Configuration)
-and the [Environments](#chapter_07-Environments) chapters.
+Puedes ahora finalizar tu instalación leyendo los capítulos
+[Configuración del Servidor Web](#chapter_06-Web-Server-Configuration)
+y [Entornos](#chapter_07-Environments).
 
 >**NOTE**
->As a sandbox is just a normal symfony project where some tasks have
->been executed for you and some configuration changed, it is quite
->easy to use it as a starting point of a new project. But keep in mind
->that you will probably need to adapt the configuration; for instance
->changing the security related settings (see the configuration of XSS
->and CSRF later in this tutorial).
+>Ya que el sandbox es solo un proyecto symfony normal y corriente donde algunas
+>tareas han sido ejecutadas por tí y se modificaron algunas configuraciones,
+>es bastante fácil de usar ya que comienza desde un nuevo proyecto. Pero ten en
+>mente que probablemente necesitarás adaptar la configuración; por ejemplo
+>cambiar la configuraciónes de seguridad (leer sobre la configuración de XSS
+>y CSRF más tarde en este tutorial).
