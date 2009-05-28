@@ -1,33 +1,32 @@
 ¿Qué sigue?
 ===========
 
-If you have followed the instructions from the previous chapters, you should
-now have a fully functional symfony project. You are now ready to experiment
-symfony.
+Si has seguido las instrucciones de los anteriores capítulos, ahora deberías
+tener un proyecto symfony completamente funcional. Ahora estás listo para
+experimentar con symfony.
 
-You can start reading more documentation on the main
-[documentation page](http://www.symfony-project.org/doc/1_2/) of your version.
+Puedes empezar a leer más documentación en la [páginado de Documentación](http://www.symfony-project.org/doc/1_2/)
+principal de tu versión.
 
-On this page, you will find the Jobeet tutorial, which is probably the best
-way to learn symfony. It explains in great details the development of a web
-application from start to finish, and also teaches you the best practices of a
-web development. You can also buy it as a printed book.
+En esta página, encontrarás el tutorial Jobeet, que es probablemente la mejor
+manera de aprender symfony. En él se explica con gran detalle el desarrollo de
+una aplicación web de principio a fin, y también te enseña las mejores prácticas
+del desarrollo web. También puedes comprarlo como libro impreso.
 
-The symfony framework has a lot of great features and a lot of free
-documentation. But, one of the most valuable asset an Open-Source can have is
-its community. And symfony has one of the most amazing and active community
-around. If you start using symfony for your projects, consider joining the
-symfony community:
+El framework symfony tiene un montón de grandes características y una gran
+cantidad de documentación libre. Sin embargo, uno de los recursos más valioso
+que el código abierto puede tener es su comunidad. Y symfony tiene una comunidad
+de las más sorprendente y activa que hay . Si empiezas a usar symfony para tus
+proyectos, considera unirte a la comunidad symfony:
 
-  * Subscribe to the [user mailing-list](http://groups.google.com/group/symfony-users)
+  * Suscríbirte al [user mailing-list](http://groups.google.com/group/symfony-users)
 
-  * Subscribe to the official [blog feed](http://feeds.feedburner.com/symfony/blog)
+  * Suscríbirte al [blog feed](http://feeds.feedburner.com/symfony/blog) oficial
 
-  * Subscribe to the symfony [planet feed](http://feeds.feedburner.com/symfony/planet)
+  * Suscríbirte [planet feed](http://feeds.feedburner.com/symfony/planet)
 
-  * Come and chat on the [#symfony IRC](irc://irc.freenode.net/symfony)
-    channel on freenode
-
+  * Ven y charla en el canal [#symfony IRC](irc://irc.freenode.net/symfony)
+    de freenode
 
 >**Tip**
 >La traducción de esta guía ha sido realizada por **Roberto Germán Puentes Díaz**. 
