@@ -7,7 +7,7 @@ avranno due diverse applicazioni: un frontend ed un backend.
 
 ### Creazione del progetto
 
-Dalla cartella `sfproject/`, eseguire il task di symfony `generate:project`
+Dalla directory `sfproject/`, eseguire il task di symfony `generate:project`
 per creare effettivamente il progetto symfony:
 
     $ php lib/vendor/symfony/data/bin/symfony generate:project PROJECT_NAME
@@ -16,32 +16,32 @@ Su Windows:
 
     c:\> php lib\vendor\symfony\data\bin\symfony generate:project PROJECT_NAME
 
-Il task `generate:project` genera la struttura predefinita di cartelle e di
+Il task `generate:project` genera la struttura predefinita di directory e di
 file necessaria ad un progetto symfony:
 
- | Cartella    | Descrizione
- | ----------- | ----------------------------------
- | `apps/`     | Contiene tutte le applicazioni del progetto
- | `cache/`    | I file messi in cache dal framework
- | `config/`   | I file di configurazione del progetto
- | `lib/`      | Le classi e le librerie del progetto
- | `log/`      | I file di log del framework
- | `plugins/`  | I plugin installati
- | `test/`     | I file per i test unitari e funzionali
- | `web/`      | La cartella radice del web (vedi sotto)
+ | Directory    | Descrizione
+ | ------------ | ----------------------------------
+ | `apps/`      | Contiene tutte le applicazioni del progetto
+ | `cache/`     | I file messi in cache dal framework
+ | `config/`    | I file di configurazione del progetto
+ | `lib/`       | Le classi e le librerie del progetto
+ | `log/`       | I file di log del framework
+ | `plugins/`   | I plugin installati
+ | `test/`      | I file per i test unitari e funzionali
+ | `web/`       | La directory radice del web (vedi sotto)
 
 >**NOTE**
 >Per quale motivo symfony genera così tanti file? Uno dei maggiori
 >benefici che derivano dall'uso di un framework full-stack è quello
 >della standardizzazione dello sviluppo. Grazie alla struttura
->predefinita di file e cartelle di symfony, ogni sviluppatore che
+>predefinita di file e directory di symfony, ogni sviluppatore che
 >conosca symfony può occuparsi della manutenzione di qualsiasi
->progetto symfony. In pochi minuti, egli avrà la possibilità
+>progetto symfony. In pochi minuti avrà la possibilità
 >di analizzare il codice, sistemare i bug e aggiungere nuove
 >caratteristiche.
 
 Il task `generate:project` crea anche un collegamento `symfony` nella
-cartella radice del progetto, per accorciare il numero di caratteri
+directory radice del progetto, per accorciare il numero di caratteri
 da scrivere quando si esegue un task.
 
 Quindi, d'ora in poi, invece di usare il percorso completo a symfony,
@@ -49,10 +49,9 @@ si può usare il collegamento `symfony`.
 
 ### Creazione di un'applicazione
 
-Creiamo ora l'applicazione frontend, eseguendo il task `generate:app`:
+Creare l'applicazione frontend, eseguendo il task `generate:app`:
 
-    $ php symfony generate:app --escaping-strategy=on
-      ➥ --csrf-secret=UniqueSecret frontend
+    $ php symfony generate:app --escaping-strategy=on --csrf-secret=UniqueSecret frontend
 
 >**TIP**
 >Essendo il collegamento a symfony un file eseguibile, gli utenti Unix
@@ -65,15 +64,15 @@ Creiamo ora l'applicazione frontend, eseguendo il task `generate:app`:
 >     c:\> copy lib\vendor\symfony\data\bin\symfony.bat .
 
 Basandosi sul nome dell'applicazione fornito come *parametro*, il task
-`generate:app` crea la struttura di cartelle predefinita necessaria
-per l'applicazione, sotto la cartella `apps/frontend/`:
+`generate:app` crea la struttura di directory predefinita necessaria
+per l'applicazione, nella directory `apps/frontend/`:
 
- | Cartella     | Descrizione
- | ------------ | -------------------------------------
- | `config/`    | I file di configurazione dell'applicazione
- | `lib/`       | Le librerie e le classi dell'applicazione
- | `modules/`   | Il codice dell'applicazione (MVC)
- | `templates/` | I file dei template globali
+ | Directory     | Descrizione
+ | ------------- | -------------------------------------
+ | `config/`     | I file di configurazione dell'applicazione
+ | `lib/`        | Le librerie e le classi dell'applicazione
+ | `modules/`    | Il codice dell'applicazione (MVC)
+ | `templates/`  | I file dei template globali
 
 >**TIP**
 >Richiamando il task `generate:app` task, abbiamo usato anche due *opzioni*
@@ -91,10 +90,10 @@ per l'applicazione, sotto la cartella `apps/frontend/`:
 >[CSRF](http://it.wikipedia.org/wiki/CSRF), sarebbe meglio spendere un po' di tempo
 >per sapere di più su queste vulnerabilità.
 
-### Permessi sulla struttura di cartelle
+### Permessi sulla struttura delle directory
 
 Prima di provare ad accedere al nuovo progetto, occorre impostare i
-permessi di scrittura sulle cartelle `cache/` e `log/` ai livelli
+permessi di scrittura sulle directory `cache/` e `log/` ai livelli
 appropriati, in modo tale che il server web possa scriverci dentro:
 
     $ chmod 777 cache/ log/
@@ -102,8 +101,8 @@ appropriati, in modo tale che il server web possa scriverci dentro:
 >**SIDEBAR**
 >Consigli per chi usa uno strumento di revisione del codice
 >
->symfony scrive solamente in due cartelle di un progetto symfony,
->`cache/` e `log/`. Il contenuto di queste due cartelle dovrebbe essere
+>symfony scrive solamente in due directory di un progetto symfony,
+>`cache/` e `log/`. Il contenuto di queste due directory dovrebbe essere
 >ignorato dagli strumenti di revisione del codice (ad esempio
 >utilizzando la proprietà `svn:ignore`, se si usa Subversion).
 
@@ -113,7 +112,7 @@ Una delle prime cose da fare è quella di configurare la connessione al
 database del progetto. Il framework symfony supporta tutti i database
 supportati da [PDO]((http://www.php.net/PDO)) (MySQL, PostgreSQL,
 SQLite, Oracle, MSSQL, ...). Appoggiandosi a PDO, symfony è distribuito
-con due strumenti ORM:Propel and Doctrine. Propel è quello predefinito,
+con due strumenti ORM: Propel e Doctrine. Propel è quello predefinito,
 ma passare a Doctrine è molto facile (si veda la prossima sezione per
 maggiori informazioni).
 
