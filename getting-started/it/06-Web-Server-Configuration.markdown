@@ -41,7 +41,7 @@ dal browser web, cio' rappresenta una buona soluzione per la sicurezza dell'appl
 È giunto il momento di cambiare la configurazione di Apache in modo
 da rendere accessibile esternamente il nuovo progetto.
 
-Localizzare e aprire il file di configurazione `httpd.conf` e aggiungere le seguenti
+Individuare e aprire il file di configurazione `httpd.conf` e aggiungere le seguenti
 rige alla fine dello stesso:
 
    
@@ -70,7 +70,7 @@ rige alla fine dello stesso:
 
 >**NOTE**
 >L'alias `/sf` permette l'accesso alle immagini e file javascript necessari
->alla visualizzazione delle pagine predefinite di symfony e alla web debug toolbar.
+>alla visualizzazione delle pagine predefinite di symfony e alla toolbar di web debug.
 >
 >Su Windows, bisogna rimpiazzare la riga che definisce l'`Alias` con
 >
@@ -92,21 +92,21 @@ numeri superiori a `1024` in quanto non richiedono privilegi di amministratore.
 >**SIDEBAR**
 >Configurazione di un dominio dedicato
 >
->Nel caso in cui si e' amministratori del server stesso, e' meglio 
+>Nel caso in cui si fosse amministratori del server stesso, e' meglio 
 >creare e configurare dei virtual host piuttosto che aggiungere una nuova porta 
->ogni qualvolta si voglia iniziare un progetto.Invece di scegliere una porta e
+>ogni qualvolta si voglia iniziare un progetto. Invece di scegliere una porta e
 >aggiungere la direttiva `Listen`, scegliere un dominio e aggiungere la direttiva
 >`ServerName`:
 >
 >     #Configurazione del progetto
 >     <VirtualHost 127.0.0.1:80>
 >       ServerName sfproject.localhost
->       <!-- same configuration as before -->
+>       <!-- stessa configurazione di prima -->
 >     </VirtualHost>
 >
 >
 >Il dominio `sfproject.localhost` utilizzato nella configurazione di Apache
->deve essere dichiarato localmente.Su un sistema Linux, modficare il file `/etc/hosts`.
+>deve essere dichiarato localmente. Su un sistema Linux, modficare il file `/etc/hosts`.
 >In un sistema Windows invece il file si trova nella directory `C:\WINDOWS\system32\drivers\etc\`.
 >
 >Aggiungere la riga seguente:
@@ -130,15 +130,15 @@ nella precedente sezione.
 >`web/.htaccess`.
 
 
-E' possibile accedere all'applicativo in modalita' di ambiente di sviluppo(vedere la 
-sezione successiva per maggiori informazioni sui diversi ambienti).Digitare la
+E' possibile accedere all'applicativo nell'ambiente di sviluppo (vedere la 
+sezione successiva per maggiori informazioni sui diversi ambienti). Digitare la
 seguente URL:
 
     http://sfproject.localhost/frontend_dev.php/
 
-Dovrebbe essere visibile nell'angolo in alto a destra la web debug toolbar, con 
+Dovrebbe essere visibile nell'angolo in alto a destra la toolbar di web debug, con 
 delle piccole icone rese visibili, se tutto e' stato configurato correttamente,
- grazie all' `sf/` alias.
+grazie all' `sf/` alias.
 
 
 ![web debug toolbar](http://www.symfony-project.org/images/jobeet/1_2/01/web_debug_toolbar.png)
