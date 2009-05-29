@@ -19,7 +19,7 @@ dello sviluppo web.
 >leggere la sezione [Configurare il database](#chapter_05-Configurare_il_database)
 >per imparare come cambiare il database utilizzato nella sandbox.
 
-Potete effettuare il download della symfony sandbox nei formati `.tgz` o `.zip` dalla
+E' possibile effettuare il download della symfony sandbox nei formati `.tgz` o `.zip` dalla
 [pagina di installazione](http://www.symfony-project.org/installation/1_2) di symfony
 oppure direttamente ai seguenti URL:
 
@@ -27,17 +27,17 @@ oppure direttamente ai seguenti URL:
 
     http://www.symfony-project.org/get/sf_sandbox_1_2.zip
 
-Scompattate i file da qualche parte nella cartella radice del web e tutto è pronto.
+Scompattare i file da qualche parte nella directory root del server web e tutto è pronto.
 Il progetto symfony è ora accessibile richiedendo lo script `web/index.php`
 dal browser.
 
 >**CAUTION**
->Mantenere tutti i file di symfony nella cartella radice del web va bene per
+>Mantenere tutti i file di symfony nella directory root del server web va bene per
 >testare symfony in locale, ma è veramente una pessima idea su
 >un server di produzione visto che rende tutti i meccanismi interni della vostra
 >applicazione potenzialmente visibili agli utenti finali.
 
-Ora potete completare la vostra installazione leggendo i capitoli
+Per completare l'installazione continuare la lettura dei capitoli
 [Configurazione del web server](#chapter_06-Configurazione_del_web_server)
 e [Gli ambienti](#chapter_07-Gli_ambienti).
 
