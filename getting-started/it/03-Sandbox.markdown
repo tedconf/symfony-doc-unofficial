@@ -15,7 +15,7 @@ dello sviluppo web.
 >**CAUTION**
 >La sandbox è preconfigurata per utilizzare SQLite come database
 >engine, dovete quindi verificare che il vostro PHP supporti SQLite (vedere il
->capitolo [Prerequisites](#chapter_02-Prerequisites) ). Potete anche
+>capitolo [Prerequisiti](#chapter_02-Prerequisites) ). Potete anche
 >leggere la sezione [Configurare il database](#chapter_05-Configurare_il_database)
 >per imparare come cambiare il database utilizzato nella sandbox.
 
@@ -27,8 +27,8 @@ oppure direttamente ai seguenti URL:
 
     http://www.symfony-project.org/get/sf_sandbox_1_2.zip
 
-Scompattate i file da qualche parte nella vostra cartella radice del web e tutto è pronto.
-Il vostro progetto symfony è ora accessibile richiedendo lo script `web/index.php`
+Scompattate i file da qualche parte nella cartella radice del web e tutto è pronto.
+Il progetto symfony è ora accessibile richiedendo lo script `web/index.php`
 dal browser.
 
 >**CAUTION**
