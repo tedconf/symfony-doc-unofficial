@@ -43,7 +43,7 @@ Ma nell'ambiente di produzione la cache deve essere attivata e, ovviamente, l'ap
 >     sfContext::createInstance($configuration)->dispatch();
 
 La toolbar di web debug è un altro grande esempio dell'utilizzo degli ambienti. 
-Questa è presente in tutte le pagine dell'ambiente di sviluppo e da accesso a 
+Questa è presente in tutte le pagine dell'ambiente di sviluppo e dà accesso a 
 molte informazioni cliccando sulle differenti aree, ad esempio: i parametri di configurazione 
 dell'attuale applicazione, i log per la richiesta http corrente, le richieste SQL 
 eseguite sul database, informazioni sulla memoria e sul tempo di esecuzione.
