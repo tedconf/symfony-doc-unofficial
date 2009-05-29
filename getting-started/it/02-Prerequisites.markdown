@@ -16,19 +16,19 @@ bisogno di un server web (come Apache), un database (MySQL, PostgreSQL,
 SQLite, o qualsiasi altro database compatibile con PDO) e di PHP 5.2.4
 (o una versione successiva).
 
-Interfaccia a linea di comando
+Interfaccia a riga di comando
 ------------------------------
 
-Il framework symfony viene distribuito con uno strumento a linea di
+Il framework symfony viene distribuito con uno strumento a riga di
 comando che automatizza molte cose. Se siete utenti di un sistema
-operativo derivato da Unix, vi troverete a casa. Se siete su un sistema
+operativo derivato da Unix, vi troverete a vostro agio. Se siete su un sistema
 Windows, andrà tutto bene, dovrete solo scrivere pochi comandi nel
 prompt `cmd`.
 
 >**Note**
 >I comandi del terminale di Unix possono essere utili in un ambiente
 >Windows. Se si vogliono usare strumenti come `tar`, `gzip`, o `grep`
->su Windows, si puà installare [Cygwin](http://cygwin.com/). La
+>su Windows, si può installare [Cygwin](http://cygwin.com/). La
 >documentazione ufficiale è un po' scarsa, ma si può trovare una
 >buona guida di installazione [qui](http://www.soe.ucsc.edu/~you/notes/cygwin-install.html).
 >I più arditi possono anche provare
@@ -45,8 +45,8 @@ minimi di symfony.
 
 Innanzitutto, assicurarsi di avere almeno PHP 5.2.4 installato, usando
 la funzione di libreria `phpinfo()`, oppure eseguendo `php -v` nella
-linea di comando. Fare attenzione: in alcune configurazioni, si potrebbero
-avere installate versioni di PHP diverse, una per la linea di comando
+riga di comando. Fare attenzione: in alcune configurazioni, si potrebbero
+avere installate versioni di PHP diverse, una per la riga di comando
 e l'altra per il web.
 
 Quindi, scaricare lo script di symfony per la verifica della configurazione,
@@ -54,9 +54,9 @@ al seguente indirizzo:
 
     http://sf-to.org/1.2/check.php
 
-Salvare lo script da qualche parte nella propria cartella radice del web.
+Salvare lo script da qualche parte nella propria directory root del server web.
 
-Lanciare lo script di verifica della configurazione dalla linea di comando:
+Lanciare lo script di verifica della configurazione dalla riga di comando:
 
     $ php check_configuration.php
 
@@ -69,5 +69,5 @@ configurazione `php.ini` diverso per questi due ambienti, con
 diverse impostazioni.
 
 >**NOTE**
->Non dimenticare di rimuovere il file dalla cartella radice del web
+>Non dimenticare di rimuovere il file dalla directory root del server web
 >quando si ha finito.
