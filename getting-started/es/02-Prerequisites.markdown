@@ -35,17 +35,6 @@ bien, sólo tendrás que escribir algunos comandos en el prompt `cmd`.
 Configuración PHP
 -----------------
 
-As PHP configurations can vary a lot from one OS to another, or even between
-different Linux distributions, you need to check that your PHP configuration
-meets the symfony minimum requirements.
-
-First, ensure that you have PHP 5.2.4 at a minimum installed by using the
-`phpinfo()` built-in function or by running `php -v` on the command line. Be
-aware that on some configurations, you might have two different PHP versions
-installed: one for the command line, and another for the web.
-
-Then, download the symfony configuration checker script at the following URL:
-
 Como las configuraciones de PHP pueden variar mucho de un SO a otro, o incluso 
 entre las diferentes distribuciones de Linux, tienes que comprobar que tu 
 configuración de PHP cumple los requisitos mínimos de symfony. 
