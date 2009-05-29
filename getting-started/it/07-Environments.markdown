@@ -1,5 +1,5 @@
 Gli ambienti
-================
+============
 
 Guardando nella cartella `web/`, ci saranno due file PHP:
 `index.php` e `frontend_dev.php`. Questi file sono chiamati front controller e vengono utilizzati per gestire tutte le richieste fatte all'applicazione. 
@@ -29,7 +29,7 @@ Ma nell'ambiente di produzione la cache deve essere attivata e, ovviamente, l'ap
 
 ![Una eccezione nell'ambiente di produzione](http://www.symfony-project.org/images/jobeet/1_2/01/exception_prod.png)
 
->**NOTA**
+>**NOTE**
 >Se vengono aperti i file di front controller, si potrà notare che il contenuto 
 >degli stessi è uguale ad eccezione dei parametri che definiscono l'ambiente:
 >

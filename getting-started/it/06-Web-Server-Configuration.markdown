@@ -5,13 +5,13 @@ Modalità poco pulita e poco sicura
 ----------------------------------
 
 Nel capitolo precedente, è stata creata una directory che ospita il progetto.
-Se essa e' stata creata all'interno della directory root del server web,
+Se essa è stata creata all'interno della directory root del server web,
 è già possibile accedere al progetto stesso tramite un browser web.
 
 Ovviamente, non essendoci una configurazione specifica, quanto fatto finora è molto facile 
 e veloce da impostare, ma se si provasse per esempio ad accedere al file `config/databases.yml` 
 tramite il browser web si comprenderebbero le conseguenze negative di tale attitudine.
-Se un utente venisse a conoscenza che il sito web in questione e' sviluppato 
+Se un utente venisse a conoscenza che il sito web in questione è sviluppato 
 con Symfony, avrebbe facilmente accesso a file che contengono informazioni sensibili.
 
 
@@ -20,7 +20,7 @@ si invita alla lettura della sezione successiva per comprendere come configurare
 correttamente il proprio web server. 
 
 
-Modalita' sicura
+Modalità sicura
 ----------------
 
 In ambito web è buona prassi posizionare all'interno della directory root del
@@ -82,17 +82,17 @@ rige alla fine dello stesso:
 
 
 La configurazione appena descritta mette in ascolto Apache sulla porta `8080`,
-quindi il sito web sara' raggiungibile al seguente URL:
+quindi il sito web sarà raggiungibile al seguente URL:
 
     http://localhost:8080/
 
-E' possibile sostituire `8080` con qualsiasi altro numero ma e' preferibile utilizzare
+E' possibile sostituire `8080` con qualsiasi altro numero ma è preferibile utilizzare
 numeri superiori a `1024` in quanto non richiedono privilegi di amministratore.
 
 >**SIDEBAR**
 >Configurazione di un dominio dedicato
 >
->Nel caso in cui si fosse amministratori del server stesso, e' meglio 
+>Nel caso in cui si fosse amministratori del server stesso, è meglio 
 >creare e configurare dei virtual host piuttosto che aggiungere una nuova porta 
 >ogni qualvolta si voglia iniziare un progetto. Invece di scegliere una porta e
 >aggiungere la direttiva `Listen`, scegliere un dominio e aggiungere la direttiva
@@ -125,8 +125,8 @@ nella precedente sezione.
 
 ![Congratulazioni](http://www.symfony-project.org/images/jobeet/1_2/01/congratulations.png)
 >**TIP**
->Se il modulo `mod_rewrite` di Apache e' installato e attivo, e' possibile rimuovere
->`index.php/` dall'URL.Questo e' possibile grazie alle regole di riscrittura presenti nel file
+>Se il modulo `mod_rewrite` di Apache è installato e attivo, è possibile rimuovere
+>`index.php/` dall'URL.Questo è possibile grazie alle regole di riscrittura presenti nel file
 >`web/.htaccess`.
 
 
@@ -137,7 +137,7 @@ seguente URL:
     http://sfproject.localhost/frontend_dev.php/
 
 Dovrebbe essere visibile nell'angolo in alto a destra la toolbar di web debug, con 
-delle piccole icone rese visibili, se tutto e' stato configurato correttamente,
+delle piccole icone rese visibili, se tutto è stato configurato correttamente,
 grazie all' `sf/` alias.
 
 
