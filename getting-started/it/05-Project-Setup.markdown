@@ -135,7 +135,7 @@ eseguita modificando il seguente codice in `config/ProjectConfiguration.class.ph
     [php]
     public function setup()
     {
-      $this->enableAllPluginsExcept(array('sf#PropelPlugin', 'sfCompat10Plugin'));
+      $this->enableAllPluginsExcept(array('sfPropelPlugin', 'sfCompat10Plugin'));
     }
 
 Dopo tali modifiche, lanciare i seguenti comandi:
