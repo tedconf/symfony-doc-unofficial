@@ -17,7 +17,7 @@ un libro stampato.
 Il framework symfony ha molte grandi caratteristiche e molta
 documentazione liberamente disponibile. Ma uno dei più grandi
 valori che un progetto Open Source può avere è la sua comunità.
-E symfony ha una delle più incredibile ed attive comunità che si
+E symfony ha una delle più incredibili ed attive comunità che si
 possono trovare. Iniziando ad usare symfony per i propri progetti,
 si consideri l'ipotesi di unirsi alla comunità di symfony:
 

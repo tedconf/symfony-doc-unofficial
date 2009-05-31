@@ -34,12 +34,12 @@ Creare una directory per contenere i file del framework symfony:
 
     $ mkdir -p lib/vendor
 
-E' il momento di installare symfony. Dato che il framework symfony ha diversi 
+È il momento di installare symfony. Dato che il framework symfony ha diversi 
 stable branch è necessario selezionare la versione da installare leggendo la 
 [pagina di installazione](http://www.symfony-project.org/installation) sul sito
 web di symfony.
 
-Andate sulla pagina di installazione per la versione selezionate,
+Andate sulla pagina di installazione per la versione selezionata,
 [symfony 1.2](http://www.symfony-project.org/installation/1_2) per esempio.
 
 Nella sezione "**Source Download**" sono disponibili gli archivi nei formati
@@ -56,7 +56,7 @@ rinominato la directory a `symfony` dovrebbe esserci una directory chiamata
 `c:\dev\sfproject\lib\vendor\symfony`.
 
 >**TIP**
->Usando Subversione è consigliabile utilizzare `svn:externals` per includere
+>Usando Subversion è consigliabile utilizzare `svn:externals` per includere
 >symfony nel proprio progetto nella directory `lib/vendor/` e beneficiare così
 >dei bug fix rilasciati in modo automatico nello stable branch:
 >

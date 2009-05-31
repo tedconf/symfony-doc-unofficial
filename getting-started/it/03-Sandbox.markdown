@@ -19,7 +19,7 @@ dello sviluppo web.
 >leggere la sezione [Configurare il database](#chapter_05-Configurare_il_database)
 >per imparare come cambiare il database utilizzato nella sandbox.
 
-E' possibile effettuare il download della symfony sandbox nei formati `.tgz` o `.zip` dalla
+È possibile effettuare il download della symfony sandbox nei formati `.tgz` o `.zip` dalla
 [pagina di installazione](http://www.symfony-project.org/installation/1_2) di symfony
 oppure direttamente ai seguenti URL:
 

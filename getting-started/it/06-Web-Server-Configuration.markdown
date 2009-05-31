@@ -12,7 +12,7 @@ Ovviamente, non essendoci una configurazione specifica, quanto fatto finora è m
 e veloce da impostare, ma se si provasse per esempio ad accedere al file `config/databases.yml` 
 tramite il browser web si comprenderebbero le conseguenze negative di tale attitudine.
 Se un utente venisse a conoscenza che il sito web in questione è sviluppato 
-con Symfony, avrebbe facilmente accesso a file che contengono informazioni sensibili.
+con symfony, avrebbe facilmente accesso a file che contengono informazioni sensibili.
 
 
 **Mai utilizzare questa tipologia di configurazione su un server di produzione**,
@@ -24,7 +24,7 @@ Modalità sicura
 ----------------
 
 In ambito web è buona prassi posizionare all'interno della directory root del
-web server solo i file che necessitano l'accesso da parete del browser web come
+web server solo i file che necessitano l'accesso da parte del browser web come
 ad esempio i fogli di stile, Javascript e le immagini.
 Come opzione predefinita, si raccomanda di posizionare queste tipologie di file all'interno
 della directory `web/`.
@@ -33,8 +33,8 @@ della directory `web/`.
 All'interno di questa directory sono presenti alcune sotto directory  delle varie 
 risorse web (`css/` and `images/`) e i due file front controller.
 Quest'ultimi sono gli unici file PHP che devono essere posizionati all'interno 
-della directory web.Tutti gli altri file PHP devono essere nascosti, non raggiungibili,
-dal browser web, cio' rappresenta una buona soluzione per la sicurezza dell'applicativo.
+della directory web. Tutti gli altri file PHP devono essere nascosti, non raggiungibili,
+dal browser web, ciò rappresenta una buona soluzione per la sicurezza dell'applicativo.
 
 
 ### Configurazione del Web Server
@@ -86,7 +86,7 @@ quindi il sito web sarà raggiungibile al seguente URL:
 
     http://localhost:8080/
 
-E' possibile sostituire `8080` con qualsiasi altro numero ma è preferibile utilizzare
+È possibile sostituire `8080` con qualsiasi altro numero ma è preferibile utilizzare
 numeri superiori a `1024` in quanto non richiedono privilegi di amministratore.
 
 >**SIDEBAR**
@@ -106,7 +106,7 @@ numeri superiori a `1024` in quanto non richiedono privilegi di amministratore.
 >
 >
 >Il dominio `sfproject.localhost` utilizzato nella configurazione di Apache
->deve essere dichiarato localmente. Su un sistema Linux, modficare il file `/etc/hosts`.
+>deve essere dichiarato localmente. Su un sistema Linux, modificare il file `/etc/hosts`.
 >In un sistema Windows invece il file si trova nella directory `C:\WINDOWS\system32\drivers\etc\`.
 >
 >Aggiungere la riga seguente:
@@ -114,11 +114,11 @@ numeri superiori a `1024` in quanto non richiedono privilegi di amministratore.
 >     127.0.0.1 sfproject.localhost
 
 
-### Testare la Nuova Configurazione 
+### Testare la nuova configurazione 
 
 Riavviare Apache e controllare che sia possibile l'accesso alla nuova applicazione
 aprendo un browser web e digitando `http://localhost:8080/index.php/` oppure
-`http://sfproject.localhost/index.php/`, cio' dipende dalla configurazione scelta
+`http://sfproject.localhost/index.php/`, ciò dipende dalla configurazione scelta
 nella precedente sezione.
 
 
@@ -126,11 +126,11 @@ nella precedente sezione.
 ![Congratulazioni](http://www.symfony-project.org/images/jobeet/1_2/01/congratulations.png)
 >**TIP**
 >Se il modulo `mod_rewrite` di Apache è installato e attivo, è possibile rimuovere
->`index.php/` dall'URL.Questo è possibile grazie alle regole di riscrittura presenti nel file
+>`index.php/` dall'URL. Questo è possibile grazie alle regole di riscrittura presenti nel file
 >`web/.htaccess`.
 
 
-E' possibile accedere all'applicativo nell'ambiente di sviluppo (vedere la 
+È possibile accedere all'applicativo nell'ambiente di sviluppo (vedere la 
 sezione successiva per maggiori informazioni sui diversi ambienti). Digitare la
 seguente URL:
 

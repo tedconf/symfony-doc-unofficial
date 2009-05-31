@@ -1,11 +1,11 @@
 Gli ambienti
 ============
 
-Guardando nella cartella `web/`, ci saranno due file PHP:
+Guardando nella directory `web/`, ci saranno due file PHP:
 `index.php` e `frontend_dev.php`. Questi file sono chiamati front controller e vengono utilizzati per gestire tutte le richieste fatte all'applicazione. 
 Ma perchè avere due front controller per ogni applicazione?
 
-Entrambi i file puntano alla stessa applicazione ma per ambienti differenti.
+Entrambi i file puntano alla stessa applicazione, ma per ambienti differenti.
 Quando viene sviluppata un'applicazione, ad eccezione di quelle sviluppate direttamente sul server di produzione, diversi **ambienti** sono necessari:
 
   * L'**ambiente di sviluppo**: Questo ambiente è utilizzato dagli **sviluppatori web** quando devono lavorare sull'applicazione per aggiungere nuove funzionalità, correggere problemi, etc..
