@@ -1,21 +1,21 @@
 Yêu cầu
 =============
 
-Trước khi cài đặt symfony, bạn cần kiểu tra máy của mình để chắc rằng mọi thứ được cài đặt và cấu hình đúng. Hãy dành thời gian để đọc kĩ chương này và làm theo tất cả các yêu cầu để kiểm tra các thiết lập trên máy bạn, nó sẽ giúp bạn không phải mất thời gian với những lỗi phát sinh sau này.
+Trước khi cài đặt symfony, bạn cần dành chút thời gian để kiểm tra các thiết lập trên máy bạn, nó sẽ giúp bạn không phải mất thời gian với những lỗi phát sinh sau này.
 
 Phần mềm
 ---------
 
-Đầu tiên, bạn cần kiểm tra xem máy bạn có môi trường phát triển web chưa. Bạn cần một web server (ví dụ Apache), một hệ quản trị CSDL (MySQL, PostgreSQL, SQLite, ..), và PHP 5.2.4 hoặc mới hơn.
+Trước tiên, bạn cần có một môi trường phát triển web trên máy: web server (ví dụ Apache), hệ quản trị CSDL (MySQL, PostgreSQL, SQLite, ..), và PHP 5.2.4 hoặc mới hơn.
 
 Giao diện dòng lệnh
 ----------------------
 
-Framework symfony chứa sẵn công cụ dòng lệnh để tự động làm nhiều việc cho bạn. Nếu bạn là người dùng hệ điều hành họ Unix, bạn sẽ cảm thấy quen thuộc. Nếu bạn sử dụng Windows, bạn sẽ phải gõ một vài lệnh ở cửa sổ `cmd`.
+Framework symfony chứa sẵn công cụ dòng lệnh để tự động làm nhiều việc cho bạn. Nếu bạn dùng hệ điều hành họ Unix, bạn sẽ cảm thấy quen thuộc. Nếu sử dụng Windows, bạn cần dùng cửa sổ dòng lệnh `cmd`.
 
 >**Note**
->Unix shell commands có thể đưa vào môi trường Windows.
->Nếu bạn thích sử dụng những lệnh như `tar`, `gzip`, hay `grep` ở Windows, bạn
+>Unix shell command có thể đưa vào môi trường Windows.
+>Nếu bạn thích dùng những lệnh như `tar`, `gzip`, hay `grep` ở Windows, bạn
 >có thể cài đặt [Cygwin](http://cygwin.com/).  Tài liệu trên trang chủ khá ít,
 >bạn có thể đọc hướng dẫn cài đặt
 >[tại đây](http://www.soe.ucsc.edu/~you/notes/cygwin-install.html).
@@ -25,12 +25,12 @@ Framework symfony chứa sẵn công cụ dòng lệnh để tự động làm n
 Cấu hình PHP
 -----------------
 
-Cấu hình PHP khác nhau tùy vào hệ điều hành, thậm chí giữa các bản phân phối Linux. Bạn cần kiểm tra để chắc rằng cấu hình PHP đạt các yêu cầu tối thiểu của symfony.
+Cấu hình PHP khác nhau tùy vào hệ điều hành. Bạn cần kiểm tra để chắc rằng cấu hình PHP đạt các yêu cầu tối thiểu của symfony.
 
 Đầu tiên, hãy chắc rằng bạn có PHP 5.2.4 hoặc mới hơn bằng cách sử dụng function
 `phpinfo()` hoặc chạy lệnh `php -v`. Bạn nên kiểm tra cả 2 cách do ở một vài cấu hình, bạn có thể có 2 phiên bản PHP được cài đặt: một cho dòng lệnh, và một cho web.
 
-Sau đó, download script để kiểm tra cấu hình tại đường dẫn sau:
+Sau đó, download script sau để kiểm tra cấu hình:
 
     http://sf-to.org/1.2/check.php
 
@@ -42,7 +42,7 @@ Chạy script từ dòng lệnh để kiểm tra cấu hình:
 
 Nếu có vấn đề gì với cấu hình PHP hiện tại, đoạn script sẽ đưa ra gợi ý cách sửa.
 
-Bạn cũng nên chạy script này từ trình duyệt và sửa các lỗi phát sinh. Đó là do PHP có thể có các file cấu hình `php.ini` riêng cho 2 môi trường, với các thiết lập khác nhau.
+Bạn cũng nên chạy script này từ trình duyệt và sửa các lỗi phát sinh, do PHP có thể có các file cấu hình `php.ini` riêng cho 2 môi trường, với các thiết lập khác nhau.
 
 >**NOTE**
->Đừng quên xóa file sau khi kiểm tra xong.
+>Đừng quên xóa file script sau khi kiểm tra xong cấu hình.
