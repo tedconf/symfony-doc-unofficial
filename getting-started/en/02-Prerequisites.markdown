@@ -6,8 +6,8 @@ installed and configured correctly. Take the time to conscientiously read this
 chapter and follow all the steps required to check your configuration as it
 may save your day further down the road.
 
-Softwares
----------
+Software
+--------
 
 First of all, you need to check that your computer has a friendly working
 environment for web development. At a minimum, you need a web server (Apache
