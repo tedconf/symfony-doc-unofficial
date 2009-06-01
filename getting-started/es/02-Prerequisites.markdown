@@ -6,7 +6,7 @@ y configurado correctamente. Tóma un tiempo para leer este capítulo a concienc
 y sigue todos los pasos necesarios para verificar tu configuración, ya que puede 
 salvar tu día en el proceso.
 
-Softwares
+Software
 ---------
 
 En primer lugar, necesitas comprobar que tu equipo tiene un entorno de trabajo 

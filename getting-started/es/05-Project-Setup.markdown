@@ -130,7 +130,7 @@ el siguiente código en tu `config/ProjectConfiguration.class.php`:
     [php]
     public function setup()
     {
-      $this->enableAllPluginsExcept(array('sf#PropelPlugin', 'sfCompat10Plugin'));
+      $this->enableAllPluginsExcept(array('sfPropelPlugin', 'sfCompat10Plugin'));
     }
 
 Despues de hacer estos cambios, ejecuta estos comandos:
