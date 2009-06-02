@@ -2,13 +2,13 @@ The Environments
 ================
 
 If you have a look at the `web/` directory, you will find two PHP files:
-`index.php` and `frontend_dev.php`. These files are called front controllers:
+`index.php` and `frontend_dev.php`. These files are called **front controllers**;
 all requests to the application are made through them. But why do we have two
 front controllers for each application?
 
-Both files point to the same application but for different environments.
+Both files point to the same application but for different **environments**.
 When you develop an application, except if you develop directly on the
-production server, you need several **environments**:
+production server, you need several environments:
 
   * The **development environment**: This is the environment used by **web
     developers** when they work on the application to add new features, fix
@@ -21,7 +21,7 @@ production server, you need several **environments**:
     interact with.
 
 What makes an environment unique? In the development environment for instance,
-the application needs to log all the details of a request to ease the
+the application needs to log all the details of a request to ease
 debugging, but the cache system must be disabled as all changes made to the
 code must be taken into account right away. So, the development environment
 must be optimized for the developer. The best example is certainly when an
@@ -31,7 +31,7 @@ request right into the browser:
 
 ![An exception in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/01/exception_dev.png)
 
-But on the production environment, the cache layer must be activated and of
+But on the production environment, the cache layer must be activated and, of
 course, the application must display customized error messages instead of raw
 exceptions. So, the production environment must be optimized for performance
 and the user experience.

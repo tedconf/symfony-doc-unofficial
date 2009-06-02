@@ -21,8 +21,8 @@ The secure Way
 --------------
 
 A good web practice is to put under the web root directory only the files that
-need to be accessed by a web browser like stylesheets, JavaScripts, and
-images. And by default, we recommend to store these files under the `web/`
+need to be accessed by a web browser, like stylesheets, JavaScripts and
+images. By default, we recommend to store these files under the `web/`
 sub-directory of a symfony project.
 
 If you have a look at this directory, you will find some sub-directories for
@@ -33,7 +33,7 @@ idea as far as security is concerned.
 
 ### Web Server Configuration
 
-Now it is time to change your Apache configuration to make the new project
+Now it is time to change your Apache configuration, to make the new project
 accessible to the world.
 
 Locate and open the `httpd.conf` configuration file and add the following
@@ -77,7 +77,7 @@ the website will be accessible at the following URL:
 
     http://localhost:8080/
 
-You can change `8080` by any number but prefer numbers greater than `1024` as
+You can change `8080` to any number, but favour numbers greater than `1024` as
 they do not require administrator rights.
 
 >**SIDEBAR**
@@ -123,7 +123,7 @@ following URL:
 
     http://sfproject.localhost/frontend_dev.php/
 
-The web debug toolbar should show on the top right corner, including small
+The web debug toolbar should show in the top right corner, including small
 icons proving that your `sf/` alias configuration is correct.
 
 ![web debug toolbar](http://www.symfony-project.org/images/jobeet/1_2/01/web_debug_toolbar.png)
