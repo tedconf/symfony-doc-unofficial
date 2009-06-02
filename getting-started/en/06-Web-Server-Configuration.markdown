@@ -8,13 +8,13 @@ In the previous chapters, you have created a directory that hosts the project.
 If you have created it somewhere under the web root directory of your web
 server, you can already access the project in a web browser.
 
-Of course, as there is no configuration, if it is very fast to set up, but try
+Of course, as there is no configuration, it is very fast to set up, but try
 to access the `config/databases.yml` file in your browser to understand the
 bad consequences of such a lazy attitude. If the user knows that your
 website is developed with symfony, he will have access to a lot of sensitive
 files.
 
-**Never ever use this setup on a production server** and read the next section
+**Never ever use this setup on a production server**, and read the next section
 to learn how to configure your web server properly.
 
 The secure Way

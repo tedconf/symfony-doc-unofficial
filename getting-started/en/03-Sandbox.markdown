@@ -6,11 +6,11 @@ chapter as we will show you the fastest way to get you started. If you want to
 bootstrap a real world project, you can safely skip this chapter, and
 [jump](#chapter_04-Symfony-Installation) to the next one right away.
 
-The fastest way to experiment symfony is to install the symfony sandbox. The
-sandbox is a dead-easy to install pre-packaged symfony project, already
-configured with some sensible defaults. It is a great way to experiment
-symfony without the hassle of a proper installation that respects the web best
-practices.
+The fastest way to experiment with symfony is to install the symfony sandbox. The
+sandbox is a dead-easy-to-install pre-packaged symfony project, already
+configured with some sensible defaults. It is a great way to practice using
+symfony without the hassle of a proper installation that respects the web
+best practices.
 
 >**CAUTION**
 >As the sandbox is pre-configured to use SQLite as a database
@@ -19,7 +19,7 @@ practices.
 >read the [Configuring the Database](#chapter_05-Project-Setup_sub_configuring_the_database)
 >section to learn how to change the database used by the sandbox.
 
-You can download the symfony sandbox in the `.tgz` or `.zip` format from the
+You can download the symfony sandbox in `.tgz` or `.zip` format from the
 symfony [installation page](http://www.symfony-project.org/installation/1_2)
 or at the following URL:
 
@@ -44,7 +44,7 @@ and the [Environments](#chapter_07-Environments) chapters.
 >**NOTE**
 >As a sandbox is just a normal symfony project where some tasks have
 >been executed for you and some configuration changed, it is quite
->easy to use it as a starting point of a new project. But keep in mind
+>easy to use it as a starting point for a new project. However, keep in mind
 >that you will probably need to adapt the configuration; for instance
 >changing the security related settings (see the configuration of XSS
 >and CSRF later in this tutorial).

@@ -42,8 +42,8 @@ symfony website.
 Go to the installation page for the version you have just chosen,
 [symfony 1.2](http://www.symfony-project.org/installation/1_2) for instance.
 
-Under the "**Source Download**" section, you will find the archive in the
-`.tgz` format or in the `.zip` format. Download the archive, put it under
+Under the "**Source Download**" section, you will find the archive in 
+`.tgz` or in `.zip` format. Download the archive, put it under
 the freshly created `lib/vendor/` directory and un-archive it:
 
     $ cd lib/vendor
@@ -51,14 +51,14 @@ the freshly created `lib/vendor/` directory and un-archive it:
     $ mv symfony-1.2.2 symfony
     $ rm symfony-1.2.2.tgz
 
-Under Windows unzipping the zip file can be done with the explorer. After you
-renamed the directory to `symfony`, there should be a directory named
+Under Windows, unzipping the zip file can be achieved using Windows Explorer. After you
+rename the directory to `symfony`, there should be a directory structure similar to
 `c:\dev\sfproject\lib\vendor\symfony`.
 
 >**TIP**
 >If you use Subversion, it is even better to use the `svn:externals`
 >property to embed symfony into your project in the `lib/vendor/`
->directory and benefits from the bug fixes made in the stable branch
+>directory, which benefits from the bug fixes made in the stable branch
 >automatically:
 >
 >     http://svn.symfony-project.com/branches/1.2/
@@ -84,7 +84,7 @@ On Windows:
 >
 >     c:\> php lib\vendor\symfony\data\bin\symfony
 >
->The symfony command line is the developer best friend. It provides a lot of
+>The symfony command line is the developer's best friend. It provides a lot of
 >utilities that improve your productivity for day-to-day activities like
 >cleaning the cache, generating code, and much more.
 

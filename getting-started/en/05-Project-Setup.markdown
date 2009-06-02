@@ -33,7 +33,7 @@ files needed for a symfony project:
 >**NOTE**
 >Why does symfony generate so many files? One of the main benefits of using
 >a full-stack framework is to standardize your developments. Thanks to
->symfony default structure of files and directories, any developer with
+>symfony's default structure of files and directories, any developer with
 >some symfony knowledge can take over the maintenance of any symfony project.
 >In a matter of minutes, he will be able to dive into the code, fix bugs,
 >and add new features.
@@ -73,26 +73,26 @@ creates the default directory structure needed for the application under the
  | `templates/` | The global template files
 
 >**TIP**
->When calling the `generate:app` task, you have also passed two security related
+>When calling the `generate:app` task, you have also passed two security-related
 >*options*:
 >
 >  * `--escaping-strategy`: Enables output escaping to prevent XSS attacks
 >  * `--csrf-secret`: Enables session tokens in forms to prevent CSRF attacks
 >
->By passing these two optional options to the task, you have secured your
+>By passing these two optional arguments to the task, you have secured your
 >future development from the two most widespread vulnerabilities found on the
 >web. That's right, symfony will automatically take security measures on your
 >behalf.
 >
 >If you know nothing about
 >[XSS](http://en.wikipedia.org/wiki/Cross-site_scripting) or
->[CSRF](http://en.wikipedia.org/wiki/CSRF), take the time to learn more these
->security vulnerabilities.
+>[CSRF](http://en.wikipedia.org/wiki/CSRF), take the time to learn more about
+>these security vulnerabilities.
 
 ### Directory Structure Rights
 
 Before trying to access your newly created project, you need to set the write
-permissions on the `cache/` and `log/` directories to the appropriate levels
+permissions on the `cache/` and `log/` directories to the appropriate levels,
 so that your web server can write to them:
 
     $ chmod 777 cache/ log/
@@ -107,7 +107,7 @@ so that your web server can write to them:
 
 ### Configuring the Database
 
-One of the first thing you might want to do is to configure the database
+One of the first things you might want to do is to configure the database
 connection for your project. The symfony framework supports all
 [PDO]((http://www.php.net/PDO))-supported databases (MySQL, PostgreSQL,
 SQLite, Oracle, MSSQL, ...). On top of PDO, symfony comes bundled with two ORM
