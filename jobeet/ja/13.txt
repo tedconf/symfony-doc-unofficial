@@ -13,7 +13,7 @@
 
 ユーザーセッションはクッキーを利用して特定できます。
 symfonyにおいて、開発者はセッションを直接操作する必要はありませんが
-むしろアプリケーションのエンドユーザーを表す`~sfUser~`オブジェクトを使うことが必要です。
+むしろアプリケーションのエンドユーザーを表す`sfUser`オブジェクトを使うことが必要です。
 
 ユーザーflash
 -------------
@@ -71,18 +71,18 @@ Jobeetに関して、これらは`layout.php`によって出力されます:
 >**NOTE**
 >symfonyオブジェクトの中にはアクションから明示的に渡さなくても
 >常にテンプレートにアクセスできるものがあります: `sf_request`、`sf_user`、と
->`sf_response`.
+>`sf_response`
 
 ユーザー属性
 ------------
 
 不幸なことに、Jobeetユーザーのストーリーにはユーザーセッションに何かを保存する要件は含まれていません。
-ですので新しい要件を追加しましょう: jobの閲覧を楽にするために、
-ユーザーによって閲覧される最新の3つのjob
-は後でjobページに戻れるリンク付きのメニューに表示されます。
+ですので新しい要件を追加しましょう: 求人の閲覧を楽にするために、
+ユーザーによって閲覧される最新の3件の求人
+は後で求人ページに戻れるリンク付きのメニューに表示されます。
 
-ユーザーがjobページにアクセスするとき、表示されるjobオブジェクトは
-~ユーザーの履歴~に追加してセッションに保存する必要があります:
+ユーザーが求人ページにアクセスするとき、表示されるjobオブジェクトは
+ユーザーの履歴に追加してセッションに保存する必要があります:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -92,13 +92,13 @@ Jobeetに関して、これらは`layout.php`によって出力されます:
       {
         $this->job = $this->getRoute()->getObject();
 
-        // fetch jobs already stored in the job history
+        // 求人履歴に既に保存された求人を取得する
         $jobs = $this->getUser()->getAttribute('job_history', array());
 
-        // add the current job at the beginning of the array
+        // 配列の始めに現在の求人を追加する
         array_unshift($jobs, $this->job->getId());
 
-        // store the new job history back into the session
+        // 新しい求人履歴をセッションに保存しなおす
         $this->getUser()->setAttribute('job_history', $jobs);
       }
 
@@ -132,7 +132,7 @@ Jobeetに関して、これらは`layout.php`によって出力されます:
 ### `myUser`クラス
 
 関心の分離をより尊重するために、コードを`myUser`クラスに移動させましょう。
-`~myUser~`クラスはデフォルトの[`sfUser`](http://www.symfony-project.org/api/1_2/sfUser)基底クラスを
+`myUser`クラスはデフォルトの[`sfUser`](http://www.symfony-project.org/api/1_2/sfUser)基底クラスを
 アプリケーション固有の振る舞いで
 オーバーライドします:
 
@@ -171,7 +171,7 @@ Jobeetに関して、これらは`layout.php`によって出力されます:
   * `!in_array($job->getId(), $ids)`: jobは履歴に二度も
     保存できません
 
-  * `array_slice($ids, 0, 3)`: ユーザーによって閲覧される最新の3つのjobのみ
+  * `array_slice($ids, 0, 3)`: ユーザーによって閲覧される最新の3つの求人のみ
     表示される
 
 レイアウトにおいて、変数`$sf_content`が出力される前に
@@ -194,7 +194,7 @@ Jobeetに関して、これらは`layout.php`によって出力されます:
       <?php echo $sf_content ?>
     </div>
 
-レイアウトは現在のjobの履歴を読み取るために新しい`getJobHistory()`メソッドを使用する:
+レイアウトは現在の求人履歴を読み取るために新しい`getJobHistory()`メソッドを使用する:
 
     [php]
     // apps/frontend/lib/myUser.class.php
@@ -235,11 +235,11 @@ Jobeetに関して、これらは`layout.php`によって出力されます:
 `getJobHistory()`メソッドはPropelの`retrieveByPKs()`メソッドを使用します。
 </propel>
 
-![Jobの履歴](http://www.symfony-project.org/images/jobeet/1_2/13/job_history.png)
+![求人履歴](http://www.symfony-project.org/images/jobeet/1_2/13/job_history.png)
 
 ### sfParameterHolder
 
-job履歴のAPIを完結させるために、履歴をリセットするメソッドを追加しましょう:
+求人履歴のAPIを完結させるために、履歴をリセットするメソッドを追加しましょう:
 
     [php]
     // apps/frontend/lib/myUser.class.php
@@ -268,7 +268,7 @@ job履歴のAPIを完結させるために、履歴をリセットするメソ�
 
 ### 認証
 
-他の多くのsymfonyの機能のように、~セキュリティ~はYAMLファイル、`~security.yml~`で管理されます。
+他の多くのsymfonyの機能のように、セキュリティはYAMLファイルの`security.yml`で管理されます。
 例えば、バックエンドアプリケーションの`config/`ディレクトリで
 デフォルト設定が見つかります:
 
@@ -278,7 +278,7 @@ job履歴のAPIを完結させるために、履歴をリセットするメソ�
       is_secure: off
 
 `is_secure`エントリを`on`に切り替える場合、
-バックエンドアプリケーション全体はユーザーが認証されることを求めます。
+バックエンドアプリケーション全体でユーザーを認証することが求められます。
 
 ![ログイン](http://www.symfony-project.org/images/jobeet/1_2/13/login.png)
 
@@ -292,7 +292,7 @@ job履歴のAPIを完結させるために、履歴をリセットするメソ�
 
 ![ウェブデバッグ](http://www.symfony-project.org/images/jobeet/1_2/13/web_debug.png)
 
-認証されていないユーザーが~セキュアなアクション~にアクセスしようとするとき、
+認証されていないユーザーがセキュアなアクションにアクセスしようとするとき、
 symfonyは`settings.yml`で設定された`login`アクションにリクエストを転送します:
 
     [yml]
@@ -336,7 +336,7 @@ symfonyは`settings.yml`で設定された`login`アクションにリクエス�
 ### 認証
 
 ユーザーが認証されたとき、アクションへのアクセスは
-**クレデンシャル**を定義することでより制限できます。
+**クレデンシャル(credential)**を定義することでより制限できます。
 ユーザーはページにアクセスするために要求されるクレデンシャルを持たなければなりません:
 
     [yml]
@@ -354,14 +354,14 @@ symfonyのクレデンシャルシステムはとてもシンプルで強力で�
 >複雑なクレデンシャルの要件を記述するために
 >`security.yml`の`credentials`エントリはBooleanオペレーションをサポートします。
 >
->ユーザーがクレデンシャル A **と** Bを持たなければならない場合、
+>ユーザーがクレデンシャルA**と**Bを持たなければならない場合、
 >角かっこでクレデンシャルを囲みます:
 >
 >     [yml]
 >     index:
 >       credentials: [A, B]
 >
->ユーザーがクレデンシャル A **もしくは** Bを持たなければならない場合、
+>ユーザーがクレデンシャルA**もしくは**Bを持たなければならない場合、
 >2つの角かっこの組でクレデンシャルを囲みます:
 >
 >     [yml]
@@ -403,7 +403,7 @@ Jobeetバックエンドに関して、プロファイルは1つ: 管理者し�
 ----------
 
 車輪の再発明をしたくないので、ゼロからログインアクションを開発しません。
-代わりに、**symfony ~プラグイン~**をインストールします。
+代わりに、**symfonyプラグイン**をインストールします。
 
 symfonyフレークワークの偉大な強みの1つは
 [プラグインのエコシステム](http://www.symfony-project.org/plugins/)です。
@@ -412,7 +412,7 @@ symfonyフレークワークの偉大な強みの1つは
 
 <propel>
 今日は、バックエンドアプリケーションをセキュアにするために
-[`~sfGuardPlugin~`](http://www.symfony-project.org/plugins/sfGuardPlugin)
+[`sfGuardPlugin`](http://www.symfony-project.org/plugins/sfGuardPlugin)
 をインストールします:
 
     $ php symfony plugin:install sfGuardPlugin
@@ -429,7 +429,7 @@ symfonyフレークワークの偉大な強みの1つは
 それぞれのプラグインはプラグインの名前から名付けた独自のディレクトリを持ちます。
 
 >**NOTE**
->`plugin:install`タスクを動作させるには ~PEAR~をインストールしなければなりません。
+>`plugin:install`タスクを動作させるにはPEARをインストールしなければなりません。
 
 `plugin:install`タスクでプラグインをインストールするとき、
 symfonyは最新の安定版をインストールします。
@@ -447,7 +447,7 @@ symfonyは最新の安定版をインストールします。
 
 >**TIP**
 >`config/ProjectConfiguration.class.php`クラスで`enableAllPluginsExcept()`メソッドを使わなかった場合、
->インストールした後でプラグインを必ず有効にすることを覚えておいて下さい。
+>インストールした後でプラグインを必ず有効にすることを覚えておいてください。
 
 </propel>
 <doctrine>
@@ -457,13 +457,13 @@ symfonyのバージョンでグループ化された利用可能なすべての�
 
 プラグインはディレクトリに内蔵され、
 symfony公式サイトから[パッケージをダウンロード](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_installation)
-して解答することが可能で、
+して解凍することが可能で、
 代わりに
 [Subversionリポジトリ](http://svn.symfony-project.com/plugins/sfDoctrineGuardPlugin)への`svn:externals`リンクを作成します。
 
 >**TIP**
 >`config/ProjectConfiguration.class.php`クラスの`enableAllPluginsExcept()`メソッドを使わなかった場合、
->プラグインをインストールした後でプラグインを必ず有効にすることを覚えておいて下さい。
+>プラグインをインストールした後でプラグインを必ず有効にすることを覚えておいてください。
 
 </doctrine>
 
@@ -487,16 +487,16 @@ symfony公式サイトから[パッケージをダウンロード](http://www.sy
 
 >**TIP**
 <propel>
->`propel:build-all-load`タスクは既存のすべてのテーブルを削除することを覚えておいて下さい
+>`propel:build-all-load`タスクは既存のすべてのテーブルを削除することを覚えておいてください
 </propel>
 <doctrine>
->`doctrine:build-all-reload`タスクは既存のすべてのテーブルを削除することを覚えておいて下さい
+>`doctrine:build-all-reload`タスクは既存のすべてのテーブルを削除することを覚えておいてください
 </doctrine>
 >これらを再生成する前に。これを避けるには、モデル、フォーム、フィルタをビルドし、
 >`data/sql/`に保存されている生成SQLステートメントを実行して
 >新しいテーブルを作成します。.
 
-新しいクラスを作るときは、常にsymfonyの~キャッシュ~をクリアする必要があります:
+新しいクラスを作るときは、常にsymfonyのキャッシュをクリアする必要があります:
 
     $ php symfony cc
 
@@ -525,7 +525,7 @@ symfony公式サイトから[パッケージをダウンロード](http://www.sy
 </doctrine>
 
 ログインページ用に使われるデフォルトのアクションを変更するために
-`~settings.yml~`ファイルを編集します:
+`settings.yml`ファイルを編集します:
 
     [yml]
     # apps/backend/config/settings.yml
@@ -542,7 +542,7 @@ symfony公式サイトから[パッケージをダウンロード](http://www.sy
         # ...
 
 プラグインは1つのプロジェクトのすべてのアプリケーションで共有されるので、
-モジュールを`~enabled_modules~`設定に追加することで
+モジュールを`enabled_modules`設定に追加することで
 使いたいモジュールを明示的に有効にする必要があります。
 
 ![sfGuardPluginのログイン](http://www.symfony-project.org/images/jobeet/1_2/13/sf_guard_login.png)
@@ -559,7 +559,7 @@ symfony公式サイトから[パッケージをダウンロード](http://www.sy
 >
 >     $ php symfony list guard
 
-ユーザーが~認証~されていないとき、メニューバーを隠す必要があります:
+ユーザーが認証されていないとき、メニューバーを隠す必要があります:
 
     [php]
     // apps/backend/templates/layout.php
@@ -611,11 +611,11 @@ Jobeetバックエンドにさらに磨きをかけるには、
 ----------------
 
 ユーザーのテストの話をしていないので今日のチュートリアルは終わっていません。
-symfonyブラウザは~クッキー~をシミュレートするので、
-組み込みの[`~sfTesterUser~`](http://symfony-project.org/api/1_2/sfTesterUser)テスターによって
+symfonyブラウザはクッキーをシミュレートするので、
+組み込みの[`sfTesterUser`](http://symfony-project.org/api/1_2/sfTesterUser)テスターによって
 使用されるユーザーの振る舞いをテストするのはとても簡単です。
 
-今日追加したメニュー機能用の~機能テスト~を更新しましょう。
+今日追加したメニュー機能用の機能テストを更新しましょう。
 `job`モジュールの機能テストの末端に次のコードを追加します:
 
     [php]

@@ -11,12 +11,11 @@
 本題に入る前に、symfonyの歴史を少し語りましょう。
 私達はテストやリファクタリングのようなたくさんのベストプラクティスを推奨し、
 これらをフレームワーク自身に適用することも試みています。
-例えば、私達は有名な"Don't reinvent the wheel"のモットーを好みます。
+例えば、私達は有名な"Don't reinvent the wheel"(車輪の再発明をしない)のモットーを好みます。
 実際、4年前symfonyフレームワークは2つの既存のオープンソースのソフトウェア: 
 MojaviとPropelのグルー(つなぎ合わせるもの)として生まれました。
 新しい問題に取り組む必要があるたびに、
 1からコーディングする前に要件を満たす既存のライブラリを探します。
-
 
 今日は、Jobeetに検索エンジンを追加することに取り組みます。
 Zend Frameworkは
@@ -57,7 +56,7 @@ Zend Frameworkの一部として昨日Zend Luceneを既にインストールし�
 Jobeet検索エンジンはユーザーが入力するキーワードにマッチするすべての求人情報を返すことができるようになります。
 
 検索できるようにする前に、求人情報用にインデックスをビルドしなければなりません; 
-Jobeetに関して、it will be stored in the `data/`ディレクトリに保存されます。
+Jobeetに関して、これは`data/`ディレクトリに保存されます。
 
 <propel>
 Zend Luceneはインデックスの存在の有無に対応してインデックスを検索するために2つのメソッドを提供します。
@@ -169,7 +168,7 @@ Zend Luceneはインデックスの存在の有無に対応してインデック
       $doc->addField(Zend_Search_Lucene_Field::UnStored('location', $this->getLocation(), 'utf-8'));
       $doc->addField(Zend_Search_Lucene_Field::UnStored('description', $this->getDescription(), 'utf-8'));
 
-      // インデックスにjobを追加する
+      // インデックスに求人を追加する
       $index->addDocument($doc);
       $index->commit();
     }
@@ -179,10 +178,10 @@ Zend Luceneは既存のエントリを更新できないので、
 
 求人のインデックス作成自身はシンプルです: 主キーは将来の参照用に保存されます。
 求人とメインカラム(`position`, `company`,
-`location`, and `description`)を検索するとき、インデックスが作成されますが、
+`location`、と`description`)を検索するとき、インデックスが作成されますが、
 結果を表示する本物のオブジェクトを使用するので、インデックスには保存されません。
 
-### ##ORM## トランザクション
+### ##ORM##トランザクション
 
 求人のインデックス作成に問題がある場合もしくは求人がデータベースに保存されない場合はどうなるでしょうか？
 ##ORM##とZend Luceneの両方が例外を投げます。
@@ -287,7 +286,8 @@ Zend Luceneは既存のエントリを更新できないので、
 ### 大規模な削除
 
 `propel:data-load`タスクでフィクスチャをロードするとき、
-symfonyは`JobeetJobPeer::doDeleteAll()`メソッドを呼び出すことで既存の求人レコードをすべて削除します。
+symfonyは`JobeetJobPeer::doDeleteAll()`メソッドを呼び出すことで
+既存の求人レコードをすべて削除します。
 インデックスも一緒に削除するように
 デフォルトの振る舞いをオーバーライドしましょう:
 
@@ -443,10 +443,10 @@ Luceneインデックスからすべての結果を取得した後で、
 >[Zend Luceneのマニュアル](http://framework.zend.com/manual/ja/zend.search.lucene.query-api.html)
 >にすべての内容のドキュメントが作成されています。
 
-単体テスト
-----------
+ユニットテスト
+-------------
 
-検索エンジンをテストするために作成する必要のある単体テストの種類は？
+検索エンジンをテストするために作成する必要のあるユニットテストの種類は？
 Zend Luceneライブラリ自身は明らかにテストしませんが、
 `JobeetJob`クラスとの統合機能はテストします。
 
@@ -504,7 +504,7 @@ Zend Luceneライブラリ自身は明らかにテストしませんが、
       $databaseManager = new sfDatabaseManager($this->configuration);
 
 <propel>
-      // cleanup Lucene index
+      // Luceneのインデックスをクリーンナップする
       $index = JobeetJobPeer::getLuceneIndex();
 
       $criteria = new Criteria();
@@ -512,7 +512,7 @@ Zend Luceneライブラリ自身は明らかにテストしませんが、
       $jobs = JobeetJobPeer::doSelect($criteria);
 </propel>
 <doctrine>
-      // cleanup Lucene index
+      // Luceneのインデックスをクリーンナップする
       $index = Doctrine::getTable('JobeetJob')->getLuceneIndex();
 
       $q = Doctrine_Query::create()
@@ -533,7 +533,7 @@ Zend Luceneライブラリ自身は明らかにテストしませんが、
 
       $this->logSection('lucene', 'Cleaned up and optimized the job index');
 
-      // Remove stale jobs
+      // 古い求人を削除する
 <propel>
       $nb = JobeetJobPeer::cleanup($options['days']);
 
@@ -558,7 +558,7 @@ Zend Lucene組み込みの`optimize()`メソッドのおかげでこれを最適
 最初に、[symfonyフレームワーク](http://www.symfony-project.org/api/1_2/)で
 ネイティブに実装されてないことをチェックし、
 [symfonyプラグイン](http://www.symfony-project.org/plugins/)をチェックします。
-A[Zend Frameworkライブラリ](http://framework.zend.com/manual/ja/)
+[Zend Frameworkライブラリ](http://framework.zend.com/manual/ja/)
 と[ezComponent](http://ezcomponents.org/docs)をチェックするのはお忘れ無く。
 
 明日は、ユーザーが検索ボックスで入力する際にリアルタイムで検索結果を更新することで
