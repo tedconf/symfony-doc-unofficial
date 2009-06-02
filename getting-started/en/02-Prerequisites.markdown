@@ -3,14 +3,14 @@ Prerequisites
 
 Before installing symfony, you need to check that your computer has everything
 installed and configured correctly. Take the time to conscientiously read this
-chapter and follow all the steps required to check your configuration as it
+chapter and follow all the steps required to check your configuration, as it
 may save your day further down the road.
 
 Software
 --------
 
 First of all, you need to check that your computer has a friendly working
-environment for web development. At a minimum, you need a web server (Apache
+environment for web development. At a minimum, you need a web server (Apache,
 for instance), a database engine (MySQL, PostgreSQL, SQLite, or any
 PDO-compatible database engine), and PHP 5.2.4 or later.
 
@@ -18,13 +18,13 @@ Command Line Interface
 ----------------------
 
 The symfony framework comes bundled with a command line tool that automates a
-lot of work for you. If you are a Unix-like OS users, you will feel right at
-home. If you run a Windows system, it will also work fine, you will just have
-to type a few commands in the `cmd` prompt.
+lot of work for you. If you are a Unix-like OS user, you will feel right at
+home. If you run a Windows system, it will also work fine, but you will just have
+to type a few commands at the `cmd` prompt.
 
 >**Note**
 >Unix shell commands can come in handy in a Windows environment.
->If you would like to use tools like `tar`, `gzip`, or `grep` on Windows you
+>If you would like to use tools like `tar`, `gzip` or `grep` on Windows, you
 >can install [Cygwin](http://cygwin.com/).  The official docs are a little
 >sparse, so a good installation guide can be found
 >[here](http://www.soe.ucsc.edu/~you/notes/cygwin-install.html).
@@ -53,7 +53,7 @@ Launch the configuration checker script from the command line:
 
     $ php check_configuration.php
 
-If there is a problem with your PHP current configuration, the output of the
+If there is a problem with your PHP configuration, the output of the
 command will give you hints on what to fix and how to fix it.
 
 You should also execute the checker from a browser and fix the issues it might
