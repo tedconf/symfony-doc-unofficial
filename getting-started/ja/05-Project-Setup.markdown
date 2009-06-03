@@ -72,8 +72,8 @@ Windowsでは:
 >`generate:app`タスクを呼び出すとき、2つのセキュリティ関連の*オプション*も
 >渡すことができます:
 >
->  * `--escaping-strategy`: Enables output escaping to prevent XSS attacks
->  * `--csrf-secret`: Enables session tokens in forms to prevent CSRF attacks
+>  * `--escaping-strategy`: XSS攻撃を阻止する出力エスケーピングを有効にする
+>  * `--csrf-secret`: CSRF攻撃を阻止するセッショントークンを有効にする
 >
 >タスクにこれらの2つのオプションを渡すことで、
 >ウェブで最もよく知られる2つの脆弱性から将来の開発をセキュアにしました。
@@ -116,7 +116,7 @@ Doctrineに切り替えるのはきわめて簡単です(詳細な情報は次�
 
     $ php symfony configure:database "mysql:host=localhost;dbname=dbname" root mYsEcret
 
-`configure:database`タスクは3つの引数: [~PDO DSN~](http://www.php.net/manual/pdo.drivers.php)、
+`configure:database`タスクは3つの引数: [PDO DSN](http://www.php.net/manual/pdo.drivers.php)、
 データベースにアクセスするユーザー名、とパスワードを受け取ります。
 開発サーバーのデータベースにアクセスする必要がない場合、
 3番目の引数を省略します。

@@ -28,7 +28,6 @@ symfonyを最も速く体験する方法はサンドボックスをインスト�
 
 ウェブrootディレクトリでファイルを展開すれば作業はお終いです。
 symfonyのプロジェクトはブラウザから`web/index.php`スクリプトをリクエストすることでアクセスできます。
-script from a browser.
 
 >**CAUTION**
 >すべてのsymfonyファイルをウェブrootディレクトリに設置する方法は

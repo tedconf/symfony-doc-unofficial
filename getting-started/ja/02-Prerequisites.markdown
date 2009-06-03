@@ -49,7 +49,7 @@ PHPが5.2.4かそれ以降のPHPがインストールされていることを確
     $ php check_configuration.php
 
 PHPの現在の設定に問題がある場合、
-コマンドの出力 will give you hints on what to fix and how to fix it.
+コマンドの出力は修正する対象と方法のヒントを示します。
 
 ブラウザからもチェッカーを実行して問題があれば修正すべきです。
 これはこれら2つの環境に対して異なる設定内容を持つ`php.ini`設定ファイルがあるからです。
