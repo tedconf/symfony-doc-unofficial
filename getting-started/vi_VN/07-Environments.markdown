@@ -1,8 +1,8 @@
 Các môi trường
 ================
 
-Nếu bạn xem thư mục `web/`, bạn sẽ thấy 2 file PHP:
-`index.php` và `frontend_dev.php`. Những file này được gọi là **front controllers**;
+Trong thư mục `web/` có 2 file PHP:
+`index.php` và `frontend_dev.php`. Những file này được gọi là **front controller**;
 tất cả các yêu cầu tới ứng dụng đều thông qua chúng. Nhưng tại sao chúng ta lại có 2
 front controller cho mỗi application?
 
@@ -11,13 +11,13 @@ Khi bạn phát triển một ứng dụng, trừ khi bạn phát triển trực
 production server, bạn cần vài môi trường:
 
   * **Môi trường phát triển**: môi trường này được sử dụng bởi **lập trình viên** khi họ làm việc với ứng dụng để sửa lỗi, thêm tính năng mới, ...
-  * **Môi trường test**: Môi trường này đường dùng tự động bởi ứng dụng.
+  * **Môi trường test**: Môi trường này được dùng tự động bởi ứng dụng.
   * **Môi trường giả lập**: Môi trường này được dùng bởi **khách hàng**
     để kiểm tra ứng dụng và thông báo lỗi hoặc thiếu tính năng.
   * **Môi trường sản phẩm**: Đây là môi trường để **người dùng cuối** tương tác.
 
-Cái gì tạo nên một môi trường? Ví dụ trong môi trường phát triển,
-ứng dụng cần log tất cả các chi tiết của yêu cầu để dễ debug, nhưng hệ thống cache phải tắt để khi ứng dụng thay đổi khi thay đổi code. Do đó, môi trường development phải được cấu hình phù hợp cho lập trình viên. Ví dụ khi một lỗi xảy ra, để giúp lập trình viên debug lỗi nhanh hơn, symfony hiển thị exception với tất cả các thông tin về yêu cầu hiện tại trên trình duyệt:
+Các môi trường khác nhau như thế nào? Trong môi trường phát triển,
+ứng dụng cần log tất cả các yêu cầu để dễ debug, hệ thống cache phải tắt để khi ứng dụng thay đổi khi thay đổi code. Do đó, môi trường development phải được cấu hình phù hợp cho lập trình viên. Ví dụ khi một lỗi xảy ra, để giúp lập trình viên debug lỗi nhanh hơn, symfony hiển thị exception với tất cả các thông tin về yêu cầu hiện tại trên trình duyệt:
 
 ![An exception in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/01/exception_dev.png)
 
@@ -26,7 +26,7 @@ Nhưng ở môi trường sản phẩm, tầng cache phải được bật và t
 ![An exception in the prod environment](http://www.symfony-project.org/images/jobeet/1_2/01/exception_prod.png)
 
 >**TIP**
->Nếu bạn mở file front controller, bạn sẽ thấy nội dung những file này tương tự như nhau, chỉ kahcs nội dung cấu hình môi trường:
+>Nếu bạn mở file front controller, bạn sẽ thấy nội dung những file này tương tự như nhau, chỉ khác nội dung cấu hình môi trường:
 >
 >     [php]
 >     // web/index.php
@@ -37,4 +37,4 @@ Nhưng ở môi trường sản phẩm, tầng cache phải được bật và t
 >     $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'prod', false);
 >     sfContext::createInstance($configuration)->dispatch();
 
-Web debug toolbar cũng là một ví dụ về việc sử dụng môi trường. Nó hiển thị trên môi trường phát triển và cho phép bạn truy cập nhiều thông tin bằng cách click và các tab: cấu hình hiện tại của ứng dụng, log yêu cầu hiện tại, câu SQL thực thi ở database engine, thông tin bộ nhớ, và thời gian thực thi.
+Web debug toolbar cũng là một ví dụ về việc sử dụng môi trường. Nó hiển thị trên môi trường phát triển và cho phép bạn truy cập nhiều thông tin bằng cách click vào các tab: cấu hình hiện tại của ứng dụng, log yêu cầu hiện tại, câu SQL thực thi ở database engine, thông tin bộ nhớ, và thời gian thực thi.
