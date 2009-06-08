@@ -74,7 +74,7 @@ Vediamo alcuni esempi di utilizzo dei metodi `sfBrowser`:
       post('search', array('keywords' => 'php'))
     ;
 
-`sfBrowser` contiene metodi addizionali per configurare l'aspetto del browser:
+`sfBrowser` contiene ulteriori metodi per configurare l'aspetto del browser:
 
  | Metodo             | Descrizione
  | ------------------ | ---------------------------------------------------
@@ -82,25 +82,25 @@ Vediamo alcuni esempi di utilizzo dei metodi `sfBrowser`:
  | `setAuth()`        | Imposta le credenziali di base per l'autenticazione
  | `setCookie()`      | Imposta un cookie
  | `removeCookie()`   | Rimuove un cookie
- | `clearCookie()`    | Rimuove tutti i cookie correnti
+ | `clearCookies()`   | Rimuove tutti i cookie correnti
  | `followRedirect()` | Segue un rinvio
 
 La classe `sfTestFunctional`
 ----------------------------
 
 Abbiamo un browser, ma abbiamo anche bisogno di un modo per analizzare gli oggetti
-di symfony per eseguire i test attuali. Può essere fatto con lime e alcuni metodi
-di `sfBrowser` come `getResponse()` e `getRequest()`, symfony però mette a
+di symfony per eseguire i test attuali. Potremmo farlo con lime ed alcuni metodi
+di `sfBrowser` come `getResponse()` e `getRequest()`, ma symfony mette a
 disposizione una via migliore.
 
-I metodi di test sono messi a disposizione da un'altra classe,
+I metodi di test sono forniti da un'altra classe,
 [`sfTestFunctional`](http://www.symfony-project.org/api/1_2/sfTestFunctional)
 che accetta un'istanza di `sfBrowser` nel suo costruttore. La classe `sfTestFunctional`
 delega i test agli oggetti **~tester|Tester~**. Svariati tester sono distribuiti con 
 symfony, inoltre potete realizzarne di vostri.
 
 Come abbiamo visto ieri, i test funzionali vengono memorizzati nella cartella
-`test/functional/`. Per Jobeet, trovate i test nella sotto-cartella
+`test/functional/`. Per Jobeet, i test si trovano nella sotto-cartella
 `test/functional/frontend/`, visto che ogni applicazione ha la
 propria sotto-cartella. Questa cartella contiene due file:
 `categoryActionsTest.php` e `jobActionsTest.php`, semplici test
@@ -126,9 +126,9 @@ funzionali creati automaticamente dai task che generano i moduli:
       end()
     ;
 
-A prima vista, lo script precedente vi potrà sembrare un po' strano. Questo perché
+A prima vista, lo script precedente potrebbe sembrare un po' strano. Questo perché
 i metodi di `sfBrowser` e `sfTestFunctional` implementano una
-[~interfaccia fluida|Interfaccia fluida~](http://en.wikipedia.org/wiki/Fluent_interface)
+[~interfaccia fluida|Interfaccia fluida~](http://en.wikipedia.org/wiki/Fluent_interface),
 restituendo sempre `$this`. Questo permette di concatenare le chiamate
 ai metodi, per una migliore leggibilità. Il pezzo di codice sopra è
 equivalente a:
@@ -150,7 +150,7 @@ equivalente a:
     $browser->checkElement('body', '!/This is a temporary page/');
     $browser->end();
 
-I test sono eseguiti in un tester block context. Ogni tester block context inizia
+I test sono eseguiti in blocchi. Ogni blocco inizia
 con `with('TESTER NAME')->begin()` e termina con `end()`:
 
     [php]
@@ -165,7 +165,7 @@ Il codice verifica che il parametro `module` della richiesta sia uguale a
 `category` e che `action` sia uguale a `index`.
 
 >**TIP**
->Quando avete bisogno di chiamare un solo metodo in un tester non è necessario
+>Quando serve chiamare un solo metodo in un tester, non è necessario
 >creare un blocco: `with('request')->isParameter('module', 'category')`.
 
 ### Il Tester della Richiesta
@@ -190,8 +190,8 @@ per analizzare e testare gli oggetti `sfWebResponse`:
  | ------------------ | -----------------------------------------------------
  | `checkElement()`   | Verifica se un selettore CSS di risposta corrisponda ad un criterio
  | `isHeader()`       | Controlla il valore dell'header
- | `isStatusCode()`   | Controlla lo status code della risposta
- | `isRedirected()`   | Controlla se la risposta corrente è un redirect
+ | `isStatusCode()`   | Controlla il codice di stato della risposta
+ | `isRedirected()`   | Controlla se la risposta corrente è un rinvio
 
 >**NOTE**
 >Descriveremo altre classi [tester](http://www.symfony-project.org/api/1_2/test)
@@ -200,8 +200,8 @@ per analizzare e testare gli oggetti `sfWebResponse`:
 Eseguire Test funzionali
 ------------------------
 
-Come per i test unitari, eseguire test funzionali può essere fatto eseguendo
-il file di test direttamente
+Come per i test unitari, i test funzionali posso essere eseguiti direttamene
+eseguendo il file di test
 
     $ php test/functional/frontend/categoryActionsTest.php
 
@@ -209,13 +209,13 @@ O utilizzando il task `test:functional`:
 
     $ php symfony test:functional frontend categoryActions
 
-![Tests on the command line](http://www.symfony-project.org/images/jobeet/1_2/09/cli_tests.png)
+![Test su linea di comando](http://www.symfony-project.org/images/jobeet/1_2/09/cli_tests.png)
 
 Dati da testare
 ---------------
 
-Come per i test unitari per ##ORM##, dobbiamo caricare i dati da testare
-ogni volta che eseguiamo un test funzionale. Possiamo riutilizzare il
+Come per i test unitari per ##ORM##, occorre caricare i dati da testare
+ogni volta che si esegue un test funzionale. Possiamo riutilizzare il
 codice scritto ieri:
 
     [php]
@@ -230,7 +230,7 @@ codice scritto ieri:
     Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
 </doctrine>
 
-Caricare dati in un test funzionale è più facile rispetto ad un test unitario
+Caricare dati in un test funzionale è più facile rispetto ad un test unitario,
 in quanto il database è già stato inizializzato dallo script di bootstrap.
 
 Come per i test unitari, non copieremo questo pezzo di codice in ogni file di
@@ -330,9 +330,9 @@ secondo parametro.
     ;
 
 In questi test, dobbiamo controllare che non ci sia il link "more jobs"
- per la categoria design (`.category_design .more_jobs` non esista), e che
- ci sia il link "more jobs" per la categoria programming
- (`.category_programming .more_jobs` esista).
+per la categoria design (`.category_design .more_jobs` non esista), e che
+ci sia il link "more jobs" per la categoria programming
+(`.category_programming .more_jobs` esista).
 
 ### I lavori sono ordinati cronologicamente
 
@@ -370,16 +370,16 @@ In questi test, dobbiamo controllare che non ci sia il link "more jobs"
       end()
     ;
 
-Per testare se i lavori sono ordinati cronologicamente, dobbiamo
+Per testare se i lavori sono ordinati cronologicamente, occorre
 controllare che l'ultimo lavoro elencato nella homepage sia
-quello che ci aspettiamo. Possiamo farlo verificando che l'URL
+quello che ci si aspetta. Possiamo farlo verificando che l'URL
 contenga la ~chiave primaria|Chiave primaria~ attesa. Siccome la chiave primaria
 cambia tra le esecuzioni, abbiamo innanzitutto bisogno
 dell'oggetto ##ORM## dal database.
 
 Anche se il test funziona così com'è, dobbiamo eseguire una leggera
-rifattorizzazione, dato che ottenere il primo lavoro della categoria
-programming può essere riutilizzato da qualche altra parte nei test.
+rifattorizzazione, dato che l'estrazione del primo lavoro della categoria
+programming può essere riutilizzata da qualche altra parte nei test.
 Non sposteremo il codice nel modello, dato che è specifico per il test.
 Al contrario, lo sposteremo all'interno della classe
 `JobeetTestFunctional` che abbiamo creato in precedenza. Questa classe
