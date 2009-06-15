@@ -4,10 +4,6 @@ Configuração do Web Server
 O modo feio
 -----------
 
-In the previous chapters, you have created a directory that hosts the project.
-If you have created it somewhere under the web root directory of your web
-server, you can already access the project in a web browser.
-
 Nos capítulos ateriores você criou o diretório que hospeda seu projeto. Se você criou o projeto em algum lugar dentro do diretório raíz do seu servidor web, você já deve conseguir acessar a pasta web/ seu projeto pelo browser.
 
 Como não há nenhuma configuração, é muito rápido de visualizar o projeto. Tente para acessar o arquivo `config/databases.yml` no seu navegador para compreender a más consequências dessa atitude preguiçosa. 
