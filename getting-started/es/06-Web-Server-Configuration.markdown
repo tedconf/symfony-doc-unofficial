@@ -23,7 +23,7 @@ La Manera segura
 
 Una buena práctica web es poner bajo el directorio web raíz sólo los archivos a
 los que necesita tener acceso el navegador web: las hojas de estilo, JavaScripts,
-o imágenes. Te recomendamos almacenar estos archivos en el subdirectorio `web`
+o imágenes. Por defecto, te recomendamos almacenar estos archivos en el subdirectorio `web`
 de un proyecto symfony.
 
 Si echas un vistazo a este directorio, encontrarás algunos sub-directorios para
@@ -34,8 +34,8 @@ la cual es una buena idea en lo que respecta a seguridad.
 
 ### Configuración del Servidor Web
 
-Ahora es el momento de cambiar tu configuración de Apache para que el nuevo
-proyecto sea accesible para el mundo.
+Ahora es el momento de cambiar tu configuración de Apache, para que el nuevo
+proyecto sea accesible para todo el mundo.
 
 Busca y abre el archivo de configuración `httpd.conf` y añade la siguiente
 configuración al final:
@@ -79,8 +79,8 @@ que el sitio web será accesible en la siguiente URL:
 
     http://localhost:8080/
 
-Puedes cambiar `8080` por cualquier número mayor que 1024, ya que no se requieren
-derechos de administrador en esos puertos.
+Puedes cambiar `8080` por cualquier número mayor que 1024, ya que esos puertos
+no requieren permisos de administrador.
 
 >**SIDEBAR**
 >Configurar un Nombre de Dominio dedicado

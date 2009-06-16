@@ -58,8 +58,9 @@ Luego renombra el directorio a `symfony`, deberia quedar
 
 >**TIP**
 >Si usas Subversion, esto es auún mejor para usar la propiedad `svn:externals`
->para incluir symfony dentro de tu proyecto en el directorio `lib/vendor/`
->y recibir asi los arreglos a errores hechos en la rama estable automatically:
+>para incluir symfony dentro de tu proyecto en el directorio `lib/vendor/`,
+>el cual te brinda las soluciones a errores cometidos en la rama estable
+>automatically:
 >
 >     http://svn.symfony-project.com/branches/1.2/
 

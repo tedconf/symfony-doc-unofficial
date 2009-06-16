@@ -2,7 +2,7 @@
 ===========
 
 Si has seguido las instrucciones de los anteriores capítulos, ahora deberías
-tener un proyecto symfony completamente funcional. Ahora estás listo para
+tener un proyecto symfony completamente funcional, Y ya estás listo para
 experimentar con symfony.
 
 Puedes empezar a leer más documentación en la [páginado de Documentación](http://www.symfony-project.org/doc/1_2/)
@@ -14,9 +14,9 @@ una aplicación web de principio a fin, y también te enseña las mejores práct
 del desarrollo web. También puedes comprarlo como libro impreso.
 
 El framework symfony tiene un montón de grandes características y una gran
-cantidad de documentación libre. Sin embargo, uno de los recursos más valioso
-que el código abierto puede tener es su comunidad. Y symfony tiene una comunidad
-de las más sorprendente y activa que hay . Si empiezas a usar symfony para tus
+cantidad de documentación libre. Eso habla, de que uno de los recursos más valioso
+que el código abierto puede tener es su comunidad, y symfony tiene una de las
+comunidades más sorprendente y activa que hay. Si empiezas a usar symfony para tus
 proyectos, considera unirte a la comunidad symfony:
 
   * Suscríbirte al [user mailing-list](http://groups.google.com/group/symfony-users)

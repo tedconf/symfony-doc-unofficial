@@ -8,8 +8,8 @@ al siguiente ya mismo.
 
 La forma más rápida de experimentar con symfony es instalar el sandbox symfony
 (la caja de arena). El sandbox es la forma fácil de instalar un proyecto symfony
-pre-empaquetado, ya configurado con algunos valores predeterminados razonables.
-Es una gran manera de experimentar con symfony sin la molestia de hacer una
+pre-empaquetado, configurado ya con algunos valores predeterminados razonables.
+Es una gran manera de practicar con symfony sin la molestia de hacer una
 instalación adecuada que respete las mejores prácticas de la web.
 
 >**CAUTION**
@@ -19,7 +19,7 @@ instalación adecuada que respete las mejores prácticas de la web.
 >[Configurando la Base de Datos](#chapter_05-Project-Setup_sub_configuring_the_database)
 > para aprender como se cambia la base de datos usada por el sandbox.
 
-Puedes descargar el sandbox symfony en formato `.tgz` o `.zip` de la
+Puedes descargar el sandbox symfony en los formatos `.tgz` o `.zip` de la
 [página de instalación](http://www.symfony-project.org/installation/1_2) de
 symfony o de la siguiente URL:
 
@@ -44,7 +44,7 @@ y [Entornos](#chapter_07-Environments).
 >**NOTE**
 >Ya que el sandbox es solo un proyecto symfony normal y corriente donde algunas
 >tareas han sido ejecutadas por tí y se modificaron algunas configuraciones,
->es bastante fácil de usar ya que comienza desde un nuevo proyecto. Pero ten en
+>es bastante fácil de usar ya que comienza para un nuevo proyecto. Sin embargo, ten en
 >mente que probablemente necesitarás adaptar la configuración; por ejemplo
 >cambiar la configuraciónes de seguridad (leer sobre la configuración de XSS
 >y CSRF más tarde en este tutorial).

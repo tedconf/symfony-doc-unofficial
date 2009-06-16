@@ -2,13 +2,13 @@ Los Entornos
 ============
 
 Si echas un vistazo al directorio `web/`, encontrarás dos archivos PHP:
-`index.php` y `frontend_dev.php`. Estos archivos se llaman controladores frontales:
+`index.php` y `frontend_dev.php`. Estos archivos se llaman **controladores frontales**;
 todas las solicitudes a la aplicación se realizan a través de ellos. Pero,
-¿por qué tenemos dos controladores frontalespara cada aplicación?
+¿por qué tenemos dos controladores frontales para cada aplicación?
 
-Ambos archivos apuntan a la misma aplicación pero para diferentes entornos.
+Ambos archivos apuntan a la misma aplicación pero para diferentes **entornos**.
 Cuando desarrollas una aplicación, excepto si desarrollas directamente en el
-servidor de producción, necesitas  varios **entornos**:
+servidor de producción, necesitas  varios entornos:
 
   * El **entorno de desarrollo**: Este es el ambiente utilizado por
     **desarrolladores web** para añadir nuevas funciones, corregir los errores, ...
@@ -30,7 +30,7 @@ de la petición en el navegador:
 
 ![An exception in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/01/exception_dev.png)
 
-Pero en el entorno de la producción, la capa del cache debe estar activada y por
+Pero en el entorno de la producción, la capa del cache debe estar activada, y por
 supuesto, la aplicación deberá mostrar los mensajes de error personalizados en
 lugar de excepciones. Por eso, el entorno de producción debe ser optimizado para
 el rendimiento y la experiencia del usuario final.
