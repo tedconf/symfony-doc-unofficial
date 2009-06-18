@@ -1,636 +1,601 @@
-Chapter 4 - Schema Files
-========================
-
-In the previous chapters you've seen some various syntaxes for specifying your schema information in YAML files placed in `config/doctrine`. This chapter explains the syntaxes and how to specify all your schema meta data in YAML format.
-
-## Data Types
-
-Doctrine offers several column data types. When you specify the portable Doctrine type it is automatically converted to the appropriate type of the DBMS you are using. Below is a list of the available column types that can be used as well as the type it is translated to when using the MySQL DBMS engine.
-
->**NOTE**
->Doctrine data types are standardized and made portable across all DBMS. For the types that the DBMS do not support natively, Doctrine has the ability to convert the data on the way in to the and on the way out of the database. For example the Doctrine `array` and `object` types are `serialized()` on the way in and `unserialized()` on the way out.
-
-| Type        | MySQL Type   |
-|-------------|--------------|
-| integer     | integer      |
-| float       | double       |
-| decimal     | decimal      |
-| string      | varchar      |
-| array       | text         |
-| object      | text         |
-| blob        | longblob     |
-| clob        | longtext     |
-| timestamp   | datetime     |
-| time        | time         |
-| date        | date         |
-| enum        | varchar/enum |
-| gzip        | text         |
-
->**SIDEBAR**
->The Doctrine `enum` type can either be emulated or you can use the native enum type if your DBMS supports it. It is off by default so you will need to enable an attribute to use native enums.
->
->Before we enable the attribute Doctrine will generate SQL like the following and simply emulate the enum type and will make sure the value you specify is one of the valid specified values.
->
->     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
->
->Now lets specify the `use_native_enum` attribute on our connection so that Doctrine knows to generate the native enum sql for your DBMS.
->
->     [yml]
->     all:
->       doctrine:
->         class: sfDoctrineDatabase
->         param:
->           dsn: 'mysql:host=localhost;dbname=symfony12doctrine'
->           username: user
->           attributes:
->             use_native_enum: true
->
->Now that we have enabled the attribute Doctrine generates the following SQL under MySQL:
->
->     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type ENUM('Normal', 'Administrator'), PRIMARY KEY(id)) ENGINE = INNODB;
-
-Below is a sample yaml schema file that implements each of the different column types.
-
-    [yml]
-    User:
-      columns:
-        id:
-          type: integer(4)
-          primary: true
-          autoincrement: true
-        username: string(255)
-        password: string(255)
-        latitude: float
-        longitude: float
-        hourly_rate:
-          type: decimal
-          scale: 2
-        groups_array: array
-        session_object: object
-        description: clob
-        profile_image_binary_data: blob
-        created_at: timestamp
-        time_last_available: time
-        date_last_available: date
-        roles:
-          type: enum
-          values: [administrator, moderator, normal]
-          default: normal
-        html_header: gzip
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE user (id INT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), latitude DOUBLE, longitude DOUBLE, hourly_rate DECIMAL(18,2), groups_array TEXT, session_object TEXT, description LONGTEXT, profile_image_binary_data LONGBLOB, created_at DATETIME, time_last_available TIME, date_last_available DATE, roles ENUM('administrator', 'moderator', 'normal') DEFAULT 'normal', html_header TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
-
-## Options
-
-Often you need to set options on your table for controlling things like charset, collation and table type in mysql. These can be controlled easily with options.
-
-    [yml]
-    User:
-      options:
-        type: MyISAM
-        collate: utf8_unicode_ci
-        charset: utf8
-      columns:
-        username: string(255)
-        password: string(255)
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = MyISAM;
-
-## Indexes
-
-You can optimize your database by defining indexes on columns which are used in conditions on your queries. Below is an example of indexing the username column of a user table since it is common to do lookups on the table by the users username.
-
-    [yml]
-    User:
-      columns:
-        username: string(255)
-        password: string(255)
-      indexes:
-        username_index:
-          fields: [username]
-          type: unique
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), UNIQUE INDEX username_indext_idx (username), PRIMARY KEY(id)) ENGINE = INNODB;
-
-You can also optionally specify unique directly on the column when dealing with single column unique indexes.
-
-    [yml]
-    User:
-      columns:
-        username:
-          type: string(255)
-          unique: true
-        password: string(255)
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255) UNIQUE, password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
-
->**Note**
->Indexes are automatically created on relationship foreign keys when the relationships are defined. The next section explains how to define relationships between foreign keys on your tables.
-
-## Relationships
-
-Doctrine offers the ability to map the relationships which exist in your database to the ORM so that it can be the most help when working with your data.
-
-### One to One
-
-Here is a simple example of how to define a one-to-one relation between a User and Profile model.
-
-    [yml]
-    Profile:
-      columns:
-        user_id: integer
-        name: string(255)
-        email_address:
-          type: string(255)
-          email: true
-      relations:
-        User:
-          local: user_id
-          foreign: id
-          type: one
-          foreignType: one
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE profile (id BIGINT AUTO_INCREMENT, user_id BIGINT, name VARCHAR(255), email_address VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
-    ALTER TABLE profile ADD FOREIGN KEY (user_id) REFERENCES user(id);
-
-### One to Many
-
-Here is a simple example of how to define a one-to-many relation between a User and Phonenumber model.
-
-    [yml]
-    Phonenumber:
-      columns:
-        user_id: integer
-        phonenumber: string(255)
-      relations:
-        User:
-          foreignAlias: Phonenumbers
-          local: user_id
-          foreign: id
-          type: one
-          foreignType: many
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
-    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id);
-
-### Many to Many
-
-Here is a simple example of how to define a many-to-many relation between a BlogPost and Tag model.
-
-    [yml]
-    BlogPost:
-      columns:
-        user_id: integer
-        title: string(255)
-        body: clob
-      relations:
-        User:
-          local: user_id
-          foreign: id
-          type: one
-          foreignType: one
-          foreignAlias: BlogPosts
-        Tags:
-          class: Tag
-          foreignAlias: BlogPosts
-          refClass: BlogPostTag
-          local: blog_post_id
-          foreign: tag_id
-
-    Tag:
-      columns:
-        name: string(255)
-
-    BlogPostTag:
-      columns:
-        blog_post_id:
-          type: integer
-          primary: true
-        tag_id:
-          type: integer
-          primary: true
-      relations:
-        BlogPost:
-          local: blog_post_id
-          foreign: id
-          foreignAlias: BlogPostTags
-        Tag:
-          local: tag_id
-          foreign: id
-          foreignAlias: BlogPostTags
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
-    CREATE TABLE blog_post_tag (blog_post_id BIGINT, tag_id BIGINT, PRIMARY KEY(blog_post_id, tag_id)) ENGINE = INNODB;
-    CREATE TABLE tag (id BIGINT AUTO_INCREMENT, name VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
-    ALTER TABLE blog_post ADD FOREIGN KEY (user_id) REFERENCES user(id);
-    ALTER TABLE blog_post_tag ADD FOREIGN KEY (tag_id) REFERENCES tag(id);
-    ALTER TABLE blog_post_tag ADD FOREIGN KEY (blog_post_id) REFERENCES blog_post(id);
-
-## Cascading Operations
-
-When saving objects in Doctrine it is cascaded to associated objects by default. Deleting is slightly different. Doctrine has the ability to do both application and database level cascading deletes.
-
-### Database Level
-
-Doctrine also has the ability to export cascading operations to the database level. Below is an example of how to setup a model with some cascading options.
-
-    [yml]
-    User:
-      columns:
-        username: string(255)
-        password: string(255)
-
-    Phonenumber:
-      columns:
-        user_id: integer
-        phonenumber: string(255)
-      relations:
-        User:
-          foreignAlias: Phonenumbers
-          local: user_id
-          foreign: id
-          type: one
-          foreignType: many
-          onDelete: CASCADE
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
-    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE;
-
->**NOTE**
->Database level cascading is specified on the side where the foreign key lives.
-
-### Application Level
-
-Unlike the `save()` operations the `delete()` cascading needs to be turned on explicitly. Here is an example:
-
->**NOTE**
->Application level cascading `save()` and `delete()` does not apply when doing DQL update and delete statements, only when calling `save()` and `delete()` on your objects.
-
-    User:
-      columns:
-        username: string(255)
-        password: string(255)
-      relations:
-        Phonenumbers:
-          class: Phonenumber
-          local: id
-          foreign: id
-          type: many
-          foreignType: one
-          cascade: [delete]
-
-    Phonenumber:
-      columns:
-        user_id: integer
-        phonenumber: string(255)
-      relations:
-        User:
-          foreignAlias: Phonenumbers
-          local: user_id
-          foreign: id
-          type: one
-          foreignType: many
-
->**NOTE**
->Application level cascading deletes differ from database level in that they are defined on the side where the relationship you wish to cascade on is defined. This is different than database level cascades where you always specify it on the side where the foreign key lives.
-
-## Behaviors
-
-One great feature of Doctrine is the ability to have plug n' play behavior. These behaviors can be easily included in your model definitions and you inherit functionality automatically.
-
-### Core Behaviors
-
-Here is a list of behavior bundled with Doctrine core. You can use any of the behaviors in your models without writing any code.
-
-| Name           | Description                        |
-|----------------|------------------------------------|
-| Geographical   | Adds latitude and longitude to your model and offers functionality for calculating miles/kilometers between records. |
-| I18n           | Adds internationalization capabilities to your models. |
-| NestedSet      | Turn your models in to a traversable tree. |
-| Searchable     | Index all the data in your models and make it searchable. |
-| Sluggable      | Add a `slug` field to your models and have it automatically create a slug based on your configuration. |
-| SoftDelete     | Never really delete a record. Will simply set a deleted flag instead and filter all deleted records from select queries. |
-| Timestampable  | Add a `created_at` and `updated_at` column to your models have Doctrine set them when inserting and updating records. |
-| Versionable    | Turn your models in to an audit log and record all changes. Offers the ability to revert back to previous versions easily. |
-
-You can easily enable a behavior by using the actAs functionality. Below is an example of how to use the Sluggable behavior.
-
-    BlogPost:
-      actAs:
-        Sluggable:
-          fields: [title]
-          unique: true
-      columns:
-        user_id: integer
-        title: string(255)
-        body: clob
-
-The above example will automatically add a slug column to the model and will set the value of the slug column based on the value of the title column and make sure the value is unique. If a slug already exists in the database with the same value then 1, 2, 3, etc. is appended to the end.
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, slug VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
-
->**NOTE**
->You can also write your own behaviors. Check out the source code of the existing behaviors to get a peek at how they work. They can be found in `SF_ROOT/plugins/sfDoctrinePlugin/lib/doctrine/Doctrine/Template`. And you can read more about Doctrine behaviors in the [manual](http://www.doctrine-project.org/documentation/manual/1_0?one-page#behaviors).
-
-## Nesting Behaviors
-
-Doctrine offers the ability to easily nest behaviors. For example you may want to have a `Sluggable` behavior on your auto-generated model with the `I18n` behavior.
-
-    [yml]
-    Gallery:
-      actAs:
-        I18n:
-          fields: [title, description]
-          actAs:
-            Sluggable:
-              fields:  [title]
-      columns:
-        title: string(255)
-        description: clob
-
-Now the `GalleryTranslation` model which is automatically generated will have a `slug` column which is automatically set for you based on the translated title column. You can mix your behaviors together but remember some behaviors will not always play together as they are developed standalone and are not aware of each other.
-
-## Inheritance
-
-Another great feature of Doctrine is the ability to use native PHP OOP inheritance with your models. It supports three different inheritance strategies which can be used independently or mixed together. Below are some examples of the different inheritance strategies.
-
-**Inheritance Types**
-
-| Name                | Description                                |
-|---------------------|--------------------------------------------|
-| Concrete            | Each child class has a separate table has all the columns of its parents |
-| Simple              | Each child class shares the same table and columns as its parents |
-| Column Aggregation  | All columns must be defined in the parent and each child class is determined by a `type` column |
-
-Below are some examples of the three different inheritance strategies supported by Doctrine.
-
-### Concrete Inheritance
-
-Concrete inheritance creates separate tables for child classes. However in concrete inheritance each class generates a table which contains all columns, including inherited columns.
-
-    TextItem:
-      columns:
-        topic: string(100)
-
-    Comment:
-      inheritance:
-        extends: TextItem
-        type: concrete
-      columns:
-        content: string(300)
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE text_item (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), PRIMARY KEY(id)) ENGINE = INNODB;
-    CREATE TABLE comment (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), content TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
-
-### Simple Inheritance
-
-Simple inheritance is the simplest inheritance. In simple inheritance all the child classes share the same columns as the parent.
-
-    Entity:
-      columns:
-        name: string(30)
-        username: string(20)
-        password: string(16)
-        created: integer(11)
-
-    User:
-      inheritance:
-        extends: Entity
-        type: simple
-
-    Group:
-      inheritance:
-        extends: Entity
-        type: simple
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, PRIMARY KEY(id)) ENGINE = INNODB;
-
-### Column Aggregation Inheritance
-
-In the following example we have one database table called entity. Users and groups are both entities and they share the same database table.
-
-The entity table has a column called type automatically added which tells whether an entity is a group or a user.
-
-    Entity:
-      columns:
-        name: string(30)
-        username: string(20)
-        password: string(16)
-        created: integer(11)
-
-    User:
-      inheritance:
-        extends: Entity
-        type: column_aggregation
-
-    Group:
-      inheritance:
-        extends: Entity
-        type: column_aggregation
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
-
-## Global Schema Information
-
-Doctrine schemas allow you to specify certain parameters that will apply to all of the models defined in the schema file. Below you can find an example on what global parameters you can set for schema files.
-
-List of global parameters:
-
-| Name        | Description   |
-|-------------|---------------|
-| connection  | Name of the connection to bind the models to |
-| attributes  | Array of attributes to apply to the models |
-| actAs       | Array of actAs behaviors and options to enable on the models |
-| options     | Array of table options to apply to the models |
-| inheritance | Inheritance options to apply to the models |
-
-Here is a sample schema file which implements some global schema information:
-
-    [yml]
-    connection: conn_name1
-    actAs: [Timestampable]
-    options:
-      type: INNODB
-
-    User:
-      columns:
-        id:
-          type: integer(4)
-          primary: true
-          autoincrement: true
-        contact_id:
-          type: integer(4)
-        username:
-          type: string(255)
-        password:
-          type: string(255)
-      relations:
-        Contact:
-          foreignType: one
-
-    Contact:
-      columns:
-        id:
-          type: integer(4)
-          primary: true
-          autoincrement: true
-        name:
-          type: string(255)
-
-Generates the following SQL with MySQL:
-
-    CREATE TABLE contact (id INT AUTO_INCREMENT, name VARCHAR(255), created_at DATETIME, updated_at DATETIME, PRIMARY KEY(id)) ENGINE = INNODB;
-    CREATE TABLE user (id INT AUTO_INCREMENT, contact_id INT, username VARCHAR(255), password VARCHAR(255), created_at DATETIME, updated_at DATETIME, INDEX contact_id_idx (contact_id), PRIMARY KEY(id)) ENGINE = INNODB;
-    ALTER TABLE user ADD FOREIGN KEY (contact_id) REFERENCES contact(id);
-
-All of the settings at the top will be applied to every model which is defined in that yaml file.
-
-## Plugin Schemas
-
-With symfony plugins, using Doctrine schemas are no different than using them in your main `config/doctrine` folder. The plugin should also have the same `config/doctrine` directory containing YAML files. It is not necessary to specify any package parameter like you have to with Propel. The plugin is smart enough to know it is a part of a plugin because of its location.
-
-The models, forms, filters, etc. are all generated in to sub-folders for the plugin to make organization and maintenance of your models easier. For example in `sfDoctrineGuardPlugin` `sfGuardUser` is generated as follows.
-
-    lib/
-      model/
-       doctrine/
-         sfDoctrineGuardPlugin/
-           sfGuardUser.class.php
-           sfGuardUserTable.class.php
-           base
-             BasesfGuardUser.class.php
-      form/
-        doctrine/
-          BaseFormDoctrine.class.php
-          sfDoctrineGuardPlugin/
-            sfGuardUserForm.class.php
-            base
-              BasesfGuardUserForm.class.php
-    plugins/
-      sfDoctrineGuardPlugin/
-        lib/
-          model/
-            doctrine/
-              PluginsfGuardUser.class.php
-              PluginsfGuardUserTable.class.php
-          form/
-            doctrine/
-              PluginsfGuardUserForm.class.php
-
-The hierarchy of the generated classes are as follows.
-
-| Name                   | Extends                | Description                        |
-|------------------------|------------------------|------------------------------------|
-| sfGuardUser            | PluginsfGuardUser      | Top level model class for all your custom project functionality. |
-| PluginsfGuardUser      | BasesfGuardUser        | Plugin level model class for functionality bundled with the plugin. |
-| BasesfGuardUser        | sfDoctrineRecord       | Generated base model class containing schema meta data. |
-| sfGuardUserTable       | PluginsfGuardUserTable | Top level table class for custom project functionality. |
-| PluginsfGuardUserTable | Doctrine_Table         | Plugin level table class for functionality bundled with the plugin. |
-| sfGuardUserForm        | PluginsfGuardUserForm  | Top level form class for all your custom project functionality. |
-| PluginsfGuardUserForm  | BasesfGuardUserForm    | Plugin level form class for functionality bundled with the plugin. |
-| BasesfGuardUserForm    | BaseFormDoctrine       | Generated base form class containing form widgets and validators. |
-| BaseFormDoctrine       | sfFormDoctrine         | Generated base form class which all generated forms extend. |
-
-## Element Definitions
-
-Below is a list with all the allowed element names and a brief definition for each one.
-
-### Root Elements
-
-| Name         | Description                |
-|--------------|----------------------------|
-| abstract     | Whether or not to make the generated class abstract. Defaults to false. When a class is abstract it is not exported to the database. |
-| className    | Name of the class to generate |
-| tableName    | Name of the table in your DBMS to use. |
-| connection   | Name of the `Doctrine_Connection` instance to bind the model to. |
-| columns      | Column definitions. |
-| relations    | Relationship definitions. |
-| indexes      | Index definitions. |
-| attributes   | Attribute definitions. |
-| actAs        | ActAs definitions. |
-| options      | Option definitions. |
-| inheritance  | Array for inheritance definition |
-| listeners    | Array defining listeners to attach |
-| checks       | Checks to run at application level as well as exporting to your DBMS |
-
-### Columns
-
-| Name         | Description                |
-|--------------|----------------------------|
-| name         | Name of the column.        |
-| fixed        | Whether or not the column is fixed. |
-| primary      | Whether or not the column is a part of the primary key. |
-| autoincrement| Whether or not the column is an autoincrement column. |
-| type         | Doctrine data type of the column |
-| length       | Length of the column |
-| default      | Default value of the column |
-| scale        | Scale of the column. Used for the `decimal` type. |
-| values       | List of values for the `enum` type. |
-| comment      | Comment for the column. |
-| sequence     | Sequence definition for column. |
-| zerofill     | Whether or not to make the column fill empty characters with zeros |
-| extra        | Array of extra information to store with the column definition |
-
-### Relations
-
-| Name         | Description                |
-|--------------|----------------------------|
-| class        | Name of class to use for relationship. |
-| alias        | Alias to use to identify relationship. |
-| type         | The relationship type. Value can be either `one` or `many` and it defaults to `one`. |
-| refClass     | Middle reference class to use for many to many relationships. |
-| local        | The local field name used in the relationship. |
-| foreign      | the foreign field name used in the relationship. |
-| foreignAlias | The alias of the opposite end of the relationship. Only allowed when `autoComplete` is set to `true`. |
-| foreignType  | The type of the opposite end of the relationship. Only allowed when `autoComplete` is set to `true`. |
-| autoComplete | Whether or not to add the relationship to the opposite end making it bi-directional. Defaults to true. |
-| cascade      | Application level cascading options. |
-| onDelete     | Database level cascading delete value. |
-| onUpdate     | Database level cascading update value. |
-| equal        | Whether or not the relationship is a equal nested many to many. |
-| owningSide   | - |
-| refClassRelationAlias | - |
-
-### Inheritance
-
-| Name         | Description                |
-|--------------|----------------------------|
-| type         | Type of inheritance to use. Allowed values are `concrete`, `column_aggregation`, and `simple`. |
-| extends      | Name of the class to extend. |
-| keyField     | Name of the field to use as the key for `column_aggregation` inheritance. |
-| keyValue     | Value to fill the `keyField` with for `column_aggregation` inheritance. |
-
-### Indexes
-
-| Name         | Description                 |
-|--------------|-----------------------------|
-| name         | Name of the index to create.|
-| fields       | Array of fields to use in the index. |
-| unique       | Whether or not the index is unique. |
-
->**TIP**
->More can be read about schema files in the Doctrine Manual [here](http://www.doctrine-project.org/documentation/manual/1_0/en/schema-files).
+2
+        Svalbard kirke speidergruppe
+1003
+        Nadderud speidergruppe
+1005
+        Nesøya sjøspeidergruppe
+1006
+        Høvik Verk speidergruppe
+1010
+        1. Eiksmarka speidergruppe
+1014
+        Snarøen sjøspeidergruppe
+1016
+        1. Lysaker speidergruppe
+1017
+        1. Høvik speidergruppe
+1018
+        1. Kolsås speidergruppe
+1024
+        2. Blommenholm speidergruppe
+1025
+        1. Jar speidergruppe
+1029
+        1. Rykkinn speidergruppe
+1032
+        1. Sandvika speidergruppe
+1103
+        1. Eydehavn speidergruppe
+1105
+        Flosta speidergruppe
+1106
+        Fjære speidergruppe
+1113
+        1. Øyestad speidergruppe
+1114
+        Åmli speidergruppe
+1203
+        1. Lindås speidergruppe
+1207
+        3. Laksevåg sjøspeidergruppe
+1208
+        23. Bergen speidergruppe
+1210
+        1. Skjold speidergruppe
+1215
+        Sandsli speidergruppe
+1221
+        Glesnes speidergruppe
+1223
+        Valestrand speidergruppe
+1230
+        1. Laksevåg speidergruppe
+1402
+        Siggerud speidergruppe
+1404
+        Nordby 1. speidergruppe
+1416
+        Vestby speidergruppe
+1417
+        1. Ås speidergruppe
+1418
+        Oppegård speidergruppe
+1501
+        1. Isegran sjøspeidergruppe
+1503
+        Rolvsøyspeiderne
+1510
+        1. Fredrikstad speidergruppe
+1604
+        Skarnes 1 speidergruppe
+1609
+        Kongsvinger 2 speidergruppe
+1714
+        1. Gulseth speidergruppe
+1728
+        1. Skotfoss speidergruppe
+1730
+        1. Helle speidergruppe
+1732
+        1. Herøya speidergruppe
+1803
+        Fåberg speidergruppe
+1805
+        Follebu speidergruppe
+1808
+        Brøttum speidergruppe
+1901
+        Norheimsund speidergruppe
+1904
+        1. Øystese sjøspeidergruppe
+2003
+        Furnes speidergruppe
+2015
+        2. Romedal speidergruppe
+2017
+        Vallset speidergruppe
+2104
+        1. Selfors speidergruppe
+2108
+        1. Hemnesberget speidergruppe
+2204
+        Vestbygd speidergruppe
+2215
+        1. Stokmarknes speidergruppe
+2302
+        4. Drammen speidergruppe
+2305
+        1. Skoger speidergruppe
+2307
+        2. Lier speidergruppe
+2315
+        1. Mjøndalen speidergruppe
+2323
+        Nesbygda speidergruppe
+2324
+        1. Krokstadelva speidergruppe
+2407
+        Vannareid speidergruppe
+2412
+        Storfjord speidergruppe
+2504
+        1. Sandvollan speidergruppe
+2506
+        1. Vinne speidergruppe
+2508
+        Egge speidergruppe
+2512
+        Namsos speidergruppe
+2513
+        1. Levanger speidergruppe
+2601
+        Rabita speidergruppe
+2602
+        Kalbakken speidergruppe
+2615
+        1. Vålerenga speidergruppe
+2618
+        7. Oslo Kanaljene speidergruppe
+2620
+        62. Oslo Årvollspeiderne
+2703
+        Bygdøy speidergruppe
+2704
+        Longship group, 41. Oslo Ullevål sp.gr.
+2705
+        1. Røa speidergruppe
+2706
+        Ullern II speidergruppe
+2720
+        4. Oslo speidergruppe
+2722
+        2. Riis speidergruppe
+2804
+        2. Nordstrand 2 speidergruppe
+2805
+        1. Bryn speidergruppe
+2807
+        1. Haugerud speidergruppe
+2814
+        Manglerud speidergruppe
+2905
+        5. Eidsvoll speiderguppe
+2908
+        Hemnes speidergruppe
+2911
+        Kløfta 1 speidergruppe
+2915
+        Lørenskog Syd speidergruppe
+2918
+        Nannestad 1. speidergruppe
+2926
+        Stabburet Gjerdrum speidergruppe
+3004
+        2. Frei Rensvik speidergruppe
+3005
+        1. Fræna Elnesvågen speidergruppe
+3012
+        2. Molde speidergruppe
+3014
+        1. Nesset speidergruppe
+3015
+        1. Rauma Åndalsnes speidergruppe
+3017
+        4. Rauma Innfjorden speidergruppe
+3101
+        1. Skudesneshavn sjøspeidergr.
+3110
+        Grinde speidergruppe
+3202
+        1. Fauske speidergruppe
+3203
+        1. Bodø speidergruppe
+3301
+        Nordfjordeid speidergruppe
+3302
+        Naustdal speidergruppe
+3303
+        Førde speidergruppe
+3304
+        Systrond speidergruppe
+3308
+        Måløy speidergruppe
+3402
+        1. Ålesund speidergruppe
+3416
+        1. Stette speidergruppe
+3512
+        1. Andøya speidergruppe
+3520
+        1. Høvåg speidergruppe
+3521
+        1. Kristiansand speidergruppe
+3523
+        3. Kristiansand speidergruppe
+3531
+        Marnadal speidergruppe
+3534
+        1. Vennesla speidergruppe
+3539
+        1. Vanse speidergruppe
+3608
+        Rissa speidergruppe
+3712
+        Notodden speidergruppe
+3713
+        Rjukan speidergruppe
+3716
+        1. Åmot speidergruppe
+3804
+        Trondheim 8. sjøspeidergruppe
+3811
+        Kattem speidergruppe
+3902
+        1. Råde speidergruppe
+3903
+        2. Rygge speidergruppe
+3904
+        Ekholt speidergruppe
+4001
+        Figgjo speidergruppe
+4023
+        1. Lura speidergruppe
+4027
+        Hå - Nærbø speidergruppe
+4041
+        Furuneset speidergruppe
+4124
+        Holmestrand speidergruppe
+4130
+        1. Stavern speidergruppe
+4133
+        Tønsberg speidergruppe
+4202
+        Begnadalen speidergruppe
+4206
+        Gjøvik speidergruppe
+4214
+        1. Brandbu speidergruppe
+4305
+        Røros speidergruppe
+4401
+        Skiptvet speidergruppe
+4402
+        Halden speidergruppe
+4411
+        Hafslundsøy speidergruppe
+4415
+        1. Sarpsborg speidergruppe
+4418
+        Lande speidergruppe
+4419
+        Trøgstad speidergruppe
+4422
+        Rakkestad speidergruppe
+4501
+        Hønefoss speidergruppe
+4504
+        1. Hole speidergruppe
+4508
+        Nes Ådal I speidergruppe
+6007
+        Porsgrunn FA speidergruppe
+6012
+        Oslo FA 3. Korps speidergruppe
+6018
+        Kristiansand FA speidergruppe
+6032
+        Skudenes FA speidergruppe
+6034
+        Farsund FA speidergruppe
+6203
+        Arendal FSK speidergruppe
+6214
+        Lørenskog FSK Kurland speidergruppe
+6220
+        2. Kristiansand FSK speidergruppe
+6221
+        Kristiansand FSK speidergruppe
+6222
+        Songdalen FSK speidergruppe
+6227
+        1. Brunlanes FSK speidergruppe
+6403
+        
+
+Hammerfest MS  speidergruppe
+
+6404
+        Øståsen MS speidergruppe
+6411
+        Harstadbotn MS speidergruppe
+6415
+        Grünerløkka MS speidergruppe
+6421
+        11. Trondheim MS speidergruppe
+6424
+        Sandnes MS speidergruppe
+6429
+        Mysen MS speidergruppe
+6430
+        Halden MS speidergruppe
+6501
+        Arendal MSK speidergruppe
+6504
+        Froland NmU speidergruppe
+6506
+        1. Vegårshei NmU speidergruppe
+6516
+        Mjøndalen NmU speidergruppe
+6523
+        Lista NmU speidergruppe
+6524
+        Farsund NmU speidergruppe
+6525
+        Kristiansand NmU speidergruppe
+6536
+        Hordvik NmU speidergruppe
+3
+        Skogvokterne *** i NSF
+5
+        Sverveli Gilvell Tropp ***.
+1015
+        3. Blommenholm *** speidergruppe
+1102
+        1. Arendal *** speidergruppe
+1110
+        1. Tromøy *** speidergruppe
+1111
+        2. Tromøy *** speidergruppe
+1112
+        1. Tvedestrand *** speidergruppe
+1115
+        Agder Old Guides *** speidergruppe
+1201
+        Bergen Old Guides *** speidergruppe
+1202
+        Rovernes Beredsskapsgruppe *** Bergen
+1209
+        Speidersenteret i Bergen***speidergruppe
+1412
+        Sofiemyr *** speidergruppe
+1420
+        Nesoddtangen *** speidergruppe
+1506
+        Kirkeøy *** speidergruppe
+1511
+        3. Fredrikstad *** speidergruppe
+1605
+        Grue 1 *** speidergruppe
+1606
+        Roverud *** speidergruppe
+1726
+        Vold og Kilebygda *** speidergruppe
+1734
+        Sundby *** speidergruppe
+1740
+        2. Solum TLB *** speidergruppe
+1807
+        Hundorp I *** speidergruppe
+1810
+        Vinstra *** speidergruppe
+1818
+        Øyer *** speidergruppe
+2008
+        Hamar *** speidergruppe
+2019
+        Vang II *** speidergruppe
+2201
+        Bjørnskinn *** speidergruppe
+2202
+        Melbu *** speidergruppe
+2207
+        Lødingen *** speidergruppe
+2311
+        Nærsnes *** speidergruppe
+2318
+        Rovernes Beredskapsgruppe *** Nedre Busk
+2507
+        Skogn *** speidergruppe
+2509
+        1. Røra *** speidergruppe
+2510
+        Røyrvik *** speidergruppe
+2514
+        Malm I *** speidergruppe
+2603
+        1. Grorud *** speidergruppe
+2606
+        10. Oslo Stovner *** speidergruppe
+2609
+        36. Oslo Lilleborg *** speidergruppe
+2610
+        Oslo Don Bosco *** speidergruppe
+2616
+        38. Oslo *** speidergruppe
+2621
+        29. Oslo Tonio *** speidergruppe
+2623
+        1. Grefsen *** speidergruppe
+2708
+        14. Oslo *** speidergruppe
+2709
+        Oslo Nordmarka Old Guides *** sp.gr.
+2711
+        1. Oslo 4 *** speidergruppe
+2712
+        Oslo Majorstuen *** speidergruppe
+2718
+        Holmenkollen I *** speidergruppe
+2723
+        Oslo Old Guides 3 *** speidergruppe
+2802
+        2. Bekkelaget *** speidergruppe
+2803
+        3.-4. Nordstrand *** speidergruppe
+2811
+        Oslo Old Guides II *** speidergruppe
+2910
+        Jessheim 1 *** speidergruppe
+2922
+        Nordkisa 1 *** speidergruppe
+2927
+        4. Strømmen *** speidergruppe
+3003
+        1. Eide *** speidergruppe
+3011
+        1. Molde *** speidergruppe
+3013
+        3. Molde *** speidergruppe
+3020
+        Kristiansund Old Guides *** sp.gr.
+3024
+        RBG *** Romsdal og Nordmøre
+3109
+        Førdespeidarane *** sp.gr
+3115
+        Sveio *** speidergruppe
+3118
+        Finnås *** speidergruppe
+3306
+        Sogndal *** speidergruppe
+3307
+        Årdal *** speidergruppe
+3404
+        4. Ålesund *** speidergruppe
+3408
+        Ålesund I *** speidergruppe
+3409
+        Spjelkavik *** speidergruppe
+3413
+        6. Ålesund *** speidergruppe
+3506
+        Rovernes beredskapsstyrke, *** Kr.sand
+3514
+        Farsund *** sjøspeidergruppe
+3515
+        Feda *** speidergruppe
+3614
+        Sør - Trøndelag *** Old Guides sp.gr.
+3702
+        Bø ***studentspeidergruppe
+3703
+        Geithus *** speidergruppe
+3708
+        1. Kongsberg *** speidergruppe
+3802
+        3. Trondheim *** speidergruppe
+3803
+        5. Trondheim *** speidergruppe
+3806
+        RBG - Trøndelag *** gruppe
+3807
+        13. Trondheim *** speidergruppe
+3810
+        Gib Gob *** speidergruppe
+3812
+        Trondheim Old Guides *** speidergruppe
+3814
+        2. Strinda *** speidergruppe
+3819
+        Jonsvatnet *** speidergruppe
+3910
+        5. Moss *** speidergruppe
+3912
+        Moss og Rygge Old Guides *** speidergr.
+4006
+        Stavanger 8. *** speidergruppe
+4008
+        7. Stavanger *** speidergruppe
+4012
+        Forus *** speidergruppe
+4018
+        Sauda 1 *** speidergruppe
+4020
+        Strand Tau *** speidergruppe
+4028
+        Stavanger Old Guides I *** speidergr.
+4029
+        Stavanger Old Guides II *** speidergr.
+4030
+        Stavanger Old Guides III *** speidergr.
+4031
+        Hinna 1. Old Guides *** speidergruppe
+4032
+        Hinna 2. Old Guides *** speidergr.
+4033
+        Hå - Nærbø Old Guides *** speidergruppe
+4034
+        Bryne Old Guides *** speidergruppe
+4035
+        Randaberg Old Guides *** speidergr.
+4036
+        Strand Jørpeland *** Old Guides speiderg
+4037
+        Mosikken Old Guides *** speidergruppe
+4039
+        Rovernes Beredskapsgruppe *** Rogaland
+4040
+        Sørmarka Old Guides *** speidergruppe
+4101
+        1. Larvik *** speidergruppe
+4104
+        1. Tjølling *** speiderguppe
+4114
+        Re *** speidergruppe
+4129
+        Våle *** speidergruppe
+4132
+        Helgerød *** speidergruppe
+4136
+        1. Nykirke *** speidergruppe
+4138
+        2. Sande *** speidergruppe
+4205
+        Fagernes I *** speidergruppe
+4208
+        Grua *** speidergruppe
+4213
+        Kolbu *** speidergruppe
+4215
+        Rogne *** speidergruppe
+4302
+        Alvdal *** speidergruppe
+4303
+        Engerdal *** speidergruppe
+4304
+        Tynset *** speidergruppe
+4406
+        Greåker Kirkes *** speidergruppe
+4412
+        1. Grålum *** speidergruppe
+4420
+        Askim Old Guides *** speidergr.
+6019
+        Mandal FA *** speidergruppe
+6023
+        Sandnes FA *** speidergruppe
+6026
+        Sarpsborg FA *** speidergruppe
+6027
+        Askim FA *** speidergruppe
+6107
+        Stavanger BSK *** speidergruppe
+6212
+        1. Oslo Vestre FSK *** speidergruppe
+6216
+        3. Ørsta FSK *** speidergruppe
+6217
+        13. Ålesund FSK *** speidergruppe
+6225
+        Bryne FSK *** speidergruppe
+6401
+        Arendal MS *** speidergruppe
+6419
+        8. Kristiansand MS *** sjøspeidergruppe
+6426
+        Stavanger MS *** speidergruppe
+6431
+        Tistedal MS *** speidergruppe
+6529
+        Larvik NmU *** speidergruppe
