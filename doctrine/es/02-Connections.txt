@@ -1,0 +1,259 @@
+Chapter 2 - Connections
+=======================
+
+## Introduction
+
+In this chapter we'll explain some things about Doctrine connections, how to configure multiple connections, bind models, and how to create and drop your databases and other connection related activities.
+
+The default `config/databases.yml` should look like the following.
+
+    all:
+      propel:
+        class:      sfPropelDatabase
+        param:
+          dsn:      mysql:host=localhost;dbname=dbname
+          username: user
+
+The only difference between Propel and Doctrine here is that the class must be  `sfDoctrineDatabase` instead of `sfPropelDatabase` and the connection name is doctrine instead of propel. Both Doctrine and Propel use PHP Data Objects (PDO) as the database abstraction layer.
+
+>**NOTE**
+>Though Propel requires at least one connection named `propel`, Doctrine does not require that the connection be named `doctrine` so you can name it whatever you like.
+
+You can configure the connections in `config/databases.yml` with the `configure:database` task like the following.
+
+    $ ./symfony configure:database --name=doctrine --class=sfDoctrineDatabase "mysql:host=localhost;dbname=dbname" user secret
+
+Now you will see a new connection defined like the following:
+
+    doctrine:
+      class: sfDoctrineDatabase
+      param:
+        dsn: 'mysql:host=localhost;dbname=dbname'
+        username: user
+        password: secret
+
+>**NOTE**
+>You need to completely remove the references to propel in `config/databases.yml` if you have the sfPropelPlugin disabled.
+
+## Supported Drivers
+
+Doctrine supports all drivers which PDO supports. PHP must be compiled with both PDO and the PDO_* drivers you wish to use. Below is a list of databases PDO will work with.
+
+| Name              | Description                                          |
+|-------------------|------------------------------------------------------|
+| MS SQL Server     | Microsoft SQL Server and Sybase Functions (PDO_DBLIB)|
+| Firebird/Interbase| Firebird/Interbase Functions (PDO_FIREBIRD)          |
+| IBM               | IBM Functions (PDO_IBM)                              |
+| Informix          | Informix Functions (PDO_INFORMIX)                    |
+| MySQL             | MySQL Functions (PDO_MYSQL)                          |
+| Oracle            | Oracle Functions (PDO_OCI)                           |
+| ODBC and DB2      | ODBC and DB2 Functions (PDO_ODBC)                    |
+| PostgreSQL        | PostgreSQL Functions (PDO_PGSQL)                     |
+| SQLite            | SQLite Functions (PDO_SQLITE)                        |
+
+>**NOTE**
+>You can read more about PDO at [http://www.php.net/pdo](http://www.php.net/pdo).
+
+## Data Source Name(DSN)
+
+Doctrine offers two ways of specifying your DSN information. You can use the Doctrine style DSN or use the native PDO style.
+
+### Doctrine Style
+
+Doctrine has a DSN syntax which is based off of PEAR MDB2.
+
+    all:
+      doctrine:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          driver://username:password@host/database_name
+
+### PDO Style
+
+You may alternatively specify your DSN information in the PDO style syntax.
+
+    all:
+      doctrine:
+        class:          sfDoctrineDatabase
+        param:
+          dsn:          driver:dbname=database_name;host=localhost
+          username:     username
+          password:     password
+
+>**TIP**
+>Using the PDO style syntax offers more flexibility and ability to specify non standard information about your connection to PDO. For example, when specifying non standard unix_socket paths or ports to use when connecting, specifying it in PDO syntax is more flexible. The `configure:database` command also only works with the PDO style.
+
+## Import from Database
+
+Doctrine has the ability to generate a schema file in `config/doctrine/schema.yml` from an existing database. Just configure your Doctrine connection for the database you wish to import and run the following command.
+
+>**NOTE**
+>This is a good way to convert your Propel schema to Doctrine. Simply create your database using propel, and then generate the schema in Doctrine from your created database.
+
+    $ ./symfony doctrine:build-schema
+    >> doctrine  generating yaml schema from database
+
+Now have a look in `config/doctrine/schema.yml` and you will see the yaml for the database. In this example we have a user table.
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+The above mysql table would generate a yaml schema like the following in `config/doctrine/schema.yml`
+
+    [yml]
+    User:
+      tableName: user
+      columns:
+        id:
+          type: integer(8)
+          primary: true
+          autoincrement: true
+        username: string(255)
+        password: string(255)
+
+## Multiple Connections
+
+Doctrine offers the ability to have multiple connections. You can easily bind models to connections so that queries are executed on the appropriate connection. So first we need to add multiple connections with the `configure:database` command like the following.
+
+    $ ./symfony configure:database --name=master --class=sfDoctrineDatabase "mysql:host=localhost;dbname=master" user secret
+    $ ./symfony configure:database --name=client --class=sfDoctrineDatabase "mysql:host=localhost;dbname=client" user secret
+
+Remove the original connection we created and your `config/databases.yml` will look like the following.
+
+    all:
+      master:
+        class: sfDoctrineDatabase
+        param:
+          dsn: 'mysql:host=localhost;dbname=master'
+          username: user
+          password: secret
+      client:
+        class: sfDoctrineDatabase
+        param:
+          dsn: 'mysql:host=localhost;dbname=client'
+          username: user
+          password: secret
+
+Now say we have a `Client` model which you want to bind to the master database. You can simply do this directly in the definition of the model like below. Place the following YAML code in `config/doctrine/schema.yml`
+
+    Client:
+      connection: master
+      columns:
+        name: string(255)
+        username: string(255)
+        password: string(255)
+
+Now each `Client` can have `Stores` but they are saved in a separate database from the `Clients`.
+
+    Store:
+      connection: client
+      attributes:
+        export: tables
+      columns:
+        name: string(255)
+        description: string(500)
+        client_id: integer
+      relations:
+        Client:
+         foreignAlias: Stores
+
+>**Note**
+>Because the tables are in separate databases the data can only be lazily loaded. Doctrine does not currently support generating sql for joining tables across databases. Also, notice the export attribute being set to tables. This tells Doctrine to only export the create table statement and not any foreign key constraints.
+
+## Connection Attributes
+
+sfDoctrinePlugin allows you to specify connection attributes directly in the `config/databases.yml` file like the following.
+
+      doctrine:
+        class: sfDoctrineDatabase
+        param:
+          dsn: 'mysql:host=localhost;dbname=dbname'
+          username: user
+          password: secret
+          attributes:
+            use_dql_callbacks: true
+
+The attributes you specify here will be set on the `Doctrine_Connection` instances when the connection is created.
+
+>**NOTE**
+>Attributes in Doctrine are for configuring and controlling features. You can read more about attributes in the [Doctrine documentation](http://www.doctrine-project.com/documentation/manual/1_0?chapter=configuration).
+
+## Build Everything
+
+Now that we have our connections and schema defined we can build everything with the following command.
+
+    $ ./symfony doctrine:build-all-reload
+                                                       
+      This command will remove all data in your database.  
+      Are you sure you want to proceed? (y/N)              
+                                                       
+    y
+    >> doctrine  dropping databases
+    >> doctrine  creating databases
+    >> doctrine  generating model classes
+    >> doctrine  generating sql for models
+    >> doctrine  generating form classes
+    >> doctrine  generating filter form classes
+    >> doctrine  created tables successfully
+    >> doctrine  loading data fixtures from "/Us...ymfony12doctrine/data/fixtures"
+
+Running the above commands is equal to running the following commands separately.
+
+    $ ./symfony doctrine:drop-db
+                                                       
+      This command will remove all data in your database.  
+      Are you sure you want to proceed? (y/N)              
+                                                       
+    y
+    >> doctrine  dropping databases
+    $ ./symfony doctrine:build-db
+    >> doctrine  creating databases
+    $ ./symfony doctrine:build-model
+    >> doctrine  generating model classes
+    $ ./symfony doctrine:build-sql
+    >> doctrine  generating sql for models
+    $ ./symfony doctrine:build-form
+    >> doctrine  generating form classes
+    $ ./symfony doctrine:build-filters
+    >> doctrine  generating filter form classes
+    $ ./symfony doctrine:insert-sql
+    >> doctrine  created tables successfully
+    $ ./symfony doctrine:data-load
+    >> doctrine  loading data fixtures from "/Us...ymfony12doctrine/data/fixtures"
+
+>**Note**
+>You can take a look at the models which were generated from your YAML schema files in lib/model/doctrine and lib/model/doctrine/base. The files in the generated folder are re-written each time you build your models whereas the ones below the base directory are not. You may customize your models by editing the classes in lib/model/doctrine.
+
+Here is what the `lib/model/doctrine/base/BaseClient.class.php` should look like.
+
+    [php]
+    <?php
+    // Connection Component Binding
+    Doctrine_Manager::getInstance()->bindComponent('Client', 'master');
+
+    /**
+     * This class has been auto-generated by the Doctrine ORM Framework
+     */
+    abstract class BaseClient extends sfDoctrineRecord
+    {
+      public function setTableDefinition()
+      {
+        $this->setTableName('client');
+        $this->hasColumn('name', 'string', 255, array('type' => 'string', 'length' => '255'));
+        $this->hasColumn('username', 'string', 255, array('type' => 'string', 'length' => '255'));
+        $this->hasColumn('password', 'string', 255, array('type' => 'string', 'length' => '255'));
+      }
+
+      public function setUp()
+      {
+        $this->hasMany('Store as Stores', array('local' => 'id',
+                                                'foreign' => 'client_id'));
+      }
+    }
+
+>**TIP**
+>It is common practice to run the `./symfony doctrine:build-all-reload-test-all` command when developing. This will rebuild your entire environment and run the full test suite. This is a good command to run before committing new code to ensure no new regressions have occurred.
+
+-
+
+>**TIP**
+>More can be read about connections in the Doctrine Manual [here](http://www.doctrine-project.org/documentation/manual/1_0/en/connection-management).

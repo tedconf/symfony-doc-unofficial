@@ -1,0 +1,674 @@
+Chapter 4 - Schema Files
+========================
+
+In the previous chapters you've seen some various syntaxes for specifying 
+your schema information in YAML files placed in `config/doctrine`. This 
+chapter explains the syntaxes and how to specify all your schema meta data 
+in YAML format.
+
+## Data Types
+
+Doctrine offers several column data types. When you specify the portable 
+Doctrine type it is automatically converted to the appropriate type of the
+DBMS you are using. Below is a list of the available column types that can 
+be used as well as the type it is translated to when using the MySQL and 
+pgSQL DBMS engines.
+
+>**NOTE**
+>Doctrine data types are standardized and made portable across all DBMS. 
+For the types that the DBMS do not support natively, Doctrine has the ability 
+to convert the data on the way in to the and on the way out of the database. 
+For example the Doctrine `array` and `object` types are `serialized()` on the 
+way in and `unserialized()` on the way out.
+
+| Type           | MySQL Type   | pgSQL Type                 |
+|----------------|--------------|----------------------------|
+| integer        | integer      | int/serial                 |
+| integer(1)     | tinyint      | smallint/serial            |
+| integer(2)     | smallint     | smallint/serial            |
+| integer(3)     | mediumint    | int/serial                 |
+| integer(4)     | int          | int/serial                 |
+| integer(5)     | bigint       | bigint/bigserial           |
+| float          | double       | float                      |
+| double         | double       | float                      |
+| decimal        | decimal      | numeric                    |
+| char           | char         | char                       |
+| varchar        | varchar      | varchar                    |
+| string         | varchar      | varchar                    |
+| array          | text         | text                       |
+| object         | text         | text                       |
+| blob           | longblob     | bytea                      |
+| blob(255)      | tinyblob     | bytea                      |
+| blob(65532)    | blob         | bytea                      |
+| blob(16777215) | mediuumblob  | bytea                      |
+| clob           | longtext     | text                       |
+| clob(255)      | tinytext     | text                       |
+| clob(65532)    | text         | text                       |
+| clob(16777215) | mediumtext   | text                       |
+| timestamp      | datetime     | timestamp without timezone |
+| time           | time         | time without timezone      |
+| date           | date         | date                       | 
+| gzip           | text         | text                       |
+| boolean        | tinyint(1)   | boolean                    |
+| bit            | bit          | varbit                     |
+| varbit         | n/a          | varbit                     |
+| inet           | n/a          | inet                       |
+| enum           | -see below-  | -see below-                |
+
+* Char(length) is used for string if "fixed" parameter is true. Length defaults
+to 255 if not provided.
+* Any value up to and including the number shown in brackets will produce the 
+specified column type
+* "Integer" and "int" are identical, any integer greater than 5 will produce 
+"bigint"
+* In postgres, serial is used if "autoincrement" is set
+* In Doctrine >= 1.1, timezone is not specified
+
+>**SIDEBAR**
+>The Doctrine `enum` type can either be emulated or you can use the native enum type if your DBMS supports it. It is off by default so you will need to enable an attribute to use native enums.
+>
+>Before we enable the attribute Doctrine will generate SQL like the following and simply emulate the enum type and will make sure the value you specify is one of the valid specified values.
+>
+>     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+>
+>Now lets specify the `use_native_enum` attribute on our connection so that Doctrine knows to generate the native enum sql for your DBMS.
+>
+>     [yml]
+>     all:
+>       doctrine:
+>         class: sfDoctrineDatabase
+>         param:
+>           dsn: 'mysql:host=localhost;dbname=symfony12doctrine'
+>           username: user
+>           attributes:
+>             use_native_enum: true
+>
+>Now that we have enabled the attribute Doctrine generates the following SQL under MySQL:
+>
+>     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), user_type ENUM('Normal', 'Administrator'), PRIMARY KEY(id)) ENGINE = INNODB;
+
+Below is a sample yaml schema file that implements each of the different column types.
+
+    [yml]
+    User:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        username: string(255)
+        password: string(255)
+        latitude: float
+        longitude: float
+        hourly_rate:
+          type: decimal
+          scale: 2
+        groups_array: array
+        session_object: object
+        description: clob
+        profile_image_binary_data: blob
+        created_at: timestamp
+        time_last_available: time
+        date_last_available: date
+        roles:
+          type: enum
+          values: [administrator, moderator, normal]
+          default: normal
+        html_header: gzip
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE user (id INT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), latitude DOUBLE, longitude DOUBLE, hourly_rate DECIMAL(18,2), groups_array TEXT, session_object TEXT, description LONGTEXT, profile_image_binary_data LONGBLOB, created_at DATETIME, time_last_available TIME, date_last_available DATE, roles ENUM('administrator', 'moderator', 'normal') DEFAULT 'normal', html_header TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
+
+## Options
+
+Often you need to set options on your table for controlling things like charset, collation and table type in mysql. These can be controlled easily with options.
+
+    [yml]
+    User:
+      options:
+        type: MyISAM
+        collate: utf8_unicode_ci
+        charset: utf8
+      columns:
+        username: string(255)
+        password: string(255)
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci ENGINE = MyISAM;
+
+## Indexes
+
+You can optimize your database by defining indexes on columns which are used in conditions on your queries. Below is an example of indexing the username column of a user table since it is common to do lookups on the table by the users username.
+
+    [yml]
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+      indexes:
+        username_index:
+          fields: [username]
+          type: unique
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), UNIQUE INDEX username_indext_idx (username), PRIMARY KEY(id)) ENGINE = INNODB;
+
+You can also optionally specify unique directly on the column when dealing with single column unique indexes.
+
+    [yml]
+    User:
+      columns:
+        username:
+          type: string(255)
+          unique: true
+        password: string(255)
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255) UNIQUE, password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+>**Note**
+>Indexes are automatically created on relationship foreign keys when the relationships are defined. The next section explains how to define relationships between foreign keys on your tables.
+
+## Relationships
+
+Doctrine offers the ability to map the relationships which exist in your database to the ORM so that it can be the most help when working with your data.
+
+### One to One
+
+Here is a simple example of how to define a one-to-one relation between a User and Profile model.
+
+    [yml]
+    Profile:
+      columns:
+        user_id: integer
+        name: string(255)
+        email_address:
+          type: string(255)
+          email: true
+      relations:
+        User:
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: one
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE profile (id BIGINT AUTO_INCREMENT, user_id BIGINT, name VARCHAR(255), email_address VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE profile ADD FOREIGN KEY (user_id) REFERENCES user(id);
+
+### One to Many
+
+Here is a simple example of how to define a one-to-many relation between a User and Phonenumber model.
+
+    [yml]
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id);
+
+### Many to Many
+
+Here is a simple example of how to define a many-to-many relation between a BlogPost and Tag model.
+
+    [yml]
+    BlogPost:
+      columns:
+        user_id: integer
+        title: string(255)
+        body: clob
+      relations:
+        User:
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: one
+          foreignAlias: BlogPosts
+        Tags:
+          class: Tag
+          foreignAlias: BlogPosts
+          refClass: BlogPostTag
+          local: blog_post_id
+          foreign: tag_id
+
+    Tag:
+      columns:
+        name: string(255)
+
+    BlogPostTag:
+      columns:
+        blog_post_id:
+          type: integer
+          primary: true
+        tag_id:
+          type: integer
+          primary: true
+      relations:
+        BlogPost:
+          local: blog_post_id
+          foreign: id
+          foreignAlias: BlogPostTags
+        Tag:
+          local: tag_id
+          foreign: id
+          foreignAlias: BlogPostTags
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE blog_post_tag (blog_post_id BIGINT, tag_id BIGINT, PRIMARY KEY(blog_post_id, tag_id)) ENGINE = INNODB;
+    CREATE TABLE tag (id BIGINT AUTO_INCREMENT, name VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE blog_post ADD FOREIGN KEY (user_id) REFERENCES user(id);
+    ALTER TABLE blog_post_tag ADD FOREIGN KEY (tag_id) REFERENCES tag(id);
+    ALTER TABLE blog_post_tag ADD FOREIGN KEY (blog_post_id) REFERENCES blog_post(id);
+
+## Cascading Operations
+
+When saving objects in Doctrine it is cascaded to associated objects by default. Deleting is slightly different. Doctrine has the ability to do both application and database level cascading deletes.
+
+### Database Level
+
+Doctrine also has the ability to export cascading operations to the database level. Below is an example of how to setup a model with some cascading options.
+
+    [yml]
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+          onDelete: CASCADE
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE phonenumber (id BIGINT AUTO_INCREMENT, user_id BIGINT, phonenumber VARCHAR(255), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE phonenumber ADD FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE;
+
+>**NOTE**
+>Database level cascading is specified on the side where the foreign key lives.
+
+### Application Level
+
+Unlike the `save()` operations the `delete()` cascading needs to be turned on explicitly. Here is an example:
+
+>**NOTE**
+>Application level cascading `save()` and `delete()` does not apply when doing DQL update and delete statements, only when calling `save()` and `delete()` on your objects.
+
+    User:
+      columns:
+        username: string(255)
+        password: string(255)
+      relations:
+        Phonenumbers:
+          class: Phonenumber
+          local: id
+          foreign: id
+          type: many
+          foreignType: one
+          cascade: [delete]
+
+    Phonenumber:
+      columns:
+        user_id: integer
+        phonenumber: string(255)
+      relations:
+        User:
+          foreignAlias: Phonenumbers
+          local: user_id
+          foreign: id
+          type: one
+          foreignType: many
+
+>**NOTE**
+>Application level cascading deletes differ from database level in that they are defined on the side where the relationship you wish to cascade on is defined. This is different than database level cascades where you always specify it on the side where the foreign key lives.
+
+## Behaviors
+
+One great feature of Doctrine is the ability to have plug n' play behavior. These behaviors can be easily included in your model definitions and you inherit functionality automatically.
+
+### Core Behaviors
+
+Here is a list of behavior bundled with Doctrine core. You can use any of the behaviors in your models without writing any code.
+
+| Name           | Description                        |
+|----------------|------------------------------------|
+| Geographical   | Adds latitude and longitude to your model and offers functionality for calculating miles/kilometers between records. |
+| I18n           | Adds internationalization capabilities to your models. |
+| NestedSet      | Turn your models in to a traversable tree. |
+| Searchable     | Index all the data in your models and make it searchable. |
+| Sluggable      | Add a `slug` field to your models and have it automatically create a slug based on your configuration. |
+| SoftDelete     | Never really delete a record. Will simply set a deleted flag instead and filter all deleted records from select queries. |
+| Timestampable  | Add a `created_at` and `updated_at` column to your models have Doctrine set them when inserting and updating records. |
+| Versionable    | Turn your models in to an audit log and record all changes. Offers the ability to revert back to previous versions easily. |
+
+You can easily enable a behavior by using the actAs functionality. Below is an example of how to use the Sluggable behavior.
+
+    BlogPost:
+      actAs:
+        Sluggable:
+          fields: [title]
+          unique: true
+      columns:
+        user_id: integer
+        title: string(255)
+        body: clob
+
+The above example will automatically add a slug column to the model and will set the value of the slug column based on the value of the title column and make sure the value is unique. If a slug already exists in the database with the same value then 1, 2, 3, etc. is appended to the end.
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE blog_post (id BIGINT AUTO_INCREMENT, user_id BIGINT, title VARCHAR(255), body LONGTEXT, slug VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), INDEX user_id_idx (user_id), PRIMARY KEY(id)) ENGINE = INNODB;
+
+>**NOTE**
+>You can also write your own behaviors. Check out the source code of the existing behaviors to get a peek at how they work. They can be found in `SF_ROOT/plugins/sfDoctrinePlugin/lib/doctrine/Doctrine/Template`. And you can read more about Doctrine behaviors in the [manual](http://www.doctrine-project.org/documentation/manual/1_0?one-page#behaviors).
+
+## Nesting Behaviors
+
+Doctrine offers the ability to easily nest behaviors. For example you may want to have a `Sluggable` behavior on your auto-generated model with the `I18n` behavior.
+
+    [yml]
+    Gallery:
+      actAs:
+        I18n:
+          fields: [title, description]
+          actAs:
+            Sluggable:
+              fields:  [title]
+      columns:
+        title: string(255)
+        description: clob
+
+Now the `GalleryTranslation` model which is automatically generated will have a `slug` column which is automatically set for you based on the translated title column. You can mix your behaviors together but remember some behaviors will not always play together as they are developed standalone and are not aware of each other.
+
+## Inheritance
+
+Another great feature of Doctrine is the ability to use native PHP OOP inheritance with your models. It supports three different inheritance strategies which can be used independently or mixed together. Below are some examples of the different inheritance strategies.
+
+**Inheritance Types**
+
+| Name                | Description                                |
+|---------------------|--------------------------------------------|
+| Concrete            | Each child class has a separate table has all the columns of its parents |
+| Simple              | Each child class shares the same table and columns as its parents |
+| Column Aggregation  | All columns must be defined in the parent and each child class is determined by a `type` column |
+
+Below are some examples of the three different inheritance strategies supported by Doctrine.
+
+### Concrete Inheritance
+
+Concrete inheritance creates separate tables for child classes. However in concrete inheritance each class generates a table which contains all columns, including inherited columns.
+
+    TextItem:
+      columns:
+        topic: string(100)
+
+    Comment:
+      inheritance:
+        extends: TextItem
+        type: concrete
+      columns:
+        content: string(300)
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE text_item (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE comment (id BIGINT AUTO_INCREMENT, topic VARCHAR(100), content TEXT, PRIMARY KEY(id)) ENGINE = INNODB;
+
+### Simple Inheritance
+
+Simple inheritance is the simplest inheritance. In simple inheritance all the child classes share the same columns as the parent.
+
+    Entity:
+      columns:
+        name: string(30)
+        username: string(20)
+        password: string(16)
+        created: integer(11)
+
+    User:
+      inheritance:
+        extends: Entity
+        type: simple
+
+    Group:
+      inheritance:
+        extends: Entity
+        type: simple
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, PRIMARY KEY(id)) ENGINE = INNODB;
+
+### Column Aggregation Inheritance
+
+In the following example we have one database table called entity. Users and groups are both entities and they share the same database table.
+
+The entity table has a column called type automatically added which tells whether an entity is a group or a user.
+
+    Entity:
+      columns:
+        name: string(30)
+        username: string(20)
+        password: string(16)
+        created: integer(11)
+
+    User:
+      inheritance:
+        extends: Entity
+        type: column_aggregation
+
+    Group:
+      inheritance:
+        extends: Entity
+        type: column_aggregation
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE entity (id BIGINT AUTO_INCREMENT, name VARCHAR(30), username VARCHAR(20), password VARCHAR(16), created BIGINT, type VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
+
+## Global Schema Information
+
+Doctrine schemas allow you to specify certain parameters that will apply to all of the models defined in the schema file. Below you can find an example on what global parameters you can set for schema files.
+
+List of global parameters:
+
+| Name        | Description   |
+|-------------|---------------|
+| connection  | Name of the connection to bind the models to |
+| attributes  | Array of attributes to apply to the models |
+| actAs       | Array of actAs behaviors and options to enable on the models |
+| options     | Array of table options to apply to the models |
+| inheritance | Inheritance options to apply to the models |
+
+Here is a sample schema file which implements some global schema information:
+
+    [yml]
+    connection: conn_name1
+    actAs: [Timestampable]
+    options:
+      type: INNODB
+
+    User:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        contact_id:
+          type: integer(4)
+        username:
+          type: string(255)
+        password:
+          type: string(255)
+      relations:
+        Contact:
+          foreignType: one
+
+    Contact:
+      columns:
+        id:
+          type: integer(4)
+          primary: true
+          autoincrement: true
+        name:
+          type: string(255)
+
+Generates the following SQL with MySQL:
+
+    CREATE TABLE contact (id INT AUTO_INCREMENT, name VARCHAR(255), created_at DATETIME, updated_at DATETIME, PRIMARY KEY(id)) ENGINE = INNODB;
+    CREATE TABLE user (id INT AUTO_INCREMENT, contact_id INT, username VARCHAR(255), password VARCHAR(255), created_at DATETIME, updated_at DATETIME, INDEX contact_id_idx (contact_id), PRIMARY KEY(id)) ENGINE = INNODB;
+    ALTER TABLE user ADD FOREIGN KEY (contact_id) REFERENCES contact(id);
+
+All of the settings at the top will be applied to every model which is defined in that yaml file.
+
+## Plugin Schemas
+
+With symfony plugins, using Doctrine schemas are no different than using them in your main `config/doctrine` folder. The plugin should also have the same `config/doctrine` directory containing YAML files. It is not necessary to specify any package parameter like you have to with Propel. The plugin is smart enough to know it is a part of a plugin because of its location.
+
+The models, forms, filters, etc. are all generated in to sub-folders for the plugin to make organization and maintenance of your models easier. For example in `sfDoctrineGuardPlugin` `sfGuardUser` is generated as follows.
+
+    lib/
+      model/
+       doctrine/
+         sfDoctrineGuardPlugin/
+           sfGuardUser.class.php
+           sfGuardUserTable.class.php
+           base
+             BasesfGuardUser.class.php
+      form/
+        doctrine/
+          BaseFormDoctrine.class.php
+          sfDoctrineGuardPlugin/
+            sfGuardUserForm.class.php
+            base
+              BasesfGuardUserForm.class.php
+    plugins/
+      sfDoctrineGuardPlugin/
+        lib/
+          model/
+            doctrine/
+              PluginsfGuardUser.class.php
+              PluginsfGuardUserTable.class.php
+          form/
+            doctrine/
+              PluginsfGuardUserForm.class.php
+
+The hierarchy of the generated classes are as follows.
+
+| Name                   | Extends                | Description                        |
+|------------------------|------------------------|------------------------------------|
+| sfGuardUser            | PluginsfGuardUser      | Top level model class for all your custom project functionality. |
+| PluginsfGuardUser      | BasesfGuardUser        | Plugin level model class for functionality bundled with the plugin. |
+| BasesfGuardUser        | sfDoctrineRecord       | Generated base model class containing schema meta data. |
+| sfGuardUserTable       | PluginsfGuardUserTable | Top level table class for custom project functionality. |
+| PluginsfGuardUserTable | Doctrine_Table         | Plugin level table class for functionality bundled with the plugin. |
+| sfGuardUserForm        | PluginsfGuardUserForm  | Top level form class for all your custom project functionality. |
+| PluginsfGuardUserForm  | BasesfGuardUserForm    | Plugin level form class for functionality bundled with the plugin. |
+| BasesfGuardUserForm    | BaseFormDoctrine       | Generated base form class containing form widgets and validators. |
+| BaseFormDoctrine       | sfFormDoctrine         | Generated base form class which all generated forms extend. |
+
+## Element Definitions
+
+Below is a list with all the allowed element names and a brief definition for each one.
+
+### Root Elements
+
+| Name         | Description                |
+|--------------|----------------------------|
+| abstract     | Whether or not to make the generated class abstract. Defaults to false. When a class is abstract it is not exported to the database. |
+| className    | Name of the class to generate |
+| tableName    | Name of the table in your DBMS to use. |
+| connection   | Name of the `Doctrine_Connection` instance to bind the model to. |
+| columns      | Column definitions. |
+| relations    | Relationship definitions. |
+| indexes      | Index definitions. |
+| attributes   | Attribute definitions. |
+| actAs        | ActAs definitions. |
+| options      | Option definitions. |
+| inheritance  | Array for inheritance definition |
+| listeners    | Array defining listeners to attach |
+| checks       | Checks to run at application level as well as exporting to your DBMS |
+
+### Columns
+
+| Name         | Description                |
+|--------------|----------------------------|
+| name         | Name of the column.        |
+| fixed        | Whether or not the column is fixed. |
+| primary      | Whether or not the column is a part of the primary key. |
+| autoincrement| Whether or not the column is an autoincrement column. |
+| type         | Doctrine data type of the column |
+| length       | Length of the column |
+| default      | Default value of the column |
+| scale        | Scale of the column. Used for the `decimal` type. |
+| values       | List of values for the `enum` type. |
+| comment      | Comment for the column. |
+| sequence     | Sequence definition for column. |
+| zerofill     | Whether or not to make the column fill empty characters with zeros |
+| extra        | Array of extra information to store with the column definition |
+
+### Relations
+
+| Name         | Description                |
+|--------------|----------------------------|
+| class        | Name of class to use for relationship. |
+| alias        | Alias to use to identify relationship. |
+| type         | The relationship type. Value can be either `one` or `many` and it defaults to `one`. |
+| refClass     | Middle reference class to use for many to many relationships. |
+| local        | The local field name used in the relationship. |
+| foreign      | the foreign field name used in the relationship. |
+| foreignAlias | The alias of the opposite end of the relationship. Only allowed when `autoComplete` is set to `true`. |
+| foreignType  | The type of the opposite end of the relationship. Only allowed when `autoComplete` is set to `true`. |
+| autoComplete | Whether or not to add the relationship to the opposite end making it bi-directional. Defaults to true. |
+| cascade      | Application level cascading options. |
+| onDelete     | Database level cascading delete value. |
+| onUpdate     | Database level cascading update value. |
+| equal        | Whether or not the relationship is a equal nested many to many. |
+| owningSide   | - |
+| refClassRelationAlias | - |
+
+### Inheritance
+
+| Name         | Description                |
+|--------------|----------------------------|
+| type         | Type of inheritance to use. Allowed values are `concrete`, `column_aggregation`, and `simple`. |
+| extends      | Name of the class to extend. |
+| keyField     | Name of the field to use as the key for `column_aggregation` inheritance. |
+| keyValue     | Value to fill the `keyField` with for `column_aggregation` inheritance. |
+
+### Indexes
+
+| Name         | Description                 |
+|--------------|-----------------------------|
+| name         | Name of the index to create.|
+| fields       | Array of fields to use in the index. |
+| unique       | Whether or not the index is unique. |
+
+>**TIP**
+>More can be read about schema files in the Doctrine Manual [here](http://www.doctrine-project.org/documentation/manual/1_0/en/schema-files).

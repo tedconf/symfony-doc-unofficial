@@ -1,0 +1,135 @@
+Chapter 3 - Configuration
+=========================
+
+## Attributes
+
+Doctrine controls features and settings with attributes. The attributes can be defined at different levels of a hierarchy. Some attributes can be specified at all levels and others cannot. Below explains how you can specify attributes at each level. Attributes can be specified globally, on each connection, or on each individual model.
+
+In symfony you can control the Doctrine configuration in your `config/ProjectConfiguration.class.php` or `apps/appname/config/appnameConfiguration.class.php`
+
+### Global
+
+You can control global attributes by creating a `configureDoctrine()` in your configuration. All global attributes are set on the `Doctrine_Manager` singleton instance. This method is invoked when the `sfDoctrinePlugin` `config.php` is loaded. This is before any connections exist so only `Doctrine_Manager` attribute can be controlled at this point.
+
+    [php]
+    public function configureDoctrine(Doctrine_Manager $manager)
+    {
+      $manager->setAttribute('use_dql_callbacks', true);
+      $manager->setAttribute('use_native_enum', true);
+    }
+
+### All Connections
+
+You can control per connection attributes by creating a `configureDoctrineConnection()` in your configuration class. This method is invoked in `sfDoctrineDatabase` as each connection is instantiated by symfony in the order they exist in `config/databases.yml`.
+
+    [php]
+    public function configureDoctrineConnection(Doctrine_Connection $connection)
+    {
+      $connection->setAttribute('use_dql_callbacks', true);
+      $connection->setAttribute('use_native_enum', true);
+    }
+
+You can also optionally specify connection attributes directly on the connection definition in `config/doctrine/databases.yml` like the following:
+
+    [yml]
+    doctrine:
+       class: sfDoctrineDatabase
+       param:
+         dsn: 'mysql:host=localhost;dbname=dbname'
+         username: user
+         password: secret
+         attributes:
+           use_dql_callbacks: true
+           use_native_enum:  true
+
+You may also want to have a different configuration for each connection so you can create a specific function that is also invoked on each individual connection. If you have a connection named `master` then you will need to create a function named `configureDoctrineConnectionMaster()` in your `config/ProjectConfiguration.class.php` file.
+
+    [php]
+    public function configureDoctrineConnectionMaster(Doctrine_Connection $connection)
+    {
+      $connection->setAttribute('use_dql_callbacks', false);
+      $connection->setAttribute('use_native_enum', false);
+    }
+
+In the above example we have enabled `use_dql_callbacks` and `use_native_enum` for every connection except the connection named `master` by enabling it for all connections and disabling the attributes specifically for that connection.
+
+### Model
+
+The last level of the hierarchy for Doctrine is models. The attributes can be specified directly in the YAML definition of the model.
+
+    [yml]
+    Store:
+      connection: client
+      attributes:
+        export: tables
+      columns:
+        name: string(255)
+        description: string(500)
+
+You can also set attributes using php code in the generated model classes in `lib/model/doctrine`. Check out `lib/model/doctrine/Store.class.php` and override the `setTableDefinition()` to specify some additional attributes. 
+
+    [php]
+    public function setTableDefinition()
+    {
+      parent::setTableDefinition();
+      $this->setAttribute('export', 'tables');
+    }
+
+## Configuring Model Building
+
+sfDoctrinePlugin offers the ability to override some of the default model building options. These settings can be controlled using the `sfConfig` class using the parameter named `doctrine_model_builder_options`.
+
+Here is an example of how you can change the base class used when generating models. You can set it to use a class named `myDoctrineRecord` or whatever you want. Just make sure that a class exists somewhere in your project for the symfony autoloading to find.
+
+    [php]
+    public function configureDoctrine(Doctrine_Manager $manager)
+    {
+      $options = array('baseClassName' => 'myDoctrineRecord');
+      sfConfig::set('doctrine_model_builder_options', $options);
+    }
+
+Make sure you create the class. For example, `sfproject/lib/myDoctrineRecord.class.php` with the following php code.
+
+    [php]
+    class myDoctrineRecord extends sfDoctrineRecord
+    {
+    }
+
+Now when you generate your models, all the classes will extend from `myDoctrineRecord` instead of `sfDoctrineRecord` so you can add custom functionality to all your models.
+
+Here is a list of all the other options which can be changed to different values for the model building process.
+
+| Name                 | Description                               | Default          |
+|----------------------|-------------------------------------------|------------------|
+| suffix               | Suffix to use for generated classes       | .class.php       |
+| generateBaseClasses  | Whether or not to generate base classes   | true             |
+| generateTableClasses | Whether or not to generate *Table classes | true             |
+| baseClassPrefix      | Word to prefix base classes with          | Base             |
+| baseClassesDirectory | Directory to generate base classes in     | base             |
+| baseClassName        | Super parent to extend models from        | sfDoctrineRecord |
+
+## Custom Doctrine Library Path
+
+With `sfDoctrinePlugin` it is easy to swap out the version of Doctrine used by simply changing one configuration value.
+
+Below you will find an example of how you can configure `sfDoctrinePlugin` to use a different version of Doctrine, for example 1.0.10.
+
+First we need to check out the version of Doctrine we want to use into `lib/vendor/doctrine`:
+
+    $ mkdir lib/vendor
+    $ cd lib/vendor
+    $ svn co http://svn.doctrine-project.org/tags/1.0.10/lib doctrine
+
+Now we can configure the `sfDoctrinePlugin` to use that version of Doctrine instead of the one that comes bundled with the plugin. In your `ProjectConfiguration::setup()` method you need to change the value of the `sfDoctrinePlugin_doctrine_lib_path` with `sfConfig`, like the following:
+
+    [php]
+    public function setup()
+    {
+      sfConfig::set('sfDoctrinePlugin_doctrine_lib_path', sfConfig::get('sf_lib_dir') . '/vendor/doctrine/Doctrine.php');
+    }
+
+>**NOTE**
+>Not all versions of Doctrine are compatible with the Symfony `sfDoctrinePlugin`. For example using a different major version of Doctrine that is not bundled with the `sfDoctrinePlugin` is not guaranteed to work well, if at all.
+
+>**TIP**
+>More can be read about configuration in the Doctrine Manual [here](http://www.doctrine-project.org/documentation/manual/1_0/en/configuration).
