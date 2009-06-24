@@ -157,112 +157,61 @@ Siccome il database non esiste ancora e non vogliamo prendere decisioni su
 di esso (come realizzarlo), creeremo lo schema a mano modificando un file vuoto
 `config/schema.yml`:
 
+>**TIP**
+>Si avrà bisogno di creare a mano la cartella `config/doctrine/` nel progetto,
+>perché non esiste ancora:
+>
+>     $ mkdir config/doctrine
+
     [yml]
     # config/doctrine/schema.yml
     JobeetCategory:
-      actAs:
-        Timestampable: ~
+      actAs: { Timestampable: ~ }
       columns:
-        name:
-          type: string(255)
-          notnull:  true
-          unique: true
+        name: { type: string(255), notnull: true, unique: true }
 
     JobeetJob:
-      actAs:
-        Timestampable: ~
+      actAs: { Timestampable: ~ }
       columns:
-        category_id:
-          type: integer
-          notnull:  true
-        type:
-          type: string(255)
-        company:
-          type: string(255)
-          notnull:  true
-        logo:
-          type: string(255)
-        url:
-          type: string(255)
-        position:
-          type: string(255)
-          notnull:  true
-        location:
-          type: string(255)
-          notnull:  true
-        description:
-          type: string(4000)
-          notnull:  true
-        how_to_apply:
-          type: string(4000)
-          notnull:  true
-        token:
-          type: string(255)
-          notnull:  true
-          unique: true
-        is_public:
-          type: boolean
-          notnull:  true
-          default:  1
-        is_activated:
-          type: boolean
-          notnull:  true
-          default:  0
-        email:
-          type: string(255)
-          notnull:  true
-        expires_at:
-          type: timestamp
-          notnull:  true
+        category_id:  { type: integer, notnull: true }
+        type:         { type: string(255) }
+        company:      { type: string(255), notnull: true }
+        logo:         { type: string(255) }
+        url:          { type: string(255) }
+        position:     { type: string(255), notnull: true }
+        location:     { type: string(255), notnull: true }
+        description:  { type: string(4000), notnull: true }
+        how_to_apply: { type: string(4000), notnull: true }
+        token:        { type: string(255), notnull: true, unique: true }
+        is_public:    { type: boolean, notnull: true, default: 1 }
+        is_activated: { type: boolean, notnull: true, default: 0 }
+        email:        { type: string(255), notnull: true }
+        expires_at:   { type: timestamp, notnull: true }
       relations:
-        JobeetCategory:
-          onDelete: CASCADE
-          local:  category_id
-          foreign:  id
-          foreignAlias: JobeetJobs
-        Affiliates:
-          class:  JobeetAffiliate
-          local:  category_id
-          foreign:  affiliate_id
-          refClass: JobeetCategoryAffiliate
-          foreignAlias: JobeetJobs
+        JobeetCategory: { onDelete: CASCADE, local: category_id, foreign: id, foreignAlias: JobeetJobs } 
 
     JobeetAffiliate:
-      actAs:
-        Timestampable: ~
+      actAs: { Timestampable: ~ }
       columns:
-        url:
-          type: string(255)
-          notnull:  true
-        email:
-          type: string(255)
-          notnull:  true
-          unique: true
-        token:
-          type: string(255)
-          notnull:  true
-        is_active:
-          type: boolean
-          notnull:  true
-          default:  0
+        url:       { type: string(255), notnull: true }
+        email:     { type: string(255), notnull: true, unique: true }
+        token:     { type: string(255), notnull: true }
+        is_active: { type: boolean, notnull: true, default: 0 }
+      relations:
+        JobeetCategories:
+          class: JobeetCategory
+          refClass: JobeetCategoryAffiliate
+          local: affiliate_id
+          foreign: category_id
+          foreignAlias: JobeetAffiliates
 
     JobeetCategoryAffiliate:
       columns:
-        category_id:
-          type: integer
-          primary:  true
-        affiliate_id:
-          type: integer
-          primary:  true
+        category_id:  { type: integer, primary: true }
+        affiliate_id: { type: integer, primary: true }
       relations:
-        JobeetCategory:
-          onDelete: CASCADE
-          local:  category_id
-          foreign:  id
-        JobeetAffiliate:
-          onDelete: CASCADE
-          local:  affiliate_id
-          foreign:  id
+        JobeetCategory:  { onDelete: CASCADE, local: category_id, foreign: id }
+        JobeetAffiliate: { onDelete: CASCADE, local: affiliate_id, foreign: id }
 </doctrine>
 
 >**TIP**
@@ -334,7 +283,7 @@ configurazione (chiave primaria per `id` e timestamp per
             `time`, `date`, `enum`, `gzip`)
   * `notnull`: Impostarlo a `true` se si vuole che la colonna sia
      obbligatoria
-  * `unique`: SImpostarlo a `true` se si vuole creare una chiave
+  * `unique`: Impostarlo a `true` se si vuole creare una chiave
      univoca per la colonna.
 
 >**NOTE**
@@ -889,8 +838,8 @@ metodo `__toString()`, come sotto.
       }
     }
 
-Ora potete creare e modificare i lavori. Provate a lasciare un campo richiesto in bianco, o
-ad immettere una data non valida. Tutto bene, symfony ha creato delle regole di
+Ora potete creare e modificare i lavori. Provate a lasciare vuoto un campo richiesto, o
+a immettere una data non valida. Tutto bene, symfony ha creato delle regole di
 validazione di base, partendo dallo schema del database.
 
 ![Validazione](http://www.symfony-project.org/images/jobeet/1_2/03/validation.png)
