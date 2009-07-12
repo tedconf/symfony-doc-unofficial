@@ -13,7 +13,7 @@ guides may prescribe. Although it will take slightly more time to install
 symfony our way, a little extra effort at the beginning is really worth it in
 the long run. Also, as with any other PHP software installation, there are a
 lot of small traps that you can fall into that can make your experience harder
-that it needs to be, so we will try to help you avoid them.
+than it needs to be, so we will try to help you avoid them.
 
 This tutorial teaches you everything you need to get started with a new symfony
 project. From the web server configuration, installation of symfony itself, to
