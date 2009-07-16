@@ -1,0 +1,783 @@
+Day 4: The Controller and the View
+第三天：控制器和视图
+==================================
+
+昨天，我们研究了symfony是如何通过抽象化数据库引擎间的差别，将关联元素转化为面向
+对象的类，来简化数据库管理的；我们使用##ORM##描述数据库结构、生成数据表，并给
+数据库添加了一些初始数据。
+
+今天，我们将完成昨天生成的工作模块（`job` moudle）。这个模块已经包括Jobeet需要的
+所有代码：
+
+ * 显示所有工作的列表页
+ * 创建新工作的页面
+ * 更新工作的页面
+ * 删除工作的页面
+
+代码已经有了，我们要修改模板，让它符合我们的设计。
+
+~MVC~体系
+----------------------
+
+如果你没有用过框架，你可能习惯于将php代码与HTML代码混编在同一个php文件中。这些
+php文件可能都包含配置代码、业务逻辑、SQL语句和HTML代码。
+
+你可能使用过模板引擎从HTML代码中分离出业务逻辑，也可能使用过数据抽象层从业务逻辑
+中分离出关系模型。但是大多时候，这只会让你产生大量的代码。开发速度提高，但不久，
+你就发现代码越来越难维护，因为除了你之外没有人能读懂这些代码是如何工作的。
+
+对于这些问题，有一个非常好的解决办法——[**MVC 设计模式**]
+(http://en.wikipedia.org/wiki/Model-view-controller) ，这是现在最普遍的使用的
+组织代码的方式。简单来说，MVC模式定义了一种最自然的组织代码的方式。这种模式将
+代码分离为**3个层**:
+
+  * 模型层（**~Model~** layer）定义业务逻辑（数据库属于这个层）。上节课中你已经知道，
+    symfony将与模型层关联的所有类和文件都放在`lib/model`目录下。
+
+  * 视图层（~View~）是与用户交互的层（模板引擎是这个层的一部分）。在symfony中，
+    视图层主要由PHP模板组成。这些文件存储在不同的`templates/`目录中，今天稍后会讲到。
+
+  * 控制层（**~Controller~**）是一段代码，它从模型层读取数据传送给视图层，由视图层显示
+  到客户端。当我们第1天安装symfony时，我们看到所有的请求都由前端控制器(`index.php`
+  and `frontend_dev.php`)管理。这些前端控制器（front controllers）将实际工作交由动作
+  （**actions**）处理。象我们昨天看到的一样，这些动作被合理的组织到**模块**（modules）中。
+
+![MVC](http://www.symfony-project.org/images/jobeet/1_2/04/mvc.png)
+
+今天，我将按第2天给出的布局修改主页和工作页，并让它们能动态显示内容。这样的话，
+我们要做很多事，你可以从其中了解 symfony目录结构，及各层代码分离的方法。
+
+布局
+----------
+
+首先，如果你仔细研究了网页的设计图，你会发现每个页面都有很多相同的地方。
+这表示我们必须在每个页面添加一些相同的代码。如你所知，代码重复是非常糟糕的，
+所以我们首先要解决这个问题。
+
+我们通常办法是：将重复代码（如头部代码和底部代码）分别写入单独的页面，然后
+再让需要显示这些内容的页面去调用这些单独的页面。下面是个简单的图示：
+
+![Header and footer](http://www.symfony-project.org/images/jobeet/1_2/04/header_footer.png)
+
+这种办法看起来不错，大多数时候我们也是这么做的。但是，这个办法存在一个缺陷，
+就是头部和底部两个独立的文件中会含有没有闭合的HTML标签。 为了让一切看上去很
+完美，我们使用了另外一种更好方式来解决这个问题——
+[~装饰设计模式|Decorator~ design pattern](http://en.wikipedia.org/wiki/Decorator_pattern)
+（Decorator design pattern）：就是使用全局模板（layout ），来装饰展示内容的
+模板（译注：内容模板如同画，全局模板如同框，装饰模式就是用画框来装饰画。反过
+来说，一个画框又可以装饰不同的画）:
+
+![Layout](http://www.symfony-project.org/images/jobeet/1_2/04/layout.png)
+
+默认的全局模板（layout）放在`layout.php`文件中，可以在
+`apps/frontend/templates/`目录下找到它。这个目录中的通常存放全局模板文件，
+程序（app）中每个模块（module）都可以使用。
+
+用下面代码替换`layout.php`中的代码:
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+      <head>
+        <title>Jobeet - Your best job board</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <?php include_javascripts() ?>
+        <?php include_stylesheets() ?>
+      </head>
+      <body>
+        <div id="container">
+          <div id="header">
+            <div class="content">
+              <h1><a href="/job">
+                <img src="/images/logo.jpg" alt="Jobeet Job Board" />
+              </a></h1>
+
+              <div id="sub_header">
+                <div class="post">
+                  <h2>Ask for people</h2>
+                  <div>
+                    <a href="/job/new">Post a Job</a>
+                  </div>
+                </div>
+
+                <div class="search">
+                  <h2>Ask for a job</h2>
+                  <form action="" method="get">
+                    <input type="text" name="keywords"
+                      id="search_keywords" />
+                    <input type="submit" value="search" />
+                    <div class="help">
+                      Enter some keywords (city, country, position, ...)
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="content">
+            <?php if ($sf_user->hasFlash('notice')): ?>
+              <div class="flash_notice">
+                <?php echo $sf_user->getFlash('notice') ?>
+              </div>
+            <?php endif; ?>
+
+            <?php if ($sf_user->hasFlash('error')): ?>
+              <div class="flash_error">
+                <?php echo $sf_user->getFlash('error') ?>
+              </div>
+            <?php endif; ?>
+
+            <div class="content">
+              <?php echo $sf_content ?>
+            </div>
+          </div>
+
+          <div id="footer">
+            <div class="content">
+              <span class="symfony">
+                <img src="/images/jobeet-mini.png" />
+                powered by <a href="http://www.symfony-project.org/">
+                <img src="/images/symfony.gif" alt="symfony framework" />
+                </a>
+              </span>
+              <ul>
+                <li><a href="">About Jobeet</a></li>
+                <li class="feed"><a href="">Full feed</a></li>
+                <li><a href="">Jobeet API</a></li>
+                <li class="last"><a href="">Affiliates</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+
+
+和其它的一些模板程序不大相同，symfony的~模板|Templates~都是纯PHP文件。在layout模板中
+包含一些PHP变量和函数调用。如~`$sf_content`~就是一个非常有趣的变量：它由框架定义，包
+含由动作（action）生成的HTML代码。
+
+如果你浏览`job`模块(`http://jobeet.localhost/frontend_dev.php/job`)，
+你可以看到所有被layout装饰的动作。
+
+样式、图片、脚本
+----------------------------------------
+
+这不是一个关于网页设计的教程，我们已经为读者准备好了全部的资源文件:你可以到
+[这里](http://www.symfony-project.org/get/jobeet/images.zip)
+下载图片放到`web/images/`目录下;从[这里](http://www.symfony-project.org/get/jobeet/css.zip)
+下载css文件放到`web/css/`目录下。
+
+>**NOTE**
+>在layout中包含一个收藏夹图标，你可以从[这里](http://www.symfony-project.org/get/jobeet/favicon.ico)
+>下载，放到`web/`目录下。
+
+![The job module with a layout and assets](http://www.symfony-project.org/images/jobeet/1_2/04/job_layout_assets.png)
+
+>**TIP**
+>默认的情况下，`generate:project`命令会自动在/web目录下生成3个目录来分别存放不
+>同文件：`/web/images/`目录用来保存图片，`/web/~css|CSS~/`保存~css样式表|Stylesheets~，
+>`/web/js/`保存javascript文件。这些目录是symfony的默认目录，如果没有特别的声明，
+>symfony会自动到这些目录寻找相应类型的文件。当然，我们也可以通过显示的说明，而
+>将这些类型文件放到`web/`下的任意目录中。
+
+也许你会奇怪，当我们在浏览器中查看job页面源文件时，会发现页面使用一个名叫
+`main.css`的样式文件，但是在layout页面中我们却没有发现任何调用这个文件的语句，
+这是怎么回事呢？
+
+其实`main.css`已经被调用了，只不过是使用了一种我们现在还不太熟悉的方式——辅助函数（helper）。
+辅助函数是symfony内置辅助生成HTML代码的函数，很多情况下它可以帮助你节约书写
+HTML代码的时间。`include_stylesheets()`就是一个辅助函数，用来生成一个调用css文件
+的`<link>`标签。
+
+但是如何知道include_stylesheets()函数是如何知道调用哪个css样式文件呢？
+
+`include_stylesheets()`函数是通过读取~`view.yml`~文件中`stylesheets`项来决定调用哪些文件的。
+~`view.yml`~被用来配置视图层，下面是`generate:app`自动生成的`view.yml`文件：
+
+    [yml]
+    # apps/frontend/config/view.yml
+    default:
+      http_metas:
+        content-type: text/html
+
+      metas:
+        #title:        symfony project
+        #description:  symfony project
+        #keywords:     symfony, project
+        #language:     en
+        #robots:       index, follow
+
+      stylesheets:    [main.css]
+
+      javascripts:    []
+
+      has_layout:     on
+      layout:         layout
+
+这个`view.yml`文件为程序下的所有模板设置`默认`配置，例如`stylesheets` 项定义程
+序每个页面要调用的css文件的数组（这个数组通过`include_stylesheets()`调用）。
+我们可以通过`stylesheets`项为程序中每一个页面单独定义要调用的css文件。
+
+>**NOTE**
+>在默认的`view.yml`文件中调用的样式文件是`main.css`而不是`/css/main.css`。
+>事实上这是一个问题, 使用`/~css|CSS~/`路径当做~前缀|Prefix~和不是用其实是等价的。
+
+当定义多个样式时，程序会按照数组中文件名的顺序，依次生成标签，按顺序调用每个样式：
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css]
+
+你可以改变它们的`media`属性，也可以省略样式文件名的`.css`后缀：
+
+    [yml]
+    stylesheets:    [main.css, jobs.css, job.css, print: { media: print }]
+
+这条设置将转化成下面的html标签：
+
+    [php]
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/jobs.css" />
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/job.css" />
+    <link rel="stylesheet" type="text/css" media="print"
+      href="/css/print.css" />
+
+>**TIP**
+>`view.yml`也定义程序的使用全局模板，默认调用~layout|Layout~ 模板，这个模板对应`layout.php`
+>文件。如果将`has_layout`项设置为`false`，装饰模式将被禁用。
+
+
+`view.yml`不仅可以定义所有模板共用css文件，还可以单独为每个模块设置css样式。
+将程序的`view.yml`文件改回只包含`main.css`：
+
+    [yml]
+    # apps/frontend/config/view.yml
+    stylesheets:    [main.css]
+
+为了给`job`模块单独配置视图，我们必须在`apps/frontend/modules/job/config/`目录下，
+给job模块创建一个新的`view.yml`文件，加入代码：
+
+    [yml]
+    # apps/frontend/modules/job/config/view.yml
+    indexSuccess:
+      stylesheets: [jobs.css]
+
+    showSuccess:
+      stylesheets: [job.css]
+
+`indexSuccess` 和 `showSuccess`两部分（对应index和show动作的模板名字，关于模板
+的命名规则后面会详细讲述）可以使用程序`view.yml`中的所有的设置项来配置。也可以
+使用`all`为模块中所有动作进行配置。当程序执行时，模块和程序的`view.yml`文件将
+被合并，合并的原则是：模块（的 `view.yml`）中所有的设置项及模块（的`view.yml`）
+中没有而程序（的`view.yml`）中有的设置项将全部保留；程序（的`view.yml`）中与模
+块（的`view.yml`）中相同的设置将被覆盖；
+
+>**SIDEBAR**
+>symfony配置规则
+>
+>有一些symfony配置文件，同样的设置可以在不同的级别中定义:
+>
+>  * 默认的配置位于框架中
+>  * 整个项目共用的全局配置（global configuration）在`config/`目录下
+>  * 整个程序共用的局部配置（local configuration）在`apps/APP/config/`目录下
+>  * 模块使用的局部配置位于`apps/APP/modules/MODULE/config/`目录下
+>
+>为获得良好的性能，程序运行时，配置系统将合并这些存在于不同文件中的设置，并生成
+>一个缓存文件。这就是为什么改变设置时需要清空缓存的原因。
+
+一般来说，配置文件中的每个设置都可以使用PHP代码的动态实现，例如，你可以直接
+使用~`use_stylesheet()`辅助函数~ 来调用`view.yml`中设置的css文件：
+
+    [php]
+    <?php use_stylesheet('main.css') ?>
+
+你也可以在layout中使用这个辅助函数来调用一个全局css样式。
+
+选择哪种方法只是一个爱好问题。一方面，`view.yml`提供了一种为模块里所有动作设置
+配置的方法，这在一个模板里是不可能实现的（模板中只能配置使用这个模板的动作）。
+另一方面，`view.yml`文件中设置是完全静态，当你需要动态调用的时候，使用
+`use_stylesheet()` ~helper|Helpers~会非常方便，另外使用辅助函数会使你css文件和HTML代码
+放在一起，修改起来会方便许多。
+
+在jobeet中我们将使用use_stylesheet()辅助函数的方式，你不需要配置view.yml文件。
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
+
+>**NOTE**
+>相应的，javascript文件的调用可以通过`view.yml`中`javascripts`项设置，也可以
+>通过在模板使用~`use_javascript()`辅助函数~来调用。
+
+Job首页
+----------------
+
+在第3天教程中，job首页已经通过`job`模块中`index`动作生成。`index`动作是首页
+的控制层部分，关联的模板`indexSuccess.php`是视图层部分：
+
+    apps/
+      frontend/
+        modules/
+          job/
+            actions/
+              actions.class.php
+            templates/
+              indexSuccess.php
+
+### 动作
+
+每个~动作|Action~都是类的一个方法。对于工作主页来说，类为`jobActions`（命名方式：
+模块名+`Action`后缀），方法为`executeIndex()`（命名方式：`execute`+以驼峰式书写
+的动作名），这个动作从数据库中获取全部的job记录：
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    class jobActions extends sfActions
+    {
+      public function executeIndex(sfWebRequest $request)
+      {
+<propel>
+        $this->jobeet_job_list = JobeetJobPeer::doSelect(new Criteria());
+</propel>
+<doctrine>
+        $this->jobeet_job_list = Doctrine::getTable('JobeetJob')
+          ->createQuery('a')
+          ->execute();
+</doctrine>
+      }
+
+      // ...
+    }
+
+<propel>
+让我们仔细看一下这段代码：`executeIndex()`方法（控制层）调用`JobeetJobPeer`方法检索
+所有job记录（`new Criteria()`），这个方法返回一个包含所有`JobeetJob`对象（symfony将
+数据表中每条记录转化成一个对象）的数组，并将这个数组赋值给`jobeet_job_list`对象属性。
+</propel>
+<doctrine>
+让我们仔细看一下这段代码: `executeIndex()`方法（控制层）调用 `JobeetJob` 创建查询获
+得全部的job记录。这个方法返回一个包含`JobeetJob`对象的`Doctrine_Collection`，并将这
+个数组赋值给`jobeet_job_list`对象属性。
+
+让我们仔细看一下这段代码: the `executeIndex()` method (the
+Controller) calls the Table `JobeetJob` to create a query to retrieve all the 
+jobs. It returns a `Doctrine_Collection` of `JobeetJob` objects that are assigned to
+the `jobeet_job_list` object property.
+</doctrine>
+
+所有这样对象属性（jobeet_job_list）都会自动传递给模板（the View）。要将数据从
+控制层传送到视图(或者说从动作传给模板)，只需要定义一个新属性：
+
+    [php]
+    public function executeFooBar(sfWebRequest $request)
+    {
+      $this->foo = 'bar';
+      $this->bar = array('bar', 'baz');
+    }
+
+你可以直接在模板中用`$foo`和`$bar`变量访问这个两个属性。
+
+### 模板
+
+默认情况下，~模板|Templates~的名称与动作的名称是相对应的（模板的命名规则：
+动作名+`Success`后缀）。
+
+`indexSuccess.php`模板为所有工作生成HTML表格，用来展示工作信息：
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <h1>Job List</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Id</th>
+          <th>Category</th>
+          <th>Type</th>
+    <!-- more columns here -->
+          <th>Created at</th>
+          <th>Updated at</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($jobeet_job_list as $jobeet_job): ?>
+        <tr>
+          <td>
+            <a href="<?php echo url_for('job/show?id='.$jobeet_job->getId()) ?>">
+              <?php echo $jobeet_job->getId() ?>
+            </a>
+          </td>
+          <td><?php echo $jobeet_job->getCategoryId() ?></td>
+          <td><?php echo $jobeet_job->getType() ?></td>
+    <!-- more columns here -->
+          <td><?php echo $jobeet_job->getCreatedAt() ?></td>
+          <td><?php echo $jobeet_job->getUpdatedAt() ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+
+    <a href="<?php echo url_for('job/new') ?>">New</a>
+
+在模板代码中， `foreach`遍历所有`job`对象（`$jobeet_job_list`），输出数据表中
+每条job记录中每个字段（column）值。我们可以通过调用存取器、很容易的访问记录中
+的每个字段，存取器有统一的命名规则：是以get+~驼峰式|Code Formatting~书写的字段（column）名（getColumn），
+例如 `getCreatedAt()`方法，可以获取一条记录的`created_at`值【字段名中下划线（_）
+被自动省略】。
+
+我们修改一下模板，只显示需要的内容：
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <div id="jobs">
+      <table class="jobs">
+        <?php foreach ($jobeet_job_list as $i => $job): ?>
+          <tr class="<?php echo fmod($i, 2) ? 'even' : 'odd' ?>">
+            <td class="location"><?php echo $job->getLocation() ?></td>
+            <td class="position">
+              <a href="<?php echo url_for('job/show?id='.$job->getId()) ?>">
+                <?php echo $job->getPosition() ?>
+              </a>
+            </td>
+            <td class="company"><?php echo $job->getCompany() ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </table>
+    </div>
+
+![Homepage](http://www.symfony-project.org/images/jobeet/1_2/04/homepage.png)
+
+
+模板中`url_for()`也是一个辅助函数，生成标签，我们明天再说它。
+
+Job页面模板
+---------------------
+
+现在我们定制job页模板，打开`showSuccess.php`，用下面代码替换现有的内容：
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
+    <?php use_helper('Text') ?>
+
+    <div id="job">
+      <h1><?php echo $job->getCompany() ?></h1>
+      <h2><?php echo $job->getLocation() ?></h2>
+      <h3>
+        <?php echo $job->getPosition() ?>
+        <small> - <?php echo $job->getType() ?></small>
+      </h3>
+
+      <?php if ($job->getLogo()): ?>
+        <div class="logo">
+          <a href="<?php echo $job->getUrl() ?>">
+            <img src="/uploads/jobs/<?php echo $job->getLogo() ?>"
+              alt="<?php echo $job->getCompany() ?> logo" />
+          </a>
+        </div>
+      <?php endif; ?>
+
+      <div class="description">
+        <?php echo simple_format_text($job->getDescription()) ?>
+      </div>
+
+      <h4>How to apply?</h4>
+
+      <p class="how_to_apply"><?php echo $job->getHowToApply() ?></p>
+
+      <div class="meta">
+<propel>
+        <small>posted on <?php echo $job->getCreatedAt('m/d/Y') ?></small>
+</propel>
+<doctrine>
+        <small>posted on <?php echo date('m/d/Y', strtotime($job->getCreatedAt())) ?></small>
+</doctrine>
+      </div>
+
+      <div style="padding: 20px 0">
+        <a href="<?php echo url_for('job/edit?id='.$job->getId()) ?>">
+          Edit
+        </a>
+      </div>
+    </div>
+
+这个模板直接使用`$job`变量显示job信息，我们前边提到过，这个变量是在动作里定义的
+一个对象属性。这里我们将`$jobeet_job`改成了`$job`，所以要相应的修改`show`动作里
+的对象属性名（注意，有两处要修改）：
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeShow(sfWebRequest $request)
+    {
+<propel>
+      $this->job =
+       ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+      $this->job = Doctrine::getTable('JobeetJob')->
+       ➥ find($request->getParameter('id'));
+</doctrine>
+      $this->forward404Unless($this->job);
+    }
+
+<propel>
+注意，有些propel~存取器|Accessors~ 可以携带参数。如，`created_at`字段的类型为timestamp，
+可以设置`getCreatedAt()`存取器方法的第一个参数来格式化输出日期：
+
+    [php]
+    $job->getCreatedAt('m/d/Y');
+</propel>
+
+>**NOTE**
+>工作说明使用`simple_format_text()` 辅助函数格式化为HTML，将carriage替换为`<br />`，
+>这个辅助函数属于`Text` 辅助函数组，这个组的辅助函数不会被程序自动加载，
+>需要使用`use_helper()`加载。
+
+![Job page](http://www.symfony-project.org/images/jobeet/1_2/04/job.png)
+
+~槽~（~Slot~）
+-------
+
+现在，我们已经在layout中定义所有页面的`<title>`标签：
+
+    [php]
+    <title>Jobeet - Your best job board</title>
+
+但对于工作页，我们希望显示更有意义的title，比如公司名和工作地点。
+
+symfony中，当layout中一个区域依赖模板显示（依赖于模板中定义的内容，而显示的位
+置却在模板之外）时，需要定义一个槽：
+
+![Slots](http://www.symfony-project.org/images/jobeet/1_2/04/layout_slots.png)
+
+给layout添加一个槽，让标题动态显示：
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <title><?php include_slot('title') ?></title>
+
+每个槽都通过一个名字（如`title`）定义，并通过`include_slot()`调用。现在，
+在`showSuccess.php`模板开头，定义一个槽：
+
+    [php]
+    // apps/frontend/modules/job/templates/showSuccess.php
+    <?php slot(
+      'title',
+      sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()))
+    ?>
+
+如果要生成复杂的title，`slot()`辅助函数可以写成下面代码块的形式：
+
+    [php]
+    // apps/frontend/modules/job/templates/showSuccess.php
+    <?php slot('title') ?>
+      <?php echo sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()) ?>
+    <?php end_slot(); ?>
+
+一般像首页这样的页面，我们只需要普通的title，我们只需要在layout定义一个默认title：
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <title>
+      <?php if (!include_slot('title')): ?>
+        Jobeet - Your best job board
+      <?php endif; ?>
+    </title>
+
+如果名为`title`的槽已经定义，`include_slot()`将返回`true`，显示`title`槽
+定义内容，否则显示默认title。
+
+>**TIP**
+>我们已经看了不少以`include_`开头的辅助函数，这些辅助函数可以直接输出HTML代码，
+>而以`get_`开头的helper，大多数时候都只返回内容（需要输出语句显示内容）：
+>
+>     [php]
+>     <?php include_slot('title') ?>
+>     <?php echo get_slot('title') ?>
+>
+>     <?php include_stylesheets() ?>
+>     <?php echo get_stylesheets() ?>
+
+Job页动作
+-------------------
+
+工作页由`show`动作生成，`show`动作在`job`模块的`executeShow()`方法中定义：
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+<propel>
+        $this->job =
+         ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+</propel>
+<doctrine>
+        $this->job = Doctrine::getTable('JobeetJob')->
+         ➥ find($request->getParameter('id'));
+</doctrine>
+        $this->forward404Unless($this->job);
+      }
+
+      // ...
+    }
+
+<propel>
+同`index`动作一样，`show`动作也继承自`JobeetJobPeer`类，不过它是使用
+`retrieveByPk()`方法来获得一条job记录，这个方法的参数是数据表的~主键|Primary Key~。
+</propel>
+<doctrine>
+同`index`动作一样，the `JobeetJob` table class is used to retrieve a job,
+this time by using the `find()` method. The parameter of this method
+is the unique identifier of a job, its ~primary key|Primary Key~. The next 
+section will explain why the `$request->getParameter('id')` statement returns 
+the job primary key.
+</doctrine>
+
+<propel>
+>**TIP**
+>propel生成的model类包含许多有用的方法，这些方法与项目对象一起使用。花些时间
+>去浏览一下位于`lib/om/`目录下这些文件中模型类中各个方法，将很有帮助。
+</propel>
+
+如果请求的job记录不存在，`forward404Unless()`显示~404|404 Error~错误页面，
+它的第一参数为布尔型变量，如果为 `true`，`forward404Unless()`会停止执行当前进程。
+当forward方法通过抛出`sfError404Exception`异常停止执行动作时，不需要使用返回语句。
+
+生产~环境|Environments~和开发环境的404页面有些区别：
+
+![404 error in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/05/404_dev.png)
+
+![404 error in the prod environment](http://www.symfony-project.org/images/jobeet/1_2/05/404_prod.png)
+
+>**NOTE**
+>在部署Jobeet网站到生产服务器上之前，你将会学会如何定制默认的404页面。
+
+-
+
+>**SIDEBAR**
+>“~forward|Action Forwarding~”方法组
+>
+>forward404Unless相当于：
+>
+>     [php]
+>     $this->forward404If(!$this->job);
+>
+>也等同于：
+>
+>     [php]
+>     if (!$this->job)
+>     {
+>       $this->forward404();
+>     }
+>
+>forward404()方法是这个的快捷方式：
+>
+>     [php]
+>     $this->forward('default', '404');
+>
+>forward()方法跳转到同一个程序中的另一个动作；在前边的例子中，跳转到default模块的404动作。default模块绑定在symfony中，提供默认动作显示404，安全和登陆页面。
+
+请求与响应
+----------------------------
+
+当你在浏览器中浏览`/job` 或 `/job/show/id/1`页面时，你便与服务器进行了一次交互，
+浏览器发送一个请求（**~request|HTTP Request~**）到服务器而服务器返回一个响应
+（**~response|HTTP Response~**）。
+
+我们已经看到symfony将请求封装到`sfWebRequest`对象中（看一下`executeShow()`方法）。
+作为一个面向对象的框架，响应也被封装到`sfWebResponse`对象中。你可以通过调用
+`$this->getResponse()`访问响应对象。
+
+这些对象提供许多方便的方法，访问PHP函数和PHP全局变量中的信息。
+
+>**NOTE**
+>symfony为什么要打包已经存在的PHP功能？第一，因为symfony方法比PHP相应的方法更
+>加强大。第二，当你测试一个程序，symfony方法更容易模拟一个请求或回应对象，这
+>比起反复折腾全局变量或使用PHP中类似`header()`的函数强很多。
+
+### 请求（Request）
+
+`sfWebRequest`类包含了~`$_SERVER`~, ~`$_COOKIE`~, ~`$_GET`~, ~`$_POST`~, ~`$_FILES`~
+PHP全局数组：
+
+ Method name          | PHP equivalent
+ -------------------- | --------------------------------------------------
+ `getMethod()`        | `$_SERVER['REQUEST_METHOD']`
+ `getUri()`           | `$_SERVER['REQUEST_URI']`
+ `getReferer()`       | `$_SERVER['HTTP_REFERER']`
+ `getHost()`          | `$_SERVER['HTTP_HOST']`
+ `getLanguages()`     | `$_SERVER['HTTP_ACCEPT_LANGUAGE']`
+ `getCharsets()`      | `$_SERVER['HTTP_ACCEPT_CHARSET']`
+ `isXmlHttpRequest()` | `$_SERVER['X_REQUESTED_WITH'] == 'XMLHttpRequest'`
+ `getHttpHeader()`    | `$_SERVER`
+ `getCookie()`        | `$_COOKIE`
+ `isSecure()`         | `$_SERVER['HTTPS']`
+ `getFiles()`         | `$_FILES`
+ `getGetParameter()`  | `$_GET`
+ `getPostParameter()` | `$_POST`
+ `getUrlParameter()`  | `$_SERVER['PATH_INFO']`
+ `getRemoteAddress()` | `$_SERVER['REMOTE_ADDR']`
+
+我们已经用过`getParameter()`方法访问请求的参数，它返回`$_GET`或`$_POST`
+全局变量的值或`~PATH_INFO~`变量。
+
+如果你想确定请求参数究竟属于上面哪一类，你需要使用`getGetParameter()`, 
+`getPostParameter()`, 和 `getUrlParameter()`。
+
+>**NOTE**
+>如果你想限制一个动作只接受某种特定~HTTP method|HTTP Method~传递的参数，
+>比如，当你需要表单是否是通过`POST`方式提交的，你可以使用`isMethod()`方法：
+>`$this->forwardUnless($request->isMethod(’POST’));`
+
+### 响应（Response）
+
+`sfWebResponse`类，包含`~header|HTTP Headers~()` 和 
+`setraw~cookie|Cookies~()`PHP方法：
+
+ Method name                   | PHP equivalent
+ ----------------------------- | ----------------
+ `setCookie()`                 | `setrawcookie()`
+ `setStatusCode()`             | `header()`
+ `setHttpHeader()`             | `header()`
+ `setContentType()`            | `header()`
+ `addVaryHttpHeader()`         | `header()`
+ `addCacheControlHttpHeader()` | `header()`
+
+当然，`sfWebResponse`也可以设置响应内容(`setContent()`)，和发送响应(`send()`)到
+浏览器的方法。
+
+今天开始时候，我们讲了如何在`view.yml`文件和模板中管理样式表和`javascript`脚本。
+现在我们用响应对象的`addStylesheet()`和`addJavascript()`方法可以实现同样的效果。
+
+>**TIP**
+>[`sfAction`](http://www.symfony-project.org/api/1_2/sfAction),
+>[`sfRequest`](http://www.symfony-project.org/api/1_2/sfRequest)和
+>[`sfResponse`](http://www.symfony-project.org/api/1_2/sfResponse)类提供了
+>许多有用的方法。不要犹豫了，去
+>[API documentation](http://www.symfony-project.org/api/1_2/)学习更多的
+>symfony 内置类。
+
+明天见
+----------------
+
+今天，我们已经描述了一些symfony使用的设计模式。希望项目结构现在会更有意义。
+我们已经通过操作layout和模板文件，改变了模板。并使用插槽和动作让模板显示的
+更加动态。
+
+明天，我们将学习更多关于`url_for()`辅助函数的用法，并通过它给子框架设置路由。
+
+__ORM__
