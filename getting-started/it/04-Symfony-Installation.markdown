@@ -87,27 +87,3 @@ Su Windows:
 >a disposizione molti strumenti che migliorano la vostra produttività per 
 >attività giornaliere come pulizia della cache, generazione di codice e molto
 >altro.
-
-### Il path di symfony
-
-Per sapere la versione di symfony utilizzata da un progetto basta digitare:
-
-    $ php symfony -V
-
-L'opzione `-V` mostra il path della directory di installazione di symfony che è
-memorizzato in `config/ProjectConfiguration.class.php`:
-
-    [php]
-    // config/ProjectConfiguration.class.php
-    require_once '/Users/fabien/work/symfony/dev/1.2/lib/autoload/sfCoreAutoload.class.php';
-
-Per una maggiore portabilità cambiare il path assoluto dell'installazione di symfony
-con un path relativo:
-
-    [php]
-    // config/ProjectConfiguration.class.php
-    require_once dirname(__FILE__).'/../lib/vendor/symfony/lib/autoload/sfCoreAutoload.class.php';
-
-In questo modo è possibile spostare la directory del progetto in qualsiasi punto
-della vostra macchina o su un'altra facendo in modo che il progetto continui a 
-funzionare.

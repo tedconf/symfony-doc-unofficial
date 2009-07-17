@@ -106,6 +106,30 @@ appropriati, in modo tale che il server web possa scriverci dentro:
 >ignorato dagli strumenti di revisione del codice (ad esempio
 >utilizzando la proprietà `svn:ignore`, se si usa Subversion).
 
+### Il path di symfony
+
+Per sapere la versione di symfony utilizzata da un progetto basta digitare:
+
+    $ php symfony -V
+
+L'opzione `-V` mostra il path della directory di installazione di symfony che è
+memorizzato in `config/ProjectConfiguration.class.php`:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    require_once '/Users/fabien/work/symfony/dev/1.2/lib/autoload/sfCoreAutoload.class.php';
+
+Per una maggiore portabilità cambiare il path assoluto dell'installazione di symfony
+con un path relativo:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    require_once dirname(__FILE__).'/../lib/vendor/symfony/lib/autoload/sfCoreAutoload.class.php';
+
+In questo modo è possibile spostare la directory del progetto in qualsiasi punto
+della vostra macchina o su un'altra facendo in modo che il progetto continui a 
+funzionare.
+
 ### Configurare il database
 
 Una delle prime cose da fare è quella di configurare la connessione al
