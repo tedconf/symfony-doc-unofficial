@@ -10,7 +10,7 @@ simple types like strings, booleans, floats, or integers. But unlike PHP, it
 makes a difference between arrays (sequences) and hashes (mappings).
 
 This section describes the minimum set of features you will need to use YAML
-as a coniguration file format in symfony, although the YAML format is capable
+as a configuration file format in symfony, although the YAML format is capable
 of describing much more complex nested data structures.
 
 Scalars
