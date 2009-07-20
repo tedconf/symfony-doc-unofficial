@@ -213,7 +213,9 @@ Abbiamo apportato modifiche a molti file solamente per una feature molto semplic
 Ma ogni volta che abbiamo aggiunto del codice, abbiamo provato a metterlo nello strato
 corretto dell'applicazione, abbiamo inoltre fatto in modo di creare codice riusabile.
 Durante questo processo abbiamo anche fatto la rifattorizzazione di parti di codice esistente.
-Questo è il flusso tipico quando si lavora su un progetto symfony.
+Questo è il flusso tipico quando si lavora su un progetto symfony. Nella schermata
+seguente, per questioni di spazio, si vedono solo 5 lavori. In realtà dovrebbero
+vedersene 10 (secondo le impostazioni `max_jobs_on_homepage`):
 
 ![Homepage](http://www.symfony-project.org/images/jobeet/1_2/07/homepage.png)
 
@@ -224,20 +226,20 @@ Creazione del modulo delle categorie
 
     $ php symfony generate:module frontend category
 
-Se avete creato un modulo avrete probabilmente utilizzato il comando
+Se avete creato un modulo, avrete probabilmente utilizzato il comando
 `propel:generate-module`. Questo va bene, ma visto che il 90% del codice generato
-in questo caso non ci serve, ho utilizzato il comando `generate:module`
+in questo caso non ci serve, meglio usare il comando `generate:module`,
 che crea un modulo vuoto.
 
 >**TIP**
->Perché non aggiungere una `category` action al modulo `job`? Potremmo, ma 
+>Perché non aggiungere un'azione `category` al modulo `job`? Potremmo, ma 
 >visto che il soggetto principale della pagina delle categorie è una categoria,
->sembra più naturale creare un modulo `category` dedicato a questo.
+>sembra più naturale creare un modulo `category` dedicato.
 
 Accedendo alla pagina delle categorie, la rotta `category` dovrà trovare la 
 categoria associata alla variabile `slug` presente nella richiesta. Ma siccome
 lo ~slug~ non è memorizzato nel database, e siccome non possiamo dedurre la 
-categoria dallo slug non c'è modo di individuare la categoria associata allo 
+categoria dallo slug, non c'è modo di individuare la categoria associata allo 
 slug.
 
 Aggiornare il database
@@ -278,7 +280,7 @@ Ora che `slug` è una vera colonna, dobbiamo rimuovere il metodo `getSlug()` da
 
 <propel>
 Ogni volta che il nome di `category` cambia, dobbiamo calcolare e cambiare anche
-`slug`. Facciamo un override del metodo `setName()`:
+`slug`. Ridefiniamo il metodo `setName()`:
 
     [php]
     // lib/model/JobeetCategory.php
@@ -296,7 +298,7 @@ L'impostazione della colonna `slug` viene presa in considerazione automaticament
 >e impostato nell'oggetto.
 </doctrine>
 
-usiamo il task `propel:build-all-load` per aggiornare le tabelle del database,
+usiamo il task `propel:build-all-load` per aggiornare le tabelle del database
 e ripopoliamo il database con le nostre fixture:
 
     $ php symfony propel:build-all-loadd --no-confirmation
