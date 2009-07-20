@@ -1,20 +1,20 @@
-���
+简介
 ====
 
-��Ϊһ��web�����ߣ�ʹ��һ����symfony������full-stack������ע: full-stack framework
-�����������ӵ��������ܹ��ܵĿ�ܣ��������߿����ٶȺͿ���Ч�ʵ����;����
-symfony�������������õĹ�����������רעӦ�ó����ҵ���߼�����֮����һ������
-��ҳ�������һ�����ݿ����㡣Ȼ��, ��Ҳ����Ҫ����һЩ���۵ģ���һҹ֮������
-ȫ�������Ժ������ǲ����ܵġ�
+作为一名web开发者，使用一款象symfony这样的full-stack（译者注: full-stack framework
+个人理解就是拥有完整框架功能的框架）框架是提高开发速度和开发效率的最好途径。
+symfony捆绑了许多有用的功能来帮助您专注应用程序的业务逻辑，他之不是一个对象
+分页类或者另一个数据库抽象层。然而, 这也是需要付出一些代价的；在一夜之间掌握
+全部的特性和配置是不可能的。
 
-2008��ĩ������[*Practical Symfony*](http://www.symfony-project.org/jobeet/),
-��һ��ѧϰsymfony�ܺõ�;�������ܰ������˽�symfony��ι���, ���Ҵ���ѧϰ��
-��ţ�ǵĿ���������
+2008年末发布的[*Practical Symfony*](http://www.symfony-project.org/jobeet/),
+是一个学习symfony很好的途径。它能帮助你了解symfony如何工作, 并且从中学习到
+大牛们的开发方法。
 
-���㿪ʼ��symfony��ʱ��, ����Ҫһ�����Ժ����׵��ҵ�����𰸵Ĳο��ֲᡣ
-*Symfony Reference Guide*ּ���ṩ����һ��ָ��. ����Ϊ*Practical symfony*�Ĳ��䡣
-�⽫���ǰ���������symfony���ĵ�һ���顣�����ṩ���꾡��Ŀ¼��������������زο�
-�ͱ�������ݣ������������ٶ��ҵ�ÿһ�����õ������
+当你开始用symfony的时候, 你需要一本可以很容易地找到问题答案的参考手册。
+*Symfony Reference Guide*旨在提供这样一份指南。它作为*Practical symfony*的补充。
+这将会是伴随你整个symfony生涯的一本书。本书提供了详尽的目录、术语索引、相关参考
+和表格等内容，你能以最快的速度找到每一个可用的配置项。
 
-������Ϊsymfony����Ҫ������, ��Ҳ����ʹ���Ȿ����Ѱ�Ҹ��������, ���߾���������
-����һЩ�µ�����. ��ϣ����������һ�������Ȿ��.
+尽管作为symfony的主要开发者, 我也经常使用这本书来寻找个别的设置, 或者经常在书中
+发现一些新的秘密。我希望您会象我一样爱上这本书。
