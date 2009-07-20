@@ -46,7 +46,7 @@ php文件可能都包含配置代码、业务逻辑、SQL语句和HTML代码。
 今天，我将按第2天给出的布局修改主页和工作页，并让它们能动态显示内容。这样的话，
 我们要做很多事，你可以从其中了解 symfony目录结构，及各层代码分离的方法。
 
-布局
+布局(layout)
 ----------
 
 首先，如果你仔细研究了网页的设计图，你会发现每个页面都有很多相同的地方。
@@ -61,7 +61,7 @@ php文件可能都包含配置代码、业务逻辑、SQL语句和HTML代码。
 这种办法看起来不错，大多数时候我们也是这么做的。但是，这个办法存在一个缺陷，
 就是头部和底部两个独立的文件中会含有没有闭合的HTML标签。 为了让一切看上去很
 完美，我们使用了另外一种更好方式来解决这个问题——
-[~装饰设计模式|Decorator~ design pattern](http://en.wikipedia.org/wiki/Decorator_pattern)
+[装饰设计模式](http://en.wikipedia.org/wiki/Decorator_pattern) (Decorator design pattern)
 （Decorator design pattern）：就是使用全局模板（layout ），来装饰展示内容的
 模板（译注：内容模板如同画，全局模板如同框，装饰模式就是用画框来装饰画。反过
 来说，一个画框又可以装饰不同的画）:
@@ -155,7 +155,7 @@ php文件可能都包含配置代码、业务逻辑、SQL语句和HTML代码。
     </html>
 
 
-和其它的一些模板程序不大相同，symfony的~模板|Templates~都是纯PHP文件。在layout模板中
+和其它的一些模板程序不大相同，symfony的模板都是纯PHP文件。在layout模板中
 包含一些PHP变量和函数调用。如~`$sf_content`~就是一个非常有趣的变量：它由框架定义，包
 含由动作（action）生成的HTML代码。
 
@@ -178,7 +178,7 @@ php文件可能都包含配置代码、业务逻辑、SQL语句和HTML代码。
 
 >**TIP**
 >默认的情况下，`generate:project`命令会自动在/web目录下生成3个目录来分别存放不
->同文件：`/web/images/`目录用来保存图片，`/web/~css|CSS~/`保存~css样式表|Stylesheets~，
+>同文件：`/web/images/`目录用来保存图片，`/web/~css|CSS~/`保存css样式表(Stylesheets)，
 >`/web/js/`保存javascript文件。这些目录是symfony的默认目录，如果没有特别的声明，
 >symfony会自动到这些目录寻找相应类型的文件。当然，我们也可以通过显示的说明，而
 >将这些类型文件放到`web/`下的任意目录中。
@@ -223,7 +223,7 @@ HTML代码的时间。`include_stylesheets()`就是一个辅助函数，用来�
 
 >**NOTE**
 >在默认的`view.yml`文件中调用的样式文件是`main.css`而不是`/css/main.css`。
->事实上这是一个问题, 使用`/~css|CSS~/`路径当做~前缀|Prefix~和不是用其实是等价的。
+>事实上这是一个问题, 使用`/~css|CSS~/`路径当做前缀(Prefix)和不是用其实是等价的。
 
 当定义多个样式时，程序会按照数组中文件名的顺序，依次生成标签，按顺序调用每个样式：
 
@@ -291,7 +291,7 @@ HTML代码的时间。`include_stylesheets()`就是一个辅助函数，用来�
 >一个缓存文件。这就是为什么改变设置时需要清空缓存的原因。
 
 一般来说，配置文件中的每个设置都可以使用PHP代码的动态实现，例如，你可以直接
-使用~`use_stylesheet()`辅助函数~ 来调用`view.yml`中设置的css文件：
+使用`use_stylesheet()`辅助函数来调用`view.yml`中设置的css文件：
 
     [php]
     <?php use_stylesheet('main.css') ?>
@@ -315,7 +315,7 @@ HTML代码的时间。`include_stylesheets()`就是一个辅助函数，用来�
 
 >**NOTE**
 >相应的，javascript文件的调用可以通过`view.yml`中`javascripts`项设置，也可以
->通过在模板使用~`use_javascript()`辅助函数~来调用。
+>通过在模板使用`use_javascript()`辅助函数来调用。
 
 Job首页
 ----------------
@@ -332,9 +332,9 @@ Job首页
             templates/
               indexSuccess.php
 
-### 动作
+### 动作(Action)weil
 
-每个~动作|Action~都是类的一个方法。对于工作主页来说，类为`jobActions`（命名方式：
+每个动作都是类的一个方法。对于工作主页来说，类为`jobActions`（命名方式：
 模块名+`Action`后缀），方法为`executeIndex()`（命名方式：`execute`+以驼峰式书写
 的动作名），这个动作从数据库中获取全部的job记录：
 
@@ -385,9 +385,9 @@ the `jobeet_job_list` object property.
 
 你可以直接在模板中用`$foo`和`$bar`变量访问这个两个属性。
 
-### 模板
+### 模板(Templates)
 
-默认情况下，~模板|Templates~的名称与动作的名称是相对应的（模板的命名规则：
+默认情况下，模板的名称与动作的名称是相对应的（模板的命名规则：
 动作名+`Success`后缀）。
 
 `indexSuccess.php`模板为所有工作生成HTML表格，用来展示工作信息：
@@ -431,7 +431,7 @@ the `jobeet_job_list` object property.
 
 在模板代码中， `foreach`遍历所有`job`对象（`$jobeet_job_list`），输出数据表中
 每条job记录中每个字段（column）值。我们可以通过调用存取器、很容易的访问记录中
-的每个字段，存取器有统一的命名规则：是以get+~驼峰式|Code Formatting~书写的字段（column）名（getColumn），
+的每个字段，存取器有统一的命名规则：是以get+驼峰式书写的字段（column）名（getColumn），
 例如 `getCreatedAt()`方法，可以获取一条记录的`created_at`值【字段名中下划线（_）
 被自动省略】。
 
@@ -533,7 +533,7 @@ Job页面模板
     }
 
 <propel>
-注意，有些propel~存取器|Accessors~ 可以携带参数。如，`created_at`字段的类型为timestamp，
+注意，有些propel存取器(Accessors)可以携带参数。如，`created_at`字段的类型为timestamp，
 可以设置`getCreatedAt()`存取器方法的第一个参数来格式化输出日期：
 
     [php]
@@ -547,7 +547,7 @@ Job页面模板
 
 ![Job page](http://www.symfony-project.org/images/jobeet/1_2/04/job.png)
 
-~槽~（~Slot~）
+槽（~Slot~）
 -------
 
 现在，我们已经在layout中定义所有页面的`<title>`标签：
@@ -636,7 +636,7 @@ Job页动作
 
 <propel>
 同`index`动作一样，`show`动作也继承自`JobeetJobPeer`类，不过它是使用
-`retrieveByPk()`方法来获得一条job记录，这个方法的参数是数据表的~主键|Primary Key~。
+`retrieveByPk()`方法来获得一条job记录，这个方法的参数是数据表的主键。
 </propel>
 <doctrine>
 同`index`动作一样，the `JobeetJob` table class is used to retrieve a job,
@@ -656,7 +656,7 @@ the job primary key.
 它的第一参数为布尔型变量，如果为 `true`，`forward404Unless()`会停止执行当前进程。
 当forward方法通过抛出`sfError404Exception`异常停止执行动作时，不需要使用返回语句。
 
-生产~环境|Environments~和开发环境的404页面有些区别：
+生产环境(Environments)和开发环境的404页面有些区别：
 
 ![404 error in the dev environment](http://www.symfony-project.org/images/jobeet/1_2/05/404_dev.png)
 
