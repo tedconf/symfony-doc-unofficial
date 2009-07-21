@@ -144,7 +144,7 @@ The `http_metas` and `metas` settings allows the definition of meta tags to be
 included in the layout.
 
 >**NOTE**
->The inclusion of the meta tags defined in `view.yml` must be done manually
+>The inclusion of the meta tags defined in `view.yml` can be done manually
 >with the `include_metas()` and `include_http_metas()` helpers.
 
 These settings are *deprecated* in favor of pure HTML in the layout for static
