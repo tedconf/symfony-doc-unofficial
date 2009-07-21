@@ -1,0 +1,593 @@
+第5天：路由配置
+===============
+
+如果你完成了第4天的教程，你应该熟悉了MVC模式，它是非常自然的编码模式。如果你和
+它接触的时间长一点，你将不会再想回到以前的编码模式。复习一下昨天的内容，我们
+自定义了Jobeet页面，学习了symfony中一些概念，如layout、helper和slot。
+
+
+今天，我们将接触到symfony路由的奇妙世界。
+
+链接
+----
+
+如果你以前开发过php网站，你可能习惯了`/job.php?id=1`这样形式的URL。但如果
+你点击jobeet主页的任何一个job链接，你会注意到它URL类似：`/job/show/id/1`。
+symfony是如何让这种样式的URL工作的？symfony如何确定这个URL调用哪个动作？
+为什么使用$request->getParameter('id')来请求参数？今天我们将回答这些问题。
+
+回答这些问题之前，先让我们讨论一下URL，它们究竟是什么。在web环境里， URL是
+web资源的唯一标识。当你访问一个URL时，你实际是告诉浏览器取回有这个标识（URL）
+的资源。所以作为连接网站和用户的纽带，URL应该传递给用户一些关于资源的、有意义的
+信息。但是传统的URL没有真正传递这些信息，它们做的只是传递一些用户并不关心的
+数据库标识，和暴露程序内部结构。暴露程序的内部工作，将给你的网站带来很大的
+安全隐患：用户可能尝试猜测URL访问不允许访问的资源。当然开发者必须使用合适的方法
+去保护这些资源，但首先你最好先隐藏URL中的敏感信息。
+
+链接如此重要，以至于在symfony中有一个专门用来管理路由的框架**~routing~** framework。
+路由管理内部URI和外部URL。当接到请求时，路由分析URL并转化成内部的URI。
+
+我们已经在`showSuccess.php`模板中见过内部URI样式：
+
+    'job/show?id='.$job->getId()
+
+`url_for()`将这个内部URI转换成适当的URL：
+
+    /job/show/id/1
+
+内部URI由几部分组成：`job`是模块名，`show`是动作名，查询字符串将参数传递给动作。
+内部URI的一般模式：
+
+    MODULE/ACTION?key=value&key_1=value_1&...
+
+因为symfony路由是双向处理，所以你可不需要修改程序代码，就能修改URL样式。这是
+前端控制器设计模式的一个主要优点。
+
+路由配置
+--------
+
+~`routing.yml`~是路由配置文件，用来设置外部URL和内部URI的映射关系：
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    homepage:
+      url:   /
+      param: { module: default, action: index }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
+
+这个`routing.yml`描述了几个路由规则。这些路由，由名称(`homepage`)、式样(`/:module/:action/*`)
+和一些参数构成（`param`后面的内容）。
+
+当用户发出一个请求时，路由会尝试将URL与配置文件中的规则匹配。并使用最先匹配的
+路由规则来分析URL，所以路由的排列顺序很重要。让我们看些例子，更好的理解它是
+如何工作的。
+
+When you request the Jobeet homepage, which has the `/job` URL, the first
+route that matches is the `default_index` one. In a pattern, a word ~prefixed|Prefix~
+with a colon (`:`) is a variable, so the `/:module` pattern means: Match a `/`
+followed by something. In our example, the `module` variable will have `job`
+as a value. This value can then be retrieved with
+`$request->getParameter('module')` in the action. This route also defines a
+default value for the `action` variable. So, for all URLs matching this route,
+the request will also have an `action` parameter with `index` as a value.
+
+当你用含有`/job`的 URL访问Jobeet主页时，第一个匹配的是`default_index`。在一个式样中，
+以冒号开始字符串表示变量，所以`/:module`式样表示：匹配/后有内容的URL。在例子中，
+变量`module`将以`job`作为值。这个值可以在动作里用$request->getParameter(’module’)
+获取，这条规则给`action`定义了一个默认值。所以，匹配这条规则的 URL，请求中将自动带有
+`action`参数，其值为`index`。
+
+当你请求`/job/show/id/1`页面时，symfony将匹配最后一个式样：`/:module/:action/*`。
+在一个式样中(`*`)匹配一个或多个以(`/`) 分隔的“变量名/变量值”集合：
+
+  | Request parameter | Value |
+  | ----------------- | ----- |
+  | module            | job   |
+  | action            | show  |
+  | id                | 1     |
+
+>**NOTE**
+>在symfony中module 和 action是特殊变量，用来决定运行哪个动作。
+
+URL `/job/show/id/1`可以在模板中通过`url_for()`辅助函数生成：
+
+    [php]
+    url_for('job/show?id='.$job->getId())
+
+你也可以使用“@路由规则名”的方式：
+
+    [php]
+    url_for('@default?module=job&action=show&id='.$job->getId())
+
+这两中方式是一样的，不过使用“@路由规则名”方式速度更快一些，因为程序不需要
+匹配所有路由，而是直接匹配与名称相对的规则。并且它不包含模块名和动作名，更加
+灵活（修改的时候直接改相应的规则，而不用修改每一个`url_for()`中模块和动作名）。
+
+自定义路由
+----------
+
+现在你用`/ `URL访问网站会看到symfony默认的congratulations页面。因为URL匹配了
+主页的路由。现在我们修改主页的路由规则，将主页改为jobeet的主页，将`module`设为
+`job`：
+
+    [php]
+    # apps/frontend/config/routing.yml
+    homepage:
+      url:   /
+      param: { module: job, action: index }
+
+用主页的路由修改Jobeet logo的链接：
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <h1>
+      <a href="<?php echo url_for('@homepage') ?>">
+        <img src="/images/jobeet.gif" alt="Jobeet Job Board" />
+      </a>
+    </h1>
+
+That was easy!
+
+多么简单！
+
+>**TIP**
+>When you update the routing configuration, the changes are immediately
+>taken into account in the development environment. But to make them
+>also work in the production environment, you need to clear the cache.
+
+For something a bit more involved, 我们将job页的URL改成更有意义的式样
+
+    /job/sensio-labs/paris-france/1/web-developer
+
+Without knowing anything about Jobeet, and without looking at the page, you
+can understand from the URL that Sensio Labs is looking for a Web developer to
+work in Paris, France.
+
+>**NOTE**
+>友好的URL非常重要，它不但给用户传递了信息，而且对搜索引擎优化也十分有用，在
+>email时使用也会有很好的效果。
+
+下面的式样可以用来匹配上面的URL：
+
+    /job/:company/:location/:id/:position
+
+编辑`routing.yml`在文件开始处添加`job_show_user`路由规则：
+
+    [yml]
+    job_show_user:
+      url:   /job/:company/:location/:id/:position
+      param: { module: job, action: show }
+
+刷新首页，你会发现job的链接并没有变。这是因为必须传递给路由规则所有需要的变量，
+路由规则才能生成相应的URL。修改`indexSuccess.php`的`url_for()`语句:
+
+    [php]
+    url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().
+      '&location='.$job->getLocation().'&position='.$job->getPosition())
+
+也可以用数组表示内部URI：
+
+    [php]
+    url_for(array(
+      'module'   => 'job',
+      'action'   => 'show',
+      'id'       => $job->getId(),
+      'company'  => $job->getCompany(),
+      'location' => $job->getLocation(),
+      'position' => $job->getPosition(),
+    ))
+
+路由匹配条件(Requirements)
+--------------------------
+
+在第1天我们提到了验证和错误处理的好处，路由系统内建了验证器。每个式样中的变量
+都可以用正则表达式进行验证，使用`~requirements|Requirements~`项定义验证规则：
+
+    [yml]
+    job_show_user:
+      url:   /job/:company/:location/:id/:position
+      param: { module: job, action: show }
+      requirements:
+        id: \d+
+
+上面的`requirements`要求`id`必须是数字，否则，将不匹配这条路由规则。
+
+路由类
+------
+
+默认的~`routing.yml`~文件中，每个路由规则被内部转换为[`sfRoute`](http://www.symfony-project.org/api/1_2/sfRoute)
+类的一个对象。我们可以在路由规则中设置`class`项，指定该条路由规则转换为哪个类的对象。
+如果你熟悉HTTP协议，应该了解它的几个“method”，像`~GET|GET (HTTP Method)~`, 
+`~POST|POST (HTTP Method)~`, `~HEAD|HEAD (HTTP Method)~`, `~DELETE|DELETE (HTTP Method)~`
+和 `~PUT|PUT (HTTP Method)~`。浏览器支持前3个，后2个则不支持。
+
+限制路由只匹配某种请求方式，你可以将路由类修改为[`sfRequestRoute`](http://www.symfony-project.org/api/1_2/sfRequestRoute)，
+并设置requirements 的`sf_method`项：
+
+    [yml]
+    job_show_user:
+      url:   /job/:company/:location/:id/:position
+      class: sfRequestRoute
+      param: { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [get]
+
+>**NOTE**
+>Requiring a route to only match for some ~HTTP methods|HTTP Method~ is not totally
+>equivalent to using `sfWebRequest::isMethod()` in your actions. That's
+>because the routing will continue to look for a matching route if the
+>method does not match the expected one.
+
+>**NOTE**
+>需要限制路由规则匹配的~HTTP methods|HTTP Method~ ，我们也可以在动作中
+>使用`sfWebRequest::isMethod()`。 That's because the routing will continue
+>to look for a matching route if the method does not match the expected one.
+
+对象路由类
+----------
+
+The new internal URI for a job is quite long and tedious to write
+(`url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().'&location='.$job->getLocation().'&position='.$job->getPosition())`),
+but as we have just learned in the previous section, the route class can be
+changed. For the `job_show_user` route, it is better to use
+[~`sfPropelRoute`~](http://www.symfony-project.org/api/1_2/sfPropelRoute) as the
+class is optimized for routes that represent ##ORM## objects or collections of
+##ORM## objects:
+
+新的内部URI很长，书写起来很不方便(`url_for('job/show?id='.$job->getId().'&company='.$job->getCompany().'&location='.$job->getLocation().'&position='.$job->getPosition())`)。
+我们可以通过改变路由类的方法，来让它变的简洁。对于这条路由规则，
+使用[~`sfPropelRoute`~](http://www.symfony-project.org/api/1_2/sfPropelRoute)
+作为类是最佳选择，它表现为##ORM##对象或对象集合：
+
+    [yml]
+    job_show_user:
+      url:     /job/:company/:location/:id/:position
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [get]
+
+`options`项可以用来定制路由规则的行为。这里`model`选项定义了与路由规则相互关联的
+##ORM##模型类(`JobeetJob`)，`type`选项定义了这个路由规则对应的是一个对象
+（如果这个路由规则对应的是对象集合，用`list`代替object）
+
+现在`job_show_user`与`JobeetJob`建立了联系，我们简化`url_for()`|`url_for()`语句为：
+
+    [php]
+    url_for(array('sf_route' => 'job_show_user', 'sf_subject' => $job))
+
+或:
+
+    [php]
+    url_for('job_show_user', $job)
+
+>**NOTE**
+>当你需要传送多个参数时，可以使用第一个例子的方式。
+
+这个路由规则的工作原理：路由规则中的所有变量在`JobeetJob`类中都有一个对应存取器
+（例如，`company`路由变量对应`getCompany()`的值），可以自动获取需要参数。
+
+访问生成的URL，它们可能不完全像你想象的样子：
+
+    http://jobeet.localhost/frontend_dev.php/job/Sensio+Labs/Paris%2C+France/1/Web+Developer
+
+我们需要对生成的URL进行格式化("~slug|Slug~ify")，用`-`替换所有非ASCII字符。
+添加下边代码到`JobeetJob.php`：
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    public function getCompanySlug()
+    {
+      return Jobeet::slugify($this->getCompany());
+    }
+
+    public function getPositionSlug()
+    {
+      return Jobeet::slugify($this->getPosition());
+    }
+
+    public function getLocationSlug()
+    {
+      return Jobeet::slugify($this->getLocation());
+    }
+
+然后新建`lib/Jobeet.class.php`文件，创建`slugify`方法：
+
+    [php]
+    // lib/Jobeet.class.php
+    class Jobeet
+    {
+      static public function slugify($text)
+      {
+        // replace all non letters or digits by -
+        $text = preg_replace('/\W+/', '-', $text);
+
+        // trim and lowercase
+        $text = strtolower(trim($text, '-'));
+
+        return $text;
+      }
+    }
+
+>**NOTE**
+>In this tutorial, we never show the opening `<?php` statement in the
+>code examples that only contain pure PHP code to optimize space and
+>save some trees. You should obviously remember to add it whenever you
+>create a new PHP file.
+
+我们创建了3个模拟存取器`getCompanySlug()`, `getPositionSlug()`和
+`getLocationSlug()`，它们返回转换后的字符串。用它们替换`job_show_user`
+路由规则中原来的字段名：
+
+    [yml]
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [get]
+
+因为我们添加了新类(`Jobeet`)，刷新Jobeet主页之前，先要清空缓存:
+
+    $ php symfony cc
+
+现在我们得到想要的URL形式：
+
+    http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/1/web-developer
+
+通过对象生成URL只是路由的一部分功能，路由还能通过URL找到相应的对象。相关的对象
+可以用路由对象的`getObject()`方法获取。当分析一个请求时，路由存储匹配的路由对象，
+在动作中使用。可以修改`executeShow()`为：
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+        $this->job = $this->getRoute()->getObject();
+
+        $this->forward404Unless($this->job);
+      }
+
+      // ...
+    }
+
+如果你试图通过一个不存在的`id`浏览job,会看到一个404错误页，但显示错误信息不同了：
+
+![404 with sfPropelRoute](http://www.symfony-project.org/images/jobeet/1_2/05/404_propel_route.png)
+
+因为，`getRoute()`已经自动抛出了404|404 Error~错误。所以可以再简化一下`executeShow`方法：
+
+    [php]
+    class jobActions extends sfActions
+    {
+      public function executeShow(sfWebRequest $request)
+      {
+        $this->job = $this->getRoute()->getObject();
+      }
+
+      // ...
+    }
+
+>**TIP**
+>如果你不希望路由规则产生404错误，你可以将`allow_empty`选项设为`true`。
+
+-
+
+>**NOTE**
+>The related object of a route is lazy loaded. It is only retrieved from the
+>database if you call the `getRoute()` method.
+
+动作和模板中路由设定
+--------------------
+
+在模板中，`url_for()`辅助函数将内部URI转换成外部URL。symfony 中还有一些辅助函数也用URI作参数，
+像`link_to()`，它生成一个`<a>`标签：
+
+    [php]
+    <?php echo link_to($job->getPosition(), 'job_show_user', $job) ?>
+
+生成下面的HTML代码：
+
+    [php]
+    <a href="/job/sensio-labs/paris-france/1/web-developer">Web Developer</a>
+
+`url_for()`和`link_to()`都可以生成绝对链接：
+
+    [php]
+    url_for('job_show_user', $job, true);
+
+    link_to($job->getPosition(), 'job_show_user', $job, true);
+
+如果你想在动作中生成一个URL，你可以使用`generateUrl()`方法：
+
+    [php]
+    $this->redirect($this->generateUrl('job_show_user', $job));
+
+>**SIDEBAR**
+>"redirect"方法组
+>
+>昨天，我们讲了”forward”方法。这些方法将当前请求跳转到另一个动作，而不需要页面
+>在浏览器中来回切换。
+>
+>"redirect"方法将用户重定向到另一个URL。和forward一样，可以使用`redirect()`，
+>或`redirectIf()`和`redirectUnless()`快捷方式。
+
+路由集
+------
+
+对`job`模块而言， `show`动作已经使用了自定义的路由规则，但是其它动作(`index`, 
+`new`, `edit`, `create`, `update`, and `delete`)还在使用默认的路由规则：
+
+    [yml]
+    default:
+      url: /:module/:action/*
+
+对于编程的初期，`default`路由规则是一种很好的方式，它没有定义太多规则。
+但当我们需要特殊的配置时，这种一把抓的方式就不适合了。
+
+因为所有的动作都与`JobeetJob`类有联系，我们可以像给`show`动作定制路由一样，
+用~`sfPropelRoute`~给每一个动作轻松定制路由。但是，因为job模块定义的7个动作
+使用了同一个数据模型，所以我们也可以使用[~`sfPropelRouteCollection`~](http://www.symfony-project.org/api/1_2/sfPropelRouteCollection)类：
+
+打开`routing.yml`文件修改如下：
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    job:
+      class:   sfPropelRouteCollection
+      options: { model: JobeetJob }
+
+    job_show_user:
+      url:     /job/:company_slug/:location_slug/:id/:position_slug
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show }
+      requirements:
+        id: \d+
+        sf_method: [get]
+
+    # default rules
+    homepage:
+      url:   /
+      param: { module: job, action: index }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
+
+上面的`job`路由规则实际上是一个快捷方式，它自动生成下面7个`sfPropelRoute`路由规则：
+
+    [yml]
+    job:
+      url:     /job.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: list }
+      param:   { module: job, action: index, sf_format: html }
+      requirements: { sf_method: get }
+
+    job_new:
+      url:     /job/new.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: new, sf_format: html }
+      requirements: { sf_method: get }
+
+    job_create:
+      url:     /job.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: create, sf_format: html }
+      requirements: { sf_method: post }
+
+    job_edit:
+      url:     /job/:id/edit.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: edit, sf_format: html }
+      requirements: { sf_method: get }
+
+    job_update:
+      url:     /job/:id.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: update, sf_format: html }
+      requirements: { sf_method: put }
+
+    job_delete:
+      url:     /job/:id.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: delete, sf_format: html }
+      requirements: { sf_method: delete }
+
+    job_show:
+      url:     /job/:id.:sf_format
+      class:   sfPropelRoute
+      options: { model: JobeetJob, type: object }
+      param:   { module: job, action: show, sf_format: html }
+      requirements: { sf_method: get }
+
+>**NOTE**
+>一些由`sfPropelRouteCollection`生成的路由具有相同的~URL~。但路由设定程序仍然可以
+>使用它们，因为它们的匹配的请求方式(~HTTP method|HTTP Method~ requirements)不同。
+
+`job_delete`和`job_update`路由规则匹配的请求方式是浏览器不支持的`~DELETE|DELETE (HTTP Method)~`
+和 `~PUT|PUT (HTTP Method)~`。symfony模拟了它们，所以同样可以工作。打开`_form.php`模板看个例子：
+
+    [php]
+    // apps/frontend/modules/job/templates/_form.php
+    <form action="..." ...>
+    <?php if (!$form->getObject()->isNew()): ?>
+      <input type="hidden" name="sf_method" value="PUT" />
+    <?php endif; ?>
+
+    <?php echo link_to(
+      'Delete',
+      'job/delete?id='.$form->getObject()->getId(),
+      array('method' => 'delete', 'confirm' => 'Are you sure?')
+    ) ?>
+
+无论你想通过`sf_method`传送何种HTTP 请求方式 ，所有的symfony 辅助函数都能将它
+告知模拟程序。
+
+>**NOTE**
+>symfony还有一些象`sf_method`一样以`sf_`开头的特殊参数，在上面生成的路由规则中
+>你可以看到`sf_format`，以后解释它。
+
+
+路由调试
+--------
+
+路由集在输出多条路由规则方面非常有用。如命令行`app:routes`就使用它输出
+一个程序所有路由规则：
+
+    $ php symfony app:routes frontend
+
+将一个路由规则名作为额外的参数，可以获得一个路由许多调试信息。
+
+    $ php symfony app:routes frontend job_edit
+
+默认路由
+--------
+
+为URL定义路由规则是一个好习惯。可以通过添加或移除默认规则前边(#)来配置路由规则：
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    #default_index:
+    #  url:   /:module
+    #  param: { action: index }
+    #
+    #default:
+    #  url:   /:module/:action/*
+
+The Jobeet application must still work as before.
+
+明天见
+------
+
+今天学习很多新东西。你学习了如何使用Symfony路由框架，从代码中分离出URL。
+
+明天的教程不会涉及任何新的概念，我们会花一些时间深入学习一下我们学过的知识。
+
+__ORM__
