@@ -2,7 +2,7 @@ Il file di configurazione databases.yml
 =======================================
 
 La configurazione ~`databases.yml`~ consente la configurazione della
-connessione al database. E' usata da entrambi gli ORM preinstallati con symfony: Propel e
+connessione al database. È usata da entrambi gli ORM preinstallati con symfony: Propel e
 Doctrine.
 
 Il file principale di configurazione `databases.yml` per un progetto può essere trovato
@@ -12,16 +12,16 @@ nella cartella `config/`.
 >La maggior parte delle volte, tutte le applicazioni di un progetto condividono lo stesso
 >database. Questo è il motivo per cui il principale file di configurazione del database è
 >nella cartella `config/` del progetto. Naturalmente si può non tenere conto della configurazione
->di default definendo un file di configurazione `databases.yml` configuration file in your
+>di default, definendo un file di configurazione `databases.yml`
 >nelle cartelle di configurazione dell'applicazione.
 
 Come discusso in sede di introduzione, il file `databases.yml` è
-[**environment-aware**](#chapter_03_environment_awareness), trae beneficio
-dal [**meccanismo di configurazione a cascata**](#chapter_03_configuration_cascade),
-e può includere [**costanti**](#chapter_03_constants).
+[**consapevole dell'ambiente**](#chapter_03_consapevolezza_dell_ambiente), trae beneficio
+dal [**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata),
+e può includere [**costanti**](#chapter_03_costanti).
 
 Ogni connessione descritta nel file `databases.yml` deve comprendere un nome, un nome
-del gestore di classe del database, e un set di parametri (`param`) usati per configurare
+del gestore di classe del database e un set di parametri (`param`) usati per configurare
 l'oggetto database:
 
     [yml]
@@ -40,7 +40,7 @@ definito e sarà automaticamente incluso prima che il factory sia creato:
       file:  ABSOLUTE_PATH_TO_FILE
 
 >**NOTE**
->Il file di configurazione `databases.yml` è salvato nella cached come file PHP; il
+>Il file di configurazione `databases.yml` è salvato nella cache come file PHP; il
 >processo è gestito automaticamente dalla [classe](#chapter_14_config_handlers_yml)
 >~`sfDatabaseConfigHandler`~.
 
@@ -49,7 +49,7 @@ definito e sarà automaticamente incluso prima che il factory sia creato:
 >**TIP**
 >La configurazione del database può anche essere configurata utilizzando
 >il task `database:configure`.  Questo task aggiorna il file `databases.yml`
->in base agli argomenti che gli vengono passati.
+>in base ai parametri che gli vengono passati.
 
 Propel
 ------
@@ -84,10 +84,10 @@ I seguenti parametri possono essere personalizzati sotto la sezione `param`:
  | Chiave       | Descrizione                              | Valore predefinito |
  | ------------ | ---------------------------------------- | ------------------ |
  | `classname`  | La classe adattatore per Propel          | `PropelPDO`        |
- | `dsn`        | Il DSN PDO (richiesto)                   | -                  |
+ | `dsn`        | Il DSN PDO (obbligatorio)                | -                  |
  | `username`   | Nome utente per il database              | -                  |
  | `password`   | Password per il database                 | -                  |
- | `pooling`    | Abilitare pooling                        | `true`             |
+ | `pooling`    | Abilita il pooling                       | `true`             |
  | `encoding`   | L'insieme di caratteri predefinito       | `UTF-8`            |
  | `persistent` | Per creare connessioni persistenti       | `false`            |
  | `options`    | Un insieme di opzioni per Propel         | -                  |
@@ -117,7 +117,7 @@ I seguenti parametri possono essere personalizzati sotto la sezione `param`:
 
  | Chiave       | Descrizione                              | Valore predefinito |
  | ------------ | ---------------------------------------- | ------------------ |
- | `dsn`        | Il DSN PDO (richiesto)                   | -                  |
+ | `dsn`        | Il DSN PDO (obbligatorio)                | -                  |
  | `username`   | Nome utente per il database              | -                  |
  | `password`   | Password per il database                 | -                  |
  | `encoding`   | L'insieme di caratteri predefinito       | `UTF-8`            |

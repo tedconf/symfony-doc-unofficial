@@ -1,9 +1,9 @@
 Il file di configurazione cache.yml
 ===================================
 
-Il file di configurazione ~`cache.yml`~ descrive la configurazione della cache per lo
-strato vista. Questo file di configurazione è attivo solo se il settaggio
-[`cache`](#chapter_04_sub_cache) è abilitato in `settings.yml`.
+Il file di configurazione ~`cache.yml`~ descrive la configurazione della cache per il
+livello della vista. Questo file di configurazione è attivo solo se  l'impostazione
+[`cache`](#chapter_04_sub_cache) è abilitata in `settings.yml`.
 
 >**TIP**
 >La configurazione della classe usata per la cache e
@@ -13,7 +13,7 @@ strato vista. Questo file di configurazione è attivo solo se il settaggio
 >configurazione `factories.yml`.
 
 Quando una applicazione è creata, symfony genera un file `cache.yml` predefinito
-nella cartella dell'applicazione `config/` che descrive la cache per l'intera
+nella cartella dell'applicazione `config/`, che descrive la cache per l'intera
 applicazione (sotto la chiave `default`). Nella modalità predefinita, la cache è
 globalmente assegnata a `off`:
 
@@ -26,39 +26,39 @@ globalmente assegnata a `off`:
 >**TIP**
 >Dal momento che l'impostazione `enabled` è assegnata a `false` nella modalità predefinita,
 >è necessario abilitare la cache selettivamente. Si può anche lavorare in questo altro modo:
->abilitare la cache globalmente dopodichè, disabilitarla su pagine specifiche che
+>abilitare la cache globalmente, dopodiché disabilitarla su pagine specifiche che
 >non possono essere messe in cache. L'approccio migliore dovrebbe dipendere da quale dei due metodi
 >necessita di meno lavoro per l'applicazione.
 
 Come discusso in sede di introduzione, il file `cache.yml` trae benefici dal
-[**meccanismo di configurazione a cascata**](#chapter_03_configuration_cascade),
-e può includere [**costanti**](#chapter_03_constants).
+[**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata),
+e può includere [**costanti**](#chapter_03_costanti).
 
 >**NOTE**
 >Il file di configurazione `cache.yml` è memorizzato nella cache come file PHP; il
 >processo è gestito automaticamente dalla [classe](#chapter_14_config_handlers_yml) 
 >~`sfCacheConfigHandler`~.
 
-La configurazione predefinita dell'applicazione può essere sovrascritta per un modulo con
+La configurazione predefinita dell'applicazione può essere sovrascritta per un modulo, con
 la creazione di un file `cache.yml` nella cartella `config/` del modulo. Le chiavi
-principali sono nomi di azioni senza il prefisso `execute` (ad esempio `index` per il
-metodo `executeIndex`). Un partial o un componente può anche essere messo in cache
-utilizzando il suo nome con un prefisso di sottolineatura (`_`).
+principali sono nomi di azioni. senza il prefisso `execute` (ad esempio `index` per il
+metodo `executeIndex`). Anche un partial o un componente possono essere messi in cache,
+utilizzando il nome con un prefisso di sottolineatura (`_`).
 
 Per determinare se una azione è messa in cache o no, symfony cerca le informazioni
 nel seguente ordine:
 
-  * una configurazione per una specifica azione, partial, o componente nel
+  * una configurazione per una specifica azione, partial o componente nel
     file di configurazione del modulo, se esiste;
 
   * una configurazione per un intero modulo nel file di configurazione del modulo, se
     esiste (sotto la chiave `all`);
 
-  * la configuazione predefinita dell'applicazione (sotto la chiave `default`).
+  * la configurazione predefinita dell'applicazione (sotto la chiave `default`).
 
 >**CAUTION**
 >Una richiesta in arrivo con parametri `GET` nella stringa di richiesta o
->onviata con il metodo `POST`, `PUT`, o `DELETE` non sarà mai messa
+>inviata con il metodo `POST`, `PUT` o `DELETE` non sarà mai messa
 >in cache da symfony, indipendentemente dalla configurazione.
 
 ~`enabled`~
@@ -73,19 +73,19 @@ L'impostazione `enabled` abilita o disabilita la cache per l'ambito corrente.
 
 *Predefinito*: `false`
 
-L'impostazione `with_layout` determina se la cache deve essere oer l'intera
+L'impostazione `with_layout` determina se la cache deve essere per l'intera
 pagina (`true`), o solo per l'azione (`false`).
 
 >**NOTE**
->L'opzione `with_layout` non è presa in considerazione per la cache di option is not taken into account for partial and
->partial e componenti in quanto non possono essere decorati da un layout.
+>L'opzione `with_layout` non è presa in considerazione per la cache di
+>partial e componenti, in quanto non possono essere decorati da un layout.
 
 ~`lifetime`~
 ------------
 
 *Predefinito*: `86400`
 
-L'impostazione `lifetime` definisce il ciclo di vita lato server della cache in
+L'impostazione `lifetime` definisce il ciclo di vita lato server della cache, in
 secondi (`86400` secondi equivalgono a un giorno).
 
 ~`client_lifetime`~
@@ -93,14 +93,14 @@ secondi (`86400` secondi equivalgono a un giorno).
 
 *Predefinito*: Stesso valore di `lifetime`
 
-L'impostazione `client_lifetime` definisce il cliclo di vita lato client della cache in
+L'impostazione `client_lifetime` definisce il cliclo di vita lato client della cache, in
 secondi.
 
 Questa impostazione è usata per assegnare automaticamente l'header `Expires` e la
 variabile di controllo cache `max-cache`, a meno che gli header `Last-Modified`
 o `Expires` non siano già stati assegnati.
 
-E' possibile disabilitare la cache lato client assegnando il valore `0`.
+È possibile disabilitare la cache lato client assegnando il valore `0`.
 
 ~`contextual`~
 --------------
@@ -111,11 +111,11 @@ L'impostazione `contextual` determina se la cache dipende dal corrente contesto
 di pagina o no. L'impostazione quindi è significativa solo quando usata per
 partial e componenti.
 
-Quando l'uotput un partial è diverso in base al template in cui è
-incluso, il partial è detto contestuale, e l'impostazione `contextual`
+Quando l'output di un partial è diverso in base al template in cui è
+incluso, il partial è detto contestuale e l'impostazione `contextual`
 deve essere assegnata a `true`. Il valore predefinito è assegnato a `false`, il che significa
 che l'output per partial e componenti è sempre lo stesso, dovunque
-è incluso.
+siano inclusi.
 
 >**NOTE**
 >La cache rimarrà ovviamente diversa per un diverso insieme di parametri.

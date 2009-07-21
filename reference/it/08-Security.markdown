@@ -8,7 +8,7 @@ e autorizzazione per una applicazione symfony.
 >Le informazioni di configurazione del file `security.yml` sono usate dalla
 >classe factory [`user`](#chapter_05_user) (predefinita `sfBasicSecurityUser`).
 > L'esecuzione dell'autenticazione e dell'autorizzazione è
->fatta da `security` [filter](#chapter_12_security).
+>fatta da `security` [filter](#chapter_12_sicurezza).
 
 Quando un'applicazione è creata, symfony genera un file `security.yml`
 predefinito nella cartella dell'applicazione `config/` che descrive la sicurezza per
@@ -19,21 +19,21 @@ l'intera applicazione (sotto la chiave `default`):
       is_secure: off
 
 Come discusso in sede di introduzione, il file `security.yml` trae benefici dal
- [**meccanismo di configurazione a cascata**](#chapter_03_configuration_cascade),
-e può includere [**costanti**](#chapter_03_constants).
+ [**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata),
+e può includere [**costanti**](#chapter_03_costanti).
 
-La configurazione predefinita dell'applicazione può essere sovrascritta per un modulo
+La configurazione predefinita dell'applicazione può essere sovrascritta per un modulo,
 creando un file `security.yml` nella cartella `config/` del modulo. Le
 chiavi principali sono nomi di azioni senza il prefisso `execute` (ad esempio `index`
  per il metodo `executeIndex`).
 
-Per determinare se una azione è sicura o no, symfony cerca le infomazioni
+Per determinare se una azione è sicura o no, symfony cerca le informazioni
 nel seguente ordine:
 
-  * una configurazione per l'azione specifica nel file della configurazione del modulo
+  * una configurazione per l'azione specifica nel file della configurazione del modulo,
     se esiste;
 
-  * una configurazione per l'intero modulo nel file di configurazione del modulo
+  * una configurazione per l'intero modulo nel file di configurazione del modulo,
     se esiste (sotto la chiave `all`);
 
   * la configurazione predefinita dell'applicazione (sotto la chiave `default`).
@@ -57,10 +57,10 @@ applicazione, autorizza l'accesso a chiunque:
       is_secure: off
 
 Con l'impostazione della chiave ~`is_secure`~ su `on` nel file dell'applicazione
- `security.yml`, l'intera applicazione richiederà al'utenticazione per tutti gli utenti.
+ `security.yml`, l'intera applicazione richiederà al'autenticazione per tutti gli utenti.
 
 >**NOTE**
->Quando un utente non autenticato prova ad accedere ad una azione mezza in sicurezza, symfony
+>Quando un utente non autenticato prova ad accedere ad una azione messa in sicurezza, symfony
 >inoltra la richiesta all'azione `login` configurata in `settings.yml`.
 
 Per modificare i requisiti di autenticazione di un modulo, creare un file `security.yml`
@@ -83,9 +83,9 @@ chiave dopo il nome dell'azione:
 >infinita.
 
 ~Autorizzazione~
----------------
+----------------
 
-Quando un uente è autenticato, l'accesso ad alcune azioni può essere maggiormente
+Quando un utente è autenticato, l'accesso ad alcune azioni può essere maggiormente
 limitato definendo *~credenziali~*. Quando le credenziali sono definite, un utente
 deve avere le credenziali richieste, per accedere all'azione:
 
@@ -96,10 +96,10 @@ deve avere le credenziali richieste, per accedere all'azione:
 
 Il sistema di credenziali di symfony è semplice e potente. Una credenziale è una
 stringa che può rappresentare tutto quello di cui si ha bisogno per descrivere il modello
-di sucurezza dell'applicazione (come gruppi e permessi).
+di sicurezza dell'applicazione (come gruppi e permessi).
 
 La chiave `credentials` supporta operazioni booleane per descrivere complessi 
-requisiti di credenziali utilizzando la notazione array.
+requisiti di credenziali, utilizzando la notazione array.
 
 Se un utente deve avere la credenziale A **e** la credenziale B, inserire le
 credenziali con parentesi quadre:
@@ -115,5 +115,5 @@ credenziali con due paia di parentesi quadre:
     index:
       credentials: [[A, B]]
 
-E' possibile anche mischiare e combinare parentesi per descrivere ogni tipo di espressione booleana
+È possibile anche mischiare e combinare parentesi per descrivere ogni tipo di espressione booleana
 con qualunque numero di credenziali.

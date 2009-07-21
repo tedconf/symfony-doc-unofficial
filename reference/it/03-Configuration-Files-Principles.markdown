@@ -55,7 +55,7 @@ dell'impostazione con prefisso `SF_`:
     [yml]
     logging: %SF_LOGGING_ENABLED%
 
-Quando symfony compila i file di configurazione si occupa di sostituire tutte le
+Quando symfony compila i file di configurazione, si occupa di sostituire tutte le
 occorrenze dei segnaposto `%SF_XXX%` con i corrispondenti valori contenuti in 
 `settings.yml`. Nell'esempio qui sotto sostituirà il segnaposto `SF_LOGGING_ENABLED`
 con il valore dell'impostazione `logging_enabled` definita il `settings.yml`.
@@ -83,7 +83,7 @@ Le costanti sono molto utili quando si ha bisogno di fare riferimento a director
 o a percorsi di file senza inserirli nel codice. Symfony definisce alcune costanti
 per directory comuni a livello di progetto e di applicazione.
 
-La radice della gerarchia c'è la directory root del progetto, `SF_ROOT_DIR`.
+La radice della gerarchia è la directory root del progetto, `SF_ROOT_DIR`.
 Tutte le altre costanti derivano da questa directory root.
 
 La struttura delle directory del progetto è definita come segue:
