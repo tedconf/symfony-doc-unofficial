@@ -75,7 +75,7 @@ corrente:
  | ~`SF_APP`~             | Il nome dell'applicazione corrente    | `getApplication()`       |
  | ~`SF_ENVIRONMENT`~     | Il nome dell'ambiente corrente        | `getEnvironment()`       |
  | ~`SF_DEBUG`~           | Indica se il debug è attivo o meno    | `isDebug()`              |
- | ~`SF_SYMFONY_LIB_DIR`~ | La directory delle librerie symfonyry | `getSymfonyLibDir()`     |
+ | ~`SF_SYMFONY_LIB_DIR`~ | La directory delle librerie symfony   | `getSymfonyLibDir()`     |
 
 ### Le directory
 
