@@ -3,13 +3,13 @@ The cache.yml Configuration File
 
 The ~`cache.yml`~ configuration file describes the cache configuration for the
 view layer. This configuration file is only active if the
-[`cache`](#chapter_04_sub_cache) setting is enabled in `settings.yml`.
+[`cache`](#chapter_04-Settings_sub_cache) setting is enabled in `settings.yml`.
 
 >**TIP**
 >The configuration of the class used for caching and
 >its associated configuration is to be done in the
->[`view_cache_manager`](#chapter_05_view_cache_manager) and
->[`view_cache`](#chapter_05_view_cache) sections of the `factories.yml`
+>[`view_cache_manager`](#chapter_05-Factories_sub_view_cache_manager) and
+>[`view_cache`](#chapter_05-Factories_sub_view_cache) sections of the `factories.yml`
 >configuration file.
 
 When an application is created, symfony generates a default `cache.yml` file
@@ -31,13 +31,13 @@ to `off`:
 >for your application.
 
 As discussed in the introduction, the `cache.yml` file benefits from
-the [**configuration cascade mechanism**](#chapter_03_configuration_cascade),
-and can include [**constants**](#chapter_03_constants).
+the [**configuration cascade mechanism**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade),
+and can include [**constants**](#chapter_03-Configuration-Files-Principles_sub_constants).
 
 >**NOTE**
 >The `cache.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfCacheConfigHandler`~
->[class](#chapter_14_config_handlers_yml).
+>[class](#chapter_14-Other-Configuration-Files_sub_config_handlers_yml).
 
 The default application configuration can be overridden for a module by
 creating a `cache.yml` file in the `config/` directory of the module. The main

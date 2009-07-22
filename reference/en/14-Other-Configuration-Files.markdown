@@ -12,13 +12,13 @@ autoloaded by symfony. Each directory is scanned for PHP classes and
 interfaces.
 
 As discussed in the introduction, the `autoload.yml` file benefits from the
-[**configuration cascade mechanism**](#chapter_03_configuration_cascade), and
-can include [**constants**](#chapter_03_constants).
+[**configuration cascade mechanism**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade), and
+can include [**constants**](#chapter_03-Configuration-Files-Principles_sub_constants).
 
 >**NOTE**
 >The `autoload.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfAutoloadConfigHandler`~
->[class](#chapter_14_config_handlers_yml).
+>[class](#chapter_14-Other-Configuration-Files_sub_config_handlers_yml).
 
 The default configuration is fine for most projects:
 
@@ -131,10 +131,10 @@ an extract of the default configuration:
     - %SF_SYMFONY_LIB_DIR%/action/sfActions.class.php
 
 As discussed in the introduction, the `core_compile.yml` file benefits from the
-[**configuration cascade mechanism**](#chapter_03_configuration_cascade), and
-can include [**constants**](#chapter_03_constants).
+[**configuration cascade mechanism**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade), and
+can include [**constants**](#chapter_03-Configuration-Files-Principles_sub_constants).
 
 >**NOTE**
 >The `core_compile.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfCompileConfigHandler`~
->[class](#chapter_14_config_handlers_yml).
+>[class](#chapter_14-Other-Configuration-Files_sub_config_handlers_yml).
