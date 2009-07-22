@@ -1,0 +1,275 @@
+第18天：~AJAX~
+==============
+
+昨天，我们实现了一个非常强大的搜索引擎，感谢Zend Lucene库。
+
+今天，我们要利用[AJAX](http://en.wikipedia.org/wiki/AJAX)给搜索引擎增加实时响应
+功能，加强搜索引擎的响应能力。
+
+使用AJAX时，我们希望无论用户的浏览器是否支持JavaScript，搜索引擎都可以正常工作。
+所有我们决定使用[非侵入式 JavaScript](http://en.wikipedia.org/wiki/Unobtrusive_JavaScript)
+实现这个新功能。非侵入式JavaScript同时也可以很好的实现， CSS和JavaScript行为
+与客户端HTML代码中分类。
+
+安装~jQuery~
+------------
+
+为了避免重复开发并做到浏览器兼容，我们将使用现有的JavaScript库——jQuery。
+Symfony框架能与任何JavaScript库一起工作。
+
+到 [jQuery](http://jquery.com/) 网站，下载最新版本，将.js问放到`web/js/`目录中。
+
+>**TIP**
+>也可以使用[sfJqueryReloadedPlugin](http://www.symfony-project.org/plugins/sfJqueryReloadedPlugin)
+>插件安装jQuery。
+
+加载jQuery
+----------
+
+因为所有页面都需要jQuery，所以我们将它放到layout的`<head>`标签中。注意， 
+使用`include_javascripts()`调用前，先插入`use_javascript()`函数：
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+
+      <?php use_javascript('jquery-1.2.6.min.js') ?>
+      <?php include_javascripts() ?>
+    </head>
+
+我们可以直接用`<script>`标签调用jQuery，但使用`use_javascript()`辅助函数可以
+保证同一个JavaScript文件不会被调用两次。
+
+>**NOTE**
+>For
+>[~performance reasons|Performances~](http://developer.yahoo.com/performance/rules.html#js_bottom),
+>you might also want to move the `include_javascripts()` helper call just
+>before the ending `</body>` tag.
+
+>**TIP**
+>如果使用sfJqueryReloadedPlugin插件，在模板中使用use_helper(`jQuery`)调用jQuery。
+
+Adding ~Behaviors|Behaviors (JavaScript)~
+-----------------------------------------
+
+要实现实时搜索(live search)，意味着每当用户在搜索框中有一个键入动作，程序
+就要访问一次服务器；并将返回的内容更新到页面的选区，而不用刷新整个页面。
+
+我们不需要使用`on*()`添加行为，jQuery可以在页面完全载入时，直接将行为
+添加到~DOM~元素中。这样一来，如果浏览器不支持JavaScript，行为将不被添加，
+搜索引擎还还会象以前那样工作。
+
+首先，拦截用户在搜索框中的键入动作：
+
+    [php]
+    $('#search_keywords').keyup(function(key)
+    {
+      if (this.value.length >= 3 || this.value == '')
+      {
+        // do something
+      }
+    });
+
+>**NOTE**
+>现在还不要添加代码，因为还要有做很多修改。最终的JavaScript代码，会在下一节添加到layout中。
+
+每次键入内容，jQuery都会执行一次上面定义的匿名函数，但前提是用户键入内容超过3个
+字符或input标签中内容被清空时。
+
+要实现AJAX调用，只需在DOM元素上使用`load()`方法：
+
+    [php]
+    $('#search_keywords').keyup(function(key)
+    {
+      if (this.value.length >= 3 || this.value == '')
+      {
+        $('#jobs').load(
+          $(this).parents('form').attr('action'), { query: this.value + '*' }
+        );
+      }
+    });
+
+因为AJAX调用和“正常”调用使用同一个动作，所以我们下面将对动作进行修改。
+
+现在先来调整一下搜索按钮。当浏览器支持JavaScript时，让它隐藏起来：
+
+    [php]
+    $('.search input[type="submit"]').hide();
+
+User Feedback
+-------------
+
+我们知道，从AJAX请求服务器到服务器返回响应(response)需要一段时间，所以页面内容都不会
+马上更新。这段等待时间，你应该向用户显示一些提示信息(visual feedback)，告诉用户请求正在执行。
+
+常用的方法是在这段时间里，显示一个载入图标。下面我们在layout中加入载入图标，并在
+不需要的时候隐藏该图标：
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <div class="search">
+      <h2>Ask for a job</h2>
+      <form action="<?php echo url_for('@job_search') ?>" method="get">
+        <input type="text" name="query" value="<?php echo $sf_request->getParameter('query') ?>" id="search_keywords" />
+        <input type="submit" value="search" />
+        <img id="loader" src="/images/loader.gif" style="vertical-align: middle; display: none" />
+        <div class="help">
+          Enter some keywords (city, country, position, ...)
+        </div>
+      </form>
+    </div>
+
+>**NOTE**
+>这个载入图标是专门为Jobeet设计的。你可以创建自己的图标，也有许多提供免费图标的网站，如
+http://www.ajaxload.info/.
+
+现在各部分都已经准备好了，创建一个`search.js`包含下面的JavaScript代码：
+
+    [php]
+    // web/js/search.js
+    $(document).ready(function()
+    {
+      $('.search input[type="submit"]').hide();
+
+      $('#search_keywords').keyup(function(key)
+      {
+        if (this.value.length >= 3 || this.value == '')
+        {
+          $('#loader').show();
+          $('#jobs').load(
+            $(this).parents('form').attr('action'),
+            { query: this.value + '*' },
+            function() { $('#loader').hide(); }
+          );
+        }
+      });
+    });
+
+你同样需要更新layout，引用这个新文件：
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <?php use_javascript('search.js') ?>
+
+>**SIDEBAR**
+>JavaScript as an Action
+>
+>虽然我们给搜索引擎添加JavaScript是静态的，但有些时候，你需要调用一些PHP代码
+>（使用`url_for()`辅助函数动态生成）。
+>
+>JavaScript和几天前看到的HTML一样，不过是另一种格式（format），在symfony中格
+>式管理非常容易。如果想在搜索引擎中使用JavaScript文件，你可以修改`job_search`
+>路由，并创建`searchSuccess.js.php`模板：
+>
+>     [yml]
+>     job_search:
+>       url:   /search.:sf_format
+>       param: { module: job, action: search, sf_format: html }
+>       requirements:
+>         sf_format: (?:html|js)
+
+
+AJAX in an Action
+-----------------
+
+如果浏览器支持JavaScript，jQuery将拦截搜索框的键盘输入，并调用`search`动作。如果
+不支持，用户点击搜索按钮，程序也会调用这个`search`动作。
+
+两种方式请求同一个动作，但需要返回的内容却不同，所以我们在`search`动作中使用
+`isXmlHttpRequest()`进行判断。当AJAX调用时，`isXmlHttpRequest()`方法会返回`true`。
+
+>**NOTE**
+>`isXmlHttpRequest()`方法支持Prototype, Mootools和 jQuery这些主流JavaScript库。
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeSearch(sfWebRequest $request)
+    {
+      if (!$query = $request->getParameter('query'))
+      {
+        return $this->forward('job', 'index');
+      }
+
+<propel>
+      $this->jobs = JobeetJobPeer::getForLuceneQuery($query);
+</propel>
+<doctrine>
+      $this->jobs = Doctrine::getTable('JobeetJob')->getForLuceneQuery($query);
+</doctrine>
+
+      if ($request->isXmlHttpRequest())
+      {
+        return $this->renderPartial('job/list', array('jobs' => $this->jobs));
+      }
+    }
+
+jQuery只更新`#jobs` DOM元素内容，不重新加载整个页面，页面不需要layout装饰。因此，
+一般情况下AJAX请求动作时layout默认是关闭的。
+
+此外，我们只需要返回`job/list`局部模板的内容，而不用返回整个模板。
+`renderPartial()`方法将局部模板作为响应返回给客户端。
+
+当用户清空搜索框，或没有匹配的结果时，我们需要显示一条提示信息。我们使用
+`renderText()`方法设置一个简单的测试字符串：
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeSearch(sfWebRequest $request)
+    {
+      if (!$query = $request->getParameter('query'))
+      {
+        return $this->forward('job', 'index');
+      }
+
+<propel>
+      $this->jobs = JobeetJobPeer::getForLuceneQuery($query);
+</propel>
+<doctrine>
+      $this->jobs = Doctrine::getTable('JobeetJob')->getForLuceneQuery($query);
+</doctrine>
+
+      if ($request->isXmlHttpRequest())
+      {
+        if ('*' == $query || !$this->jobs)
+        {
+          return $this->renderText('No results.');
+        }
+        else
+        {
+          return $this->renderPartial('job/list', array('jobs' => $this->jobs));
+        }
+      }
+    }
+
+>**TIP**
+>你也可以通过`renderComponent()`方法返回组件。
+
+测试AJAX
+--------
+
+因为Symfony浏览程序不能模拟JavaScript，你需要使用其它方法来测试AJAX。这意味着，
+你需要手动添加jQuery或其它主流JavaScript库的请求头信息：
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->setHttpHeader('X_REQUESTED_WITH', 'XMLHttpRequest');
+    $browser->
+      info('5 - Live search')->
+
+      get('/search?query=sens*')->
+      with('response')->begin()->
+        checkElement('table tr', 2)->
+      end()
+    ;
+
+`setHttpHeader()`方法为浏览器下一次请求(HTTP header)设置一个HTTP头。
+
+明天见
+------
+
+昨天，我们使用Zend Lucene库实现了搜索引擎。今天，我们用jQuery提高了它的
+响应能力。Symfony框架提供了所有轻松构建MVC程序的工具，也可以与其它组件
+协调工作。总之，使用最好的工具，来完成这个工作。
+
+明天，我们学习如果国际化Jobeet网站。
+
+__ORM__
