@@ -15,8 +15,8 @@ dello sviluppo web.
 >**CAUTION**
 >La sandbox è preconfigurata per utilizzare SQLite come database
 >engine, dovete quindi verificare che il vostro PHP supporti SQLite (vedere il
->capitolo [Prerequisiti](#chapter_02-Prerequisites) ). Potete anche
->leggere la sezione [Configurare il database](#chapter_05-Configurare_il_database)
+>capitolo [Prerequisiti](#chapter_02-Prerequisiti) ). Potete anche
+>leggere la sezione [Configurare il database](#chapter_05-Configurare-il-database)
 >per imparare come cambiare il database utilizzato nella sandbox.
 
 È possibile effettuare il download della symfony sandbox nei formati `.tgz` o `.zip` dalla
@@ -38,8 +38,8 @@ dal browser.
 >applicazione potenzialmente visibili agli utenti finali.
 
 Per completare l'installazione continuare la lettura dei capitoli
-[Configurazione del web server](#chapter_06-Configurazione_del_web_server)
-e [Gli ambienti](#chapter_07-Gli_ambienti).
+[Configurazione del web server](#chapter_06-Configurazione-del-web-server)
+e [Gli ambienti](#chapter_07-Gli-ambienti).
 
 >**NOTE**
 >Dato che la sandbox è un normale progetto symfony dove sono stati eseguiti
