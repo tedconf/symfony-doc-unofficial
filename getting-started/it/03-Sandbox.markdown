@@ -39,7 +39,7 @@ dal browser.
 
 Per completare l'installazione continuare la lettura dei capitoli
 [Configurazione del web server](#chapter_06-Configurazione-del-Web-Server)
-e [Gli ambienti](#chapter_07-Environments).
+e [Gli ambienti](#chapter_07-Gli-ambienti).
 
 >**NOTE**
 >Dato che la sandbox è un normale progetto symfony dove sono stati eseguiti
