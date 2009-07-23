@@ -1,4 +1,4 @@
-Il File di configurazione view.yml
+Il file di configurazione view.yml
 ==================================
 
 Il livello della Vista può essere configurato modificando il file
