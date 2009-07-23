@@ -1,0 +1,622 @@
+第八天：单元测试
+================
+
+过去两天，我们回顾我们过去5天学过的内容，增加和修改了一些功能。在这个过程中，
+我们也接触到symfony一些高级功能。
+
+今天我们将学习一些和前学到的、完全不同的内容：自动化测试。因为将包括很多内容，
+我们需要花费2天的时间学习这些内容。
+
+symfony中的测试
+---------------
+
+symfony有2种不同种类的自动化测试：单元测试（unit tests）和功能测试（
+functional tests）。
+
+单元测试检验每个方法和函数是否正常工作，每个测试必须尽可能的独立。
+
+功能测试检验整体程序运行过程是否正确。
+
+symfony所有测试都在`test/`目录下，有两个子目录。一个存储单元测试文件
+（`test/unit/`），另一个存储功能测试文件（`test/functional/`）。
+
+今天的课程讲解单元测试，明天讲功能测试。
+
+单元测试
+--------
+
+写单元测试是网站开发中最艰难环节之一，也是最好的习惯之一。当网页开发者没有
+真正检验自己的工作，就会出现问题： 我添加功能前写测试程序吗？我需要测试什么？
+我的测试是否需要涵盖各种特殊情况？我如何确定所有内容都通过了测试？但通常一个
+最基础的问题是：从哪开始？
+
+symfony提倡的是一种实用主义的方式：有一点总比没有强。你有许多没有测试的代码吗？
+没问题，你不需要一套完整测试套件，就可以从测试中获益。你可以在发现bug时，再开始
+添加测试。久而久之，你的代码将变得更好，代码覆盖度将提高，你对代码将更有信心。
+以实用主义的方式开始测试程序，不久之后你就会感到适应的。下面我们为新功能写测试。
+我保证你很快就会上瘾的。
+
+大部分测试库存在的问题是，巨大的学习成本。这也是symfony为什么提供非常简单的
+测试库——**lime**的原因，它将让编写测试程序非常轻松。
+
+>**NOTE**
+>Even if this tutorial describes the lime built-in library extensively, you
+>can use any testing library, like the excellent
+>[PHPUnit](http://www.phpunit.de/) library.
+
+`lime`测试框架
+--------------
+
+所有使用lime框架进行的单元测试，都以相同的代码开始：
+
+    [php]
+    require_once dirname(__FILE__).'/../bootstrap/unit.php';
+
+    $t = new lime_test(1, new lime_output_color());
+
+首先，引用`unit.php`引导文件进行简单的初始化。然后，创建实例化`lime_test`对象，
+该对象第一个参数表示需要执行多个测试项。
+
+>**NOTE**
+>如果最终执行测试的数量与该参数值不同，lime会输出一条警告信息。（例如
+一个测试产生了php致命错误）。
+
+测试程序调用方法或函数，并让其使用预定义值执行，然后将执行结果与预期的
+结果相比较 以判断测试是否通过。
+
+为更容易进行结果比较，`lime_test`对象提供了几个方法：
+
+ 方法                          | 描述
+ ----------------------------- | --------------------------------------------
+ `ok($test)`                   | 测试一个条件如果为`true`，测试通过。
+ `is($value1, $value2)`        | 比较两个值如果相等(`==`)，测试通过。
+ `isnt($value1, $value2)`      | 比较两个值如果不相等，测试通过。
+ `like($string, $regexp)`      | 一个字符串与正则表达式匹配，测试通过。
+ `unlike($string, $regexp)`    | 一个字符串与正则表达式不匹配，测试通过。
+ `is_deeply($array1, $array2)` | 检查两个数组有相同值
+
+>**TIP**
+>你可能想知道为什么lime定义这么多测试方法，因为所有的测试都可以通过`ok()`
+>一个方法实现。采取供选择的方法的好处在于，假如测试失败会有更明确的错误信息，
+>可以提高测试可读性。
+
+`lime_test`对象也提供了其他方便的测试方法：
+
+ 方法                    | 描述
+ ----------------------- | --------------------------------------------------
+ `fail()`                | 总是失败，用于测试异常。
+ `pass()`                | 总是通过，用于测试异常。
+ `skip($msg, $nb_tests)` | 作为`$nb_tests`计数，用于条件测试。
+ `todo()`                | 作为一个测试的计数，用于测试仍然被写。
+
+如果没有进行任何测试，`comment($msg)`方法最后会输出一条注释。
+
+运行单元测试
+------------
+
+所有的单元测试文件存储在`test/unit/`目录下。按约定，测试文件命名方式是”类名+Test”。
+你可以按喜欢的方式组织目录中文件，但我们还是建议你仿照`lib/`的目录结构。
+
+To illustrate unit testing, we will test the `Jobeet` class.
+
+Create a `test/unit/JobeetTest.php` file and copy the following code inside:
+
+创建`test/unit/JobeetTest.php`文件，复制以下内容到文件中：
+
+    [php]
+    // test/unit/JobeetTest.php
+    require_once dirname(__FILE__).'/../bootstrap/unit.php';
+
+    $t = new lime_test(1, new lime_output_color());
+    $t->pass('This test always passes.');
+
+你可以直接运行文件，来执行测试：
+
+    $ php test/unit/JobeetTest.php
+
+或使用`test:unit`命令：
+
+    $ php symfony test:unit Jobeet
+
+![Tests on the command line](http://www.symfony-project.org/images/jobeet/1_2/08/cli_tests.png)
+
+>**Note**: ~Windows~命令行没有代码高亮显示。
+
+测试`slugify`方法
+-----------------
+
+让我们以`Jobeet::slugify()`单元测试，作为我们的开始。
+
+我们在第5天创建`slugify()`方法来清理字符串，让它可以安全地包含在URL中。这个方法
+包含一些基础的转化，如将非ASCII字符转换成(`-`)或将字符串转换为小写字母。
+
+ | Input         | Output       |
+ | ------------- | ------------ |
+ | Sensio Labs   | sensio-labs  |
+ | Paris, France | paris-france |
+
+用下面的代码替换测试文件中的内容：
+
+    [php]
+    // test/unit/JobeetTest.php
+    require_once dirname(__FILE__).'/../bootstrap/unit.php';
+
+    $t = new lime_test(6, new lime_output_color());
+
+    $t->is(Jobeet::slugify('Sensio'), 'sensio');
+    $t->is(Jobeet::slugify('sensio labs'), 'sensio-labs');
+    $t->is(Jobeet::slugify('sensio   labs'), 'sensio-labs');
+    $t->is(Jobeet::slugify('paris,france'), 'paris-france');
+    $t->is(Jobeet::slugify('  sensio'), 'sensio');
+    $t->is(Jobeet::slugify('sensio  '), 'sensio');
+
+如果你仔细观察我们写到测试，你将注意到每行代码只测试一种情况。你必须记住这条规则：
+一个测试项只测试一种情况。
+
+现在可以运行测试文件。如果所有测试项通过，最后将显示“绿色条”表示通过，否则出现
+“红色条”警告你有没通过的测试项。
+
+![slugify() tests](http://www.symfony-project.org/images/jobeet/1_2/08/slugify.png)
+
+如果一个测试项测试失败，将输出一些提示信息，描述失败原因；但如果文件中有上百个
+测试项，从中找出错误信息将是很难的一件事。
+
+所有lime测试方法都有一个字符串作为最后一个参数，这个参数用来显示说明信息。用来
+添加该测试项的描述信息。它也可以作为方法预期行的格式文档，让我们添加一些描述信息
+到`slugify`测试文件：
+
+    [php]
+    require_once dirname(__FILE__).'/../bootstrap/unit.php';
+
+    $t = new lime_test(6, new lime_output_color());
+
+    $t->comment('::slugify()');
+    $t->is(Jobeet::slugify('Sensio'), 'sensio',
+     ➥ '::slugify() converts all characters to lower case');
+    $t->is(Jobeet::slugify('sensio labs'), 'sensio-labs',
+     ➥ '::slugify() replaces a white space by a -');
+    $t->is(Jobeet::slugify('sensio   labs'), 'sensio-labs',
+     ➥ '::slugify() replaces several white spaces by a single -');
+    $t->is(Jobeet::slugify('  sensio'), 'sensio',
+     ➥ '::slugify() removes - at the beginning of a string');
+    $t->is(Jobeet::slugify('sensio  '), 'sensio',
+     ➥ '::slugify() removes - at the end of a string');
+    $t->is(Jobeet::slugify('paris,france'), 'paris-france',
+     ➥ '::slugify() replaces non-ASCII characters by a -');
+
+![slugify() tests with messages](http://www.symfony-project.org/images/jobeet/1_2/08/slugify_doc.png)
+
+这些说明字符串在你试图指出该测试项的功能时，尤其有用。你可以观察出这些字符的
+输出格式：以方法名开头，后接该方法应如何行为的描述。
+
+>**SIDEBAR**
+>代码覆盖度
+>
+>写测试时，常常会忘记对一部分代码进行测试。
+>
+>为帮助你检查是否所有代码都已经进行了测试，symfony提供test:coverage命令。将
+>一个测试文件（或目录）和一个lib文件（或目录）作为2个参数一同传递给这个命令，
+>它将告诉你已测试代码的覆盖程度。
+>
+>     $ php symfony test:coverage test/unit/JobeetTest.php lib/Jobeet.class.php
+>
+>如果你想知道具体哪行代码没有被覆盖，可以使用`--detailed`选项：
+>
+>     $ php symfony test:coverage --detailed test/unit/JobeetTest.php lib/Jobeet.class.php
+>
+>记住，当命令显示你已经进行了一个完整的单元测试时，这只表示每行代码都已执行，
+>而不表示所有的特例情况都被测试到了。
+>
+>因为`test:coverage`依赖于`~XDebug~`收集的信息，所以你需要必须先安装它。
+
+为新功能添加测试
+----------------
+
+假如给`slugify()`传递一个空的字符串，它将返回一个空字符串。你可以添加这样的
+测试，它也会通过测试。但是一个空字符串在URL中没有意义。让我们修改一下
+`slugify()`方法，假如是空字符的话返回`n-a`字符串。
+
+你可以先写测试代码，然后更新方法，或者相反。先写测试代码会给你信心：即将
+加入的功能的确可以运行。
+
+    [php]
+    $t->is(Jobeet::slugify(''), 'n-a',
+     ➥ '::slugify() converts the empty string to n-a');
+
+This development methodology, where you first write tests then implement features,
+is known as [Test Driven Development (~TDD|Test Driven Development~)](http://en.wikipedia.org/wiki/Test_Driven_Development).
+
+如果你现在运行测试，会显示一条红色的错误提示。因为这个新功能还没有添加到
+`slugify()`方法中，或者已经添加的新功能没有通过测试。
+
+现在更新`Jobeet`类，在开始处加入下面的条件语句：
+
+    [php]
+    // lib/Jobeet.class.php
+    static public function slugify($text)
+    {
+      if (empty($text))
+      {
+        return 'n-a';
+      }
+
+      // ...
+    }
+
+现在你必须更新测试计划中测试量，这个测试才可以通过。否则，你将看到一条类似的
+提示：你计划进行6个测试，1个额外运行。更新计划测试量很重要，因为如果测试脚本
+提前结束，你会马上知道。
+
+为调试bug添加测试
+-----------------
+
+让我们讨论这种情况，测试已经通过了不过一个用户向你提交了bug：一些招聘信息指向404页面。
+你经过调查，错误的原因是这些招聘信息含有空公司名、职位或本地化字符。这不可能啊？因为你
+从头到尾检查了整个数据库，并没有发现空字段。最后你发现，当字符串中全部都是非ASCII字符时，
+`slugify()`会将它转换成空字符串。然后你很高兴地打开`Jobeet`类修改代码…不过这不是个好注意。
+在修复bug之前，我们应该先进行一下测试：
+
+    [php]
+    $t->is(Jobeet::slugify(' - '), 'n-a',
+     ➥ '::slugify() converts a string that only contains non-ASCII characters to n-a');
+
+![slugify() bug](http://www.symfony-project.org/images/jobeet/1_2/08/slugify_bug.png)
+
+如我们所料，测试没有通过，现在修改`slugify()`方法，将空字符检查添加到后面：
+
+    [php]
+    static public function slugify($text)
+    {
+      // ...
+
+      if (empty($text))
+      {
+        return 'n-a';
+      }
+
+      return $text;
+    }
+
+新的测试也通过。现在，虽然我们的测试代码的覆盖率已经达到了100%，但`slugify()`
+仍然存在bug。
+
+当你写测试代码的时候，你不可能考虑到所有的特殊情况，而且测试时它们也没有出现问题。
+但是一旦你发现bug时，一定要在修复之前先写测试代码。这意味着随着时间的推移，你的
+代码将变得越来越好。
+
+>**SIDEBAR**
+>更好的`slugify`方法
+>
+>你或许知道symfony是法国人开发的，我们添加一个法语字符测试，字符串中包含一个重音符号：
+>
+>     [php]
+>     $t->is(Jobeet::slugify('Développeur Web'), 'developpeur-web', '::slugify() removes accents');
+>
+>这个测试一定会失败，`slugify()`方法将把é替换成(-)而不是e。这是一个字符转换问题。如果你安
+>装了”iconv”库，它可以帮我们解决这个问题：
+>
+>     [php]
+>     // code derived from http://php.vrana.cz/vytvoreni-pratelskeho-url.php
+>     static public function slugify($text)
+>     {
+>       // replace non letter or digits by -
+>       $text = preg_replace('~[^\\pL\d]+~u', '-', $text);
+>
+>       // trim
+>       $text = trim($text, '-');
+>
+>       // transliterate
+>       if (function_exists('iconv'))
+>       {
+>         $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+>       }
+>
+>       // lowercase
+>       $text = strtolower($text);
+>
+>       // remove unwanted characters
+>       $text = preg_replace('~[^-\w]+~', '', $text);
+>
+>       if (empty($text))
+>       {
+>         return 'n-a';
+>       }
+>
+>       return $text;
+>     }
+>
+>Remember to save all your PHP files with the ~UTF-8~ encoding, as this is the
+>default symfony ~encoding|Encoding~, and the one used by "iconv" to do the
+>transliteration.
+>
+>记住使用~UTF-8~编码(encoding)保存所有PHP文件，使用”iconv”转换编码，UTF-8是symfony默认编码方式。
+>
+>我们修改测试文件，这个测试需要PHP支持”iconv”：
+>
+>     [php]
+>     if (function_exists('iconv'))
+>     {
+>       $t->is(Jobeet::slugify('Développeur Web'), 'developpeur-web', '::slugify() removes accents');
+>     }
+>     else
+>     {
+>       $t->skip('::slugify() removes accents - iconv not installed');
+>     }
+
+##ORM##单元测试
+---------------
+
+### 数据库配置
+
+因为需要数据库连接，所以##ORM##模型类的单元测试稍微复杂一些。你已经有了开发用的数据库，
+但作为良好习惯，你应该创建一个专用的测试数据库。
+
+在第1天的课程中，我们介绍过环境是改变程序设置一种手段。默认的，所有测试程序都运行在测试
+环境中，所以我们需要给测试环境配置一个不同的数据库：
+
+<propel>
+    $ php symfony configure:database --env=test
+     ➥ "mysql:host=localhost;dbname=jobeet_test" root mYsEcret
+</propel>
+<doctrine>
+    $ php symfony configure:database --name=doctrine
+     ➥ --class=sfDoctrineDatabase --env=test
+     ➥ "mysql:host=localhost;dbname=jobeet_test" root mYsEcret
+</doctrine>
+
+`env`选项告诉命令，这个数据库配置只用于测试(`test`)环境。我们在第3天使用这个命令时没有
+带任何`env`选项，所以那个数据库配置被应用到所有环境。
+
+>**NOTE**
+>如果你好奇，打开`config/databases.yml`配置文件，看看symfony改变依赖的环境是多么容易。
+
+现在我们已经配置了数据库，现在用`propel:insert-sql`导入：
+
+    $ mysqladmin -uroot -pmYsEcret create jobeet_test
+    $ php symfony propel:insert-sql --env=test
+
+>**SIDEBAR**
+>symfony配置原则
+>
+>在第4天的课程中，我们看见配置文件可以定义为不同的级别。
+>
+>不仅如此，大多数配置文件中都可以为不同的环境进行不同的设置，如我们用过的
+>`databases.yml`, `app.yml`, `view.yml`, 和 `settings.yml`文件。在这些文件
+>中主关键字为环境名，关键字`all`中配置可以被所有环境共享：
+>
+>     [yml]
+>     # config/databases.yml
+>     dev:
+>       propel:
+>         class: sfPropelDatabase
+<propel>
+>         param:
+>           classname: DebugPDO
+</propel>
+>
+>     test:
+>       propel:
+>         class: sfPropelDatabase
+>         param:
+<propel>
+>           classname: DebugPDO
+</propel>
+>           dsn: 'mysql:host=localhost;dbname=jobeet_test'
+>
+>     all:
+>       propel:
+>         class: sfPropelDatabase
+>         param:
+>           dsn: 'mysql:host=localhost;dbname=jobeet'
+>           username: root
+>           password: null
+
+### 测试数据
+
+我们有了专用测试数据库，现在需要导入一些数据。第3天时候我们用`propel:data-load`导入过数据。但是对测试环境来说，这些数据需要在每次使用时自动加载。
+
+<propel>
+`propel:data-load`内部使用[`sfPropelData`](http://www.symfony-project.org/api/1_2/sfPropelData)类加载数据：
+
+    [php]
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+`doctrine:data-load` 内部使用`Doctrine::loadData()`方法加载数据：
+
+    [php]
+    Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+>**NOTE**
+>~`sfConfig`~对象可以用来获取项目子目录的完整路径。使用它来引用路径，
+>要比硬编码路径更容易修改目录结构。
+
+`loadData()`方法将一个目录或文件作为第一个参数。也可以用包含多个目录、文件的数组作为参数。
+
+我们已经在`data/fixtures/`目录下创建了一些初始数据。单元测试和功能测试使用的初始化数据
+保存`test/fixtures/`目录下。
+
+现在复制`data/fixtures/`文件到`test/fixtures/`目录中。
+
+### 测试`JobeetJob`
+
+我们为`JobeetJob`模型类添加一些单元测试。
+
+我们所有的##ORM##单元测试将以相同的代码开始，在`test/bootstrap/`下创建`##ORM##.php`文件：
+
+    [php]
+    // test/bootstrap/##ORM##.php
+    include(dirname(__FILE__).'/unit.php');
+
+    $configuration =
+     ➥ ProjectConfiguration::getApplicationConfiguration(
+     ➥ 'frontend', 'test', true);
+
+    new sfDatabaseManager($configuration);
+
+<propel>
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+    Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+这些代码的功能显而易见：
+
+  * 对于前端控制器，我们为测试环境(`test` environment)初始化一个配置对象：
+
+        [php]
+        $configuration =
+         ➥ ProjectConfiguration::getApplicationConfiguration(
+         ➥ 'frontend', 'test', true);
+
+  * 我们创建数据库管理器。通过读取`databases.yml`配置初始化##ORM##连接：
+
+        [php]
+        new sfDatabaseManager($configuration);
+
+<propel>
+  * 我们使用sfPropelData读取测试数据：
+
+        [php]
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+  * 我们使用`Doctrine::loadData()`读取测试数据：
+
+        [php]
+        Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+>**NOTE**
+>只有存在需要运行的SQL语句时，##ORM##才会连接数据库。
+
+现在万事俱备，我们可以开始测试`JobeetJob`类啦。
+
+首先，我们需要创建在`test/unit/model`目录下`JobeetJobTest.php`文件：
+
+    [php]
+    // test/unit/model/JobeetJobTest.php
+    include(dirname(__FILE__).'/../../bootstrap/##ORM##.php');
+
+    $t = new lime_test(1, new lime_output_color());
+
+然后，我们给`getCompanySlug()`添加测试：
+
+    [php]
+    $t->comment('->getCompanySlug()');
+<propel>
+    $job = JobeetJobPeer::doSelectOne(new Criteria());
+</propel>
+<doctrine>
+    $job = Doctrine::getTable('JobeetJob')->createQuery()->fetchOne();
+</doctrine>
+    $t->is($job->getCompanySlug(), Jobeet::slugify($job->getCompany()), '->getCompanySlug() return the slug for the company');
+
+注意，我们值测试`getCompanySlug()`方法生成slug是否正确，因为其它测试项刚才已经测试过了。
+
+`save()`测试，稍微有些复杂：
+
+    [php]
+    $t->comment('->save()');
+    $job = create_job();
+    $job->save();
+    $expiresAt = date('Y-m-d', time() + 86400
+      ➥ * sfConfig::get('app_active_days'));
+<propel>
+    $t->is($job->getExpiresAt('Y-m-d'), $expiresAt, '->save() updates expires_at if not set');
+</propel>
+<doctrine>
+    $t->is(date('Y-m-d', strtotime($job->getExpiresAt())), $expiresAt, '->save() updates expires_at if not set');
+</doctrine>
+
+    $job = create_job(array('expires_at' => '2008-08-08'));
+    $job->save();
+<propel>
+    $t->is($job->getExpiresAt('Y-m-d'), '2008-08-08', '->save() does not update expires_at if set');
+</propel>
+<doctrine>
+    $t->is(date('Y-m-d', strtotime($job->getExpiresAt())), '2008-08-08', '->save() does not update expires_at if set');
+</doctrine>
+
+    function create_job($defaults = array())
+    {
+      static $category = null;
+
+      if (is_null($category))
+      {
+<propel>
+        $category = JobeetCategoryPeer::doSelectOne(new Criteria());
+</propel>
+<doctrine>
+        $category = Doctrine::getTable('JobeetCategory')
+          ->createQuery()
+          ->limit(1)
+          ->fetchOne();
+</doctrine>
+      }
+
+      $job = new JobeetJob();
+      $job->fromArray(array_merge(array(
+        'category_id'  => $category->getId(),
+        'company'      => 'Sensio Labs',
+        'position'     => 'Senior Tester',
+        'location'     => 'Paris, France',
+        'description'  => 'Testing is fun',
+        'how_to_apply' => 'Send e-Mail',
+        'email'        => 'job@example.com',
+        'token'        => rand(1111, 9999),
+        'is_activated' => true,
+<propel>
+      ), $defaults), BasePeer::TYPE_FIELDNAME);
+</propel>
+<doctrine>
+      ), $defaults));
+</doctrine>
+
+      return $job;
+    }
+
+>**NOTE**
+>每次添加测试，不要忘记更新`lime_test`构造方法中的计划测试量。对于`JobeetJobTest`你需要
+>将它从`1`改为`3`。
+
+### 测试其他##ORM##类
+
+你现在可以为其它##ORM##类添加测试，因为你现在已经习惯了编写单元测试的过程，
+它非常简单。你可以通过SVN得到我们今天初始化数据和相关的单元测试（release_day_08标签下）。
+
+打包测试
+--------
+
+可以用`test:unit`命令(~task~)执行全部单元测试：
+
+    $ php symfony test:unit
+
+命令输出每个测试文件是否通过：
+
+![Unit tests harness](http://www.symfony-project.org/images/jobeet/1_2/08/test_harness.png)
+
+>**TIP**
+>If the `test:unit` task returns a "~dubious status|Dubious Status~" for a 
+>file, it indicates that the script died before end. Running the test file 
+>alone will give you the exact error message.
+
+明天见
+------
+
+虽然测试程序非常重要，但可能有些人跳过了今天的课程。我很高兴你没有。
+
+当然，学习symfony意味着要学习它提供的所有好的功能，同时也要学习基本的开发原理(philosophy)
+和良好的编程习惯(best practices)，测试就是其中之一。或快或慢，单元测试会为你节省开发时间。
+让你对自己的代码有坚定信心，不再害怕重构代码。单元测试是一个安全守卫，它会在
+你出现问题时提醒你。symfony框架本身的测试超过9000条。
+
+明天我们为`job`和`category`模块写一些功能测试。在这之前花些时间，给Jobeet模型类
+写更多的单元测试。
+
+__ORM__
