@@ -9,8 +9,8 @@ The main `settings.yml` configuration file for an application can be found in
 the `apps/APP_NAME/config/` directory.
 
 As discussed in the introduction, the `settings.yml` file is
-[**environment-aware**](#chapter_03-Configuration-File-Principles_sub_environment_awareness), and benefits from
-the [**configuration cascade mechanism**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade).
+[**environment-aware**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness), and benefits from
+the [**configuration cascade mechanism**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade).
 
 Each environment section has two sub-sections: `.actions` and `.settings`. All
 configuration directives go under the `.settings` sub-section, except for the

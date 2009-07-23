@@ -16,9 +16,9 @@ the `config/` directory.
 >application configuration directories.
 
 As discussed in the introduction, the `databases.yml` file is
-[**environment-aware**](#chapter_03-Configuration-File-Principles_sub_environment_awareness), benefits from
-the [**configuration cascade mechanism**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade),
-and can include [**constants**](#chapter_03-Configuration-File-Principles_sub_constants).
+[**environment-aware**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness), benefits from
+the [**configuration cascade mechanism**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade),
+and can include [**constants**](#chapter_03-Configuration-Files-Principles_sub_constants).
 
 Each connection described in `databases.yml` must include a name, a database
 handler class name, and a set of parameters (`param`) used to configure the

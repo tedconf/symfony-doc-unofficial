@@ -19,8 +19,8 @@ the whole application (under the `default` key):
       is_secure: off
 
 As discussed in the introduction, the `security.yml` file benefits from
-the [**configuration cascade mechanism**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade),
-and can include [**constants**](#chapter_03-Configuration-File-Principles_sub_constants).
+the [**configuration cascade mechanism**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade),
+and can include [**constants**](#chapter_03-Configuration-Files-Principles_sub_constants).
 
 The default application configuration can be overridden for a module by
 creating a `security.yml` file in the `config/` directory of the module. The
