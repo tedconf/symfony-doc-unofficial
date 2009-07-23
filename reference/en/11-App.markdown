@@ -12,12 +12,12 @@ global `sfConfig` class, and keys are prefixed with the `app_` string:
     sfConfig::get('app_active_days');
 
 All settings are prefixed by `app_` because the `sfConfig` class also provides
-access to [symfony settings](#chapter_03-Configuration-Files-Principles_sub_configuration_settings) and
-[project directories](#chapter_03-Configuration-Files-Principles_sub_directories).
+access to [symfony settings](03-Configuration-Files-Principles#chapter_03_sub_configuration_settings) and
+[project directories](03-Configuration-Files-Principles#chapter_03_sub_directories).
 
 As discussed in the introduction, the `app.yml` file is
-[**environment-aware**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness), and benefits from
-the [**configuration cascade mechanism**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade).
+[**environment-aware**](03-Configuration-Files-Principles#chapter_03_environment_awareness), and benefits from
+the [**configuration cascade mechanism**](03-Configuration-Files-Principles#chapter_03_configuration_cascade).
 
 The `app.yml` configuration file is a great place to define settings that
 change based on the environment (an API key for instance), or settings that
@@ -33,4 +33,4 @@ necessarily understand symfony or PHP (a system administrator for instance).
 >**NOTE**
 >The `app.yml` configuration file is cached as a PHP file; the process
 >is automatically managed by the ~`sfDefineEnvironmentConfigHandler`~
->[class](#chapter_14-Other-Configuration-Files_sub_config_handlers_yml).
+>[class](14-Other-Configuration-Files#chapter_14_config_handlers_yml).

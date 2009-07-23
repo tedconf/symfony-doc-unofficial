@@ -8,8 +8,8 @@ The main `filters.yml` configuration file for an application can be found in
 the `apps/APP_NAME/config/` directory.
 
 As discussed in the introduction, the `filters.yml` file benefits from the
-[**configuration cascade mechanism**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade), and
-can include [**constants**](#chapter_03-Configuration-Files-Principles_sub_constants).
+[**configuration cascade mechanism**](03-Configuration-Files-Principles#chapter_03_configuration_cascade), and
+can include [**constants**](03-Configuration-Files-Principles#chapter_03_constants).
 
 The `filters.yml` configuration file contains a list of named filter
 definitions:
@@ -85,18 +85,18 @@ should be the last one:
 >**NOTE**
 >The `filters.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfFilterConfigHandler`~
->[class](#chapter_14-Other-Configuration-Files_sub_config_handlers_yml).
+>[class](14-Other-Configuration-Files#chapter_14_config_handlers_yml).
 
 <div class="pagebreak"></div>
 
 Filters
 -------
 
- * [`rendering`](#chapter_12-Filters_sub_rendering)
- * [`security`](#chapter_12-Filters_sub_security)
- * [`cache`](#chapter_12-Filters_sub_cache)
- * [`common`](#chapter_12-Filters_sub_common)
- * [`execution`](#chapter_12-Filters_sub_execution)
+ * [`rendering`](12-Filters#chapter_12_rendering)
+ * [`security`](12-Filters#chapter_12_security)
+ * [`cache`](12-Filters#chapter_12_cache)
+ * [`common`](12-Filters#chapter_12_common)
+ * [`execution`](12-Filters#chapter_12_execution)
 
 `rendering`
 -----------
@@ -132,7 +132,7 @@ the user object.
 The security filter must have a type of `security`.
 
 The fine-grained configuration of the security filter is done via the
-`security.yml` configuration [file](#chapter_08-Security).
+`security.yml` configuration [file](08-Security#chapter_08).
 
 >**TIP**
 >If the requested action is not configured as secure in `security.yml`, the

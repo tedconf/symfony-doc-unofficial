@@ -22,7 +22,7 @@ the first time.
 
 The parsing and caching of each configuration file is done by specialized
 configuration handler classes, configured in
-[`config_handler.yml`](#chapter_14-Other-Configuration-Files_config_handlers_yml).
+[`config_handler.yml`](14-Other-Configuration-Files#chapter_14_config_handlers_yml).
 
 In the following sections, when we talk about the "compilation", it means the
 first time when the YAML file is converted to a PHP file and stored in the

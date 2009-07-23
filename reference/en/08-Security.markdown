@@ -6,9 +6,9 @@ authorization rules for a symfony application.
 
 >**TIP**
 >The configuration information from the `security.yml` file is used by
->the [`user`](#chapter_05-Factories_sub_user) factory class (`sfBasicSecurityUser` by
+>the [`user`](05-Factories#chapter_05_user) factory class (`sfBasicSecurityUser` by
 >default). The enforcement of the authentication and authorization is
->done by the `security` [filter](#chapter_12-Filters_sub_security).
+>done by the `security` [filter](12-Filters#chapter_12_security).
 
 When an application is created, symfony generates a default `security.yml`
 file in the application `config/` directory which describes the security for
@@ -19,8 +19,8 @@ the whole application (under the `default` key):
       is_secure: off
 
 As discussed in the introduction, the `security.yml` file benefits from
-the [**configuration cascade mechanism**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade),
-and can include [**constants**](#chapter_03-Configuration-Files-Principles_sub_constants).
+the [**configuration cascade mechanism**](03-Configuration-Files-Principles#chapter_03_configuration_cascade),
+and can include [**constants**](03-Configuration-Files-Principles#chapter_03_constants).
 
 The default application configuration can be overridden for a module by
 creating a `security.yml` file in the `config/` directory of the module. The
@@ -44,7 +44,7 @@ access an action.
 >**NOTE**
 >The `security.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfSecurityConfigHandler`~
->[class](#chapter_14-Other-Configuration-Files_sub_config_handlers_yml).
+>[class](14-Other-Configuration-Files#chapter_14_config_handlers_yml).
 
 ~Authentication~
 ----------------
