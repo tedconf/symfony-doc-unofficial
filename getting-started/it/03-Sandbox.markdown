@@ -4,7 +4,7 @@ La Sandbox
 Se il vostro obiettivo è provare symfony per qualche ora, continuate a leggere questo
 capitolo e vi mostreremo il modo più veloce per iniziare. Se invece intendete avviare
 un progetto reale, potete tranquillamente saltare questo capitolo e
-[andare](#chapter_04-Installazione-di-symfony) direttamente al prossimo.
+[andare](#chapter_04-Symfony-Installation) direttamente al prossimo.
 
 Il modo più veloce per sperimentare symfony è installare la symfony sandbox. La
 sandbox è un modo facilissimo per installare un progetto symfony pronto all'uso, già
@@ -15,8 +15,8 @@ dello sviluppo web.
 >**CAUTION**
 >La sandbox è preconfigurata per utilizzare SQLite come database
 >engine, dovete quindi verificare che il vostro PHP supporti SQLite (vedere il
->capitolo [Prerequisiti](#chapter_02-Prerequisiti) ). Potete anche
->leggere la sezione [Configurare il database](#chapter_05-Preparazione-del-progetto_sub_configurare_il_database)
+>capitolo [Prerequisiti](#chapter_02-Prerequisites) ). Potete anche
+>leggere la sezione [Configurare il database](#chapter_05-Project-Setup_sub_configurare_il_database)
 >per imparare come cambiare il database utilizzato nella sandbox.
 
 È possibile effettuare il download della symfony sandbox nei formati `.tgz` o `.zip` dalla
@@ -38,8 +38,8 @@ dal browser.
 >applicazione potenzialmente visibili agli utenti finali.
 
 Per completare l'installazione continuare la lettura dei capitoli
-[Configurazione del web server](#chapter_06-Configurazione-del-Web-Server)
-e [Gli ambienti](#chapter_07-Gli-ambienti).
+[Configurazione del web server](#chapter_06-Web-Server-Configuration)
+e [Gli ambienti](#chapter_07-Environments).
 
 >**NOTE**
 >Dato che la sandbox è un normale progetto symfony dove sono stati eseguiti
