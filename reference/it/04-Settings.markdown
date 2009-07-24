@@ -13,7 +13,7 @@ Come anticipato nell'introduzione il file `settings.yml` è
 e beneficia del [**meccanismo di configurazione a cascata**](03-Configuration-Files-Principles#chapter_03_configurazione_a_cascata).
 
 Ogni sezione dedicata ad un ambiente ha due sotto sezioni: `.actions` e `.settings`.
-Tutte le impostazioni vanno inserite nella sotto sezione `.settings` eccezion 
+Tutte le impostazioni vanno inserite nella sotto sezione `.settings`, eccezion 
 fatta per le azioni di default da visualizzare per alcune pagine comuni.
 
 >**NOTE**
@@ -111,9 +111,9 @@ La sotto sezione `.settings` è dove si specifica la configurazione del framewor
 I paragrafi seguenti descrivono tutte le possibile impostazioni ordinate per
 importanza.
 
-Tutte le impostaioni definite nella sezione `.settings` sono disponibili in qualsiasi
-punto del codice utilizzando l'oggetto `sfConfig` ed anteponendo al nome dell'impostazione
-il prefisso `sf_`. Per esempio per ottenere il valore dell'impostazione `charset`
+Tutte le impostazioni definite nella sezione `.settings` sono disponibili in qualsiasi
+punto del codice, utilizzando l'oggetto `sfConfig` ed anteponendo al nome dell'impostazione
+il prefisso `sf_`. Per esempio, per ottenere il valore dell'impostazione `charset`
 utilizzare:
 
     [php]
@@ -136,7 +136,7 @@ in uno script Javascript).
 Il sub-framework che si occupa dell'escape dell'output utilizza l'impostazione
 `charset` per il suo compito.
 
-E' vivamente consigliato di cambiare il valore di defaul a `on`.
+È vivamente consigliato di cambiare il valore di default a `on`.
 
 >**TIP**
 >Queste impostazioni possono essere dichiarate quando si crea un'applicazione 
@@ -149,7 +149,7 @@ E' vivamente consigliato di cambiare il valore di defaul a `on`.
 L'impostazione `escaping_method` definisce la funzione di default da utilizzare
 per l'escape delle variabili nei template (vedere `escaping_strategy` precedente).
 
-E' possibile selezionare uno dei valori proposti: ~`ESC_SPECIALCHARS`~, ~`ESC_RAW`~,
+È possibile selezionare uno dei valori proposti: ~`ESC_SPECIALCHARS`~, ~`ESC_RAW`~,
 ~`ESC_ENTITIES`~, ~`ESC_JS`~, ~`ESC_JS_NO_ENTITIES`~, e
 ~`ESC_SPECIALCHARS`~ o creare una nuova funzione.
 
@@ -167,7 +167,7 @@ tutti i form generati dal form framework. Questa impostazione è utilizzata anch
 dall'helper `link_to()` quando c'è la necessità di convertire un link ad un form
 (per simulare un metodo HTTP `DELETE` per esempio).
 
-E' vivamente consigliato di cambiare il valore di defaul a una chiave segreta
+È vivamente consigliato di cambiare il valore di default con una chiave segreta
 univoca.
 
 >**TIP**
@@ -288,7 +288,7 @@ in cache o meno.
 
 Questa impostazione è stata introdotto in symfony 1.2.7 per aumentare le performance
 senza inficiare la retrocompatibilità con le precedenti release delle 1.2.
-Verrà rimossa in symfony 1.3 in quanto l'ottimizzazion sarà sempre abilitata.
+Verrà rimossa in symfony 1.3, in quanto l'ottimizzazione sarà sempre abilitata.
 
 >**CAUTION**
 >Questa impostazione è disponibile solo per symfony 1.2.7 e superiori.
@@ -332,18 +332,18 @@ La configurazione di default è la più sensibile e non dovrebbe essere modifica
 
 >**NOTE**
 >La visualizzazione degli errori nel browser è disabilitata automaticamente per 
->i front controller che hanno disabilitto il `debug`, questo è il caso di default
+>i front controller che hanno disabilitato il `debug`, questo è il caso di default
 >per l'ambiente `prod`.
 
 ### ~`compressed`~
 
 *Default*: `off`
 
-L'impostazione `compressed` abilita la compressione nativa di PHP delle response.
+L'impostazione `compressed` abilita la compressione nativa di PHP delle risposte.
 Se impostato a `on` symfony utilizzerà [`ob_gzhandler`](http://www.php.net/ob_gzhandler)
 come funzione di callback per `ob_start()`.
 
-E' raccomandabile tenere questo valore a `off` ed utilizzare invece il meccaniscmo 
+È raccomandabile tenere questo valore a `off` ed utilizzare invece il meccanismo 
 di compressione nativo del web server utilizzato.
 
 ### ~`use_database`~
@@ -365,7 +365,7 @@ automaticamente redirette alla pagina `lib/exception/data/unavailable.php`
 messa a disposizione dal core di symfony.
 
 >**TIP**
->E' possibile l'override del template di default aggiungendo un file 
+>È possibile l'override del template di default aggiungendo un file 
 >`config/unavailable.php` al progetto o all'applicazione.
 
 ### ~`check_symfony_version`~
@@ -376,8 +376,8 @@ L'impostazione `check_symfony_version` abilita e disabilita il controllo della
 versione corrente di symfony eseguito ad ogni richiesta. Se abilitato symfony 
 pulirà la cache in modo automatico quando il framework verrà aggiornato.
 
-E' vivamente sconsigliato di impostare questo valore su `on`dato che aggiunge
-un leggero overhead e perchè è veramente semplice ripulire la cache quando si
+È vivamente sconsigliato di impostare questo valore su `on`dato che aggiunge
+un leggero overhead e perché è veramente semplice ripulire la cache quando si
 esegue il deploy di un nuovo progetto. Questa impostazione è utile solamente
 quando molto progetti condividono lo stesso codice symfony, cosa che comunque
 non è raccomandata.
@@ -386,7 +386,7 @@ non è raccomandata.
 
 *Default*: `/sf/sf_web_debug`
 
-L'impostazione `web_debug_web_dir` definisce il path per i materiali della 
+L'impostazione `web_debug_web_dir` definisce il percorso per i materiali della 
 web debug toolbar (immagini, fogli di stile e file JavaScript).
 
 ### ~`strip_comments`~

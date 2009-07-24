@@ -208,7 +208,7 @@ collezione di oggetti di modelli.
 
 ### ~`method`~
 
-L'opzione `type` è obbligatoria. E' il metodo da chiamare sulla classe del modello
+L'opzione `type` è obbligatoria. È il metodo da chiamare sulla classe del modello
 per recuperare l'oggetto (o gli oggetti) associati a questa rotta. Deve essere un
 metodo statico. Il metodo è chiamato con i parametri della rotta scansionata come
 argomento.

@@ -2,11 +2,11 @@ Il file di configurazione generator.yml
 =======================================
 
 Il generatore di admin di symfony permette la creazione di una interfaccia di backend per
-per le classi del modello. Funziona sia che utilizziate Propel che Doctrine come ORM.
+per le classi del modello. Funziona utilizzando sia Propel che Doctrine come ORM.
 
 ### Creazione
 
-I module del generatore di admin sono creati dai task `propel:generate-admin` o
+I moduli del generatore di admin sono creati dai task `propel:generate-admin` o
 `doctrine:generate-admin`:
 
     $ php symfony propel:generate-admin backend Article
@@ -39,10 +39,10 @@ La voce `param` contiene le opzioni di configurazione per il modulo generato.
 `model_class` definisce la classe del modello  associata a questo modulo, e
 l'opzione `theme` definisce il tema predefinito da usare.
 
-Ma la configurazione principale è presente sotto la voce`config`. E' organizzata
+Ma la configurazione principale è presente sotto la voce`config`. È organizzata
 in sette sezioni:
 
-  * `actions`: Configurazione predefinita per le azioni trovate sull'elenco e sui forms
+  * `actions`: Configurazione predefinita per le azioni trovate sull'elenco e sui form
   * `fields`:  Configurazione predefinita per i campi
   * `list`:    Configurazione per l'elenco
   * `filter`:  Configurazione per i filtri
@@ -87,9 +87,9 @@ i componenti da una tilde (`~`):
     display: [_title, ~content]
 
 Nell'esempio sopra, il campo `title` sarà visualizzato dal partial `title`,
-e il campo `content` dal comopnente `content`.
+e il campo `content` dal componente `content`.
 
-Il generatore di admin passa alcuni parametri ai partials e ai componenti:
+Il generatore di admin passa alcuni parametri ai partial e ai componenti:
 
   * Per le pagine `new` e `edit`:
 
@@ -118,7 +118,7 @@ modello:
 
 Alcune opzioni possono prendere oggetti di modello segnaposto. Un segnaposto è una stringa
 che segue il modello: `%%NAME%%`. La stringa `NAME` può essere qualunque cosa possa
-essere vonvertita a un metodo getter valido di un oggetto (`get` più un suffisso
+essere convertita a un metodo getter valido di un oggetto (`get` più un suffisso
 costituito dalla stringa `NAME` con il primo carattere maiuscolo). Per esempio, `%%title%%` sarà
 sostituito dal valore di `$article->getTitle()`. I valori segnaposto sono
 sostituiti dinamicamente a runtime in accordo con l'oggetto associato con il
@@ -307,9 +307,9 @@ L'opzione `label` definisce l'etichetta da usare per il campo:
 
 ### ~`help`~
 
-*Default*: none
+*Predefinito*: nessuno
 
-The `help` option defines the help text to display for the field.
+L'opzione `help` definisce il testo di aiuto da mostrare per il campo.
 
 ### ~`attributes`~
 
@@ -343,10 +343,10 @@ to be displayed. The credentials are only enforced for the object list.
 
 *Predefinito*: nessuno
 
-L'opzione `renderer` definisce una callback PHP per eseguire la visualizzazione del campo. Se
+L'opzione `renderer` definisce un callback PHP per eseguire la visualizzazione del campo. Se
 definita, sovrascrive ogni altra cosa come partial o componenti.
 
-La callback è chiamata con il valore del campo e gli argomenti definiti
+Il callback è chiamato con il valore del campo e gli argomenti definiti
 dall'opzione `renderer_arguments`.
 
 ### ~`renderer_arguments`~
@@ -354,7 +354,7 @@ dall'opzione `renderer_arguments`.
 *Predefinito*: `array()`
 
 L'opzione `renderer_arguments` definisce gli argomenti da passare
-alla callback PHP `renderer` quando visualizza il campo. E' usata unicamente se
+alla callback PHP `renderer` quando visualizza il campo. È usata unicamente se
 l'opzione `renderer` è definita.
 
 `actions`
@@ -369,7 +369,7 @@ voci `list`, `edit`, o `new`.
 
 *Predefinito*: La chiave dell'azione
 
-L'opzione `name` definisce l'eticetta da usare per l'azione.
+L'opzione `name` definisce l'etichetta da usare per l'azione.
 
 ### ~`action`~
 
@@ -400,10 +400,10 @@ L'opzione `title` definisce il titolo della pagina elenco.
 
 ### ~`display`~
 
-*Predefinito*: Tutte le colonne del modello, nell'ordine della loro deinizione nel file
+*Predefinito*: Tutte le colonne del modello, nell'ordine della loro definizione nel file
 dello schema
 
-L'opzione `display` deinisce un array di colonne ordinate da visualizzare
+L'opzione `display` definisce un array di colonne ordinate da visualizzare
 nell'elenco.
 
 Un segno di uguale (`=`) prima di una colonna è una convenzione per convertire la stringa in un
@@ -471,7 +471,7 @@ link che va alla pagina di `edit` dell'oggetto corrente.
 
 *Valore predefinito*: nessuno
 
-L'opzione `sort` definisce la colonna predefinita per l'ordinamento. E' un array costituito da
+L'opzione `sort` definisce la colonna predefinita per l'ordinamento. È un array costituito da
 due componenti: il nome della colonna e la direzione dell'ordinamento: `asc` o `desc`:
 
     [yml]
@@ -597,7 +597,7 @@ L'opzione `display` definisce l'elenco ordinato dei campi da visualizzare.
 
 >**TIP**
 >Essendo che i campi dei filtri sono sempre opzionali, non c'è la necessità di sovrascrivere la
->classe del filtro del form per confgurare i campi che devono essere visualizzati.
+>classe del filtro del form per configurare i campi che devono essere visualizzati.
 
 ### ~`class`~
 

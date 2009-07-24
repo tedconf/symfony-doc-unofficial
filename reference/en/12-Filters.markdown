@@ -66,7 +66,7 @@ To remove a filter, you need to disable it by setting the `enabled` key to
 
 There are two special name filters: `rendering` and `execution`. They are both
 mandatory and are identified with the `type` parameter. The `rendering` filter
-should always be the first registered filtered and the `execution` filter
+should always be the first registered filter and the `execution` filter
 should be the last one:
 
     [yml]
