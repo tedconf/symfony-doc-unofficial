@@ -1,0 +1,632 @@
+第九天：功能测试
+===========================
+
+昨天，我们讲了如何使用symfony的lime测试库进行单元测试。
+
+今天，我们将对`job`和`category`模块中现有功能进行功能测试。
+
+功能测试
+--------
+
+功能测试是一个非常好的工具，可以完整地测试你的程序：从浏览器开始产生请求(request)，
+到服务器发送响应(response)。功能测试可以涵盖一个程序的所有层：路由、模型、动作和模板。
+它所做的可能和你做过的这些事非常类似：添加或修改动作，打开浏览器，点击链接并检查
+页面内容是否工作正常。换句话说，功能测试与你在浏览器中手动测试的过程是一样的。
+
+由于是手动进行，这个过程显得乏味而且容易出错。每次更改代码，你都要逐步追踪所有脚本
+以确认没有出错。这会让人发疯。symfony功能测试提供描述脚本的简单途径。它通过模拟用户
+在浏览器中动作，自动运行每个脚本。与单元测试一样，功能测试同样会增强你对代码的信心。
+
+>**NOTE**
+>The functional test framework does not replace tools like
+>"[~Selenium~](http://selenium.seleniumhq.org/)". Selenium runs directly in the
+>browser to automate testing across many platforms and browsers and as such,
+>it is able to test your application's JavaScript.
+
+`sfBrowser`类
+-------------
+
+在symfony中，功能测试在专用浏览器中运行，通过[~`sfBrowser`|Browser~](http://www.symfony-project.org/api/1_2/sfBrowser) 
+类来实现。该浏览器专为测试程序设计，它不需要浏览器支持，就可以直接连接程序。
+无论你是否发出请求，都可以通过它调用所有symfony对象（注：普通浏览器只有发出
+请求时才能调用对象，而sfBrowser在请求之前也可以调用对象），在这个浏览器中
+你可以进行对象内省和功能测试。
+
+`sfBrowser`模拟标准浏览器导航方法：
+
+
+ | Method       | Description
+ | ------------ | -------------------------------------------------
+ | `get()`      | 获得一个URL
+ | `post()`     | 发送一个URL
+ | `call()`     | 调用一个URL（`PUT`和`DELETE`模式使用）
+ | `back()`     | 后退
+ | `forward()`  | 前进
+ | `reload()`   | 重载当前页面
+ | `click()`    | 点击一个链接或按钮
+ | `select()`   | 选择单选框或复选框
+ | `deselect()` | 取消选定单选框或复选框
+ | `restart()`  | 重启浏览器
+
+下面是一些使用`sfBrowser`的例子：
+
+    [php]
+    $browser = new sfBrowser();
+
+    $browser->
+      get('/')->
+      click('Design')->
+      get('/category/programming?page=2')->
+      get('/category/programming', array('page' => 2))->
+      post('search', array('keywords' => 'php'))
+    ;
+
+`sfBrowser`配置浏览器行为的附加方法：
+
+ | Method             | Description
+ | ------------------ | -------------------------------------------------
+ | `setHttpHeader()`  | 设定HTTP头
+ | `setAuth()`        | 设定基础认证证书
+ | `setCookie()`      | 设定一个cookie
+ | `removeCookie()`   | 移除一个cookie
+ | `clearCookies()`   | 清除当前所有cookie
+ | `followRedirect()` | Follows a redirect
+
+`sfTestFunctional`类
+----------------------------
+
+已经有了浏览器，我们需要一种方法来内省symfony对象，以进行实际测试。我们
+可以使用`lime`和`sfBrowser`中一些方法，如`getResponse()` 和 `getRequest()`，
+但symfony提供了更好方式。
+
+symfony提供了[`sfTestFunctional`](http://www.symfony-project.org/api/1_2/sfTestFunctional)类，
+它的构造函数使用`sfBrowser`实例作为参数。`sfTestFunctional`类将测试交由测试器类处理。
+symfony包含许多测试器类，你同样可以创建自己的测试器类。
+
+我们昨天已经知道，用于功能测试文件存储在`test/functional`目录下。每个程序
+都有属于自己的子目录，`Jobeet`前台的功能测试文件存储在`test/functional/frontend`
+目录下。这个目录已经有了两个文件：`categoryActionsTest.php`和`jobActionsTest.php`，
+因为每生成一个模块都会自动生成相应的基础测试文件：
+
+    [php]
+    // test/functional/frontend/categoryActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new sfTestFunctional(new sfBrowser());
+
+    $browser->
+      get('/category/index')->
+
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'index')->
+      end()->
+
+      with('response')->begin()->
+        isStatusCode(200)->
+        checkElement('body', '!/This is a temporary page/')->
+      end()
+    ;
+
+上面的内容可能看起来有一点奇怪。因为`sfBrowser`和`sfTestFunctional`的方法总是返回
+`$this`激活[~fluent interface|Fluent Interface~](http://en.wikipedia.org/wiki/Fluent_interface) 。
+它允许你以一种更易读的方式，将方法的调用串连起来。
+
+    [php]
+    // test/functional/frontend/categoryActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new sfTestFunctional(new sfBrowser());
+
+    $browser->get('/category/index');
+    $browser->with('request')->begin();
+    $browser->isParameter('module', 'category');
+    $browser->isParameter('action', 'index');
+    $browser->end();
+
+    $browser->with('response')->begin();
+    $browser->isStatusCode(200);
+    $browser->checkElement('body', '!/This is a temporary page/');
+    $browser->end();
+
+所有测试都运行在测试块中。测试块以`with(’TESTER NAME’)->begin()`开始，
+以`end()`结束：
+
+    [php]
+    $browser->
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'index')->
+      end()
+    ;
+
+上边代码测试参数`module`、`action`的值是否分别是`category`和`index`。
+
+>**TIP**
+>如果你只需要测试一个方法时，你可以直接使用：`with(’request’)->isParameter(’module’, ‘category’)`，
+>而不需要创建测试块。
+
+### 请求测试器
+
+The **~request tester|HTTP Request (Test)~** provides tester methods to 
+introspect and test the `sfWebRequest` object:
+
+请求测试器（request tester）提供了内省和测试`sfWebRequest`对象的测试器方法：
+
+ | Method             | Description
+ | ------------------ | ------------------------------------------------
+ | `isParameter()`    | 检查一个请求参数的值
+ | `isFormat()`       | 检查请求格式
+ | `isMethod()`       | 检查请求方式
+ | `hasCookie()`      | 检查请求是否带有给定名字的cookie
+ | `isCookie()`       | 检查cookie值
+
+### 响应测试器
+
+同样也存在响应测试器（response tester）类，它提供`sfWebResponse`对象的测试器方法：
+
+ | Method             | Description
+ | ------------------ | -----------------------------------------------------
+ | `checkElement()`   | 检查一个响应CSS选择器是否匹配条件
+ | `isHeader()`       | 检查header值
+ | `isStatusCode()`   | 检查响应状态代码
+ | `isRedirected()`   | 检查当前响应是不是重定向
+
+>**NOTE**
+>我们将来会解释更多[testers](http://www.symfony-project.org/api/1_2/test)类（forms, user, cache, …）
+
+运行功能测试
+------------
+
+与单元测试相同，功能测试也可以通过直接执行测试文件的方式进行：
+
+    $ php test/functional/frontend/categoryActionsTest.php
+
+或使用`test:functional`命令进行：
+
+    $ php symfony test:functional frontend categoryActions
+
+![Tests on the command line](http://www.symfony-project.org/images/jobeet/1_2/09/cli_tests.png)
+
+测试数据
+--------
+
+与##ORM##单元测试相同，每次启动功能测试时，我们需要载入测试数据。
+我们可以重用昨天的代码：
+
+    [php]
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new sfTestFunctional(new sfBrowser());
+<propel>
+    $loader = new sfPropelData();
+    $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+    Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+在功能测试中载入数据比在单元测试中容易一点，因为数据已经启动脚本初始化。
+
+与单元测试一样，我们不会复制粘贴这块代码到每个测试文件，但我们将创建自己的
+功能测试类，它继承`sfTestFunctional`：
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function loadData()
+      {
+<propel>
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+        Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+        return $this;
+      }
+    }
+
+编写功能测试
+------------
+
+写功能测试就如同在浏览器中运行脚本一样。作为第2天提出的需求的一部分，我们已经完成了需要测试的所有脚本。
+
+首先，我们修改`jobActionsTest.php`测试Jobeet首页。用下面的代码替换：
+
+### 过期招聘信息不显示
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'index')->
+      end()->
+      with('response')->begin()->
+        info('  1.1 - Expired jobs are not listed')->
+        checkElement('.jobs td.position:contains("expired")', false)->
+      end()
+    ;
+
+与使用`lime`一样，提示信息可以通过`info()`方法被插入，让输出结果可读性更强。
+要检查首页是否有过期的招聘信息，我们只需要检查~CSS~选择器`.jobs td.position:contains(”expired”)`
+与响应的HTML内容之间是否匹配（在测试数据中，唯一过期的招聘信息包含 ”expired”字符串）。
+
+>**TIP**
+>`checkElement()`方法最大限度的支持CSS3选择器。
+
+### 只在分类中显示n条招聘信息
+
+添加下面代码到测试文件尾部：
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $max = sfConfig::get('app_max_jobs_on_homepage');
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info(sprintf('  1.2 - Only %s jobs are listed for a category', $max))->
+      with('response')->
+        checkElement('.category_programming tr', $max)
+    ;
+
+`checkElement()`方法同样也支持检验CSS选择器是否与响应内容n（多）次匹配。
+
+### 当一个分类有足够多招聘信息时才显示链接
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.3 - A category has a link to the category page only if too many jobs')->
+      with('response')->begin()->
+        checkElement('.category_design .more_jobs', false)->
+        checkElement('.category_programming .more_jobs')->
+      end()
+    ;
+
+在这里，我们测试design分类是否没有”more jobs”链接(`.category_design .more_jobs`不存在)，
+同时测试programming分类是否有”more jobs”链接(`.category_programming .more_jobs`存在)。
+
+### 招聘信息按日期排序
+
+    [php]
+<propel>
+    // most recent job in the programming category
+    $criteria = new Criteria();
+    $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+    $category = JobeetCategoryPeer::doSelectOne($criteria);
+
+    $criteria = new Criteria();
+    $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+    $criteria->add(JobeetJobPeer::CATEGORY_ID, $category->getId());
+    $criteria->addDescendingOrderByColumn(JobeetJobPeer::CREATED_AT);
+
+    $job = JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+    $q = Doctrine_Query::create()
+      ->select('j.*')
+      ->from('JobeetJob j')
+      ->leftJoin('j.JobeetCategory c')
+      ->where('c.slug = ?', 'programming')
+      ->andWhere('j.expires_at > ?', date('Y-m-d', time()))
+      ->orderBy('j.created_at DESC');
+
+    $job = $q->fetchOne();
+</doctrine>
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.4 - Jobs are sorted by date')->
+      with('response')->begin()->
+        checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]', $job->getId()))->
+      end()
+    ;
+
+为了测试招聘信息是否按日期排序，我们只需获取首页最后一条信息，看其company字段中
+是否包含数字102，如果包含则测试通过。与之相比，测试 programming列表中第一条信息
+要复杂一些，因为最早的2条招聘信息的position、company和 location字段中信息是相同的。
+所以，我们只能测试URL中是否包含的主键。因为主键在运行中会改变，所以我们通过##ORM##对象获得主键。
+
+现在测试可以正常工作了，但我们还需要重构一小部分代码，因为从获取programming分类
+第一条招聘信息这部分代码，还可以在其它测试中重用。注意，虽然这部分代码进行的是
+数据库操作，但我们不会将它移到模型层，因为这部分代码只在测试中使用。我们将代码
+移到先前创建的`JobeetTestFunctional`类中。这个类是Jobeet域专用功能测试器类：
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function getMostRecentProgrammingJob()
+      {
+<propel>
+        // most recent job in the programming category
+        $criteria = new Criteria();
+        $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+        $category = JobeetCategoryPeer::doSelectOne($criteria);
+
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->add(JobeetJobPeer::CATEGORY_ID, $category->getId());
+        $criteria->addDescendingOrderByColumn(JobeetJobPeer::CREATED_AT);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->select('j.*')
+          ->from('JobeetJob j')
+          ->leftJoin('j.JobeetCategory c')
+          ->where('c.slug = ?', 'programming');
+        $q = Doctrine::getTable('JobeetJob')->addActiveJobsQuery($q);
+
+        return $q->fetchOne();
+</doctrine>
+      }
+
+      // ...
+    }
+
+You can now replace the previous test code by the following one:
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.4 - Jobs are sorted by date')->
+      with('response')->begin()->
+        checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]',
+          $browser->getMostRecentProgrammingJob()->getId()))->
+      end()
+    ;
+
+### 主页上每个招聘信息都可点击
+
+    [php]
+    $browser->info('2 - The job page')->
+      get('/')->
+
+      info('  2.1 - Each job on the homepage is clickable and give detailed information')->
+      click('Web Developer', array(), array('position' => 1))->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'show')->
+        isParameter('company_slug', 'sensio-labs')->
+        isParameter('location_slug', 'paris-france')->
+        isParameter('position_slug', 'web-developer')->
+        isParameter('id', $browser->getMostRecentProgrammingJob()->getId())->
+      end()
+    ;
+
+为测试首页招聘信息链接是否可用，我们模拟”Web Developer”链接的点击动作。
+页面上有许多链接，我们使用`array(’position’ => 1)`通知浏览器点击第一个链接。
+
+然后，测试每个请求参数，以确认通过招聘信的息路由规则，可以访问正确的内容。
+
+通过例子学习
+------------
+
+这里，我们给出测试所有信息和分类页面的代码。仔细阅读这些代码，你会学到一些技巧：
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function loadData()
+      {
+<propel>
+        $loader = new sfPropelData();
+        $loader->loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</propel>
+<doctrine>
+        Doctrine::loadData(sfConfig::get('sf_test_dir').'/fixtures');
+</doctrine>
+
+        return $this;
+      }
+
+      public function getMostRecentProgrammingJob()
+      {
+<propel>
+        // most recent job in the programming category
+        $criteria = new Criteria();
+        $criteria->add(JobeetCategoryPeer::SLUG, 'programming');
+        $category = JobeetCategoryPeer::doSelectOne($criteria);
+
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::GREATER_THAN);
+        $criteria->addDescendingOrderByColumn(JobeetJobPeer::CREATED_AT);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->select('j.*')
+          ->from('JobeetJob j')
+          ->leftJoin('j.JobeetCategory c')
+          ->where('c.slug = ?', 'programming');
+        $q = Doctrine::getTable('JobeetJob')->addActiveJobsQuery($q);
+
+        return $q->fetchOne();
+</doctrine>
+      }
+
+      public function getExpiredJob()
+      {
+<propel>
+        // expired job
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::LESS_THAN);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j')
+          ->where('j.expires_at < ?', date('Y-m-d', time()));
+
+        return $q->fetchOne();
+</doctrine>
+      }
+    }
+
+    // test/functional/frontend/jobActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'index')->
+      end()->
+      with('response')->begin()->
+        info('  1.1 - Expired jobs are not listed')->
+        checkElement('.jobs td.position:contains("expired")', false)->
+      end()
+    ;
+
+    $max = sfConfig::get('app_max_jobs_on_homepage');
+
+    $browser->info('1 - The homepage')->
+      info(sprintf('  1.2 - Only %s jobs are listed for a category', $max))->
+      with('response')->
+        checkElement('.category_programming tr', $max)
+    ;
+
+    $browser->info('1 - The homepage')->
+      get('/')->
+      info('  1.3 - A category has a link to the category page only if too many jobs')->
+      with('response')->begin()->
+        checkElement('.category_design .more_jobs', false)->
+        checkElement('.category_programming .more_jobs')->
+      end()
+    ;
+
+    $browser->info('1 - The homepage')->
+      info('  1.4 - Jobs are sorted by date')->
+      with('response')->begin()->
+        checkElement(sprintf('.category_programming tr:first a[href*="/%d/"]', $browser->getMostRecentProgrammingJob()->getId()))->
+      end()
+    ;
+
+    $browser->info('2 - The job page')->
+      info('  2.1 - Each job on the homepage is clickable and give detailed information')->
+      click('Web Developer', array(), array('position' => 1))->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'show')->
+        isParameter('company_slug', 'sensio-labs')->
+        isParameter('location_slug', 'paris-france')->
+        isParameter('position_slug', 'web-developer')->
+        isParameter('id', $browser->getMostRecentProgrammingJob()->getId())->
+      end()->
+
+      info('  2.2 - A non-existent job forwards the user to a 404')->
+      get('/job/foo-inc/milano-italy/0/painter')->
+      with('response')->isStatusCode(404)->
+
+      info('  2.3 - An expired job page forwards the user to a 404')->
+      get(sprintf('/job/sensio-labs/paris-france/%d/web-developer', $browser->getExpiredJob()->getId()))->
+      with('response')->isStatusCode(404)
+    ;
+
+    // test/functional/frontend/categoryActionsTest.php
+    include(dirname(__FILE__).'/../../bootstrap/functional.php');
+
+    $browser = new JobeetTestFunctional(new sfBrowser());
+    $browser->loadData();
+
+    $browser->info('1 - The category page')->
+      info('  1.1 - Categories on homepage are clickable')->
+      get('/')->
+      click('Programming')->
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'show')->
+        isParameter('slug', 'programming')->
+      end()->
+
+      info(sprintf('  1.2 - Categories with more than %s jobs also have a "more" link', sfConfig::get('app_max_jobs_on_homepage')))->
+      get('/')->
+      click('22')->
+      with('request')->begin()->
+        isParameter('module', 'category')->
+        isParameter('action', 'show')->
+        isParameter('slug', 'programming')->
+      end()->
+
+      info(sprintf('  1.3 - Only %s jobs are listed', sfConfig::get('app_max_jobs_on_category')))->
+      with('response')->checkElement('.jobs tr', sfConfig::get('app_max_jobs_on_category'))->
+
+      info('  1.4 - The job listed is paginated')->
+      with('response')->begin()->
+        checkElement('.pagination_desc', '/32 jobs/')->
+        checkElement('.pagination_desc', '#page 1/2#')->
+      end()->
+
+      click('2')->
+      with('request')->begin()->
+        isParameter('page', 2)->
+      end()->
+      with('response')->checkElement('.pagination_desc', '#page 2/2#')
+    ;
+
+调试功能测试
+------------
+
+有时，进行功能测试可能会失败。而symfony模拟浏览器又不支持图形界面，所以很难
+诊断出失败的原因。非常感谢symfony提供了`debug()`方法，它可以在命令行中输出响应头和内容：
+
+    [php]
+    $browser->with('response')->debug();
+
+`debug()`方法可以放在响应测试块中任何地方，并会中断脚本执行，返回响应信息。
+
+打包功能测试
+------------
+
+`test:functional`命令也可以用于启动程序所有功能测试：
+
+    $ php symfony test:functional frontend
+
+这个命令为每个文件单独产生一行输出信息：
+
+![Functional tests harness](http://www.symfony-project.org/images/jobeet/1_2/09/test_harness.png)
+
+打包测试
+--------
+
+和你期待的一样，symfony提供可以启动项目所有测试（单元和功能测试）的命令：
+
+    $ php symfony test:all
+
+![Tests harness](http://www.symfony-project.org/images/jobeet/1_2/09/tests_harness.png)
+
+明天见
+------
+
+结束了我们的symfony测试之旅。你不会再有不测试的借口了！有了lime框架和
+功能测试框架这些强大的工具，你将不费吹灰之力完成程序测试。
+
+对于功能测试来说，我们今天的教程只触及皮毛。以后我们每添加一个新功能，
+都会编写功能测试代码，我们会学到它更多功能。
+
+功能测试框架并不能取代“Selenium“这样的测试工具。selenium可以直接在
+浏览器中自动测试，并能跨越多个平台和浏览器，还能测试程序中的JavaScript脚本。
+
+明天再来，我们将学习symfony另一个强大的框架：from框架。
+
+__ORM__
