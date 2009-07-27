@@ -2,7 +2,7 @@ Configuration File Principles
 =============================
 
 Symfony configuration files are based on a common set of principles and share
-some common properties. This section describes them in details, and acts as a
+some common properties. This section describes them in detail, and acts as a
 reference for other sections describing YAML configuration files.
 
 Cache
