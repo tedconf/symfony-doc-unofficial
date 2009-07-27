@@ -13,8 +13,8 @@ factories.yml設定ファイル
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 始めの章で説明したように、`factories.yml`ファイルは
-[**環境を認識し**](03-Configuration-Files-Principles#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
-the [**設定カスケードのメカニズム**](03-Configuration-Files-Principles#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、[**定数**](03-Configuration-Files-Principles#chapter_03-Configuration-Files-Principles_sub_constants)をインクルードできます。
+[**環境を認識し**](03-Configuration-Files-Principles#chapter_03_environment_awareness)、
+[**設定カスケードのメカニズム**](03-Configuration-Files-Principles#chapter_03_configuration_cascade)の恩恵を受け、[**定数**](03-Configuration-Files-Principles#chapter_03_constants)をインクルードできます。
 
 `factories.yml`設定ファイルは名前付きのファクトリのリストを含みます:
 
@@ -56,76 +56,76 @@ symfonyのコアオブジェクト用のカスタムクラスを使うことが�
 >**NOTE**
 >`factories.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >プロセスは`sfFactoryConfigHandler`
->[クラス](14-Other-Configuration-Files#chapter_14-Other-Configuration-Files_sub_config_handlers_yml)によって自動的に管理されます。
+>[クラス](14-Other-Configuration-Files#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 <div class="pagebreak"></div>
 
 ファクトリ
 ---------
 
- * [`request`](05-Factories#chapter_05-Factories_sub_request)
+ * [`request`](05-Factories#chapter_05_request)
 
-   * [`formats`](05-Factories#chapter_05-Factories_sub_formats)
-   * [`path_info_array`](05-Factories#chapter_05-Factories_sub_path_info_array)
-   * [`path_info_key`](05-Factories#chapter_05-Factories_sub_path_info_key)
-   * [`relative_url_root`](05-Factories#chapter_05-Factories_sub_relative_url_root)
+   * [`formats`](05-Factories#chapter_05_formats)
+   * [`path_info_array`](05-Factories#chapter_05_path_info_array)
+   * [`path_info_key`](05-Factories#chapter_05_path_info_key)
+   * [`relative_url_root`](05-Factories#chapter_05_relative_url_root)
 
  * [`response`](05-Factories#chapter_05-Factories_response)
 
-   * [`charset`](05-Factories#chapter_05-Factories_sub_charset)
-   * [`http_protocol`](05-Factories#chapter_05-Factories_sub_http_protocol)
-   * [`send_http_headers`](05-Factories#chapter_05-Factories_sub_send_http_headers)
+   * [`charset`](05-Factories#chapter_05_charset)
+   * [`http_protocol`](05-Factories#chapter_05_http_protocol)
+   * [`send_http_headers`](05-Factories#chapter_05_send_http_headers)
 
- * [`user`](05-Factories#chapter_05-Factories_sub_user)
+ * [`user`](05-Factories#chapter_05_user)
 
-   * [`default_culture`](05-Factories#chapter_05-Factories_sub_default_culture)
-   * [`timeout`](05-Factories#chapter_05-Factories_sub_timeout)
-   * [`use_flash`](05-Factories#chapter_05-Factories_sub_use_flash)
+   * [`default_culture`](05-Factories#chapter_05_default_culture)
+   * [`timeout`](05-Factories#chapter_05_timeout)
+   * [`use_flash`](05-Factories#chapter_05_use_flash)
 
- * [`storage`](05-Factories#chapter_05-Factories_sub_storage)
+ * [`storage`](05-Factories#chapter_05_storage)
 
-   * [`auto_start`](05-Factories#chapter_05-Factories_sub_auto_start)
-   * [`database`](05-Factories#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`db_table`](05-Factories#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`db_id_col`](05-Factories#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`db_data_col`](05-Factories#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`db_time_col`](05-Factories#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`session_cache_limiter`](05-Factories#chapter_05-Factories_sub_session_cache_limiter)
-   * [`session_cookie_domain`](05-Factories#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_httponly`](05-Factories#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_lifetime`](05-Factories#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_path`](05-Factories#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_secure`](05-Factories#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_name`](05-Factories#chapter_05-Factories_sub_session_name)
+   * [`auto_start`](05-Factories#chapter_05_auto_start)
+   * [`database`](05-Factories#chapter_05_database_storage_specific_options)
+   * [`db_table`](05-Factories#chapter_05_database_storage_specific_options)
+   * [`db_id_col`](05-Factories#chapter_05_database_storage_specific_options)
+   * [`db_data_col`](05-Factories#chapter_05_database_storage_specific_options)
+   * [`db_time_col`](05-Factories#chapter_05_database_storage_specific_options)
+   * [`session_cache_limiter`](05-Factories#chapter_05_session_cache_limiter)
+   * [`session_cookie_domain`](05-Factories#chapter_05_session_set_cookie_params_parameters)
+   * [`session_cookie_httponly`](05-Factories#chapter_05_session_set_cookie_params_parameters)
+   * [`session_cookie_lifetime`](05-Factories#chapter_05_session_set_cookie_params_parameters)
+   * [`session_cookie_path`](05-Factories#chapter_05_session_set_cookie_params_parameters)
+   * [`session_cookie_secure`](05-Factories#chapter_05_session_set_cookie_params_parameters)
+   * [`session_name`](05-Factories#chapter_05_session_name)
 
- * [`view_cache_manager`](05-Factories#chapter_05-Factories_sub_view_cache_manager)
- * [`view_cache`](05-Factories#chapter_05-Factories_sub_view_cache)
- * [`i18n`](05-Factories#chapter_05-Factories_sub_i18n)
+ * [`view_cache_manager`](05-Factories#chapter_05_view_cache_manager)
+ * [`view_cache`](05-Factories#chapter_05_view_cache)
+ * [`i18n`](05-Factories#chapter_05_i18n)
 
-   * [`cache`](05-Factories#chapter_05-Factories_sub_cache)
-   * [`debug`](05-Factories#chapter_05-Factories_sub_debug)
-   * [`source`](05-Factories#chapter_05-Factories_sub_source)
-   * [`untranslated_prefix`](05-Factories#chapter_05-Factories_sub_untranslated_prefix)
-   * [`untranslated_suffix`](05-Factories#chapter_05-Factories_sub_untranslated_suffix)
+   * [`cache`](05-Factories#chapter_05_cache)
+   * [`debug`](05-Factories#chapter_05_debug)
+   * [`source`](05-Factories#chapter_05_source)
+   * [`untranslated_prefix`](05-Factories#chapter_05_untranslated_prefix)
+   * [`untranslated_suffix`](05-Factories#chapter_05_untranslated_suffix)
 
- * [`routing`](05-Factories#chapter_05-Factories_sub_routing)
+ * [`routing`](05-Factories#chapter_05_routing)
 
-   * [`cache`](05-Factories#chapter_05-Factories_sub_cache)
-   * [`extra_parameters_as_query_string`](05-Factories#chapter_05-Factories_sub_extra_parameters_as_query_string)
-   * [`generate_shortest_url`](05-Factories#chapter_05-Factories_sub_generate_shortest_url)
-   * [`lazy_routes_deserialize`](05-Factories#chapter_05-Factories_sub_lazy_routes_deserialize)
-   * [`lookup_cache_dedicated_keys`](05-Factories#chapter_05-Factories_sub_lookup_cache_dedicated_keys)
-   * [`load_configuration`](05-Factories#chapter_05-Factories_sub_load_configuration)
-   * [`segment_separators`](05-Factories#chapter_05-Factories_sub_segment_separators)
-   * [`suffix`](05-Factories#chapter_05-Factories_sub_suffix)
-   * [`variable_prefixes`](05-Factories#chapter_05-Factories_sub_variable_prefixes)
+   * [`cache`](05-Factories#chapter_05_cache)
+   * [`extra_parameters_as_query_string`](05-Factories#chapter_05_extra_parameters_as_query_string)
+   * [`generate_shortest_url`](05-Factories#chapter_05_generate_shortest_url)
+   * [`lazy_routes_deserialize`](05-Factories#chapter_05_lazy_routes_deserialize)
+   * [`lookup_cache_dedicated_keys`](05-Factories#chapter_05_lookup_cache_dedicated_keys)
+   * [`load_configuration`](05-Factories#chapter_05_load_configuration)
+   * [`segment_separators`](05-Factories#chapter_05_segment_separators)
+   * [`suffix`](05-Factories#chapter_05_suffix)
+   * [`variable_prefixes`](05-Factories#chapter_05_variable_prefixes)
 
- * [`logger`](05-Factories#chapter_05-Factories_sub_logger)
+ * [`logger`](05-Factories#chapter_05_logger)
 
-   * [`level`](05-Factories#chapter_05-Factories_sub_level)
-   * [`loggers`](05-Factories#chapter_05-Factories_sub_loggers)
+   * [`level`](05-Factories#chapter_05_level)
+   * [`loggers`](05-Factories#chapter_05_loggers)
 
- * [`controller`](05-Factories#chapter_05-Factories_sub_controller)
+ * [`controller`](05-Factories#chapter_05_controller)
 
 <div class="pagebreak"></div>
 
@@ -238,7 +238,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 
 >**NOTE**
 >デフォルトでは、`myUser`クラスは`sfBasicSecurityUser`を継承します。
->これは[`security.yml`](08-Security#chapter_08-Security)設定ファイルで
+>これは[`security.yml`](08-Security)設定ファイルで
 >設定できます。
 
 ### `timeout`
@@ -362,7 +362,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
       class: sfViewCacheManager
 
 >**CAUTION**
->[`cache`](04-Settings#chapter_04-Settings_sub_cache)設定が
+>[`cache`](04-Settings#chapter_04_cache)設定が
 >`on`にセットされている場合にのみこのファクトリは作成されます。
 
 ビューキャッシュマネージャーの設定は`param`キーを含みません。
@@ -387,7 +387,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
         prefix:                    %SF_APP_DIR%/template
 
 >**CAUTION**
->[`cache`](04-Settings#chapter_04-Settings_sub_cache)設定が
+>[`cache`](04-Settings#chapter_04_cache)設定が
 >`on`にセットされている場合のみこのファクトリが定義されます。
 
 `view_cache`ファクトリは`sfCache`を継承するキャッシュクラスを
@@ -417,7 +417,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
             prefix:                    %SF_APP_DIR%/i18n
 
 >**CAUTION**
->[`i18n`](04-Settings#chapter_04-Settings_sub_i18n)設定が
+>[`i18n`](04-Settings#chapter_04_i18n)設定が
 >`on`にセットされている場合のみこのファクトリが定義されます。
 
 ### `source`
