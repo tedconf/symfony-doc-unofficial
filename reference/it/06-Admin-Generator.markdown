@@ -232,58 +232,58 @@ Nella pagina `list`, ogni contenitore di campo HTML ha le seguenti classi:
 Opzioni di configurazione disponibili
 -------------------------------------
 
- * [`actions`](#chapter_06-Admin-Generator_sub_actions)
+ * [`actions`](06-Admin-Generator#chapter_05_actions)
 
-   * [`name`](#chapter_06-Admin-Generator_sub_name)
-   * [`action`](#chapter_06-Admin-Generator_sub_action)
-   * [`credentials`](#chapter_06-Admin-Generator_sub_credentials)
+   * [`name`](06-Admin-Generator#chapter_05_sub_name)
+   * [`action`](06-Admin-Generator#chapter_05_sub_action)
+   * [`credentials`](06-Admin-Generator#chapter_05_sub_credentials)
 
- * [`fields`](#chapter_06-Admin-Generator_sub_fields)
+ * [`fields`](06-Admin-Generator#chapter_05_fields)
 
-   * [`label`](#chapter_06-Admin-Generator_sub_label)
-   * [`help`](#chapter_06-Admin-Generator_sub_help)
-   * [`attributes`](#chapter_06-Admin-Generator_sub_attributes)
-   * [`credentials`](#chapter_06-Admin-Generator_sub_credentials)
-   * [`renderer`](#chapter_06-Admin-Generator_sub_renderer)
-   * [`renderer_arguments`](#chapter_06-Admin-Generator_sub_renderer_arguments)
+   * [`label`](06-Admin-Generator#chapter_05_sub_label)
+   * [`help`](06-Admin-Generator#chapter_05_sub_help)
+   * [`attributes`](06-Admin-Generator#chapter_05_sub_attributes)
+   * [`credentials`](06-Admin-Generator#chapter_05_sub_credentials)
+   * [`renderer`](06-Admin-Generator#chapter_05_sub_renderer)
+   * [`renderer_arguments`](06-Admin-Generator#chapter_05_sub_renderer_arguments)
 
- * [`list`](#chapter_06-Admin-Generator_sub_list)
+ * [`list`](06-Admin-Generator#chapter_05_list)
 
-   * [`title`](#chapter_06-Admin-Generator_sub_title)
-   * [`display`](#chapter_06-Admin-Generator_sub_display)
-   * [`hide`](#chapter_06-Admin-Generator_sub_hide)
-   * [`layout`](#chapter_06-Admin-Generator_sub_layout)
-   * [`params`](#chapter_06-Admin-Generator_sub_params)
-   * [`sort`](#chapter_06-Admin-Generator_sub_sort)
-   * [`max_per_page`](#chapter_06-Admin-Generator_sub_max_per_page)
-   * [`pager_class`](#chapter_06-Admin-Generator_sub_pager_class)
-   * [`batch_actions`](#chapter_06-Admin-Generator_sub_batch_actions)
-   * [`object_actions`](#chapter_06-Admin-Generator_sub_object_actions)
-   * [`actions`](#chapter_06-Admin-Generator_sub_actions)
-   * [`peer_method`](#chapter_06-Admin-Generator_sub_peer_method)
-   * [`peer_count_method`](#chapter_06-Admin-Generator_sub_peer_count_method)
-   * [`table_method`](#chapter_06-Admin-Generator_sub_table_method)
-   * [`table_count_method`](#chapter_06-Admin-Generator_sub_table_count_method)
+   * [`title`](06-Admin-Generator#chapter_05_sub_title)
+   * [`display`](06-Admin-Generator#chapter_05_sub_display)
+   * [`hide`](06-Admin-Generator#chapter_05_sub_hide)
+   * [`layout`](06-Admin-Generator#chapter_05_sub_layout)
+   * [`params`](06-Admin-Generator#chapter_05_sub_params)
+   * [`sort`](06-Admin-Generator#chapter_05_sub_sort)
+   * [`max_per_page`](06-Admin-Generator#chapter_05_sub_max_per_page)
+   * [`pager_class`](06-Admin-Generator#chapter_05_sub_pager_class)
+   * [`batch_actions`](06-Admin-Generator#chapter_05_sub_batch_actions)
+   * [`object_actions`](06-Admin-Generator#chapter_05_sub_object_actions)
+   * [`actions`](06-Admin-Generator#chapter_05_sub_actions)
+   * [`peer_method`](06-Admin-Generator#chapter_05_sub_peer_method)
+   * [`peer_count_method`](06-Admin-Generator#chapter_05_sub_peer_count_method)
+   * [`table_method`](06-Admin-Generator#chapter_05_sub_table_method)
+   * [`table_count_method`](06-Admin-Generator#chapter_05_sub_table_count_method)
 
- * [`filter`](#chapter_06-Admin-Generator_sub_filter)
+ * [`filter`](06-Admin-Generator#chapter_05_filter)
 
-   * [`display`](#chapter_06-Admin-Generator_sub_display)
+   * [`display`](06-Admin-Generator#chapter_05_sub_display)
+   * [`class`](06-Admin-Generator#chapter_05_sub_class)
+
+ * [`form`](06-Admin-Generator#chapter_05_form)
+
+   * [`display`](06-Admin-Generator#chapter_05_sub_display)
    * [`class`](#chapter_06-Admin-Generator_sub_class)
 
- * [`form`](#chapter_06-Admin-Generator_form)
+ * [`edit`](06-Admin-Generator#chapter_05_edit)
 
-   * [`display`](#chapter_06-Admin-Generator_sub_display)
-   * [`class`](#chapter_06-Admin-Generator_sub_class)
+   * [`title`](06-Admin-Generator#chapter_05_sub_title)
+   * [`actions`](06-Admin-Generator#chapter_05_sub_actions)
 
- * [`edit`](#chapter_06-Admin-Generator_sub_edit)
+ * [`new`](06-Admin-Generator#chapter05__new)
 
-   * [`title`](#chapter_06-Admin-Generator_sub_title)
-   * [`actions`](#chapter_06-Admin-Generator_sub_actions)
-
- * [`new`](#chapter_06-Admin-Generator_sub_new)
-
-   * [`title`](#chapter_06-Admin-Generator_sub_title)
-   * [`actions`](#chapter_06-Admin-Generator_sub_actions)
+   * [`title`](06-Admin-Generator#chapter_05_sub_title)
+   * [`actions`](06-Admin-Generator#chapter_05_sub_actions)
 
 <div class="pagebreak"></div>
 
@@ -406,7 +406,7 @@ dello schema
 L'opzione `display` definisce un array di colonne ordinate da visualizzare
 nell'elenco.
 
-Un segno di uguale (`=`) prima di una colonna è una convenzione per convertire la stringa in un
+Il segno di uguale (`=`) prima di una colonna è una convenzione per convertire la stringa in un
 link che va alla pagina di `edit` dell'oggetto corrente.
 
     [yml]
