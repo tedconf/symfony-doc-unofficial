@@ -13,11 +13,11 @@
 API
 ---
 
-アプリケーションプログラミングインターフェイス([Application Programming Interface](http://en.wikipedia.org/wiki/Application_programming_interface))、または**API**はアプリケーション上の外部ウェブサイトを含められる特別なサービスのための開発者インターフェイスです。[Google Maps](http://www.google.com/apis/maps/)または[Flickr](http://www.flickr.com/services/api/response.rest.html)などはAPIのおかげでインターネット上での多くのウェブサイトを拡張するために使用されています。
+アプリケーションプログラミングインターフェイス([Application Programming Interface](http://en.wikipedia.org/wiki/Application_programming_interface))、または**API**はアプリケーション上の外部Webサイトを含められる特別なサービスのための開発者インターフェイスです。[Google Maps](http://www.google.com/apis/maps/)または[Flickr](http://www.flickr.com/services/api/response.rest.html)などはAPIのおかげでインターネット上での多くのWebサイトを拡張するために使用されています。
 
 askeetは例外を認めませんが、サービスの人気を高めるために、他のサイトで利用可能であるべきだということを信じます。[11日目](11.txt)に開発されたRSSフィードはその要求への最初のアプローチでしたが、私達はもっとよくすることができます。
 
-askeetはユーザーによる質問への回答のAPIを提供する予定です。このAPIへのアクセスはHTTP認証を通したaskeetの登録ユーザーに限定されます。選択されたAPIのレスポンスフォーマットは[Representational State Transfer](http://en.wikipedia.org/wiki/REST)もしくはRESTで、ウェブにおいてメインAPIの大抵の出力と類似するレスポンスはシンプルなXMLブロックです:
+askeetはユーザーによる質問への回答のAPIを提供する予定です。このAPIへのアクセスはHTTP認証を通したaskeetの登録ユーザーに限定されます。選択されたAPIのレスポンスフォーマットは[Representational State Transfer](http://en.wikipedia.org/wiki/REST)もしくはRESTで、WebにおいてメインAPIの大抵の出力と類似するレスポンスはシンプルなXMLブロックです:
 
     [xml]
     <?xml version="1.0" encoding="utf-8" ?>
@@ -43,7 +43,7 @@ askeetはユーザーによる質問への回答のAPIを提供する予定で�
 HTTP認証
 --------
 
-APIの使用をaskeetの登録ユーザーに制限することを選びました。そのためには、HTTP認証プロセス、HTTPプロトコルの組み込みの認証メカニズムを使用します。以前見たウェブ認証とは違います。なぜなら、ウェブページさえ必要ないからです。すべてのやりとりはHTTPヘッダーに取って代わられます。
+APIの使用をaskeetの登録ユーザーに制限することを選びました。そのためには、HTTP認証プロセス、HTTPプロトコルの組み込みの認証メカニズムを使用します。以前見たWeb認証とは違います。なぜなら、Webページさえ必要ないからです。すべてのやりとりはHTTPヘッダーに取って代わられます。
 
 [6日目](6.txt)においてカスタムバリデータを含む認証メソッドを必要としています。そこで最初にリファクタリングしてUserPeerモデルクラスのログインコードを再配置します:
 
@@ -67,7 +67,7 @@ APIの使用をaskeetの登録ユーザーに制限することを選びまし�
       return null;
     }
 
-新しいクラスメソッドである`UserPeer::getAutenticatedUser()`は`myLoginValidator.class.php`(お任せします)と新しい`api/index`ウェブサービスで使用されます:
+新しいクラスメソッドである`UserPeer::getAutenticatedUser()`は`myLoginValidator.class.php`(お任せします)と新しい`api/index`Webサービスで使用されます:
 
     [php]
     <?php
@@ -115,7 +115,7 @@ APIの使用をaskeetの登録ユーザーに制限することを選びまし�
     
     ?>
 
-最初に、APIモジュール(`preExecute()`メソッド)のアクションを実行する前に、ウェブデバッグツールバーをオフにします。XMLであるこのアクションのビュー、ツールバーコードの挿入は有効ではないレスポンスを発生させます。
+最初に、APIモジュール(`preExecute()`メソッド)のアクションを実行する前に、Webデバッグツールバーをオフにします。XMLであるこのアクションのビュー、ツールバーコードの挿入は有効ではないレスポンスを発生させます。
 
 `index`アクションが行う最初のことはログインとパスワードが提供されているかチェックし、askeetのアカウントと一致するかチェックします。一致しない場合、`authenticateUser()`メソッドは '401 'のHTTPヘッダーレスポンスを設定します。ユーザーのブラウザでポップアップするHTTP認証ウィンドウを呼び出します; ユーザーはログインとパスワードのリクエストを再投稿しなければなりません。
 
@@ -147,7 +147,7 @@ APIの使用をaskeetの登録ユーザーに制限することを選びまし�
 
 `Autorization`属性は再送信されるHTTPリクエストに追加されます。これは[base64](http://en.wikipedia.org/wiki/Base64)でエンコードされた 'login:password'の文字列を含みます。それが`authenticateUser()`メソッドで`$_SERVER['PHP_AUTH_USER']`と`$_SERVER['PHP_AUTH_PW']`が探すものです。
 
->**Note**: base64は入力の暗号化バージョンを出力しません。base64でエンコードされた文字列をデコードするのは[とても簡単](http://makcoder.sourceforge.net/demo/base64.php)で、パスワードを平文にします。例えば `ZmFicG90OnN5bWZvbnk=`をデコードすると `fabpot:symfony`です。インターネット上での平文でのパスワードの転送(ウェブフォームに入力されたときなど)は傍受されることを考慮しなければなりません。この理由からHTTP認証は重要ではない内容とサービスに限定しなければなりません。APIの呼び出しと同様に、追加の保護機能はHTTPSプロトコルを要求することによって実現されます。
+>**Note**: base64は入力の暗号化バージョンを出力しません。base64でエンコードされた文字列をデコードするのは[とても簡単](http://makcoder.sourceforge.net/demo/base64.php)で、パスワードを平文にします。例えば `ZmFicG90OnN5bWZvbnk=`をデコードすると `fabpot:symfony`です。インターネット上での平文でのパスワードの転送(Webフォームに入力されたときなど)は傍受されることを考慮しなければなりません。この理由からHTTP認証は重要ではない内容とサービスに限定しなければなりません。APIの呼び出しと同様に、追加の保護機能はHTTPSプロトコルを要求することによって実現されます。
 
 ログインとパスワードが提供され、ユーザーのデータベースに存在するのであれば、`index`アクションが実行されます。さもなければ、`error`アクション(空)に転送し、`errorSuccess.php`テンプレートを表示します:
 
@@ -249,7 +249,7 @@ REST APIのレスポンスはシンプルなXMLなので、ブラウザによっ
 外部APIを統合する
 -----------------
 
-PHPにおいて外部APIの統合はXMLの読み込みよりも難しいことではありません。askeetにおいて存在する外部APIを統合してもすぐに利益は得られません。symfonyで構築されているかに関わらずaskeet APIを外部のウェブサイトに統合する方法について少し説明します。
+PHPにおいて外部APIの統合はXMLの読み込みよりも難しいことではありません。askeetにおいて存在する外部APIを統合してもすぐに利益は得られません。symfonyで構築されているかに関わらずaskeet APIを外部のWebサイトに統合する方法について少し説明します。
 
 PHP5には[SimpleXML](http://php.net/manual/book.simplexml.php)がバンドルされています。SimpleXMLはXMLドキュメントを読み込みループするツールのセットで、とても簡単で使いやすいです。SimpleXMLによって要素名は自動的にオブジェクトのプロパティに割り当てられ、これは再帰的に行われます。属性はイテレータのアクセスに割り当てされます。
 
