@@ -232,58 +232,58 @@ Nella pagina `list`, ogni contenitore di campo HTML ha le seguenti classi:
 Opzioni di configurazione disponibili
 -------------------------------------
 
- * [`actions`](06-Admin-Generator#chapter_05_actions)
+ * [`actions`](06-Admin-Generator#chapter_06_actions)
 
-   * [`name`](06-Admin-Generator#chapter_05_sub_name)
-   * [`action`](06-Admin-Generator#chapter_05_sub_action)
-   * [`credentials`](06-Admin-Generator#chapter_05_sub_credentials)
+   * [`name`](06-Admin-Generator#chapter_06_sub_name)
+   * [`action`](06-Admin-Generator#chapter_06_sub_action)
+   * [`credentials`](06-Admin-Generator#chapter_06_sub_credentials)
 
- * [`fields`](06-Admin-Generator#chapter_05_fields)
+ * [`fields`](06-Admin-Generator#chapter_06_fields)
 
-   * [`label`](06-Admin-Generator#chapter_05_sub_label)
-   * [`help`](06-Admin-Generator#chapter_05_sub_help)
-   * [`attributes`](06-Admin-Generator#chapter_05_sub_attributes)
-   * [`credentials`](06-Admin-Generator#chapter_05_sub_credentials)
-   * [`renderer`](06-Admin-Generator#chapter_05_sub_renderer)
-   * [`renderer_arguments`](06-Admin-Generator#chapter_05_sub_renderer_arguments)
+   * [`label`](06-Admin-Generator#chapter_06_sub_label)
+   * [`help`](06-Admin-Generator#chapter_06_sub_help)
+   * [`attributes`](06-Admin-Generator#chapter_06_sub_attributes)
+   * [`credentials`](06-Admin-Generator#chapter_06_sub_credentials)
+   * [`renderer`](06-Admin-Generator#chapter_06_sub_renderer)
+   * [`renderer_arguments`](06-Admin-Generator#chapter_06_sub_renderer_arguments)
 
- * [`list`](06-Admin-Generator#chapter_05_list)
+ * [`list`](06-Admin-Generator#chapter_06_list)
 
-   * [`title`](06-Admin-Generator#chapter_05_sub_title)
-   * [`display`](06-Admin-Generator#chapter_05_sub_display)
-   * [`hide`](06-Admin-Generator#chapter_05_sub_hide)
-   * [`layout`](06-Admin-Generator#chapter_05_sub_layout)
-   * [`params`](06-Admin-Generator#chapter_05_sub_params)
-   * [`sort`](06-Admin-Generator#chapter_05_sub_sort)
-   * [`max_per_page`](06-Admin-Generator#chapter_05_sub_max_per_page)
-   * [`pager_class`](06-Admin-Generator#chapter_05_sub_pager_class)
-   * [`batch_actions`](06-Admin-Generator#chapter_05_sub_batch_actions)
-   * [`object_actions`](06-Admin-Generator#chapter_05_sub_object_actions)
-   * [`actions`](06-Admin-Generator#chapter_05_sub_actions)
-   * [`peer_method`](06-Admin-Generator#chapter_05_sub_peer_method)
-   * [`peer_count_method`](06-Admin-Generator#chapter_05_sub_peer_count_method)
-   * [`table_method`](06-Admin-Generator#chapter_05_sub_table_method)
-   * [`table_count_method`](06-Admin-Generator#chapter_05_sub_table_count_method)
+   * [`title`](06-Admin-Generator#chapter_06_sub_title)
+   * [`display`](06-Admin-Generator#chapter_06_sub_display)
+   * [`hide`](06-Admin-Generator#chapter_06_sub_hide)
+   * [`layout`](06-Admin-Generator#chapter_06_sub_layout)
+   * [`params`](06-Admin-Generator#chapter_06_sub_params)
+   * [`sort`](06-Admin-Generator#chapter_06_sub_sort)
+   * [`max_per_page`](06-Admin-Generator#chapter_06_sub_max_per_page)
+   * [`pager_class`](06-Admin-Generator#chapter_06_sub_pager_class)
+   * [`batch_actions`](06-Admin-Generator#chapter_06_sub_batch_actions)
+   * [`object_actions`](06-Admin-Generator#chapter_06_sub_object_actions)
+   * [`actions`](06-Admin-Generator#chapter_06_sub_actions)
+   * [`peer_method`](06-Admin-Generator#chapter_06_sub_peer_method)
+   * [`peer_count_method`](06-Admin-Generator#chapter_06_sub_peer_count_method)
+   * [`table_method`](06-Admin-Generator#chapter_06_sub_table_method)
+   * [`table_count_method`](06-Admin-Generator#chapter_06_sub_table_count_method)
 
- * [`filter`](06-Admin-Generator#chapter_05_filter)
+ * [`filter`](06-Admin-Generator#chapter_06_filter)
 
-   * [`display`](06-Admin-Generator#chapter_05_sub_display)
-   * [`class`](06-Admin-Generator#chapter_05_sub_class)
+   * [`display`](06-Admin-Generator#chapter_06_sub_display)
+   * [`class`](06-Admin-Generator#chapter_06_sub_class)
 
- * [`form`](06-Admin-Generator#chapter_05_form)
+ * [`form`](06-Admin-Generator#chapter_06_form)
 
-   * [`display`](06-Admin-Generator#chapter_05_sub_display)
+   * [`display`](06-Admin-Generator#chapter_06_sub_display)
    * [`class`](#chapter_06-Admin-Generator_sub_class)
 
- * [`edit`](06-Admin-Generator#chapter_05_edit)
+ * [`edit`](06-Admin-Generator#chapter_06_edit)
 
-   * [`title`](06-Admin-Generator#chapter_05_sub_title)
-   * [`actions`](06-Admin-Generator#chapter_05_sub_actions)
+   * [`title`](06-Admin-Generator#chapter_06_sub_title)
+   * [`actions`](06-Admin-Generator#chapter_06_sub_actions)
 
- * [`new`](06-Admin-Generator#chapter05__new)
+ * [`new`](06-Admin-Generator#chapter_06_new)
 
-   * [`title`](06-Admin-Generator#chapter_05_sub_title)
-   * [`actions`](06-Admin-Generator#chapter_05_sub_actions)
+   * [`title`](06-Admin-Generator#chapter_06_sub_title)
+   * [`actions`](06-Admin-Generator#chapter_06_sub_actions)
 
 <div class="pagebreak"></div>
 
