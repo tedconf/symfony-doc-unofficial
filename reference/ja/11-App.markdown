@@ -12,12 +12,12 @@ symfonyフレームワークはアプリケーション固有の設定のため�
     sfConfig::get('app_active_days');
 
 すべての設定には`app_`の接頭辞がつけられます。`sfConfig`クラスは
-[symfonyの設定](03-Configuration-Files-Principles#chapter_03_configuration_settings)と
-[プロジェクトのディレクトリ](03-Configuration-Files-Principles#chapter_03_directories)にアクセスする権限を提供するからです。
+[symfonyの設定](#chapter_03-Configuration-Files-Principles_sub_configuration_settings)と
+[プロジェクトのディレクトリ](#chapter_03-Configuration-Files-Principles_sub_directories)にアクセスする権限を提供するからです。
 
 最初の章で説明したように、`app.yml`ファイルは
-[**環境を認識し**](03-Configuration-Files-Principles#chapter_03_environment_awareness)、
-[**設定カスケードのメカニズム**](03-Configuration-Files-Principles#chapter_03_configuration_cascade)の恩恵を受けます。
+[**環境を認識し**](#chapter_03-Configuration-File-Principles_sub_environment_awareness)、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)の恩恵を受けます。
 
 `app.yml`設定ファイルは環境に基づいて変化する設定(例えばAPIキー)
 もしくは時間をかけて進化する可能性のある設定(例えばEメールアドレス)を定義するのにふさわしい場所です。
@@ -32,4 +32,4 @@ symfonyフレームワークはアプリケーション固有の設定のため�
 >**NOTE**
 >`app.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >処理は`sfDefineEnvironmentConfigHandler`
->[クラス](14-Other-Configuration-Files#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。

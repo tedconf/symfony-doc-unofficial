@@ -3,13 +3,13 @@ cache.yml設定ファイル
 
 `cache.yml`設定ファイルはビューレイヤー用のキャッシュ設定を記述します。
 この設定ファイルは`settings.yml`で
-[`cache`](#chapter_04_cache)設定が有効な場合のみ有効です。
+[`cache`](#chapter_04-Settings_sub_cache)設定が有効な場合のみ有効です。
 
 >**TIP**
 >クラスの設定はキャッシュのために使われ関連設定は
 >[`view_cache_manager`](#chapter_05_view_cache_manager)と
 >`factories.yml`設定ファイルの
->[`view_cache`](#chapter_05_view_cache)セクション
+>[`view_cache`](#chapter_05-Factories_sub_view_cache)セクション
 >で行われます。
 
 アプリケーションが作成されるとき、symfonyはアプリケーションの`config/`ディレクトリで
@@ -31,13 +31,13 @@ cache.yml設定ファイル
 >選ぶ方法が決まります。
 
 はじめの章で説明したように、`cache.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03_configuration_cascade)の恩恵を受け、
-[**定数**](#chapter_03_constants)を格納できます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)の恩恵を受け、
+[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
 
 >**NOTE**
 >`cache.yml`設定ファイルはPHPファイルとしてキャッシュされます;
 >処理は`sfCacheConfigHandler`
->[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 アプリケーションのデフォルト設定はモジュールの`config/`ディレクトリで
 `cache.yml`ファイルを作成することでモジュールのためにオーバーライドできます。

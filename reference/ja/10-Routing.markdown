@@ -36,63 +36,63 @@ routing.yml設定ファイル
 >**NOTE**
 >`routing.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >処理は`sfRoutingConfigHandler`
->[クラス](14-Other-Configuration-Files#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 <div class="pagebreak"></div>
 
 ルートクラス
 ------------
 
- * [メインの設定](#chapter_10_route_configuration)
+ * [メインの設定](#chapter_10-Routing_sub_route_configuration)
 
-   * [`class`](#chapter_10_class)
-   * [`options`](#chapter_10_options)
-   * [`param`](#chapter_10_param)
-   * [`params`](#chapter_10_params)
-   * [`requirements`](#chapter_10_requirements)
-   * [`type`](#chapter_10_type)
-   * [`url`](#chapter_10_url)
+   * [`class`](#chapter_10-Routing_sub_class)
+   * [`options`](#chapter_10-Routing_sub_options)
+   * [`param`](#chapter_10-Routing_sub_param)
+   * [`params`](#chapter_10-Routing_sub_params)
+   * [`requirements`](#chapter_10-Routing_sub_requirements)
+   * [`type`](#chapter_10-Routing_sub_type)
+   * [`url`](#chapter_10-Routing_sub_url)
 
- * [`sfRoute`](#chapter_10_sfroute)
- * [`sfRequestRoute`](#chapter_10_sfrequestroute)
+ * [`sfRoute`](#chapter_10-Routing_sub_sfroute)
+ * [`sfRequestRoute`](#chapter_10-Routing_sub_sfrequestroute)
 
-   * [`sf_method`](#chapter_10_sf_method)
+   * [`sf_method`](#chapter_10-Routing_sub_sf_method)
 
- * [`sfObjectRoute`](#chapter_10_sfobjectroute)
+ * [`sfObjectRoute`](#chapter_10-Routing_sub_sfobjectroute)
 
-   * [`allow_empty`](#chapter_10_allow_empty)
-   * [`convert`](#chapter_10_convert)
-   * [`method`](#chapter_10_method)
-   * [`model`](#chapter_10_model)
-   * [`type`](#chapter_10_type)
+   * [`allow_empty`](#chapter_10-Routing_sub_allow_empty)
+   * [`convert`](#chapter_10-Routing_sub_convert)
+   * [`method`](#chapter_10-Routing_sub_method)
+   * [`model`](#chapter_10-Routing_sub_model)
+   * [`type`](#chapter_10-Routing_sub_type)
 
- * [`sfPropelRoute`](#chapter_10_sfpropelroute)
+ * [`sfPropelRoute`](#chapter_10-Routing_sub_sfpropelroute)
 
-   * [`method_for_criteria`](#chapter_10_method_for_criteria)
+   * [`method_for_criteria`](#chapter_10-Routing_sub_method_for_criteria)
 
- * [`sfDoctrineRoute`](#chapter_10_sfdoctrineroute)
+ * [`sfDoctrineRoute`](#chapter_10-Routing_sub_sfdoctrineroute)
 
-   * [`method_for_query`](#chapter_10_method_for_query)
+   * [`method_for_query`](#chapter_10-Routing_sub_method_for_query)
 
- * [`sfRouteCollection`](#chapter_10_sfroutecollection)
- * [`sfObjectRouteCollection`](#chapter_10_sfobjectroutecollection)
+ * [`sfRouteCollection`](#chapter_10-Routing_sub_sfroutecollection)
+ * [`sfObjectRouteCollection`](#chapter_10-Routing_sub_sfobjectroutecollection)
 
-   * [`actions`](#chapter_10_actions)
-   * [`collection_actions`](#chapter_10_collection_actions)
-   * [`column`](#chapter_10_column)
-   * [`model`](#chapter_10_model)
-   * [`model_methods`](#chapter_10_model_methods)
-   * [`module`](#chapter_10_module)
-   * [`object_actions`](#chapter_10_object_actions)
-   * [`prefix_path`](#chapter_10_prefix_path)
-   * [`requirements`](#chapter_10_requirements)
-   * [`route_class`](#chapter_10_route_class)
-   * [`segment_names`](#chapter_10_segment_names)
-   * [`with_show`](#chapter_10_with_show)
-   * [`with_wildcard_routes`](#chapter_10_with_wildcard_routes)
+   * [`actions`](#chapter_10-Routing_sub_actions)
+   * [`collection_actions`](#chapter_10-Routing_sub_collection_actions)
+   * [`column`](#chapter_10-Routing_sub_column)
+   * [`model`](#chapter_10-Routing_sub_model)
+   * [`model_methods`](#chapter_10-Routing_sub_model_methods)
+   * [`module`](#chapter_10-Routing_sub_module)
+   * [`object_actions`](#chapter_10-Routing_sub_object_actions)
+   * [`prefix_path`](#chapter_10-Routing_sub_prefix_path)
+   * [`requirements`](#chapter_10-Routing_sub_requirements)
+   * [`route_class`](#chapter_10-Routing_sub_route_class)
+   * [`segment_names`](#chapter_10-Routing_sub_segment_names)
+   * [`with_show`](#chapter_10-Routing_sub_with_show)
+   * [`with_wildcard_routes`](#chapter_10-Routing_sub_with_wildcard_routes)
 
- * [`sfPropelRouteCollection`](#chapter_10_sfpropelroutecollection)
- * [`sfDoctrineRouteCollection`](#chapter_10_sfdoctrineroutecollection)
+ * [`sfPropelRouteCollection`](#chapter_10-Routing_sub_sfpropelroutecollection)
+ * [`sfDoctrineRouteCollection`](#chapter_10-Routing_sub_sfdoctrineroutecollection)
 
 <div class="pagebreak"></div>
 
@@ -105,29 +105,29 @@ routing.yml設定ファイル
 
 ### `class`
 
-`*デフォルト*: `sfRoute` (もしくは`type`が`collection`である場合`sfRouteCollection`、下記を参照)
+*デフォルト*: `sfRoute` (もしくは`type`が`collection`である場合`sfRouteCollection`、下記を参照)
 
 `class`設定によってルートのために使用するルートクラスを変更できるようになります。
 
 ### `url`
 
-`*デフォルト*: `/`
+*デフォルト*: `/`
 
 `url`設定は現在のリクエストのために使われるルートに対して
 やってくるURLがマッチしなければならないパターンです。
 
 パターンは複数のセグメントで構成されます:
 
- * 変数([コロン `:`](05-Factories#chapter_05_variable_prefixes)を接頭辞とする単語)
+ * 変数([コロン `:`](#chapter_05-Factories_sub_variable_prefixes)を接頭辞とする単語)
  * 定数
  * キー/値の組のシーケンスにマッチするワイルドカード(`*`)
 
 それぞれのセグメントはあらかじめ定義された区切り文字の1つで区切らなければなりません
-([デフォルトでは`/`もしくは`.`](05-Factories#chapter_05_segment_separators))。
+([デフォルトでは`/`もしくは`.`](#chapter_05-Factories_sub_segment_separators))。
 
 ### `params`
 
-`*デフォルト*: 空の配列
+*デフォルト*: 空の配列
 
 `params`設定はルートに関連付けされたパラメータの配列を定義します。
 これらは`url`に含まれる変数、もしくはこのルートに関連する変数
@@ -135,7 +135,7 @@ routing.yml設定ファイル
 
 ### `param`
 
-`*デフォルト*: 空の配列
+*デフォルト*: 空の配列
 
 この設定は`params`設定と同等です。
 
@@ -148,7 +148,7 @@ routing.yml設定ファイル
 
 ### `requirements`
 
-`*デフォルト*: 空の配列
+*デフォルト*: 空の配列
 
 `requirements`設定は`url`変数で満たさなければならない要件の配列です。
 キーはurl変数で変数は変数の値が
@@ -162,7 +162,7 @@ routing.yml設定ファイル
 
 ### `type`
 
-`*デフォルト*: `null`
+*デフォルト*: `null`
 
 `collection`にセットされている場合、ルートはルートコレクションとして読み込まれます。
 
@@ -182,7 +182,7 @@ routing.yml設定ファイル
 
 ### `sf_method`
 
-`*デフォルト*: `get`
+*デフォルト*: `get`
 
 `sf_method`オプションは`requirements`配列で使われます。
 これはルートにマッチする処理でHTTPリクエストを強制します。
@@ -213,14 +213,14 @@ routing.yml設定ファイル
 
 ### `allow_empty`
 
-`*デフォルト*: `true`
+*デフォルト*: `true`
 
 `allow_empty`オプションが`false`にセットされる場合、
 `model` `method`への呼び出しによってオブジェクトが返されない場合、ルートは404の例外を投げます。
 
 ### `convert`
 
-`*デフォルト*: `toParams`
+*デフォルト*: `toParams`
 
 `convert`オプションはこのモデルオブジェクトに基づいてルートを生成するために
 モデルを適切なパラメータの配列に変換するために呼び出すメソッドです。 
@@ -232,7 +232,7 @@ routing.yml設定ファイル
 
 ### `method_for_criteria`
 
-`*デフォルト*: コレクションには`doSelect`、単独のオブジェクトには`doSelectOne`
+*デフォルト*: コレクションには`doSelect`、単独のオブジェクトには`doSelectOne`
 
 `method_for_criteria`オプションは現在のリクエストに関連するオブジェクトを
 読み取るためにPeerクラスで呼び出されるメソッドを定義します。
@@ -243,7 +243,7 @@ routing.yml設定ファイル
 
 ### `method_for_query`
 
-`*デフォルト*: none
+*デフォルト*: none
 
 `method_for_query`オプションは現在のリクエストに
 関連するオブジェクトを読み取るために
@@ -268,7 +268,7 @@ routing.yml設定ファイル
 
 ### `actions`
 
-`*デフォルト*: `false`
+*デフォルト*: `false`
 
 `actions`オプションはルート用に認可されるアクションの配列を定義します。
 アクションはすべての利用可能なアクションのサブセット: `list`、`new`、`create`、
@@ -280,7 +280,7 @@ routing.yml設定ファイル
 
 ### `module`
 
-`*デフォルト*: ルートの名前
+*デフォルト*: ルートの名前
 
 `module`オプションはモジュールの名前を定義します。
 
@@ -293,14 +293,14 @@ routing.yml設定ファイル
 
 ### `column`
 
-`*デフォルト*: `id`
+*デフォルト*: `id`
 
 `column`オプションはモデルオブジェクト用のユニークな
 識別子として使用するモデルのカラムを定義します。
 
 ### `with_show`
 
-`*デフォルト*: `true`
+*デフォルト*: `true`
 
 `show`アクションはルート用に認可されたアクションに含めなければならないか決定するために
 `with_show`オプションは`actions`オプションが
@@ -308,14 +308,14 @@ routing.yml設定ファイル
 
 ### `segment_names`
 
-`*デフォルト*: array('edit' => 'edit', 'new' => 'new'),
+*デフォルト*: `array('edit' => 'edit', 'new' => 'new'),`
 
 `segment_names`は`edit`と`new`アクション用に
 `url`パターンで使う単語を定義します。
 
 ### `model_methods`
 
-`*デフォルト*: 空の配列
+*デフォルト*: 空の配列
 
 `model_methods`オプションはモデルからオブジェクトを読み取るために
 呼び出すメソッドを定義します(`sfObjectRoute`の`method`オプションを参照)。
@@ -328,35 +328,35 @@ routing.yml設定ファイル
 
 ### `requirements`
 
-`*デフォルト*: `column`に対して`\d+`
+*デフォルト*: `column`に対して`\d+`
 
 `requirements`オプションはルート変数に適用する
 要件の配列を定義します。
 
 ### `with_wildcard_routes`
 
-`*デフォルト*: `false`
+*デフォルト*: `false`
 
 `with_wildcard_routes`オプションは2つのワイルドカードのルートを通して
 アクションにアクセスできるようにします: 1つは単独のオブジェクトに、もう1つはオブジェクトコレクションに。
 
 ### `route_class`
 
-`*デフォルト*: `sfObjectRoute`
+*デフォルト*: `sfObjectRoute`
 
 `route_class`オプションはコレクション用に使われるデフォルトのルートオブジェクトを
 オーバーライドできます。
 
 ### `collection_actions`
 
-`*デフォルト*: 空の配列
+*デフォルト*: 空の配列
 
 `collection_actions`オプションはコレクションルートに利用可能な
 追加アクションの配列を定義します。
 
 ### `object_actions`
 
-`*デフォルト*: 空の配列
+*デフォルト*: 空の配列
 
 `object_actions`オプションはオブジェクトルートに利用可能な
 追加アクションの配列を定義します。

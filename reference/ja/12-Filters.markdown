@@ -8,8 +8,8 @@ filters.yml設定ファイル
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 最初の章で説明したように、`filters.yml`ファイルは
-[**設定カスケードのメカニズム**](03-Configuration-Files-Principles#chapter_03_configuration_cascade)から恩恵を浮け、
-[**定数**](03-Configuration-Files-Principles#chapter_03_constants)を含めることができます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)から恩恵を浮け、
+[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含めることができます。
 
 `filters.yml`設定ファイルは名前付きフィルタ定義のリストを
 格納できます:
@@ -85,18 +85,18 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
 >**NOTE**
 >`filters.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >処理は`sfFilterConfigHandler`
->[クラス](14-Other-Configuration-Files#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 <div class="pagebreak"></div>
 
 フィルタ
 --------
 
- * [`rendering`](12-Filters#chapter_12_rendering)
- * [`security`](12-Filters#chapter_12_security)
- * [`cache`](12-Filters#chapter_12_cache)
- * [`common`](12-Filters#chapter_12_common)
- * [`execution`](12-Filters#chapter_12_execution)
+ * [`rendering`](#chapter_12-Filters_sub_rendering)
+ * [`security`](#chapter_12-Filters_sub_security)
+ * [`cache`](#chapter_12-Filters_sub_cache)
+ * [`common`](#chapter_12-Filters_sub_common)
+ * [`execution`](#chapter_12-Filters_sub_execution)
 
 `rendering`
 -----------
@@ -132,7 +132,7 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
 `security`フィルタは`security`の型を持たなければなりません。
 
 `security`フィルタのきめ細かい設定は
-`security.yml`設定[ファイル](08-Security)を通して行われます。
+`security.yml`設定[ファイル](#chapter_08-Security)を通して行われます。
 
 >**TIP**
 >必須のアクションが`security.yml`でセキュアなものとして設定されていない場合、
@@ -149,9 +149,10 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
       param:
         condition: %SF_CACHE%
 
-`cache`フィルタはアクションとページを管理します。It is also
-responsible for adding the needed HTTP cache headers to the response
-(`Last-Modified`, `ETag`, `Cache-Control`, `Expires`, ...).
+`cache`フィルタはアクションとページを管理します。
+これは必要とされるHTTPキャッシュヘッダーを
+レスポンスに追加するための責務も担います
+(`Last-Modified`、`ETag`、`Cache-Control`、`Expires`、...)。
 
 `common`
 --------

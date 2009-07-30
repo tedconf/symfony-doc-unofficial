@@ -18,7 +18,7 @@ adminジェネレータモジュールは`propel:generate-admin`もしくは
 >**NOTE**
 >`generator.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >処理は`sfGeneratorConfigHandler`
->[クラス](04-Settings#chapter_14-Other-Configuration-Files_sub_config_handlers_yml)によって自動的に管理されます。
+>[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 ### 設定ファイル
 
@@ -231,69 +231,69 @@ adminジェネレータの外見はとても簡単に調整できます。
 利用可能な設定オプション
 -----------------------
 
- * [`actions`](06-Admin-Generator#chapter_06_actions)
+ * [`actions`](#chapter_06-Admin-Generator_sub_actions)
 
-   * [`name`](06-Admin-Generator#chapter_06_name)
-   * [`action`](06-Admin-Generator#chapter_06_action)
-   * [`credentials`](06-Admin-Generator#chapter_06_credentials)
+   * [`name`](#chapter_06-Admin-Generator_sub_name)
+   * [`action`](#chapter_06-Admin-Generator_sub_action)
+   * [`credentials`](#chapter_06-Admin-Generator_sub_credentials)
 
- * [`fields`](06-Admin-Generator#chapter_06_fields)
+ * [`fields`](#chapter_06-Admin-Generator_sub_fields)
 
-   * [`label`](06-Admin-Generator#chapter_06_label)
-   * [`help`](06-Admin-Generator#chapter_06_help)
-   * [`attributes`](06-Admin-Generator#chapter_06_attributes)
-   * [`credentials`](06-Admin-Generator#chapter_06_credentials)
-   * [`renderer`](06-Admin-Generator#chapter_06_renderer)
-   * [`renderer_arguments`](06-Admin-Generator#chapter_06_renderer_arguments)
+   * [`label`](#chapter_06-Admin-Generator_sub_label)
+   * [`help`](#chapter_06-Admin-Generator_sub_help)
+   * [`attributes`](#chapter_06-Admin-Generator_sub_attributes)
+   * [`credentials`](#chapter_06-Admin-Generator_sub_credentials)
+   * [`renderer`](#chapter_06-Admin-Generator_sub_renderer)
+   * [`renderer_arguments`](#chapter_06-Admin-Generator_sub_renderer_arguments)
 
- * [`list`](06-Admin-Generator#chapter_06_list)
+ * [`list`](#chapter_06-Admin-Generator_sub_list)
 
-   * [`title`](06-Admin-Generator#chapter_06_title)
-   * [`display`](06-Admin-Generator#chapter_06_display)
-   * [`hide`](06-Admin-Generator#chapter_06_hide)
-   * [`layout`](06-Admin-Generator#chapter_06_layout)
-   * [`params`](06-Admin-Generator#chapter_06_params)
-   * [`sort`](06-Admin-Generator#chapter_06_sort)
-   * [`max_per_page`](06-Admin-Generator#chapter_06_max_per_page)
-   * [`pager_class`](06-Admin-Generator#chapter_06_pager_class)
-   * [`batch_actions`](06-Admin-Generator#chapter_06_batch_actions)
-   * [`object_actions`](06-Admin-Generator#chapter_06_object_actions)
-   * [`actions`](06-Admin-Generator#chapter_06_actions)
-   * [`peer_method`](06-Admin-Generator#chapter_06_peer_method)
-   * [`peer_count_method`](06-Admin-Generator#chapter_06_peer_count_method)
-   * [`table_method`](06-Admin-Generator#chapter_06_table_method)
-   * [`table_count_method`](06-Admin-Generator#chapter_06_table_count_method)
+   * [`title`](#chapter_06-Admin-Generator_sub_title)
+   * [`display`](#chapter_06-Admin-Generator_sub_display)
+   * [`hide`](#chapter_06-Admin-Generator_sub_hide)
+   * [`layout`](#chapter_06-Admin-Generator_sub_layout)
+   * [`params`](#chapter_06-Admin-Generator_sub_params)
+   * [`sort`](#chapter_06-Admin-Generator_sub_sort)
+   * [`max_per_page`](#chapter_06-Admin-Generator_sub_max_per_page)
+   * [`pager_class`](#chapter_06-Admin-Generator_sub_pager_class)
+   * [`batch_actions`](#chapter_06-Admin-Generator_sub_batch_actions)
+   * [`object_actions`](#chapter_06-Admin-Generator_sub_object_actions)
+   * [`actions`](#chapter_06-Admin-Generator_sub_actions)
+   * [`peer_method`](#chapter_06-Admin-Generator_sub_peer_method)
+   * [`peer_count_method`](#chapter_06-Admin-Generator_sub_peer_count_method)
+   * [`table_method`](#chapter_06-Admin-Generator_sub_table_method)
+   * [`table_count_method`](#chapter_06-Admin-Generator_sub_table_count_method)
 
- * [`filter`](06-Admin-Generator#chapter_06_filter)
+ * [`filter`](#chapter_06-Admin-Generator_sub_filter)
 
-   * [`display`](06-Admin-Generator#chapter_06_display)
-   * [`class`](06-Admin-Generator#chapter_06_class)
+   * [`display`](#chapter_06-Admin-Generator_sub_display)
+   * [`class`](#chapter_06-Admin-Generator_sub_class)
 
- * [`form`](06-Admin-Generator#chapter_06-Admin-Generator_form)
+ * [`form`](#chapter_06-Admin-Generator_form)
 
-   * [`display`](06-Admin-Generator#chapter_06_display)
-   * [`class`](06-Admin-Generator#chapter_06_class)
+   * [`display`](#chapter_06-Admin-Generator_sub_display)
+   * [`class`](#chapter_06-Admin-Generator_sub_class)
 
- * [`edit`](06-Admin-Generator#chapter_06_edit)
+ * [`edit`](#chapter_06-Admin-Generator_sub_edit)
 
-   * [`title`](06-Admin-Generator#chapter_06_title)
-   * [`actions`](06-Admin-Generator#chapter_06_actions)
+   * [`title`](#chapter_06-Admin-Generator_sub_title)
+   * [`actions`](#chapter_06-Admin-Generator_sub_actions)
 
- * [`new`](06-Admin-Generator#chapter_06_new)
+ * [`new`](#chapter_06-Admin-Generator_sub_new)
 
-   * [`title`](06-Admin-Generator#chapter_06_title)
-   * [`actions`](06-Admin-Generator#chapter_06_actions)
+   * [`title`](#chapter_06-Admin-Generator_sub_title)
+   * [`actions`](#chapter_06-Admin-Generator_sub_actions)
 
 <div class="pagebreak"></div>
 
-fields
-------
+`fields`
+--------
 
 `fields`セクションはそれぞれのフィールドに対するデフォルト設定を定義します。
 この設定はすべてのページに対して定義されページごとに
 オーバーライドできます(`list`、`filter`、`form`、`edit`、と`new`)。
 
-### label
+### `label`
 
 *デフォルト*: 人がわかりやすいようにしたカラムの名前
 
@@ -304,13 +304,13 @@ fields
       fields:
         slug: { label: "URL shortcut" }
 
-### help
+### `help`
 
 *デフォルト*: none
 
 `help`オプションはフィールド用に表示するヘルプテキストを定義します。
 
-### attributes
+### `attributes`
 
 *デフォルト*: `array()`
 
@@ -321,7 +321,7 @@ fields
       fields:
         slug: { attributes: { class: foo } }
 
-### credentials
+### `credentials`
 
 *デフォルト*: none
 
@@ -338,7 +338,7 @@ fields
 >クレデンシャルは
 >`security.yml`設定ファイルと同じルールで定義されます。
 
-### renderer
+### `renderer`
 
 *デフォルト*: none
 
@@ -348,7 +348,7 @@ fields
 コールバックは`renderer_arguments`オプションで
 定義されたフィールドと引数の値で呼び出されます。
 
-### renderer_arguments
+### `renderer_arguments`
 
 *デフォルト*: `array()`
 
@@ -356,8 +356,8 @@ fields
 PHPの`renderer`コールバックに渡す引数を定義します。 
 `renderer`オプションが定義される場合のみ使われます。
 
-actions
--------
+`actions`
+---------
 
 フレームワークはいくつかの組み込みのアクションを定義します。
 これらすべてに接頭辞としてアンダースコア(`_`)がつけられます。 
@@ -371,13 +371,13 @@ actions
 
 `name`オプションはアクションに使うラベルを定義します。
 
-### action
+### `action`
 
 *デフォルト*: アクションの名前に基づいて定義される
 
 `action`オプションは`execute`の接頭辞無しで実行するアクションの名前を定義します。
 
-### credentials
+### `credentials`
 
 *デフォルト*: none
 
@@ -388,16 +388,16 @@ actions
 >クレデンシャルは
 >`security.yml`設定ファイルと同じルールで定義されます。
 
-list
-----
+`list`
+------
 
-### title
+### `title`
 
 *デフォルト*: "List"の接尾辞がつけられた人間にわかりやすいモデルクラスの名前
 
 `title`オプションはlistページのタイトルを定義します。
 
-### display
+### `display`
 
 *デフォルト*: すべてのモデルのカラム、スキーマでの定義順
 file
@@ -416,7 +416,7 @@ file
 >**NOTE**
 >カラムを隠す`hide`オプションもご覧ください。
 
-### hide
+### `hide`
 
 *デフォルト*: none
 
@@ -433,7 +433,7 @@ file
 >`display`と`hide`オプションが両方とも提供される場合、`hide`
 >オプションが無視されます。
 
-### layout
+### `layout`
 
 *デフォルト*: `tabular`
 
@@ -450,7 +450,7 @@ file
 >`display`オプションは`stacked`レイアウトを使う際にも必要です。
 >これはユーザーによってソート可能になるカラムを定義するからです。
 
-### params
+### `params`
 
 *デフォルト値*: none
 
@@ -466,7 +466,7 @@ file
 カラムの前の等号(`=`)は文字列を
 現在のオブジェクトの`edit`ページに向かうリンクに変換する規約です。
 
-### sort
+### `sort`
 
 *デフォルト値*: none
 
@@ -478,21 +478,21 @@ file
       list:
         sort: [published_at, desc]
 
-### max_per_page
+### `max_per_page`
 
 *デフォルト値*: `20`
 
 `max_per_page`オプションは1つのページを表示するオブジェクトの
 最大数を定義します。
 
-### pager_class
+### `pager_class`
 
 *デフォルト値*: Propelでは`sfPropelPager`、Doctrineでは`sfDoctrinePager`
 
 `pager_class`オプションはlistを表示する際に使用する
 ページャクラスを定義します。
 
-### batch_actions
+### `batch_actions`
 
 *デフォルト値*: `{ _delete: ~ }`
 
@@ -509,7 +509,7 @@ file
 >バッチアクションの機能はオプションを
 >空の配列: `{}`にセットすることで無効にできます。
 
-### object_actions
+### `object_actions`
 
 *デフォルト値*: `{ _edit: ~, _delete: ~ }`
 
@@ -523,7 +523,7 @@ file
 >オブジェクトアクションの機能はオプションを
 >空の配列: `{}`にセットすることで無効にできます。
 
-### actions
+### `actions`
 
 *デフォルト値*: `{ _new: ~ }`
 
@@ -537,7 +537,7 @@ file
 >オブジェクトアクション機能は
 >オプションを空の配列: `{}`にセットすることで無効にできます。
 
-### peer_method
+### `peer_method`
 
 *デフォルト値*: `doSelect`
 
@@ -548,7 +548,7 @@ file
 >このオプションはPropelに対してのみ存在します。Doctrineに対しては、`table_method`
 >オプションを使います。
 
-### table_method
+### `table_method`
 
 *デフォルト値*: `doSelect`
 
@@ -559,7 +559,7 @@ file
 >このオプションはDoctrineに対してのみ存在します。Propelに対しては、`peer_method`
 >オプションを使います。
 
-### peer_count_method
+### `peer_count_method`
 
 *デフォルト値*: `doCount`
 
@@ -570,7 +570,7 @@ file
 >このオプションはPropelに対してのみ存在します。Doctrineに対しては、
 >`table_count_method`オプションを使います。
 
-### table_count_method
+### `table_count_method`
 
 *デフォルト値*: `doCount`
 
@@ -581,13 +581,13 @@ file
 >このオプションはDoctrineに対してのみ存在します。Propelに対しては、
 >`peer_count_method`オプションを使います。
 
-filter
-------
+`filter`
+--------
 
 `filter`セクションはlistページに表示されるフォームをフィルタリングするための設定を
 定義します。
 
-### display
+### `display`
 
 *デフォルト値*: 定義の順序で、フィルタフォームクラスで定義されたすべてのフィールド。
 
@@ -597,7 +597,7 @@ filter
 >フィルタフィールドは常にオプションで、表示するフィールドを設定するために
 >フィルタフォームクラスをオーバーライドする必要はありません。
 
-### class
+### `class`
 
 *デフォルト値*: 接尾辞が`FormFilter`であるモデルクラスの名前
 
@@ -606,8 +606,8 @@ filter
 >**TIP**
 >フィルタリング機能を完全に除外するには、`class`を`false`にセットします。
 
-form
-----
+`form`
+------
 
 `form`セクションは`edit`と`new`セクションのためのフォールバックとしてのみ存在します
 (最初の継承ルールを参照)。
@@ -616,7 +616,7 @@ form
 >フォームセクション(`form`、`edit`、と`new`)に関して、`label`と`help`オプションは
 >フォームクラスで定義したものをオーバーライドします。
 
-### display
+### `display`
 
 *デフォルト値*: フォームクラスで定義されたすべてのクラス。順序は定義された順序と同じ。
 
@@ -650,30 +650,30 @@ form
 >1つのクラスを使用し条件ロジックを使用する違いを
 >考慮する方がベターです。
 
-edit
-----
+`edit`
+------
 
 `edit`セクションは`form`セクションと同じオプションを受け取ります。
 
-### title
+### `title`
 
 *デフォルト*: 接尾辞が"Edit"である人間にわかりやすいモデルクラスの名前
 
 `title`オプションはeditページのタイトルの見出しを定義します。
 これはモデルオブジェクトのプレースホルダーを含むことができます。
 
-### actions
+### `actions`
 
 *デフォルト値*: `{ _delete: ~, _list: ~, _save: ~ }`
 
 `actions`オプションはフォームを投稿する際に利用可能なアクションを定義します。
 
-new
----
+`new`
+-----
 
 `new`セクションは`form`セクションと同じオプションを受け取ります。
 
-### title
+### `title`
 
 *デフォルト*: 接尾辞が"New"である人間にわかりやすいモデルクラスの名前
 
@@ -684,7 +684,7 @@ new
 >オブジェクトが新しい場合でも、タイトルの一部として出力したい
 >デフォルトの値を持つことができます。
 
-### actions
+### `actions`
 
 *デフォルト値*: `{ _delete: ~, _list: ~, _save: ~, _save_and_add: ~ }`
 

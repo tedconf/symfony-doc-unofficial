@@ -16,9 +16,9 @@ databases.yml設定ファイル
 >デフォルトの設定をオーバーライドできます。
 
 最初の章で説明したように、`databases.yml`ファイルは
-[**環境を認識し**](#chapter_03_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03_configuration_cascade)の恩恵を受け、
-[**定数*](#chapter_03_constants)を格納します。
+[**環境を認識し**](#chapter_03-Configuration-File-Principles_sub_environment_awareness)、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)の恩恵を受け、
+[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納します。
 
 `databases.yml`で説明したそれぞれの接続はデータベースオブジェクトを設定するために
 使用する、名前、データベースハンドラクラスの名前、
@@ -42,7 +42,7 @@ databases.yml設定ファイル
 >**NOTE**
 >`databases.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >プロセスは`sfDatabaseConfigHandler`
->[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 -
 

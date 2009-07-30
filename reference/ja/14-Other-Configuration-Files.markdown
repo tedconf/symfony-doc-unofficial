@@ -12,12 +12,12 @@
 スキャンされます。
 
 最初の章で説明したように、`autoload.yml`ファイルは
-[**設定カスケードのメカニズム**](03-Configuration-Files-Principles#chapter_03_configuration_cascade)から恩恵を受け、[**定数**](03-Configuration-Files-Principles#chapter_03_constants)を格納できます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)から恩恵を受け、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
 
 >**NOTE**
 >`autoload.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >処理は`sfAutoloadConfigHandler`
->[クラス](14-Other-Configuration-Files#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 大抵のプロジェクトではデフォルト構成で十分です:
 
@@ -130,8 +130,8 @@
     - %SF_SYMFONY_LIB_DIR%/action/sfActions.class.php
 
 最初の章で説明したように、`core_compile.yml`ファイルは
-[**設定カスケードのメカニズム**](03-Configuration-Files-Principles#chapter_03_configuration_cascade)の恩恵を受け、
-[**定数**](03-Configuration-Files-Principles#chapter_03_constants)を格納できます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)の恩恵を受け、
+[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
 
 >**NOTE**
 >`core_compile.yml`設定ファイルはPHPファイルとしてキャッシュされます; 

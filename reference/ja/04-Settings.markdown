@@ -9,8 +9,8 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 はじめの章で検討されたように、`settings.yml`ファイルは
-[**環境を認識し**](03-Configuration-Files-Principles#chapter_03_environment_awareness)、
-[**設定カスケードのメカニズム**](03-Configuration-Files-Principles#chapter_03_configuration_cascade)から恩恵を受けます。
+[**環境を認識し**](#chapter_03-Configuration-File-Principles_sub_environment_awareness)、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)から恩恵を受けます。
 
 それぞれの環境は2つのサブセクション: `.actions`と`.settings`を持ちます。
 共通ページ用にレンダリングされるデフォルトのアクション以外は、
@@ -19,7 +19,7 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 >**NOTE**
 >`settings.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >プロセスは`sfDefineEnvironmentConfigHandler`
->[クラス](14-Other-Configuration-Files#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 <div class="pagebreak"></div>
 
@@ -28,36 +28,36 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 
   * `.actions`
 
-    * [`error_404`](04-Settings#chapter_04_sub_error_404)
-    * [`login`](04-Settings#chapter_04_sub_error_404)
-    * [`secure`](04-Settings#chapter_04_sub_secure)
-    * [`module_disabled`](04-Settings#chapter_04_sub_module_disabled)
+    * [`error_404`](#chapter_04-Settings_sub_error_404)
+    * [`login`](#chapter_04-Settings_sub_error_404)
+    * [`secure`](#chapter_04-Settings_sub_secure)
+    * [`module_disabled`](#chapter_04-Settings_sub_module_disabled)
 
   * `.settings`
 
-    * [`cache`](04-Settings#chapter_04_sub_cache)
-    * [`charset`](04-Settings#chapter_04_sub_charset)
-    * [`check_lock`](04-Settings#chapter_04_sub_check_lock)
-    * [`check_symfony_version`](04-Settings#chapter_04_sub_check_symfony_version)
-    * [`compressed`](04-Settings#chapter_04_sub_compressed)
-    * [`csrf_secret`](04-Settings#chapter_04_sub_csrf_secret)
-    * [`default_culture`](04-Settings#chapter_04_sub_default_culture)
-    * [`default_timezone`](04-Settings#chapter_04_sub_default_timezone)
-    * [`enabled_modules`](04-Settings#chapter_04_sub_enabled_modules)
-    * [`error_reporting`](04-Settings#chapter_04_sub_error_reporting)
-    * [`escaping_strategy`](04-Settings#chapter_04_sub_escaping_strategy)
-    * [`escaping_method`](04-Settings#chapter_04_sub_escaping_method)
-    * [`etag`](04-Settings#chapter_04_sub_etag)
-    * [`i18n`](04-Settings#chapter_04_sub_i18n)
-    * [`lazy_cache_key`](04-Settings#chapter_04_sub_lazy_cache_key)
-    * [`logging_enabled`](04-Settings#chapter_04_sub_logging_enabled)
-    * [`no_script_name`](04-Settings#chapter_04_sub_no_script_name)
-    * [`max_forwards`](04-Settings#chapter_04_sub_max_forwards)
-    * [`standard_helpers`](04-Settings#chapter_04_sub_standard_helpers)
-    * [`strip_comments`](04-Settings#chapter_04_sub_strip_comments)
-    * [`use_database`](04-Settings#chapter_04_sub_use_database)
-    * [`web_debug`](04-Settings#chapter_04_sub_web_debug)
-    * [`web_debug_web_dir`](04-Settings#chapter_04_sub_web_debug_web_dir)
+    * [`cache`](#chapter_04-Settings_sub_cache)
+    * [`charset`](#chapter_04-Settings_sub_charset)
+    * [`check_lock`](#chapter_04-Settings_sub_check_lock)
+    * [`check_symfony_version`](#chapter_04-Settings_sub_check_symfony_version)
+    * [`compressed`](#chapter_04-Settings_sub_compressed)
+    * [`csrf_secret`](#chapter_04-Settings_sub_csrf_secret)
+    * [`default_culture`](#chapter_04-Settings_sub_default_culture)
+    * [`default_timezone`](#chapter_04-Settings_sub_default_timezone)
+    * [`enabled_modules`](#chapter_04-Settings_sub_enabled_modules)
+    * [`error_reporting`](#chapter_04-Settings_sub_error_reporting)
+    * [`escaping_strategy`](#chapter_04-Settings_sub_escaping_strategy)
+    * [`escaping_method`](#chapter_04-Settings_sub_escaping_method)
+    * [`etag`](#chapter_04-Settings_sub_etag)
+    * [`i18n`](#chapter_04-Settings_sub_i18n)
+    * [`lazy_cache_key`](#chapter_04-Settings_sub_lazy_cache_key)
+    * [`logging_enabled`](#chapter_04-Settings_sub_logging_enabled)
+    * [`no_script_name`](#chapter_04-Settings_sub_no_script_name)
+    * [`max_forwards`](#chapter_04-Settings_sub_max_forwards)
+    * [`standard_helpers`](#chapter_04-Settings_sub_standard_helpers)
+    * [`strip_comments`](#chapter_04-Settings_sub_strip_comments)
+    * [`use_database`](#chapter_04-Settings_sub_use_database)
+    * [`web_debug`](#chapter_04-Settings_sub_web_debug)
+    * [`web_debug_web_dir`](#chapter_04-Settings_sub_web_debug_web_dir)
 
 <div class="pagebreak"></div>
 
@@ -133,7 +133,7 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 
 出力エスケーパーサブフレームワークはエスケープ用に`charset`設定を使います。
 
-デフォルトの値を`on`に変更することを多いにお勧めします。
+デフォルトの値を`on`に変更することを大いにお勧めします。
 
 >**TIP**
 >`--escaping-strategy`オプションを使用することで`generate:app`タスクで
@@ -161,7 +161,7 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 `csrf_secret`はアプリケーション用のunique secretです。
 `false`に設定されていない場合、これはフォームフレームワークで定義された
 すべてのフォーム用のCSRF保護を有効にします。
-リンクをフォームに変換することが必要なとき(例えば`DELETE` HTTPメソッドをシミュレートする)
+リンクをフォームに変換することが必要なとき(例えばHTTP `DELETE`メソッドをシミュレートする)
 この設定は`link_to()`ヘルパーにも使われます。
 
 デフォルトの値をunique secretに変更することを多いにお勧めします。
@@ -221,10 +221,10 @@ PHPで認識される任意の[タイムゾーン](http://www.php.net/manual/cla
 
 >**TIP**
 >キャッシュシステムの一般設定は`factories.yml`設定ファイルの
->[`view_cache_manager`](05-Factories#chapter_05_view_cache_manager)と
->[`view_cache`](05-Factories#chapter_05_view_cache)セクションで行われます。
+>[`view_cache_manager`](#chapter_05_view_cache_manager)と
+>[`view_cache`](#chapter_05-Factories_sub_view_cache)セクションで行われます。
 >きめ細かい設定は
->[`cache.yml`](09-Cache#chapter_09)設定ファイルで行われます。
+>[`cache.yml`](#chapter_09-Cache)設定ファイルで行われます。
 
 ### `etag`
 
@@ -243,7 +243,7 @@ symfonyによって生成されたETagはレスポンスのコンテンツの
 
 >**TIP**
 >国際化システムの一般設定は
->`factories.yml`設定ファイルの[`i18n`](05-Factories#chapter_05_i18n)セクションで
+>`factories.yml`設定ファイルの[`i18n`](#chapter_05-Factories_sub_i18n)セクションで
 >行われます。
 
 ### `default_culture`

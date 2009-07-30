@@ -5,7 +5,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 設定できます。
 
 はじめの章で説明したように、`view.yml`ファイルは
-[**設定カスケードのメカニズム**](03-Configuration-Files-Principles#chapter_03_configuration_cascade)から恩恵を受け、[**定数**](03-Configuration-Files-Principles#chapter_03_constants)をインクルードできます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)から恩恵を受け、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)をインクルードできます。
 
 >**CAUTION**
 >アクションから呼び出されるテンプレートもしくはメソッドで直接使われるヘルパーのために
@@ -25,7 +25,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 >**NOTE**
 >`view.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >処理は`sfViewConfigHandler`
->[クラス](14-Other-Configuration-Files#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 `layout`
 --------
@@ -62,7 +62,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 >**NOTE**
 >`view.yml`で定義されたスタイルシートのインクルードは
 >`include_stylesheets()`ヘルパーによる手動もしくは
->[commonフィルタ](12-Filters#chapter_12_common)で自動的に行われます。
+>[commonフィルタ](#chapter_12-Filters_sub_common)で自動的に行われます。
 
 多くのフィルタが定義されている場合、symfonyは定義と同じ順序で
 これらをインクルードします:
@@ -100,7 +100,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 >**NOTE**
 >`view.yml`で定義されたJavaScriptファイルのインクルードは
 >`include_javascripts()`ヘルパーで手動、もしくは
->[commonフィルタ](#chapter_12_common)で自動的に行われます。
+>[commonフィルタ](#chapter_12-Filters_sub_common)で自動的に行われます。
 
 多くのファイルが定義されている場合、symfonyは定義と同じ順序で
 これらをインクルードします:
@@ -152,5 +152,5 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 
 >**TIP**
 >効果があるとき、
->[`settings.yml`設定ファイル](04-Settings#chapter_04_charset)で定義された文字集合を
+>[`settings.yml`設定ファイル](#chapter_04-Settings_sub_charset)で定義された文字集合を
 >インクルードするためにHTTPの`Content-Type`のメタ情報は自動的に修正されます。
