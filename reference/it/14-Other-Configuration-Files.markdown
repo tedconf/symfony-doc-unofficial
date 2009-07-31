@@ -12,12 +12,12 @@ autocaricate da symfony. Ogni cartella è scansionata per classi e
 interfaccie PHP.
 
 Come discusso in sede di introduzione, il file `autoload.yml` tre beneficio dal
-[**meccanismo di configurazione a cascata**](#chapter_03_configuration_cascade), e
-può includere [**costanti**](#chapter_03_constants).
+[**meccanismo di configurazione a cascata**](03-Configuration-Files-Principles#chapter_03_configuration_cascade), e
+può includere [**costanti**](03-Configuration-Files-Principles#chapter_03_constants).
 
 >**NOTE**
 >Il file di configurazione `autoload.yml` è messo in cache come file PHP; il
->processo è gestito automaticamente dalla [classe](#chapter_14_config_handlers_yml) 
+>processo è gestito automaticamente dalla [classe](14-Other-Configuration-Files#chapter_14_config_handlers_yml) 
 >~`sfAutoloadConfigHandler`~.
 
 La configurazione predefinita va bene per la maggior parte dei progetti:
@@ -131,10 +131,10 @@ un estratto della configurazione predefinita:
     - %SF_SYMFONY_LIB_DIR%/action/sfActions.class.php
 
 Come discusso in sede di introduzione, il file `core_compile.yml` beneficia del
-[**meccanismo di configurazione a cascata**](#chapter_03_configuration_cascade), e
-può includere [**costanti**](#chapter_03_constants).
+[**meccanismo di configurazione a cascata**](03-Configuration-Files-Principles#chapter_03_configuration_cascade), e
+può includere [**costanti**](03-Configuration-Files-Principles#chapter_03_constants).
 
 >**NOTE**
 >Il file di configurazione `core_compile.yml` è messo in cache come file PHP; il
->processo è gestito automaticamente dalla [classe](#chapter_14_config_handlers_yml)
+>processo è gestito automaticamente dalla [classe](14-Other-Configuration-Files#chapter_14_config_handlers_yml)
 >~`sfCompileConfigHandler`~.

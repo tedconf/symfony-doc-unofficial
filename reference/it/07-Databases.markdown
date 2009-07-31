@@ -16,9 +16,9 @@ nella cartella `config/`.
 >nelle cartelle di configurazione dell'applicazione.
 
 Come discusso in sede di introduzione, il file `databases.yml` è
-[**consapevole dell'ambiente**](#chapter_03_consapevolezza_dell_ambiente), trae beneficio
-dal [**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata),
-e può includere [**costanti**](#chapter_03_costanti).
+[**consapevole dell'ambiente**](03-Configuration-Files-Principles#chapter_03_consapevolezza_dell_ambiente), trae beneficio
+dal [**meccanismo di configurazione a cascata**](03-Configuration-Files-Principles#chapter_03_configurazione_a_cascata),
+e può includere [**costanti**](03-Configuration-Files-Principles#chapter_03_costanti).
 
 Ogni connessione descritta nel file `databases.yml` deve comprendere un nome, un nome
 del gestore di classe del database e un set di parametri (`param`) usati per configurare
