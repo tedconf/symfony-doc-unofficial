@@ -1,0 +1,754 @@
+第11天：表单测试
+================
+
+昨天我们用symfony创建了第一个表单。人们可以在Jobeet上发布招聘信息，但是因为时间不够，
+没有添加测试。
+
+今天我们将完成这个工作。这个过程中，我们会学到更多关于表单框架的知识。
+
+>**SIDEBAR**
+>在symfony之外使用表单框架
+>
+>symfony框架是由许多独立的、可分离元件组成。这意味着，你可以单独使用其中某一部分，而不必使用
+>整个MVC框架。表单框架就是一个例子，它并不依赖于symfony。通过访问`lib/form/`、`lib/widgets/`和 
+>`lib/validators/`目录，就可以在任何程序中使用它。
+>
+>另一个可重用元件是路由框架。复制`lib/routing/`目录到你的项目中，就可以使用了。
+>
+>下面是symfony平台各元件依赖关系图：
+>
+>![The symfony platform](http://www.symfony-project.org/images/jobeet/1_2/11/platform.png)
+
+提交表单
+--------
+
+打开`jobActionsTest`文件，为招聘信息创建和验证功能添加功能测试(functional test)。
+
+在文件的尾部加入下面的代码，访问信息创建页面：
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->info('3 - Post a Job page')->
+      info('  3.1 - Submit a Job')->
+
+      get('/job/new')->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'new')->
+      end()
+    ;
+
+我们已经使用`click()`模拟点击链接。这个方法还可以用来提交表单。你只需要将表单字段值
+作为该方法的第二个参数。同真正的浏览器一样，浏览器对象会将表单默认值与提交的值合并。
+
+但是要传送字段值，我们需要知道它们对应的字段名。如果你查看网页源文件或使用
+Firefox Web Developer Toolbar”Forms > Display Form Details”功能，你将看到
+`company`的字段名为`jobeet_job[company]`。
+
+>**NOTE**
+>当PHP遇到`input`字段使用象`jobeet_job[company]`这样的名字时，会将自动将它转换为一个
+>名为`jobeet_job`的数组。
+
+为了让代码看起来更整洁，我们将格式改为`job[%s]`，添加下面的代码添加到`JobeetJobForm`中
+`configure(`)方法尾部：
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    $this->widgetSchema->setNameFormat('job[%s]');
+
+经过修改，浏览器中`company`字段名应该是`job[company]`。现在模拟点击”Preview your job”
+按钮，并传送合法的值到表单：
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->info('3 - Post a Job page')->
+      info('  3.1 - Submit a Job')->
+
+      get('/job/new')->
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'new')->
+      end()->
+
+      click('Preview your job', array('job' => array(
+        'company'      => 'Sensio Labs',
+        'url'          => 'http://www.sensio.com/',
+        'logo'         => sfConfig::get('sf_upload_dir').'/jobs/sensio-labs.gif',
+        'position'     => 'Developer',
+        'location'     => 'Atlanta, USA',
+        'description'  => 'You will work with symfony to develop websites for our customers.',
+        'how_to_apply' => 'Send me an email',
+        'email'        => 'for.a.job@example.com',
+        'is_public'    => false,
+      )))->
+
+      with('request')->begin()->
+        isParameter('module', 'job')->
+        isParameter('action', 'create')->
+      end()
+    ;
+
+通过传送上传文件的决定路径，浏览器同样可以模拟文件上传。
+
+提交表单后, 我们检测当前执行的是否是`create`动作。
+
+表单测试器
+----------
+
+我们刚才提交的表单应该是合法的。你可以使用表单测试器(**form tester**)进行测试：
+
+    [php]
+    with('form')->begin()->
+      hasErrors(false)->
+    end()->
+
+表单测试器有许多方法测试表单当前状态，如错误。
+
+如果你在测试中犯了错，测试没有通过，你可以使用第9天用过的`with(’response’)->~debug|Debug~()`语句。
+但你必须深入研究生成的HTML检查错误信息。这不是很方便。所以我们使用表单测试器，它同样提供
+`debug()`方法，输出相关的表单状态和错误信息：
+
+    [php]
+    with('form')->debug()
+
+重定向测试
+----------
+
+因为表单是合法的，新的招聘信息应该已经发布，用户也应该被重定向(~redirected|Redirection~)到`show`页面：
+
+    [php]
+    isRedirected()->
+    followRedirect()->
+
+    with('request')->begin()->
+      isParameter('module', 'job')->
+      isParameter('action', 'show')->
+    end()->
+
+`isRedirected()`测试页面是否已经重定向，而`followRedirect()`方法跟踪重定向（到达新页面）。
+
+>**NOTE**
+>浏览程序类不能自动跟踪重定向，因为你可能在重定向之前内省对象。
+
+##ORM##测试器
+-------------
+
+最后，我们想测试存储到数据库的招聘信息，并检查`is_activated`字段是否设置成`false`，
+因为用户还没有发布它。
+
+使用另一个**##ORM##测试器（**##ORM## tester**）很容易完成这个测试。因为**##ORM##测试器默认没有加载，我们现在添加它：
+
+<propel>
+    [php]
+    $browser->setTester('propel', 'sfTesterPropel');
+</propel>
+<doctrine>
+    [php]
+    $browser->setTester('doctrine', 'sfTesterDoctrine');
+</doctrine>
+
+##ORM##测试器提供`check()`方法检查数据库中，匹配参数条件的一个或多个对象。
+
+    [php]
+<propel>
+    with('propel')->begin()->
+</propel>
+<doctrine>
+    with('doctrine')->begin()->
+</doctrine>
+      check('JobeetJob', array(
+        'location'     => 'Atlanta, USA',
+        'is_activated' => false,
+        'is_public'    => false,
+      ))->
+    end()
+
+<propel>
+这个条件可以象上面那样是个数组，也可以是带有复杂查询的`Criteria`实例。你可以通过
+设第3个参数为布尔值（默认为`true`）来测试对象是否存，或将其设置为一个整数测试
+匹配对象的数量。
+</propel>
+<doctrine>
+这个条件可以象上面那样是个数组，也可以是带有复杂查询的`Doctrine_Query`实例。你可以通过
+设第3个参数为布尔值（默认为`true`）来测试对象是否存，或将其设置为一个整数测试
+匹配对象的数量。
+</doctrine>
+
+测试错误
+--------
+
+当我们提交合法值说，创建招聘信息的表单工作正常。我们现在测试一下提交不合法数据情况下表单
+的行为：
+
+    [php]
+    $browser->
+      info('  3.2 - Submit a Job with invalid values')->
+
+      get('/job/new')->
+      click('Preview your job', array('job' => array(
+        'company'      => 'Sensio Labs',
+        'position'     => 'Developer',
+        'location'     => 'Atlanta, USA',
+        'email'        => 'not.an.email',
+      )))->
+
+      with('form')->begin()->
+        hasErrors(3)->
+        isError('description', 'required')->
+        isError('how_to_apply', 'required')->
+        isError('email', 'invalid')->
+      end()
+    ;
+
+`hasErrors()`方法可以测试一定数量的错误，这个数量由传递给该方法的整型参数值决定。
+`isError()`方法测试给定字段的错误代码。
+
+>**TIP**
+>在检测提交无效数据(non-valid)的表单行为测试中，我们并没有重新检测整个表单。
+>只是给特定的内容添加了测试。
+
+你也可以通过测试生成的~HTML~的方法来检查包含的错误信息，但是在我们的情况中是
+不需要的，因为我们没有定制表单布局。
+
+现在，我们需要测试预览页面的管理栏功能。当一个招聘信息还没有激活，你可以对它进行
+编辑、删除或发布操作。测试这3个链接，我们需要先建一个招聘信息。这会包含许多复制粘贴。
+因为我不喜欢浪费电子树（啥意思？是不是还是造轮子的事），让我们在`JobeetTestFunctional`类
+中添加一个创建招聘信息的方法：
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function createJob($values = array())
+      {
+        return $this->
+          get('/job/new')->
+          click('Preview your job', array('job' => array_merge(array(
+            'company'      => 'Sensio Labs',
+            'url'          => 'http://www.sensio.com/',
+            'position'     => 'Developer',
+            'location'     => 'Atlanta, USA',
+            'description'  => 'You will work with symfony to develop websites for our customers.',
+            'how_to_apply' => 'Send me an email',
+            'email'        => 'for.a.job@example.com',
+            'is_public'    => false,
+          ), $values)))->
+          followRedirect()
+        ;
+      }
+
+      // ...
+    }
+
+`createJob()`方法创建招聘信息，跟踪重定向，然后返回到浏览器，并且不会中断连续接口（fluent interface）。
+你也可以传送一个值数组，这些值将与一些默认值合并。
+
+Forcing the ~HTTP Method~ of a link
+-----------------------------------
+
+测试”Publish”链接更加简单：
+
+    [php]
+    $browser->info('  3.3 - On the preview page, you can publish the job')->
+      createJob(array('position' => 'FOO1'))->
+      click('Publish', array(), array('method' => 'put', '_with_csrf' => true))->
+
+<propel>
+      with('propel')->begin()->
+</propel>
+<doctrine>
+      with('doctrine')->begin()->
+</doctrine>
+        check('JobeetJob', array(
+          'position'     => 'FOO1',
+          'is_activated' => true,
+        ))->
+      end()
+    ;
+
+如果你记得第10天的时候，我们将”Publish”链接的配置为使用HTTP `~PUT|PUT (HTTP Method)~`方式请求。
+因为浏览器不能理解`PUT`请求，`link_to()`辅助函数将这个链接转换为一个带有
+JavaScript脚本的表单链接。而测试浏览器不能执行JavaScript，我们需要通过`Click()`
+第三个参数，强制使用`PUT`方式。此外，`link_to()`辅助函数还嵌入一个~CSRF~标记（token），
+因为我们第1天已经激活了CSRF保护；`_with_csrf`选项模拟这个标记（token）。
+
+测试”Delete”链接也非常相似：
+
+    [php]
+    $browser->info('  3.4 - On the preview page, you can delete the job')->
+      createJob(array('position' => 'FOO2'))->
+      click('Delete', array(), array('method' => 'delete', '_with_csrf' => true))->
+
+<propel>
+      with('propel')->begin()->
+</propel>
+<doctrine>
+      with('doctrine')->begin()->
+</doctrine>
+        check('JobeetJob', array(
+          'position' => 'FOO2',
+        ), false)->
+      end()
+    ;
+
+Tests as a SafeGuard
+--------------------
+
+当一个招聘信息发布，你就无法再编辑它。即使”Edit”链接不再显示在预览页面，
+让我们为这个需求添加一些测试。
+
+首先，给`createJob()`方法添加另一个参数，允许自动发布招聘信息，同时创建
+`getJobByPosition()`方法，返回给定位置的招聘信息：
+
+    [php]
+    // lib/test/JobeetTestFunctional.class.php
+    class JobeetTestFunctional extends sfTestFunctional
+    {
+      public function createJob($values = array(), $publish = false)
+      {
+        $this->
+          get('/job/new')->
+          click('Preview your job', array('job' => array_merge(array(
+            'company'      => 'Sensio Labs',
+            'url'          => 'http://www.sensio.com/',
+            'position'     => 'Developer',
+            'location'     => 'Atlanta, USA',
+            'description'  => 'You will work with symfony to develop websites for our customers.',
+            'how_to_apply' => 'Send me an email',
+            'email'        => 'for.a.job@example.com',
+            'is_public'    => false,
+          ), $values)))->
+          followRedirect()
+        ;
+
+        if ($publish)
+        {
+          $this->
+            click('Publish', array(), array('method' => 'put', '_with_csrf' => true))->
+            followRedirect()
+          ;
+        }
+
+        return $this;
+      }
+
+<propel>
+      public function getJobByPosition($position)
+      {
+        $criteria = new Criteria();
+        $criteria->add(JobeetJobPeer::POSITION, $position);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+      }
+</propel>
+<doctrine>
+      public function getJobByPosition($position)
+      {
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j')
+          ->where('j.position = ?', $position);
+
+        return $q->fetchOne();
+      }
+</doctrine>
+
+      // ...
+    }
+
+如果招聘信息已经发布，编辑页面必须返回~404|404 Error~状态代码：
+
+    [php]
+    $browser->info('  3.5 - When a job is published, it cannot be edited anymore')->
+      createJob(array('position' => 'FOO3'), true)->
+      get(sprintf('/job/%s/edit', $browser->getJobByPosition('FOO3')->getToken()))->
+
+      with('response')->begin()->
+        isStatusCode(404)->
+      end()
+    ;
+
+但是如果你运行测试，你不会获得期待的结果，因为我们昨天忘记实现这个安全(~security|Security~)设施。
+写测试同时也是发现bug的好方法，因为你需要考虑所有特例(~edge cases|Edge Cases~)。
+
+修复bug非常简单，因为如果招聘信息被激活，我们只需要指向404页面就可以了：
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeEdit(sfWebRequest $request)
+    {
+      $job = $this->getRoute()->getObject();
+      $this->forward404If($job->getIsActivated());
+
+      $this->form = new JobeetJobForm($job);
+    }
+
+这个修复微不足道，但你确定其它所有内容都始终按我们的预期工作吗？你可以打开
+浏览器测试访问编辑页面所有可能的组合。但这里有个更简单的方法：运行你测试套件；
+如果你已经引入了回归（~regression|Regression~），symfony会立刻告诉你。
+
+Back to the Future in a Test
+----------------------------
+
+当一条招聘信息5天内就要过期，或已经过期，用户可以扩展30天有效期，从扩展之日起算。
+
+在（真实）浏览器中测试这个需求并不容易，因为过期日期是招聘信息创建时自动设置为
+未来30天。所以，当访问招聘页面时，扩展有效期的链接并不存在。当然，你可以在数据库
+中hack过期日期，或者让模板一直显示扩展链接，但这样做很麻烦而且很容易出错。你也许
+已经猜到，编写一些测试将可以解决这个问题。
+
+一如既往，我们首先需要给`extend`方法添加一条新路由：
+
+    [yml]
+    # apps/frontend/config/routing.yml
+    job:
+      class:   sfPropelRouteCollection
+      options:
+        model:          JobeetJob
+        column:         token
+        object_actions: { publish: PUT, extend: PUT }
+      requirements:
+        token: \w+
+
+然后，局部模板`_admin`中更新”Extend”链接：
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/_admin.php -->
+    <?php if ($job->expiresSoon()): ?>
+     - <?php echo link_to('Extend', 'job_extend', $job, array('method' => 'put')) ?> for another <?php echo sfConfig::get('app_active_days') ?> days
+    <?php endif; ?>
+
+之后，创建`extend`动作：
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    public function executeExtend(sfWebRequest $request)
+    {
+      $request->checkCSRFProtection();
+
+      $job = $this->getRoute()->getObject();
+      $this->forward404Unless($job->extend());
+
+<propel>
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extended until %s.', $job->getExpiresAt('m/d/Y')));
+</propel>
+<doctrine>
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extended until %s.', date('m/d/Y', strtotime($job->getExpiresAt()))));
+</doctrine>
+
+      $this->redirect($this->generateUrl('job_show_user', $job));
+    }
+
+同我们期待的一样，当有效期被扩展成功后，`JobeetJob`的`extend()`方法会返回`true`，否则返回`false`：
+
+<propel>
+    [php]
+    // lib/model/JobeetJob.php
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function extend()
+      {
+        if (!$this->expiresSoon())
+        {
+          return false;
+        }
+
+        $this->setExpiresAt(time() + 86400 * sfConfig::get('app_active_days'));
+
+        return $this->save();
+      }
+
+      // ...
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJob.class.php
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function extend()
+      {
+        if (!$this->expiresSoon())
+        {
+          return false;
+        }
+
+        $this->setExpiresAt(date('Y-m-d', time() + 86400 * sfConfig::get('app_active_days')));
+
+        $this->save();
+
+        return true;
+      }
+
+      // ...
+    }
+</doctrine>
+
+最后，添加测试脚本：
+
+    [php]
+    $browser->info('  3.6 - A job validity cannot be extended before the job expires soon')->
+      createJob(array('position' => 'FOO4'), true)->
+      call(sprintf('/job/%s/extend', $browser->getJobByPosition('FOO4')->getToken()), 'put', array('_with_csrf' => true))->
+      with('response')->begin()->
+        isStatusCode(404)->
+      end()
+    ;
+
+    $browser->info('  3.7 - A job validity can be extended when the job expires soon')->
+      createJob(array('position' => 'FOO5'), true)
+    ;
+
+    $job = $browser->getJobByPosition('FOO5');
+<propel>
+    $job->setExpiresAt(time());
+</propel>
+<doctrine>
+    $job->setExpiresAt(date('Y-m-d'));
+</doctrine>
+    $job->save();
+
+    $browser->
+      call(sprintf('/job/%s/extend', $job->getToken()), 'put', array('_with_csrf' => true))->
+      with('response')->isRedirected()
+    ;
+
+<propel>
+    $job->reload();
+    $browser->test()->is(
+      $job->getExpiresAt('y/m/d'),
+      date('y/m/d', time() + 86400 * sfConfig::get('app_active_days'))
+    );
+</propel>
+<doctrine>
+    $job->refresh();
+    $browser->test()->is(
+      date('y/m/d', strtotime($job->getExpiresAt())),
+      date('y/m/d', time() + 86400 * sfConfig::get('app_active_days'))
+    );
+</doctrine>
+
+这个测试脚本引入了一些新内容：
+
+ * `call()`方法使用不同与`GET`或`POST`方式，调取URL 
+<propel>
+ * 动作更新招聘信息后，我们需要使用`$job->reload()`重新载入当前对象。
+</propel>
+<doctrine>
+ * 动作更新招聘信息后，我们需要使用`$job->refresh()`重新载入当前对象。
+</doctrine>
+ * 在脚本结尾处，我们使用嵌入的`lime`对象，直接测试过期日期。 
+
+表单安全
+--------
+
+### Form Serialization Magic!
+
+##ORM##表单非常容易使用，因为它们自动做许多工作。例如将一个表单存如数据库只需要
+调用`$form->save()`。
+
+它是如何工作的呢？`save()`方法主要进行如下几个步骤：
+
+ * 开始事务处理 
+ * 加工提交的数据（通过调用`updateCOLUMNColumn()`方法，如果它存在的话） 
+ * 调用##ORM##对象`fromArray()`方法更新字段值 
+ * 保存对象到数据库 
+ * 提交事务处理 
+
+### 内置安全特性
+
+`fromArray()`方法带有一个值数组，并更新相应字段的值。这会产生安全问题吗？如何处理
+一个人给没有授权的字段提交值？比如，我可以强制标`token`字段吗？
+
+让我们写一个测试模拟提交`token`字段：
+
+    [php]
+    // test/functional/frontend/jobActionsTest.php
+    $browser->
+      get('/job/new')->
+      click('Preview your job', array('job' => array(
+        'token' => 'fake_token',
+      )))->
+
+      with('form')->begin()->
+        hasErrors(7)->
+        hasGlobalError('extra_fields')->
+      end()
+    ;
+
+当提交这个表单时，会出现`extra_fields`全局错误。因为默认情况下，表单不允许
+提交附加的字段。这也是为什么表单字段必须有对应的验证器的原因。
+
+>**TIP**
+>你也可以使用象Firefox Web Developer Toolbar这样舒服的浏览器工具，提交附加字段。
+
+你可以将`allow_extra_fields`设置为`true`，从而绕过安全措施：
+
+    [php]
+    class MyForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->validatorSchema->setOption('allow_extra_fields', true);
+      }
+    }
+
+这个测试会通过，但是`token`的值已经被过滤掉了。所以你始终无法绕过安全措施。
+但如果你确信要得到这个值，将`filter_extra_fields`设置成`false`：
+
+    [php]
+    $this->validatorSchema->setOption('filter_extra_fields', false);
+
+>**NOTE**
+>这里只是个示范。你现在可以从Jobeet项目中移除它们，因为测试不需要验证symfony的功能。
+
+### ~XSS~和~CSRF~保护
+
+第1天的时候，我们用下面的命令行创建`frontend`程序：
+
+    $ php symfony generate:app --escaping-strategy=on
+       ➥ --csrf-secret=Unique$ecret frontend
+
+`--escaping-strategy`选项用于激活XSS选项。这意味着默认情况下，模板中所有的变量
+都已经被转义。如果你尝试在工作描述中提交一些HTML标记，你会注意到，当显示在页面的时候，
+HTML标记并没有被并没有被解释执行，只是作为纯文本输出。
+
+`--csrf-secret`选项用于激活CSRF保护。当你使用这个选项时，所有表单中会被嵌入`_csrf_token`隐藏字段。
+
+>**TIP**
+>转义策略和CSRF保密可以随时通过编辑`apps/frontend/config/settings.yml`配置文件更改。
+>至于`databases.yml`文件这个设置可以按不同的环境，分别配置：
+>
+>     [yml]
+>     all:
+>       .settings:
+>         # Form security secret (CSRF protection)
+>         csrf_secret: Unique$ecret
+>
+>         # Output escaping settings
+>         escaping_strategy: on
+>         escaping_method:   ESC_SPECIALCHARS
+
+Maintenance Tasks
+-----------------
+
+虽然symfony是一个网页框架，但它带有命令行(~command line|Command Line~)工具。
+你已经使用它在项目和程序中了创建默认的目录结构，也为模型生成了各种各样的文件。
+添加一个新的命令(~task|Tasks~ )非常轻松，因为命令行使用的工具，
+都包装在一个框架中。
+
+当用户创建一条招聘信息，他必须激活它并在线发布。否则数据库中将堆满过期的招聘信息。
+让我们创建一个命令来移除这些过期数据。这个命令必须有定时运行。
+
+
+    [php]
+    // lib/task/JobeetCleanupTask.class.php
+    class JobeetCleanupTask extends sfBaseTask
+    {
+      protected function configure()
+      {
+        $this->addOptions(array(
+<doctrine>
+          new sfCommandOption('application', null, sfCommandOption::PARAMETER_REQUIRED, 'The application', 'frontend'),
+</doctrine>
+          new sfCommandOption('env', null, sfCommandOption::PARAMETER_REQUIRED, 'The environement', 'prod'),
+          new sfCommandOption('days', null, sfCommandOption::PARAMETER_REQUIRED, '', 90),
+        ));
+
+        $this->namespace = 'jobeet';
+        $this->name = 'cleanup';
+        $this->briefDescription = 'Cleanup Jobeet database';
+
+        $this->detailedDescription = <<<EOF
+    The [jobeet:cleanup|INFO] task cleans up the Jobeet database:
+
+      [./symfony jobeet:cleanup --env=prod --days=90|INFO]
+    EOF;
+      }
+
+      protected function execute($arguments = array(), $options = array())
+      {
+        $databaseManager = new sfDatabaseManager($this->configuration);
+
+<propel>
+        $nb = JobeetJobPeer::cleanup($options['days']);
+        $this->logSection('propel', sprintf('Removed %d stale jobs', $nb));
+</propel>
+<doctrine>
+        $nb = Doctrine::getTable('JobeetJob')->cleanup($options['days']);
+        $this->logSection('doctrine', sprintf('Removed %d stale jobs', $nb));
+</doctrine>
+      }
+    }
+
+这个命令在`configure()`方法中配置。每个命令必须有唯一的名字（`namespace`:`name`），
+并且可以携带参数和选项。
+
+>**TIP**
+>浏览symfony内建命令(`lib/task/`)可以获得更多使用范例。
+
+`jobeet:cleanup`命令定义2个选项：`--env`和`--days`，它们都有合理的默认值。
+
+运行方式与symfony内建的命令运行方式相似：
+
+
+    $ php symfony jobeet:cleanup --days=10 --env=dev
+
+<propel>
+一如既往，`JobeetJobPeer`类中的数据库清理代码已经被剔除：
+
+    [php]
+    // lib/model/JobeetJobPeer.php
+    static public function cleanup($days)
+    {
+      $criteria = new Criteria();
+      $criteria->add(self::IS_ACTIVATED, false);
+      $criteria->add(self::CREATED_AT, time() - 86400 * $days, Criteria::LESS_THAN);
+
+      return self::doDelete($criteria);
+    }
+
+`doDelete()`方法移除匹配指定`Criteria`对象的数据库记录。它也可以携带包含主键的数组。
+</propel>
+<doctrine>
+一如既往，`JobeetJobTable`类中的数据库清理代码已经被剔除：
+
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    public function cleanup($days)
+    {
+      $q = $this->createQuery('a')
+        ->delete()
+        ->andWhere('a.is_activated = ?', 0)
+        ->andWhere('a.created_at < ?', date('Y-m-d', time() - 86400 * $days));
+
+      return $q->execute();
+    }
+</doctrine>
+
+>**NOTE**
+>symfony命令在它们的环境中运行良好，当命令成功时它们返回值。你可以在命令结束时，
+>通过明确返回一个整数的方式强制返回值。
+
+明天见
+------
+
+测试是symfony理念和工具的核心。今天我们又一次学习了如何利用symfony工具，使开发过程
+变得轻松、快速，更重要的是安全。
+
+symfony表单框架不仅仅提供了控件和验证器：它给你提供了简单的测试方法，确保你的表单，
+在默认情况下是安全的。
+
+Our tour of great symfony features do not end today. 明天，我们将为Jobeet创建后台程序。
+创建后台界面是很多网站项目必须做的事，Jobeet也不例外。创建一个后台需要很多的工作量,
+但是Jobeet不需要. 我们如何在一个小时内完成这个界面？很简单，我们使用symfony的管理生成器框架。
+Until then, take care.
+
+
+__ORM__
