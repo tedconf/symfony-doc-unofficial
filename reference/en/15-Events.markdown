@@ -247,7 +247,7 @@ parsed. This event can be used to filter the options passed by the user.
 | `method`    | The name of the called missing method
 | `arguments` | The arguments passed to the method
 
-The `configuration.method_not_found` event is notified when a method does not
+The `configuration.method_not_found` event is notified when a method is not
 defined in the `sfProjectConfiguration` class. By listening to this event, a
 method can be added to the class, without using inheritance.
 
@@ -265,7 +265,7 @@ method can be added to the class, without using inheritance.
 | `method`    | The name of the called missing method
 | `arguments` | The arguments passed to the method
 
-The `component.method_not_found` event is notified when a method does not
+The `component.method_not_found` event is notified when a method is not
 defined in the `sfComponent` class. By listening to this event, a method can
 be added to the class, without using inheritance.
 
@@ -309,7 +309,7 @@ The `controller.change_action` is notified just before an action is executed.
 | `method`    | The name of the called missing method
 | `arguments` | The arguments passed to the method
 
-The `controller.method_not_found` event is notified when a method does not
+The `controller.method_not_found` event is notified when a method is not
 defined in the `sfController` class. By listening to this event, a method can
 be added to the class, without using inheritance.
 
@@ -417,7 +417,7 @@ are initialized.
 | `method`    | The name of the called missing method
 | `arguments` | The arguments passed to the method
 
-The `request.method_not_found` event is notified when a method does not
+The `request.method_not_found` event is notified when a method is not
 defined in the `sfRequest` class. By listening to this event, a method can be
 added to the class, without using inheritance.
 
@@ -435,7 +435,7 @@ added to the class, without using inheritance.
 | `method`    | The name of the called missing method
 | `arguments` | The arguments passed to the method
 
-The `response.method_not_found` event is notified when a method does not
+The `response.method_not_found` event is notified when a method is not
 defined in the `sfResponse` class. By listening to this event, a method can be
 added to the class, without using inheritance.
 
@@ -519,7 +519,7 @@ during a request.
 | `method`    | The name of the called missing method
 | `arguments` | The arguments passed to the method
 
-The `user.method_not_found` event is notified when a method does not defined
+The `user.method_not_found` event is notified when a method is not defined
 in the `sfUser` class. By listening to this event, a method can be added to
 the class, without using inheritance.
 
