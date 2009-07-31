@@ -16,8 +16,8 @@ databases.yml設定ファイル
 >デフォルトの設定をオーバーライドできます。
 
 最初の章で説明したように、`databases.yml`ファイルは
-[**環境を認識し**](#chapter_03-Configuration-File-Principles_sub_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)の恩恵を受け、
+[**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、
 [**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納します。
 
 `databases.yml`で説明したそれぞれの接続はデータベースオブジェクトを設定するために

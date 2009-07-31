@@ -13,8 +13,8 @@ factories.yml設定ファイル
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 始めの章で説明したように、`factories.yml`ファイルは
-[**環境を認識し**](#chapter_03-Configuration-File-Principles_sub_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)の恩恵を受け、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)をインクルードできます。
+[**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)をインクルードできます。
 
 `factories.yml`設定ファイルは名前付きのファクトリのリストを含みます:
 

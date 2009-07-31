@@ -31,7 +31,7 @@ cache.yml設定ファイル
 >選ぶ方法が決まります。
 
 はじめの章で説明したように、`cache.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)の恩恵を受け、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、
 [**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
 
 >**NOTE**

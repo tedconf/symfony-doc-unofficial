@@ -9,8 +9,8 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 はじめの章で検討されたように、`settings.yml`ファイルは
-[**環境を認識し**](#chapter_03-Configuration-File-Principles_sub_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)から恩恵を受けます。
+[**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を受けます。
 
 それぞれの環境は2つのサブセクション: `.actions`と`.settings`を持ちます。
 共通ページ用にレンダリングされるデフォルトのアクション以外は、

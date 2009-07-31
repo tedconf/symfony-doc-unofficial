@@ -16,8 +16,8 @@ symfonyフレームワークはアプリケーション固有の設定のため�
 [プロジェクトのディレクトリ](#chapter_03-Configuration-Files-Principles_sub_directories)にアクセスする権限を提供するからです。
 
 最初の章で説明したように、`app.yml`ファイルは
-[**環境を認識し**](#chapter_03-Configuration-File-Principles_sub_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)の恩恵を受けます。
+[**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受けます。
 
 `app.yml`設定ファイルは環境に基づいて変化する設定(例えばAPIキー)
 もしくは時間をかけて進化する可能性のある設定(例えばEメールアドレス)を定義するのにふさわしい場所です。

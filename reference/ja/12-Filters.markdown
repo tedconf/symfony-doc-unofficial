@@ -8,7 +8,7 @@ filters.yml設定ファイル
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 最初の章で説明したように、`filters.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)から恩恵を浮け、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を浮け、
 [**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含めることができます。
 
 `filters.yml`設定ファイルは名前付きフィルタ定義のリストを

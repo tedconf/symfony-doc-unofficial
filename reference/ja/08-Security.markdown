@@ -18,7 +18,7 @@ symfonyアプリケーション用の認証と認可を記述します。
       is_secure: off
 
 はじめの章で説明したように、`security.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-File-Principles_sub_configuration_cascade)から恩恵を受け、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を受け、
 [**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
 
 デフォルトのアプリケーションの設定はモジュールの`config/`ディレクトリで
