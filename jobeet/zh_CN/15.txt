@@ -1,0 +1,387 @@
+第十五天：Feed
+==============
+
+昨天，你开始编写了第一个自己的程序。现在不要停。随着对symfony了解的增加，
+你可以给程序添加更多的功能。可以将它共享到社区。
+
+我们今天要学习一些全新的内容。
+
+如果你找工作，你可能希望当有新工作发布时马上被通知。隔一个小时检查一下网站
+不是很方便，为了让用户了解最新的工作信息，我们今天将添加几个feed。
+
+Formats
+-------
+
+symfony框架自身支持~formats|Formats~和~mime-types|Mime Types~。这意味着相同的
+模型和控制器基于请求的格式不同，可以使用不同的模板。HTML是symfony默认的格式，
+但symfony支持其它几种方便的格式，如txt、 js、css、 json、xml、rdf 或 atom。
+
+可以通过~request|HTTP Request~对象的`setRequestFormat()`方法设置格式：
+
+    [php]
+    $request->setRequestFormat('xml');
+
+但是大部分时候，格式是嵌在URL里的。在我们的案例中，如果路由中使用了特殊的~`sf_format`~
+变量，symfony会为你设置它。拿工作列表来说，它的URL是：
+
+    http://jobeet.localhost/frontend_dev.php/job
+
+这个URL等价于：
+
+    http://jobeet.localhost/frontend_dev.php/job.html
+
+两个URL是等价的，因为这个路由由`sfPropelRouteCollection`类生成，并将`sf_format`作为扩展名。
+你可以自己运行`app:routes`查看一下：
+
+![Cli](http://www.symfony-project.org/images/jobeet/1_2/15/cli.png)
+
+Feeds
+-----
+
+### Latest Jobs Feed
+
+支持不同的格式象创建不同的模板一样容易。现在我们给最新的招聘信息创建一个
+[Atom feed](http://en.wikipedia.org/wiki/Atom_(standard))，现在创建`indexSuccess.atom.php`模板：
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.atom.php -->
+    <?xml version="1.0" encoding="utf-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Jobeet</title>
+      <subtitle>Latest Jobs</subtitle>
+      <link href="" rel="self"/>
+      <link href=""/>
+      <updated></updated>
+      <author><name>Jobeet</name></author>
+      <id>Unique Id</id>
+
+      <entry>
+        <title>Job title</title>
+        <link href="" />
+        <id>Unique id</id>
+        <updated></updated>
+        <summary>Job description</summary>
+        <author><name>Company</name></author>
+      </entry>
+    </feed>
+
+>**SIDEBAR**
+>模板命名
+>
+>因为`html`是web程序最普遍使用的格式，所以我们经常会在在模板中省略它。比如`indexSuccess.php`
+>和`indexSuccess.html.php`是等同的，如果目录下同时存在这两个文件，symfony会使用最先发现的那个。
+>
+>为什么默认模板名称以`Success`为后缀？动作可以通过返回值，决定使用哪个模板显示。
+>如果动作没有返回，那么就相当于执行了下面的代码：
+>
+>     [php]
+>     return sfView::SUCCESS; // == 'Success'
+>
+>如果你想改变后缀，只需要返回其它的值
+>
+>     [php]
+>     return sfView::ERROR; // == 'Error'
+>
+>     return 'Foo';
+>
+>你也可以通过`setTemplate()`方法改变模板的名称：
+>
+>     [php]
+>     $this->setTemplate('foo');
+
+默认地情况下，symfony依据格式的不同，改变响应的`~Content-Type~`，对所有非HTML的格式，
+将不使用layout模板。对于Atom feed，symfony将`Content-Type`设置为
+`application/atom+xml; charset=utf-8`。
+
+在Jobeet页面底部，修改feed链接：
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <li class="feed">
+      <a href="<?php echo url_for('@job?sf_format=atom') ?>">Full feed</a>
+    </li>
+
+内部URI和招聘列表的一样，带有`sf_format`变量。
+
+添加`<link>`标记到layout的`<head>`中：
+
+
+    [php]
+    <!-- apps/frontend/templates/layout.php -->
+    <link rel="alternate" type="application/atom+xml" title="Latest Jobs"
+      href="<?php echo url_for('@job?sf_format=atom', true) ?>" />
+
+`href`属性使用了一个绝对~URL (Absolute)~，感谢`url_for()`的第2个参数。
+
+我们来更新Atom模板的头部：
+
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.atom.php -->
+    <title>Jobeet</title>
+    <subtitle>Latest Jobs</subtitle>
+    <link href="<?php echo url_for('@job?sf_format=atom', true) ?>" rel="self"/>
+    <link href="<?php echo url_for('@homepage', true) ?>"/>
+<propel>
+    <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', JobeetJobPeer::getLatestPost()->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+    <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime(Doctrine::getTable('JobeetJob')->getLatestPost()->getCreatedAt())) ?></updated>
+</doctrine>
+    <author>
+      <name>Jobeet</name>
+    </author>
+    <id><?php echo sha1(url_for('@job?sf_format=atom', true)) ?></id>
+
+<propel>
+注意`getCreatedAt()`的参数`U`，可以返回时间戳。创建`getLatestPost()`获取最新发布的招聘信息：
+</propel>
+<doctrine>
+注意使用`strtotime()`处理`created_at`，可以返回时间戳。创建`getLatestPost()`获取最新发布的招聘信息：
+method:
+</doctrine>
+
+<propel>
+    [php]
+    // lib/model/JobeetJobPeer.php
+    class JobeetJobPeer extends BaseJobeetJobPeer
+    {
+      static public function getLatestPost()
+      {
+        $criteria = new Criteria();
+        self::addActiveJobsCriteria($criteria);
+
+        return JobeetJobPeer::doSelectOne($criteria);
+      }
+
+      // ...
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      public function getLatestPost()
+      {
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j');
+        $this->addActiveJobsQuery($q);
+
+        return $q->fetchOne();
+      }
+
+      // ...
+    }
+</doctrine>
+
+feed各项通过下面代码生成：
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.atom.php -->
+    <?php use_helper('Text') ?>
+    <?php foreach ($categories as $category): ?>
+      <?php foreach ($category->getActiveJobs(sfConfig::get('app_max_jobs_on_homepage')) as $job): ?>
+        <entry>
+          <title>
+            <?php echo $job->getPosition() ?> (<?php echo $job->getLocation() ?>)
+          </title>
+          <link href="<?php echo url_for('job_show_user', $job, true) ?>" />
+          <id><?php echo sha1($job->getId()) ?></id>
+<propel>
+          <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', $job->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+          <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime($job->getCreatedAt())) ?></updated>
+</doctrine>
+          <summary type="xhtml">
+           <div xmlns="http://www.w3.org/1999/xhtml">
+             <?php if ($job->getLogo()): ?>
+               <div>
+                 <a href="<?php echo $job->getUrl() ?>">
+                   <img src="http://<?php echo $sf_request->getHost().'/uploads/jobs/'.$job->getLogo() ?>"
+                     alt="<?php echo $job->getCompany() ?> logo" />
+                 </a>
+               </div>
+             <?php endif; ?>
+
+             <div>
+               <?php echo simple_format_text($job->getDescription()) ?>
+             </div>
+
+             <h4>How to apply?</h4>
+
+             <p><?php echo $job->getHowToApply() ?></p>
+           </div>
+          </summary>
+          <author>
+            <name><?php echo $job->getCompany() ?></name>
+          </author>
+        </entry>
+      <?php endforeach; ?>
+    <?php endforeach; ?>
+
+请求对象（`$sf_request`）的`getHost()`方法，返回当前主机名，用来生成logo的绝对链接很方便。
+
+![Feed](http://www.symfony-project.org/images/jobeet/1_2/15/feed.png)
+
+>**TIP**
+>调试feed可以使用[`curl`](http://curl.haxx.se/)和[`wget`](http://www.gnu.org/software/wget/)
+>命令行工具，非常容易，因为你可以看到feed实际内容。
+
+### Latest Jobs in a Category Feed
+
+Jobeet的目的之一就是让人们找到针对性更强的工作。所以，我们需要为每个分类创建一个~feed|Feeds~。
+
+首先，更新`category`的路由，添加对不同格式的支持：
+
+    [yml]
+    // apps/frontend/config/routing.yml
+    category:
+      url:     /category/:slug.:sf_format
+      class:   sfPropelRoute
+      param:   { module: category, action: show, sf_format: html }
+      options: { model: JobeetCategory, type: object }
+      requirements:
+        sf_format: (?:html|atom)
+
+现在，`category`路由可以解析`html`和`atom`格式了。更新模板中feed链接：
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <div class="feed">
+      <a href="<?php echo url_for('category', array('sf_subject' => $category, 'sf_format' => 'atom')) ?>">Feed</a>
+    </div>
+
+    <!-- apps/frontend/modules/category/templates/showSuccess.php -->
+    <div class="feed">
+      <a href="<?php echo url_for('category', array('sf_subject' => $category, 'sf_format' => 'atom')) ?>">Feed</a>
+    </div>
+
+最后一步，创建`showSuccess.atom.php`模板。因为在这个feed中同样要显示招聘信息列表，
+我们需要重构一下代码，将生成feed各项的代码写入`_list.atom.php`局部模板。同模板一样，
+局部模板也是特殊格式的。
+
+    [php]
+    <!-- apps/frontend/job/templates/_list.atom.php -->
+    <?php use_helper('Text') ?>
+
+    <?php foreach ($jobs as $job): ?>
+      <entry>
+        <title><?php echo $job->getPosition() ?> (<?php echo $job->getLocation() ?>)</title>
+        <link href="<?php echo url_for('job_show_user', $job, true) ?>" />
+        <id><?php echo sha1($job->getId()) ?></id>
+<propel>
+          <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', $job->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+          <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime($job->getCreatedAt())) ?></updated>
+</doctrine>
+        <summary type="xhtml">
+         <div xmlns="http://www.w3.org/1999/xhtml">
+           <?php if ($job->getLogo()): ?>
+             <div>
+               <a href="<?php echo $job->getUrl() ?>">
+                 <img src="http://<?php echo $sf_request->getHost().'/uploads/jobs/'.$job->getLogo() ?>"
+                   alt="<?php echo $job->getCompany() ?> logo" />
+               </a>
+             </div>
+           <?php endif; ?>
+
+           <div>
+             <?php echo simple_format_text($job->getDescription()) ?>
+           </div>
+
+           <h4>How to apply?</h4>
+
+           <p><?php echo $job->getHowToApply() ?></p>
+         </div>
+        </summary>
+        <author>
+          <name><?php echo $job->getCompany() ?></name>
+        </author>
+      </entry>
+    <?php endforeach; ?>
+
+你可以使用`_list.atom.php`局部模板，简化feed模板：
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.atom.php -->
+    <?xml version="1.0" encoding="utf-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Jobeet</title>
+      <subtitle>Latest Jobs</subtitle>
+      <link href="<?php echo url_for('@job?sf_format=atom', true) ?>" rel="self"/>
+      <link href="<?php echo url_for('@homepage', true) ?>"/>
+<propel>
+      <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', JobeetJobPeer::getLatestPost()->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+      <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime(Doctrine::getTable('JobeetJob')->getLatestPost()->getCreatedAt())) ?></updated>
+</doctrine>
+      <author>
+        <name>Jobeet</name>
+      </author>
+      <id><?php echo sha1(url_for('@job?sf_format=atom', true)) ?></id>
+
+    <?php foreach ($categories as $category): ?>
+      <?php include_partial('job/list', array('jobs' => $category->getActiveJobs(sfConfig::get('app_max_jobs_on_homepage')))) ?>
+    <?php endforeach; ?>
+    </feed>
+
+最后，创建`showSuccess.atom.php`模板：
+
+    [php]
+    <!-- apps/frontend/modules/category/templates/showSuccess.atom.php -->
+    <?xml version="1.0" encoding="utf-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Jobeet (<?php echo $category ?>)</title>
+      <subtitle>Latest Jobs</subtitle>
+      <link href="<?php echo url_for('category', array('sf_subject' => $category, 'sf_format' => 'atom'), true) ?>" rel="self" />
+      <link href="<?php echo url_for('category', array('sf_subject' => $category), true) ?>" />
+<propel>
+      <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', $category->getLatestPost()->getCreatedAt('U')) ?></updated>
+</propel>
+<doctrine>
+      <updated><?php echo gmstrftime('%Y-%m-%dT%H:%M:%SZ', strtotime($category->getLatestPost()->getCreatedAt())) ?></updated>
+</doctrine>
+      <author>
+        <name>Jobeet</name>
+      </author>
+      <id><?php echo sha1(url_for('category', array('sf_subject' => $category), true)) ?></id>
+
+      <?php include_partial('job/list', array('jobs' => $pager->getResults())) ?>
+    </feed>
+
+在主feed中，需要加入最新招聘信息的日期：
+
+    [php]
+<propel>
+    // lib/model/JobeetCategory.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetCategory.class.php
+</doctrine>
+    class JobeetCategory extends BaseJobeetCategory
+    {
+      public function getLatestPost()
+      {
+        $jobs = $this->getActiveJobs(1);
+
+        return $jobs[0];
+      }
+
+      // ...
+    }
+
+![Category Feed](http://www.symfony-project.org/images/jobeet/1_2/15/category_feed.png)
+
+明天见
+------
+
+与许多symfony功能一样，symfony的格式支持可以让你轻松完成网站feed的添加。
+
+今天，我们已经提高了求职者体验。明天，我们将看到如何通过Web Service功能，
+使招聘信息有更多展示机会。
+
+__ORM__

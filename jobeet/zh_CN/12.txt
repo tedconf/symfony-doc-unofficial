@@ -1,0 +1,1168 @@
+第十二天：管理程序生成器
+========================
+
+经过昨天的修改，Jobeet前台（frontend）程序已经可以满足招聘和求职者的需要。接下来
+我们讨论Jobeet后台（backend）程序。
+
+今天，我们的目标是用一小时时间，给jobeet开发一个完整的后台界面。这都要感谢symfony
+的~admin generator|Admin Generator~（管理程序生成器，下面简称AG）提供的强大功能。
+
+创建后台
+--------
+
+我们首先要创建后台(~backend|Backend~)程序，你应该还记得如何使用`generate:app`来
+创建新程序：
+
+    $ php symfony generate:app --escaping-strategy=on
+      ➥ --csrf-secret=UniqueSecret1 backend
+
+需要说明的是，虽然后台程序只供jobeet管理员使用，但是我们仍然使用了symfony所有
+内建安全特性。
+
+>**TIP**
+>If you want to use special characters in the password, like a dollar sign
+>(`$`) for instance, you need to properly escape them on the command line:
+>
+>     $ php symfony generate:app --csrf-secret=Unique\$ecret backend
+
+现在后台程序已经可以使用了，http://jobeet.localhost/backend.php用于生产(`prod`)环境，
+http://jobeet.localhost/backend_dev.php用于开发(`dev`)环境。
+
+>**NOTE**
+>当生成前台程序时，给生产环境生成的前端控制器为index.php。因为在同一目录中只能有一个
+>`index.php`文件，所以symfony会将`index.php`赋予最先生成的程序，之后创建的程序前端
+>控制器则以程序名命名。
+
+现在，如果你尝试用propel:data-load重新导入测试数据的话，它不会正常工作。因为
+`JobeetJob::save()`方法需要从前台程序访问~`app.yml`~配置文件。而现在我们有两个程序，
+symfony会使用它最先找到程序——后台程序。
+
+我们可以通过另一种方式让`JobeetJob::save()`使用正确的`app.yml`配置，通过第8天的学习我们知道，
+yml配置是可以分为不同的级别。如果将`apps/frontend/config/app.yml`移动到`config/app.yml`，
+那么`app.yml`便成为程序级的配置，可以被所有程序共享，从而解决这个问题。因为AG中将广泛地
+用到model类，因此我们也需要`app.yml`中的变量。
+
+>**TIP**
+>`propel:data-load`命令拥有`--application`选项，可以为data-load指定目标程序：
+>
+>     $ php symfony propel:data-load --application=frontend
+
+后台模块
+--------
+
+前台程序中创建模块时，我们使用`propel:generate-module`命令，生成一个基于模型类的
+基本的~CRUD~模块。在后台程序中创建模块，我们使用`propel:generate-admin`命令，这个命令
+可以为一个model类生成完整的后台界面:
+
+    $ php symfony propel:generate-admin backend JobeetJob --module=job
+    $ php symfony propel:generate-admin backend JobeetCategory
+       ➥ --module=category
+
+上面两个命令为`JobeetJob`类和`JobeetCategory`类分别创建`job`和`category`两个模块。
+
+这里的`--module`选项作用是，使用指定的模块名称替换自动生成的默认名称（如果没有指定，
+`JobeetJob`类将默认生成名称为`jobeet_job`模块，指定后为`job`）。
+
+这个命令同时会为每个模块生成一个定制的路由规则：
+
+    [yml]
+    # apps/backend/config/routing.yml
+    jobeet_job:
+      class: sfPropelRouteCollection
+      options:
+        model:                JobeetJob
+        module:               job
+        prefix_path:          job
+        column:               id
+        with_wildcard_routes: true
+
+我们发现路由规则中class项使用`sfPropelRouteCollection`类，这并不不奇怪，因为管理界面
+主要目的是管理模型对象。
+
+路由配置中还定义了一些我们以前没有见过的选项：
+
+  * `prefix_path`:         为生成的路由规则定义前缀路径（例如，edit页面类似于`/job/1/edit`） 
+  * `column`:              定义用在URL中的数据表字段，用于引用一个对象。 
+  * `with_wildcard_routes`:与标准的CRUD相比，管理界面有更多的操作，这个选项可以不编辑路由的情况下，
+                           定义更多对象和动作集。 
+
+>**TIP**
+>我们可以使用help参数查看命令的帮助信息。
+>
+>     $ php symfony help propel:generate-admin
+>
+>它将显示所有的参数、选项和例子。
+
+Backend Look and Feel
+---------------------
+
+你马上就可以使用生成的模块：
+
+    http://jobeet.localhost/backend_dev.php/job
+    http://jobeet.localhost/backend_dev.php/category
+
+与前几天生成的简单模块相比，管理模块有更多的功能。即使我们一行PHP代码也不写，
+仍然可以得打功能强大的模块：
+
+  * 对象列表是分页显示的 
+  * 这个列表可排序 
+  * 这个列表可筛选 
+  * 对象可以被创建, 编辑和删除 
+  * 表单可以验证 
+  * 选中的这些对象可以批量删除
+  * **Flash messages**给用户即时的消息反馈
+  * 还有很多… 
+
+admin generator提供创建后台界面需要的所有功能。
+
+为了获得良好的用户体验，后台默认layout可以自定义。我们给后台界面添加了一个
+简单的导航栏，方便在job和category之间切换。用
+
+下面的代码替换默认`~layout|Layout~.php`内容：
+
+    [php]
+    // apps/backend/templates/layout.php
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+      <head>
+        <title>Jobeet Admin Interface</title>
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <?php use_stylesheet('admin.css') ?>
+        <?php include_javascripts() ?>
+        <?php include_stylesheets() ?>
+      </head>
+      <body>
+        <div id="container">
+          <div id="header">
+            <h1>
+              <a href="<?php echo url_for('@homepage') ?>">
+                <img src="/images/logo.jpg" alt="Jobeet Job Board" />
+              </a>
+            </h1>
+          </div>
+
+          <div id="menu">
+            <ul>
+              <li>
+<propel>
+                <?php echo link_to('Jobs', '@jobeet_job') ?>
+</propel>
+<doctrine>
+                <?php echo link_to('Jobs', '@jobeet_job_job') ?>
+</doctrine>
+              </li>
+              <li>
+<propel>
+                <?php echo link_to('Categories', '@jobeet_category') ?>
+</propel>
+<doctrine>
+                <?php echo link_to('Categories', '@jobeet_category_category') ?>
+</doctrine>
+              </li>
+            </ul>
+          </div>
+
+          <div id="content">
+            <?php echo $sf_content ?>
+          </div>
+
+          <div id="footer">
+            <img src="/images/jobeet-mini.png" />
+            powered by <a href="http://www.symfony-project.org/">
+            <img src="/images/symfony.gif" alt="symfony framework" /></a>
+          </div>
+        </div>
+      </body>
+    </html>
+
+同前台一样，我们给后台准备了`admin.css`文件。这个文件已经在第四天被安装在`web/css`目录下了。
+
+![The admin generator look and feel](http://www.symfony-project.org/images/jobeet/1_2/12/look_and_feel.png)
+
+最后在`routing.yml`修改后台默认主页:
+
+    [yml]
+    # apps/backend/config/routing.yml
+    homepage:
+      url:   /
+      param: { module: job, action: index }
+
+symfony缓存
+-----------
+
+如果你已经迫不及待地打开了`apps/backend/modules/`目录中的文件，你会惊奇的
+发现`/templates`目录中竟然没有任何模板文件， `actions.class.php`文件中也没有
+任何动作：
+
+    [php]
+    // apps/backend/modules/job/actions/actions.class.php
+    require_once dirname(__FILE__).'/../lib/jobGeneratorConfiguration.class.php';
+    require_once dirname(__FILE__).'/../lib/jobGeneratorHelper.class.php';
+
+    class jobActions extends autoJobActions
+    {
+    }
+
+什么都没有，那它是如何工作的？其实，如果你仔细观察就会注意到`jobActions`继承了
+`autoJobActions`类（以前都是`sfActions`类）。`autoJobActions`类由symfony自动生成，
+在`cache/backend/dev/modules/autoJob/`目录下，它包含后台使用的“真正”模块（模板和动作）：
+
+    [php]
+    // cache/backend/dev/modules/autoJob/actions/actions.class.php
+    class autoJobActions extends sfActions
+    {
+      public function preExecute()
+      {
+        $this->configuration = new jobGeneratorConfiguration();
+
+        if (!$this->getUser()->hasCredential(
+          $this->configuration->getCredentials($this->getActionName())
+        ))
+        {
+
+    // ...
+
+我们对admin generator这种工作方式可能似曾相识，事实上，它与model和form类非常相似，
+symfony基于`schema.yml`文件内容生成model类和form类。admin generator中的模块可以在
+`config/generator.yml`中配置，下面是默认文件：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    generator:
+      class: sfPropelGenerator
+      param:
+        model_class:           JobeetJob
+        theme:                 admin
+        non_verbose_templates: true
+        with_show:             false
+        singular:              ~
+        plural:                ~
+        route_prefix:          jobeet_job
+<propel>
+        with_propel_route:     1
+</propel>
+<doctrine>
+        with_doctrine_route:   1
+</doctrine>
+
+        config:
+          actions: ~
+          fields:  ~
+          list:    ~
+          filter:  ~
+          form:    ~
+          edit:    ~
+          new:     ~
+
+每次更新`generator.yml`，symfony都会重新生成cache。我们今天将看到，自定义管理模块
+是件非常简单、快速而有意思的事情。
+
+>**NOTE**
+>只有在开发环境里才会自动重新生成~cache|Cache~文件。在生成环境中，你需要通过
+>`cache:clear`手动清空。
+
+后台配置
+--------
+
+管理模块可以通过编辑`generator.yml`配置文件中的`config`键来配置。配置由7部分组成：
+
+  * `actions`:动作默认配置，建立在列表和表单上。 
+  * `fields`: 字段默认配置。 
+  * `list`:   列表配置。 
+  * `filter`: 过滤配置。 
+  * `form`:   new/edit 表单配置。 
+  * `edit`:   edit页特殊配置。 
+  * `new`:    new页特殊配置。 
+
+让我们开始配置吧。
+
+Title Configuration
+-------------------
+
+`category`模块的`list`，`edit`和`new`的标题，都可以通过定义`title`选项来设置：
+
+    [yml]
+    # apps/backend/modules/category/config/generator.yml
+    config:
+      actions: ~
+      fields:  ~
+      list:
+        title: Category Management
+      filter:  ~
+      form:    ~
+      edit:
+        title: Editing Category "%%name%%"
+      new:
+        title: New Category
+
+`edit`的`title`选项包含变量：所有被包围在%%中的字符串都会被替换成对应的对象列。
+
+![Titles](http://www.symfony-project.org/images/jobeet/1_2/12/title.png)
+
+`job`模块的配置也非常相似：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      actions: ~
+      fields:  ~
+      list:
+        title: Job Management
+      filter:  ~
+      form:    ~
+      edit:
+        title: Editing Job "%%company%% is looking for a %%position%%"
+      new:
+        title: Job Creation
+
+字段(fields)配置
+----------------
+
+视图(`list`, `new`, 和`edit`)由字段(~fields|Fields~)组成。一个字段可以是model类的一个列，
+也可以是一个自定义列，稍后我们会看到自定义列。
+
+默认字段配置可以在`fields`部分定义：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      fields:
+        is_activated: { label: Activated?, help: Whether the user has activated the job, or not }
+        is_public:    { label: Public?, help: Whether the job can also be published on affiliate websites, or not }
+
+![Fields Configuration](http://www.symfony-project.org/images/jobeet/1_2/12/fields.png)
+
+`fields`部分配置将影响所有视图中的字段，这意味着`list`, `edit`, 和 `new`视图中
+`is_activated`字段的`label`都将改变。
+
+admin generator配置基于配置级联原则。例如，如果你只想改变`list`视图的`label`，
+可以在`list`部分定义一个`fields`选项：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      list:
+        fields:
+          is_public:    { label: "Public? (label for the list)" }
+
+任何主`fields`部分下的配置都可以被特殊配置覆盖。覆盖规则如下：
+
+ * `new`和`edit`继承`form`，`form`继承`fields`。 
+ * `list`继承`fields`
+ * `filter`继承`fields` 
+
+>**NOTE**
+>对于form部分(`form`, `edit`, 和`new`)，`label`和`help`配置将覆盖
+>在`form`类中定义的值。
+
+列表视图配置
+------------
+
+### `display`
+
+默认情况下，列表中显示的model类的所有列。可以使用`display`选项自定义定义显示哪些列：
+
+    [yml]
+    # apps/backend/modules/category/config/generator.yml
+    config:
+      list:
+        title:   Category Management
+        display: [=name, slug]
+
+上面表示只显示`name`和`slug`两列值。`name`列前的`=`表示，`name`将以链接的形式显示。
+
+![Table list](http://www.symfony-project.org/images/jobeet/1_2/12/list_columns.png)
+
+同样设置`job`模块中`display`部分：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      list:
+        title:   Job Management
+        display: [company, position, location, url, is_activated, email]
+
+### `layout`
+
+列表可以通过不同的~layout|Layout~显示。默认地，layout的显示方式为平板式（`~tabular|Tabular Layout~`），
+这意味着所有值都是按列显示的。但是对于`job`模块，最好用堆叠式（`~stacked|Stacked Layout~）的layout，
+我们使用另一个内建的layout：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      list:
+        title:   Job Management
+        layout:  stacked
+        display: [company, position, location, url, is_activated, email]
+        params:  |
+          %%is_activated%% <small>%%category_id%%</small> - %%company%%
+           (<em>%%email%%</em>) is looking for a %%=position%% (%%location%%)
+
+在堆叠式(`stacked`)layout，每个对象显示为单独一行，通过`params`选项定义。
+
+>**NOTE**
+>虽然已经不按列显示各项，但`display`选项仍然要保留，用于用户排序各项。
+
+### 虚拟("virtual")列
+
+这个配置中`%%category_id%%`部分显示category主键，显示分类名会更直观。
+
+其实`%%`标记中的变量不必真正对应数据库的字段，只要model类中存在相应getter方法
+（如`getFoo()`）就可以正确显示。
+
+所以，要显示分类名，我们可以在`JobeetJob`类中
+定义`getCategoryName()`方法，并将`%%category_id%%`替换为`%%category_name%%`来实现。
+
+不过，我们也可以通过`JobeetJob`类中`getJobeetCategory()`方法来实现显示分类名，
+这个类返回相关的category对象。如果你用`%%jobeet_category%%`，它会像`JobeetCategory`类
+`__toString()`方法一样将对象转换为字符串。
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    %%is_activated%% <small>%%jobeet_category%%</small> - %%company%%
+     (<em>%%email%%</em>) is looking for a %%=position%% (%%location%%)
+
+![Stacked layout](http://www.symfony-project.org/images/jobeet/1_2/12/stacked_layout.png)
+
+### `sort`
+
+作为管理员，你可能对最近发表的job感兴趣。你可以通过`sort`选项设置默认用来排序的字段：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      list:
+        sort: [expires_at, desc]
+
+### `max_per_page`
+
+默认情况下`list`每页最多显示20条记录，这可以通过`max_per_page`选项修改：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      list:
+        max_per_page: 10
+
+![Max per page](http://www.symfony-project.org/images/jobeet/1_2/12/max_per_page.png)
+
+### 批处理动作`batch_actions`
+
+在list中，一个动作可以运行在几个对象上。`category`不需要这些批处理动作，删除它们：
+
+    [yml]
+    # apps/backend/modules/category/config/generator.yml
+    config:
+      list:
+        batch_actions: {}
+
+![Remove the batch actions](http://www.symfony-project.org/images/jobeet/1_2/12/no_batch_actions.png)
+
+The `batch_actions` option defines the list of batch actions. The empty array
+allows the removal of the feature.
+
+默认情况下，框架为每个模块定义一个`delete`批处理动作 ，但对于job模块，我们需要
+一个将一些选中的job的有效期延长30天的方法，我们需要添加extend批处理动作：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      list:
+        batch_actions:
+          _delete:    ~
+          extend:     ~
+
+这些以下划线（`_`）开头的动作都是框架内建动作。如果你现在刷新浏览器，
+并选择extend批处理动作，symfony将提示你需要创建`executeBatchExtend()`方法：
+
+    [php]
+    // apps/backend/modules/job/actions/actions.class.php
+    class jobActions extends autoJobActions
+    {
+      public function executeBatchExtend(sfWebRequest $request)
+      {
+        $ids = $request->getParameter('ids');
+
+<propel>
+        $jobs = JobeetJobPeer::retrieveByPks($ids);
+
+        foreach ($jobs as $job)
+</propel>
+<doctrine>
+        $q = Doctrine_Query::create()
+          ->from('JobeetJob j')
+          ->whereIn('j.id', $ids);
+
+        foreach ($q->execute() as $job)
+</doctrine>
+        {
+          $job->extend(true);
+        }
+
+        $this->getUser()->setFlash('notice', 'The selected jobs have been extended successfully.');
+
+<propel>
+        $this->redirect('@jobeet_job');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_job_job');
+</doctrine>
+      }
+    }
+
+这些选中的主键被存储到请求参数`ids`中。通过传递给`JobeetJob::extend()`方法一个
+额外的参数，绕开方法中的一些检查。
+
+我们需要更新`extend()`让它接受新参数：
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function extend($force = false)
+      {
+        if (!$force && !$this->expiresSoon())
+        {
+          return false;
+        }
+
+<propel>
+        $this->setExpiresAt(time() + 86400 * sfConfig::get('app_active_days'));
+</propel>
+<doctrine>
+        $this->setExpiresAt(date('Y-m-d', time() + 86400 * sfConfig::get('app_active_days')));
+</doctrine>
+        $this->save();
+
+        return true;
+      }
+
+      // ...
+    }
+
+执行完extend批处理动作后，页面将跳转到`job`模块主页。
+
+![Custom batch actions](http://www.symfony-project.org/images/jobeet/1_2/12/custom_batch_actions.png)
+
+### 对象动作`object_actions`
+
+在列表中有一个额外的列，这个列中包含用于控制某一对象的动作（`edit`、`delete`）。
+对于`category`模块来说，我们已经有在名字加上了edit链接，并且我们不需要从列表中
+直接删除某个对象，所以可以删除这些动作：
+
+    [yml]
+    # apps/backend/modules/category/config/generator.yml
+    config:
+      list:
+        object_actions: {}
+
+对于`job`模块，我们则要保留现有的动作，并添加一个新的`extend`动作，与我们添加的
+批处理动作相似：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      list:
+        object_actions:
+          extend:     ~
+          _edit:      ~
+          _delete:    ~
+
+同批处理动作一样，`_delete`和`_edit`动作是框架内建动作。我们需要定义`listExtend()`
+方法使`extend`链接工作：
+
+    [php]
+    // apps/backend/modules/job/actions/actions.class.php
+    class jobActions extends autoJobActions
+    {
+      public function executeListExtend(sfWebRequest $request)
+      {
+        $job = $this->getRoute()->getObject();
+        $job->extend(true);
+
+        $this->getUser()->setFlash('notice', 'The selected jobs have been extended successfully.');
+
+<propel>
+        $this->redirect('@jobeet_job');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_job_job');
+</doctrine>
+      }
+
+      // ...
+    }
+
+![Custom object action](http://www.symfony-project.org/images/jobeet/1_2/12/custom_object_actions.png)
+
+### `actions`
+
+我们已经看到，如何将一个动作与一个对象（`object_actions`选项）或多个对象
+（`batch_actions`选项）建立联系。而`actions`选项则没有将动作与任何现有的对象相联系，
+它更像创建了一个新对象。现在让我们移除默认的`new`动作，并添加一个新动作，
+用来删除过期60天的所有job：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      list:
+        actions:
+          deleteNeverActivated: { label: Delete never activated jobs }
+
+Until now, all actions we have defined had `~`, which means that symfony
+configures the action automatically. Each action can be customized by defining
+an array of parameters. The `label` option overrides the default ~label|Labels~
+generated by symfony.
+
+By default, the action executed when you click on the link is the name of the
+action prefixed with `list`.
+
+Create the `listDeleteNeverActivated` action in the `job` module:
+
+    [php]
+    // apps/backend/modules/job/actions/actions.class.php
+    class jobActions extends autoJobActions
+    {
+      public function executeListDeleteNeverActivated(sfWebRequest $request)
+      {
+<propel>
+        $nb = JobeetJobPeer::cleanup(60);
+</propel>
+<doctrine>
+        $nb = Doctrine::getTable('JobeetJob')->cleanup(60);
+</doctrine>
+
+        if ($nb)
+        {
+          $this->getUser()->setFlash('notice', sprintf('%d never activated jobs have been deleted successfully.', $nb));
+        }
+        else
+        {
+          $this->getUser()->setFlash('notice', 'No job to delete.');
+        }
+
+<propel>
+        $this->redirect('@jobeet_job');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_job_job');
+</doctrine>
+      }
+
+      // ...
+    }
+
+<propel>
+我们重用了昨天定义的`JobeetJobPeer::cleanup()`方法。这是MVC模式提供重用的一个很好例子。
+</propel>
+<doctrine>
+我们重用了昨天定义的`JobeetJobTable::cleanup()`方法。这是MVC模式提供重用的一个很好例子。
+</doctrine>
+
+>**NOTE**
+>你也可以给动作传送一个`action`参数：
+>
+>     [yml]
+>     deleteNeverActivated: { label: Delete never activated jobs, action: foo }
+
+![Actions](http://www.symfony-project.org/images/jobeet/1_2/12/actions.png)
+
+<propel>
+### `peer_method`
+</propel>
+<doctrine>
+### `table_method`
+</doctrine>
+
+通过调试工具栏(~web debug toolbar|Web Debug Toolbar~)我们可以看到，显示一次
+招聘列表页面需要请求数据库14次。
+
+如果你点击这个数字，可以看到大部分请求都是为每个招聘信息获取分类名。
+
+![Number of requests before](http://www.symfony-project.org/images/jobeet/1_2/12/web_debug_before.png)
+
+要减少请求次数，我们可以改变默认获取信息方法，
+<propel>
+使用`peer_method`选项：
+</propel>
+<doctrine>
+使用`table_method`选项：
+</doctrine>
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      list:
+<propel>
+        peer_method: doSelectJoinJobeetCategory
+
+`doSelectJoinJobeetCategory()`方法在`job`表和`category`表间添加一个join，
+自动生成category对象关联到每条招聘记录。
+</propel>
+<doctrine>
+        table_method: retrieveBackendJobList
+
+Now you must create the `retrieveBackendJobList` method in `JobeetJobTable`
+located in `lib/model/doctrine/JobeetJobTable.class.php`.
+
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    class JobeetJobTable extends Doctrine_Table
+    {
+      public function retrieveBackendJobList(Doctrine_Query $q)
+      {
+        $rootAlias = $q->getRootAlias();
+        $q->leftJoin($rootAlias . '.JobeetCategory c');
+        return $q;
+      }
+
+      // ...
+
+The `retrieveBackendJobList()` method adds a ~join~ between the `job` and
+the `category` tables and automatically creates the category object related to
+each job.
+</doctrine>
+
+现在数据库请求数变为4次：
+
+![Number of requests after](http://www.symfony-project.org/images/jobeet/1_2/12/web_debug_after.png)
+
+表单视图配置
+------------
+
+表单视图配置（Form Views Configuration）包括3部分：`form`, `edit`, 和 `new`。
+它们可以进行同样的配置，`form`部分只作为`edit`部分和`new`部分回调存在。
+
+### `display`
+
+像`list`部分一样，你可以使用`display`选项改变字段的显示顺序。但是因为显示的
+`form`是在类中定义的，不要试图删除任何一个表单元素，这将导致意外验证错误。
+
+`display`选项也可以将表单字段分成不同的组：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      form:
+        display:
+          Content: [category_id, type, company, logo, url, position,
+            ➥ location, description, how_to_apply, is_public, email]
+          Admin:   [_generated_token, is_activated, expires_at]
+
+上面定义了2个组（`Content`和`Admin`），每组里都包含几个字段，显示如下：
+
+![Fields grouping](http://www.symfony-project.org/images/jobeet/1_2/12/fields_grouping.png)
+
+>**NOTE**
+>The columns in the `Admin` group do not show up in the browser yet because
+>they have been unset in the job form definition. They will appear in a few
+>sections when we define a custom job form class for the admin application.
+
+admin generator默认支持数据表之间的多对多关系。所有在category form中，除了有
+`name`、`slug`输入框外，还有一个下拉框，里面是与`category`对应的所有`affiliates`。
+在这个页面修改`category`与`affiliates`之间管理没有意义，删除它：
+
+    [php]
+<propel>
+    // lib/form/JobeetCategoryForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetCategoryForm.class.php
+</doctrine>
+    class JobeetCategoryForm extends BaseJobeetCategoryForm
+    {
+      public function configure()
+      {
+<propel>
+        unset($this['jobeet_category_affiliate_list']);
+</propel>
+<doctrine>
+        unset($this['created_at'], $this['updated_at'], $this['jobeet_affiliates_list']);
+</doctrine>
+      }
+    }
+
+### "Virtual" columns
+
+In the `display` options for the job form, the `_generated_token` field starts
+with an underscore (`_`). This means that the rendering for this field will be
+handled by a custom ~partial|Partial Templates~ named `_generated_token.php`
+
+使用下面内容创建局部模板:
+
+    [php]
+    // apps/backend/modules/job/templates/_generated_token.php
+    <div class="sf_admin_form_row">
+      <label>Token</label>
+      <?php echo $form->getObject()->getToken() ?>
+    </div>
+
+在局部模板中调用了当前form对象(`$form`)，并通过`getObject()`方法访问关联的对象。
+
+>**NOTE**
+>如果需要使用组件，可以用(`~`)开头。
+
+### `class`
+
+后台的表单是给管理员使用的，我们希望它比用户job表单显示更多的内容。但是现在
+并非如此，因为我们曾经在`JobeetJobForm`类中将一些当时不需要的表单元素删除了。
+
+为让前台和后台使用不同的表单，我们需要再创建一个form类——`BackendJobeetJobForm`，
+它继承`JobeetJobForm`类。我们重构一下`JobeetJobForm`类，将`unset()`语句放到到一个方法中，
+这样我们可以通过重载`BackendJobeetJobForm`中的方法来重设被删除的表单元素：
+
+    [php]
+<propel>
+    // lib/form/JobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/JobeetJobForm.class.php
+</doctrine>
+    class JobeetJobForm extends BaseJobeetJobForm
+    {
+      public function configure()
+      {
+        $this->removeFields();
+
+        $this->validatorSchema['email'] = new sfValidatorAnd(array(
+          $this->validatorSchema['email'],
+          new sfValidatorEmail(),
+        ));
+
+        // ...
+      }
+
+      protected function removeFields()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['expires_at'], $this['is_activated'],
+          $this['token']
+        );
+      }
+    }
+
+<propel>
+    // lib/form/BackendJobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/BackendJobeetJobForm.class.php
+</doctrine>
+    class BackendJobeetJobForm extends JobeetJobForm
+    {
+      public function configure()
+      {
+        parent::configure();
+      }
+
+      protected function removeFields()
+      {
+        unset(
+          $this['created_at'], $this['updated_at'],
+          $this['token']
+        );
+      }
+    }
+
+配置文件中的`class`选项可以覆盖admin generator的默认from类：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    config:
+      form:
+        class: BackendJobeetJobForm
+
+>**NOTE**
+>当我们添加了一个新的类，不要忘记清理缓存。
+
+目前，编辑表单还有些问题：上传的logo不显示，也无法删除。`sfWidgetFormInputFileEditable`
+控件可以生成一个文件上传框控件：
+
+    [php]
+<propel>
+    // lib/form/BackendJobeetJobForm.class.php
+</propel>
+<doctrine>
+    // lib/form/doctrine/BackendJobeetJobForm.class.php
+</doctrine>
+    class BackendJobeetJobForm extends JobeetJobForm
+    {
+      public function configure()
+      {
+        parent::configure();
+
+        $this->widgetSchema['logo'] = new sfWidgetFormInputFileEditable(array(
+          'label'     => 'Company logo',
+          'file_src'  => '/uploads/jobs/'.$this->getObject()->getLogo(),
+          'is_image'  => true,
+          'edit_mode' => !$this->isNew(),
+          'template'  => '<div>%file%<br />%input%<br />%delete% %delete_label%</div>',
+        ));
+
+        $this->validatorSchema['logo_delete'] = new sfValidatorPass();
+      }
+
+      // ...
+    }
+
+`sfWidgetFormInputFileEditable`控件有以下几个选项：
+
+  * `file_src`:   当前上传文件的web路径 
+  * `is_image`:   如果是`true`，文件将作为图片处理 
+  * `edit_mode`:  表单是不是在编辑模式下 
+  * `with_delete`:是否显示删除当前文件选框 
+  * `template`:   显示用的模板 
+
+![File upload](http://www.symfony-project.org/images/jobeet/1_2/12/file_upload.png)
+
+>**TIP**
+>因为生成的模板定义许多了`class`和`id`属性，所以admin generator的外观很容易修改。
+>如logo表单元素可以使用`sf_admin_form_field_logo`定制。每个字段都有一个依存的类，
+>如`sf_admin_text`和`sf_admin_boolean`：
+
+<propel>
+`edit_mode`选项使用了`sfPropel::isNew()`方法。
+</propel>
+<doctrine>
+`edit_mode`选项使用了`sfDoctrineRecord::isNew()`方法。
+</doctrine>
+
+如果form中model对象是新的，将返回`true`，否则返回`false`。当需要根据对象状态
+来使用不同的控件（widgets）或验证器时，这个很有用。
+
+过滤器配置(Filters Configuration)
+---------------------------------
+
+配置filter和配置form视图完全一样。事实上，filter就是form。form类是由`propel:build-all`生成的。
+你也可以用`propel:build-filters`重新生成它们。
+
+form过滤类位于`lib/filter`目录下，每个model类都有一个对应的filter类(`JobeetJobFormFilter`
+对应`JobeetJobForm`)。
+
+我们为`category`模块移除所有过滤字段：
+
+    [yml]
+    # apps/backend/modules/category/config/generator.yml
+    config:
+      filter:
+        class: false
+
+在`job`模块中，我们删除一些过滤用的字段：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    filter:
+      display: [category_id, company, position, description, is_activated,
+       ➥ is_public, email, expires_at]
+
+因为filter总是可选的，不需要覆盖filter form类配置显示的字段。
+
+![Filters](http://www.symfony-project.org/images/jobeet/1_2/12/filters.png)
+
+自定义动作(Actions Customization)
+---------------------------------
+
+当配置不够用时，你可以在action类中添加新方法，也可以覆盖已有方法：
+
+ | Method                 | Description
+ | ---------------------- | -------------------------------------
+ | `executeIndex()`       | `list` view action
+ | `executeFilter()`      | Updates the filters
+ | `executeNew()`         | `new` view action
+ | `executeCreate()`      | Creates a new Job
+ | `executeEdit()`        | `edit` view action
+ | `executeUpdate()`      | Updates a Job
+ | `executeDelete()`      | Deletes a Job
+ | `executeBatch()`       | Executes a batch action
+ | `executeBatchDelete()` | Executes the `_delete` batch action
+ | `processForm()`        | Processes the Job form
+ | `getFilters()`         | Returns the current filters
+ | `setFilters()`         | Sets the filters
+ | `getPager()`           | Returns the list pager
+ | `getPage()`            | Gets the pager page
+ | `setPage()`            | Sets the pager page
+ | `buildCriteria()`      | Builds the `Criteria` for the list
+ | `addSortCriteria()`    | Adds the sort `Criteria` for the list
+ | `getSort()`            | Returns the current sort column
+ | `setSort()`            | Sets the current sort column
+
+因为这里每个方法只做一件事，所有不需要大量修改就可以改变它们的功能。
+
+自定义模板(Templates Customization)
+-----------------------------------
+
+我们已经看到，如何自定义admin generator生成的模板，感谢`class`和`id`属性。
+
+至于这些类，你也可以覆盖原来的模板。因为模板是纯PHP文件并且不是PHP类，
+一个模板可以被模块里的同名模板所覆盖（例如，`apps/backend/modules/job/templates/`目录对应`job`管理模块）:
+
+ | Template                     | Description
+ | ---------------------------- | -------------------------------------
+ | `_assets.php`                | Renders the CSS and JS to use for templates
+ | `_filters.php`               | Renders the filters box
+ | `_filters_field.php`         | Renders a single filter field
+ | `_flashes.php`               | Renders the flash messages
+ | `_form.php`                  | Displays the form
+ | `_form_actions.php`          | Displays the form actions
+ | `_form_field.php`            | Displays a singe form field
+ | `_form_fieldset.php`         | Displays a form fieldset
+ | `_form_footer.php`           | Displays the form footer
+ | `_form_header.php`           | Displays the form header
+ | `_list.php`                  | Displays the list
+ | `_list_actions.php`          | Displays the list actions
+ | `_list_batch_actions.php`    | Displays the list batch actions
+ | `_list_field_boolean.php`    | Displays a single boolean field in the list
+ | `_list_footer.php`           | Displays the list footer
+ | `_list_header.php`           | Displays the list header
+ | `_list_td_actions.php`       | Displays the object actions for a row
+ | `_list_td_batch_actions.php` | Displays the checkbox for a row
+ | `_list_td_stacked.php`       | Displays the stacked layout for a row
+ | `_list_td_tabular.php`       | Displays a single field for the list
+ | `_list_th_stacked.php`       | Displays a single column name for the header
+ | `_list_th_tabular.php`       | Displays a single column name for the header
+ | `_pagination.php`            | Displays the list pagination
+ | `editSuccess.php`            | Displays the `edit` view
+ | `indexSuccess.php`           | Displays the `list` view
+ | `newSuccess.php`             | Displays the `new` view
+
+最终配置
+--------
+
+这是最后的配置文件内容：
+
+    [yml]
+    # apps/backend/modules/job/config/generator.yml
+    generator:
+      class: sfPropelGenerator
+      param:
+        model_class:           JobeetJob
+        theme:                 admin
+        non_verbose_templates: true
+        with_show:             false
+        singular:              ~
+        plural:                ~
+        route_prefix:          jobeet_job
+<propel>
+        with_propel_route:     1
+</propel>
+<doctrine>
+        with_doctrine_route:   1
+</doctrine>
+
+        config:
+          actions: ~
+          fields:
+            is_activated: { label: Activated?, help: Whether the user has activated the job, or not }
+            is_public:    { label: Public? }
+          list:
+            title:         Job Management
+            layout:        stacked
+            display:       [company, position, location, url, is_activated, email]
+            params:  |
+<propel>
+              %%is_activated%% <small>%%jobeet_category%%</small> - %%company%%
+</propel>
+<doctrine>
+              %%is_activated%% <small>%%JobeetCategory%%</small> - %%company%%
+</doctrine>
+               (<em>%%email%%</em>) is looking for a %%=position%% (%%location%%)
+            max_per_page:  10
+            sort:          [expires_at, desc]
+            batch_actions:
+              _delete:    ~
+              extend:     ~
+            object_actions:
+              extend:     ~
+              _edit:      ~
+              _delete:    ~
+            actions:
+              deleteNeverActivated: { label: Delete never activated jobs }
+<propel>
+            peer_method:  doSelectJoinJobeetCategory
+</propel>
+<doctrine>
+            table_method: retrieveBackendJobList
+</doctrine>
+          filter:
+            display: [category_id, company, position, description, is_activated, is_public, email, expires_at]
+          form:
+            class:     BackendJobeetJobForm
+            display:
+              Content: [category_id, type, company, logo, url, position, location, description, how_to_apply, is_public, email]
+              Admin:   [_generated_token, is_activated, expires_at]
+          edit:
+            title: Editing Job "%%company%% is looking for a %%position%%"
+          new:
+            title: Job Creation
+
+    # apps/backend/modules/category/config/generator.yml
+    generator:
+      class: sfPropelGenerator
+      param:
+        model_class:           JobeetCategory
+        theme:                 admin
+        non_verbose_templates: true
+        with_show:             false
+        singular:              ~
+        plural:                ~
+        route_prefix:          jobeet_category
+<propel>
+        with_propel_route:     1
+</propel>
+<doctrine>
+        with_doctrine_route:   1
+</doctrine>
+
+        config:
+          actions: ~
+          fields:  ~
+          list:
+            title:   Category Management
+            display: [=name, slug]
+            batch_actions: {}
+            object_actions: {}
+          filter:
+            class: false
+          form:
+            actions:
+              _delete: ~
+              _list:   ~
+              _save:   ~
+          edit:
+            title: Editing Category "%%name%%"
+          new:
+            title: New Category
+
+通过这两个配置文件，我们在很短的时间内已经开发了很好的后台界面。
+
+>**TIP**
+>You already know that when something is configurable in a YAML file, there is
+>also the possibility to use plain PHP code. For the admin generator, you can
+>edit the `apps/backend/modules/job/lib/jobGeneratorConfiguration.class.php`
+>file. It gives you the same options as the YAML file but with a PHP
+>interface. To learn the method names, have a look at the generated base class
+>in
+>`cache/backend/dev/modules/autoJob/lib/BaseJobGeneratorConfiguration.class.php`.
+
+>**TIP**
+>你已经知道什么东西可以YAML文件中配置，YAML文件中允许使用纯PHP代码。对于admin generator，
+>你可以编辑`apps/backend/modules/job/lib/jobGeneratorConfiguration.class.php`文件。
+>它提供了与YAML文件相同选项，但是PHP接口。想了解这些方法，可以看一下生成在缓存中的base类
+>`cache/backend/dev/modules/autoJob/lib/BaseJobGeneratorConfiguration.class.php`.
+
+明天见
+------
+
+只用了1个小时时间，我们已经创建一个功能完整的后台界面。我们只写了不到50行PHP代码。
+对于这么多功能来说，不算太糟糕。
+
+明天，我们经看到如何使用用户名和密码，保证后台安全。是时候讨论symfony User类了。
+
+__ORM__
