@@ -1,0 +1,536 @@
+第十七天：搜索引擎
+=================
+
+两天前，我们添加了feed，让用户可以订阅最新发布的招聘信息。今天，我们继续提高用户体验，
+实现Jobeet最后一个主要功能：搜索引擎。
+
+The Technology
+--------------
+
+工作之前，我们先了解一点symfony的历史。我们始终提倡代码测试、重构这些好习惯，
+在开发symfony框架时也试着将它们应用其中。“不要重新发明轮子”是我们座右铭。
+事实上，在4年前开始开发symfony时，我们就结合Mojavi和 Propel这两个开源软件，
+而没有再去重新开发。正因如此，每当我们要解决一些新问题时，我们并不忙于开始编写代码，
+而是先去寻找是否有一个已经存在、并且好用库。
+
+Today, we want to add a search engine to Jobeet, and the Zend Framework
+provides a great library, called
+[~Zend Lucene~](http://framework.zend.com/manual/en/zend.search.lucene.html),
+which is a port of the well-know Java Lucene project. Instead of creating
+yet another search engine for Jobeet, which is quite a complex task, we
+will use Zend Lucene.
+
+今天，我们要添加的搜索程序也是使用现有的库——
+[~Zend Lucene~](http://framework.zend.com/manual/en/zend.search.lucene.html)，
+这是Zend框架中的一个库，是著名的Java Lucene项目的一个端口。Instead of creating
+yet another search engine for Jobeet, which is quite a complex task, we
+will use Zend Lucene.
+
+在Zend Lucene文档中，对这个库的描述：
+
+>… 一个PHP5写成的通用文本搜索引擎。使用文件系统存储索引，不需要数据库支持，
+>所以它可以用在几乎所有PHP网站。Zend_Search_Lucene支持下面功能：
+>
+>  * 分等排列搜索结果 – 最好的结果显示在最前面
+>  * 多种请求方式：短语请求，布尔请求，通配符请求，模糊请求，范围请求等等
+>  * 在不同字段中搜索（如，标题，作者，内容）
+
+-
+
+>**NOTE**
+>我们这里不再多介绍Zend Lucene库的使用，而是重点讲如何在symfony中使用它；
+>更广泛的来说，是如何在symfony中使用第三方软件。如果你想了解更多关于
+>Zend Lucene的信息，请参考[Zend Lucene documentation](http://framework.zend.com/manual/en/zend.search.lucene.html)文档。
+
+在昨天安装Zend Framework的邮件库的时候，已经已经顺便安装了Zend Lucene库。
+
+索引
+----
+
+当用户输入关键字时，Jobeet搜索引擎会返回与之相匹配的所有工作。我们必须给所有工作建立索引，
+搜索引擎才能正常，索引文件存储在`data/`目录下。
+
+<propel>
+Zend Lucene提供2种方法检索索引，无论索引是否存在，方法都会访问索引文件。所以
+，我们必须在`JobeetJobPeer`中创建一个helper方法，当索引存在时则返回索引，
+如果不存在则创建一个新的索引文件：
+</propel>
+<doctrine>
+Zend Lucene提供2种方法检索索引，无论索引是否存在，方法都会访问索引文件。所以
+，我们必须在`JobeetJobTable`中创建一个helper方法，当索引存在时则返回索引，
+如果不存在则创建一个新的索引文件：
+</doctrine>
+
+    [php]
+<propel>
+    // lib/model/JobeetJobPeer.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJobTable.class.php
+</doctrine>
+    static public function getLuceneIndex()
+    {
+      ProjectConfiguration::registerZend();
+
+      if (file_exists($index = self::getLuceneIndexFile()))
+      {
+        return Zend_Search_Lucene::open($index);
+      }
+      else
+      {
+        return Zend_Search_Lucene::create($index);
+      }
+    }
+
+    static public function getLuceneIndexFile()
+    {
+      return sfConfig::get('sf_data_dir').'/job.'.sfConfig::get('sf_environment').'.index';
+    }
+
+### `save()`方法
+
+每次创建、更新或删除工作时，索引文件也必须更新。为了保证每次保存工作信息到数据时，
+都更新索引文件，我们需要编辑JobeetJob的`save()`方法：
+
+<propel>
+    [php]
+    // lib/model/JobeetJob.php
+    public function save(PropelPDO $con = null)
+    {
+      // ...
+
+      $ret = parent::save($con);
+
+      $this->updateLuceneIndex();
+
+      return $ret;
+    }
+</propel>
+<doctrine>
+    [php]
+    public function save(Doctrine_Connection $conn = null)
+    {
+      // ...
+
+      $ret = parent::save($conn);
+
+      $this->updateLuceneIndex();
+
+      return $ret;
+    }
+</doctrine>
+
+创建`updateLuceneIndex()`方法，它做实际工作：
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    public function updateLuceneIndex()
+    {
+<propel>
+      $index = JobeetJobPeer::getLuceneIndex();
+</propel>
+<doctrine>
+      $index = $this->getTable()->getLuceneIndex();
+</doctrine>
+
+      // remove existing entries
+      foreach ($index->find('pk:'.$this->getId()) as $hit)
+      {
+        $index->delete($hit->id);
+      }
+
+      // don't index expired and non-activated jobs
+      if ($this->isExpired() || !$this->getIsActivated())
+      {
+        return;
+      }
+
+      $doc = new Zend_Search_Lucene_Document();
+
+      // store job primary key to identify it in the search results
+      $doc->addField(Zend_Search_Lucene_Field::Keyword('pk', $this->getId()));
+
+      // index job fields
+      $doc->addField(Zend_Search_Lucene_Field::UnStored('position', $this->getPosition(), 'utf-8'));
+      $doc->addField(Zend_Search_Lucene_Field::UnStored('company', $this->getCompany(), 'utf-8'));
+      $doc->addField(Zend_Search_Lucene_Field::UnStored('location', $this->getLocation(), 'utf-8'));
+      $doc->addField(Zend_Search_Lucene_Field::UnStored('description', $this->getDescription(), 'utf-8'));
+
+      // add job to the index
+      $index->addDocument($doc);
+      $index->commit();
+    }
+
+因为Zend Lucene不能更新索引中已存在的记录，所以当我们需要更新一条已存在的记录时，
+必须先移除这条记录。
+
+建立工作索引本身很简单：存储主键的作用是，做为搜索结果中工作URL的参数，用户可以
+通过URL访问相应的工作页面。而索引文件中存储的主字段（`position`, `company`, 
+`location`, `description`）是用来匹配搜索内容的。
+
+### ##ORM## 异常处理
+
+还有些问题，比如说一个工作存储到了数据库中，在写入索引文件时却失败了，或者存储
+一个工作到数据库失败了，但这个记录却写入的索引文件中，怎么办？##ORM##和Zend Lucene
+都会抛出异常。在一些情况下，我们可能已经将工作存入数据库，但没有生成相应的索引。
+为了阻止这种情况发生，我们可以将两种情况放入异常处理中，当发生错误时进行事务回滚：
+
+<propel>
+    [php]
+    // lib/model/JobeetJob.php
+    public function save(PropelPDO $con = null)
+    {
+      // ...
+
+      if (is_null($con))
+      {
+        $con = Propel::getConnection(JobeetJobPeer::DATABASE_NAME, Propel::CONNECTION_WRITE);
+      }
+
+      $con->beginTransaction();
+      try
+      {
+        $ret = parent::save($con);
+
+        $this->updateLuceneIndex();
+
+        $con->commit();
+
+        return $ret;
+      }
+      catch (Exception $e)
+      {
+        $con->rollBack();
+        throw $e;
+      }
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJob.class.php
+    public function save(Doctrine_Connection $conn = null)
+    {
+      // ...
+
+      $conn = $conn ? $conn : $this->getTable()->getConnection();
+      $conn->beginTransaction();
+      try
+      {
+        $ret = parent::save($conn);
+
+        $this->updateLuceneIndex();
+
+        $conn->commit();
+
+        return $ret;
+      }
+      catch (Exception $e)
+      {
+        $conn->rollBack();
+        throw $e;
+      }
+    }
+</doctrine>
+
+### `delete()`
+
+我们同样需要覆盖`delete()`方法，当从数据库删除一条记录时，从索引文件中移除相应的记录：
+
+<propel>
+    [php]
+    // lib/model/JobeetJob.php
+    public function delete(PropelPDO $con = null)
+    {
+      $index = JobeetJobPeer::getLuceneIndex();
+
+      foreach ($index->find('pk:'.$this->getId()) as $hit)
+      {
+        $index->delete($hit->id);
+      }
+
+      return parent::delete($con);
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJob.class.php
+    public function delete(Doctrine_Connection $conn = null)
+    {
+      $index = $this->getTable()->getLuceneIndex();
+
+      foreach ($index->find('pk:'.$this->getId()) as $hit)
+      {
+        $index->delete($hit->id);
+      }
+
+      return parent::delete($conn);
+    }
+</doctrine>
+
+<propel>
+### Mass delete
+
+当我们使用`propel:data-load`导入初始化数据时，symfony通过调用`JobeetJobPeer::doDeleteAll()`方法
+移除所有存在的工作记录。重写该方法，在删除所有记录的同时删除全部索引文件：
+
+    [php]
+    // lib/model/JobeetJobPeer.php
+    public static function doDeleteAll($con = null)
+    {
+      if (file_exists($index = self::getLuceneIndexFile()))
+      {
+        sfToolkit::clearDirectory($index);
+        rmdir($index);
+      }
+
+      return parent::doDeleteAll($con);
+    }
+</propel>
+
+搜索
+----
+
+好了，万事俱备，现在导入数据，生成索引文件：
+
+    $ php symfony propel:data-load --env=dev
+
+命令中使用的`--env`选项指定索引运行在`dev`环境中，默认环境是`cli`。
+
+>**TIP**
+>对于Unix用户：因为索引可能从命令行，也可能web进行修改，你必须同时保证两种情况下，
+>索引目录都可写。
+
+-
+
+>**NOTE**
+>You might have some warnings about the `ZipArchive` class if you don't have
+>the `zip` extension compiled in your PHP. It's a known bug of the
+>`Zend_Loader` class.
+
+在前台实现搜索非常容易。首先，创建路由：
+
+    [yml]
+    job_search:
+      url:   /search
+      param: { module: job, action: search }
+
+然后，动作：
+
+    [php]
+    // apps/frontend/modules/job/actions/actions.class.php
+    class jobActions extends sfActions
+    {
+      public function executeSearch(sfWebRequest $request)
+      {
+        if (!$query = $request->getParameter('query'))
+        {
+          return $this->forward('job', 'index');
+        }
+
+<propel>
+        $this->jobs = JobeetJobPeer::getForLuceneQuery($query);
+</propel>
+<doctrine>
+        $this->jobs = Doctrine::getTable('JobeetJob')
+         ➥ ->getForLuceneQuery($query);
+</doctrine>
+      }
+
+      // ...
+    }
+
+模板也非常简单：
+
+    [php]
+    // apps/frontend/modules/job/templates/searchSuccess.php
+    <?php use_stylesheet('jobs.css') ?>
+
+    <div id="jobs">
+      <?php include_partial('job/list', array('jobs' => $jobs)) ?>
+    </div>
+
+搜索直接使用`getForLuceneQuery()`方法：
+
+<propel>
+    [php]
+    // lib/model/JobeetJobPeer.php
+    static public function getForLuceneQuery($query)
+    {
+      $hits = self::getLuceneIndex()->find($query);
+
+      $pks = array();
+      foreach ($hits as $hit)
+      {
+        $pks[] = $hit->pk;
+      }
+
+      $criteria = new Criteria();
+      $criteria->add(self::ID, $pks, Criteria::IN);
+      $criteria->setLimit(20);
+
+      return self::doSelect(self::addActiveJobsCriteria($criteria));
+    }
+</propel>
+<doctrine>
+    [php]
+    // lib/model/doctrine/JobeetJobTable.class.php
+    public function getForLuceneQuery($query)
+    {
+      $hits = $this->getLuceneIndex()->find($query);
+
+      $pks = array();
+      foreach ($hits as $hit)
+      {
+        $pks[] = $hit->pk;
+      }
+
+      if (empty($pks))
+      {
+        return array();
+      }
+
+      $q = $this->createQuery('j')
+        ->whereIn('j.id', $pks)
+        ->limit(20);
+      $q = $this->addActiveJobsQuery($q);
+
+      return $q->execute();
+    }
+</doctrine>
+
+我们从Lucene索引中获得全部结果中过滤掉未激活的工作，将结果限制为`20`条记录。
+
+更新layout：
+
+    [php]
+    // apps/frontend/templates/layout.php
+    <h2>Ask for a job</h2>
+    <form action="<?php echo url_for('@job_search') ?>" method="get">
+      <input type="text" name="query" value="<?php echo $sf_request->getParameter('query') ?>" id="search_keywords" />
+      <input type="submit" value="search" />
+      <div class="help">
+        Enter some keywords (city, country, position, ...)
+      </div>
+    </form>
+
+>**NOTE**
+>Zend Lucene提供了丰富的查询机制，支持布尔、通配符、模糊搜索等方式。请参考
+>[Zend Lucene](http://framework.zend.com/manual/en/zend.search.lucene.query-api.html)手册。
+
+~Unit Tests|Unit Testing~
+-------------------------
+
+我们需要对搜索引擎做哪些测试呢？显然我不会测试Zend Lucene框架本身，但它集成在`JobeetJob`类中。
+
+添加下面的测试到`JobeetJobTest.php`文件尾部，不要忘记更新测试的数目为`7`：
+
+    [php]
+    // test/unit/model/JobeetJobTest.php
+    $t->comment('->getForLuceneQuery()');
+    $job = create_job(array('position' => 'foobar', 'is_activated' => false));
+    $job->save();
+<propel>
+    $jobs = JobeetJobPeer::getForLuceneQuery('position:foobar');
+</propel>
+<doctrine>
+    $jobs = Doctrine::getTable('JobeetJob')->getForLuceneQuery('position:foobar');
+</doctrine>
+    $t->is(count($jobs), 0, '::getForLuceneQuery() does not return non activated jobs');
+
+    $job = create_job(array('position' => 'foobar', 'is_activated' => true));
+    $job->save();
+<propel>
+    $jobs = JobeetJobPeer::getForLuceneQuery('position:foobar');
+</propel>
+<doctrine>
+    $jobs = Doctrine::getTable('JobeetJob')->getForLuceneQuery('position:foobar');
+</doctrine>
+    $t->is(count($jobs), 1, '::getForLuceneQuery() returns jobs matching the criteria');
+    $t->is($jobs[0]->getId(), $job->getId(), '::getForLuceneQuery() returns jobs matching the criteria');
+
+    $job->delete();
+<propel>
+    $jobs = JobeetJobPeer::getForLuceneQuery('position:foobar');
+</propel>
+<doctrine>
+    $jobs = Doctrine::getTable('JobeetJob')->getForLuceneQuery('position:foobar');
+</doctrine>
+    $t->is(count($jobs), 0, '::getForLuceneQuery() does not return deleted jobs');
+
+我们测试一个未激活或已删除的工作，是否没有出现在搜索结果中；也测试了匹配条件的工作是否显示在结果中。
+
+~Tasks~
+-------
+
+最后我们需要创建一个任务清理过期的索引（如，当工作过期），同时地对索引进行优化。
+因为我们已经有了cleanup任务，我们只需要将上面的功能加进去便可以了：
+
+    [php]
+    // lib/task/JobeetCleanupTask.class.php
+    protected function execute($arguments = array(), $options = array())
+    {
+      $databaseManager = new sfDatabaseManager($this->configuration);
+
+<propel>
+      // cleanup Lucene index
+      $index = JobeetJobPeer::getLuceneIndex();
+
+      $criteria = new Criteria();
+      $criteria->add(JobeetJobPeer::EXPIRES_AT, time(), Criteria::LESS_THAN);
+      $jobs = JobeetJobPeer::doSelect($criteria);
+</propel>
+<doctrine>
+      // cleanup Lucene index
+      $index = Doctrine::getTable('JobeetJob')->getLuceneIndex();
+
+      $q = Doctrine_Query::create()
+        ->from('JobeetJob j')
+        ->where('j.expires_at < ?', date('Y-m-d'));
+
+      $jobs = $q->execute();
+</doctrine>
+      foreach ($jobs as $job)
+      {
+        if ($hit = $index->find('pk:'.$job->getId()))
+        {
+          $hit->delete();
+        }
+      }
+
+      $index->optimize();
+
+      $this->logSection('lucene', 'Cleaned up and optimized the job index');
+
+      // Remove stale jobs
+<propel>
+      $nb = JobeetJobPeer::cleanup($options['days']);
+
+      $this->logSection('propel', sprintf('Removed %d stale jobs', $nb));
+</propel>
+<doctrine>
+      $nb = Doctrine::getTable('JobeetJob')->cleanup($options['days']);
+
+      $this->logSection('doctrine', sprintf('Removed %d stale jobs', $nb));
+</doctrine>
+    }
+
+上面的工作从索引中移除所有过期的招聘信息，并进行优化，感谢Zend Lucene内建的`optimize()`优化方法。
+
+明天见
+------
+
+今天我们花不到一个小时时间完成了一个完整的搜索引擎。每当你想添加一个新功能时，
+看一下是不是其它什么地方已经解决了这个问题。首先，看一看是不[symfony](http://www.symfony-project.org/api/1_2/)
+已经有这样的功能。同时不要忘记查看一下[symfony plugins](http://www.symfony-project.org/plugins/). 
+也不要忘记查看[Zend Framework libraries](http://framework.zend.com/manual/en/)
+和[ezComponent](http://ezcomponents.org/docs)。
+
+明天我们将使用非侵入式JavaScript代码，提高搜索引擎的反应能力。根据用户输入内容，
+实时更新搜索结果。当然也会适时的讲解如何在symfony中使用AJAX。
+
+__ORM__
