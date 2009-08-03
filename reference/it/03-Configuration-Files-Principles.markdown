@@ -24,7 +24,7 @@ volta.
 
 Il parsing e l'inserimento in cache di ogni file di configurazione viene eseguito
 da classi handler specializzate configurate in 
-[`config_handler.yml`](14-Other-Configuration-Files#chapter_14_config_handlers_yml).
+[`config_handler.yml`](#chapter_14_config_handlers_yml).
 
 Nelle sezioni seguenti quando parleremo di "compilazione" significa che la prima 
 volta un file YAML viene convertito in un file PHP e memorizzato nella cache.
