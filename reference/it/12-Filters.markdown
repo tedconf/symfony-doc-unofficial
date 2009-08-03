@@ -86,7 +86,7 @@ sono obbligatori e sono identificato dal parametro `type`. Il filtro
 >**NOTE**
 >Il file di configurazione `filters.yml` è messo in cache come file PHP;
 >il processo è gestito automaticamente dalla
->[classe](14-Other-Configuration-Files#chapter_14_config_handlers_yml) 
+>[classe](#chapter_14_config_handlers_yml) 
 >~`sfFilterConfigHandler`~.
 
 <div class="pagebreak"></div>
@@ -94,11 +94,11 @@ sono obbligatori e sono identificato dal parametro `type`. Il filtro
 Filtri
 ------
 
- * [`rendering`](12-Filters#chapter_12-Filters_rendering)
- * [`security`](12-Filters#chapter_12-Filters_security)
- * [`cache`](12-Filters#chapter_12-Filters_cache)
- * [`common`](12-Filters#chapter_12-Filters_common)
- * [`execution`](12-Filters#chapter_12-Filters_execution)
+ * [`rendering`](#chapter_12-Filters_rendering)
+ * [`security`](#chapter_12-Filters_security)
+ * [`cache`](#chapter_12-Filters_cache)
+ * [`common`](#chapter_12-Filters_common)
+ * [`execution`](#chapter_12-Filters_execution)
 
 `rendering`
 -----------

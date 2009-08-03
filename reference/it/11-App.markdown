@@ -12,12 +12,12 @@ la classe globale `sfConfig` e le chiavi hanno come prefisso la stringa `app_`:
     sfConfig::get('app_active_days');
 
 Tutte le impostazioni hanno il prefisso `app_` perché la classe `sfConfig` 
-permette l'accesso anche alle [impostazioni di symfony](03-Configuration-Files-Principles#chapter_03_sub_impostazioni_della_configurazione)
-ed alle [directory del progetto](03-Configuration-Files-Principles#chapter_03_sub_le_directory).
+permette l'accesso anche alle [impostazioni di symfony](#chapter_03_sub_impostazioni_della_configurazione)
+ed alle [directory del progetto](#chapter_03_sub_le_directory).
 
 Come già visto nell'introduzione il file `app.yml` ha la 
-[consapevolezza dell'ambiente](03-Configuration-Files-Principles#chapter_03_consapevolezza_dell_ambiente) e 
-beneficia della [configurazione a cascata](03-Configuration-Files-Principles#chapter_03_configurazione_a_cascata).
+[consapevolezza dell'ambiente](#chapter_03_consapevolezza_dell_ambiente) e 
+beneficia della [configurazione a cascata](#chapter_03_configurazione_a_cascata).
 
 Il file di configurazione `app.yml` è un ottimo posto in cui definire le impostazioni
 che cambiano in base all'ambiente (una chiave API per esempio) o le impostazioni
@@ -34,5 +34,5 @@ qualcuno che non deve necessariamente conoscere symfony o il PHP
 
 >**NOTE**
 >Il file di configurazione `app.yml` è memorizzato in cache come file 
->PHP; questo processo è gestito in modo automatico dalla [classe](14-Other-Configuration-Files#chapter_14_config_handlers_yml)
+>PHP; questo processo è gestito in modo automatico dalla [classe](#chapter_14_config_handlers_yml)
 >~`sfDefineEnvironmentConfigHandler`~.

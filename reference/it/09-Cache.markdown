@@ -8,8 +8,8 @@ livello della vista. Questo file di configurazione è attivo solo se  l'impostaz
 >**TIP**
 >La configurazione della classe usata per la cache e
 >le sue configurazioni associate è eseguita nelle sezioni
->[`view_cache_manager`](05-Factories#chapter_05_view_cache_manager) e
->[`view_cache`](05-Factories#chapter_05_view_cache) del file di
+>[`view_cache_manager`](#chapter_05_view_cache_manager) e
+>[`view_cache`](#chapter_05_view_cache) del file di
 >configurazione `factories.yml`.
 
 Quando una applicazione è creata, symfony genera un file `cache.yml` predefinito
@@ -31,12 +31,12 @@ globalmente assegnata a `off`:
 >necessita di meno lavoro per l'applicazione.
 
 Come discusso in sede di introduzione, il file `cache.yml` trae benefici dal
-[**meccanismo di configurazione a cascata**](03-Configuration-Files-Principles#chapter_03_configurazione_a_cascata),
-e può includere [**costanti**](03-Configuration-Files-Principles#chapter_03_costanti).
+[**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata),
+e può includere [**costanti**](#chapter_03_costanti).
 
 >**NOTE**
 >Il file di configurazione `cache.yml` è memorizzato nella cache come file PHP; il
->processo è gestito automaticamente dalla [classe](14-Other-Configuration-Files#chapter_14_config_handlers_yml) 
+>processo è gestito automaticamente dalla [classe](#chapter_14_config_handlers_yml) 
 >~`sfCacheConfigHandler`~.
 
 La configurazione predefinita dell'applicazione può essere sovrascritta per un modulo, con

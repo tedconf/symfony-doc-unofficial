@@ -5,8 +5,8 @@ Il livello della Vista può essere configurato modificando il file
 di configurazione ~`view.yml`~.
 
 Come accennato nell'introduzione, il file `view.yml` beneficia del
-[**meccanismo di configurazione a cascata**](03-Configuration-Files-Principles#chapter_03_configurazione_a_cascata),
-e può includere delle [**costanti**](03-Configuration-Files-Principles#chapter_03_costanti).
+[**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata),
+e può includere delle [**costanti**](#chapter_03_costanti).
 
 >**CAUTION**
 >Questo file di configurazione è per lo più deprecato a favore di helper
@@ -158,5 +158,5 @@ di uno slot, per i meta dinamici (come il titolo o la descrizione).
 >**TIP**
 >Se ha senso, il meta HTTP `content-type` è modificato automaticamente
 >per includere il set di caratteri definito nel
->[file di configurazione `settings.yml`](04-Settings#chapter_04_sub_charset),
+>[file di configurazione `settings.yml`](#chapter_04_sub_charset),
 >se non è già presente.
