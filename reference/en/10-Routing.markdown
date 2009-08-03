@@ -36,63 +36,63 @@ The `class` name should extend the `sfRoute` base class. If not provided, the
 >**NOTE**
 >The `routing.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfRoutingConfigHandler`~
->[class](14-Other-Configuration-Files#chapter_14_config_handlers_yml).
+>[class](#chapter_14_config_handlers_yml).
 
 <div class="pagebreak"></div>
 
 Route Classes
 -------------
 
- * [Main Configuration](10-Routing#chapter_10_route_configuration)
+ * [Main Configuration](#chapter_10_route_configuration)
 
-   * [`class`](10-Routing#chapter_10_sub_class)
-   * [`options`](10-Routing#chapter_10_sub_options)
-   * [`param`](10-Routing#chapter_10_sub_param)
-   * [`params`](10-Routing#chapter_10_sub_params)
-   * [`requirements`](10-Routing#chapter_10_sub_requirements)
-   * [`type`](10-Routing#chapter_10_sub_type)
-   * [`url`](10-Routing#chapter_10_sub_url)
+   * [`class`](#chapter_10_sub_class)
+   * [`options`](#chapter_10_sub_options)
+   * [`param`](#chapter_10_sub_param)
+   * [`params`](#chapter_10_sub_params)
+   * [`requirements`](#chapter_10_sub_requirements)
+   * [`type`](#chapter_10_sub_type)
+   * [`url`](#chapter_10_sub_url)
 
- * [`sfRoute`](10-Routing#chapter_10_sfroute)
- * [`sfRequestRoute`](10-Routing#chapter_10_sfrequestroute)
+ * [`sfRoute`](#chapter_10_sfroute)
+ * [`sfRequestRoute`](#chapter_10_sfrequestroute)
 
-   * [`sf_method`](10-Routing#chapter_10_sub_sf_method)
+   * [`sf_method`](#chapter_10_sub_sf_method)
 
- * [`sfObjectRoute`](10-Routing#chapter_10_sfobjectroute)
+ * [`sfObjectRoute`](#chapter_10_sfobjectroute)
 
-   * [`allow_empty`](10-Routing#chapter_10_sub_allow_empty)
-   * [`convert`](10-Routing#chapter_10_sub_convert)
-   * [`method`](10-Routing#chapter_10_sub_method)
-   * [`model`](10-Routing#chapter_10_sub_model)
-   * [`type`](10-Routing#chapter_10_sub_type)
+   * [`allow_empty`](#chapter_10_sub_allow_empty)
+   * [`convert`](#chapter_10_sub_convert)
+   * [`method`](#chapter_10_sub_method)
+   * [`model`](#chapter_10_sub_model)
+   * [`type`](#chapter_10_sub_type)
 
- * [`sfPropelRoute`](10-Routing#chapter_10_sfpropelroute)
+ * [`sfPropelRoute`](#chapter_10_sfpropelroute)
 
-   * [`method_for_criteria`](10-Routing#chapter_10_sub_method_for_criteria)
+   * [`method_for_criteria`](#chapter_10_sub_method_for_criteria)
 
- * [`sfDoctrineRoute`](10-Routing#chapter_10_sfdoctrineroute)
+ * [`sfDoctrineRoute`](#chapter_10_sfdoctrineroute)
 
-   * [`method_for_query`](10-Routing#chapter_10_sub_method_for_query)
+   * [`method_for_query`](#chapter_10_sub_method_for_query)
 
- * [`sfRouteCollection`](10-Routing#chapter_10_sfroutecollection)
- * [`sfObjectRouteCollection`](10-Routing#chapter_10_sfobjectroutecollection)
+ * [`sfRouteCollection`](#chapter_10_sfroutecollection)
+ * [`sfObjectRouteCollection`](#chapter_10_sfobjectroutecollection)
 
-   * [`actions`](10-Routing#chapter_10_sub_actions)
-   * [`collection_actions`](10-Routing#chapter_10_sub_collection_actions)
-   * [`column`](10-Routing#chapter_10_sub_column)
-   * [`model`](10-Routing#chapter_10_sub_model)
-   * [`model_methods`](10-Routing#chapter_10_sub_model_methods)
-   * [`module`](10-Routing#chapter_10_sub_module)
-   * [`object_actions`](10-Routing#chapter_10_sub_object_actions)
-   * [`prefix_path`](10-Routing#chapter_10_sub_prefix_path)
-   * [`requirements`](10-Routing#chapter_10_sub_requirements)
-   * [`route_class`](10-Routing#chapter_10_sub_route_class)
-   * [`segment_names`](10-Routing#chapter_10_sub_segment_names)
-   * [`with_show`](10-Routing#chapter_10_sub_with_show)
-   * [`with_wildcard_routes`](10-Routing#chapter_10_sub_with_wildcard_routes)
+   * [`actions`](#chapter_10_sub_actions)
+   * [`collection_actions`](#chapter_10_sub_collection_actions)
+   * [`column`](#chapter_10_sub_column)
+   * [`model`](#chapter_10_sub_model)
+   * [`model_methods`](#chapter_10_sub_model_methods)
+   * [`module`](#chapter_10_sub_module)
+   * [`object_actions`](#chapter_10_sub_object_actions)
+   * [`prefix_path`](#chapter_10_sub_prefix_path)
+   * [`requirements`](#chapter_10_sub_requirements)
+   * [`route_class`](#chapter_10_sub_route_class)
+   * [`segment_names`](#chapter_10_sub_segment_names)
+   * [`with_show`](#chapter_10_sub_with_show)
+   * [`with_wildcard_routes`](#chapter_10_sub_with_wildcard_routes)
 
- * [`sfPropelRouteCollection`](10-Routing#chapter_10_sfpropelroutecollection)
- * [`sfDoctrineRouteCollection`](10-Routing#chapter_10_sfdoctrineroutecollection)
+ * [`sfPropelRouteCollection`](#chapter_10_sfpropelroutecollection)
+ * [`sfDoctrineRouteCollection`](#chapter_10_sfdoctrineroutecollection)
 
 <div class="pagebreak"></div>
 
@@ -118,12 +118,12 @@ to be used for the current request.
 
 The pattern is made of segments:
 
- * variables (a word prefixed with a [colon `:`](05-Factories#chapter_05_sub_variable_prefixes))
+ * variables (a word prefixed with a [colon `:`](#chapter_05_sub_variable_prefixes))
  * constants
  * a wildcard (`*`) to match a sequence of key/value pairs
 
 Each segment must be separated by one of the pre-defined separator
-([`/` or `.` by default](05-Factories#chapter_05_sub_segment_separators)).
+([`/` or `.` by default](#chapter_05_sub_segment_separators)).
 
 ### ~`params`~
 

@@ -16,9 +16,9 @@ the `config/` directory.
 >application configuration directories.
 
 As discussed in the introduction, the `databases.yml` file is
-[**environment-aware**](03-Configuration-Files-Principles#chapter_03_environment_awareness), benefits from
-the [**configuration cascade mechanism**](03-Configuration-Files-Principles#chapter_03_configuration_cascade),
-and can include [**constants**](03-Configuration-Files-Principles#chapter_03_constants).
+[**environment-aware**](#chapter_03_environment_awareness), benefits from
+the [**configuration cascade mechanism**](#chapter_03_configuration_cascade),
+and can include [**constants**](#chapter_03_constants).
 
 Each connection described in `databases.yml` must include a name, a database
 handler class name, and a set of parameters (`param`) used to configure the
@@ -42,7 +42,7 @@ defined and will be automatically included before the factory is created:
 >**NOTE**
 >The `databases.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfDatabaseConfigHandler`~
->[class](14-Other-Configuration-Files#chapter_14_config_handlers_yml).
+>[class](#chapter_14_config_handlers_yml).
 
 -
 

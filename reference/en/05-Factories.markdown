@@ -13,9 +13,9 @@ The main `factories.yml` configuration file for an application can be found in
 the `apps/APP_NAME/config/` directory.
 
 As discussed in the introduction, the `factories.yml` file is
-[**environment-aware**](03-Configuration-Files-Principles#chapter_03_environment_awareness), benefits from
-the [**configuration cascade mechanism**](03-Configuration-Files-Principles#chapter_03_configuration_cascade),
-and can include [**constants**](03-Configuration-Files-Principles#chapter_03_constants).
+[**environment-aware**](#chapter_03_environment_awareness), benefits from
+the [**configuration cascade mechanism**](#chapter_03_configuration_cascade),
+and can include [**constants**](#chapter_03_constants).
 
 The `factories.yml` configuration file contains a list of named factories:
 
@@ -56,76 +56,76 @@ will be automatically included before the factory is created:
 >**NOTE**
 >The `factories.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfFactoryConfigHandler`~
->[class](14-Other-Configuration-Files#chapter_14_config_handlers_yml).
+>[class](#chapter_14_config_handlers_yml).
 
 <div class="pagebreak"></div>
 
 Factories
 ---------
 
- * [`request`](05-Factories#chapter_05_request)
+ * [`request`](#chapter_05_request)
 
-   * [`formats`](05-Factories#chapter_05_sub_formats)
-   * [`path_info_array`](05-Factories#chapter_05_sub_path_info_array)
-   * [`path_info_key`](05-Factories#chapter_05_sub_path_info_key)
-   * [`relative_url_root`](05-Factories#chapter_05_sub_relative_url_root)
+   * [`formats`](#chapter_05_sub_formats)
+   * [`path_info_array`](#chapter_05_sub_path_info_array)
+   * [`path_info_key`](#chapter_05_sub_path_info_key)
+   * [`relative_url_root`](#chapter_05_sub_relative_url_root)
 
- * [`response`](05-Factories#chapter_05_response)
+ * [`response`](#chapter_05_response)
 
-   * [`charset`](05-Factories#chapter_05_sub_charset)
-   * [`http_protocol`](05-Factories#chapter_05_sub_http_protocol)
-   * [`send_http_headers`](05-Factories#chapter_05_sub_send_http_headers)
+   * [`charset`](#chapter_05_sub_charset)
+   * [`http_protocol`](#chapter_05_sub_http_protocol)
+   * [`send_http_headers`](#chapter_05_sub_send_http_headers)
 
- * [`user`](05-Factories#chapter_05_user)
+ * [`user`](#chapter_05_user)
 
-   * [`default_culture`](05-Factories#chapter_05_sub_default_culture)
-   * [`timeout`](05-Factories#chapter_05_sub_timeout)
-   * [`use_flash`](05-Factories#chapter_05_sub_use_flash)
+   * [`default_culture`](#chapter_05_sub_default_culture)
+   * [`timeout`](#chapter_05_sub_timeout)
+   * [`use_flash`](#chapter_05_sub_use_flash)
 
- * [`storage`](05-Factories#chapter_05_storage)
+ * [`storage`](#chapter_05_storage)
 
-   * [`auto_start`](05-Factories#chapter_05_sub_auto_start)
-   * [`database`](05-Factories#chapter_05_sub_database_storage_specific_options)
-   * [`db_table`](05-Factories#chapter_05_sub_database_storage_specific_options)
-   * [`db_id_col`](05-Factories#chapter_05_sub_database_storage_specific_options)
-   * [`db_data_col`](05-Factories#chapter_05_sub_database_storage_specific_options)
-   * [`db_time_col`](05-Factories#chapter_05_sub_database_storage_specific_options)
-   * [`session_cache_limiter`](05-Factories#chapter_05_sub_session_cache_limiter)
-   * [`session_cookie_domain`](05-Factories#chapter_05_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_httponly`](05-Factories#chapter_05_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_lifetime`](05-Factories#chapter_05_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_path`](05-Factories#chapter_05_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_secure`](05-Factories#chapter_05_sub_session_set_cookie_params_parameters)
-   * [`session_name`](05-Factories#chapter_05_sub_session_name)
+   * [`auto_start`](#chapter_05_sub_auto_start)
+   * [`database`](#chapter_05_sub_database_storage_specific_options)
+   * [`db_table`](#chapter_05_sub_database_storage_specific_options)
+   * [`db_id_col`](#chapter_05_sub_database_storage_specific_options)
+   * [`db_data_col`](#chapter_05_sub_database_storage_specific_options)
+   * [`db_time_col`](#chapter_05_sub_database_storage_specific_options)
+   * [`session_cache_limiter`](#chapter_05_sub_session_cache_limiter)
+   * [`session_cookie_domain`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_cookie_httponly`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_cookie_lifetime`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_cookie_path`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_cookie_secure`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_name`](#chapter_05_sub_session_name)
 
- * [`view_cache_manager`](05-Factories#chapter_05_view_cache_manager)
- * [`view_cache`](05-Factories#chapter_05_view_cache)
- * [`i18n`](05-Factories#chapter_05_i18n)
+ * [`view_cache_manager`](#chapter_05_view_cache_manager)
+ * [`view_cache`](#chapter_05_view_cache)
+ * [`i18n`](#chapter_05_i18n)
 
-   * [`cache`](05-Factories#chapter_05_sub_cache)
-   * [`debug`](05-Factories#chapter_05_sub_debug)
-   * [`source`](05-Factories#chapter_05_sub_source)
-   * [`untranslated_prefix`](05-Factories#chapter_05_sub_untranslated_prefix)
-   * [`untranslated_suffix`](05-Factories#chapter_05_sub_untranslated_suffix)
+   * [`cache`](#chapter_05_sub_cache)
+   * [`debug`](#chapter_05_sub_debug)
+   * [`source`](#chapter_05_sub_source)
+   * [`untranslated_prefix`](#chapter_05_sub_untranslated_prefix)
+   * [`untranslated_suffix`](#chapter_05_sub_untranslated_suffix)
 
- * [`routing`](05-Factories#chapter_05_routing)
+ * [`routing`](#chapter_05_routing)
 
-   * [`cache`](05-Factories#chapter_05_sub_cache)
-   * [`extra_parameters_as_query_string`](05-Factories#chapter_05_sub_extra_parameters_as_query_string)
-   * [`generate_shortest_url`](05-Factories#chapter_05_sub_generate_shortest_url)
-   * [`lazy_routes_deserialize`](05-Factories#chapter_05_sub_lazy_routes_deserialize)
-   * [`lookup_cache_dedicated_keys`](05-Factories#chapter_05_sub_lookup_cache_dedicated_keys)
-   * [`load_configuration`](05-Factories#chapter_05_sub_load_configuration)
-   * [`segment_separators`](05-Factories#chapter_05_sub_segment_separators)
-   * [`suffix`](05-Factories#chapter_05_sub_suffix)
-   * [`variable_prefixes`](05-Factories#chapter_05_sub_variable_prefixes)
+   * [`cache`](#chapter_05_sub_cache)
+   * [`extra_parameters_as_query_string`](#chapter_05_sub_extra_parameters_as_query_string)
+   * [`generate_shortest_url`](#chapter_05_sub_generate_shortest_url)
+   * [`lazy_routes_deserialize`](#chapter_05_sub_lazy_routes_deserialize)
+   * [`lookup_cache_dedicated_keys`](#chapter_05_sub_lookup_cache_dedicated_keys)
+   * [`load_configuration`](#chapter_05_sub_load_configuration)
+   * [`segment_separators`](#chapter_05_sub_segment_separators)
+   * [`suffix`](#chapter_05_sub_suffix)
+   * [`variable_prefixes`](#chapter_05_sub_variable_prefixes)
 
- * [`logger`](05-Factories#chapter_05_logger)
+ * [`logger`](#chapter_05_logger)
 
-   * [`level`](05-Factories#chapter_05_sub_level)
-   * [`loggers`](05-Factories#chapter_05_sub_loggers)
+   * [`level`](#chapter_05_sub_level)
+   * [`loggers`](#chapter_05_sub_loggers)
 
- * [`controller`](05-Factories#chapter_05_controller)
+ * [`controller`](#chapter_05_controller)
 
 <div class="pagebreak"></div>
 
@@ -239,7 +239,7 @@ available or defaults to `HTTP/1.0`.
 
 >**NOTE**
 >By default, the `myUser` class inherits from `sfBasicSecurityUser`,
->which can be configured in the [`security.yml`](08-Security#chapter_08)
+>which can be configured in the [`security.yml`](#chapter_08)
 >configuration file.
 
 ### ~`timeout`~
@@ -361,7 +361,7 @@ several additional options are available:
       class: sfViewCacheManager
 
 >**CAUTION**
->This factory is only created if the [`cache`](04-Settings#chapter_04_sub_cache)
+>This factory is only created if the [`cache`](#chapter_04_sub_cache)
 >setting is set to `on`.
 
 The view cache manager configuration does not include a `param` key. This
@@ -385,7 +385,7 @@ underlying cache object used by the view cache manager.
         prefix:                    %SF_APP_DIR%/template
 
 >**CAUTION**
->This factory is only defined if the [`cache`](04-Settings#chapter_04_sub_cache)
+>This factory is only defined if the [`cache`](#chapter_04_sub_cache)
 >setting is set to `on`.
 
 The `view_cache` factory defines a cache class that must inherit from
@@ -415,7 +415,7 @@ The `view_cache` factory defines a cache class that must inherit from
             prefix:                    %SF_APP_DIR%/i18n
 
 >**CAUTION**
->This factory is only defined if the [`i18n`](04-Settings#chapter_04_sub_i18n)
+>This factory is only defined if the [`i18n`](#chapter_04_sub_i18n)
 >setting is set to `on`.
 
 ### ~`source`~

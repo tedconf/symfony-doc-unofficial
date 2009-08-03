@@ -5,8 +5,8 @@ The View layer can be configured by editing the ~`view.yml`~ configuration
 file.
 
 As discussed in the introduction, the `view.yml` file benefits from the
-[**configuration cascade mechanism**](03-Configuration-Files-Principles#chapter_03_configuration_cascade), and
-can include [**constants**](03-Configuration-Files-Principles#chapter_03_constants).
+[**configuration cascade mechanism**](#chapter_03_configuration_cascade), and
+can include [**constants**](#chapter_03_constants).
 
 >**CAUTION**
 >This configuration file is mostly deprecated in favors of helpers used
@@ -26,7 +26,7 @@ The `view.yml` configuration file contains a list of view configurations:
 >**NOTE**
 >The `view.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfViewConfigHandler`~
->[class](14-Other-Configuration-Files#chapter_14_config_handlers_yml).
+>[class](#chapter_14_config_handlers_yml).
 
 Layout
 ------
@@ -63,7 +63,7 @@ view.
 >**NOTE**
 >The inclusion of the stylesheets defined in `view.yml` can be done either
 >manually with the `include_stylesheets()` helper, or automatically with
->the [common filter](12-Filters#chapter_12_common).
+>the [common filter](#chapter_12_common).
 
 If many files are defined, symfony will include them in the same order as the
 definition:
@@ -101,7 +101,7 @@ current view.
 >**NOTE**
 >The inclusion of the JavaScript files defined in `view.yml` can be done
 >either manually with the `include_javascripts()` helper, or automatically
->with the [common filter](12-Filters#chapter_12_common).
+>with the [common filter](#chapter_12_common).
 
 If many files are defined, symfony will include them in the same order as the
 definition:
@@ -154,4 +154,4 @@ the title or the description).
 >**TIP**
 >When it makes sense, the `content-type` HTTP meta is automatically modified
 >to include the charset defined in the
->[`settings.yml` configuration file](04-Settings#chapter_04_sub_charset) if not already present.
+>[`settings.yml` configuration file](#chapter_04_sub_charset) if not already present.

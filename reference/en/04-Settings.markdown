@@ -9,8 +9,8 @@ The main `settings.yml` configuration file for an application can be found in
 the `apps/APP_NAME/config/` directory.
 
 As discussed in the introduction, the `settings.yml` file is
-[**environment-aware**](03-Configuration-Files-Principles#chapter_03_environment_awareness), and benefits from
-the [**configuration cascade mechanism**](03-Configuration-Files-Principles#chapter_03_configuration_cascade).
+[**environment-aware**](#chapter_03_environment_awareness), and benefits from
+the [**configuration cascade mechanism**](#chapter_03_configuration_cascade).
 
 Each environment section has two sub-sections: `.actions` and `.settings`. All
 configuration directives go under the `.settings` sub-section, except for the
@@ -19,7 +19,7 @@ default actions to be rendered for some common pages.
 >**NOTE**
 >The `settings.yml` configuration file is cached as a PHP file; the process is
 >automatically managed by the ~`sfDefineEnvironmentConfigHandler`~
->[class](14-Other-Configuration-Files#chapter_14_config_handlers_yml).
+>[class](#chapter_14_config_handlers_yml).
 
 <div class="pagebreak"></div>
 
@@ -28,36 +28,36 @@ Settings
 
   * `.actions`
 
-    * [`error_404`](04-Settings#chapter_04_sub_error_404)
-    * [`login`](04-Settings#chapter_04_sub_error_404)
-    * [`secure`](04-Settings#chapter_04_sub_secure)
-    * [`module_disabled`](04-Settings#chapter_04_sub_module_disabled)
+    * [`error_404`](#chapter_04_sub_error_404)
+    * [`login`](#chapter_04_sub_error_404)
+    * [`secure`](#chapter_04_sub_secure)
+    * [`module_disabled`](#chapter_04_sub_module_disabled)
 
   * `.settings`
 
-    * [`cache`](04-Settings#chapter_04_sub_cache)
-    * [`charset`](04-Settings#chapter_04_sub_charset)
-    * [`check_lock`](04-Settings#chapter_04_sub_check_lock)
-    * [`check_symfony_version`](04-Settings#chapter_04_sub_check_symfony_version)
-    * [`compressed`](04-Settings#chapter_04_sub_compressed)
-    * [`csrf_secret`](04-Settings#chapter_04_sub_csrf_secret)
-    * [`default_culture`](04-Settings#chapter_04_sub_default_culture)
-    * [`default_timezone`](04-Settings#chapter_04_sub_default_timezone)
-    * [`enabled_modules`](04-Settings#chapter_04_sub_enabled_modules)
-    * [`error_reporting`](04-Settings#chapter_04_sub_error_reporting)
-    * [`escaping_strategy`](04-Settings#chapter_04_sub_escaping_strategy)
-    * [`escaping_method`](04-Settings#chapter_04_sub_escaping_method)
-    * [`etag`](04-Settings#chapter_04_sub_etag)
-    * [`i18n`](04-Settings#chapter_04_sub_i18n)
-    * [`lazy_cache_key`](04-Settings#chapter_04_sub_lazy_cache_key)
-    * [`logging_enabled`](04-Settings#chapter_04_sub_logging_enabled)
-    * [`no_script_name`](04-Settings#chapter_04_sub_no_script_name)
-    * [`max_forwards`](04-Settings#chapter_04_sub_max_forwards)
-    * [`standard_helpers`](04-Settings#chapter_04_sub_standard_helpers)
-    * [`strip_comments`](04-Settings#chapter_04_sub_strip_comments)
-    * [`use_database`](04-Settings#chapter_04_sub_use_database)
-    * [`web_debug`](04-Settings#chapter_04_sub_web_debug)
-    * [`web_debug_web_dir`](04-Settings#chapter_04_sub_web_debug_web_dir)
+    * [`cache`](#chapter_04_sub_cache)
+    * [`charset`](#chapter_04_sub_charset)
+    * [`check_lock`](#chapter_04_sub_check_lock)
+    * [`check_symfony_version`](#chapter_04_sub_check_symfony_version)
+    * [`compressed`](#chapter_04_sub_compressed)
+    * [`csrf_secret`](#chapter_04_sub_csrf_secret)
+    * [`default_culture`](#chapter_04_sub_default_culture)
+    * [`default_timezone`](#chapter_04_sub_default_timezone)
+    * [`enabled_modules`](#chapter_04_sub_enabled_modules)
+    * [`error_reporting`](#chapter_04_sub_error_reporting)
+    * [`escaping_strategy`](#chapter_04_sub_escaping_strategy)
+    * [`escaping_method`](#chapter_04_sub_escaping_method)
+    * [`etag`](#chapter_04_sub_etag)
+    * [`i18n`](#chapter_04_sub_i18n)
+    * [`lazy_cache_key`](#chapter_04_sub_lazy_cache_key)
+    * [`logging_enabled`](#chapter_04_sub_logging_enabled)
+    * [`no_script_name`](#chapter_04_sub_no_script_name)
+    * [`max_forwards`](#chapter_04_sub_max_forwards)
+    * [`standard_helpers`](#chapter_04_sub_standard_helpers)
+    * [`strip_comments`](#chapter_04_sub_strip_comments)
+    * [`use_database`](#chapter_04_sub_use_database)
+    * [`web_debug`](#chapter_04_sub_web_debug)
+    * [`web_debug_web_dir`](#chapter_04_sub_web_debug_web_dir)
 
 <div class="pagebreak"></div>
 
@@ -221,10 +221,10 @@ The `cache` setting enables or disables template caching.
 
 >**TIP**
 >The general configuration of the cache system is done in
->the [`view_cache_manager`](05-Factories#chapter_05_view_cache_manager) and
->[`view_cache`](05-Factories#chapter_05_view_cache) sections of the `factories.yml`
+>the [`view_cache_manager`](#chapter_05_view_cache_manager) and
+>[`view_cache`](#chapter_05_view_cache) sections of the `factories.yml`
 >configuration file. The fined-grained configuration is done in
->the [`cache.yml`](09-Cache#chapter_09) configuration file.
+>the [`cache.yml`](#chapter_09) configuration file.
 
 ### ~`etag`~
 
@@ -243,7 +243,7 @@ sub-framework. If your application is internationalized, set it to `on`.
 
 >**TIP**
 >The general configuration of the i18n system is to be done in the
->[`i18n`](05-Factories#chapter_05_i18n) section of the `factories.yml` configuration
+>[`i18n`](#chapter_05_i18n) section of the `factories.yml` configuration
 >file.
 
 ### ~`default_culture`~
