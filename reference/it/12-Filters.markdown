@@ -5,14 +5,14 @@ Il file di configurazione ~`filters.yml`~ descrive la catena di filtri da
 eseguire per ogni richiesta.
 
 Il file di configurazione principale `filters.yml` per un'applicazione
-può essere trovato nella cartella `apps/APP_NAME/config/`.
+può essere trovato nella cartella `apps/NOME_APP/config/`.
 
-Come accennato nell'introduzione, il file `filters.yml` dal
+Come accennato nell'introduzione, il file `filters.yml` trae benefici dal
 [**meccanismo di configurazione a cascata**](#chapter_03-Configuration-Files-Principles_sub_configurazione_a_cascata)
 e può includere delle [**costanti**](#chapter_03-Configuration-Files-Principles_sub_costanti).
 
 Il file di configurazione `filters.yml` contiene una lista di definizioni
-nominale di filtri:
+di filtri con nome:
 
     [yml]
     FILTRO_1:
@@ -66,7 +66,7 @@ Per togliere un filtro, occorre disabilitarlo impostando la chiave
       enabled: false
 
 Ci sono due nomi speciali di filtri: `rendering` e `execution`. Entrambi
-sono obbligatori e sono identificato dal parametro `type`. Il filtro
+sono obbligatori e sono identificati dal parametro `type`. Il filtro
 `rendering` dovrebbe essere sempre il primo registrato ed il filtro
 `execution` dovrebbe essere sempre l'ultimo:
 
@@ -185,7 +185,7 @@ alla risposta principale, a meno che non siano già stati inclusi.
       param:
         type: execution
 
-Il filtro `execution` è al centro della catena dei filtri ed si
+Il filtro `execution` è al centro della catena dei filtri e si
 occupa dell'esecuzione di tutte le azioni e le viste.
 
-Il filtro `execution` dovrebbe essere l'ulitmo filtro registrato.
+Il filtro `execution` dovrebbe essere l'ultimo filtro registrato.
