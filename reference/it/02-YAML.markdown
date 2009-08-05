@@ -273,7 +273,7 @@ Occorre fare attenzione a non scombinare l'indentazione. Tenete a mente le
 seguenti semplici regole quando aggiungete codice PHP ad un file YAML:
 
 
- * Le istruzioni `<?php ?>` devono sempre iniziare la riga o essere include in
+ * Le istruzioni `<?php ?>` devono sempre iniziare la riga o essere incluse in
    un valore.
 
  * Se un istruzione `<?php ?>` termina una riga, bisogna inserire esplicitamente
