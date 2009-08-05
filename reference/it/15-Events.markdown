@@ -14,7 +14,7 @@ nome, separati da un punto (`.`).
 Uso
 ---
 
-Si può notificare un evento creando un oggetto evento:
+Si può notificare un evento iniziando con il creare un oggetto evento:
 
 
     [php]
@@ -201,7 +201,7 @@ di gestione delle eccezioni di symfony, processando l'evento.
 | `priority` | Il livello di priorità (`sfLogger::EMERG`, `sfLogger::ALERT`, `sfLogger::CRIT`, `sfLogger::ERR`, `sfLogger::WARNING`, `sfLogger::NOTICE`, `sfLogger::INFO`, or `sfLogger::DEBUG`)
 
 L'evento `command.log` è il meccanismo usato da symfony per il log della
-lina di comando (CLI) di symfony (si veda il factory logger).
+linea di comando (CLI) di symfony (si veda il factory logger).
 
 ### ~`command.pre_command`~
 
@@ -286,7 +286,7 @@ si può aggiungere un metodo alla classe senza usare l'ereditarietà.
 *Notificatori predefiniti*: `sfContext`
 
 L'evento `context.load_factories` è notificato una volta a richiesta
-dall'oggetto `sfContext`, subito che tutti i factory sono stati
+dall'oggetto `sfContext`, subito dopo che tutti i factory sono stati
 inizializzati. È il primo evento ad essere notificato con tutte le
 classi principali inizializzate.
 
