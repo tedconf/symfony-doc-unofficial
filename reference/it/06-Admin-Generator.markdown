@@ -13,7 +13,7 @@ I moduli del generatore di admin sono creati dai task `propel:generate-admin` o
 
     $ php symfony doctrine:generate-admin backend Article
 
-I comandi precedenti creano un modulo generatore admin `article` per
+I comandi precedenti creano un modulo `article` generatore di admin per
 la classe del modello `Article`.
 
 >**NOTE**
@@ -39,7 +39,7 @@ La voce `param` contiene le opzioni di configurazione per il modulo generato.
 `model_class` definisce la classe del modello  associata a questo modulo, e
 l'opzione `theme` definisce il tema predefinito da usare.
 
-Ma la configurazione principale è presente sotto la voce`config`. È organizzata
+Ma la configurazione principale è presente sotto la voce `config`. È organizzata
 in sette sezioni:
 
   * `actions`: Configurazione predefinita per le azioni trovate sull'elenco e sui form
@@ -91,7 +91,7 @@ e il campo `content` dal componente `content`.
 
 Il generatore di admin passa alcuni parametri ai partial e ai componenti:
 
-  * Per le pagine `new` e `edit`:
+  * Per le pagine `new` ed `edit`:
 
     * `form`:       Il form associato al corrente oggetto del modello
     * `attributes`: Un array di attributi HTML da applicare ai widget
@@ -116,12 +116,12 @@ modello:
 
 ### Oggetti segnaposto
 
-Alcune opzioni possono prendere oggetti di modello segnaposto. Un segnaposto è una stringa
-che segue il modello: `%%NAME%%`. La stringa `NAME` può essere qualunque cosa possa
+Alcune opzioni possono prendere oggetti del modello segnaposto. Un segnaposto è una stringa
+che segue il modello: `%%NOME%%`. La stringa `NOME` può essere qualunque cosa possa
 essere convertita a un metodo getter valido di un oggetto (`get` più un suffisso
-costituito dalla stringa `NAME` con il primo carattere maiuscolo). Per esempio, `%%title%%` sarà
-sostituito dal valore di `$article->getTitle()`. I valori segnaposto sono
-sostituiti dinamicamente a runtime in accordo con l'oggetto associato con il
+costituito dalla stringa `NOME` con il primo carattere maiuscolo). Per esempio, `%%titolo%%` sarà
+sostituito dal valore di `$article->getTitolo()`. I valori segnaposto sono
+sostituiti dinamicamente a runtime in accordo con l'oggetto associato nel
 contesto corrente.
 
 >**TIP**
@@ -141,8 +141,8 @@ a cascata. Le regole di ereditarietà sono le seguenti:
 
 ### ~Credenziali~
 
-Le azioni nel generatore di admin (sulle liste e sui form) possono essere nascoste,
-basate sulle credenziali dell'utente usando l'opzione `credential` (vedere sotto).
+Nel generatore di admin (sulle liste e sui form) le azioni possono essere nascoste,
+in base alle credenziali dell'utente usando l'opzione `credential` (vedere sotto).
 Tuttavia, anche se il collegamento o il bottone non appaiono, le azioni devono
 essere adeguatamente protette da accessi illeciti. La gestione delle credenziali nel
 generatore di admin si prende cura solo della visualizzazione.
@@ -168,10 +168,10 @@ Quando la configurazione non è sufficiente, è possibile sovrascrivere i metodi
  | `getFilters()`         | Restituisce i filtri correnti
  | `setFilters()`         | Assegna i filtri
  | `getPager()`           | Restituisce il paginatore dell'elenco
- | `getPage()`            | Ottiene la pagina del paginatore
- | `setPage()`            | Assegna la pagina del paginatore
- | `buildCriteria()`      | Costruisce il `Criteria` per l'elenco
- | `addSortCriteria()`    | Aggiunge il `Criteria` ordinamento per l'elenco
+ | `getPage()`            | Ottiene la pagina dal paginatore
+ | `setPage()`            | Assegna la pagina al paginatore
+ | `buildCriteria()`      | Costruisce i `Criteri` per l'elenco
+ | `addSortCriteria()`    | Aggiunge l'ordinamento ai `Criteri` per l'elenco
  | `getSort()`            | Restituisce l'attuale colonna dell'ordinamento
  | `setSort()`            | Imposta l'attuale colonna per l'ordinamento
 
@@ -456,7 +456,7 @@ che è definita dall'opzione `params` (vedere sotto).
 *Valore predefinito*: nessuno
 
 L'opzione `params` è usata per definire lo schema di stringhe HTML da usare quando
-si utilizza l'impaginazione `stacked`. Questa stringa può contenere segnaposti nel modello dell'oggetto:
+si utilizza l'impaginazione `stacked`. Questa stringa può contenere segnaposti nell'oggetto del modello:
 
     [yml]
     config:
@@ -585,7 +585,7 @@ numero di oggetti per il filtro corrente.
 `filter`
 --------
 
-La sezione `filter` definisce la configurazione per il form filtrato
+La sezione `filter` definisce la configurazione per il form del filtro
 visualizzato nella pagina elenco.
 
 ### ~`display`~
@@ -651,7 +651,7 @@ L'opzione `class` definisce la classe form da usare per le pagine
 
 >**TIP**
 >Anche se è possibile definire una opzione `class` in entrambe le sezioni
->`new` e `edit`, + meglio utilizzare una classe e prendersi cura delle differenze
+>`new` e `edit`, è meglio utilizzare una classe e prendersi cura delle differenze
 >utilizzando la logica condizionale.
 
 `edit`
