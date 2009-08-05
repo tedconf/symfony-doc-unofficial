@@ -4,7 +4,7 @@ Il file di configurazione routing.yml
 Il file di configurazione `routing.yml` permette la definizione di rotte.
 
 Il file di configurazione principale `routing.yml` per una applicazione può essere trovato
-nella cartella `apps/APP_NAME/config/`.
+nella cartella `apps/NOME_APP/config/`.
 
 Il file di configurazione `routing.yml` contiene un elenco con nome delle definizioni
 di rotte:
@@ -26,8 +26,8 @@ Quando viene letto il file di configurazione `routing.yml`, ciascuna rotta è co
 un oggetto della classe `class`:
 
     [yml]
-    ROUTE_NAME:
-      class: CLASS_NAME
+    NOME_ROTTA:
+      class: NOME_CLASSE
       # configuration if the route
 
 Il nome `class` dovrebbe estendere la classe base `sfRoute`. Se così non avviene, come
@@ -113,14 +113,14 @@ L'impostazione `class` consente di cambiare la classe route da usare per la rott
 
 *Predefinito*: `/`
 
-L'impostazione `url` è il pattern che deve confrontare una URL entrante per la rotta
+L'impostazione `url` è il pattern che deve confrontare una URL entrante con la rotta
 che deve essere usata per la richiesta corrente.
 
-Il pattern è fatto di segmenti:
+Il pattern è costituito da segmenti:
 
  * variabili (una parola con prefisso [due punti `:`](#chapter_05_sub_variable_prefixes))
  * costanti
- * un carattere jolly (`*`) per confrontare una sequenza di coppie chiave/valore pairs
+ * un carattere jolly (`*`) per confrontare una sequenza di coppie chiave/valore
 
 Ciascun segmento deve essere separato da uno dei separatori predefiniti
 ([`/` o `.` per impostazione predefinita](#chapter_05_sub_segment_separators)).
@@ -151,7 +151,7 @@ opzioni disponibili per ciascuna classe di rotte.
 
 *Predefinito*: Un array vuoto
 
-L'impostazione `requirements` è un array di requisiti he devono essere soddisfatti
+L'impostazione `requirements` è un array di requisiti che devono essere soddisfatti
 dalle variabili `url`. Le chiavi sono le variabili url e i valori sono
 espressioni regolari a cui i valori della variabile devono corrispondere.
 
@@ -273,7 +273,7 @@ associato con la rotta corrente.
 
 L'opzione `actions` definisce un array di azioni autorizzate per la rotta. Le
 azioni devono essere un sotto insieme di tutte le azioni disponibili: `list`, `new`, `create`,
-`edit`, `update`, `delete`, and `show`.
+`edit`, `update`, `delete`, e `show`.
 
 Se l'opzione è assegnata a `false`, il valore predefinito, tutte le azioni saranno disponibili
 eccetto per la `show` se l'opzione `with_show` è assegnata a `false` (vedere
