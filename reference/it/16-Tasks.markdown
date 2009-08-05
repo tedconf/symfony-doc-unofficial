@@ -1,7 +1,7 @@
 Task
 =====
 
-Il framework symfony comprende uno strumento per l'interfaccia riga di comando.
+Il framework symfony comprende uno strumento per l'interfaccia a riga di comando.
 Task già presenti mettono in grado allo sviluppatore di eseguire molti compiti ricorrenti
 e fastidiosi nel ciclo di vita di un progetto.
 
@@ -147,7 +147,7 @@ Il task `help` mostra l'aiuto per un task:
 
 ### ~`list`~
 
-Il task `list` elenca itask:
+Il task `list` elenca i task:
 
     $ php symfony list  [spazionomi]
 
@@ -243,7 +243,7 @@ e `template`.
 
 ### ~`configure::author`~
 
-Il task `configure::author` configura l'utore del progetto:
+Il task `configure::author` configura l'autore del progetto:
 
     $ php symfony configure:author  autore
 
