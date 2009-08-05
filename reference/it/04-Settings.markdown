@@ -2,11 +2,11 @@ Il file di configurazione settings.yml
 ======================================
 
 Molti aspetti di symfony possono essere configurati sia tramite file di 
-configurazione scritto in YAML sia in semplice PHP. In questa sezione viene 
+configurazione scritti in YAML sia in semplice PHP. In questa sezione viene 
 descritto il principale file di configurazione per un'applicazione: `settings.yml`.
 
 Il file di configurazione `settings.yml` per un'applicazione si trova nella 
-directory `apps/APP_NAME/config/`.
+cartella `apps/NOME_APP/config/`.
 
 Come anticipato nell'introduzione il file `settings.yml` è 
 [consapevole dell'ambiente](#chapter_03_consapevolezza_dell_ambiente) 
@@ -14,7 +14,7 @@ e beneficia del [**meccanismo di configurazione a cascata**](#chapter_03_configu
 
 Ogni sezione dedicata ad un ambiente ha due sotto sezioni: `.actions` e `.settings`.
 Tutte le impostazioni vanno inserite nella sotto sezione `.settings`, eccezion 
-fatta per le azioni di default da visualizzare per alcune pagine comuni.
+fatta per le azioni predefinite da visualizzare per alcune pagine comuni.
 
 >**NOTE**
 >Il file di configurazione `settings.yml` viene memorizzato in cache come file
@@ -65,7 +65,7 @@ Impostazioni
 La sotto sezione `.actions`
 ---------------------------
 
-*Configurazione di default*:
+*Configurazione predefinita*:
 
     [yml]
     default:
@@ -88,7 +88,8 @@ modulo (con suffisso `_module`) e la seconda per l'azione (con suffisso `_action
 
 ### ~`error_404`~
 
-L'azione `error_404` viene eseguita quando deve essere visualizzata una pagina 404.
+L'azione `error_404` viene eseguita quando deve essere visualizzata una pagina 404
+(pagina non trovata).
 
 ### ~`login`~
 
@@ -108,7 +109,7 @@ La sotto sezione `.settings`
 ----------------------------
 
 La sotto sezione `.settings` è dove si specifica la configurazione del framework.
-I paragrafi seguenti descrivono tutte le possibile impostazioni ordinate per
+I paragrafi seguenti descrivono tutte le possibili impostazioni ordinate per
 importanza.
 
 Tutte le impostazioni definite nella sezione `.settings` sono disponibili in qualsiasi
@@ -121,7 +122,7 @@ utilizzare:
 
 ### ~`escaping_strategy`~
 
-*Default*: `off`
+*Predefinito*: `off`
 
 L'impostazione `escaping_strategy` è un valore Booleano che determina se il 
 sub-framework per l'escape dell'output è abilitato o meno. Quando è abilitato
@@ -129,14 +130,14 @@ tutte le variabili disponibili nei template vengono automaticamente sottoposte
 all'escape chiamando la funzione di supporto definita nell'impostazione 
 `escaping_method` (vedere sotto).
 
-Notare che `escaping_method` è l'helper di default usato da symfony, tuttavia
+Notare che `escaping_method` è l'helper predefinito usato da symfony, tuttavia
 può essere rimpiazzato di volta in volta (un esempio è l'output di una variabile
 in uno script Javascript).
 
 Il sub-framework che si occupa dell'escape dell'output utilizza l'impostazione
 `charset` per il suo compito.
 
-È vivamente consigliato di cambiare il valore di default a `on`.
+È vivamente consigliato di cambiare il valore predefinito a `on`.
 
 >**TIP**
 >Queste impostazioni possono essere dichiarate quando si crea un'applicazione 
@@ -144,22 +145,22 @@ Il sub-framework che si occupa dell'escape dell'output utilizza l'impostazione
 
 ### ~`escaping_method`~
 
-*Default*: `ESC_SPECIALCHARS`
+*Predefinito*: `ESC_SPECIALCHARS`
 
-L'impostazione `escaping_method` definisce la funzione di default da utilizzare
+L'impostazione `escaping_method` definisce la funzione predefinita da utilizzare
 per l'escape delle variabili nei template (vedere `escaping_strategy` precedente).
 
 È possibile selezionare uno dei valori proposti: ~`ESC_SPECIALCHARS`~, ~`ESC_RAW`~,
 ~`ESC_ENTITIES`~, ~`ESC_JS`~, ~`ESC_JS_NO_ENTITIES`~, e
 ~`ESC_SPECIALCHARS`~ o creare una nuova funzione.
 
-Per la maggior parte dei casi il valore di default è la scelta migliore. Può essere
+Per la maggior parte dei casi il valore predefinito è la scelta migliore. Può essere
 utilizzato anche l'helper `ESC_ENTITIES` specialmente se si lavora solamente con
 l'inglese o lingue europee.
 
 ### ~`csrf_secret`~
 
-*Default*: `false`
+*Predefinito*: `false`
 
 L'impostazione `csrf_secret` specifica una chiave univoca di sicurezza per 
 l'applicazione. Se non è impostata a `false`, attiva la protezione CSRF per 
@@ -167,7 +168,7 @@ tutti i form generati dal form framework. Questa impostazione è utilizzata anch
 dall'helper `link_to()` quando c'è la necessità di convertire un link ad un form
 (per simulare un metodo HTTP `DELETE` per esempio).
 
-È vivamente consigliato di cambiare il valore di default con una chiave segreta
+È vivamente consigliato di cambiare il valore predefinito con una chiave segreta
 univoca.
 
 >**TIP**
@@ -176,21 +177,21 @@ univoca.
 
 ### ~`charset`~
 
-*Default*: `utf-8`
+*Predefinito*: `utf-8`
 
 L'impostazione `charset` specifica il set di caratteri che verrà utilizzato in ogni 
 situazione dal framework: dal `Content-Type` header della response alla funzionalità
 di escaping dell'output.
 
-Il più delle volte il valore di default va bene.
+Il più delle volte il valore predefinito va bene.
 
 ### ~`enabled_modules`~
 
-*Default*: `[default]`
+*Predefinito*: `[default]`
 
 L'impostazione `enabled_modules` è un array dei nomi dei moduli da abilitare
 per la specifica applicazione. Moduli definiti in plugin o nel core di symfony 
-non sono abilitati di default e devono quindi essere elencati in questa 
+non sono abilitati in modo predefinito e devono quindi essere elencati in questa 
 impostazione per essere accessibili.
 
 Aggiungere un modulo è solamente questione di aggiungerlo alla lista (l'ordine
@@ -199,16 +200,16 @@ con cui vengono inseriti non importa):
     [yml]
     enabled_modules: [default, sfGuardAuth]
 
-Il modulo `default` definito nel framework contiene tutte le azioni di default 
+Il modulo `default` definito nel framework contiene tutte le azioni predefinite 
 impostate nella sotto sezione `.actions` del file `settings.yml`. Raccomandiamo 
 di personalizzare tutte le impostazioni e quindi rimuovere il modulo `default`
 da questa configurazione.
 
 ### ~`default_timezone`~
 
-*Default*: none
+*Predefinito*: none
 
-L'impostazione `default_timezone` definisce la timezone di default utilizzata
+L'impostazione `default_timezone` definisce la timezone predefinita utilizzata
 da PHP. Può essere una qualsiasi [timezone](http://www.php.net/manual/en/class.datetimezone.php)
 riconosciuta da PHP.
 
@@ -219,28 +220,28 @@ riconosciuta da PHP.
 
 ### ~`cache`~
 
-*Default*: `off`
+*Predefinito*: `off`
 
 L'impostazione `cache` abilita o meno il caching dei template.
 
 >**TIP**
->La configurazione generale del sistema della cache viene specificato nelle sezioni 
+>La configurazione generale del sistema della cache viene specificata nelle sezioni 
 >[`view_cache_manager`](#chapter_05_view_cache_manager) e 
 >[`view_cache`](#chapter_05_view_cache) del file `factories.yml`.
->La configurazione di precisione viene fatta nel file di configurazione 
+>La configurazione dettagliata viene fatta nel file di configurazione 
 >[`cache.yml`](#chapter_09).
 
 ### ~`etag`~
 
-*Default*: `on` ad esclusione degli ambienti `dev` e `test`
+*Predefinito*: `on` ad esclusione degli ambienti `dev` e `test`
 
-L'impostazione `etag` abilita e disabilita la generatione automatica degli header 
+L'impostazione `etag` abilita e disabilita la generazione automatica degli header 
 HTTP `ETag`. L'ETag generato da symfony è un semplice md5 del contenuto della 
 response.
 
 ### ~`i18n`~
 
-*Default*: `off`
+*Predefinito*: `off`
 
 L'impostazione `i18n` è un valore Booleano che abilita e disabilita il 
 sub-framework i18n. Se l'applicazione è internazionalizzata impostarlo a `on`.
@@ -251,42 +252,42 @@ sub-framework i18n. Se l'applicazione è internazionalizzata impostarlo a `on`.
 
 ### ~`default_culture`~
 
-*Default*: `en`
+*Predefinito*: `en`
 
-L'impostazione `default_culture` definisce la nazionalità di default utilizzata
-dal sub-framework i8n. Può essere una qualsiasi delle nazionalità valide.
+L'impostazione `default_culture` definisce la nazionalità predefinita utilizzata
+dal sub-framework i18n. Può essere una qualsiasi delle nazionalità valide.
 
 ### ~`standard_helpers`~
 
-*Default*: `[Partial, Cache, Form]`
+*Predefinito*: `[Partial, Cache, Form]`
 
 L'impostazione `standard_helpers` è un array di gruppi di helper da caricare
 per tutti i template (nome del gruppo di helper senza il suffisso `Helper`).
 
 ### ~`no_script_name`~
 
-*Default*: `on` per l'ambiente `prod` della prima applicazione creata,
+*Predefinito*: `on` per l'ambiente `prod` della prima applicazione creata,
 `off` per tutte le altre
 
 L'impostazione `no_script_name` determina il fatto che il nome del front controller
-venga inserito o meno negli URL generati. Di default è impostato a `on` dal 
+venga inserito o meno negli URL generati. In modalità predefinita è impostato a `on` dal 
 task `generate:app` per l'ambiente `prod` della prima applicazione creata.
 
 Ovviamente solo un'applicazione e ambiente può avere questa impostazione impostata
-a `on` se tutti i front controller sono nella stessa directory (`web/`). Se fosse
-necessario avere più di un'applicazione con `no_script_name` impostato a  `on`
-è necessario spostare i front controller corrispondenti in una sotto directory
-della web root directory.
+a `on` se tutti i front controller sono nella stessa cartella (`web/`). Se fosse
+necessario avere più di un'applicazione con `no_script_name` impostato a  `on`,
+è necessario spostare i front controller corrispondenti in una sotto cartella
+della cartella web principale.
 
 ### ~`lazy_cache_key`~
 
-*Default*: `on` per i nuovi progetti, `off` per progetti aggiornati
+*Predefinito*: `on` per i nuovi progetti, `off` per progetti aggiornati
 
 Quando abilitata l'impostazione `lazy_cache_key` ritarda la creazione di una chiave
 cache fino a che non verrà verificato se l'azione o il partial può essere inserito
 in cache o meno.
 
-Questa impostazione è stata introdotto in symfony 1.2.7 per aumentare le performance
+Questa impostazione è stata introdotta in symfony 1.2.7 per aumentare le performance
 senza inficiare la retrocompatibilità con le precedenti release delle 1.2.
 Verrà rimossa in symfony 1.3, in quanto l'ottimizzazione sarà sempre abilitata.
 
@@ -295,7 +296,7 @@ Verrà rimossa in symfony 1.3, in quanto l'ottimizzazione sarà sempre abilitata
 
 ### ~`logging_enabled`~
 
-*Default*: `on` per tutti gli ambienti escluso `prod`
+*Predefinito*: `on` per tutti gli ambienti escluso `prod`
 
 L'impostazione `logging_enabled` abilita il sub-framework dei log. Impostandola 
 a `false` si bypassa completamente il meccanismo di log e si ottiene un piccolo
@@ -307,14 +308,14 @@ guadagno in termini di prestazioni.
 
 ### ~`web_debug`~
 
-*Default*: `off` per tutti gli ambienti escluso `dev`
+*Predefinito*: `off` per tutti gli ambienti escluso `dev`
 
 L'impostazione `web_debug` abilita la web debug toolbar. La web debug toolbar 
 viene inserita in una pagina quando il content type della response è HTML.
 
 ### ~`error_reporting`~
 
-*Default*:
+*Predefinito*:
 
   * `prod`:  E_PARSE | E_COMPILE_ERROR | E_ERROR | E_CORE_ERROR | E_USER_ERROR
   * `dev`:   E_ALL | E_STRICT
@@ -328,16 +329,16 @@ PHP (da visualizzare nel browser o da scrivere nei log).
 >Sul sito ufficiale di PHP si possono trovare alcune informazioni su come
 >utilizzare gli [operatori logici](http://www.php.net/language.operators.bitwise).
 
-La configurazione di default è la più sensibile e non dovrebbe essere modificata.
+La configurazione predefinita è la più sensibile e non dovrebbe essere modificata.
 
 >**NOTE**
 >La visualizzazione degli errori nel browser è disabilitata automaticamente per 
->i front controller che hanno disabilitato il `debug`, questo è il caso di default
+>i front controller che hanno disabilitato il `debug`, questo è il caso predefinito
 >per l'ambiente `prod`.
 
 ### ~`compressed`~
 
-*Default*: `off`
+*Predefinito*: `off`
 
 L'impostazione `compressed` abilita la compressione nativa di PHP delle risposte.
 Se impostato a `on` symfony utilizzerà [`ob_gzhandler`](http://www.php.net/ob_gzhandler)
@@ -348,14 +349,14 @@ di compressione nativo del web server utilizzato.
 
 ### ~`use_database`~
 
-*Default*: `on`
+*Predefinito*: `on`
 
 L'impostazione `use_database` determina se l'applicazione utilizza o meno un 
 database.
 
 ### ~`check_lock`~
 
-*Default*: `off`
+*Predefinito*: `off`
 
 L'impostazione `check_lock` abilita e disabilita il sistema di lock di un'applicazione
 azionato da alcuni task come `cache:clear` e `project:disable`.
@@ -365,18 +366,18 @@ automaticamente redirette alla pagina `lib/exception/data/unavailable.php`
 messa a disposizione dal core di symfony.
 
 >**TIP**
->È possibile l'override del template di default aggiungendo un file 
+>È possibile sovrascrivere il template predefinito aggiungendo un file 
 >`config/unavailable.php` al progetto o all'applicazione.
 
 ### ~`check_symfony_version`~
 
-*Default*: `off`
+*Predefinito*: `off`
 
 L'impostazione `check_symfony_version` abilita e disabilita il controllo della 
 versione corrente di symfony eseguito ad ogni richiesta. Se abilitato symfony 
 pulirà la cache in modo automatico quando il framework verrà aggiornato.
 
-È vivamente sconsigliato di impostare questo valore su `on`dato che aggiunge
+È vivamente sconsigliato di impostare questo valore su `on` dato che aggiunge
 un leggero overhead e perché è veramente semplice ripulire la cache quando si
 esegue il deploy di un nuovo progetto. Questa impostazione è utile solamente
 quando molto progetti condividono lo stesso codice symfony, cosa che comunque
@@ -384,14 +385,14 @@ non è raccomandata.
 
 ### ~`web_debug_web_dir`~
 
-*Default*: `/sf/sf_web_debug`
+*Predefinito*: `/sf/sf_web_debug`
 
-L'impostazione `web_debug_web_dir` definisce il percorso per i materiali della 
+L'impostazione `web_debug_web_dir` definisce il percorso per i file della 
 web debug toolbar (immagini, fogli di stile e file JavaScript).
 
 ### ~`strip_comments`~
 
-*Default*: `on`
+*Predefinito*: `on`
 
 L'impostazione `strip_comments` determina se symfony può ignorare i commenti quando 
 compila le classi del core. Questa impostazione viene utilizzata solamente se
@@ -402,7 +403,7 @@ impostare il valore a `off`.
 
 ### ~`max_forwards`~
 
-*Default*: `5`
+*Predefinito*: `5`
 
 L'impostazione `max_forwards` definisce il massimo numero di forward interni 
 permessi prima che symfony generi un'eccezione. Questo serve per prevenire loop
