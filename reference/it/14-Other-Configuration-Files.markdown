@@ -11,7 +11,7 @@ La configurazione `autoload.yml` determina quali cartelle necessitano di essere
 autocaricate da symfony. Ogni cartella è scansionata per classi e 
 interfaccie PHP.
 
-Come discusso in sede di introduzione, il file `autoload.yml` tre beneficio dal
+Come discusso in sede di introduzione, il file `autoload.yml` trae beneficio dal
 [**meccanismo di configurazione a cascata**](#chapter_03_configuration_cascade), e
 può includere [**costanti**](#chapter_03_constants).
 
@@ -48,7 +48,7 @@ La configurazione predefinita va bene per la maggior parte dei progetti:
         prefix:         1
         recursive:      on
 
-Ogni configurazione ha un nome e deve essere assegnato con un chiave che ha quel nome. Questo
+Ogni configurazione ha un nome e deve essere assegnato con una chiave che ha quel nome. Questo
 consente di sovrascrivere la configurazione predefinita.
 
 >**TIP**
