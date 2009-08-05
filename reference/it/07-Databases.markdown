@@ -12,7 +12,7 @@ nella cartella `config/`.
 >La maggior parte delle volte, tutte le applicazioni di un progetto condividono lo stesso
 >database. Questo è il motivo per cui il principale file di configurazione del database è
 >nella cartella `config/` del progetto. Naturalmente si può non tenere conto della configurazione
->di default, definendo un file di configurazione `databases.yml`
+>predefinita, definendo un file di configurazione `databases.yml`
 >nelle cartelle di configurazione dell'applicazione.
 
 Come discusso in sede di introduzione, il file `databases.yml` è
@@ -54,7 +54,7 @@ definito e sarà automaticamente incluso prima che il factory sia creato:
 Propel
 ------
 
-*Configurazione di default*:
+*Configurazione predefinita*:
 
     [yml]
     dev:
@@ -95,7 +95,7 @@ I seguenti parametri possono essere personalizzati sotto la sezione `param`:
 Doctrine
 --------
 
-*Configurazione di default*:
+*Configurazione predefinita*:
 
     [yml]
     all:
