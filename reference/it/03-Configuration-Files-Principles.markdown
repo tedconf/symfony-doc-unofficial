@@ -2,7 +2,7 @@ I principi dei file di configurazione
 =====================================
 
 I file di configurazione di symfony si basano su un insieme di principi comuni 
-e condividono alcune proprietà. Questa sezione descrive questi principi in dettaglio
+e condividono alcune proprietà. Questa sezione descrive tali principi in dettaglio
 e si propone come riferimento per le altre sezioni che descrivono i file di
 configurazione YAML.
 
@@ -18,7 +18,7 @@ sola volta, quando il file YAML viene processato ed interpretato per la prima
 volta.
 
 >**TIP**
->Nell'ambiente `dev`, dove `is_debug` è impostato a `true` di default, 
+>Nell'ambiente `dev`, dove `is_debug` è impostato a `true` in modalità predefinita, 
 >i file di configurazione vengono processati ogni volta che si registrano
 >delle modifiche (symfony verifica la data dell'ultima modifica).
 
@@ -26,7 +26,7 @@ Il parsing e l'inserimento in cache di ogni file di configurazione viene eseguit
 da classi handler specializzate configurate in 
 [`config_handler.yml`](#chapter_14_config_handlers_yml).
 
-Nelle sezioni seguenti quando parleremo di "compilazione" significa che la prima 
+Nelle sezioni seguenti quando parleremo di "compilazione" intenderemo che la prima 
 volta un file YAML viene convertito in un file PHP e memorizzato nella cache.
 
 >**TIP**
@@ -58,7 +58,7 @@ dell'impostazione con prefisso `SF_`:
 Quando symfony compila i file di configurazione, si occupa di sostituire tutte le
 occorrenze dei segnaposto `%SF_XXX%` con i corrispondenti valori contenuti in 
 `settings.yml`. Nell'esempio qui sotto sostituirà il segnaposto `SF_LOGGING_ENABLED`
-con il valore dell'impostazione `logging_enabled` definita il `settings.yml`.
+con il valore dell'impostazione `logging_enabled` definita in `settings.yml`.
 
 ### Impostazioni dell'applicazione
 
@@ -67,7 +67,7 @@ Si possono utilizzare anche le impostazioni definite nel file di configurazione
 
 ### Costanti speciali
 
-Di default symfony definisce quattro costanti in relazione al front controller 
+Per impostazione predefinita symfony definisce quattro costanti in relazione al front controller 
 corrente:
 
  | Costanti               | Descrizione                           | Metodo di configurazione |
@@ -75,20 +75,20 @@ corrente:
  | ~`SF_APP`~             | Il nome dell'applicazione corrente    | `getApplication()`       |
  | ~`SF_ENVIRONMENT`~     | Il nome dell'ambiente corrente        | `getEnvironment()`       |
  | ~`SF_DEBUG`~           | Indica se il debug è attivo o meno    | `isDebug()`              |
- | ~`SF_SYMFONY_LIB_DIR`~ | La directory delle librerie symfony   | `getSymfonyLibDir()`     |
+ | ~`SF_SYMFONY_LIB_DIR`~ | La cartella delle librerie symfony    | `getSymfonyLibDir()`     |
 
-### Le directory
+### Le cartelle
 
-Le costanti sono molto utili quando si ha bisogno di fare riferimento a directory
+Le costanti sono molto utili quando si ha bisogno di fare riferimento a cartelle
 o a percorsi di file senza inserirli nel codice. Symfony definisce alcune costanti
-per directory comuni a livello di progetto e di applicazione.
+per cartelle comuni a livello di progetto e di applicazione.
 
-La radice della gerarchia è la directory root del progetto, `SF_ROOT_DIR`.
-Tutte le altre costanti derivano da questa directory root.
+La radice della gerarchia è la cartella root del progetto, `SF_ROOT_DIR`.
+Tutte le altre costanti derivano da questa cartella root.
 
-La struttura delle directory del progetto è definita come segue:
+La struttura delle cartelle del progetto è definita come segue:
 
- | Costanti           | Valore di default    |
+ | Costanti           | Valore predefinito   |
  | ------------------ | -------------------- |
  | ~`SF_APPS_DIR`~    | `SF_ROOT_DIR/apps`   |
  | ~`SF_CONFIG_DIR`~  | `SF_ROOT_DIR/config` |
@@ -102,10 +102,10 @@ La struttura delle directory del progetto è definita come segue:
  | ~`SF_WEB_DIR`~     | `SF_ROOT_DIR/web`    |
  | ~`SF_UPLOAD_DIR`~  | `SF_WEB_DIR/uploads` |
 
-La struttura delle directory delle applicazioni è definita nella direcotry
+La struttura delle cartelle delle applicazioni è definita nella cartella
 `SF_APPS_DIR/APP_NAME`:
 
- | Costanti                | Valore di default      |
+ | Costanti                | Valore predefinito     |
  | ----------------------- | ---------------------- |
  | ~`SF_APP_CONFIG_DIR`~   | `SF_APP_DIR/config`    |
  | ~`SF_APP_LIB_DIR`~      | `SF_APP_DIR/lib`       |
@@ -114,9 +114,9 @@ La struttura delle directory delle applicazioni è definita nella direcotry
  | ~`SF_APP_I18N_DIR`~     | `SF_APP_DIR/i18n`      |
 
 
-Infine, la directory della cache delle applicazioni è definita come segue:
+Infine, la cartella della cache delle applicazioni è definita come segue:
 
- | Costanti                  | Valore di default                |
+ | Costanti                  | Valore predefinito               |
  | ------------------------- | -------------------------------- |
  | ~`SF_APP_BASE_CACHE_DIR`~ | `SF_CACHE_DIR/APP_NAME`          |
  | ~`SF_APP_CACHE_DIR`~      | `SF_CACHE_DIR/APP_NAME/ENV_NAME` |
@@ -136,7 +136,7 @@ Alcuni file di configurazione di symfony sono ambiente dipendenti, la loro
 interpretazione dipende dall'attuale ambiente in uso. Questi file hanno sezioni
 diverse che definiscono come la configurazione deve variare per ogni ambiente.
 Quando si crea una nuova applicazione symfony crea configurazioni per i tre
-ambienti di default: `prod`, `test`, and `dev`:
+ambienti predefiniti: `prod`, `test`, and `dev`:
 
     [yml]
     prod:
@@ -149,12 +149,12 @@ ambienti di default: `prod`, `test`, and `dev`:
       # Configurazione dell'ambiente `dev`
 
     all:
-      # Configurazione di default per tutti gli ambienti
+      # Configurazione predefinita per tutti gli ambienti
 
 Quando symfony necessita di un valore da un file di configurazione procede facendo
 il merge (la fusione) della configurazione per l'ambiente corrente con la sezione
 di configurazione definita in `all`. La sezione speciale `all` descrive la 
-configurazione di default per tutti gli ambienti. Se la sezione di un ambiente 
+configurazione predefinita per tutti gli ambienti. Se la sezione di un ambiente 
 specifico non è definita symfony ricade sulla configurazione `all`.
 
 Configurazione a cascata
@@ -164,8 +164,8 @@ Configurazione a cascata
 `factories.yml`, `databases.yml`, `security.yml`, `cache.yml`, `app.yml`,
 `filters.yml`, `view.yml`
 
-Alcuni file di configurazione possono essere definiti in molte sotto directory
-`config/` contenute nella struttura delle directory del progetto.
+Alcuni file di configurazione possono essere definiti in molte sotto cartelle
+`config/` contenute nella struttura delle cartelle del progetto.
 
 Quando la configurazione viene compilata i valori da tutti i diversi file vengono
 fusi assieme rispettando il seguente ordine di precedenza:
@@ -176,14 +176,14 @@ fusi assieme rispettando il seguente ordine di precedenza:
   * La configurazione definita nei plugin (`PROJECT_ROOT_DIR/plugins/*/config/XXX.yml`)
   * La configurazione definita nelle librerie di symfony (`SF_LIB_DIR/config/XXX.yml`)
 
-Per esempio quanto definito in `settings.yml` nella directory di un'applicazione
-eredita dalla configurazione impostata nella directory principale del progetto `config/`,
-ed eventualmente dalla configurazione di default contenuta nel framework stesso
+Per esempio quanto definito in `settings.yml` nella cartella di un'applicazione
+eredita dalla configurazione impostata nella cartella principale del progetto `config/`,
+ed eventualmente dalla configurazione predefinita contenuta nel framework stesso
 (`lib/config/config/settings.yml`).
 
 >**TIP**
 >Quando un file di configurazione è ambiente dipendente e può essere definito in 
->diverse directory si applica la seguente lista di priorità:
+>diverse cartelle si applica la seguente lista di priorità:
 >
 > 1. Modulo
 > 2. Applicazione
