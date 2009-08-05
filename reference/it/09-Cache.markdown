@@ -7,12 +7,12 @@ livello della vista. Questo file di configurazione è attivo solo se  l'impostaz
 
 >**TIP**
 >La configurazione della classe usata per la cache e
->le sue configurazioni associate è eseguita nelle sezioni
+>le sue configurazioni associate sono spiegate nelle sezioni
 >[`view_cache_manager`](#chapter_05_view_cache_manager) e
 >[`view_cache`](#chapter_05_view_cache) del file di
 >configurazione `factories.yml`.
 
-Quando una applicazione è creata, symfony genera un file `cache.yml` predefinito
+Quando una applicazione è creata, symfony genera un file predefinito `cache.yml`
 nella cartella dell'applicazione `config/`, che descrive la cache per l'intera
 applicazione (sotto la chiave `default`). Nella modalità predefinita, la cache è
 globalmente assegnata a `off`:
@@ -41,7 +41,7 @@ e può includere [**costanti**](#chapter_03_costanti).
 
 La configurazione predefinita dell'applicazione può essere sovrascritta per un modulo, con
 la creazione di un file `cache.yml` nella cartella `config/` del modulo. Le chiavi
-principali sono nomi di azioni. senza il prefisso `execute` (ad esempio `index` per il
+principali sono nomi di azioni senza il prefisso `execute` (ad esempio `index` per il
 metodo `executeIndex`). Anche un partial o un componente possono essere messi in cache,
 utilizzando il nome con un prefisso di sottolineatura (`_`).
 
@@ -93,7 +93,7 @@ secondi (`86400` secondi equivalgono a un giorno).
 
 *Predefinito*: Stesso valore di `lifetime`
 
-L'impostazione `client_lifetime` definisce il cliclo di vita lato client della cache, in
+L'impostazione `client_lifetime` definisce il ciclo di vita lato client della cache, in
 secondi.
 
 Questa impostazione è usata per assegnare automaticamente l'header `Expires` e la
