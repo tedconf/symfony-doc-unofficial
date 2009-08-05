@@ -1,7 +1,7 @@
 Il file di configurazione view.yml
 ==================================
 
-Il livello della Vista può essere configurato modificando il file
+Il livello della vista può essere configurato modificando il file
 di configurazione ~`view.yml`~.
 
 Come accennato nell'introduzione, il file `view.yml` beneficia del
@@ -32,7 +32,7 @@ della vista:
 Layout
 ------
 
-*Configurazione Predefinita*:
+*Configurazione predefinita*:
 
     [yml]
     default:
@@ -40,10 +40,11 @@ Layout
       layout:     layout
 
 Il file di configurazione `view.yml` definisce il ~layout~ predefinito
-usato dall'applicazione. Di default, il nome è `layout`, quindi symfony
-decora ogni pagina con il file `layout.php`, che si trova nella cartella
-`templates/` dell'applicazione. Si può anche disabilitare del tutto il
-processo di decorazione impostando la voce `~has_layout~` a `false`.
+usato dall'applicazione. Per impostazione predefinita, il nome è `layout`,
+quindi symfony decora ogni pagina con il file `layout.php`, che si trova
+nella cartella `templates/` dell'applicazione. Si può anche disabilitare
+del tutto il processo di decorazione impostando la voce `~has_layout~`
+a `false`.
 
 >**TIP**
 >Il layout viene disabilitato automaticamente per le richieste XML HTTP
