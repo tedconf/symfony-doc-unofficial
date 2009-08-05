@@ -10,8 +10,8 @@ e autorizzazione per una applicazione symfony.
 > L'esecuzione dell'autenticazione e dell'autorizzazione è
 >fatta da `security` [filter](#chapter_12_sicurezza).
 
-Quando un'applicazione è creata, symfony genera un file `security.yml`
-predefinito nella cartella dell'applicazione `config/` che descrive la sicurezza per
+Quando un'applicazione è creata, symfony genera un file predefinito
+`security.yml` nella cartella dell'applicazione `config/` che descrive la sicurezza per
 l'intera applicazione (sotto la chiave `default`):
 
     [yml]
@@ -57,7 +57,7 @@ applicazione, autorizza l'accesso a chiunque:
       is_secure: off
 
 Con l'impostazione della chiave ~`is_secure`~ su `on` nel file dell'applicazione
- `security.yml`, l'intera applicazione richiederà al'autenticazione per tutti gli utenti.
+ `security.yml`, l'intera applicazione richiederà l'autenticazione per tutti gli utenti.
 
 >**NOTE**
 >Quando un utente non autenticato prova ad accedere ad una azione messa in sicurezza, symfony
