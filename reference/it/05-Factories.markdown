@@ -1,5 +1,5 @@
-Il file di configurazione The factories.yml
-===========================================
+Il file di configurazione factories.yml
+=======================================
 
 I factory sono oggetti del core necessari al framework durante la vita di ogni richiesta.
 Sono inizializzati nel file di configurazione `factories.yml` e sempre accessibili tramite l'oggetto
@@ -10,7 +10,7 @@ Sono inizializzati nel file di configurazione `factories.yml` e sempre accessibi
     sfContext::getInstance()->getUser();
 
 Per una applicazione il file di configurazione `factories.yml` può essere trovato nella directory 
-`apps/APP_NAME/config/`.
+`apps/NOME_APP/config/`.
 
 Come abbiamo detto durante l'introduzione, il file `factories.yml` è
 [**consapevole dell'ambiente**](03-Configuration-Files-Principles#chapter_03_environment_awareness), beneficia del 
@@ -303,50 +303,50 @@ L'impostazione `auto_start` abilita o disabilita la partenza automatica della se
 
 ### ~`session_name`~
 
-The `session_name` option defines the name of the cookie used by symfony to
-store the user session. By default, the name is `symfony`, which means that
-all your applications share the same cookie (and as such the corresponding
-authentication and authorizations).
+L'opzione `session_name` definisce il nome del cookie usato da symfony per
+memorizzare la sessione utente. Per impostazione predefinita, il nome è `symfony`, il che significa che
+tutte le applicazioni condividono lo stesso cookie (e quindi anche le corrispondenti
+autenticazioni e autorizzazioni).
 
 ### `session_set_cookie_params()` parameters
 
-The `storage` factory calls the
+La factory `storage`  chiama la funzione
 [`session_set_cookie_params()`](http://www.php.net/session_set_cookie_params)
-function with the value of the following options:
+con il valore delle seguenti opzioni:
 
- * ~`session_cookie_lifetime`~: Lifetime of the session cookie, defined in
-                                seconds.
- * ~`session_cookie_path`~:   Path on the domain where the cookie will work.
-                              Use a single slash (`/`) for all paths on the
-                              domain.
- * ~`session_cookie_domain`~: Cookie domain, for example `www.php.net`. To
-                              make cookies visible on all subdomains then the
-                              domain must be prefixed with a dot like `.php.net`.
- * ~`session_cookie_secure`~: If `true` cookie will only be sent over secure
-                              connections.
- * ~`session_cookie_httponly`~: If set to `true` then PHP will attempt to send the
-                                `httponly` flag when setting the session cookie.
+ * ~`session_cookie_lifetime`~: Durata del cookie di sessione, definita in
+                                secondi.
+ * ~`session_cookie_path`~:   Percorso sul dominio dove il cookie andrà a lavorare.
+                              Usare una barra singola (`/`) per tutti i percorsi sul
+                              dominio.
+ * ~`session_cookie_domain`~: Dominio del cookie, per esempio `www.php.net`. Per
+                              rendere visibili i cookie su tutti i sotto domini,
+                              il dominio deve essere preceduto da un punto, come `.php.net`.
+ * ~`session_cookie_secure`~: Se `true` il cookie sarà inviato solo su connessioni
+                              sicure.
+ * ~`session_cookie_httponly`~: Se è impostato a `true` allora PHP tenterà di inviare il
+                                flag `httponly` quando imposta il cookie di sessione.
 
 >**NOTA**
->The description of each option comes from the `session_set_cookie_params()`
->function description on the PHP website
+>La descrizione di ciascuna opzione proviene dalla descrizione della funzione 
+>`session_set_cookie_params()` presente sul sito web del PHP
 
 ### ~`session_cache_limiter`~
 
-If the `session_cache_limiter` option is set, PHP's
+Se l'opzione `session_cache_limiter` è assegnata, la funzione PHP
 [`session_cache_limiter()`](http://www.php.net/session_cache_limiter)
-function is called and the option value is passed as an argument.
+è chiamata e il valore dell'opzione è passato come argomento.
 
 ### Database Storage-specific Options
 
-When using a storage that inherits from the `sfDatabaseSessionStorage` class,
-several additional options are available:
+Quando si utilizza uno storage che eredita dalla classe `sfDatabaseSessionStorage`,
+sono disponibili molte altre opzioni:
 
- * ~`database`~:     The database name (required)
- * ~`db_table`~:     The table name (required)
- * ~`db_id_col`~:    The primary key column name (`sess_id` by default)
- * ~`db_data_col`~:  The data column name (`sess_data` by default)
- * ~`db_time_col`~:  The time column name (`sess_time` by default)
+ * ~`database`~:     Il nome del database (necessario)
+ * ~`db_table`~:     Il nome della tabella (necessario)
+ * ~`db_id_col`~:    Il nome della colonna della chiave primaria (`sess_id` per impostazione predefinita)
+ * ~`db_data_col`~:  Il nome della colonna con i dati (`sess_data` per impostazione predefinita)
+ * ~`db_time_col`~:  Il nome della colonna con il tempo (`sess_time` per impostazione predefinita)
 
 `view_cache_manager`
 --------------------
@@ -360,17 +360,17 @@ several additional options are available:
       class: sfViewCacheManager
 
 >**ATTENZIONE**
->This factory is only created if the [`cache`](#chapter_04_sub_cache)
->setting is set to `on`.
+>Questo factory è craato solo se l'impostazione [`cache`](#chapter_04_sub_cache)
+>è impostata su `on`.
 
-The view cache manager configuration does not include a `param` key. This
-configuration is done via the `view_cache` factory, which defines the
-underlying cache object used by the view cache manager.
+La configurazione del gestore della cache della vista non include una chiave `param`. Questa
+configurazione è fatta attraverso il factory `view_cache`, che definisce il
+sottostante oggetto cache usato dal gestore della cache della vista.
 
 `view_cache`
 ------------
 
-*sfContext Accessor*: none (used directly by the `view_cache_manager` factory)
+*sfContext Accessor*: none (usato direttamente dal factory `view_cache_manager`)
 
 *Configurazione standard*:
 
@@ -384,11 +384,11 @@ underlying cache object used by the view cache manager.
         prefix:                    %SF_APP_DIR%/template
 
 >**ATTENZIONE**
->This factory is only defined if the [`cache`](#chapter_04_sub_cache)
->setting is set to `on`.
+>Questo factory è definito solo se l'impostazione [`cache`](#chapter_04_sub_cache)
+>è impostata a `on`.
 
-The `view_cache` factory defines a cache class that must inherit from
-`sfCache` (see the Cache section for more information).
+Il factory `view_cache` definisce una classe cache che deve ereditare da
+`sfCache` (vedere la sezione Cache per maggiori informazioni).
 
 `i18n`
 ------
@@ -414,32 +414,32 @@ The `view_cache` factory defines a cache class that must inherit from
             prefix:                    %SF_APP_DIR%/i18n
 
 >**ATTENZIONE**
->This factory is only defined if the [`i18n`](#chapter_04_sub_i18n)
->setting is set to `on`.
+>Questo factory è definito solo se l'impostazione [`i18n`](#chapter_04_sub_i18n)
+>è impostata a `on`.
 
 ### ~`source`~
 
-The `source` option defines the container type for translations.
+L'opzione `source` definisce il tipo di contenitore per le traduzioni.
 
 *Built-in containers*: `XLIFF`, `SQLite`, `MySQL`, and `gettext`.
 
 ### ~`debug`~
 
-The `debug` option sets the debugging mode. If set to `on`, un-translated
-messages are decorated with a prefix and a suffix (see below).
+L'opzione `debug` imposta la modalità debug. Se impostato a `on`, i messaggi
+non tradotti sono decorati con un prefisso e un suffissocon un prefisso e un suffisso (vedere sotto).
 
 ### ~`untranslated_prefix`~
 
-The `untranslated_prefix` defines a prefix to used for un-translated messages.
+`untranslated_prefix` definisce un prefisso da usare per i messaggi non tradotti.
 
 ### ~`untranslated_suffix`~
 
-The `untranslated_suffix` defines a suffix to used for un-translated messages.
+`untranslated_suffix` definisce un suffisso da usare per i messaggi non tradotti.
 
 ### ~`cache`~
 
-The `cache` option defines a anonymous cache factory to be used for caching
-i18n data (see the Cache section for more information).
+L'opzione `cache` definisce un factory cache anonimo da usare per mettere
+in cache i dati i18n (vedere la sezione Cache per maggiori informazioni).
 
 `routing`
 ---------
@@ -477,79 +477,79 @@ variable name in a route pattern.
 
 ### ~`segment_separators`~
 
-*Default*: `/` and `.`
+*Predefinito*: `/` and `.`
 
-The `segment_separators` option defines the list of route segment separators.
-Most of the time, you don't want to override this option for the whole
-routing, but for specific routes.
+L'opzione `segment_separators` definisce l'elenco dei separatori delle parti di rotta.
+La maggior parte delle volte, non si vuole sovrascrivere questa opzione per tutte le
+rotte, ma per alcune specifiche rotte.
 
 ### ~`generate_shortest_url`~
 
-*Default*: `true` for new projects, `false` for upgraded projects
+*Predefinito*: `true` per i nuovi progetti, `false` per i progetti aggiornati
 
-If set to `true`, the `generate_shortest_url` option will tell the routing
-system to generate the shortest route possible. Set it to `false` if you want
-your routes to be backward compatible with symfony 1.0 and 1.1.
+Se impostata `true`, l'opzione `generate_shortest_url` chiederà al sistema
+per le rotte di generare la rotta più corta possibile. Impostare a `false` se si vuole
+che le rotte siano compatibili all'indietro con symfony 1.0 e 1.1.
 
 ### ~`extra_parameters_as_query_string`~
 
-*Default*: `true` for new projects, `false` for upgraded projects
+*Predefinito*: `true` per i nuovi progetti, `false` per i progetti aggiornati
 
-When some parameters are not used in the generation of a route, the
-`extra_parameters_as_query_string` allows those extra parameters to be
-converted to a query string. Set it to `false` to fallback to the behavior of
-symfony 1.0 or 1.1. In those versions, the extra parameters were just ignored
-by the routing system.
+WSe alcuni parametri non sono utilizzati per la generazione di una rotta,
+`extra_parameters_as_query_string` permette ai parametri aggiuntivi di essere
+convertiti in una query string. Settare a `false` per tornare al comportamento di
+symfony 1.0 o 1.1. In queste versioni, i parametri extra erano semplicemente ignorati
+dal sistema delle rotte.
 
 ### ~`cache`~
 
-The `cache` option defines an anonymous cache factory to be used for caching
-routing configuration and data (see the Cache section for more information).
+L'opzione `cache` definisce un factory cache anonimo da usare per mettere in cache
+la configurazione delle rotte e i dati (vedere la sezione Cache per maggiori informazioni).
 
 ### ~`suffix`~
 
-*Default*: none
+*Predefinito*: none
 
-The default suffix to use for all routes. This option is deprecated and is not
-useful anymore.
+Il suffisso predefinito da utilizzare per tutte le rotte. Questa opzione è deprecata e non è
+più di nessuna utilità.
 
 ### ~`load_configuration`~
 
-*Default*: `true`
+*Predefinito*: `true`
 
-The `load_configuration` option defines whether the `routing.yml` files must
-be automatically loaded and parsed. Set it to `false` if you want to use the
-routing system of symfony outside of a symfony project.
+L'opzione `load_configuration` definisce se i file `routing.yml` devono
+essere automaticamente caricati ed elaborati. Impostare a `false` se si vuole usare il
+sistema delle rotte di symfony fuori da un progetto symfony.
 
 ### ~`lazy_routes_deserialize`~
 
-*Default*: `false`
+*Predefinito*: `false`
 
-If set to `true`, the `lazy_routes_deserialize` setting enables lazy
-unserialization of the routing cache. It can improve the performance of your
-applications if you have a large number of routes and if most matching routes
-are among the first ones. It is strongly advised to test the setting before
-deploying to production, as it can harm your performance in certain
-circumstances.
+Se impostata a `true`, l'impostazione `lazy_routes_deserialize` abilita la
+de-serializzazione "lazy" della cache delle rotte. Questa può migliorare le prestazioni delle
+applicazioni se si ha un elevato numero di rotte e se la maggior parte delle corrispondenze
+con le rotte sono collocate nelle prime posizioni. Si consiglia vivamente di verificare
+l'impostazione prima di andare in produzione, perchè in certe circostanze
+può fare degradare le prestazioni.
 
 >**ATTENZIONE**
->This setting is only available for symfony 1.2.7 and up.
+>Questa impostazione è disponibile solo per symfony 1.2.7 o superiore.
 
 ### ~`lookup_cache_dedicated_keys`~
 
-*Default*: `false`
+*Predefinito*: `false`
 
-The `lookup_cache_dedicated_keys` setting determines how the routing cache is
-constructed. When set to `false`, the cache is stored as one big value; when
-set to `true`, each route has its own cache store. This setting is a
-performance optimization setting.
+L'impostazione `lookup_cache_dedicated_keys` determina come la cache del routing è
+costruita. Quando impostata a `false`, la cache è memorizzata come un solo grande valore; quando
+è impostata a `true`, ciascuna rotta ha la sua memorizzazione nella cache. Questa impostazione è
+per ottimizzare le performance.
 
-As a rule of thumb, setting this to `false` is better when using a file-based
-cache class (`sfFileCache` for instance), and setting it to `true` is better
-when using a memory-based cache class (`sfAPCCache` for instance).
+Come regola generale, l'imopstazione a `false` è migliore quando su usa una classe cache
+basata su file (per esempio `sfFileCache`), l'impostazione a `true` è migliore
+quando si usa una classe cache basata sulla memoria (per esempio `sfAPCCache`).
 
 >**ATTENZIONE**
->Questo parametro è disponibile solo dalla versione 1.2.7 di symfony in avanti.
+>Questo parametro è disponibile solo dalla versione 1.2.7 in poi di symfony.
 
 `logger`
 --------
@@ -577,7 +577,7 @@ when using a memory-based cache class (`sfAPCCache` for instance).
               level: debug
               file: %SF_LOG_DIR%/%SF_APP%_%SF_ENVIRONMENT%.log
 
-*Configurazione standard for the `prod` environment*:
+*Configurazione standard per l'ambiente `prod`*:
 
     [yml]
     logger:
@@ -587,20 +587,20 @@ when using a memory-based cache class (`sfAPCCache` for instance).
         loggers: ~
 
 >**ATTENZIONE**
->This factory is always defined, but the logging only occurs if the
->`logging_enabled` setting is set to `on`.
+>Questo factory è sempre definito, ma il logging si verifica soltanto se
+>l'impostazione `logging_enabled` è impostata a `on`.
 
 ### ~`level`~
 
-The `level` option defines the level of the logger.
+L'opzione `level` definisce il livello del logger.
 
-*Possible values*: `EMERG`, `ALERT`, `CRIT`, `ERR`, `WARNING`, `NOTICE`,
+*Possibili valori*: `EMERG`, `ALERT`, `CRIT`, `ERR`, `WARNING`, `NOTICE`,
 `INFO`, or `DEBUG`.
 
 ### ~`loggers`~
 
-The `loggers` option defines a list of loggers to use. The list is an array of
-anonymous logger factories.
+L'opzione `loggers` definisce un elenco di logger da usare. L'elenco è un array di
+factory logger anonimi.
 
 *Built-in logger classes*: `sfConsoleLogger`, `sfFileLogger`, `sfNoLogger`,
 `sfStreamLogger`, and `sfVarLogger`.
@@ -616,18 +616,18 @@ anonymous logger factories.
     controller:
       class: sfFrontWebController
 
-Anonymous Cache Factories
--------------------------
+Factory cache anonimi
+---------------------
 
-Several factories (`view_cache`, `i18n`, and `routing`) can take advantage of
-a cache object if defined in their configuration. The configuration of the
-cache object is similar for all factories. The `cache` key defines an
-anonymous cache factory. Like any other factory, it takes a `class` and a
-`param` entries. The `param` entry can take any option available for the given
-cache class.
+Alcuni factory (`view_cache`, `i18n`, e `routing`) possono trarre vantaggio da
+un oggetto cache se definito nella loro configurazione. La configurazione
+dell'oggetto cache è simile per tutti i factory. La chiave `cache` definisce una
+cache factory anonima. Come ogni altro factory, prende le voci `class` e
+`param`. La voce `param` può prendere qualunque opzione disponibile per la data
+classe cache.
 
-The `prefix` option is the most important one as it allows to share or
-separate a cache between different environments/applications/projects.
+L'opzione `prefix` è la più importante dal momento che permette di condividere o
+separare una cache tra differenti ambienti/applicazioni/progetti.
 
 *Built-in cache classes*: `sfAPCCache`, `sfEAcceleratorCache`, `sfFileCache`,
 `sfMemcacheCache`, `sfNoCache`, `sfSQLiteCache`, and `sfXCacheCache`.
