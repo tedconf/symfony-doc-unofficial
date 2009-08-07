@@ -12,7 +12,7 @@ livello della vista. Questo file di configurazione è attivo solo se  l'impostaz
 >[`view_cache`](#chapter_05_view_cache) del file di
 >configurazione `factories.yml`.
 
-Quando una applicazione è creata, symfony genera un file predefinito `cache.yml`
+Quando un'applicazione viene creata, symfony genera un file predefinito `cache.yml`
 nella cartella dell'applicazione `config/`, che descrive la cache per l'intera
 applicazione (sotto la chiave `default`). Nella modalità predefinita, la cache è
 globalmente assegnata a `off`:
@@ -45,7 +45,7 @@ principali sono nomi di azioni senza il prefisso `execute` (ad esempio `index` p
 metodo `executeIndex`). Anche un partial o un componente possono essere messi in cache,
 utilizzando il nome con un prefisso di sottolineatura (`_`).
 
-Per determinare se una azione è messa in cache o no, symfony cerca le informazioni
+Per determinare se un'azione è messa in cache o no, symfony cerca le informazioni
 nel seguente ordine:
 
   * una configurazione per una specifica azione, partial o componente nel
