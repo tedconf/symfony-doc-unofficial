@@ -103,7 +103,7 @@ L'azione `secure` viene eseguita quando un utente non ha le credenziale richiest
 ### ~`module_disabled`~
 
 L'azione `module_disabled` viene eseguita quando un utente invia una richiesta
-ad un modulo disabilitato
+ad un modulo disabilitato.
 
 La sotto sezione `.settings`
 ----------------------------
