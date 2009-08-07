@@ -9,7 +9,7 @@ Sono inizializzati nel file di configurazione `factories.yml` e sempre accessibi
     // restituisce il factory per l'oggetto User
     sfContext::getInstance()->getUser();
 
-Per una applicazione il file di configurazione `factories.yml` può essere trovato nella directory 
+Per una applicazione il file di configurazione `factories.yml` può essere trovato nella cartella 
 `apps/NOME_APP/config/`.
 
 Come abbiamo detto durante l'introduzione, il file `factories.yml` è
@@ -17,7 +17,7 @@ Come abbiamo detto durante l'introduzione, il file `factories.yml` è
 [**meccanismo di configurazione a cascata**](#chapter_03_configuration_cascade),
 e può includere [**costanti**](#chapter_03_constants).
 
-Il file di configurazione `factories.yml` contiene una lista di factory dichiarate:
+Il file di configurazione `factories.yml` contiene un elenco di dichiarazioni di factory:
 
     [yml]
     FACTORY_1:
@@ -29,7 +29,7 @@ Il file di configurazione `factories.yml` contiene una lista di factory dichiara
     # ...
 
 I nomi delle factory supportate sono: `controller`, `logger`, `i18n`, `request`,
-`response`, `routing`, `storage`, `user`, `view_cache`, and
+`response`, `routing`, `storage`, `user`, `view_cache`, e
 `view_cache_manager`.
 
 Quando `sfContext` inizializza le factory, legge dal file `factories.yml`
@@ -55,7 +55,7 @@ automaticamente usato prima che la factory sia creata:
       class: NOME_DELLA_CLASSE
       file:  PERCORSO_ASSOLUTO_DEL_FILE
 
->**NOTA**
+>**NOTE**
 >Il file di configurazione `factories.yml` viene salvato in cache come file PHP; Il processo
 >è automaticamente gestito dalla [class](#chapter_14_config_handlers_yml) 
 > ~`sfFactoryConfigHandler`~.
@@ -239,7 +239,7 @@ altrimenti usa `HTTP/1.0`.
         use_flash:       true
         default_culture: %SF_DEFAULT_CULTURE%
 
->**NOTA**
+>**NOTE**
 >La classe `myUser` eredita da `sfBasicSecurityUser`,
 >che può essere configurata nel file di configurazione
 >[`security.yml`](#chapter_08).
@@ -253,7 +253,7 @@ ad un utente dopo 30 minuti di inattività.
 Questa impostazione è usata solo dalle classi user che ereditano dalla classe base 
 `sfBasicSecurityUser`, come nel caso della classe generata dal sistema `myUser`.
 
->**NOTA**
+>**NOTE**
 >Per evitare comportamenti inaspettati, la classe user forza automaticamente la massima durata
 >per il garbage collector delle sessioni (`session.gc_maxlifetime`) in modo che 
 >sia maggiore, o uguale, al timeout.
@@ -266,9 +266,9 @@ L'impostazione `use_flash` abilita o disabilita il componente flash.
 
 L'impostazione `default_culture` definisce la direttiva di traduzione da usare per 
 l'utente che entra nel sito per la prima volta. Se non dichiarato utilizza il valore 
-`default_culture` dichiarato nel file `settings.yml`.
+`default_culture` impostato nel file `settings.yml`.
 
->**ATTENZIONE**
+>**CAUTION**
 >Se l'impostazione ~`default_culture`~ viene cambiata in `factories.yml` o
 >in `settings.yml`, è necessario eliminare i cookie del browser per vedere le modifiche.
 
@@ -327,7 +327,7 @@ con il valore delle seguenti opzioni:
  * ~`session_cookie_httponly`~: Se è impostato a `true` allora PHP tenterà di inviare il
                                 flag `httponly` quando imposta il cookie di sessione.
 
->**NOTA**
+>**NOTE**
 >La descrizione di ciascuna opzione proviene dalla descrizione della funzione 
 >`session_set_cookie_params()` presente sul sito web del PHP
 
@@ -359,8 +359,8 @@ sono disponibili molte altre opzioni:
     view_cache_manager:
       class: sfViewCacheManager
 
->**ATTENZIONE**
->Questo factory è craato solo se l'impostazione [`cache`](#chapter_04_sub_cache)
+>**CAUTION**
+>Questo factory è creato solo se l'impostazione [`cache`](#chapter_04_sub_cache)
 >è impostata su `on`.
 
 La configurazione del gestore della cache della vista non include una chiave `param`. Questa
@@ -383,7 +383,7 @@ sottostante oggetto cache usato dal gestore della cache della vista.
         lifetime:                  86400
         prefix:                    %SF_APP_DIR%/template
 
->**ATTENZIONE**
+>**CAUTION**
 >Questo factory è definito solo se l'impostazione [`cache`](#chapter_04_sub_cache)
 >è impostata a `on`.
 
@@ -413,7 +413,7 @@ Il factory `view_cache` definisce una classe cache che deve ereditare da
             lifetime:                  31556926
             prefix:                    %SF_APP_DIR%/i18n
 
->**ATTENZIONE**
+>**CAUTION**
 >Questo factory è definito solo se l'impostazione [`i18n`](#chapter_04_sub_i18n)
 >è impostata a `on`.
 
@@ -426,7 +426,7 @@ L'opzione `source` definisce il tipo di contenitore per le traduzioni.
 ### ~`debug`~
 
 L'opzione `debug` imposta la modalità debug. Se impostato a `on`, i messaggi
-non tradotti sono decorati con un prefisso e un suffissocon un prefisso e un suffisso (vedere sotto).
+non tradotti sono decorati con un prefisso e un suffisso (vedere sotto).
 
 ### ~`untranslated_prefix`~
 
@@ -470,10 +470,10 @@ in cache i dati i18n (vedere la sezione Cache per maggiori informazioni).
 
 ### ~`variable_prefixes`~
 
-*Default*: `:`
+*Predefinito*: `:`
 
-The `variable_prefixes` option defines the list of characters that starts a
-variable name in a route pattern.
+L'opzione `variable_prefixes`definisce l'elenco dei caratteri che iniziano un
+nome variabile in uno schema di rotta.
 
 ### ~`segment_separators`~
 
@@ -526,13 +526,13 @@ sistema delle rotte di symfony fuori da un progetto symfony.
 *Predefinito*: `false`
 
 Se impostata a `true`, l'impostazione `lazy_routes_deserialize` abilita la
-de-serializzazione "lazy" della cache delle rotte. Questa può migliorare le prestazioni delle
-applicazioni se si ha un elevato numero di rotte e se la maggior parte delle corrispondenze
-con le rotte sono collocate nelle prime posizioni. Si consiglia vivamente di verificare
-l'impostazione prima di andare in produzione, perchè in certe circostanze
+de-serializzazione "lazy" della cache delle rotte. Questa opzione può migliorare le
+prestazioni delle applicazioni se si ha un elevato numero di rotte e se la maggior parte
+delle corrispondenze con le rotte sono collocate nelle prime posizioni. Si consiglia vivamente
+di verificare l'impostazione prima di andare in produzione, perchè in certe circostanze
 può fare degradare le prestazioni.
 
->**ATTENZIONE**
+>**CAUTION**
 >Questa impostazione è disponibile solo per symfony 1.2.7 o superiore.
 
 ### ~`lookup_cache_dedicated_keys`~
@@ -544,11 +544,11 @@ costruita. Quando impostata a `false`, la cache è memorizzata come un solo gran
 è impostata a `true`, ciascuna rotta ha la sua memorizzazione nella cache. Questa impostazione è
 per ottimizzare le performance.
 
-Come regola generale, l'imopstazione a `false` è migliore quando su usa una classe cache
+Come regola generale, l'impostazione a `false` è migliore quando su usa una classe cache
 basata su file (per esempio `sfFileCache`), l'impostazione a `true` è migliore
 quando si usa una classe cache basata sulla memoria (per esempio `sfAPCCache`).
 
->**ATTENZIONE**
+>**CAUTION**
 >Questo parametro è disponibile solo dalla versione 1.2.7 in poi di symfony.
 
 `logger`
@@ -586,7 +586,7 @@ quando si usa una classe cache basata sulla memoria (per esempio `sfAPCCache`).
         level:   err
         loggers: ~
 
->**ATTENZIONE**
+>**CAUTION**
 >Questo factory è sempre definito, ma il logging si verifica soltanto se
 >l'impostazione `logging_enabled` è impostata a `on`.
 
@@ -629,5 +629,5 @@ classe cache.
 L'opzione `prefix` è la più importante dal momento che permette di condividere o
 separare una cache tra differenti ambienti/applicazioni/progetti.
 
-*Built-in cache classes*: `sfAPCCache`, `sfEAcceleratorCache`, `sfFileCache`,
-`sfMemcacheCache`, `sfNoCache`, `sfSQLiteCache`, and `sfXCacheCache`.
+*Classi cache disponibili*: `sfAPCCache`, `sfEAcceleratorCache`, `sfFileCache`,
+`sfMemcacheCache`, `sfNoCache`, `sfSQLiteCache`, e `sfXCacheCache`.
