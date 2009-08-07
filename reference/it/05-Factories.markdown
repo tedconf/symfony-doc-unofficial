@@ -157,12 +157,12 @@ Factory
 
 ### ~`path_info_array`~
 
-L'impostazione `path_info_array` definisce l'array PHP globale che sarà usato per recuperare informazioni. 
+L'opzione `path_info_array` definisce l'array PHP globale che sarà usato per recuperare informazioni. 
 In alcune configurazioni il valore predefinito potrebbe essere cambiato da `SERVER` ad `ENV`.
 
 ### ~`path_info_key`~
 
-L'impostazione `path_info_key` definisce la chiave sotto la quale l'informazione relativa a `PATH_INFO`
+L'opzione `path_info_key` definisce la chiave sotto la quale l'informazione relativa a `PATH_INFO`
 può essere trovata.
 
 Se è usato ~IIS~ con un modulo di riscrittura delle URL come `IIFR` o `ISAPI`, è necessario impostare questo parametro
@@ -170,13 +170,13 @@ a `HTTP_X_REWRITE_URL`.
 
 ### ~`formats`~
 
-L'impostazione `formats` definisce un array di estensioni di file ed il corrispettivo
+L'opzione `formats` definisce un array di estensioni di file ed il corrispettivo
 `Content-Type`. E' usata automaticamente dal framework per gestire il `Content-Type` di una risposta, 
 in base all'estensione dell'URI richiesta.
 
 ### ~`relative_url_root`~
 
-L'impostazione `relative_url_root` definisce la parte di URL che precede il front
+L'opzione `relative_url_root` definisce la parte di URL che precede il front
 controller. Normalmente, è automaticamente gestita dal framework e non necessita
 cambiamenti.
 
@@ -205,7 +205,7 @@ cambiamenti.
 
 ### ~`send_http_headers`~
 
-L'impostazione `send_http_headers` specifica quando deve essere inviato un
+L'opzione `send_http_headers` specifica quando deve essere inviato un
 response headers insieme ad un response content. Questa opzione è particolarmente 
 comoda per fare test, in quanto gli header sono inviati tramite la funzione PHP 
 `header()` che invia avvisi se si sta provando ad inviare headers dopo a qualche tipo
@@ -213,13 +213,13 @@ di output.
 
 ### ~`charset`~
 
-L'impostazione `charset` definisce il charset da utilizzare nel response. Il valore predefinito,
+L'opzione `charset` definisce il charset da utilizzare nel response. Il valore predefinito,
 preso dal parametro `charset` nel file `settings.yml`, è quello che serve la maggior parte
 delle volte.
 
 ### ~`http_protocol`~
 
-L'impostazione `http_protocol` definisce la versione del protocollo HTTP da utilizzare 
+L'opzione `http_protocol` definisce la versione del protocollo HTTP da utilizzare 
 per la risposta. Come valore predefinito utilizza `$_SERVER['SERVER_PROTOCOL']` 
 altrimenti usa `HTTP/1.0`.
 
@@ -246,7 +246,7 @@ altrimenti usa `HTTP/1.0`.
 
 ### ~`timeout`~
 
-L'impostazione `timeout` definisce il timeout per l'autenticazione utente.
+L'opzione `timeout` definisce il timeout per l'autenticazione utente.
 Non è correlata al timeout della sessione. Il valore predefinito rimuove l'autenticazione
 ad un utente dopo 30 minuti di inattività.
 
@@ -260,11 +260,11 @@ Questa impostazione è usata solo dalle classi user che ereditano dalla classe b
 
 ### ~`use_flash`~
 
-L'impostazione `use_flash` abilita o disabilita il componente flash.
+L'opzione `use_flash` abilita o disabilita il componente flash.
 
 ### ~`default_culture`~
 
-L'impostazione `default_culture` definisce la direttiva di traduzione da usare per 
+L'opzione `default_culture` definisce la direttiva di traduzione da usare per 
 l'utente che entra nel sito per la prima volta. Se non dichiarato utilizza il valore 
 `default_culture` impostato nel file `settings.yml`.
 
@@ -298,7 +298,7 @@ una richiesta HTTP e l'altra.
 
 ### ~`auto_start`~
 
-L'impostazione `auto_start` abilita o disabilita la partenza automatica della sessione di PHP 
+L'opzione `auto_start` abilita o disabilita la partenza automatica della sessione di PHP 
 (usando la funzione `session_start()` del linguaggio).
 
 ### ~`session_name`~
