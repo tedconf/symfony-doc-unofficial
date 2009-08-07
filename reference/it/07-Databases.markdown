@@ -79,7 +79,7 @@ Propel
           persistent: true
           pooling:    true
 
-I seguenti parametri possono essere personalizzati sotto la sezione `param`:
+I seguenti parametri possono essere personalizzati nella sezione `param`:
 
  | Chiave       | Descrizione                              | Valore predefinito |
  | ------------ | ---------------------------------------- | ------------------ |
