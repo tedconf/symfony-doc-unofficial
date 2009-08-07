@@ -380,7 +380,7 @@ pulirà la cache in modo automatico quando il framework verrà aggiornato.
 È vivamente sconsigliato di impostare questo valore su `on` dato che aggiunge
 un leggero overhead e perché è veramente semplice ripulire la cache quando si
 esegue il deploy di un nuovo progetto. Questa impostazione è utile solamente
-quando molto progetti condividono lo stesso codice symfony, cosa che comunque
+quando molti progetti condividono lo stesso codice symfony, cosa che comunque
 non è raccomandata.
 
 ### ~`web_debug_web_dir`~
