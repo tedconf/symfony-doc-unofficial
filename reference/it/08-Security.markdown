@@ -86,7 +86,7 @@ chiave dopo il nome dell'azione:
 ----------------
 
 Quando un utente è autenticato, l'accesso ad alcune azioni può essere maggiormente
-limitato definendo *~credenziali~*. Quando le credenziali sono definite, un utente
+limitato definendo delle *~credenziali~*. Quando le credenziali sono definite, un utente
 deve avere le credenziali richieste, per accedere all'azione:
 
     [yml]
