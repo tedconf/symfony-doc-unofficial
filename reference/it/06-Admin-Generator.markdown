@@ -127,7 +127,7 @@ contesto corrente.
 >**TIP**
 >Quando un modello ha una chiave esterna a un'altro modello, Propel e Doctrine
 >determinano un getter per il relativo oggetto. Come per ogni altro getter, questo
->può essere usato come segnaposto se se definisce un significativo metodo `__toString()`
+>può essere usato come segnaposto se si definisce un significativo metodo `__toString()`
 >che converte l'oggetto in una stringa.
 
 ### Configurazione per l'ereditarietà
@@ -635,7 +635,7 @@ Questa opzione può anche essere usata per organizzare i campi in gruppi:
           Content: [title, body, author]
           Admin:   [is_published, expires_at]
 
-La configurazione sopra definisce due gruppi (`Content` e `Admin`), ciascuno
+La configurazione riportata qui sopra definisce due gruppi (`Content` e `Admin`), ciascuno
 contenente un sottoinsieme di campi del form.
 
 >**CAUTION**
