@@ -18,7 +18,7 @@ la classe del modello `Article`.
 
 >**NOTE**
 >Il file di configurazione `generator.yml` è messo in cache come file PHP; il
->processo è gestito automaticamente dalla [classe](#chapter_14-Other-Configuration-Files_config_handlers_yml)
+>processo è gestito automaticamente dalla [classe](#chapter_14_config_handlers_yml)
 >~`sfGeneratorConfigHandler`~.
 
 ### File di configurazione
@@ -273,7 +273,7 @@ Opzioni di configurazione disponibili
  * [`form`](#chapter_06_form)
 
    * [`display`](#chapter_06_sub_display)
-   * [`class`](#chapter_06-Admin-Generator_sub_class)
+   * [`class`](#chapter_06_sub_class)
 
  * [`edit`](06-Admin-Generator#chapter_06_edit)
 

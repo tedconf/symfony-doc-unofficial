@@ -43,7 +43,7 @@ ripiego è usata la classe base `sfRoute`.
 Le classi per le rotte
 ----------------------
 
- * [Configurazione principale](#chapter_10_route_configuration)
+ * [Configurazione principale](#chapter_10_configurazione_delle_rotte)
 
    * [`class`](#chapter_10_sub_class)
    * [`options`](#chapter_10_sub_options)

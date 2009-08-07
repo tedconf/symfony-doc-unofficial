@@ -13,9 +13,9 @@ Per una applicazione il file di configurazione `factories.yml` può essere trova
 `apps/NOME_APP/config/`.
 
 Come abbiamo detto durante l'introduzione, il file `factories.yml` è
-[**consapevole dell'ambiente**](03-Configuration-Files-Principles#chapter_03_environment_awareness), beneficia del 
-[**meccanismo di configurazione a cascata**](#chapter_03_configuration_cascade),
-e può includere [**costanti**](#chapter_03_constants).
+[**consapevole dell'ambiente**](#chapter_03_environment_awareness), beneficia del 
+[**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata),
+e può includere [**costanti**](#chapter_03_costanti).
 
 Il file di configurazione `factories.yml` contiene un elenco di dichiarazioni di factory:
 

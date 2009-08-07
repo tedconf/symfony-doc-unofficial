@@ -13,7 +13,7 @@ la classe globale `sfConfig` e le chiavi hanno come prefisso la stringa `app_`:
 
 Tutte le impostazioni hanno il prefisso `app_` perché la classe `sfConfig` 
 permette l'accesso anche alle [impostazioni di symfony](#chapter_03_sub_impostazioni_della_configurazione)
-ed alle [cartelle del progetto](#chapter_03_sub_le_directory).
+ed alle [cartelle del progetto](#chapter_03_le_cartelle).
 
 Come già visto nell'introduzione il file `app.yml` ha la 
 [consapevolezza dell'ambiente](#chapter_03_consapevolezza_dell_ambiente) e 

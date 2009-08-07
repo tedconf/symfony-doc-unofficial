@@ -8,8 +8,8 @@ Il file di configurazione principale `filters.yml` per un'applicazione
 può essere trovato nella cartella `apps/NOME_APP/config/`.
 
 Come accennato nell'introduzione, il file `filters.yml` trae benefici dal
-[**meccanismo di configurazione a cascata**](#chapter_03-Configuration-Files-Principles_sub_configurazione_a_cascata)
-e può includere delle [**costanti**](#chapter_03-Configuration-Files-Principles_sub_costanti).
+[**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata)
+e può includere delle [**costanti**](#chapter_03_costanti).
 
 Il file di configurazione `filters.yml` contiene una lista di definizioni
 di filtri con nome:
@@ -94,11 +94,11 @@ sono obbligatori e sono identificati dal parametro `type`. Il filtro
 Filtri
 ------
 
- * [`rendering`](#chapter_12-Filters_rendering)
- * [`security`](#chapter_12-Filters_security)
- * [`cache`](#chapter_12-Filters_cache)
- * [`common`](#chapter_12-Filters_common)
- * [`execution`](#chapter_12-Filters_execution)
+ * [`rendering`](#chapter_12_rendering)
+ * [`security`](#chapter_12_security)
+ * [`cache`](#chapter_12_cache)
+ * [`common`](#chapter_12_common)
+ * [`execution`](#chapter_12_execution)
 
 `rendering`
 -----------
@@ -135,7 +135,7 @@ Il filtro `security` deve avere come tipo `security`.
 
 Una configurazione più granulare del filtro `security` può essere
 fatta tramite il file di configurazione
-[`security.yml`](#chapter_08-Security).
+[`security.yml`](#chapter_08).
 
 >**TIP**
 >Se l'azione richiesta non è configurata come sicura in `security.yml`,

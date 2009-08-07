@@ -8,7 +8,7 @@ e autorizzazione per una applicazione symfony.
 >Le informazioni di configurazione del file `security.yml` sono usate dalla
 >classe factory [`user`](#chapter_05_user) (predefinita `sfBasicSecurityUser`).
 > L'esecuzione dell'autenticazione e dell'autorizzazione è
->fatta da `security` [filter](#chapter_12_sicurezza).
+>fatta da `security` [filter](#chapter_12_security).
 
 Quando un'applicazione è creata, symfony genera un file predefinito
 `security.yml` nella cartella dell'applicazione `config/` che descrive la sicurezza per
