@@ -495,7 +495,7 @@ che le rotte siano compatibili all'indietro con symfony 1.0 e 1.1.
 
 *Predefinito*: `true` per i nuovi progetti, `false` per i progetti aggiornati
 
-WSe alcuni parametri non sono utilizzati per la generazione di una rotta,
+Se alcuni parametri non sono utilizzati per la generazione di una rotta,
 `extra_parameters_as_query_string` permette ai parametri aggiuntivi di essere
 convertiti in una query string. Settare a `false` per tornare al comportamento di
 symfony 1.0 o 1.1. In queste versioni, i parametri extra erano semplicemente ignorati
@@ -544,7 +544,7 @@ costruita. Quando impostata a `false`, la cache è memorizzata come un solo gran
 è impostata a `true`, ciascuna rotta ha la sua memorizzazione nella cache. Questa impostazione è
 per ottimizzare le performance.
 
-Come regola generale, l'impostazione a `false` è migliore quando su usa una classe cache
+Come regola generale, l'impostazione a `false` è migliore quando si usa una classe cache
 basata su file (per esempio `sfFileCache`), l'impostazione a `true` è migliore
 quando si usa una classe cache basata sulla memoria (per esempio `sfAPCCache`).
 
