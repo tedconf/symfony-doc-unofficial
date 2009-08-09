@@ -7,8 +7,7 @@
 昨日のチュートリアルで、Jobeetのページデザインや処理のカスタマイズをし、
 レイアウトやヘルパー、スロットといったsymfonyのコンセプトについても見直しました。
 
-今日は、symfonyのルーティングフレームワークのすばらしい世界
-へダイブしましょう。
+今日は、symfonyのルーティングフレームワークのすばらしい世界に飛び込みましょう。
 
 
 URL
@@ -17,9 +16,9 @@ URL
 Jobeetホームページ上の求人情報をクリックすると、URLは`/job/show/id/1`のように表示されます。
 もしPHPでWebサイトの開発をしたことがあるなら、おそらく`/job.php?id=1`というURLを見慣れているでしょう。
 symfonyはどうやって動作しているのでしょうか？
-symfonyはどうやってこのURLを基本としてアクションを決めているのでしょうか？
+symfonyはどうやってこのURLを基本とするアクションを決めているのでしょうか？
 なぜ求人の`id`は`$request->getParameter('id')`で取得できるのでしょうか？
-今日は、これら全ての問題の答えを見ていきます。
+今日は、これら全ての問題の答えを見てゆきます。
 
 しかしまず初めに、URLとURLが正確に指すものについて話します。
 Webコンテキスト上で、URLはWebリソースの一意的な名前です。
@@ -55,7 +54,7 @@ URLはsymfonyでフレームワーク全体を管理するのに重要なもの�
 
 symfonyのルーティングは2つの処理方法があるので、
 技術的実装を変更することなくURLを変換することができます。
-このことはフロントコントローラデザインパターンの主なアドバンデージの1つです。
+このことはFront Controllerデザインパターンの主なアドバンデージの1つです。
 
 ルーティング設定
 ----------------
@@ -83,7 +82,7 @@ symfonyのルーティングは2つの処理方法があるので、
 `routing.yml`内の最初にマッチするルートが重要となります。
 このルーティングの動作を理解するためにもっとたくさんの例を見ることにしましょう。
 
-`/job` URLを持つJobeetホームページにリクエストをすると、
+`/job`のURLを持つJobeetホームページにリクエストをすると、
 マッチする最初のルートは`default_index`です。
 パターン内ではコロン(`:`)を接頭辞に持つ単語が変数であり、`/:module` パターンは「`/`の後にマッチする何か」ということを意味します。
 この例の中では、`module`変数は値として`job`を持ちます。
@@ -95,7 +94,7 @@ symfonyのルーティングは2つの処理方法があるので、
 もし`/job/show/id/1`ページにリクエストするなら、
 symfonyは最後のパターンである(`/:modules/:action/*`)にマッチします。
 
-パターン内ではスター(`*`)はスラッシュ(`/`)で分けられた変数と値のペアの一群にマッチします:
+パターン内ではスター(`*`)はスラッシュ(`/`)で区切られた変数と値のペアの一群にマッチします:
 
   | リクエストパラメータ | 値    |
   | -------------------- | ----- |
@@ -128,7 +127,7 @@ URLの`/job/show/id/1`は下記で使われている
 
 今のところ、ブラウザでURLの`/`にリクエストすると、symfonyのデフォルトの初期ページになります。
 その理由はこのURLが`homepage`ルートにマッチするからです。
-しかしJobeetホームページとして意味をなすために変更します。
+しかしJobeetのホームページとしての役目を果たすように変更します。
 変更するには、`homepage`ルートの`module`変数の値を`job`に変更します:
 
     [php]
@@ -137,8 +136,7 @@ URLの`/job/show/id/1`は下記で使われている
       url:   /
       param: { module: job, action: index }
 
-`homepage`ルートを使うようにレイアウト内の
-Jobeetロゴのリンクを変更します。:
+`homepage`ルートを使うようにレイアウト内のJobeetロゴのリンクを変更します。:
 
     [php]
     <!-- apps/frontend/templates/layout.php -->
@@ -181,7 +179,7 @@ routing.yml`ファイルを編集しファイルの冒頭に
       url:   /job/:company/:location/:id/:position
       param: { module: job, action: show }
 
-Jobeetホームページをリフレッシュするなら、求人情報へのリンクは変更しません。
+Jobeetホームページをリフレッシュしても、求人情報へのリンクは変更されません。
 ルートを生成するなら、必要な変数を全て渡すことが必要となります。
 ですので、`indexSuccess.php`内で呼び出される`url_for()`を変更する必要があります。
 
@@ -280,14 +278,14 @@ requirementsエントリに
     [php]
     url_for(array('sf_route' => 'job_show_user', 'sf_subject' => $job))
 
-or just:
+もしくは単に:
 
     [php]
     url_for('job_show_user', $job)
 
 >**NOTE**
 >オブジェクト以外に複数の引数を渡すことが必要な際に
->最初の例は役に立ちます。
+>最初の例が役に立ちます。
 
 ルート内の全ての変数は`JobeetJob`クラスのアクセサと対応して動きます
 (例えば、`company`ルートの変数は
@@ -364,12 +362,12 @@ or just:
         id: \d+
         sf_method: [get]
 
-Jobeetホームページをリフレッシュする前に新しいクラス(`Jobeet`)を追加したので
+Jobeetのホームページをリフレッシュする前に新しいクラス(`Jobeet`)を追加したので
 キャッシュをクリアする必要があります:
 
     $ php symfony cc
 
-これで期待したURLが利用できるようになります:
+これで期待するURLが利用できるようになります:
 
     http://jobeet.localhost/frontend_dev.php/job/sensio-labs/paris-france/1/web-developer
 
@@ -398,8 +396,8 @@ Jobeetホームページをリフレッシュする前に新しいクラス(`Job
 
 ![sfPropelRouteでの404エラー](http://www.symfony-project.org/images/jobeet/1_2/05/404_propel_route.png)
 
-この理由は404エラーが`getRoute()`メソッドによって自動で投げられているからです。
-だから`executeShow()`メソッドはもっと単純にできます:
+この理由は404エラーが`getRoute()`メソッドによって自動で投げられるからです。
+なので`executeShow()`メソッドはもっと単純にできます:
 
     [php]
     class jobActions extends sfActions
@@ -570,7 +568,7 @@ Jobeetホームページをリフレッシュする前に新しいクラス(`Job
 
 `job_delete`と`job_update`ルートが必要としているHTTPメソッドはブラウザでサポートされていません(`DELETE`と`PUT`)。
 この動作はsymfonyがシミュレートしているので動きます。
-例を見るために`_form.php`テンプレートを開いてください:
+具体例を見るために`_form.php`テンプレートを開いてください:
 
     [php]
     // apps/frontend/modules/job/templates/_form.php
