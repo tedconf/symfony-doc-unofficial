@@ -1,0 +1,540 @@
+Chương 1 - Tạo Form
+=========================
+
+Một form được tạo bởi các field như hidden input, text inputs, select box, và checkbox. Chương này giới thiệu bạn các tạo form và quản lý các field sử dụng symfony forms framework.
+
+Bạn cần Symfony 1.1 trở lên để đọc hướng dẫn này. Bạn cũng cần tạo một project và application `frontend`. Tham khảo phần hứng dẫn cài đặt để có hướng dẫn chi tiết.
+
+Trước khi bắt đầu
+---------------
+
+Chúng ta sẽ thêm một form liên hệ vào ứng dụng symfony.
+
+Hình 1-1 chỉ ra form liên hệ để người dùng điền thông điệp muốn gửi.
+
+Hình 1-1 - Form liên hệ
+
+![Contact form](/images/forms_book/en/01_01.png "Contact form")
+
+Chúng ta sẽ tạo 3 field cho form này: tên user, email, và thông điệp user muôn gửi. Chúng ta sẽ hiển thị nội dung user nhập vào như mô tả trong hình 1-2.
+
+Hình 1-2 - Trang Thank you
+
+![Thank you page](/images/forms_book/en/01_02.png "Thank you page")
+
+Hình 1-3 - Tương tác giữa ứng dụng và người dùng
+
+![Interaction with the user schema](/images/forms_book/en/01_03.png "Interaction with the user schema")
+
+Widget
+-------
+
+### Lớp `sfForm` và `sfWidget`
+
+Trong symfony, một form là một đối tượng thừa kế từ lớp `sfForm`. Trong ví dụ của chúng ta, chúng ta sẽ tạo lớp `ContactForm` thừa kế từ lớp `sfForm`.
+
+>**Note**
+>`sfForm` là lớp cơ sở của tất cả các form, giúp dễ dàng quản lý cấu hình và vòng đời của form.
+
+Bạn có thể bắt đầu cấu hình form bằng các thêm các **widget** sử dụng phương thức `configure()`.
+
+Một **widget** mô tả một field của form. Trong ví dụ của chúng ta, chúng ta cần thêm 3 widget mô tả 3 field: `name`, `email`, và `message`. Listing 1-1 mô tả sự thực thi đầu tiên của lớp `ContactForm`.
+
+Listing 1-1 - Lớp `ContactForm` với 3 field
+
+    [php]
+    // lib/form/ContactForm.class.php
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+      }
+    }
+
+>**NOTE**
+>Trong cuốn sách này, chúng tôi không hiển thị thẻ `<?php` ở code
+>do ví dụ luôn là code PHP. Bạn cần luôn ghi nhớ rằng chúng ta đang code php và khi bạn tạo file PHP thì bạn cần thêm thẻ mở này.
+
+Các widget được xác định trong phương thức `configure()`. Phương thức này được tự động gọi bởi phương thức khởi tạo của lớp `sfForm`.
+
+Phương thức `setWidgets()` dùng để xác định các widget dùng trong form. Phương thức `setWidgets()` nhận một mảng với khóa là tên field và giá trị là widget object. Mỗi widget là một đối tượng thừa kế từ lớp `sfWidget`. Trong ví dụ này chúng ta sử dụng 2 widget:
+
+  * `sfWidgetFormInput`  : widget này mô tả field `input`
+  * `sfWidgetFormTextarea`: widget này mô tả field `textarea`
+
+>**Note**
+>Mặc định, chúng ta lưu các form class trong thư mục `lib/form/`. Bạn có thể chứa nó ở bất kì thư mục nào được quản lý bởi symfony autoloading mechanism, nhưng như chúng ta sẽ thấy sau này, symfony sử dụng thư mục `lib/form/` để tạo các form từ các model object.
+
+### Hiển thị Form
+
+Form của chúng ta bây giờ đã sẵn sàng để sử dụng. Chúng ta tạo một module để hiển thị form:
+
+    $ cd ~/PATH/TO/THE/PROJECT
+    $ php symfony generate:module frontend contact
+
+Trong module `contact`, sửa lại action `index` để cung cấp một instance của form cho template.
+
+Listing 1-2 - Class Actions của module `contact`
+
+    [php]
+    // apps/frontend/modules/contact/actions/actions.class.php
+    class contactActions extends sfActions
+    {
+      public function executeIndex()
+      {
+        $this->form = new ContactForm();
+      }
+    }
+
+Khi tạo một form, phương thức `configure()` đã tạo trước đó, sẽ tự động được gọi.
+
+Chúng ta cũng cần tạo một template để hiển thị form.
+
+Listing 1-3 - Template hiển thị form
+
+    [php]
+    // apps/frontend/modules/contact/templates/indexSuccess.php
+    <form action="<?php echo url_for('contact/submit') ?>" method="POST">
+      <table>
+        <?php echo $form ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+Một symfony form chỉ quản lý các widget hiển thị thông tin tới người dùng. Trong template `indexSuccess`, dòng `<?php echo $form ?>` chỉ hiển thị 3 field. Các thành phân khác như `form` tag và nút submit do lập trình viên tự thêm vào. Ban đầu nó không được tự nhiên lắm, nhưng sau này chúng ta sẽ thấy lợi ích và sự tiện lợi của các form nhúng này.
+
+Sử dụng `<?php echo $form ?>` rất hữu ích khi tạo prototype. Nó cho phép lập trình viên tập trung vào business logic mà không cần quan tâm đến việc trình bày. Chương 3 sẽ mô tả cách cá nhân hóa template và form layout.
+
+>**Note**
+Khi hiển thị một object sử dụng `<?php echo $form ?>`, PHP engine sẽ tự động hiển thị nội dung text của đối tượng `$form`. Để chuyển một đối tượng sang dạng chuỗi, PHP cố gắng thực thi magic method `__toString()`. Mỗi widget đều implement magic method này để chuyển đối tượng thành mã HTML. Việc gọi `<?php echo $form ?>` tương đương với `<?php echo $form->__toString() ?>`.
+
+Bây giờ chúng ta cs thể thấy form từ trình duyệt (Hình 1-4) bằng cách gõ địa chỉ đến action `contact/index` (`/frontend_dev.php/contact`).
+
+Hình 1-4 - Form liên hệ được tạo ra
+
+![Generated Contact Form](/images/forms_book/en/01_04.png "Generated Contact Form")
+
+Listing 1-4 Code được tạo ra ở template.
+
+    [html]
+    <form action="/frontend_dev.php/contact/submit" method="POST">
+      <table>
+        
+        <!-- Beginning of generated code by <?php echo $form ?> -->
+        <tr>
+          <th><label for="name">Name</label></th>
+          <td><input type="text" name="name" id="name" /></td>
+        </tr>
+        <tr>
+          <th><label for="email">Email</label></th>
+          <td><input type="text" name="email" id="email" /></td>
+        </tr>
+        <tr>
+          <th><label for="message">Message</label></th>
+          <td><textarea rows="4" cols="30" name="message" id="message"></textarea></td>
+        </tr>
+        <!-- End of generated code by <?php echo $form ?> -->
+
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+Bây giờ chúng ta có thể thấy rằng form được hiển thị với 3 dòng `<tr>` trong bảng. Đó là lý do tại sao chúng ta thêm thẻ đóng `<table>`. Mỗi dòng có một thẻ `<label>` và form tag (`<input>` hoặc `<textarea>`).
+
+### Label
+
+Label của mỗi field được tự động tạo ra. Mặc định, label được chuyển từ field name theo 2 nguyên tắc: kí tự đầu được viết hoa và dấu gạch dưới được thay thế bởi dấu cách. 
+Ví dụ:
+
+
+    [php]
+    $this->setWidgets(array(
+      'first_name' => new sfWidgetFormInput(), // generated label: "First name"
+      'last_name'  => new sfWidgetFormInput(), // generated label: "Last name"
+    ));
+ 
+Mặc dù việc tự động tạo labels rất tiện lợi, nhưng framework cũng cho phép bạn tự tạo label với phương thức `setLabels()`:
+
+    [php]
+    $this->widgetSchema->setLabels(array(
+      'name'    => 'Your name',
+      'email'   => 'Your email address',
+      'message' => 'Your message',
+    ));
+
+Bạn có thể chỉnh sửa từng label với phương thức `setLabel()`:
+
+    [php]
+    $this->widgetSchema->setLabel('email', 'Your email address');
+
+Trong chương 3, bạn sẽ thấy rằng có thể extend label từ template để customize form.
+
+>**Sidebar**
+>Widget Schema
+>
+>Khi chúng ta sử dụng phương thức `setWidgets()`, symfony tạo một đối tượng `sfWidgetFormSchema`. Đối tượng này là một widget cho phép bạn mô tả tập các widget. Trong form `ContactForm` của chúng ta, chúng ta gọi phương thức `setWidgets()`. Nó tương đương với đoạn code sau:
+>
+>     [php]
+>     $this->setWidgetSchema(new sfWidgetFormSchema(array(
+>       'name'    => new sfWidgetFormInput(),
+>       'email'   => new sfWidgetFormInput(),
+>       'message' => new sfWidgetFormTextarea(),
+>     )));
+>
+>     // almost equivalent to :
+>
+>     $this->widgetSchema = new sfWidgetFormSchema(array(
+>       'name'    => new sfWidgetFormInput(),
+>       'email'   => new sfWidgetFormInput(),
+>       'message' => new sfWidgetFormTextarea(),
+>     ));
+>
+>
+>Chúng ta sẽ thấy trong Chương 5 rằng khái niệm "schema widget" giúp dễ dàng quản lý embedded forms.
+
+### Beyond generated tables
+
+Mặc định form được hiển thị dưới dạng bảng, nhưng format layout có thể thay đổi được. Những kiểu format khác nhau được xác định trong lớp thừa kế từ `sfWidgetFormSchemaFormatter`. Mặc định, một form sử dụng format `table` xác định trong lớp `sfWidgetFormSchemaFormatterTable`. Bạn cũng có thể sử dụng format `list`:
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+
+        $this->widgetSchema->setFormFormatterName('list');
+      }
+    }
+
+2 format này là có sẵn và trong Chương 5 bạn sẽ biết cách tạo lớp để tự tạo format của mình. Bây giờ chúng ta đã biết về cách hiển thị form, hãy chuyển qua phần quản lý dữ liệu gửi lên.
+
+### Submit Form
+
+Khi chúng ta tạo một template để hiển thị form, chúng ta sử dụng đường dẫn `contact/submit` trong thẻ `form`. Bây giờ chúng ta cần thêm một action `submit` trong module `contact`. Listing 1-5 chỉ ra cách lấy nội dung người dùng nhập vào và chuyển sang trang `thank you` để hiển thị thông tin đã đưa lên.
+
+Listing 1-5 - Action `submit` trong module `contact`
+
+    [php]
+    public function executeSubmit($request)
+    {
+      $this->forward404Unless($request->isMethod('post'));
+
+      $params = array(
+        'name'    => $request->getParameter('name'),
+        'email'   => $request->getParameter('email'),
+        'message' => $request->getParameter('message'),
+      );
+
+      $this->redirect('contact/thankyou?'.http_build_query($params));
+    }
+
+    public function executeThankyou()
+    {
+    }
+
+    // apps/frontend/modules/contact/templates/thankyouSuccess.php
+    <ul>
+      <li>Name:    <?php echo $sf_params->get('name') ?></li>
+      <li>Email:   <?php echo $sf_params->get('email') ?></li>
+      <li>Message: <?php echo $sf_params->get('message') ?></li>
+    </ul>
+
+>**Note**
+>`http_build_query` là một function có sẵn của PHP, nó tạo ra chuỗi URL-encoded từ một mảng các tham số.
+
+Phương thức `executeSubmit()` thực hiện 3 hành động:
+
+  * Vì lý do bảo mật, chúng ta kiểm tra xem trang được submit dùng HTTP method `POST`. Nếu không phải là `POST` method người dùng sẽ được chuyển sang trang 404. Trong template `indexSuccess`, chúng ta khai báo submit method là `POST` (`<form ... method="POST">`):
+
+        [php]
+        $this->forward404Unless($request->isMethod('post'));
+
+  * Tiếp theo chúng ta lấy dữ liệu người dùng nhập vào và chứa chúng trong mảng `params`:
+
+        [php]
+        $params = array(
+          'name'    => $request->getParameter('name'),
+          'email'   => $request->getParameter('email'),
+          'message' => $request->getParameter('message'),
+        );
+
+  * Cuối dùng, chúng ta chuyển người dùng sang trang Thank you page  (`contact/thankyou`) để hiển thị thông tin:
+
+        [php]
+        $this->redirect('contact/thankyou?'.http_build_query($params));
+
+Thay vì chuyển người dùng sang trang khác, chúng ta có thể tạo template `submitSuccess.php` để hiển thị nội dung, Nhưng tốt nhất là nên chuyển người dùng sang trang khác sau khi thực hiện một yêu cầu với `POST` method:
+
+  * Việc này tránh form bị submit lại khi người dùng reload trang Thank you.
+
+  * Người dùng có thể click vào nút quay lại trang trước mà không hiển thị pop-up yêu cầu submit lại form.
+
+>**Tip**
+>Bạn có thể chú ý rằng phương thức `executeSubmit()` có điểm khác `executeIndex()`. Khi gọi những phương thức này, symfony cung cấp đối tượng `sfRequest` hiện tại như là tham số đầu tiên cho phương thức `executeXXX()`. Với PHP, bạn không bắt buộc phải thu thập tất cả các tham số, đó là lý do tại sao chúng ta không xác định biến `request` trong phương thức `executeIndex()` do nó không cần thiết.
+
+Hình 1-5 chỉ ra workflow của các phương thức tương tác với người dùng.
+
+Figure 1-5 - Methods workflow
+
+![Methods workflow](/images/forms_book/en/01_05.png "Methods workflow")
+
+>**Note**
+>Khi hiển thị nội dung người dùng dã nhập vào, chúng ta có thể gặp nguy hiểm từ XSS (Cross-Site Scripting) attack. Bạn có thể tìm thêm thông tin về các tránh XSS bằng cách thực thi một escaping strategy ở chương [Inside the View Layer](http://www.symfony-project.org/book/1_2/07-Inside-the-View-Layer#chapter_07_output_escaping) của cuốn "The Definitive Guide to symfony".
+
+Sau khi bạn submit form bạn có thể thấy trang như hình 1-6.
+
+Figure 1-6 - Trang hiển thị sau khi submit form
+
+![Page displayed after submitting the form](/images/forms_book/en/01_06.png "Page displayed after submitting the form")
+
+Thay vì tạo mảng `params`, có một cách dễ dàng hơn để lấy thông tin của người dùng vào một mảng. Listing 1-6 sửa lại HTML attribute `name` ở widget để chứa giá trị của field trong mảng `contact`.
+
+Listing 1-6 - Modification of the `name` HTML attribute from widgets
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+
+        $this->widgetSchema->setNameFormat('contact[%s]');
+      }
+    }
+
+Gọi `setNameFormat()` cho phép bạn sửa HTML attribute `name` cho tất cả các widget. `%s` sẽ được tự động thay thế bởi tên của field khi tạo form. Ví dụ, attribute `name` của field `email` sẽ trở thành `contact[email]`. PHP tự động tạo một mảng từ nội dung user đưa lên.
+
+Bây giờ chúng ta có thể láy trực tiếp mảng `contact` từ đối tượng `request`.
+
+Listing 1-7 - format mới của attribute `name` trong action widget
+
+    [php]
+    public function executeSubmit($request)
+    {
+      $this->forward404Unless($request->isMethod('post'));
+
+      $this->redirect('contact/thankyou?'.http_build_query($request->getParameter('contact')));
+    }
+
+Khi hiển thị HTML source của form, bạn có thể thấy symfony đã tạo attribute không chỉ cho field name và format, mà còn cho attribute `id`. Attribute `id` được tạo tự động từ attribute `name` bằng cách thay thế bởi kí tự gạch dưới (`_`):
+
+  | **Name**  | **Attribute `name`** | **Attribute `id`**  |
+  | --------- | -------------------- | ------------------- |
+  | name      | contact[name]        | contact_name        |
+  | email     | contact[email]       | contact_email       |
+  | message   | contact[message]     | contact_message     |
+
+### Giải pháp khác
+
+Trong ví dụ này, chúng ta đã sử dụng 2 action để quản lý form: `index` để hiển thị, `submit` để submit. Do form được hiển thị với method `GET` và submit với method `POST`, chúng ta có thể gộp 2 method này vào method index.
+
+Listing 1-8 - Gộp 2 action dùng trong form
+
+    [php]
+    class contactActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new ContactForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->redirect('contact/thankyou?'.http_build_query($request->getParameter('contact')));
+        }
+      }
+    }
+
+Chúng ta cũng cần thay đổi attribute `action` của thẻ form trong template `indexSuccess.php`:
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+
+Như chúng ta sẽ thấy sau này, chúng ta sẽ dùng cấu trúc này do nó ngắn hơn và code mạch lạc và dễ đọc.
+
+Cấu hình Widget
+-----------------------
+
+### Widgets options
+
+Nếu một website được quản lý bởi nhiều webmasters, chúng ta muốn thêm một drop-down list để chuyển message cho đúng người liên quan (Hình 1-7). Listing 1-9 thêm một `subject` drop-down list dùng widget `sfWidgetFormSelect`.
+
+Figure 1-7 - Thêm field `subject` vào Form
+
+![Adding a `subject` Field to the Form](/images/forms_book/en/01_07.png "Adding a `subject` Field to the Form")
+
+Listing 1-9 - Thêm field `subject` vào Form
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'subject' => new sfWidgetFormSelect(array('choices' => self::$subjects)),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+
+        $this->widgetSchema->setNameFormat('contact[%s]');
+      }
+    }
+
+>**SIDEBAR**
+>`choices` option của Widget `sfWidgetFormSelect`
+>
+>PHP không có sự phân biệt giữa 1 mảng và một mảng kết hợp, do đó ở đây chúng ta dùng mảng để xác định subject list:
+>
+>     [php]
+>     $subjects = array(0 => 'Subject A', 1 => 'Subject B', 2 => 'Subject C');
+>
+>widget được tạo ra sẽ nhận các key của mảng làm attribute `value` của thẻ `option`, và value tương ứng làm nội dung của thẻ:
+>
+>     [php]
+>     <select name="contact[subject]" id="contact_subject">
+>       <option value="0">Subject A</option>
+>       <option value="1">Subject B</option>
+>       <option value="2">Subject C</option>
+>     </select>
+>
+>Chúng ta có thể thay đổi attribute `value`, bằng cách xác định trong mảng:
+>
+>     [php]
+>     $subjects = array('A' => 'Subject A', 'B' => 'Subject B', 'C' => 'Subject C');
+>
+>Code HTML tạo ra trong template:
+>
+>     [php]
+>     <select name="contact[subject]" id="contact_subject">
+>       <option value="A">Subject A</option>
+>       <option value="B">Subject B</option>
+>       <option value="C">Subject C</option>
+>     </select>
+
+Widget `sfWidgetFormSelect`, giống như tất cả các widget, nhận danh sách các option làm tham số đầu tiên. Một option có thể là bắt buộc hoặc tùy chọn. Widget `sfWidgetFormSelect` có một option bắt buộc, `choices`. Dưới đây là các options của widget chúng ta đã sử dụng:
+
+  | **Widget**             | **Mandatory Options** | **Additional Options**           |
+  | ---------------------- | --------------------- | -------------------------------- |
+  | `sfWidgetFormInput`    | -                     | `type` (default to `text`)       |
+  |                        |                       | `is_hidden` (default to `false`) |
+  | `sfWidgetFormSelect`   | `choices`             | `multiple` (default to `false`)  |
+  | `sfWidgetFormTextarea` | -                     | -                                |
+
+>**Tip**
+>Nếu bạn muốn biết về tất cả các option của một widget, bạn có thể tham khảo tài liệu đầy đủ về API tại  ([http://www.symfony-project.org/api/1_2/](http://www.symfony-project.org/api/1_2/)). Tất cả các option đều được mô tả, kèm với các giá trị mặc định. Ví dụ, tất cả các option của `sfWidgetFormSelect` có ở đây: ([http://www.symfony-project.org/api/1_2/sfWidgetFormSelect](http://www.symfony-project.org/api/1_2/sfWidgetFormSelect)).
+
+### Widget HTML Attribute
+
+Mỗi widget cũng nhận một danh sách các HTML attributes như là tham số thứ 2. Điều này giúp cho việc xác định HTML attribute mặc định cho form tag tạo ra. Listing 1-10 chỉ ra cách thêm attribute `class` vào field `email`.
+
+Listing 1-10 - Xác định Attribute cho một Widget
+
+    [php]
+    $emailWidget = new sfWidgetFormInput(array(), array('class' => 'email'));
+
+    // Generated HTML
+    <input type="text" name="contact[email]" class="email" id="contact_email" />
+
+HTML attribute cũng cho phép chúng ta override những thứ đã tự động tạo sẵn.
+
+Listing 1-11 - Overriding the `id` Attribute
+
+    [php]
+    $emailWidget = new sfWidgetFormInput(array(), array('class' => 'email', 'id' => 'email'));
+
+    // Generated HTML
+    <input type="text" name="contact[email]" class="email" id="email" />
+
+Nó thậm chí còn có thể thiết lập giá trị mặc định cho fields sử dụng attribute `value`.
+
+Listing 1-12 - Widgets Default Values via HTML Attributes
+
+    [php]
+    $emailWidget = new sfWidgetFormInput(array(), array('value' => 'Your Email Here'));
+
+    // Generated HTML
+    <input type="text" name="contact[email]" value="Your Email Here" id="contact_email" />
+
+option này sử dụng cho widget `input`, nhưng cũng có thể áp dụng cho widget `checkbox`, `radio` và `textarea`. Lớp `sfForm` cung cấp phương thức cụ thể để xác định giá trị mặc định của mỗi field theo một cách thống nhất cho mỗi kiểu widget.
+
+
+>**Note**
+>Chúng tôi khuyên bạn xác định HTML attributes trong template và không xác định trong form (mặc dù nó là có thể) để đảm bảo sự tách biệt giữa các tầng như mô tả trong Chương 3.
+
+### Xác định giá trị mặc định cho các Field
+
+Xác định giá trị mặc định cho mỗi field khá hữu ích. Ví dụ, khi chúng ta hiển thị một thông điệp help trong field và sẽ biến mất khi user click vào field. Listing 1-13 chỉ ra cách xác định giá trị mặc định dựa trên method `setDefault()` và `setDefaults()`.
+
+Listing 1-13 - Thiết lập giá trị mặc định dựa trên phương thức `setDefault()` và `setDefaults()`
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setDefault('email', 'Your Email Here');
+
+        $this->setDefaults(array('email' => 'Your Email Here', 'name' => 'Your Name Here'));
+      }
+    }
+
+Phương thức `setDefault()` và `setDefaults()` hữu ích để thiết lập giá trị mặc định cho mọi
+instance trong cùng một form class. Nếu chung ta muốn sửa một object đã có sử dụng một form, giá trị mặc định sẽ tùy vào instance, do đó chúng phải động. Listing 1-14 chỉ ra hàm khởi tạo của `sfForm` có tham số đầu tiên thiết lập giá trị mặc định động.
+
+Listing 1-14 - Thiết lập giá trị mặc định của Widgets từ hàm khởi tạo của `sfForm`
+
+    [php]
+    public function executeIndex($request)
+    {
+      $this->form = new ContactForm(array('email' => 'Your Email Here', 'name' => 'Your Name Here'));
+
+      // ...
+    }
+
+>**SIDEBAR**
+>Protection XSS (Cross-Site Scripting)
+>
+>Khi thiết lập HTML attributes cho các widget, hoặc xác định giá trị mặc định, lớp `sfForm` tự động bảo vệ các giá trị khỏi tấn công XSS trong khi tạo HTML code. Bảo vệ này không phụ thuộc vào cấu hình `escaping_strategy` trong file `settings.yml`. Nếu một nội dung đã được bảo vệ bởi phương thức khác, việc bảo vệ sẽ không được lặp lại.
+>
+>Nó cũng bảo vệ kí tự `'` và `"` có thể không hợp lệ khi tạo HTML.
+>
+>Dưới đây là một ví dụ của bảo vệ này:
+>
+>     [php]
+>     $emailWidget = new sfWidgetFormInput(array(), array(
+>       'value' => 'Hello "World!"',
+>       'class' => '<script>alert("foo")</script>',
+>     ));
+>     
+>     // Generated HTML
+>     <input
+>       value="Hello &quot;World!&quot;"
+>       class="&lt;script&gt;alert(&quot;foo&quot;)&lt;/script&gt;"
+>       type="text" name="contact[email]" id="contact_email"
+>     />
