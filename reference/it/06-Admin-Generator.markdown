@@ -326,7 +326,7 @@ L'opzione `attributes` definisce gli attributi HTML da passare al widget:
 
 *Predefinito*: nessuno
 
-L'opzione `credentials` definisce le credenziali che l'utente deve avere perchè i campi
+L'opzione `credentials` definisce le credenziali che l'utente deve avere perché i campi
 siano visualizzati. Le credenziali sono forzate solo per l'oggetto list.
 
     [yml]

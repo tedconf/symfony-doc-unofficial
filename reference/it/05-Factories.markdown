@@ -529,7 +529,7 @@ Se impostata a `true`, l'impostazione `lazy_routes_deserialize` abilita la
 de-serializzazione "lazy" della cache delle rotte. Questa opzione può migliorare le
 prestazioni delle applicazioni se si ha un elevato numero di rotte e se la maggior parte
 delle corrispondenze con le rotte sono collocate nelle prime posizioni. Si consiglia vivamente
-di verificare l'impostazione prima di andare in produzione, perchè in certe circostanze
+di verificare l'impostazione prima di andare in produzione, perché in certe circostanze
 può fare degradare le prestazioni.
 
 >**CAUTION**

@@ -1518,7 +1518,7 @@ solo due script controllori in `web/`:
     index.php
     backend.php
 
-Questi due controllori sono sicuri perchè la modalità debug e la web debug
+Questi due controllori sono sicuri perché la modalità debug e la web debug
 toolbar sono disabilitati.
 
 ### ~`project::deploy`~
@@ -2095,7 +2095,7 @@ Si può anche generare un modulo admin di Propel passando il nome di una rotta:
 Il task crea un modulo nell'applicazione `%frontend%` per la
 definizione di rotta `%article%` trovata in `routing.yml`.
 
-Perchè i filtri e le azioni funzionino correttamente, è necessario
+Perché i filtri e le azioni funzionino correttamente, è necessario
 aggiungere l'opzione `wildcard` alla rotta:
 
     article:
