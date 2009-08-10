@@ -12,7 +12,7 @@ autocaricate da symfony. Ogni cartella è scansionata per classi e
 interfaccie PHP.
 
 Come discusso in sede di introduzione, il file `autoload.yml` trae beneficio dal
-[**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata), e
+[**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata) e
 può includere [**costanti**](#chapter_03_costanti).
 
 >**NOTE**
@@ -66,7 +66,7 @@ Diverse chiavi possono essere usate per personalizzare il comportamento dell'aut
  * `ext`: L'estensione delle classi PHP (valore predefinito `.php`)
 
 Per esempio, se si incorpora una grossa libreria all'interno del progetto sotto la
-cartella `lib/`, e se essa già supporta l'autocaricamento, si può escluderla
+cartella `lib/` e se essa già supporta l'autocaricamento, si può escluderla
 dal sistema di autocaricamento predefinito di symfony per beneficiare di un aumento
 delle prestazioni, modificando la configurazione `project` di autocaricamento:
 
@@ -131,7 +131,7 @@ un estratto della configurazione predefinita:
     - %SF_SYMFONY_LIB_DIR%/action/sfActions.class.php
 
 Come discusso in sede di introduzione, il file `core_compile.yml` beneficia del
-[**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata), e
+[**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata) e
 può includere [**costanti**](#chapter_03_costanti).
 
 >**NOTE**

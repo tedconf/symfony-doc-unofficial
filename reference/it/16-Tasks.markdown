@@ -349,7 +349,7 @@ Per saltare la conferma, si può passare l'opzione
 
 ### ~`doctrine::build-all-load`~
 
-Il task `doctrine::build-all-load` genera i modelli per Doctrine, l'SQL, inizializza il database, e carica i dati con le fixture:
+Il task `doctrine::build-all-load` genera i modelli per Doctrine, l'SQL, inizializza il database e carica i dati con le fixture:
 
     $ php symfony doctrine:build-all-load [--application[="..."]] [--env="..."] [--connection="..."] [--no-confirmation] [--skip-forms|-F] [--dir="..."] 
 
@@ -386,7 +386,7 @@ Per saltare la conferma, è possibile passare l'opzione
 
 ### ~`doctrine::build-all-reload`~
 
-Il task `doctrine::build-all-reload` genera i modelli per Doctrine, l'SQL, inizializza il database, e carica i dati:
+Il task `doctrine::build-all-reload` genera i modelli per Doctrine, l'SQL, inizializza il database e carica i dati:
 
     $ php symfony doctrine:build-all-reload [--application[="..."]] [--env="..."] [--connection="..."] [--no-confirmation] [--skip-forms|-F] [--dir="..."] 
 
@@ -1772,7 +1772,7 @@ Per creare tutte le classi ma saltare l'inizializzazione del database, usare l'o
 
 ### ~`propel::build-all-load`~
 
-Il task `propel::build-all-load` genera modelli per Propel e classi per i form, l'SQL, inizializza il database, e carica i dati:
+Il task `propel::build-all-load` genera modelli per Propel e classi per i form, l'SQL, inizializza il database e carica i dati:
 
     $ php symfony propel:build-all-load [--application[="..."]] [--env="..."] [--connection="..."] [--no-confirmation] [--skip-forms|-F] [--classes-only|-C] [--phing-arg="..."] [--append] [--dir="..."] 
 

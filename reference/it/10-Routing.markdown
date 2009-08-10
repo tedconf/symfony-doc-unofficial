@@ -158,7 +158,7 @@ espressioni regolari a cui i valori della variabile devono corrispondere.
 >**TIP**
 >L'espressione regolare sarà inclusa in un'altra espressione
 >regolare, questo vuol dire che non c'è bisogno di racchiuderla tra
->separatori, e non c'è bisogno di delimitarla con `^` o `$` per fare
+>separatori e non c'è bisogno di delimitarla con `^` o `$` per fare
 >corrispondere l'intero valore.
 
 ### ~`type`~
@@ -203,7 +203,7 @@ associato con la rotta corrente.
 
 L'opzione `type` è obbligatoria ed è il tipo di rotta che si vuole per il
 modello; essa può essere `object` o `list`. Una rotta di tipo `object`
-rappresenta un oggetto per un singolo modello, e una rotta di tipo `list` rappresenta una
+rappresenta un oggetto per un singolo modello e una rotta di tipo `list` rappresenta una
 collezione di oggetti di modelli.
 
 ### ~`method`~
@@ -273,7 +273,7 @@ associato con la rotta corrente.
 
 L'opzione `actions` definisce un array di azioni autorizzate per la rotta. Le
 azioni devono essere un sotto insieme di tutte le azioni disponibili: `list`, `new`, `create`,
-`edit`, `update`, `delete`, e `show`.
+`edit`, `update`, `delete` e `show`.
 
 Se l'opzione è assegnata a `false`, il valore predefinito, tutte le azioni saranno disponibili
 eccetto per la `show` se l'opzione `with_show` è assegnata a `false` (vedere
@@ -365,7 +365,7 @@ per l'oggetto delle rotte.
 ~`sfPropelRouteCollection`~
 ---------------------------
 
-La classe per la rotta `sfPropelRouteCollection` estende `sfRouteCollection`, e
+La classe per la rotta `sfPropelRouteCollection` estende `sfRouteCollection` e
 cambia la classe predefinita della rotta a `sfPropelRoute` (vedere sopra
 l'opzione `route_class`).
 

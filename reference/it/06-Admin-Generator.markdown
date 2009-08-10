@@ -36,7 +36,7 @@ Il file contiene due voci principali: `class` e `param`. La classe è
 `sfPropelGenerator` per Propel e `sfDoctrineGenerator` per Doctrine.
 
 La voce `param` contiene le opzioni di configurazione per il modulo generato.
-`model_class` definisce la classe del modello  associata a questo modulo, e
+`model_class` definisce la classe del modello  associata a questo modulo e
 l'opzione `theme` definisce il tema predefinito da usare.
 
 Ma la configurazione principale è presente sotto la voce `config`. È organizzata
@@ -80,7 +80,7 @@ nella classe del modello (`get` più un suffisso costituito dal nome del campo a
 
 In base al contesto, il generatore di admin è sufficientemente intelligente per conoscere come
 visualizzare i campi. Per personalizzare la visualizzazione, è possibile creare un partial o un
-componente. Per convenzione, i partial sono prefissati con una riga di sottolineatura (`_`), e
+componente. Per convenzione, i partial sono prefissati con una riga di sottolineatura (`_`) e
 i componenti da una tilde (`~`):
 
     [yml]
@@ -292,7 +292,7 @@ Opzioni di configurazione disponibili
 
 La sezione `fields` definisce la configurazione predefinita per ciascun campo. Questa
 configurazione è definita per tutte le pagine e può essere sovrascritta singolarmente per ciascuna
-pagina di base (`list`, `filter`, `form`, `edit`, e `new`).
+pagina di base (`list`, `filter`, `form`, `edit` e `new`).
 
 ### ~`label`~
 

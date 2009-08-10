@@ -619,7 +619,7 @@ factory logger anonimi.
 Factory cache anonimi
 ---------------------
 
-Alcuni factory (`view_cache`, `i18n`, e `routing`) possono trarre vantaggio da
+Alcuni factory (`view_cache`, `i18n` e `routing`) possono trarre vantaggio da
 un oggetto cache se definito nella loro configurazione. La configurazione
 dell'oggetto cache è simile per tutti i factory. La chiave `cache` definisce una
 cache factory anonima. Come ogni altro factory, prende le voci `class` e
