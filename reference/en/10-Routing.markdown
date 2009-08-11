@@ -208,7 +208,7 @@ collection of model objects.
 
 ### ~`method`~
 
-The `type` option is mandatory. It is the method to call on the model class to
+The `method` option is mandatory. It is the method to call on the model class to
 retrieve the object(s) associated with this route. This must be a static
 method. The method is called with the parameters of the parsed route as an
 argument.
