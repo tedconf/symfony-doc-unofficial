@@ -701,7 +701,7 @@ Il task `doctrine::dql` esegue una query DQL e visualizza i risultati:
 | --------------------- | ----------- | -----------
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
-| `--show-sql` | `-` | Mostra l'sql the dovrebbe essere eseguito
+| `--show-sql` | `-` | Mostra l'sql che dovrebbe essere eseguito
 
 
 Il task `doctrine:data-dql` esegue una query DQL e visualizza i risultati formattati:
@@ -956,7 +956,7 @@ Il task `doctrine::migrate` esegue la migrazione del database alla versione corr
 
 | Argomento | Predefinito | Descrizione
 | --------- | ----------- | -----------
-| `version` | `-` | The version to migrate to
+| `version` | `-` | La versione verso cui migrare
 
 
 | Opzione (Scorciatoia) | Predefinito | Descrizione
@@ -1444,10 +1444,10 @@ Oppure usando la notazione `canale/pacchetto`:
     ./symfony plugin:uninstall miocanalepear/sfGuardPlugin
 
 Si può recuperare il nome del canale  PEAR di un plugin lanciando
-il task `plugin:list].
+il task `plugin:list`.
 
 Se il plugin ha dei contenuti web (immagini, fogli di stile o javascript),
-il task rimuove anche i [web/%name%` link simbolici (sotto *nix)
+il task rimuove anche i `web/%name%` link simbolici (sotto *nix)
 o le cartelle (sotto Windows).
 
 ### ~`plugin::upgrade`~
@@ -1765,7 +1765,7 @@ Per saltare il prompt di conferma, si può passare l'opzione `no-confirmation`:
 
     ./symfony propel:buil-all --no-confirmation
 
-Per creare tutte le classi ma saltare l'inizializzazione del database, usare l'opzione`classes-only`
+Per creare tutte le classi ma saltare l'inizializzazione del database, usare l'opzione 
 `classes-only`:
 
     ./symfony propel:build-all --classes-only
@@ -1785,12 +1785,12 @@ Il task `propel::build-all-load` genera modelli per Propel e classi per i form, 
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
 | `--connection` | `propel` | Il nome della connessione
-| `--no-confirmation` | `-` | Non chiede per conferma
+| `--no-confirmation` | `-` | Non chiede conferma
 | `--skip-forms`<br />`(-F)` | `-` | Salta la generazione dei form
 | `--classes-only`<br />`(-C)` | `-` | Non inizializza il database
-| `--phing-arg` | `-` | Argomento arbitrario phing (multiple values allowed)
-| `--append` | `-` | Don't delete current data in the database
-| `--dir` | `-` | The directories to look for fixtures (più valori ammessi)
+| `--phing-arg` | `-` | Argomento arbitrario phing (più valori ammessi)
+| `--append` | `-` | Non elimina i dati già presenti nel database
+| `--dir` | `-` | Le cartelle da utilizzare per cercare delle fixture (più valori ammessi)
 
 
 Il task `propel:build-all-load` è una scorciatoia per due altri task:
@@ -2387,7 +2387,7 @@ data applicazione:
 Il task lancia tutti i test trovati in `test/functional/%application%`.
 
 E' possibile lanciare tutti i test funzionali per uno specifico controller
-dfornendo il nome del controller:
+fornendo il nome del controller:
 
     ./symfony test:functional frontend article
 
