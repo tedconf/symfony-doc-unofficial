@@ -1,21 +1,21 @@
 Task
-=====
+====
 
 Il framework symfony comprende uno strumento per l'interfaccia a riga di comando.
 Task già presenti mettono in grado allo sviluppatore di eseguire molti compiti ricorrenti
 e fastidiosi nel ciclo di vita di un progetto.
 
-Se si esegue la CLI (Command Line Interface) di `symfony`  senza nessun argomento, viene visualizzato
+Se si esegue la CLI (Command Line Interface) di `symfony` senza nessun parametro, viene visualizzato
 un elenco dei task disponibili:
 
     $ php symfony
 
 Passando l'opzione `-V`, si ottengono alcune informazioni sulla versione di
-symfony e il percorso delle librerie di symfony usate dalla  CLI:
+symfony e il percorso delle librerie di symfony usate dalla CLI:
 
     $ php symfony -V
 
-Lo strumento della CLI prende il nome di un task come primo argomento:
+Lo strumento della CLI accetta il nome di un task come primo parametro:
 
     $ php symfony list
 
@@ -24,7 +24,7 @@ due punti (`:`):
 
     $ php symfony cache:clear
 
-Dopo il nome del task, possono essere passati argomenti e opzioni:
+Dopo il nome del task, possono essere passati parametri e opzioni:
 
     $ php symfony cache:clear --type=template
 
@@ -136,7 +136,7 @@ Il task `help` mostra l'aiuto per un task:
 
 *Altri nomi*: `h`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `nome_task` | `aiuto` | Il nome del task
 
@@ -153,7 +153,7 @@ Il task `list` elenca i task:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `spazionomi` | `-` | Il nome dello spazionomi
 
@@ -164,7 +164,7 @@ Il task `list` elenca tutti i task:
 
     ./symfony list
 
-E' anche possibile visualizzare i task per uno spazionomi specifico:
+È anche possibile visualizzare i task per uno spazionomi specifico:
 
     ./symfony list test
 
@@ -179,7 +179,7 @@ Il task `app::routes` visualizza le rotte correnti per una applicazione:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `nome` | `-` | Il nome di una rotta
@@ -216,7 +216,7 @@ Il task `cache:clear` pulisce la cache di symfony.
 Per impostazione predefinita, rimuove la cache per tutti i tipi disponibili, tutte le applicazioni,
 e tutti gli ambienti.
 
-E' possibile restringere per tipo, applicazione, o ambiente:
+È possibile restringere per tipo, applicazione, o ambiente:
 
 Per esempio, per pulire la cache dell'applicazione `frontend`:
 
@@ -249,7 +249,7 @@ Il task `configure::author` configura l'autore del progetto:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `autore` | `-` | L'autore del progetto
 
@@ -272,7 +272,7 @@ Il task `configure::database` configura il DSN del database:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `dsn` | `-` | Il dsn del database
 | `nomeutente` | `root` | Il nome utente per il database
@@ -301,7 +301,7 @@ Per cambiare la configurazione di una specifica applicazione, usare l'opzione `a
 
     ./symfony configure:database --app=frontend mysql:host=localhost;dbname=example root mYsEcret
 
-E' anche possibile specificare il nome della connessione e il nome della classe per il database:
+È anche possibile specificare il nome della connessione e il nome della classe per il database:
 
     ./symfony configure:database --name=main --class=sfDoctrineDatabase mysql:host=localhost;dbname=example root
 
@@ -325,7 +325,7 @@ Il task `doctrine::build-all` genera i modelli per Doctrine, l'SQL e inizializza
 | --------------------- | ----------- | -----------
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
-| `--no-confirmation` | `-` | Non chiedere per conferma
+| `--no-confirmation` | `-` | Non chiedere conferma
 | `--skip-forms`<br />`(-F)` | `-` | Saltare la generazione dei form
 
 
@@ -362,7 +362,7 @@ Il task `doctrine::build-all-load` genera i modelli per Doctrine, l'SQL, inizial
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
 | `--connection` | `doctrine` | Il nome della connessione
-| `--no-confirmation` | `-` | Non chiedere per conferma
+| `--no-confirmation` | `-` | Non chiedere conferma
 | `--skip-forms`<br />`(-F)` | `-` | Saltare la generazione dei form
 | `--dir` | `-` | Le cartelle in cui guardare per le fixture (sono ammessi più valori)
 
@@ -376,7 +376,7 @@ Il task è equivalente a:
     ./symfony doctrine:build-all
     ./symfony doctrine:data-load
 
-Il task prende un argomento application a causa del task
+Il task accetta un parametro application a causa del task
 `doctrine:data-load`. Vedere la pagina di aiuto di `doctrine:data-load` per maggiori informazioni.
 
 Per saltare la conferma, è possibile passare l'opzione
@@ -399,7 +399,7 @@ Il task `doctrine::build-all-reload` genera i modelli per Doctrine, l'SQL, inizi
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
 | `--connection` | `doctrine` | Il nome della connessione
-| `--no-confirmation` | `-` | Non chiedere per conferma
+| `--no-confirmation` | `-` | Non chiedere conferma
 | `--skip-forms`<br />`(-F)` | `-` | Saltare la generazione dei form
 | `--dir` | `-` | Le cartelle in cui guardare per le fixture (sono ammessi più valori)
 
@@ -448,7 +448,7 @@ Il task è equivalente a:
     ./symfony doctrine:data-load
     ./symfony test-all
 
-Il task prende una applicazione come argomento per via del task
+Il task accetta una applicazione come parametro per via del task
 `doctrine:data-load`. Vedere la pagina di aiuto si `doctrine:data-load` per maggiori informazioni.
 
 ### ~`doctrine::build-db`~
@@ -627,7 +627,7 @@ Il task `doctrine::data-dump` copia i dati nella cartella delle fixture:
 
 *Altri nomi*: `doctrine-dump-data`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `target` | `-` | Il nome file di destinazione
 
@@ -692,7 +692,7 @@ Il task `doctrine::dql` esegue una query DQL e visualizza i risultati:
 
 *Altri nomi*: `doctrine-dql`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `dql_query` | `-` | La query DQL da eseguire
 
@@ -743,7 +743,7 @@ Il task `doctrine::generate-admin` genera un modulo di Doctrine per l'admin:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `application` | `-` | Il nome dell'applicazione
 | `route_or_model` | `-` | Il nome della rotta o della classe per il modello
@@ -767,7 +767,7 @@ modello `%Article%`.
 
 Il task crea una rotta nel file `routing.yml` dell'applicazione.
 
-E' possibile anche generare un modulo admin di Doctrine passando un nome di rotta:
+È possibile anche generare un modulo admin di Doctrine passando un nome di rotta:
 
     ./symfony doctrine:generate-admin frontend article
 
@@ -791,7 +791,7 @@ Il task `doctrine::generate-migration` genera la classe di migrazione:
 
 *Altri nomi*: `doctrine-generate-migration`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `name` | `-` | Il nome della migrazione
 
@@ -854,7 +854,7 @@ Il task `doctrine::generate-module` genera un modulo di Doctrine:
 
 *Altri nomi*: `doctrine-generate-crud, doctrine:generate-crud`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `application` | `-` | Il nome dell'applicazione
 | `module` | `-` | Il nome del modulo
@@ -901,7 +901,7 @@ Il task `doctrine::generate-module-for-route` genera  un modulo Doctrine per una
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `application` | `-` | Il nome dell'applicazione
 | `route` | `-` | Il nome della rotta
@@ -954,7 +954,7 @@ Il task `doctrine::migrate` esegue la migrazione del database alla versione corr
 
 *Altro nomi*: `doctrine-migrate`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `version` | `-` | La versione verso cui migrare
 
@@ -1003,7 +1003,7 @@ Il task `generate::app` genera una nuova applicazione:
 
 *Altri nomi*: `init-app`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `application` | `-` | Il nome dell'applicazione
 
@@ -1049,7 +1049,7 @@ Il task `generate::module` genera un nuovo modulo:
 
 *Altri nomi*: `init-module`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `application` | `-` | Il nome dell'applicazione
 | `module` | `-` | Il nome del modulo
@@ -1087,7 +1087,7 @@ Il task `generate::project` genera un nuovo progetto:
 
 *Altri nomi*: `init-project`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `nome` | `-` | Il nome del progetto
 
@@ -1110,7 +1110,7 @@ Il task `generate::task` crea lo scheletro di una classe per un nuovo task:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `nome_task` | `-` | Il nome del task (può contenere namespace)
 
@@ -1123,7 +1123,7 @@ Il task `generate::task` crea lo scheletro di una classe per un nuovo task:
 
 
 `generate:task` crea una nuova classe sfTask basata sul nome passato come
-argomento:
+parametro:
 
     ./symfony generate:task namespace:name
 
@@ -1161,7 +1161,7 @@ Il task `i18n::extract` estrae le stringhe i18n dai file php:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `cultura` | `-` | La cultura in obiettivo
@@ -1211,7 +1211,7 @@ Il task `i18n::find` trova le stringhe non "pronte per i18n" nell'applicazione:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 
@@ -1231,7 +1231,7 @@ Questo task è capace di trovare le stringhe non internazionalizzate nell'HTML p
     <p><?php echo 'Test' ?></p>
 
 Essendo che il task restituisce tutte le stringhe incorporate nel PHP, si possono avere alcuni falsi positivi (soprattutto
-se si usa la sintassi stringa per gli argomenti degli helper).
+se si usa la sintassi stringa per i parametri degli helper).
 
 `log`
 -----
@@ -1260,7 +1260,7 @@ Il task `log::rotate` ruota i file di log di una applicazione:
 
 *Altri nomi*: `log-rotate`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `amb` | `-` | Il nome dell'ambiente
@@ -1292,7 +1292,7 @@ Il task `plugin::add-channel` aggiunge un nuovo canale PEAR:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `nome` | `-` | Il nome del canale
 
@@ -1311,7 +1311,7 @@ Il task `plugin::install` installa un plugin:
 
 *Altri nomi*: `plugin-install`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `nome` | `-` | Il nome del plugin
 
@@ -1416,7 +1416,7 @@ Il task `plugin::uninstall` disinstalla un plugin:
 
 *Altri nomi*: `plugin-uninstall`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `nome` | `-` | Il nome del plugin
 
@@ -1458,7 +1458,7 @@ Il task `plugin::upgrade` aggiorna un plugin:
 
 *Altri nomi*: `plugin-upgrade`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `nome` | `-` | Il nome del plugin
 
@@ -1529,7 +1529,7 @@ Il task `project::deploy` copia i file di un progetto su un altro server:
 
 *Altro nome*: `sync`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `server` | `-` | Il nome del name
 
@@ -1591,7 +1591,7 @@ Il task `project::disable` disabilita un'applicazione in un dato ambiente:
 
 *Alias(es)*: `disable`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `amb` | `-` | Il nome dell'ambiente
@@ -1611,7 +1611,7 @@ Il task `project::enable` abilita una applicazione in un dato ambiente:
 
 *Alias(es)*: `enable`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `amb` | `-` | Il nome dell'ambiente
@@ -1631,7 +1631,7 @@ Il task `project::freeze` congela le librerie di symfony:
 
 *Altri nomi*: `freeze`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `symfony_data_dir` | `-` | La cartella dati di symfony
 
@@ -1643,7 +1643,7 @@ corrente progetto:
 
     ./symfony project:freeze /path/to/symfony/data/directory
 
-Il task si aspetta l'argomento obbligatorio del percoro alla cartella dei dati
+Il task si aspetta il parametro obbligatorio del percorso alla cartella dei dati
 symfony.
 
 Il task cambia anche `config/config.php` per passare ai
@@ -1741,10 +1741,10 @@ Il task `propel::build-all` genera modelli per Propel classi per i form, l'SQL e
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
 | `--connection` | `propel` | Il nome della connessione
-| `--no-confirmation` | `-` | Non chiede per conferma
+| `--no-confirmation` | `-` | Non chiede conferma
 | `--skip-forms`<br />`(-F)` | `-` | Salta la generazione dei form
 | `--classes-only`<br />`(-C)` | `-` | Non inizializza il database
-| `--phing-arg` | `-` | Argomento arbitrario phing (più valori ammessi)
+| `--phing-arg` | `-` | Parametro arbitrario phing (più valori ammessi)
 
 
 Il task `propel:build-all` è una scorciatoia per cinque altri task:
@@ -1788,7 +1788,7 @@ Il task `propel::build-all-load` genera modelli per Propel e classi per i form, 
 | `--no-confirmation` | `-` | Non chiede conferma
 | `--skip-forms`<br />`(-F)` | `-` | Salta la generazione dei form
 | `--classes-only`<br />`(-C)` | `-` | Non inizializza il database
-| `--phing-arg` | `-` | Argomento arbitrario phing (più valori ammessi)
+| `--phing-arg` | `-` | Parametro arbitrario phing (più valori ammessi)
 | `--append` | `-` | Non elimina i dati già presenti nel database
 | `--dir` | `-` | Le cartelle da utilizzare per cercare delle fixture (più valori ammessi)
 
@@ -1835,7 +1835,7 @@ Il task legge le informazioni dello schema in `config/*schema.xml` e/o
 `config/*schema.yml` dal progetto e da tutti i plugin installati.
 
 Il task usa la connessione `propel` così come è definita in `config/databases.yml`.
-E' possibile usare un'altra connessione utilizzando l'opzione `--connection`:
+È possibile usare un'altra connessione utilizzando l'opzione `--connection`:
 
     ./symfony propel:build-filters --connection="name"
 
@@ -1870,7 +1870,7 @@ Il task legge le informazioni dello schema in `config/*schema.xml` e/o
 `config/*schema.yml` dal progetto e da tutti i plugin installati.
 
 Il task usa la connessione `propel` così come definita in `config/databases.yml`.
-E' possibile usare un'altra connessione utilizzando l'opzione `--connection`:
+È possibile usare un'altra connessione utilizzando l'opzione `--connection`:
 
     ./symfony propel:build-forms --connection="name"
 
@@ -1891,7 +1891,7 @@ Il task `propel::build-model` crea classi per il modello corrente:
 
 | Opzione (Scorciatoia) | Predefinito | Descrizione
 | --------------------- | ----------- | -----------
-| `--phing-arg` | `-` | Argomento arbitrario phing (più valori ammessi)
+| `--phing-arg` | `-` | Parametro arbitrario phing (più valori ammessi)
 
 
 Il task `propel:build-model` crea classi di modelli per lo schema:
@@ -1925,7 +1925,7 @@ Il task `propel::build-schema` crea uno schema da un database esistente:
 | `--env` | `cli` | L'ambiente
 | `--connection` | `-` | Il nome della connessione
 | `--xml` | `-` | Crea uno schema XML invece di quello YML
-| `--phing-arg` | `-` | Argomento arbitrario phing (più valori ammessi)
+| `--phing-arg` | `-` | Parametro arbitrario phing (più valori ammessi)
 
 
 Il task `propel:build-schema` analizza un database per creare uno schema:
@@ -1950,7 +1950,7 @@ Il task `propel::build-sql` crea l'SQL per il modello corrente:
 
 | Opzione (Scorciatoia) | Predefinito | Descrizione
 | --------------------- | ----------- | -----------
-| `--phing-arg` | `-` | Argomento arbitrario phing (più valori ammessi)
+| `--phing-arg` | `-` | Parametro arbitrario phing (più valori ammessi)
 
 
 Il task `propel:build-sql` crea istruzioni SQL per la creazione delle tabelle:
@@ -1969,7 +1969,7 @@ Il task `propel::data-dump` copia i dati nella cartella delle fixture:
 
 *Altri nomi*: `propel-dump-data`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `target` | `-` | Il nome file di destinazione
 
@@ -1987,7 +1987,7 @@ Il task `propel:data-dump` copia i dati del database:
     ./symfony propel:data-dump > data/fixtures/dump.yml
 
 Per impostazione predefinita, il task visualizza i dati nell'output standard,
-ma si può anche passare un nome file come secondo argomento:
+ma si può anche passare un nome file come secondo parametro:
 
     ./symfony propel:data-dump dump.yml
 
@@ -1998,7 +1998,7 @@ Il file copiato è in formato YML e può essere re-importato utilizzando
 il task `propel:data-load`.
 
 Per impostazione predefinita, il task usa la connessione `propel` così come è definita in `config/databases.yml`.
-E' possibile usare un'altra connessione utilizzando l'opzione `connection`:
+È possibile usare un'altra connessione utilizzando l'opzione `connection`:
 
     ./symfony propel:data-dump --connection="name"
 
@@ -2064,7 +2064,7 @@ Il task `propel::generate-admin` genera un modulo admin di Propel:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `rotta_o_modello` | `-` | Il nome della rotta o la classe del modello
@@ -2112,7 +2112,7 @@ Il task `propel::generate-module` genera un modulo per Propel:
 
 *Altri nomi*: `propel-generate-crud, propel:generate-crud`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `modulo` | `-` | Il nome del modulo
@@ -2159,7 +2159,7 @@ Il task `propel::generate-module-for-route` genera un modulo di Propel per una d
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `rotta` | `-` | Il nome della rotta
@@ -2209,7 +2209,7 @@ Il task `propel::init-admin` inizializza un modulo admin di Propel:
 
 *Altri nomi*: `propel-init-admin`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `modulo` | `-` | Il nome del modulo
@@ -2251,7 +2251,7 @@ Il task `propel::insert-sql` inserisce l'SQL per il modello corrente:
 | `--env` | `cli` | L'ambiente
 | `--connection` | `-` | Il nome della connessione
 | `--no-confirmation` | `-` | Non chiede una conferma
-| `--phing-arg` | `-` | Argomento arbitrario phing (sono ammessi più valori)
+| `--phing-arg` | `-` | Parametro arbitrario phing (sono ammessi più valori)
 
 
 Il task `propel:insert-sql` crea le tabelle del database:
@@ -2340,7 +2340,7 @@ Il task `test::coverage` mostra la copertura del codice testato:
 
 
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `nome_test` | `-` | Un nome file del test o una cartella con i test
 | `nome_lib` | `-` | Un nome di file della libreria o una cartella con la libreria 
@@ -2371,7 +2371,7 @@ Il task `test::functional` lancia i test funzionali:
 
 *Altri nomi*: `test-functional`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `applicazione` | `-` | Il nome dell'applicazione
 | `controller` | `-` | Il nome del controller
@@ -2386,7 +2386,7 @@ data applicazione:
 
 Il task lancia tutti i test trovati in `test/functional/%application%`.
 
-E' possibile lanciare tutti i test funzionali per uno specifico controller
+È possibile lanciare tutti i test funzionali per uno specifico controller
 fornendo il nome del controller:
 
     ./symfony test:functional frontend article
@@ -2403,7 +2403,7 @@ Il task `test::unit` lancia i test unitari:
 
 *Altri nomi*: `test-unit`
 
-| Argomento | Predefinito | Descrizione
+| Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
 | `nome` | `-` | Il nome del test
 

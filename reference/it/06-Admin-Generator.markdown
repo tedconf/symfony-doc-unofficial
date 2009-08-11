@@ -74,8 +74,8 @@ generatore di admin attraverso la voce `config`.
 
 ### Campi
 
-Molte opzioni prendono un elenco di campi come argomento. Un campo può essere il nome
-di una colonna reale, o di una colonna virtuale. In entrambi i casi, deve essere definito un getter
+Molte opzioni accettano un elenco di campi come parametro. Un campo può essere il nome
+di una colonna reale o di una colonna virtuale. In entrambi i casi, deve essere definito un getter
 nella classe del modello (`get` più un suffisso costituito dal nome del campo avente la prima lettera maiuscola).
 
 In base al contesto, il generatore di admin è sufficientemente intelligente per conoscere come
@@ -346,15 +346,15 @@ siano visualizzati. Le credenziali sono forzate solo per l'oggetto list.
 L'opzione `renderer` definisce un callback PHP per eseguire la visualizzazione del campo. Se
 definita, sovrascrive ogni altra cosa come partial o componenti.
 
-Il callback è chiamato con il valore del campo e gli argomenti definiti
+Il callback è chiamato con il valore del campo e i parametri definiti
 dall'opzione `renderer_arguments`.
 
 ### ~`renderer_arguments`~
 
 *Predefinito*: `array()`
 
-L'opzione `renderer_arguments` definisce gli argomenti da passare
-alla callback PHP `renderer` quando visualizza il campo. È usata unicamente se
+L'opzione `renderer_arguments` definisce i parametri da passare
+al callback PHP `renderer` quando visualizza il campo. È usata unicamente se
 l'opzione `renderer` è definita.
 
 `actions`

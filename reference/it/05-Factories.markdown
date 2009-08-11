@@ -171,7 +171,7 @@ a `HTTP_X_REWRITE_URL`.
 ### ~`formats`~
 
 L'opzione `formats` definisce un array di estensioni di file ed il corrispettivo
-`Content-Type`. E' usata automaticamente dal framework per gestire il `Content-Type` di una risposta, 
+`Content-Type`. È usata automaticamente dal framework per gestire il `Content-Type` di una risposta, 
 in base all'estensione dell'URI richiesta.
 
 ### ~`relative_url_root`~
@@ -335,7 +335,7 @@ con il valore delle seguenti opzioni:
 
 Se l'opzione `session_cache_limiter` è assegnata, la funzione PHP
 [`session_cache_limiter()`](http://www.php.net/session_cache_limiter)
-è chiamata e il valore dell'opzione è passato come argomento.
+è chiamata e il valore dell'opzione è passato come parametro.
 
 ### Database Storage-specific Options
 

@@ -211,7 +211,7 @@ collezione di oggetti di modelli.
 L'opzione `type` è obbligatoria. È il metodo da chiamare sulla classe del modello
 per recuperare l'oggetto (o gli oggetti) associati a questa rotta. Deve essere un
 metodo statico. Il metodo è chiamato con i parametri della rotta scansionata come
-argomento.
+parametro.
 
 ### ~`allow_empty`~
 
@@ -238,7 +238,7 @@ della rotta (come definito dall'impostazione `url`).
 
 L'opzione `method_for_criteria` definisce il metodo chiamato sulla classe del
 modello Peer per recuperare l'oggetto (o gli oggetti) associati con la richiesta corrente. Il
-metodo è chiamato con i parametri della rotta scansionata come argomento.
+metodo è chiamato con i parametri della rotta scansionata come parametro.
 
 ~`sfDoctrineRoute`~
 -------------------
@@ -249,7 +249,7 @@ metodo è chiamato con i parametri della rotta scansionata come argomento.
 
 L'opzione `method_for_query` definisce il metodo da chiamare sul modello per
 recuperare l'oggetto (o gli oggetti) associati con la richiesta corrente. L'ggetto della richiesta
-corrente è passato come argomento.
+corrente è passato come parametro.
 
 Se l'opzione non è assegnata, la richiesta è solo "eseguita" con il metodo
 `execute()`.
