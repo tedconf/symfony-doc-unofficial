@@ -71,7 +71,7 @@ Let's change it to only select active jobs:
       $q = Doctrine_Query::create()
         ->from('JobeetJob j')
         ->where('j.created_at > ?',
-         ➥ date('Y-m-d h:i:s', time() - 86400 * 30));
+         ➥ date('Y-m-d H:i:s', time() - 86400 * 30));
 
       $this->jobeet_job_list = $q->execute();
 </doctrine>
@@ -212,7 +212,7 @@ model class:
         if ($this->isNew() && !$this->getExpiresAt())
         {
           $now = $this->getCreatedAt() ? strtotime($this->getCreatedAt()) : time();
-          $this->setExpiresAt(date('Y-m-d h:i:s', $now + 86400 * 30));
+          $this->setExpiresAt(date('Y-m-d H:i:s', $now + 86400 * 30));
         }
 
         return parent::save($conn);
@@ -240,7 +240,7 @@ Now, let's change the action to use the `expires_at` column instead of the
 <doctrine>
       $q = Doctrine_Query::create()
         ->from('JobeetJob j')
-        ->where('j.expires_at > ?', date('Y-m-d h:i:s', time()));
+        ->where('j.expires_at > ?', date('Y-m-d H:i:s', time()));
 
       $this->jobeet_job_list = $q->execute();
 </doctrine>
@@ -360,7 +360,7 @@ Let's update the code to take this new setting into account:
       if ($this->isNew() && !$this->getExpiresAt())
       {
         $now = $this->getCreatedAt() ? strtotime($this->getCreatedAt()) : time();
-        $this->setExpiresAt(date('Y-m-d h:i:s', $now + 86400 * sfConfig::get('app_active_days')));
+        $this->setExpiresAt(date('Y-m-d H:i:s', $now + 86400 * sfConfig::get('app_active_days')));
       }
 
       return parent::save($conn);
@@ -418,7 +418,7 @@ the code to the `JobeetJobTable` class and create a `getActiveJobs()` method:
       public function getActiveJobs()
       {
         $q = $this->createQuery('j')
-          ->where('j.expires_at > ?', date('Y-m-d h:i:s', time()));
+          ->where('j.expires_at > ?', date('Y-m-d H:i:s', time()));
 
         return $q->execute();
       }
@@ -463,7 +463,7 @@ Let's sort the jobs by the `expires_at` column:
     public function getActiveJobs()
     {
       $q = $this->createQuery('j')
-        ->where('j.expires_at > ?', date('Y-m-d h:i:s', time()))
+        ->where('j.expires_at > ?', date('Y-m-d H:i:s', time()))
         ->orderBy('j.expires_at DESC');
 
       return $q->execute();
@@ -528,7 +528,7 @@ change the join operator by adding a third argument (`Criteria::LEFT_JOIN`,
       {
         $q = $this->createQuery('c')
           ->leftJoin('c.JobeetJobs j')
-          ->where('j.expires_at > ?', date('Y-m-d h:i:s', time()));
+          ->where('j.expires_at > ?', date('Y-m-d H:i:s', time()));
 
         return $q->execute();
       }
@@ -674,7 +674,7 @@ own query. As the `Doctrine_Query` is an object, this is quite simple:
           ->from('JobeetJob j');
       }
 
-      $q->andWhere('j.expires_at > ?', date('Y-m-d h:i:s', time()))
+      $q->andWhere('j.expires_at > ?', date('Y-m-d H:i:s', time()))
         ->addOrderBy('j.expires_at DESC');
 
       return $q->execute();
@@ -862,7 +862,7 @@ the route:
     {
       public function retrieveActiveJob(Doctrine_Query $q)
       {
-        $q->andWhere('a.expires_at > ?', date('Y-m-d h:i:s', time()));
+        $q->andWhere('a.expires_at > ?', date('Y-m-d H:i:s', time()));
 
         return $q->fetchOne();
       }
