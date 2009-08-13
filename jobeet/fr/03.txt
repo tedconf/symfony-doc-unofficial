@@ -11,6 +11,61 @@ utiliser un ORM pour dialoguer avec la base de données, et créer notre premier
 module de notre application. Mais comme symfony fait une grande part du travail
 pour nous, nous aurons un module fonctionnel sans écrire trop de code PHP.
 
+<doctrine>
+Activer le plug-in `sfDoctrinePlugin`
+---------------------------
+
+Si vous lisez ce passage, c'est que vous avez décider de poursuivre le tutoriel Jobeet 
+avec l'~ORM~ ~Doctrine~ au lieu de ~Propel~. Activer Doctrine est particulièrement simple 
+dans la mesure où il suffit d'activer `sfDoctrinePlugin`, puis désactiver `sf#PropelPlugin`. 
+Cette manipulation de la manière suivante dans le fichier `config/ProjectConfiguration.class.php` 
+du projet Symfony.
+
+    [php]
+    public function setup()
+    {
+      $this->enablePlugins(array('sfDoctrinePlugin'));
+      $this->disablePlugins(array('sf#PropelPlugin'));
+    }
+
+Si vous préférez avoir tous les plugins activés par défaut, alors vous pouvez suivre la manipulation 
+suivante à la place.
+
+    [php]
+    public function setup()
+    {
+      $this->enableAllPluginsExcept(array('sf#PropelPlugin', 'sfCompat10Plugin'));
+    }
+
+>**NOTE**
+>Après ce changement, vous obtiendrez un message d'erreur tant que vous n'aurez pas reconfigurer le fichier `config/databases.yml`. 
+>Cette étape est expliquée plus loin pour utiliser `sfDoctrineDatabase`.
+
+Après avoir réaliser ces changements, n'oubliez pas de vider votre cache afin de prendre en compte les nouvelles
+classes de Doctrine.
+
+    $ php symfony cc
+
+Comme il l'est expliqué plus loin dans le tutoriel, chaque plug-in peut embarquer des ressources 
+~assets|Assets~ (images, feuilles de styles, et JavaScripts). Lorsqu'un nouveau plug-in est installé ou activé, 
+ses ressources web associées doivent aussi être installées à partir de la commande `plugin:publish-assets`:
+
+    $ php symfony plugin:publish-assets
+
+N'ayant plus besoin du plug-in `sfPropelPlugin`, le répertoire `web/sf#PropelPlugin` peut être supprimé en toute 
+securité:
+
+    $ rm web/sf#PropelPlugin
+
+>**TIP**
+>Lorsque l'on utilise Doctrine au lieu de Propel, il est recommandé de supprimer 
+>les fichiers `config/propel.ini` et `config/schema.yml` afin d'avoir une installation 
+>saine qui ne contient aucune référence à Propel.
+>
+>     $ rm config/propel.ini
+>     $ rm config/schema.yml
+</doctrine>
+
 Le Modèle Relationnel
 ----------------------
 
