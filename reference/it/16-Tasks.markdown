@@ -329,15 +329,17 @@ Il task `doctrine::build-all` genera i modelli per Doctrine, l'SQL e inizializza
 | `--skip-forms`<br />`(-F)` | `-` | Saltare la generazione dei form
 
 
-Il task `doctrine:build-all` è una scorciatoia per tre altri task:
+Il task `doctrine:build-all` è una scorciatoia per sei altri task:
 
     ./symfony doctrine:build-all
 
 Il task è equivalente a:
 
+    ./symfony doctrine:build-db
     ./symfony doctrine:build-model
     ./symfony doctrine:build-sql
     ./symfony doctrine:build-forms
+    ./symfony doctrine:build-filters
     ./symfony doctrine:insert-sql
 
 Vedere l'aiuto relativo a questi tre task per maggiori informazioni.
@@ -367,13 +369,18 @@ Il task `doctrine::build-all-load` genera i modelli per Doctrine, l'SQL, inizial
 | `--dir` | `-` | Le cartelle in cui guardare per le fixture (sono ammessi più valori)
 
 
-Il task `doctrine:build-all-load` è una scorciatoia per due altri task:
+Il task `doctrine:build-all-load` è una scorciatoia per sette altri task:
 
     ./symfony doctrine:build-all-load
 
 Il task è equivalente a:
 
-    ./symfony doctrine:build-all
+    ./symfony doctrine:build-db
+    ./symfony doctrine:build-model
+    ./symfony doctrine:build-sql
+    ./symfony doctrine:build-forms
+    ./symfony doctrine:build-filters
+    ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
 
 Il task accetta un parametro application a causa del task
@@ -404,7 +411,7 @@ Il task `doctrine::build-all-reload` genera i modelli per Doctrine, l'SQL, inizi
 | `--dir` | `-` | Le cartelle in cui guardare per le fixture (sono ammessi più valori)
 
 
-Il task `doctrine:build-all-reload` è una scorciatoia per cinque altri task:
+Il task `doctrine:build-all-reload` è una scorciatoia per otto altri task:
 
     ./symfony doctrine:build-all-reload
 
@@ -413,6 +420,9 @@ Il task è equivalente a:
     ./symfony doctrine:drop-db
     ./symfony doctrine:build-db
     ./symfony doctrine:build-model
+    ./symfony doctrine:build-sql
+    ./symfony doctrine:build-forms
+    ./symfony doctrine:build-filters
     ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
 
@@ -435,7 +445,7 @@ Il task `doctrine::build-all-reload-test-all` genera modelli per Doctrine, l'SQL
 | `--force` | `-` | Per forzare l'eliminazione del database
 
 
-Il task `doctrine:build-all-reload` è una scorciatoia per quattro altri task:
+Il task `doctrine:build-all-reload-test-all` è una scorciatoia per nove altri task:
 
     ./symfony doctrine:build-all-reload-test-all frontend
 
@@ -444,6 +454,9 @@ Il task è equivalente a:
     ./symfony doctrine:drop-db
     ./symfony doctrine:build-db
     ./symfony doctrine:build-model
+    ./symfony doctrine:build-sql
+    ./symfony doctrine:build-forms
+    ./symfony doctrine:build-filters
     ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
     ./symfony test-all

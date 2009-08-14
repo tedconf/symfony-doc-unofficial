@@ -333,9 +333,11 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
 タスクは次のものと同等です:
 
+    ./symfony doctrine:build-db
     ./symfony doctrine:build-model
     ./symfony doctrine:build-sql
     ./symfony doctrine:build-forms
+    ./symfony doctrine:build-filters
     ./symfony doctrine:insert-sql
 
 詳細な情報はこれらのタスクのヘルプページを参照してください。
@@ -371,7 +373,12 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
 タスクは次のものと同等です:
 
-    ./symfony doctrine:build-all
+    ./symfony doctrine:build-db
+    ./symfony doctrine:build-model
+    ./symfony doctrine:build-sql
+    ./symfony doctrine:build-forms
+    ./symfony doctrine:build-filters
+    ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
 
 `doctrine:data-load`タスクなのでアプリケーションの引数を受け取ります。
@@ -411,6 +418,9 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
     ./symfony doctrine:drop-db
     ./symfony doctrine:build-db
     ./symfony doctrine:build-model
+    ./symfony doctrine:build-sql
+    ./symfony doctrine:build-forms
+    ./symfony doctrine:build-filters
     ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
 
@@ -442,6 +452,9 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
     ./symfony doctrine:drop-db
     ./symfony doctrine:build-db
     ./symfony doctrine:build-model
+    ./symfony doctrine:build-sql
+    ./symfony doctrine:build-forms
+    ./symfony doctrine:build-filters
     ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
     ./symfony test-all
