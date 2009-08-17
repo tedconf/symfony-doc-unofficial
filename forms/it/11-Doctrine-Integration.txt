@@ -20,7 +20,7 @@ Prima di cominciare
 
 In questo capitolo creeremo un sistema di gestione di articoli.
 Inizieremo con lo schema del database, che è composto da cinque
-tabelle: `article`, `author`, `category`, `tag`, e `article_tag`,
+tabelle: `article`, `author`, `category`, `tag` e `article_tag`,
 come mostrato nel Listato 4-1.
 
 Listato 4-1 - Schema del database
@@ -86,7 +86,7 @@ Generazione delle classi dei form
 ---------------------------------
 
 Vogliamo modificare le informazioni sulle tabelle `article`, `author`,
-`category`, e `tag`. Per poterlo fare, abbiamo bisogno di creare dei
+`category` e `tag`. Per poterlo fare, abbiamo bisogno di creare dei
 form legati a ciascuna di queste tabelle e di configurare dei widget
 e dei validatori correlati allo schema del database. Pur essendo
 possibile creare tali form a mano, è un processo lungo, noioso e
@@ -291,8 +291,8 @@ generato nella sezione precedente:
 >/ Aggiornamento / Cancellazione) e riassume le quattro operazioni basilari
 >che possiamo usare con i dati dei modelli.
 
-Nel Listato 4-4 vediamo che il task ha generato cinque azioni, che ci
-consentono di elencare (`index`), creare (`create`), modificare (`edit`),
+Nel Listato 4-4 vediamo che il task ha generato sei azioni, che ci
+consentono di elencare (`index`), creare (`create`), mostrare i nuovi (`new`), modificare (`edit`),
 salvare (`update`), cancellare (`delete`) gli oggetti della classe `Author`.
 
 Listato 4-4 - La classe `authorActions` generata dal task
@@ -303,120 +303,99 @@ Listato 4-4 - La classe `authorActions` generata dal task
     {
       public function executeIndex()
       {
-        $this->authorList = $this->getAuthorTable()->findAll();
+        $this->author_list = Doctrine::getTable('Author')
+          ->createQuery('a')
+          ->execute();
       }
-     
-      public function executeCreate()
+
+      public function executeNew(sfWebRequest $request)
       {
         $this->form = new AuthorForm();
-     
-        $this->setTemplate('edit');
       }
-     
-      public function executeEdit($request)
-      {
-        $this->form = $this->getAuthorForm($request->getParameter('id'));
-      }
-     
-      public function executeUpdate($request)
+
+      public function executeCreate(sfWebRequest $request)
       {
         $this->forward404Unless($request->isMethod('post'));
-     
-        $this->form = $this->getAuthorForm($request->getParameter('id'));
-     
+
+        $this->form = new AuthorForm();
+
+        $this->processForm($request, $this->form);
+
+        $this->setTemplate('new');
+      }
+
+      public function executeEdit(sfWebRequest $request)
+      {
+        $this->forward404Unless($author = Doctrine::getTable('Author')->find($request->getParameter('id')), sprintf('Object author does not exist (%s).', $request->getParameter('id')));
+        $this->form = new AuthorForm($author);
+      }
+
+      public function executeUpdate(sfWebRequest $request)
+      {
+        $this->forward404Unless($request->isMethod('post') || $request->isMethod('put'));
+        $this->forward404Unless($author = Doctrine::getTable('Author')->find($request->getParameter('id')), sprintf('Object author does not exist (%s).', $request->getParameter('id')));
+        $this->form = new AuthorForm($author);
+
+        $this->processForm($request, $this->form);
+
+        $this->setTemplate('edit');
+      }
+
+      public function executeDelete(sfWebRequest $request)
+      {
+        $request->checkCSRFProtection();
+
+        $this->forward404Unless($author = Doctrine::getTable('Author')->find($request->getParameter('id')), sprintf('Object author does not exist (%s).', $request->getParameter('id')));
+        $author->delete();
+
+        $this->redirect('author/index');
+      }
+
+      protected function processForm(sfWebRequest $request, sfForm $form)
+      {
+        $form->bind($request->getParameter($form->getName()));
+        if ($form->isValid())
+        {
+          $author = $form->save();
+
+          $this->redirect('author/edit?id='.$author->getId());
+        }
+      }
+    }
+
+In questo modulo, il ciclo di vita del form è gestito da quattro metodi:
+`create`, `edit`, `update` e `processForm`. È anche possibile chiedere al task
+di generare solo un metodo che copre le funzionalità di questi quattro metodi,
+come mostra il listato 4-5.
+
+Listato 4-5 - La classe `authorActions` rifattorizzata
+
+    [php]
+    // In authorActions, sostituisce i metodi create, edit, update e processForm
+    public function executeEdit($request)
+    {
+      $this->form = new AuthorForm(Doctrine::getTable('Author')->find($request->getParameter('id')));
+
+      if ($request->isMethod('post'))
+      {
         $this->form->bind($request->getParameter('author'));
         if ($this->form->isValid())
         {
           $author = $this->form->save();
-     
           $this->redirect('author/edit?id='.$author->getId());
         }
-     
-        $this->setTemplate('edit');
-      }
-     
-      public function executeDelete($request)
-      {
-        $this->forward404Unless($author = $this->getAuthorById($request->getParameter('id')));
-     
-        $author->delete();
-     
-        $this->redirect('author/index');
-      }
-
-      private function getAuthorTable()
-      {
-        return Doctrine::getTable('Author');
-      }
-
-      private function getAuthorById($id)
-      {
-        return $this->getAuthorTable()->find($id);
-      }
-
-      private function getAuthorForm($id)
-      {
-        $author = $this->getAuthorById($id);
-
-        if ($author instanceof Author)
-        {
-          return new AuthorForm($author);
-        }
-        else
-        {
-          return new AuthorForm();
-        }
       }
     }
 
-In questo modulo, il ciclo di vita del form è gestito da tre metodi:
-`create`, `edit`, `update`. È anche possibile chiedere al task
-`doctrine:generate-crud` di generare solo un metodo che copre le funzionalità
-di questi tre metodi, con l'opzione `--non-atomic-actions`:
+>**NOTE**
+>Gli esempi seguenti usano lo stile predefinito e prolisso, in modo da
+>consentire delle personalizzazioni, se si vuole seguire l'approccio del
+>listato 4-5. Ad esempio, nel template del form, si avrà bisogno solo di
+>puntare il form all'azione di modifica, senza curarsi se l'oggetto sia
+>nuovo o vecchio.
 
-    $ ./symfony doctrine:generate-crud frontend author Author --non-atomic-actions
-
-Il codice generato usando `--non-atomic-actions` (Listato 4-5) è più
-conciso e meno prolisso.
-
-Listato 4-5 - La classe `authorActions` generata con l'opzione `--non-atomic-actions`
-
-    [php]
-    class authorActions extends sfActions
-    {
-      public function executeIndex()
-      {
-        $this->authorList = $this->getAuthorTable()->findAll();
-      }
-     
-      public function executeEdit($request)
-      {
-        $this->form = new AuthorForm(Doctrine::getTable('Author')->find($request->getParameter('id')));
-     
-        if ($request->isMethod('post'))
-        {
-          $this->form->bind($request->getParameter('author'));
-          if ($this->form->isValid())
-          {
-            $author = $this->form->save();
-     
-            $this->redirect('author/edit?id='.$author->getId());
-          }
-        }
-      }
-     
-      public function executeDelete($request)
-      {
-        $this->forward404Unless($author = Doctrine::getTable('Author')->find($request->getParameter('id')));
-     
-        $author->delete();
-     
-        $this->redirect('author/index');
-      }
-    }
-
-Il task genera anche due template, `indexSuccess` ed `editSuccess`.
-Il template `editSuccess` è stato generato senza usare l'istruzione
+Il task genera anche tre template ed un partial: `indexSuccess`, `editSuccess`,
+`newSuccess` e `_form`. Il template `_form` è stato generato senza usare l'istruzione
 `<?php echo $form ?>`. Possiamo modificare questo comportamento, usando
 `--non-verbose-templates`:
 
@@ -428,18 +407,21 @@ il Listato 4-6.
 Listato 4-6 - Il template `editSuccess`
 
     [php]
-    // apps/frontend/modules/author/templates/editSuccess.class.php
-    <?php $author = $form->getObject() ?>
-    <h1><?php echo $author->isNew() ? 'New' : 'Edit' ?> Author</h1>
-     
-    <form action="<?php echo url_for('author/edit'.(!$author->isNew() ? '?id='.$author->getId() : '')) ?>" method="post" <?php $form->isMultipart() and print 'enctype="multipart/form-data" ' ?>>
+    // apps/frontend/modules/author/templates/_form.php
+    <?php include_stylesheets_for_form($form) ?>
+    <?php include_javascripts_for_form($form) ?>
+
+    <form action="<?php echo url_for('author/'.($form->getObject()->isNew() ? 'create' : 'update').(!$form->getObject()->isNew() ? '?id='.$form->getObject()->getId() : '')) ?>" method="post" <?php $form->isMultipart() and print 'enctype="multipart/form-data" ' ?>>
+    <?php if (!$form->getObject()->isNew()): ?>
+    <input type="hidden" name="sf_method" value="put" />
+    <?php endif; ?>
       <table>
         <tfoot>
           <tr>
             <td colspan="2">
               &nbsp;<a href="<?php echo url_for('author/index') ?>">Cancel</a>
-              <?php if (!$author->isNew()): ?>
-                &nbsp;<?php echo link_to('Delete', 'author/delete?id='.$author->getId(), array('post' => true, 'confirm' => 'Are you sure?')) ?>
+              <?php if (!$form->getObject()->isNew()): ?>
+                &nbsp;<?php echo link_to('Delete', 'author/delete?id='.$form->getObject()->getId(), array('method' => 'delete', 'confirm' => 'Are you sure?')) ?>
               <?php endif; ?>
               <input type="submit" value="Save" />
             </td>
@@ -449,7 +431,7 @@ Listato 4-6 - Il template `editSuccess`
           <?php echo $form ?>
         </tbody>
       </table>
-    </form>
+      </form>
 
 >**TIP**
 >L'opzione `--with-show` ci consente di generare un'azione ed un template
@@ -459,7 +441,8 @@ Ora si può aprire in un browser l'URL `/frontend_dev.php/author` per vedere
 il modulo generato (Figura 4-1 e Figura 4-2). Prendetevi un po' di tempo
 per giocare con l'interfaccia. Grazie al modulo generato puoi elencare gli
 autori, aggiungerne uno nuovo, modificare e anche cancellare. Noterete
-anche che le regole di validazione stanno funzionando.
+anche che le regole di validazione stanno funzionando. Notate che nelle figure
+seguenti abbiamo scelto di togliere il campo "active".
 
 Figura 4-1 - Lista degli autori
 
@@ -471,15 +454,7 @@ Figura 4-2 - Modifica di un autore con errori di validazione
 
 Possiamo ora ripetere l'operazione con la classe `Article`:
 
-    $ ./symfony doctrine:generate-crud frontend article Article --non-verbose-templates --non-atomic-actions
-
-Il codice generato è molto simile al codice della classe `Author`.
-Tuttavia, se si prova a creare un nuovo articolo, il codice lancia un
-errore fatale, come si può vedere in Figura 4-3.
-
-Figura 4-3 - Le tabelle collegate devono definire il metodo `__toString()`
-
-![Le tabelle collegate devono definire il metodo `__toString()`](http://www.symfony-project.org/images/forms_book/en/04_03.png "Le tabelle collegate devono definire il metodo `__toString()`")
+    $ ./symfony doctrine:generate-crud frontend article Article --non-verbose-templates
 
 Il form `ArticleForm` usa il widget `sfWidgetFormDoctrineSelect` per
 rappresentare la relazione tra l'oggetto `Article` e l'oggetto `Author`.
@@ -503,9 +478,10 @@ Proprio come la classe `Author`, puoi creare dei metodi `__toString()`
 per le altre classi del nostro modello: `Article`, `Category`, `Tag`.
 
 >**Note**
->sfDoctrineRecord cercherà di indovinare nel __toString() base, se non
->si sta specificando il proprio. Verifica le colonne chiamate title, name,
->subject, ecc. per usarle come rappresentazione di stringa.
+>sfDoctrineRecord cercherà di indovinare nel metodo __toString() base, se non
+>si sta specificando il proprio. Verifica le colonne chiamate 'title', 'name',
+>'subject' e 'id' per usarle come rappresentazione di stringa. Se nessuno
+>di questi campi viene trovato, Doctrine restituirà una stringa di avviso.
 
 -
 
@@ -518,6 +494,11 @@ La Figura 4-4 mostra come creare un articolo dopo aver implementato il metodo `_
 Figura 4-4 - Creare un articolo
 
 ![Creare un articolo](http://www.symfony-project.org/images/forms_book/en/04_04.png "Creare un articolo")
+
+>**NOTE**
+>Nella figura 4-4 si noterà che alcuni campi non compaiono nel form, ad esempio
+>`created_at` e `updated_at`. Questo perché abbiamo personalizzato la classe del
+>form. Vedremo come nella prossima sezione.
 
 Personalizzare i form generati
 -------------------------------
@@ -689,7 +670,7 @@ Listato 4-12 - Rifattorizzare `Query` nel modello
 >queste classi sono utilizzate per rappresentare una relazione tra la tabella
 >`article` e la tabella `tag`.
 
-### Cambiare validatore
+### Cambiare un validatore
 
 Essendo `email` definita come `string(255)` nello schema, symfony ha creato
 un validatore `sfValidatorString()` che limita la lunghezza massima a 255
@@ -816,11 +797,16 @@ Listato 4-19 - Cancellare un campo
     {
       public function configure()
       {
+        // ...
+      
         unset($this->validatorSchema['created_at']);
         unset($this->widgetSchema['created_at']);
      
         unset($this->validatorSchema['updated_at']);
         unset($this->widgetSchema['updated_at']);
+
+        unset($this->validatorSchema['published_at']);
+        unset($this->widgetSchema['published_at']);
       }
     }
 
@@ -835,7 +821,7 @@ Listato 4-20 - Cancellare un campo usando il form come array PHP
     {
       public function configure()
       {
-        unset($this['created_at'], $this['updated_at']);
+        unset($this['created_at'], $this['updated_at'], $this['published_at']);
       }
     }
 
@@ -940,28 +926,43 @@ il costruttore:
 Come abbiamo osservato all'inizio del capitolo, l'azione `edit`, mostrata
 nel Listato 4-23, gestisce il ciclo di vita del form.
 
-Listato 4-23 - Il metodo `executeEdit` del modulo `author`
+Listato 4-23 - I metodi `executeNew`, `executeEdit`, `executeCreate` e `processForm` del modulo `author`
 
     [php]
     // apps/frontend/modules/author/actions/actions.class.php
     class authorActions extends sfActions
     {
       // ...
-     
-      public function executeEdit($request)
+      public function executeNew(sfWebRequest $request)
       {
-        $author = Doctrine::getTable('Author')->find($request->getParameter('id'));
+        $this->form = new AuthorForm();
+      }
+
+      public function executeCreate(sfWebRequest $request)
+      {
+        $this->forward404Unless($request->isMethod('post'));
+
+        $this->form = new AuthorForm();
+
+        $this->processForm($request, $this->form);
+
+        $this->setTemplate('new');
+      }
+
+      public function executeEdit(sfWebRequest $request)
+      {
+        $this->forward404Unless($author = Doctrine::getTable('Author')->find($request->getParameter('id')), sprintf('Object author does not exist (%s).', $request->getParameter('id')));
         $this->form = new AuthorForm($author);
-     
-        if ($request->isMethod('post'))
+      }
+      
+      protected function processForm(sfWebRequest $request, sfForm $form)
+      {
+        $form->bind($request->getParameter($form->getName()));
+        if ($form->isValid())
         {
-          $this->form->bind($request->getParameter('author'));
-          if ($this->form->isValid())
-          {
-            $author = $this->form->save();
-     
-            $this->redirect('author/edit?id='.$author->getId());
-          }
+          $author = $form->save();
+
+          $this->redirect('author/edit?id='.$author->getId());
         }
       }
     }
@@ -1227,8 +1228,8 @@ generato inzialmente dal task `doctrine:generate-crud`.
 >       }
 >     }
 >
-> Lo scopo principale di queste rifattorizzazione è quello di rispettare
->la separazione tra i livelli applicativi, e specialmente la riusabilità
+>Lo scopo principale di questa rifattorizzazione è quello di rispettare
+>la separazione tra i livelli applicativi e specialmente la riusabilità
 >degli sviluppi.   
 
 ### Personalizzare il metodo `doSave()`
