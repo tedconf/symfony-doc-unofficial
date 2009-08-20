@@ -1,0 +1,685 @@
+2. fejezet - Űrlap érvényesítés
+===============================
+
+Az 1. fejezetben megtanultuk hogyan készítsünk és jelenítsünk meg űrlapokat, egy alap kapcsolati űrlap példáján keresztül. Ebben a fejezetben az űrlap érvényesítését fogjuk megnézni.
+
+Előkészítés
+-----------
+
+Az 1. fejezetben elkészített kapcsolat űrlap még nem teljesen működőképes. Mi történik, ha a felhasználó hibás email címet ad meg, vagy az üzenet, amit elküld üres? Ezekben az esetekben hibaüzenetet szeretnénk megjeleníteni a felhasználónak, hogy javítsa ki az adatokat (ahogy a 2-1 ábrán látható).
+
+2-1 ábra - Hibaüzenetek megjelenítése
+
+![Hibaüzenetek megjelenítése](/images/forms_book/en/02_01.png "Hibaüzenetek megjelenítése")
+
+A kapcsolat űrlaphoz megvalósítandó ellenőrző szabályok listája:
+
+  * `name`   : opcionális
+  * `email`  : kötelező, érvényes email címnek kell lennie
+  * `subject`: kötelező, a kiválaszott érték egy lista eleme kell legyen
+  * `message`: kötelező, az üzenet hossza legalább 4 karakter kell legyen
+
+>**Note**
+>Miért szükséges ellenőrizni a `subject` mezőt? A `<select>` tag előre definiált értékekhez köti a felhasználót. Egy átlagos felhasználó valóban csak a listában szereplő értékek közül tud választani, ám más érték is elküdhető olyan eszközzel, mint például a Firefox Developer Toolbar, vagy tetszőleges kérést lehet szimulálni olyan eszközökkel, mint a `curl` vagy a `wget`.
+
+2-1 melléklet bemutatja az 1. fejezetben használt templatet.
+
+2-1 melléklet - A `Contact` űrlap template
+
+    [php]
+    // apps/frontend/modules/contact/templates/indexSucces.php
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <?php echo $form ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+A 2-2 ábrán látható, hogyan törik meg az interakció az alkalmazás és a felhasználó között. Az első lépésben megjelenik az űrlap. Majd a felhasználó elküldi azt. Ezután amennyiben az adatok megfelelőek átkerül a köszönet oldalra, vagy érvénytelen adatok megadásakor újra megjelenik az űrlap a hibaüzenetekkel együtt.
+
+2-2 ábra - Interakció az alkalmazás és a felhasználó között
+
+![Interakció az alkalmazás és a felhasználó között](/images/forms_book/en/02_02.png "Interakció az alkalmazás és a felhasználó között")
+
+Validatorok
+-----------
+
+Egy symfony űrlap mezők összessége. Minden egyes mezőt egyedi név azonosít, ahogy azt az 1. fejezetben láthattuk. Minden mezőhöz egy widgetet kapcsoltunk a megjelenésük sorrendjében. Most pedig lássuk hogyan érvényesíthetjük a mezők tartalmát.
+
+### Az `sfValidatorBase` osztály
+
+Minden egyes mező érvényesítéséért objektumok felelnek, amelyek az `sfValidatorBase` osztály leszármazottai. Azért, hogy érvényesíthessük a kapcsolat űrlap adatait, minden egyes mezőhöz (`name`, `email`, `subject` és `message`) meg kell adnunk a megfelelő validator objektumokat. Ezt az űrlap osztályban a `setValidators()` metódus segítségével tehetjük meg, ahogy az a 2-2 mellékleten látható.
+
+2-2 melléklet - Validatorok felvétele a `ContactForm` osztályban
+
+    [php]
+    // lib/form/ContactForm.class.php
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+      
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'subject' => new sfWidgetFormSelect(array('choices' => self::$subjects)),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+        $this->widgetSchema->setNameFormat('contact[%s]');
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+        ));
+      }
+    }
+
+Három különböző validatort használunk:
+
+  * `sfValidatorString`: egy stringet érvényesít
+  * `sfValidatorEmail` : egy email címet érvényesít
+  * `sfValidatorChoice`: egy előre definiált listában szereplő értékek alapján érvényesít
+
+Minden validator az első paraméterben az opciók listáját fogadja. A widgetekhez hasonlóan bizonyos opciók kötelezőek, mások opcionálisak. Például az `sfValidatorChoice` validator egy kötelező opciót vár, ez a `choices`. Minden validatornak megadható még a `required` és a `trim` opció, amelyek az `sfValidatorBase` osztályban vannak definiálva:
+
+  | **Opció** | **Alapértelmezett érték** | **Leírás**
+  | --------- | ------------------------- | ---------------
+  | required  | `true`                    | a mező kötelezően kitöltendő
+  | trim      | `false`                   | automatikusan eltávolítja a whitespace karaktereket a string elejéről és végéről az érvényesítés előtt 
+
+Lássuk az általunk használt validatorokhoz elérhető opciókat:
+
+  | **Validator**     | **Kötelező opciók** | **Kiegészítő opciók** |
+  | ----------------- | ------------------- | --------------------- |
+  | sfValidatorString |                     | `max_length`          |
+  |                   |                     | `min_length`          |
+  | sfValidatorEmail  |                     | `pattern`             |
+  | sfValidatorChoice | `choices`           |                       |
+
+Ha most megpróbáljuk elküldeni az űrlapot érvénytelen adatokkal, nem tapasztalunk semmilyen változást. Előbb bővítenünk kell a `contact` modult az elküldött adatok érvényesítéséhez, ahogy a 2-3 mellékleten látható.
+
+2-3 melléklet - Érvényesítés megvalósítása a `contact` modulban
+
+    [php]
+    class contactActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new ContactForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('contact'));
+          if ($this->form->isValid())
+          {
+            $this->redirect('contact/thankyou?'.http_build_query($this->form->getValues()));
+          }
+        }
+      }
+
+      public function executeThankyou()
+      {
+      }
+    }
+
+A 2-3 melléklettel néhány új fogalmat is bevezetünk:
+
+  * `GET` kérés esetén az űrlapot inicializáljuk, majd átadjuk a templatenek a megjelenítéshez. Ekkor az űrlap **kezdő állapot**ban van (**initial state**):
+
+        [php]
+        $this->form = new ContactForm();
+
+  * Mikor a felhasználó elküldi az adatokat egy `POST` kéréssel, a `bind()` metódus köti össze az elküldött adatokat az űrlappal és elindítja az adatok érvényesítését. Az űrlap ekkor **kötött állapt**ba kerül (**bound state**).
+
+        [php]
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('contact'));
+
+  * Mikor az űrlap kötött állapotba került lehetőségünk van az űrlap érvényességének ellenőrzésére az `isValid()` metódussal:
+
+      * Ha a visszatérési értéke `true`, akkor az űrlap érvényes és a felhasználó átirányítható a köszönet oldalra: 
+
+            [php]
+            if ($this->form->isValid())
+            {
+              $this->redirect('contact/thankyou?'.http_build_query($this->form->getValues()));
+            }
+
+      * Ha nem, az `indexSuccess` template jelenik meg, mint eredetileg. Az érvényesítő eljárás hibaüzeneteket rendel az űrlaphoz, amely ekkor megjelenik a felhasználónak.
+
+>**Note**
+>Mikor az űrlap kezdő állapotban van, az `isValid()` metódus mindig `false` értékkel tér vissza, és a `getValues()` metódus üres tömböt fog visszaadni.
+
+A 2-3 ábra bemutatja, hogy a kód futtatása során milyen interakciók történnek az alkalmazás és a felhasználó között.
+
+2-3 ábra - Interakciók az alkalmazás és a felhasználó között a kód futtatása során
+
+![Interakciók az alkalmazás és a felhasználó között a kód futtatása során](/images/forms_book/en/02_03.png "Interakciók az alkalmazás és a felhasználó között a kód futtatása során")
+
+### A validatorok célja
+
+Vegyük észre, hogy az átirányításnál a `$request->getParameter('contact')` helyett a `$this->form->getValues()` használtuk. Ennek az az oka, hogy a `$request->getParameter('contact')` a felhasználó által elküldött adatokkal tér vissza, míg a `$this->form->getValues()` az érvényesített adatokkal.
+
+Ha az űrlap érvényes, akkor miért nem egyforma a két kifejezés eredménye? Minden validator két feladatot lát el: egy **érvényesítő feladatot** (**validation task**) és emellett egy **tisztító feladatot** (**cleaning task**). A `getValues()` metódus az érvényesített és tisztított adatokkal tér vissza.
+
+A tisztító folyamat két fő tevékenységből áll: az bejövő adatok **normalizálása** és **konvertálása**.
+
+Az adat normalizálást a `trim` opció segítségével már megismertük. A normalizálás ennél persze sokkal fontosabb például dátumok esetén. Az `sfValidatorDate` dátumokat érvényesít. A validator többféle bemenetet fogadhat (egy időbélyeget, egy regexp-en alapuló formátumot, ...). A bemeneti érték egyszerű visszaadása helyett azt a `Y-m-d H:i:s` formátumra alakítja át. Ez garantálja a fejlesztő számára az egységes formátumot, függetlenül az eredeti érték formájától. A rendszer ezáltal a felhasználó számára nagyfokú rugalmasságot tesz lehetővé, míg a fejlesztő számára biztosítja a konzisztens adatokat. 
+
+Most nézzük meg a bejövő adat konvertálást egy file feltöltésen keresztül. A file érvényesítését az `sfValidatorFile` végzi. Ha a file feltöltése megtörtént, a neve helyett egy `sfValidatedFile` objektummal tér vissza, ami leegyszerűsíti a file információk kezelését. A fejezet későbbi részében látjuk majd ennek a validatornak a működését.
+
+>**Tip**
+>A `getValues()` metódus egy tömbbel tér vissza, ami az érvényesített és tisztított adatokat tartalmazza. Ha csak egy mező értékére van szüksége érdemes a `getValue()` metódust használni: `$email = $this->form->getValue('email')`.
+
+### Érvénytelen űrlap
+
+Ahányszor érvénytelen mezőt tartalmaz az űrlap, az `indexSuccess` template jelenik meg. A 2-4 ábrán látható az érvénytelen adatokkal elküldött űrlap eredménye.
+
+2-4 ábra - Érvénytelen űrlap
+
+![Érvénytelen űrlap](/images/forms_book/en/02_04.png "Érvénytelen űrlap")
+
+A `<?php echo $form ?>` automatikusan figyelembe veszi a mezőkhöz rendelt hibaüzeneteket és automatikusan a tisztított felhasználói adatokat jeleníti meg.
+
+Mikor a `bind()` metódussal külső adatot kötünk az űrlaphoz, az űrlap kötött állapotba kerül és a következő dolgok történnek:
+
+  * Az érvényesító folyamat elindul
+
+  * Az űrlap tárolja a kiváltott hibaüzeneteket későbbi megjelenítéshez
+
+  * Az űrlap alapértemezett értékei kicserélésre kerülnek a tisztított felhasználói adatokkal
+
+A templateben a hibaüzenetek vagy a felhasználói adatok egyszerűen elérhetők a `form` változón keresztül.
+
+>**Caution**
+>Mint az 1. fejezetben láttuk, az űrlap osztálynak megadhatunk alapértelmezett értékeket a konstruktoron keresztül. Az érvénytelen űrlap elküldése után ezek az értékek az elküldött értékkekel felülírásra kerülne, így a felhasználó javítani tudja a hibákat. Tehát soha ne használjuk az alapértelmezett értékek megadását a következő formában: `$this->form->setDefaults($request->getParameter('contact'))`.
+
+Validatorok testreszabása
+-------------------------
+
+### Hibaüzenetek testreszabása
+
+Abban a formában, ahogy 2-4 ábrán látható, a hibaüzenetek nem túl hasznosak. Lássuk hogyan tehetjük őket még intuitívabbá.
+
+Minden validator hibákat adhat az űrlaphoz. Egy hiba egy hibakódból és egy hibaüzenetből áll. Minden validator rendelkezik legalább a `required` és az `invalid` hibával, amelyek az `sfValidatorBase`ben vannak definiálva.
+
+  | **Kód**     | **Üzenet**     | **Leírás**
+  | ----------- | -------------- | ---------------
+  | required    | `Required.`    | A mező kötelezően kitöltendő és az értéke üres
+  | invalid     | `Invalid.`     | A mező érvénytelen
+
+Lássuk az eddig használt validatorokhoz rendelt hibakódokat:
+
+  | **Validator**     | **Hibakódok** |
+  | ----------------- | ------------- |
+  | sfValidatorString | `max_length`  |
+  |                   | `min_length`  |
+  | sfValidatorEmail  |               |
+  | sfValidatorChoice |               |
+
+A hibaüzenetek a validator objektumoknak átadott második argumentumban adhatók meg. A 2-4 mellékletben beállítunk néhány hibaüzenetet és a 2-5 ábrán látható, hogyan jelenik meg.
+
+2-4 melléklet - Hibaüzenetek beállítása
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+      
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(array(), array('invalid' => 'The email address is invalid.')),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4), array('required' => 'The message field is required.')),
+        ));
+      }
+    }
+
+2-5 ábra - Testreszabott hibaüzenetek
+
+![Testreszabott hibaüzenetek](/images/forms_book/en/02_05.png "Testreszabott hibaüzenetek")
+
+A 2-6 ábrán látható a túl rövid üzenet bevitele esetén generált hibaüzenet (az üzenet hosszát legalább 4 karakterben határoztuk meg).
+
+2-6 ábra - Túl rövid üzenet hiba
+
+![Túl rövid üzenet hiba](/images/forms_book/en/02_06.png "Túl rövid üzenet hiba")
+
+Ehhez a hibakódhoz (`min_length`) tartozó hibaüzenet különbözik azoktól, amiket már megismertünk, mivel ez két dinamikus értéket is tartalmaz: a felhasználói adatot (`foo`) és a mezőhöz meghatározott minimális karakterszámot (`4`). A 2-5 mellékleten láthatjuk a dinamikus értékek használatát, a 2-7 ábrán pedig a végeredményt.
+
+2-5 melléklet - Dinamikus értékek használata a hibaüzenetben
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(array(), array('invalid' => 'Email address is invalid.')),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4), array(
+            'required'   => 'The message field is required',
+            'min_length' => 'The message "%value%" is too short. It must be of %min_length% characters at least.',
+          )),
+        ));
+      }
+    }
+
+2-7 ábra - Dinamikus értékeket tartalmazó hibaüzenet
+
+![Dinamikus értékeket tartalmazó hibaüzenet](/images/forms_book/en/02_07.png "Dinamikus értékeket tartalmazó hibaüzenet")
+
+Minden hibaüzenetben használhatók dinamikus értékek, ehhez az érték nevét kell megadni százalékjelek (`%`) közé zárva. Az elérhető értékek általában a felhasználói adat (`value`) és a hibával kapcsolatosan a validatornak megadott opció neve.
+
+>**Tip**
+>Minden, validatorokhoz tartozó hibakód, opció és alapértelmezett üzenet megtalálható az online API dokumentációban ([http://www.symfony-project.org/api/1_2/](http://www.symfony-project.org/api/1_2/)), itt minden részletesen ki van fejtve (például az `sfValidatorString` validator API oldala megtalálható a [http://www.symfony-project.org/api/1_2/sfValidatorString](http://www.symfony-project.org/api/1_2/sfValidatorString) címen). 
+
+Validator biztonság
+-------------------
+
+Alapértelmezetten az űrlap csak akkor érvényes, ha minden elküldött mezőhöz van hozzárendelt validator. Ez biztosítja, hogy minden mezőhöz van érvényesítő szabály és nem lehet olyan mezőkhöz értéket megadni, amik nincsenek előre meghatározva az űrlapon.
+
+Ezen biztonsági szabály megértéséhez nézzük meg a 2-6 mellékleten lévő User objektumot.
+
+2-6 melléklet - `User` osztály
+
+    [php]
+    class User
+    {
+      protected
+        $name = '',
+        $is_admin = false;
+
+      public function setFields($fields)
+      {
+        if (isset($fields['name']))
+        {
+          $this->name = $fields['name'];
+        }
+
+        if (isset($fields['is_admin']))
+        {
+          $this->is_admin = $fields['is_admin'];
+        }
+      }
+
+      // ...
+    }
+
+A `User` osztály két tulajdonságot tárol, a felhasználó nevét (`name`) és egy logikai értéket az adminisztrátori státuszról (`is_admin`). A `setFields()` metódus mindkét mezőt frissíti. A 2-7 mellékleten a `User` osztályhoz kapcsolódó űrlap látható, amely csak a `name` tulajdonság megváltoztatását teszi lehetővé.
+
+2-7 melléklet - `User` űrlap
+
+    [php]
+    class UserForm extends sfForm
+    {
+      public function configure()
+      {
+        $this->setWidgets(array('name' => new sfWidgetFormInputString()));
+        $this->widgetSchema->setNameFormat('user[%s]');
+
+        $this->setValidators(array('name' => new sfValidatorString()));
+      }
+    }
+
+A 2-8 mellékleten látható a `user` modul, amely a korábban készített űrlap segítségével a felhasználó számára lehetővé teszi a név mező megváltoztatását.
+
+2-8 melléklet - A `user` modul megvalósítása
+
+    [php]
+    class userActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new UserForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('user'));
+          if ($this->form->isValid())
+          {
+            $user = // retrieving the current user
+
+            $user->setFields($this->form->getValues());
+
+            $this->redirect('...');
+          }
+        }
+      }
+    }
+
+Mindenféle védelem nélkül, ha a felhasználó elküld egy űrlapot a `name` és az `is_admin` mezővel, akkor a kódunk sebezhető volna. Ez egyszerűen megtehető egy olyan eszközzel, mint a Firebug. Valójában az `is_admin` mező mindig érvényes, hiszen egyetlen validator sem kapcsolódik hozzá. Az értékétől függetlenül a `setFields()` metódus nem csak a `name` tulajdonságot fogja frissíteni, de az `is_admin`t is.
+
+Ha a fenti kódnak átadunk egy `name` és egy `is_admin` mezőt is, kapni fogunk egy "Extra field name." globális hibát, ahogy a 2-8 ábrán látszik. Ezt a rendszer akkor generálja a rendszer, ha olyan mezőt küldtek, amelyhez nem kapcsolódik validator; az `is_admin` mező nincs meghatározva a `UserForm` űrlapon.
+
+2-8 ábra - Hiányzó validator hiba
+
+![Hiányzó validator hiba](/images/forms_book/en/02_08.png "Hiányzó validator hiba")
+
+Az eddig látott validatorok egy bizonyos mezőhöz generáltak hibát. Akkor mi ez a globális hiba? Amikor létrehozzuk a validatorokat a `setValidators()` metódus segítségével, a symfony készít egy `sfValidatorSchema` objektumot. Az `sfValidatorSchema` validatorok egy csoportját határozza meg. A `setValidators()` hívás megfelel a következő kódnak: 
+
+    [php]
+    $this->setValidatorSchema(new sfValidatorSchema(array(
+      'email'   => new sfValidatorEmail(),
+      'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+      'message' => new sfValidatorString(array('min_length' => 4)),
+    )));
+
+Az `sfValidatorSchema` alapértelmezetten két érvényesítő szabályt használ, hogy megóvja a validator csoportot. Ezek a szabályok az `allow_extra_fields` és `filter_extra_fields` opciókon keresztül konfigurálhatók.
+
+Az `allow_extra_fields` opció (alapértelmezett érték: `false`) ellenőrzi, hogy minden felhasználótól jövő adathoz tartozik-e validator. Ha nem, akkor egy "Extra field name." globális hibát generál, ahogy az előző példában láttuk. Fejlesztés közben így a fejlesztő figyelmeztetés kap, ha elfelejtett érvényesíteni bizonyos mezőket.
+
+Térjünk vissza a kapcsolat űrlaphoz. Változtassuk meg az érvényesítő szabályokat úgy, hogy a `name` mező kötelező legyen. Miután a `required` opció alapértelmezett értéke `true`, ezért a `name` validator a következő lesz:
+
+    [php]
+    $nameValidator = new sfValidatorString();
+
+Ennek a validatornak nincs semmilyen egyéb hatása, mivel nem használtuk sem a `min_length`, sem a `max_length` opciót. Ebben az esetben helyettesíthetjük egy üres validatorral:,
+
+    [php]
+    $nameValidator = new sfValidatorPass();
+
+Ahelyett, hogy üres validator használnánk, egyszerűen meg is szabadulhatnánk tőle, de ebben megakadályoz a korábban bemutatott védelmi mechanizmus. A 2-9 mellékleten látható, hogyan kapcsoljuk ki azt az `allow_extra_fields` segítségével.
+
+2-9 melléklet - Az `allow_extra_fields` kikapcsolása
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+        ));
+
+        $this->validatorSchema->setOption('allow_extra_fields', true);
+      }
+    }
+
+Most már képes az űrlapunk érvényesíteni az adatokat, ahogy a 2-9 ábrán látható.
+
+2-9 ábra - Érvényesítés az `allow_extra_fields` `true` beállításával
+
+![Érvényesítés az `allow_extra_fields` `true` beállításával](/images/forms_book/en/02_09.png "Érvényesítés az `allow_extra_fields` `true` beállításával")
+
+Jobban megnézve azt láthatjuk, hogy bár az űrlap érvényes, a köszönet oldalon látható `name` mező tartalma üres, függetlenül attól milyen értéket küldtünk el. Valójában az érték nincs is beállítva a `$this->form->getValues()` által visszaadott tömbben. Az `allow_extra_fields` opció segíségével megszabadultunk a validator hiánya miatt fellépő hibaüzenettől, de a `filter_extra_fields` opció, amely alapértelmezetten `true`, kiszűri az űrlapban meg nem határozott mezőket és eltávolítja értékeiket az érvényesített adatok közül. Természetesen megváltoztatható ez a viselkedés a 2-10 mellékleten látható módon.
+
+2-10 melléklet - A `filter_extra_fields` védelem kikapcsolása
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+        ));
+
+        $this->validatorSchema->setOption('allow_extra_fields', true);
+        $this->validatorSchema->setOption('filter_extra_fields', false);
+      }
+    }
+
+Most már érvényesíteni tudjuk az űrlapot és megkapjuk az összes adatot a köszönet oldalon.
+
+A 4. fejezetben látni fogjuk hogyan használhatók ezek a védelmi mechanizmusok Propel objektumok, az űrlap értékekből való biztonságos szerializálására.
+
+Logikai validatorok
+-------------------
+
+Egy mezőhöz több validator is definiálható logikai validatorok használatával:
+
+  * `sfValidatorAnd`: érvényes, ha minden validator szerint érvényes
+  
+  * `sfValidatorOr` : érvényes, ha legalább egy validator szerint érvényes
+
+A logikai validator konstruktorának első paraméterén keresztül validatorok egy listája adható meg. A 2-11 melléklet az `sfValidatorAnd` használatát mutatja be a `name` mezőhöz rendelt két, kötelező érvényű validatorral.
+
+2-11 melléklet - Az `sfValidatorAnd` használata
+
+    [php]
+    class ContactForm extends sfForm
+    {
+     public function configure()
+     {
+        // ...
+
+        $this->setValidators(array(
+          // ...
+          'name' => new sfValidatorAnd(array(
+            new sfValidatorString(array('min_length' => 5)),
+            new sfValidatorRegex(array('pattern' => '/[\w- ]+/')),
+          )),
+        ));
+      }
+    }
+
+Űrlap küldésekor a `name` mezőben lévő adat legalább 5 karakter kell legyen **és** illeszkedni kell a regexp mintára (`[\w- ]+`).
+
+Mivel a logikai validatorok maguk is validatorok, összeállítható belőlük bonyolultabb logikai kifejezés is, ahogy a 2-12 mellékleten látható.
+
+2-12 melléklet - Néhány logikai validator kombinációja
+
+    [php]
+    class ContactForm extends sfForm
+    {
+     public function configure()
+     {
+        // ...
+
+        $this->setValidators(array(
+          // ...
+          'name' => new sfValidatorOr(array(
+            new sfValidatorAnd(array(
+              new sfValidatorString(array('min_length' => 5)),
+              new sfValidatorRegex(array('pattern' => '/[\w- ]+/')),
+            )),
+            new sfValidatorEmail(),
+          )),
+        ));
+      }
+    }
+
+Globális validatorok
+--------------------
+
+Minden eddig látott validator egy mezőhöz volt rendelve és egyszerre csak egy értéket érvényesített. Bár alapvetően nem veszik figyelembe a felhasználó által elküldött többi adatot, időnként egy mező érvényessége függ a környezettől vagy más mezők értékeitől. Például globális validatorra van szükség, ha két jelszó egyezését vizsgáljuk, vagy ha egy kezdő dátumnak meg kell előznie egy záró dátumot.
+
+Mindkét esetben globális validatort kell használnunk, hogy a felhasználói adatot annak környezetében tudjuk érvényesíteni. Attól függően, hogy az egyes mezők érvényesítése előtt vagy után szeretnénk használni, beszélhetünk pre-validatorról vagy post-validatorról. Általában jobb ötlet a post-validator használata, hiszen ekkor már az adatok érvényesítve és tisztítva, azaz normalizált formában vannak. A 2-13 mellékleten látható, hogyan valósítható meg két jelszó egyezésének ellenőrzése az `sfValidatorSchemaCompare` validator segítségével.
+
+2-13 melléklet - Az `sfValidatorSchemaCompare` validator használata
+
+    [php]
+    $this->validatorSchema->setPostValidator(new sfValidatorSchemaCompare('password', sfValidatorSchemaCompare::EQUAL, 'password_again'));
+
+A symfony 1.2-től kezdve használhatók a "természetes" PHP operátorok is az `sfValidatorSchemaCompare` osztálykonstansok helyett. Az előző példával ekvivalens:
+
+    [php]
+    $this->validatorSchema->setPostValidator(new sfValidatorSchemaCompare('password', '==', 'password_again'));
+
+>**Tip**
+>Az `sfValidatorSchemaCompare` osztály, mint minden validator, az `sfValidatorSchema` validatorból származik. Az `sfValidatorSchema` maga is globális validator, hiszen az összes felhasználói adatot érvényesíti, más validatoroknak átadva az egyes mezőket.
+
+A 2-14 mellékleten látható, hogyan használható egyetlen validator a kezdő dátum és a záró dátum érvényesítésére, testre szabva a hibaüzenetet.
+
+2-14 melléklet - Az `sfValidatorSchemaCompare` validator használata
+
+    [php]
+    $this->validatorSchema->setPostValidator(
+      new sfValidatorSchemaCompare('start_date', sfValidatorSchemaCompare::LESS_THAN_EQUAL, 'end_date',
+        array(),
+        array('invalid' => 'The start date ("%left_field%") must be before the end date ("%right_field%")')
+      )
+    );
+
+A post-validator használata biztosítja, hogy a két dátum összehasonlítása pontos lesz. Bármilyen formátumban érkezett a dátum, a `start_date` és `end_date` mezők érvényesítéskor mindig összehasonlítható formátumra lesznek alakítva (`Y-m-d H:i:s` az alapértelmezett).
+
+A pre-validatorok és a post-validatorok alapértelemezetten globális hibát generálnak az űrlapon. Azonban vannak esetek, amikor egy meghatározott mezőhöz is hozzárendelhető a hiba. Az `sfValidatorSchemaCompare` validator `throw_global_error` opcióján keresztül választhatunk, hogy a hibát globálisként (2-10 ábra), vagy az első mezőhöz rendelve (2-11 ábra) szeretnénk megjeleníteni. A 2-15 melléklet mutatja be a `throw_global_error` használatát.
+
+2-15 melléklet - A `throw_global_error` opció használata
+
+    [php]
+    $this->validatorSchema->setPostValidator(
+      new sfValidatorSchemaCompare('start_date', sfValidatorSchemaCompare::LESS_THAN_EQUAL, 'end_date',
+        array('throw_global_error' => true),
+        array('invalid' => 'The start date ("%left_field%") must be before the end date ("%right_field%")')
+      )
+    );
+
+2-10 ábra - Globális validator által generált globális hiba
+
+![Globális validator által generált globális hiba](/images/forms_book/en/02_10.png "Globális validator által generált globális hiba")
+
+2-11 - Globális validator által generált lokális hiba
+
+![Globális validator által generált lokális hiba](/images/forms_book/en/02_11.png "Globális validator által generált lokális hiba")
+
+Végül logikai validatorok használatával több post-validator is megadható, ahogy a 2-16 mellékleten látszik.
+
+2-16 melléklet - Több post-validator megadása logikai validatorok használatával
+
+    [php]
+    $this->validatorSchema->setPostValidator(new sfValidatorAnd(array(
+      new sfValidatorSchemaCompare('start_date', sfValidatorSchemaCompare::LESS_THAN_EQUAL, 'end_date'),
+      new sfValidatorSchemaCompare('password', sfValidatorSchemaCompare::EQUAL, 'password_again'),
+    )));
+
+File feltöltés
+--------------
+
+File feltöltés PHPben, mint minden web orientált nyelvben, magában foglalja a HTML kód kezelést és a szerver oldali file fogadást. Ebben a részben az űrlap keretrendszer által biztosított eszközöket fogjuk végignézni, amelyek megkönnyítik a fejlesztő életét. Azt is látni fogjuk, hogyan kerülhetjük el a legjellemzőbb buktatókat. 
+
+Változtassuk meg a kapcsolat űrlapot, hogy filet is csatolhassunk az üzenethez. Ehhez felveszünk egy `file` mezőt (2-17 melléklet).
+
+2-17 melléklet - Egy `file` mező felvétele a `ContactForm` űrlapra
+
+    [php]
+    // lib/form/ContactForm.class.php
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'subject' => new sfWidgetFormSelect(array('choices' => self::$subjects)),
+          'message' => new sfWidgetFormTextarea(),
+          'file'    => new sfWidgetFormInputFile(),
+        ));
+        $this->widgetSchema->setNameFormat('contact[%s]');
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+          'file'    => new sfValidatorFile(),
+        ));
+      }
+    }
+
+Amikor egy `sfWidgetFormInputFile` widgetet használunk file feltöltéshez, meg kell adnunk az űrlap `enctype` attribútumát is a 2-18 mellékleten látható módon.
+
+2-18 melléklet - Template módosítása a `file` mező használata miatt
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST" enctype="multipart/form-data">
+      <table>
+        <?php echo $form ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+>**Note**
+>Ha dinamikusan generáljuk az űrlaphoz tartozó templatet, az űrlap objektum `isMultipart()` metódusának visszatérési értéke `true`, ha szükség van az `enctype` attribútumra.
+
+A feltöltött fileokhoz tartozó adatok PHPben nem a többi elküldött érték mellett tárolódnak. Ezért szükség van a `bind()` metódus meghívásának módosítására, hogy átadhassuk második paraméterként ezeket az adatokat (2-19 melléklet).
+
+2-19 melléklet - Feltöltött fileok átadása a `bind()` metódusnak
+
+    [php]
+    class contactActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new ContactForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('contact'), $request->getFiles('contact'));
+          if ($this->form->isValid())
+          {
+            $values = $this->form->getValues();
+            // do something with the values
+
+            // ...
+          }
+        }
+      }
+
+      public function executeThankyou()
+      {
+      }
+    }
+
+Most már az űrlap teljes mértékben funkcionál, a feltöltött file tárolásához meg kell még változtatni az actiont. Ahogy a fejezet elején láthattuk az `sfValidatorFile` átalakítja a feltöltött filehoz tartozó adatokat egy `sfValidatedFile` objektummá. A 2-20 mellékleten látható, hogyan kezeljük ezt az objektumot ha a filet a `web/uploads` könyvtárba szeretnénk menteni.
+
+2-20 melléklet - Az `sfValidatedFile` objektum használata
+
+    [php]
+    if ($this->form->isValid())
+    {
+      $file = $this->form->getValue('file');
+
+      $filename = 'uploaded_'.sha1($file->getOriginalName());
+      $extension = $file->getExtension($file->getOriginalExtension());
+      $file->save(sfConfig::get('sf_upload_dir').'/'.$filename.$extension);
+
+      // ...
+    }
+
+A következő táblázatban felsoroljuk az `sfValidatedFile` objektum minden metódusát:
+
+  | **Metódus**            | **Leírás**
+  | ---------------------- | ---------------
+  | save()                 | menti a feltöltött filet
+  | isSaved()              | `true` értékkel tér vissza ha a file le lett mentve
+  | getSavedName()         | az elmentett file nevével tér vissza
+  | getExtension()         | a file mime típusának megfelelő kiterjesztéssel tér vissza
+  | getOriginalName()      | a feltöltött file nevével tér vissza
+  | getOriginalExtension() | a feltöltött file kiterjesztésével tér vissza
+  | getTempName()          | az átmeneti file elérési útvonalával tér vissza
+  | getType()              | a file mime típusával tér vissza
+  | getSize()              | a file méretével tér vissza
+
+>**Tip**
+>A file feltöltésekor a böngésző által biztosított mime típus nem megbízható. A maximális biztonság biztosítása miatt érvényesítéskor a `finfo_open`, `mime_content_type` és `file` függvényeket használja az osztály. Végső esetben, ha a függvények egyike sem tudja megállapítani a mime típust, vagy ha a rendszer nem képes szolgáltatni azt, akkor a böngésző által küldött típust veszi figyelembe. A mime típus megállapító függvények felvételéhez vagy megváltoztatásához az `sfValidatorFile` konstruktornak át kell adni a `mime_type_guessers` opciót.
