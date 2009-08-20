@@ -1,0 +1,993 @@
+4. fejezet - Propel integráció
+==============================
+
+Egy webes projektben az ûrlapok általában a model objektumok manipulálására szolgálnak. A model objektumok adatai legtöbbször adatbázisba kerülnek egy ORM segítségével. A symfony ûrlap rendszere egy plusz réteget biztosít a Propellel, a symfony beéptett ORM-jével, való együttmûködéshez, lehetõvé téve a modelen alapuló ûrlapok könnyebb kezelését.
+
+Ebben a fejezetben az ûrlapok Propel objektumokkal való integrációját nézzük át részletesen. Ajánlott a Propel és a symfony integráció alapos ismerete. Ehhez a "The Definitive Guide to symfony" [Inside the Model Layer](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer) fejezete ad segítséget.
+
+Elõkészítés
+-----------
+
+Ebben a fejezetben egy cikkeket kezelõ rendszert fogunk készíteni. Kezdjük az adatbázis sémával. Öt táblát fogunk használni: `article`, `author`, `category`, `tag` és `article_tag`, ahogy a 4-1 mellékleten látható.
+
+4-1 melléklet - Adatbázis séma
+
+    [yml]
+    // config/schema.yml
+    propel:
+      article:
+        id:           ~
+        title:        { type: varchar(255), required: true }
+        slug:         { type: varchar(255), required: true }
+        content:      longvarchar
+        status:       varchar(255)
+        author_id:    { type: integer, required: true, foreignTable: author, foreignReference: id, OnDelete: cascade }
+        category_id:  { type: integer, required: false, foreignTable: category, foreignReference: id, onDelete: setnull }
+        published_at: timestamp
+        created_at:   ~
+        updated_at:   ~
+        _uniques:
+          unique_slug: [slug]
+
+      author:
+        id:           ~
+        first_name:   varchar(20)
+        last_name:    varchar(20)
+        email:        { type: varchar(255), required: true }
+        active:       boolean
+
+      category:
+        id:           ~
+        name:         { type: varchar(255), required: true }
+
+      tag:
+        id:           ~
+        name:         { type: varchar(255), required: true }
+
+      article_tag:
+        article_id:   { type: integer, foreignTable: article, foreignReference: id, primaryKey: true, onDelete: cascade }
+        tag_id:       { type: integer, foreignTable: tag, foreignReference: id, primaryKey: true, onDelete: cascade }
+
+A táblák közötti kapcsolatok a következõk:
+
+  * 1-n kapcsolat az `article` és az `author` tábla között: egy cikknek egy és csak egy szerzõje lehet
+  * 1-n kapcsolat az `article` és a `category` tábla között: egy cikk maximum egy kategóriába tartozhat
+  * n-n kapcsolat az `article` és a `tag` tábla között
+
+Ûrlap osztályok generálása
+--------------------------
+
+Az `article`, `author`, `category` és `tag` táblák adatait szeretnénk szerkeszteni. Ahhoz, hogy ezt megtehessük ûrlapokat kell készíteni, amelyek a felsorolt táblákhoz kapcsolódnak, valamint a widgeteket és a validatorokat az adatbázis sémához kell igazítani. Habár kézzel is lehet ûrlapot készíteni, mégis ez egy hosszú és fárasztó feladat, összességében hasonló dolgokat kell ismételni több fileban is (oszlop- és mezõnevek, oszlopok és mezõk maximális mérete, ...). Továbbá minden esetben, amikor a model változik, a hozzá kapcsolódó ûrlapnak is változnia kell. Szerencsére a Propel plugin rendelkezik egy beépített taskkal, `propel:build-forms`, amely automatizálja az modelhez kapcsolódó ûrlapok létrehozását:
+
+    $ ./symfony propel:build-forms
+
+Az ûrlap generálás alatt a task minden táblához készít egy ûrlap osztályt a modelnek leginkább megfelelõ widgetek és validatorok felhasználásával, valamint figyelembe veszi a táblák közötti kapcsolatokat is.
+
+>**Note**
+>A `propel:build-all` és `propel:build-all-load` taskok automatikusan meghívják a `propel:build-forms` taskot.
+
+A task futtatása után egy file struktúra jön létre a `lib/form/` könyvtár alatt. A példa sémához tartozó fileok a következõk:
+
+    lib/
+      form/
+        BaseFormPropel.class.php
+        ArticleForm.class.php
+        ArticleTagForm.class.php
+        AuthorForm.class.php
+        CategoryForm.class.php
+        TagForm.class.php
+        base/
+          BaseArticleForm.class.php
+          BaseArticleTagForm.class.php
+          BaseAuthorForm.class.php
+          BaseCategoryForm.class.php
+          BaseTagForm.class.php
+
+A `propel:build-forms` task minden táblához két osztályt készít, egy alaposztályt a `lib/form/base` könyvtárba és egyet a `lib/form/` alá. Például az `author` táblához tartozó ûrlap egy `BaseAuthorForm` és egy `AuthorForm` osztályból áll, amelyeket `lib/form/base/BaseAuthorForm.class.php` és `lib/form/AuthorForm.class.php` fileok tartalmaznak.
+
+>**SIDEBAR**
+>Generált ûrlap könyvtárak
+>
+>A `propel:build-forms` task által generált fileok struktúrája hasonló a Propeléhez. A Propel sémában megadott `package` (csomag) attribútum a táblák részhalmazokra történõ bontását teszi lehetõvé. Az alapértemezett csomag a `lib.model`, tehát a Propel a `lib/model/` könyvtár alá hozza létre a modeleket és a `lib/form/` alá az ûrlapokat. A `lib.model.cms` csomag használatával, ahogy a lenti példán is látható, a Propel osztályok a `lib/model/cms/`, az ûrlap osztályok pedig a `lib/form/cms/` könyvtár alá kerülnek.
+>
+>     [php]
+>     propel:
+>       _attributes: { noXsd: false, defaultIdMethod: none, package: lib.model.cms }
+>       # ...
+>
+>A csomagok használata nagyon hasznos, ha az adatbázis sémát szét szeretnénk választani, és egy pluginba szeretnénk csomagolni a hozzá tartozó ûrlapokat, ahogy azt az 5. fejezetben látni fogjuk.
+>
+>Propel csomagokkal kapcsolatos további információ a "The Definitive Guide to symfony" könyv [Inside the Model Layer](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer) fejezetében található.
+
+Foglaljuk össze egy táblázatba az `AuthorForm` ûrlap definíciójában szereplõ osztályok közötti különbségeket.
+
+  | **Osztály**    | **Csomag**    | **Kinek készült** | **Leírás**
+  | -------------- | ------------- | ----------------- | ---------------
+  | AuthorForm     | project       | fejlesztõ         | Felülírja a generált ûrlapot
+  | BaseAuthorForm | project       | symfony           | A sémán alapul, `propel:build-forms` task minden egyes futtatásakor újragenerálódik
+  | BaseFormPropel | project       | fejlesztõ         | Propel alapú ûrlapok globális módosítására szolgál
+  | sfFormPropel   | Propel plugin | symfony           | Propel ûrlapok alapja
+  | sfForm         | symfony       | symfony           | Symfony ûrlapok alapja
+
+Az `Author` osztályból származó objektum létrehozásához és szerkesztéséhez az `AuthorForm` osztályt fogjuk használni (4-2 melléklet). Észrevehetjük, hogy ez az osztály nem tartalmaz metódusokat, mindent a `BaseAuthorForm` osztálytól örököl, amely a konfiguráción alapul. Az `AuthorForm` szolgál az alap ûrlap konfiguráció testreszabására.
+
+4-2 melléklet - `AuthorForm` osztály
+
+    [php]
+    class AuthorForm extends BaseAuthorForm
+    {
+      public function configure()
+      {
+      }
+    }
+
+A 4-3 mellékleten látható a `BaseAuthorForm` osztály, a hozzá tartozó validatorokkal és widgetekkel, amely az `author` tábla modeljén alapul.
+
+4-3 melléklet - `BaseAuthorForm` osztály, az `author` tábla ûrlap reprezentációja
+
+    [php]
+    class BaseAuthorForm extends BaseFormPropel
+    {
+      public function setup()
+      {
+        $this->setWidgets(array(
+          'id'         => new sfWidgetFormInputHidden(),
+          'first_name' => new sfWidgetFormInput(),
+          'last_name'  => new sfWidgetFormInput(),
+          'email'      => new sfWidgetFormInput(),
+        ));
+
+        $this->setValidators(array(
+          'id'         => new sfValidatorPropelChoice(array('model' => 'Author', 'column' => 'id', 'required' => false)),
+          'first_name' => new sfValidatorString(array('max_length' => 20, 'required' => false)),
+          'last_name'  => new sfValidatorString(array('max_length' => 20, 'required' => false)),
+          'email'      => new sfValidatorString(array('max_length' => 255)),
+        ));
+
+        $this->widgetSchema->setNameFormat('author[%s]');
+
+        $this->errorSchema = new sfValidatorErrorSchema($this->validatorSchema);
+
+        parent::setup();
+      }
+
+      public function getModelName()
+      {
+        return 'Author';
+      }
+    }
+
+A létrejött osztály néhány kivétellel nagyon hasonlít az elõzõ fejezetben készített ûrlapokhoz:
+
+  * A szülõ osztály a `BaseFormPropel` az `sfForm` helyett
+  * A validator és widget konfiguráció a `setup()` metódusban taláható, nem pedig a `configure()`ban
+  * A `getModelName()` metódus a kapcsolódó Propel osztály nevével tér vissza
+
+>**SIDEBAR**
+>Propel ûrlapok globális testreszabása
+>
+>A `propel:build-forms` a táblákhoz tartozó ûrlaposztályokon felül létrehoz még egy `BaseFormPropel` osztályt is. Ez egy üres osztály, amely õse az összes `lib/form/base/` alatt létrehozott osztálynak, lehetõséget biztosítva minden Propel ûrlap viselkedésének egységes megváltoztatásához. Példánknál maradva, egyszerûen megváltoztatható a Propel ûrlapokhoz tartozó alapértelmezett formázó (formatter):
+>
+>     [php]
+>     abstract class BaseFormPropel extends sfFormPropel
+>     {
+>       public function setup()
+>       {
+>         sfWidgetFormSchema::setDefaultFormFormatterName('div');
+>       }
+>     }
+>
+>Látjuk, hogy a `BaseFormPropel` osztály az `sfFormPropel` osztályból származik. Ez az osztály tartalmazza a Propel specifikus funkciókat, többek között az ûrlapról elküldött adatokból készült objektum adatbázisba mentését is.
+
+>**TIP**
+>A szülõ osztályok a `setup()` metódust használják a konfiguráláshoz a `configure()` helyett. Ez lehetõvé teszi a fejlesztõ számára, hogy felülírja a beállításokat a nélkül, hogy a `parent::configure()` hívással foglalkoznia kellene.
+
+Az ûrlap mezõk nevei megfelelnek a sémában használt mezõnevekkel: `id`, `first_name`, `last_name` és `email`.
+
+A `propel:build-forms` task az `author` tábla minden mezõjéhez létrehoz egy widgetet és egy validatort a séma definíciónak megfelelõen. A task mindig a lehetõ legbiztonságosabb validator állítja be. Nézzük meg az `id` mezõt. Ellenõrizhetnénk az értékét úgy is, hogy érvényes egész-e. Ehelyett a beállított validator lehetõvé teszi, hogy érvényesítsük a mezõt, mint egy már létezõt (egy már meglévõ objektum szerkesztésekor) vagy hogy az azonosító üres-e (egy új objektum létrehozásakor). Ez egy erõsebb érvényesítés.
+
+A létrehozott ûrlapok azonnal használhatók. Adjuk a templatehez a `<?php echo $form ?>`t és egy mûködõ ûrlapot kapunk érvényesítéssel együtt **anélkül, hogy akár egy sor kódot kellett volna írnunk**.
+
+Azon túl, hogy ebbõl gyors prototípust készíthetünk, a létrehozott osztályok egyszerûen kiterjeszthetõk anélkül, hogy a generált osztályokat módosítani kellene. Mindez a szülõ és ûrlap osztályok öröklõdési mechanizmusának köszönhetõ.
+
+Végül minden adatbázis séma változtatás esetén a task újra létrehozza az ûrlapokat a módosításoknak megfelelõen anélkül, hogy korábbi saját beállításaink elvesznének.
+
+A CRUD generátor
+----------------
+
+Most, hogy elkészültek az ûrlap osztályok, lássuk milyen egyszerû létrehozni egy symfony modult az objektumok kezeléséhez. Szeretnénk létrehozni, szerkeszteni és törölni az `Article`, `Author`, `Category` és `Tag` osztályokhoz tartozó objektumokat.
+Kezdjük egy, az `Author` osztály kezelését végzõ modul készítésével. Bár kézzel is létrehozható, a Propel plugin biztosít egy `propel:generate-crud` taskot, ami egy Propel objektumhoz tartozó CRUD modult állít elõ. A korábban létrehozott ûrlapot használjuk mindehhez:
+
+    $ ./symfony propel:generate-crud frontend author Author
+
+A `propel:generate-crud` három paramétert vár:
+
+  * `frontend` : az alkalmazás neve, amelyben a modult létrehozzuk
+  * `author`   : a modul neve
+  * `Author`   : a model osztály neve, amelyhez modult hozunk létre
+
+>**Note**
+>A CRUD a Creation / Retrieval / Update / Deletion (létrehozás, visszatöltés, frissítés, törlés) rövidítése, összefoglalja azt a négy alapmûveletet, amelyet model adatokon végre szoktunk hajtani.
+
+A 4-4 mellékleten látható, hogy a task 5 actiont hozott létre, melyek lehetõvé teszik az `Author` osztály objektumainak listázását (`index`), létrehozását (`create`), módosítását (`edit`), mentését (`save`) és törlését (`delete`).
+
+4-4 melléklet - A task által generált `authorActions` osztály
+
+    [php]
+    // apps/frontend/modules/author/actions/actions.class.php
+    class authorActions extends sfActions
+    {
+      public function executeIndex()
+      {
+        $this->authorList = AuthorPeer::doSelect(new Criteria());
+      }
+
+      public function executeCreate()
+      {
+        $this->form = new AuthorForm();
+
+        $this->setTemplate('edit');
+      }
+
+      public function executeEdit($request)
+      {
+        $this->form = new AuthorForm(AuthorPeer::retrieveByPk($request->getParameter('id')));
+      }
+
+      public function executeUpdate($request)
+      {
+        $this->forward404Unless($request->isMethod('post'));
+
+        $this->form = new AuthorForm(AuthorPeer::retrieveByPk($request->getParameter('id')));
+
+        $this->form->bind($request->getParameter('author'));
+        if ($this->form->isValid())
+        {
+          $author = $this->form->save();
+
+          $this->redirect('author/edit?id='.$author->getId());
+        }
+
+        $this->setTemplate('edit');
+      }
+
+      public function executeDelete($request)
+      {
+        $this->forward404Unless($author = AuthorPeer::retrieveByPk($request->getParameter('id')));
+
+        $author->delete();
+
+        $this->redirect('author/index');
+      }
+    }
+
+Ebben a modulban az ûrlap kezelésével három metódus foglalkozik: `create`, `edit` és `update`. A `propel:generate-crud` task a `--non-atomic-actions` opcióval beállítható, hogy egyetlen metódussal oldja meg ennek a háromnak a funkcionalitását.
+
+    $ ./symfony propel:generate-crud frontend author Author --non-atomic-actions
+
+A `--non-atomic-actions` által generált kód (4-5 melléklet) tömörebb, de kevésbé átlátható.
+
+4-5 melléklet - A `--non-atomic-actions` opcióval generált `authorActions` osztály
+
+    [php]
+    class authorActions extends sfActions
+    {
+      public function executeIndex()
+      {
+        $this->authorList = AuthorPeer::doSelect(new Criteria());
+      }
+
+      public function executeEdit($request)
+      {
+        $this->form = new AuthorForm(AuthorPeer::retrieveByPk($request->getParameter('id')));
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('author'));
+          if ($this->form->isValid())
+          {
+            $author = $this->form->save();
+
+            $this->redirect('author/edit?id='.$author->getId());
+          }
+        }
+      }
+
+      public function executeDelete($request)
+      {
+        $this->forward404Unless($author = AuthorPeer::retrieveByPk($request->getParameter('id')));
+
+        $author->delete();
+
+        $this->redirect('author/index');
+      }
+    }
+
+A task két template filet generál: `indexSuccess` és `editSuccess`. Az `editSuccess` a `<?php echo $form ?>` használata nélkül jön létre. A `--non-verbose-templates` opcióval módosítható ez a viselkedés:
+
+    $ ./symfony propel:generate-crud frontend author Author --non-verbose-templates
+
+Ez az opció a prototípus készítés fázisában lehet hasznos (4-6 melléklet).
+
+4-6 melléklet - A `editSuccess` template
+
+    [php]
+    // apps/frontend/modules/author/templates/editSuccess.class.php
+    <?php $author = $form->getObject() ?>
+    <h1><?php echo $author->isNew() ? 'New' : 'Edit' ?> Author</h1>
+
+    <form action="<?php echo url_for('author/edit'.(!$author->isNew() ? '?id='.$author->getId() : '')) ?>" method="post" <?php $form->isMultipart() and print 'enctype="multipart/form-data" ' ?>>
+      <table>
+        <tfoot>
+          <tr>
+            <td colspan="2">
+              &nbsp;<a href="<?php echo url_for('author/index') ?>">Cancel</a>
+              <?php if (!$author->isNew()): ?>
+                &nbsp;<?php echo link_to('Delete', 'author/delete?id='.$author->getId(), array('post' => true, 'confirm' => 'Are you sure?')) ?>
+              <?php endif; ?>
+              <input type="submit" value="Save" />
+            </td>
+          </tr>
+        </tfoot>
+        <tbody>
+          <?php echo $form ?>
+        </tbody>
+      </table>
+    </form>
+
+>**TIP**
+>A `--with-show` opció segítségével generált kód tartalmaz egy `show` action is az objektum tartalmának megtekintéséhez (csak olvasható).
+
+Most már megnyithatjuk az elkészült modult a böngészõban, a 4-1 és 4-2 ábra szerinti megjelenést láthatjuk. Játszunk egy kicsit ezzel a felülettel. A létrehozott modul segítségével listázhatjuk a szerzõket, újakat vehetünk fel, szerkeszthetjük, módosíthatjuk és törölhetjük õket. Vegyük észre, hogy az érvényesítõ szabályok is mûködnek.
+
+4-1 ábra - Szerzõk listája
+
+![Szerzõk listája](/images/forms_book/en/04_01.png "Szerzõk listája")
+
+4-2 ábra - Egy szerzõ szerkesztése mezõ érvényesítéssel
+
+![Egy szerzõ szerkesztése mezõ érvényesítéssel](/images/forms_book/en/04_02.png "Egy szerzõ szerkesztése mezõ érvényesítéssel")
+
+Most megismételhetjük a mûveletet az `Article` osztályra is:
+
+    $ ./symfony propel:generate-crud frontend article Article --non-verbose-templates --non-atomic-actions
+
+A létrejött kód nagyon hasonlít az `Author` osztályhoz létrehozottra, de ha új cikket akarunk készíteni, a 4-3 ábrán látható végzetes hibával leáll.
+
+4-3 ábra - A kapcsolt tábláknak definiálniuk kell a `__toString()` metódust
+
+![A kapcsolt tábláknak definiálniuk kell a `__toString()` metódust](/images/forms_book/en/04_03.png "A kapcsolt tábláknak definiálniuk kell a `__toString()` metódust")
+
+Az `ArticleForm` ûrlap az `sfWidgetFormPropelSelect` widgetet használja az `Article` és az `Author` objektum közötti kapcsolat reprezentálására. Ez a widget a szerzõkbõl egy legördülõ listát készít. Megjelenítéskor a szerzõi objektumokat karakterlánccá alakítja a `__toString()` metódus segítségével, amit definiálni kell az `Author` osztályban (4-7 melléklet).
+
+4-7 melléklet - Az `Author` osztály `__toString()` metódusa
+
+    [php]
+    class Author extends BaseAuthor
+    {
+      public function __toString()
+      {
+        return $this->getFirstName().' '.$this->getLastName();
+      }
+    }
+
+Az `Author` osztályhoz hasonlóan elkészíthetjük a többi osztályhoz (`Article`, `Category` és `Tag`) is a `__toString()` metódust.
+
+>**Tip**
+>Az `sfWidgetFormPropelSelect` widget `method` opciójával beállítható az objektum konvertáláshoz használt metódusa.
+
+The Figure 4-4 Shows how to create an article after having implemented the `__toString()` method.
+
+
+4-4 ábra - Egy cikk létrehozása
+
+![Egy cikk létrehozása](/images/forms_book/en/04_04.png "Egy cikk létrehozása")
+
+Customizing the generated Forms
+-------------------------------
+
+The `propel:build-forms` and `propel:generate-crud` tasks let us create functional symfony modules to list, create, edit, and delete model objects. These modules are taking into account not only the validation rules of the model but also the relationships between tables. All of this happens without writing a single line of code!
+
+The time has now come to customize the generated code. If the form classes are already considering many elements, some aspects will need to be customized.
+
+### Configuring validators and widgets
+
+Let's start with configuring the validators and widgets generated by default.
+
+The `ArticleForm` form has a `slug` field. The slug is a string of characters that uniquely representing the article in the URL. For instance, the slug of an article whose title is "Optimize the developments with symfony" is `12-optimize-the-developments-with-symfony`, `12` being the article `id`. This field is usually automatically computed when the object is saved, depending on the `title`, but it has the potential to be explicitly overridden by the user. Even if this field is required in the schema, it can not be compulsory to the form. That is why we modify the validator and make it optional, as in Listing 4-8. We will also customize the `content` field increasing its size and forcing the user to type in at least five characters.
+
+4-8 melléklet - Customizing Validators and Widgets
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->validatorSchema['slug']->setOption('required', false);
+        $this->validatorSchema['content']->setOption('min_length', 5);
+
+        $this->widgetSchema['content']->setAttributes(array('rows' => 10, 'cols' => 40));
+      }
+    }
+
+We use here the `validatorSchema` and `widgetSchema` objects as PHP arrays. These arrays are taking the name of a field as key and return respectively the validator object and the related widget object. We can then Customize individually fields and widgets.
+
+>**Note**
+>In order to allow the use of objects as PHP arrays, the `sfValidatorSchema` and `sfWidgetFormSchema` classes implement the `ArrayAccess` interface, available in PHP since version 5.
+
+To make sure two articles can not have the same `slug`, a uniqueness constraint has been added in the schema definition. This constraint on the database level is reflected in the `ArticleForm` form using the `sfValidatorPropelUnique` validator. This validator can check the uniqueness of any form field. It is helpful among other things to check the uniqueness of an email address of a login for instance. Listing 4-9 shows how to use it in the `ArticleForm` form.
+
+4-9 melléklet - Using the `sfValidatorPropelUnique` validator to check the Uniqueness of a field
+
+    [php]
+    class BaseArticleForm extends BaseFormPropel
+    {
+      public function setup()
+      {
+        // ...
+
+        $this->validatorSchema->setPostValidator(
+          new sfValidatorPropelUnique(array('model' => 'Article', 'column' => array('slug')))
+        );
+      }
+    }
+
+The `sfValidatorPropelUnique` validator is a `postValidator` running on the whole data after the individual validation of each field. In order to validate the `slug` uniqueness, the validator must be able to access, not only the `slug` value, but also the value of the primary key(s). Validation rules are indeed different throughout the creation and the edition since the slug can stay the same during the update of an article.
+
+Let's Customize now the `active` field of the `author` table, used to know if an author is active. Listing 4-10 shows how to exclude inactive authors from the `ArticleForm` form, modifying the `criteria` option of the `sfWidgetPropelSelect` widget connected to the `author_id` field. The `criteria` option accepts a Propel Criteria object, allowing to narrow down the list of available options in the rolling list.
+
+4-10 melléklet - Customizing the `sfWidgetPropelSelect` widget
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $authorCriteria = new Criteria();
+        $authorCriteria->add(AuthorPeer::ACTIVE, true);
+
+        $this->widgetSchema['author_id']->setOption('criteria', $authorCriteria);
+      }
+    }
+
+Even if the widget customization can make us narrow down the list of available options, we must not forget to consider this narrowing on the validator level, as shown in Listing 4-11. Like the `sfWidgetProperSelect` widget, the `sfValidatorPropelChoice` validator accepts a `criteria` option to narrow down the options valid for a field.
+
+4-11 melléklet - Customizing the `sfValidatorPropelChoice` validator
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $authorCriteria = new Criteria();
+        $authorCriteria->add(AuthorPeer::ACTIVE, true);
+
+        $this->widgetSchema['author_id']->setOption('criteria', $authorCriteria);
+        $this->validatorSchema['author_id']->setOption('criteria', $authorCriteria);
+      }
+    }
+
+In the previous example we defined the `Criteria` object directly in the `configure()` method. In our project, this criteria will certainly be helpful in other circumstances, so it is better to create a `getActiveAuthorsCriteria()` method within the `AuthorPeer` class and to call this method from `ArticleForm` as Listing 4-12 shows.
+
+4-12 melléklet - Refactoring the `Criteria` in the Model
+
+    [php]
+    class AuthorPeer extends BaseAuthorPeer
+    {
+      static public function getActiveAuthorsCriteria()
+      {
+        $criteria = new Criteria();
+        $criteria->add(AuthorPeer::ACTIVE, true);
+
+        return $criteria;
+      }
+    }
+
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        $authorCriteria = AuthorPeer::getActiveAuthorsCriteria();
+        $this->widgetSchema['author_id']->setOption('criteria', $authorCriteria);
+        $this->validatorSchema['author_id']->setOption('criteria', $authorCriteria);
+      }
+    }
+
+>**TIP**
+>Like the `sfWidgetPropelSelect` widget and the `sfValidatorPropelChoice` validator represent a 1-n relation between two tables, the `sfWidgetPropelSelectMany` and the `sfValidatorPropelChoiceMany` validator represent a n-n relation and accept the same options. In the `ArticleForm` form, these classes are used to represent a relation between the `article` table and the `tag` table.
+
+### Changing validator
+
+The `email` being defined as a `varchar(255)` in the schema, symfony created a `sfValidatorString()` validator restraining the maximum length to 255 characters. This field is also supposed to receive a valid email, Listing 4-14 replaces the generated validator with a `sfValidatorEmail` validator.
+
+4-13 melléklet - Changing the `email` field Validator of the `AuthorForm` class
+
+    [php]
+    class AuthorForm extends BaseAuthorForm
+    {
+      public function configure()
+      {
+        $this->validatorSchema['email'] = new sfValidatorEmail();
+      }
+    }
+
+### Adding a validator
+
+We observed in the previous chapter how to modify the generated validator. But in the case of the `email` field, it would be useful to keep the maximum length validation. In Listing 4-14, we use the `sfValidatorAnd` validator to guarantee the email validity and check the maximum length allowed for the field.
+
+4-14 melléklet - Using a multiple Validator
+
+    [php]
+    class AuthorForm extends BaseAuthorForm
+    {
+      public function configure()
+      {
+        $this->validatorSchema['email'] = new sfValidatorAnd(array(
+          new sfValidatorString(array('max_length' => 255)),
+          new sfValidatorEmail(),
+        ));
+      }
+    }
+
+The previous example is not perfect, because if we decide later to modify the length of the `email` field in the database schema, we will have to think about doing it also in the form. Instead of replacing the generated validator, it is better to add one, as shown in Listing 4-15.
+
+4-15 melléklet - Adding a Validator
+
+    [php]
+    class AuthorForm extends BaseAuthorForm
+    {
+      public function configure()
+      {
+        $this->validatorSchema['email'] = new sfValidatorAnd(array(
+          $this->validatorSchema['email'],
+          new sfValidatorEmail(),
+        ));
+      }
+    }
+
+### Changing widget
+
+In the database schema, the `status` field of the `article` table stores the article status as a string of characters. The possible values were defined in the `ArticePeer` class, as shown in Listing 4-16.
+
+4-16 melléklet - Defining available Statuses in the `ArticlePeer` class
+
+    [php]
+    class ArticlePeer extends BaseArticlePeer
+    {
+      static protected $statuses = array('draft', 'online', 'offline');
+
+      static public function getStatuses()
+      {
+        return self::$statuses;
+      }
+
+      // ...
+    }
+
+When editing an article, the `status` field must be represented as a drop-down list instead of a text field. To do so, let's change the widget we used, as shown in Listing 4-17.
+
+4-17 melléklet - Changing the Widget for the `status` field
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        $this->widgetSchema['status'] = new sfWidgetFormSelect(array('choices' => ArticlePeer::getStatuses()));
+      }
+    }
+
+To be thorough we must also change the validator to make sure the chosen status actually belongs to the list of possible options (Listing 4-18).
+
+4-18 melléklet - Modifying the `status` Field Validator
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        $statuses = ArticlePeer::getStatuses();
+        
+        $this->widgetSchema['status'] = new sfWidgetFormSelect(array('choices' => $statuses));
+
+        $this->validatorSchema['status'] = new sfValidatorChoice(array('choices' => array_keys($statuses)));
+      }
+    }
+
+### Deleting a field
+
+The `article` table has two special columns, `created_at` and `updated_at`, whose update is automatically handled by Propel. We must then delete them from the form as Listing 4-19 show, to prevent the user from modifying them.
+
+4-19 melléklet - Deleting a Field
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        unset($this->validatorSchema['created_at']);
+        unset($this->widgetSchema['created_at']);
+
+        unset($this->validatorSchema['updated_at']);
+        unset($this->widgetSchema['updated_at']);
+      }
+    }
+
+In order to delete a field, it is necessary to delete its validator and its widget. Listing 4-20 shows how it is also possible to delete both in one action, using the form as a PHP array.
+
+4-20 melléklet - Deleting a Field using the Form as a PHP Array
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        unset($this['created_at'], $this['updated_at']);
+      }
+    }
+
+### Sum up
+
+To sum up, Listing 4-21 and Listing 4-22 show the `ArticleForm` and `AuthorForm` forms as we customize them.
+
+4-21 melléklet - `ArticleForm` Form
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        $authorCriteria = AuthorPeer::getActiveAuthorsCriteria();
+
+        // widgets
+        $this->widgetSchema['content']->setAttributes(array('rows' => 10, 'cols' => 40));
+        $this->widgetSchema['status'] = new sfWidgetFormSelect(array('choices' => ArticlePeer::getStatuses()));
+        $this->widgetSchema['author_id']->setOption('criteria', $authorCriteria);
+
+        // validators
+        $this->validatorSchema['slug']->setOption('required', false);
+        $this->validatorSchema['content']->setOption('min_length', 5);
+        $this->validatorSchema['status'] = new sfValidatorChoice(array('choices' => array_keys(ArticlePeer::getStatuses())));
+        $this->validatorSchema['author_id']->setOption('criteria', $authorCriteria);
+
+        unset($this['created_at']);
+        unset($this['updated_at']);
+      }
+    }
+
+4-22 melléklet - `AuthorForm` Form
+
+    [php]
+    class AuthorForm extends BaseAuthorForm
+    {
+      public function configure()
+      {
+        $this->validatorSchema['email'] = new sfValidatorAnd(array(
+          $this->validatorSchema['email'],
+          new sfValidatorEmail(),
+        ));
+      }
+    }
+
+Using the `propel:build-forms` allows to automatically generate most of the elements letting forms introspect the object model. This automatization is helpful for several reasons:
+
+  * It makes the developer's life easier, saving him from a repetitive and redundant work. He can then focus on the validators and widget Customization according to the project's specific business rules .
+
+  * Besides, when the database schema is updated, the generated forms will be automatically updated. The developer will just have to tune the customization they made.
+
+The next section will describe the customization of actions and templates generated by the `propel:generate-crud` task.
+
+Form Serialization
+------------------
+
+The previous section show us how to customize forms generated by the task `propel:build-forms`. In the current section, we will customize the life cycle of forms, starting from the code generated by the `propel:generate-crud` task.
+
+### Default values
+
+**A Propel form instance is always connected to a Propel object**. The linked Propel object always belongs to the class returned by the `getModelName()` method. For instance, the `AuthorForm` form can only be linked to objects belonging to the `Author` class. This object is either an empty object (a blank instance of the `Author` class), or the object sent to the constructor as first argument. Whereas the constructor of an "average" form takes an array of values as first argument, the constructor of a Propel form takes a Propel object. This object is used  to define each form field default value. The `getObject()` method returns the object related to the current instance and the `isNew()` method allows to know if the object was sent via the constructor:
+
+    [php]
+    // creating a new object
+    $authorForm = new AuthorForm();
+
+    print $authorForm->getObject()->getId(); // outputs null
+    print $authorForm->isNew();              // outputs true
+
+    // modifying an existing object
+    $author = AuthorPeer::retrieveByPk(1);
+    $authorForm = new AuthorForm($author);
+
+    print $authorForm->getObject()->getId(); // outputs 1
+    print $authorForm->isNew();              // outputs false
+
+### Handling life cycle
+
+As we observed at the beginning of the chapter, the `edit` action, shown in Listing 4-23, handles the form life cycle.
+
+4-23 melléklet - The `executeEdit` Method of the `author` Module
+
+    [php]
+    // apps/frontend/modules/author/actions/actions.class.php
+    class authorActions extends sfActions
+    {
+      // ...
+
+      public function executeEdit($request)
+      {
+        $author = AuthorPeer::retrieveByPk($request->getParameter('id'));
+        $this->form = new AuthorForm($author);
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('author'));
+          if ($this->form->isValid())
+          {
+            $author = $this->form->save();
+
+            $this->redirect('author/edit?id='.$author->getId());
+          }
+        }
+      }
+    }
+
+Even if the `edit` action looks like the actions we might have describe in the previous chapters, we can point a few differences:
+
+  * A Propel object from the `Author` class is sent as first argument to the form constructor:
+
+        [php]
+        $author = AuthorPeer::retrieveByPk($request->getParameter('id'));
+        $this->form = new AuthorForm($author);
+
+  * The widgets `name` attribute format is automatically customize to allow the retrieval of the input data in a PHP array named after the related table (`author`):
+
+        [php]
+        $this->form->bind($request->getParameter('author'));
+
+  * When the form is valid, a mere call to the `save()` method creates or updates the Propel object related to the form:
+
+        [php]
+        $author = $this->form->save();
+
+### Creating and Modifying a Propel Object
+
+Listing 4-23 code handles with a single method the creation and modification of objects from the `Author` class:
+
+  * Creation of a new `Author` object:
+
+      * The `index` action is called with no `id` parameter (`$request->getParameter('id')` is `null`)
+
+      * The call to the `retrieveByPk()` therefore sends `null`
+
+      * The `form` object is then linked to an empty `Author` Propel object
+
+      * The `$this->form->save()` call creates consequently a new `Author` object when a valid form is submitted
+
+  * Modification of an existing `Author` object:
+
+      * The `index` action is called with an `id` parameter (`$request->getParameter('id')` standing for the primary key the `Author` object is to modify)
+
+      * The call to the `retriveByPk()` method returns the `Author` object related to the primary key
+
+      * The `form` object is therefore linked to the previously found object
+
+      * The `$this->form->save()` call updates the `Author` object when a valid form is submitted
+
+### The `save()` method
+
+When a Propel form is valid, the `save()` method updates the related object and stores it in the database. This method actually stores not only the main object but also the potentially related objects. For instance, the `ArticleForm` form updates the tags connected to an article. The relation between the ` article` table and the `tag` table being a n-n relation, the tags related to an article are saved in the `article_tag` table (using the `saveArticleTagList()` generated method).
+
+In order to certify a consistent serialization, the `save()` method includes every updates in one transaction.
+
+>**Note**
+>We will see in Chapter 9 that the `save()` method also automatically updates the internationalized tables.
+
+>**SIDEBAR**
+>Using the `bindAndSave()` method
+>
+>The `bindAndSave()` method binds the input data the user submitted to the form, validates this form and updates the related object in the database, all in one operation: 
+>
+>     [php]
+>     class articleActions extends sfActions
+>     {
+>       public function executeCreate(sfWebRequest $request)
+>       {
+>         $this->form = new ArticleForm();
+>
+>         if ($request->isMethod('post') && $this->form->bindAndSave($request->getParameter('article')))
+>         {
+>           $this->redirect('article/created');
+>         }
+>       }
+>     }
+
+### Handling the files upload
+
+The `save()` method automatically updates the Propel objects but can not handle the side elements as managing the file upload.
+
+Let's see how to attach a file to each article. Files are stored in the `web/uploads` directory and a reference to the file path is kept in the `file` field of the `article` table, as shown in Listing 4-24.
+
+4-24 melléklet - Schema for the `article` Table with associated File
+
+    [yml]
+    // config/schema.yml
+    propel:
+      article:
+        // ...
+        file: varchar(255)
+
+After every schema update, you need to update the object model, the database and the related forms:
+
+    $ ./symfony propel:build-all
+
+>**Caution**
+>Do mind that the `propel:build-all` task deletes every schema tables to re-create them. The data inside the tables are therefore overwritten. That is why it is important to create test data (`fixtures`) you can download again at each model modification.
+
+Listing 4-25 shows how to modify the `ArticleForm` class in order to link a widget and a validator to the `file` field.
+
+4-25 melléklet - Modifying the `file` Field of the `ArticleForm` form.
+
+    [php]
+    class ArticleForm extends BaseArticleForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->widgetSchema['file'] = new sfWidgetFormInputFile();
+        $this->validatorSchema['file'] = new sfValidatorFile();
+      }
+    }
+
+As for every form allowing to upload a file, does not forget to add also the `enctype` attribute to the `form` tag of the template (see Chapter 2 for further informations concerning file upload management).
+
+Listing 4-26 shows the modifications to apply when saving the form to upload the file onto  the server and store its path in the `article` object.
+
+4-26 melléklet - Saving the `article` Object and the File uploaded in the Action
+
+    [php]
+    public function executeEdit($request)
+    {
+      $author = ArticlePeer::retrieveByPk($request->getParameter('id'));
+      $this->form = new ArticleForm($author);
+
+      if ($request->isMethod('post'))
+      {
+        $this->form->bind($request->getParameter('article'), $request->getFiles('article'));
+        if ($this->form->isValid())
+        {
+          $file = $this->form->getValue('file');
+          $filename = sha1($file->getOriginalName()).$file->getExtension($file->getOriginalExtension());
+          $file->save(sfConfig::get('sf_upload_dir').'/'.$filename);
+
+          $article = $this->form->save();
+
+          $this->redirect('article/edit?id='.$article->getId());
+        }
+      }
+    }
+
+Saving the uploaded file on the filesystem allows the `sfValidatedFile` object to know the absolute path to the file. During the call to the `save()` method, the fields values are used to update the related object and, as for the `file` field, the `sfValidatedFile` object is converted in a character string thanks to the `__toString()` method, sending back the absolute path to the file. The `file` column of the `article` table will store this absolute path.
+
+>**TIP**
+>If you wish to store the path relative to the `sfConfig::get('sf_upload_dir')` directory, you can create a class inheriting from `sfValidatedFile` and use the `validated_file_class` option to send to the `sfValidatorFile` validator the name of the new class. The validator will then return an instance of your class. We will see in the rest of this chapter another approach, consisting in modifying the value of the `file` column before saving the object in database.
+
+### Customizing the `save()` method
+
+We observed in the previous section how to save the uploaded file in the `edit` action. One of the principles of the object oriented programming is the reusability of the code, thanks to its encapsulation in classes. Instead of duplicating the code used to save the file in each action using the `ArticleForm` form, it is better to move it in the `ArticleForm` class. Listing 4-27 shows how to override the `save()` method in order to also save the file and possibly to delete of an existing file.
+
+4-27 melléklet - Overriding the `save()` Method of the `ArticleForm` Class
+
+    [php]
+    class ArticleForm extends BaseFormPropel
+    {
+      // ...
+     
+      public function save($con = null)
+      {
+        if (file_exists($this->getObject()->getFile()))
+        {
+          unlink($this->getObject()->getFile());
+        }
+   
+        $file = $this->getValue('file');
+        $filename = sha1($file->getOriginalName()).$file->getExtension($file->getOriginalExtension());
+        $file->save(sfConfig::get('sf_upload_dir').'/'.$filename);
+   
+        return parent::save($con);
+      }
+    }
+
+After moving the code to the form, the `edit` action is identical to the code initially generated by the `propel:generate-crud` task.
+
+>**SIDEBAR**
+>Refactoring the Code in the Model of in the Form
+>
+>The actions generated by the `propel:generate-crud` task shouldn't usually be modified.
+>
+>The logic you could add in the `edit` action, especially during the form serialization, must usually be moved in the model classes or in the form class.
+>
+>We just went over an example of refactoring in the form class in order to consider a uploaded file storing. Let's take another example related to the model. The `ArticleForm` form has a `slug` field. We observed that this field should be automatically computed from the `title` field name that it should be potentially overridden by the user. This logic does not depend on the form. It belongs therefore to the model, as shown the following code:
+>
+>     [php]
+>     class Article extends BaseArticle
+>     {
+>       public function save($con = null)
+>       {
+>         if (!$this->getSlug())
+>         {
+>           $this->setSlugFromTitle();
+>         }
+>
+>         return parent::save($con);
+>       }
+>
+>       protection function setSlugFromTitle()
+>       {
+>         // ...
+>       }
+>     }
+>
+>The main goal of those refactorings is to respect the separation in applicative layers, and especially the reusability of the developments.
+
+### Customizing the `doSave()` method
+
+We observed that the saving of an object was made within a transaction in order to guarantee that each operation related to the saving is processed correctly. When overriding the `save()`method as we did in the previous section in order to save the uploaded file, the executed code is independent from this transaction.
+
+Listing 4-28 shows how to use the `doSave()` method to insert in the global transaction our code saving the uploaded file. 
+
+4-28 melléklet - Overriding the `doSave()` Method in the `ArticleForm` Form
+
+    [php]
+    class ArticleForm extends BaseFormPropel
+    {
+      // ...
+     
+      public function doSave($con = null)
+      {
+        if (file_exists($this->getObject()->getFile()))
+        {
+          unlink($this->getObject()->getFile());
+        }
+
+        $file = $this->getValue('file');
+        $filename = sha1($file->getOriginalName()).$file->getExtension($file->getOriginalExtension());
+        $file->save(sfConfig::get('sf_upload_dir').'/'.$filename);
+
+        return parent::doSave($con);
+      }
+    }
+
+The `doSave()` method being called in the transaction created by the `save()` method, if the call to the `save()` method of the `file()` object throws an exception, the object will not be saved.
+
+### Customizing the `updateObject()` Method
+
+It is sometimes necessary to modify the object connected to the form between the update and the saving in database. 
+
+In our file upload example, instead of storing the absolute path to the uploaded file in the `file` column, we wish to store the path relative to the `sfConfig::get('sf_upload_dir')` directory.
+
+Listing 4-29 shows how to override the `updateObject()` method of the `ArticleForm` form in order to change the value of the `file` column after the automatic update object but before it is saved.
+
+4-29 melléklet - Overriding the `updateObject()` Method and the `ArticleForm` Class
+
+    [php]
+    class ArticleForm extends BaseFormPropel
+    {
+      // ...
+
+      public function updateObject()
+      {
+        $object = parent::updateObject();
+
+        $object->setFile(str_replace(sfConfig::get('sf_upload_dir').'/', '', $object->getFile()));
+
+        return $object;
+      }
+    }
+
+The `updateObject()` method is called by the `doSave()` method before saving the object in database.
