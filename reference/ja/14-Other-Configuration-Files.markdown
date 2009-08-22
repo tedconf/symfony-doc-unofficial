@@ -2,14 +2,14 @@
 ===================
 
 この章ではその他のsymfonyの設定ファイルを説明します。
-これらは変更する必要はほとんどありません。
+これらを変更する必要性はほとんどありません。
 
 `autoload.yml`
 --------------
 
-`autoload.yml`設定はsymfonyによってオートロードする必要のあるディレクトリを決定します。
+`autoload.yml`設定はsymfonyによってオートロードされる必要のあるディレクトリを決定します。
 それぞれのディレクトリはPHPクラスとインターフェイスを見つけるために
-スキャンされます。
+走査されます。
 
 最初の章で説明したように、`autoload.yml`ファイルは
 [**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を受け、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
@@ -19,7 +19,7 @@
 >処理は`sfAutoloadConfigHandler`
 >[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
-大抵のプロジェクトではデフォルト構成で十分です:
+たいていのプロジェクトではデフォルト構成で十分です:
 
     [yml]
     autoload:
@@ -54,7 +54,7 @@
 >ご覧の通り、デフォルトでは`lib/vendor/symfony/`ディレクトリは除外されます。
 >symfonyはコアクラスには異なるオートロードのメカニズムを利用するからです。
 
-オートロードの振る舞いをカスタマイズするためにいくつかのキーを使うことができます:
+オートロードのふるまいをカスタマイズするためにいくつかのキーを使うことができます:
 
  * `name`: 説明
  * `path`: オートロードするパス
@@ -65,7 +65,7 @@
  * `ext`: PHPクラスの拡張子(デフォルトは`.php`)
 
 例えば、`lib/`ディレクトリの元でプロジェクト内部で大きなライブラリを埋め込み、
-オートロード機能が既にサポートされている場合、パフォーマンスの押し上げの恩恵を受けるために
+オートロード機能がすでにサポートされている場合、パフォーマンスの押し上げの恩恵を受けるために
 `project`のオートロード設定を修正することでsymfonyのデフォルトのオートロードシステムから
 そのライブラリを除外できます:
 
@@ -129,7 +129,7 @@
     - %SF_SYMFONY_LIB_DIR%/action/sfAction.class.php
     - %SF_SYMFONY_LIB_DIR%/action/sfActions.class.php
 
-最初の章で説明したように、`core_compile.yml`ファイルは
+はじめの章で説明したように、`core_compile.yml`ファイルは
 [**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、
 [**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
 

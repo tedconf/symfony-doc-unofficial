@@ -9,7 +9,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 
 >**CAUTION**
 >アクションから呼び出されるテンプレートもしくはメソッドで直接使われるヘルパーのために
->大抵の場合この設定ファイルは非推奨です。
+>たいていの場合この設定ファイルは非推奨です。
 
 `view.yml`設定ファイルはビュー設定のリストを格納できます:
 
@@ -75,7 +75,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
     [yml]
     stylesheets: [main, foo.css, bar.css, print.css: { media: print }]
 
-`use_stylesheet()`ヘルパーのためにこの設定は*非推奨*です:
+`use_stylesheet()`ヘルパーに対してこの設定は*非推奨*です:
 
     [php]
     <?php use_stylesheet('main.css') ?>
@@ -119,7 +119,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
     <?php use_javascript('foo.js') ?>
 
 >**NOTE**
->`foo.js`のように、相対パスを使うとき、symfonyはこれらの前に
+>`foo.js`のように相対パスを使うとき、symfonyはこれらの前に
 >`/js/`をつけます。
 
 `metas`と`http_metas`

@@ -8,10 +8,10 @@ filters.yml設定ファイル
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 最初の章で説明したように、`filters.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を浮け、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含めることができます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を受け、
+[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
 
-`filters.yml`設定ファイルは名前付きフィルタ定義のリストを
+`filters.yml`設定ファイルは名前つきフィルタ定義のリストを
 格納できます:
 
     [yml]
@@ -37,7 +37,7 @@ filters.yml設定ファイル
 symfonyは複数のフィルタを1つのチェーンとして実行するので、
 最初に登録されたフィルタは最初と最後に実行されます。
 
-`class`の名前は`sfFilter`基底クラスを継承します。
+`class`クラスは`sfFilter`基底クラスを継承します。
 
 フィルタクラスがオートロードできない場合、`file`パスを定義することが可能で
 フィルタオブジェクトが作成される前に自動的にインクルードされます:
@@ -47,7 +47,7 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
       class: CLASS_NAME
       file:  ABSOLUTE_PATH_TO_FILE
 
-`filters.yml`ファイルをオーバーライドするとき、継承される設定ファイルから
+`filters.yml`ファイルをオーバーライドするとき、継承する設定ファイルから
 すべてのフィルタを維持しなければなりません:
 
     [yml]
@@ -65,7 +65,7 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
       enabled: false
 
 2つの特別な名前のフィルタ: `rendering`と`execution`があります。
-これらは両方必須で`type`パラメータで識別されます。
+これらは両方とも必須で`type`パラメータで識別されます。
 `rendering`フィルタは常に最初に登録されフィルタリングされ
 `execution`フィルタは最後のものになります:
 
@@ -111,7 +111,7 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
 
 `rendering`フィルタはブラウザへのレスポンスの出力に責務を担います。
 これは最初に登録されるフィルタになるので、
-リクエストを管理するために最後の機会を持つ最後のフィルタにもなります。
+リクエストを管理する機会を持つ最後のフィルタにもなります。
 
 `security`
 ----------
@@ -125,11 +125,11 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
          type: security
 
 `security`フィルタはアクションの`getCredential()`メソッドを呼び出すことで
-セキュリティをチェックします。一旦クレデンシャルが得られたら、 
+セキュリティをチェックします。いったんクレデンシャルが得られたら、 
 ユーザーオブジェクトの`hasCredential()`メソッドを呼び出すことで
 ユーザーが同じクレデンシャルを持つことを確認します。
 
-`security`フィルタは`security`の型を持たなければなりません。
+`security`フィルタは`security`型を持たなければなりません。
 
 `security`フィルタのきめ細かい設定は
 `security.yml`設定[ファイル](#chapter_08-Security)を通して行われます。
@@ -152,7 +152,7 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
 `cache`フィルタはアクションとページを管理します。
 これは必要とされるHTTPキャッシュヘッダーを
 レスポンスに追加するための責務も担います
-(`Last-Modified`、`ETag`、`Cache-Control`、`Expires`、...)。
+(`Last-Modified`、`ETag`、`Cache-Control`、`Expires`、・・・)。
 
 `common`
 --------
@@ -163,7 +163,7 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
     common:
       class: sfCommonFilter
 
-`common`フィルタはJavaScriptとスタイルシートが既にインクルードされていない場合
+`common`フィルタはJavaScriptとスタイルシートがすでにインクルードされていない場合
 メインのレスポンスにこれらを追加します。
 
 >**TIP**
@@ -182,7 +182,7 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
       param:
         type: execution
 
-`execution`フィルタはフィルタチェーンの中心で
+`execution`フィルタはフィルタチェーンの真ん中にあり、
 すべてのアクションとビューの実行を行います。
 
 `execution`フィルタは最後に登録されたフィルタになります。

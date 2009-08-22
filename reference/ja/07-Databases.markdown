@@ -2,34 +2,34 @@ databases.yml設定ファイル
 ========================
 
 `databases.yml`はデータベース接続の設定を可能にします。
-これはsymfonyに搭載される両方のORM: PropelとDoctrineで
+これはsymfonyに搭載されているORMであるPropelとDoctrineの両方で
 使われます。
 
 プロジェクトのメインの`databases.yml`設定ファイルは
 `config/`ディレクトリで見つかります。
 
 >**NOTE**
->大抵の場合、プロジェクトのすべてのアプリケーションは同じデータベースを
+>たいていの場合、プロジェクトのすべてのアプリケーションは同じデータベースを
 >を共有します。これがメインのデータベース設定ファイルが
 >プロジェクトの`config/`ディレクトリにある理由です。もちろん
 >アプリケーションの設定ディレクトリで`databases.yml`設定ファイルを定義することで
 >デフォルトの設定をオーバーライドできます。
 
-最初の章で説明したように、`databases.yml`ファイルは
+はじめの章で説明したように、`databases.yml`ファイルは
 [**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
 [**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、
 [**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納します。
 
 `databases.yml`で説明したそれぞれの接続はデータベースオブジェクトを設定するために
 使用する、名前、データベースハンドラクラスの名前、
-パラメータ(`param`)の設定を含まなければなりません:
+パラメータ(`param`)の設定を格納しなければなりません:
 
     [yml]
     CONNECTION_NAME:
       class: CLASS_NAME
       param: { ARRAY OF PARAMETERS }
 
-`class`の名前は`sfDatabase`基底クラスを継承します。
+`class`クラスは`sfDatabase`基底クラスを継承します。
 
 データベースハンドラクラスをオートロードできない場合、`file`パスを定義しファクトリが
 作成される前に自動的に含めることができます:

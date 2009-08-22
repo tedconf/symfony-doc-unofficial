@@ -8,7 +8,7 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 アプリケーション用のメインの`settings.yml`設定ファイルは
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
-はじめの章で検討されたように、`settings.yml`ファイルは
+はじめの章で検討したように、`settings.yml`ファイルは
 [**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
 [**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を受けます。
 
@@ -64,7 +64,7 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 `.actions`サブセクション
 -----------------------
 
-*デフォルトの構成*:
+*デフォルト構成*:
 
     [yml]
     default:
@@ -81,13 +81,13 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
         module_disabled_module: default
         module_disabled_action: disabled
 
-`.actions`サブセクションは共通のページがレンダリングされなければならないとき
-に実行するアクションを定義します。それぞれの定義は2つのコンポーネントを持ちます: 1つはモジュール用
+`.actions`サブセクションは共通のページがレンダリングされるとき
+に実行するアクションを定義します。それぞれの定義は2つのコンポーネントを格納します: 1つはモジュール用
 (接尾辞は`_module`)、もう1つはアクション用です(接尾辞は`_action`)。
 
 ### `error_404`
 
-`error_404`アクションは404ページがレンダリングされなければならないときに実行されます。
+`error_404`アクションは404ページがレンダリングされるときに実行されます。
 
 ### `login`
 
@@ -101,17 +101,17 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 
 ### `module_disabled`
 
-`module_disabled`アクションはユーザーが無効なモジュールをリクエストされるときに
+`module_disabled`アクションはユーザーが無効なモジュールをリクエストするときに
 実行されます。
 
 `.settings`サブセクション
 -------------------------
 
 `.settings`サブセクションはフレームワークの設定が行われる所です。
-下記のパラグラフはすべてのありえる設定を説明し、
+下記のパラグラフはすべてのありうる設定を説明し、
 重要度順におおまかに並べています。
 
-`.settings`セクションで定義されたすべての設定は`sfConfig`オブジェクトを使用し
+`.settings`セクションで定義されるすべての設定は`sfConfig`オブジェクトを使用し
 `sf_`の接頭辞をつけることで.任意の場所で利用可能です。
 例えば、`charset`設定の値を取得するには、次を使います:
 
@@ -122,12 +122,12 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 
 *デフォルト*: `off`
 
-`escaping_strategy`設定は出力エスケーパーサブフレームワークが有効であるかどうかを決定する論理値の設定です。
+`escaping_strategy`設定は出力エスケーパーサブフレームワークが有効であるかどうかを決定するブール値の設定です。
 有効なとき、テンプレートの中で利用可能なすべての変数は 
 `escaping_method`設定で定義されたヘルパー関数を呼び出すことで
 自動的にエスケープされます(下記を参照)。
 
-`escaping_method`はsymfonyによって使われるデフォルトのヘルパーであることに注意してください。
+`escaping_method`設定はsymfonyによって使われるデフォルトのヘルパーであることに注意してください。
 しかしこれは例えばJavaScriptスクリプトのタグで変数を出力するときなど、
 ケースバイケースでこれをオーバーライドできます。
 
@@ -136,21 +136,21 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 デフォルトの値を`on`に変更することを大いにお勧めします。
 
 >**TIP**
->`--escaping-strategy`オプションを使用することで`generate:app`タスクで
+>`--escaping-strategy`オプションを指定することで`generate:app`タスクで
 >アプリケーションを作成するときにこの設定をセットできます。
 
 ### `escaping_method`
 
 *デフォルト*: `ESC_SPECIALCHARS`
 
-`escaping_method`はテンプレートでエスケープするために
+`escaping_method`設定はテンプレートでエスケープするために
 使うデフォルト関数を定義します(上記の`escaping_strategy`設定を参照)。
 
 組み込み関数の1つ: `ESC_SPECIALCHARS`、`ESC_RAW`、
 `ESC_ENTITIES`、`ESC_JS`、`ESC_JS_NO_ENTITIES`、と
 `ESC_SPECIALCHARS`を選ぶ、もしくは独自関数を作ることができます。
 
-大抵の場合、デフォルトの値で十分です。
+たいていの場合、デフォルトの値で十分です。
 英語もしくはヨーロッパの言語のみ扱う場合のみ
 `ESC_ENTITIES`ヘルパーも使うことができます。
 
@@ -158,17 +158,17 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 
 *デフォルト*: `false`
 
-`csrf_secret`はアプリケーション用のunique secretです。
-`false`に設定されていない場合、これはフォームフレームワークで定義された
+`csrf_secret`設定はアプリケーション用の一意的な秘密の文字列(unique secret)です。
+`false`にセットされていない場合、これはフォームフレームワークで定義された
 すべてのフォーム用のCSRF保護を有効にします。
 リンクをフォームに変換することが必要なとき(例えばHTTP `DELETE`メソッドをシミュレートする)
 この設定は`link_to()`ヘルパーにも使われます。
 
-デフォルトの値をunique secretに変更することを多いにお勧めします。
+デフォルトの値をunique secretに変更することを大いにお勧めします。
 
 >**TIP**
 >`--csrf-secret`オプションを使用して`generate:app`で
->アプリケーションを作成した際にこの設定は自動的にセットされます
+>アプリケーションを作成する際にこの設定は自動的にセットされます
 
 ### `charset`
 
@@ -177,14 +177,14 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
 `charset`設定はフレームワークのすべての場所: レスポンスの`Content-Type`ヘッダー
 から出力エスケーピング機能まで使われる文字集合です。
 
-大抵の場合、デフォルトで十分です。
+たいていの場合、デフォルトで十分です。
 
 ### `enabled_modules`
 
 *デフォルト*: `[default]`
 
-`enabled_modules`はこのアプリケーションのために有効なモジュール名の配列です。
-デフォルトでは、プラグインもしくはsymfonyコアで定義されたモジュールは有効ではなく、
+`enabled_modules`設定はこのアプリケーションのために有効なモジュール名の配列です。
+デフォルトでは、プラグインもしくはsymfonyコアで定義されるモジュールは有効ではなく、
 受け入れできるようにこの設定のリストに含めなければなりません。
 
 モジュールの追加方法はシンプルで名前をリストに追加するだけです(
@@ -193,8 +193,8 @@ symfonyの多くの面はYAMLもしくはプレーンなPHPで書かれた設定
     [yml]
     enabled_modules: [default, sfGuardAuth]
 
-フレームワークで定義された`default`モジュールはサブセクションの`settings.yml`の`.actions`で
-セットされたすべてのデフォルトのアクションを格納します。これらすべてをカスタマイズし、
+フレームワークで定義される`default`モジュールはサブセクションの`settings.yml`の`.actions`で
+セットされるすべてのデフォルトのアクションを格納します。これらすべてをカスタマイズし、
 この設定から`default`モジュールを
 削除することをお勧めします。
 
@@ -209,9 +209,9 @@ PHPで認識される任意の[タイムゾーン](http://www.php.net/manual/cla
 >**NOTE**
 >タイムゾーンが定義されていない場合、
 >`php.ini`ファイルで定義することをお勧めします。
->そうでなければ、
+>そうでなければ、symfonyは
 >PHPの[`date_default_timezone_get()`](http://www.php.net/date_default_timezone_get)関数を呼び出すことで
->symfonyはベストのタイムゾーンを推測しようとします。
+>ベストのタイムゾーンを推測しようとします。
 
 ### `cache`
 
@@ -224,21 +224,21 @@ PHPで認識される任意の[タイムゾーン](http://www.php.net/manual/cla
 >[`view_cache_manager`](#chapter_05_view_cache_manager)と
 >[`view_cache`](#chapter_05-Factories_sub_view_cache)セクションで行われます。
 >きめ細かい設定は
->[`cache.yml`](#chapter_09-Cache)設定ファイルで行われます。
+>[`cache.yml`](#chapter_09-Cache)設定ファイルで行います。
 
 ### `etag`
 
 *デフォルト*: `dev`と`test`環境を除いて、デフォルトでは`on`
 
 `etag`設定はHTTPの`ETag`ヘッダーの自動生成を有効もしくは無効にします。
-symfonyによって生成されたETagはレスポンスのコンテンツの
+symfonyによって生成されるETagはレスポンスのコンテンツの
 単純なmd5です。
 
 ### `i18n`
 
 *デフォルト*: `off`
 
-`i18n`設定は国際化サブフレームワークを有効もしくは無効にする論理値です。
+`i18n`設定は国際化サブフレームワークを有効もしくは無効にするブール値です。
 アプリケーションが国際化されている場合、`on`にセットします。
 
 >**TIP**
@@ -257,13 +257,13 @@ symfonyによって生成されたETagはレスポンスのコンテンツの
 
 *デフォルト*: `[Partial, Cache, Form]`
 
-`standard_helpers`設定はすべてのテンプレート用にロードするヘルパーグループの配列です
-(`Helper`の接尾辞を持たないgroupヘルパーの名前)。
+`standard_helpers`設定はすべてのテンプレート用にロードされるヘルパーグループの配列です
+(接尾辞の`Helper`を持たないgroupヘルパーの名前)。
 
 ### `no_script_name`
 
-*デフォルト*: `on`は最初に作成されたアプリケーションの`prod`環境用に、
-`off` for all others
+*デフォルト*: `on`は最初に作成されるアプリケーションの`prod`環境用に、
+その他すべてでは`off`
 
 `no_script_name`設定はフロントコントローラスクリプトの名前が
 生成URLに追加されるかどうかを決定します。デフォルトでは、
@@ -286,7 +286,7 @@ symfonyによって生成されたETagはレスポンスのコンテンツの
 
 以前の1.2リリースとの後方互換性を壊さずにパフォーマンスを改善するために、
 この設定はsymfony 1.2.7で導入されました。
-symfony 1.3では最適化は常に有効になるのでこの設定は削除されます。
+symfony 1.3では最適化は常に有効なのでこの設定は削除されます。
 
 >**CAUTION**
 >この設定はsymfony 1.2.7とそれ以降でのみ利用可能です。
@@ -301,7 +301,7 @@ symfony 1.3では最適化は常に有効になるのでこの設定は削除さ
 
 >**TIP**
 >ロギングのきめ細かい設定は
->`factories.yml`設定ファイルで行われます。
+>`factories.yml`設定ファイルで行います。
 
 ### `web_debug`
 
@@ -323,8 +323,8 @@ Content-TypeがHTMLであるときにWebデバッグツールバーはページ�
 PHPのエラーレポートのレベルをコントロールします。
 
 >**TIP**
->PHPの公式サイトには
->[ビット演算子](http://www.php.net/language.operators.bitwise)の使い方に関する情報があります。
+>[ビット演算子](http://www.php.net/language.operators.bitwise)の使い方に関する情報は
+>PHPの公式サイトにあります。
 
 デフォルトの設定は最も利にかなったものであり、変えるべきではありません。
 
@@ -337,8 +337,8 @@ PHPのエラーレポートのレベルをコントロールします。
 
 *デフォルト*: `off`
 
-`compressed`設定はPHPのネイティブなレスポンス圧縮を有効にします。
-`on`に設定されている場合、symfonyは`ob_start()`用のコールバック関数として
+`compressed`設定はPHPネイティブなレスポンス圧縮を有効にします。
+`on`にセットされている場合、symfonyは`ob_start()`用のコールバック関数として
 [`ob_gzhandler`](http://www.php.net/ob_gzhandler)を使います。
 
 これは`off`の状態にしておいて、
@@ -389,7 +389,7 @@ symfonyコアの`lib/exception/data/unavailable.php`ページに自動的にリ�
 
 *デフォルト*: `on`
 
-`strip_comments`はコアクラスをコンパイルする際にsymfonyがコメントをはぎとるべきか決定します。
+`strip_comments`はコアクラスをコンパイルする際にsymfonyがコメントをはぎとるか決定します。
 アプリケーションの`debug`設定が`off`にセットされている場合のみこの設定が使われます。
 
 本番環境でのみ空白のページを用意する場合、 
