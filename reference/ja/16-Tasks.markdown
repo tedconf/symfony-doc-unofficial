@@ -2,11 +2,11 @@
 ======
 
 symfonyフレームワークはコマンドラインインターフェイスツールを搭載しています。
-組み込みのタスクによって開発はプロジェクトの期間に好みがわかれ繰り返される
-たくさんのタスクを実行できます。
+組み込みのタスクによって開発者はプロジェクトの間に繰り返される
+たくさんのタスクを実行できるようになります。
 
 引数無しで`symfony` CLIを実行すると、
-利用可能なタスクのリストが表示されます:
+利用可能なタスクの一覧が表示されます:
 
     $ php symfony
 
@@ -15,7 +15,7 @@ CLIで使われるsymfonyライブラリのパスの情報が得られます:
 
     $ php symfony -V
 
-CLIツールはタスクの名前を最初の引数として受け取ります:
+CLIツールは最初の引数としてタスクの名前を受け取ります:
 
     $ php symfony list
 
@@ -28,7 +28,7 @@ CLIツールはタスクの名前を最初の引数として受け取ります:
 
     $ php symfony cache:clear --type=template
 
-CLIツールは値有り、無しでオプションの長い表記と短い表記の両方をサポートします。
+CLIツールは値の有無とオプションの長短の表記をそれぞれサポートします。
 
 デバッグ情報を出力するようにタスクに指示する`-t`オプションはグローバルオプションです。
 
@@ -327,7 +327,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 | `--skip-forms`<br />`(-F)` | `-`        | フォーム生成をスキップする
 
 
-`doctrine:build-all`タスクは他の3つのタスクのショートカットです:
+`doctrine:build-all`タスクは他の6つのタスクのショートカットです:
 
     ./symfony doctrine:build-all
 
@@ -343,7 +343,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 詳細な情報はこれらのタスクのヘルプページを参照してください。
 
 確認を回避するには、`no-confirmation`
-オプションを渡すことができます:
+オプションを渡します:
 
     ./symfony doctrine:buil-all-load --no-confirmation
 
@@ -364,7 +364,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 | `--connection`             | `doctrine` | 接続名
 | `--no-confirmation`        | `-`        | 確認の質問をしない
 | `--skip-forms`<br />`(-F)` | `-`        | フォーム生成をスキップする
-| `--dir`                    | `-`        | フィクスチャを探すディレクトリ(複数の値が許容される)
+| `--dir`                    | `-`        | フィクスチャを探すディレクトリ(複数の値が許可される)
 
 
 `doctrine:build-all-load`タスクは他のタスク用のショートカットです:
@@ -385,7 +385,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 詳細な情報は`doctrine:data-load`のヘルプページを参照してください。
 
 確認を回避するには、`no-confirmation`オプションを
-渡すことができます:
+渡します　:
 
     ./symfony doctrine:build-all-load --no-confirmation
 
@@ -409,7 +409,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 | `--dir`                    | `-`        | フィクスチャを探すディレクトリ(複数の値が許可される)
 
 
-`doctrine:build-all-reload`タスクは5つのタスクのショートカットです:
+`doctrine:build-all-reload`タスクは8つのタスクのショートカットです:
 
     ./symfony doctrine:build-all-reload
 
@@ -460,7 +460,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
     ./symfony test-all
 
 `doctrine:data-load`タスクなのでアプリケーションの引数を受け取ります。
-詳細な情報は`doctrine:data-load`ヘルプページを参照してください。
+詳細な情報は`doctrine:data-load`のヘルプページを参照してください。
 
 ### `doctrine::build-db`
 
@@ -511,7 +511,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 `config/*schema.yml`のスキーマ情報を読み込みます。
 
 タスクは`config/databases.yml`で定義された`doctrine`接続を使います。
-`--connection`オプションを使うことで別の接続を使うことができます:
+`--connection`オプションを指定することで別の接続を使うことができます:
 
     ./symfony doctrine:build-filters --connection="name"
 
@@ -547,7 +547,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 `config/*schema.yml`のスキーマ情報を読み取ります。
 
 タスクは`config/databases.yml`で定義された`doctrine`接続を使います。
-`--connection`オプションを使うことで別の接続を使うことができます:
+`--connection`オプションを指定することで別の接続を使うことができます:
 
     ./symfony doctrine:build-forms --connection="name"
 
@@ -655,7 +655,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
 タスクは`data/fixtures/%target%`にデータベースのデータをダンプします。
 
-ダンプファイルはYMLフォーマットで
+ダンプファイルはYAMLフォーマットで
 `doctrine:data-load`タスクを使用して再インポートできます。
 
     ./symfony doctrine:data-load frontend
@@ -892,16 +892,16 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 モデルクラスの`%model%`用の`%application%`アプリケーションで
 `%module%`モジュールを作成します。
 
-`--generate-in-cache`オプションを使うことで`%sf_app_cache_dir%/modules/auto%module%`で
+`--generate-in-cache`オプションを指定することで`%sf_app_cache_dir%/modules/auto%module%`で
 実行時に生成されたモジュールからアクションとテンプレートを継承する空のモジュールを作成することもできます:
 
     ./symfony doctrine:generate-module --generate-in-cache frontend article Article
 
-ジェネレータは`--theme`オプションを使うことでカスタマイズされたテーマを使うことができます:
+`--theme`オプションを指定することでジェネレータはカスタマイズされたテーマを使うことができます:
 
     ./symfony doctrine:generate-module --theme="custom" frontend article Article
 
-この方法では、独自の慣習で独自のモジュールジェネレータを作成できます。
+この方法では、独自仕様に合わせてモジュールジェネレータを作成できます。
 
 ### `doctrine::generate-module-for-route`
 
@@ -1038,10 +1038,10 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 最初のアプリケーションに関しては、本番環境のスクリプトの名前は
 `index.php`です。
 
-同じ名前のアプリケーションが既に存在する場合、
+同じ名前のアプリケーションがすでに存在する場合、
 これは`sfCommandException`を投げます。
 
-(XSSを防止するために)`escaping-strategy`オプションを使うことで出力エスケーピングを有効にできます:
+(XSSを防止するために)`escaping-strategy`オプションを指定することで出力エスケーピングを有効にできます:
 
     ./symfony generate:app frontend --escaping-strategy=on
 
@@ -1085,7 +1085,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 `%sf_test_dir%/functional/%application%/%module%ActionsTest.class.php`
 という名前の機能テストのスタブも作成します。これはデフォルトではパスしません。
 
-アプリケーションに同じ名前のモジュールが既にある場合、
+アプリケーションに同じ名前のモジュールがすでにある場合、
 `sfCommandException`を投げます。
 
 ### `generate::project`
@@ -1108,7 +1108,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony generate:project blog
 
-現在のディレクトリが既にsymfonyのプロジェクトを含む場合、
+現在のディレクトリがすでにsymfonyのプロジェクトを含む場合、
 これは`sfCommandException`を投げます。
 
 ### `generate::task`
@@ -1294,7 +1294,7 @@ i18nメッセージカタログでこれらを保存するには、`--auto-save`
 
 ### `plugin::add-channel`
 
-`plugin::add-channel`タスクは新しいPEARチャネルを追加します:
+`plugin::add-channel`タスクは新しいPEARチャンネルを追加します:
 
     $ php symfony plugin:add-channel  name
 
@@ -1302,12 +1302,12 @@ i18nメッセージカタログでこれらを保存するには、`--auto-save`
 
 | 引数     | デフォルト | 説明
 | -------- | --------- | -----------
-| `name`   | `-`       | チャネル名
+| `name`   | `-`       | チャンネル名
 
 
 
 
-`plugin:add-channel`タスクは新しいPEARチャネルを追加します:
+`plugin:add-channel`タスクは新しいPEARチャンネルを追加します:
 
     ./symfony plugin:add-channel symfony.plugins.pear.example.com
 
@@ -1328,7 +1328,7 @@ i18nメッセージカタログでこれらを保存するには、`--auto-save`
 | ---------------------------- | ---------- | -----------
 | `--stability`<br />`(-s)`    | `-`        | 安定性(stable、beta、alpha)
 | `--release`<br />`(-r)`      | `-`        | 優先バージョン
-| `--channel`<br />`(-c)`      | `-`        | PEARチャネルの名前
+| `--channel`<br />`(-c)`      | `-`        | PEARチャンネルの名前
 | `--install_deps`<br />`(-d)` | `-`        | 必須の依存パッケージのインストールを強制するか
 | `--force-license`            | `-`        | MITのようなライセンスではない場合にインストールを強制するか
 
@@ -1355,10 +1355,10 @@ i18nメッセージカタログでこれらを保存するには、`--auto-save`
     ./symfony plugin:install --install-deps sfGuardPlugin
     ./symfony plugin:install -d sfGuardPlugin
 
-デフォルトでは、使用されるPEARチャネルは`symfony-plugins`
+デフォルトでは、使用されるPEARチャンネルは`symfony-plugins`
 (plugins.symfony-project.org)です。
 
-`channel`オプションで別のチャネルを指定できます:
+`channel`オプションで別のチャンネルを指定できます:
 
     ./symfony plugin:install --channel=mypearchannel sfGuardPlugin
     ./symfony plugin:install -c mypearchannel sfGuardPlugin
@@ -1391,7 +1391,7 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 
     ./symfony plugin:list
 
-これはそれぞれのプラグインのチャネルとバージョンも表示します。
+これはそれぞれのプラグインのチャンネルとバージョンも表示します。
 
 ### `plugin::publish-assets`
 
@@ -1431,7 +1431,7 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 
 | オプション(ショートカット)    | デフォルト | 説明
 | ---------------------------- | ---------- | -----------
-| `--channel`<br />`(-c)`      | `-`        | PEARチャネル名
+| `--channel`<br />`(-c)`      | `-`        | PEARチャンネル名
 | `--install_deps`<br />`(-d)` | `-`        | 依存パッケージをインストールするかどうか
 
 
@@ -1439,9 +1439,9 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 
     ./symfony plugin:uninstall sfGuardPlugin
 
-デフォルトのチャネルは`symfony`です。
+デフォルトのチャンネルは`symfony`です。
 
-異なるチャネルを持つプラグインをアンインストールすることもできます:
+異なるチャンネルを持つプラグインをアンインストールすることもできます:
 
     ./symfony plugin:uninstall --channel=mypearchannel sfGuardPlugin
 
@@ -1452,7 +1452,7 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
     ./symfony plugin:uninstall mypearchannel/sfGuardPlugin
 
 `plugin:list`タスクを立ち上げて
-プラグインのPEARチャネルを取得できます。
+プラグインのPEARチャンネルを取得できます。
 
 プラグインがWebコンテンツを格納する場合(画像、スタイルシートもしくはJavaScript)、
 タスクは`web/%name%`シンボリックリンク(Unix系)
@@ -1475,14 +1475,14 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 | ------------------------- | --------- | -----------
 | `--stability`<br />`(-s)` | `-`       | 安定性(stable、beta、alpha)
 | `--release`<br />`(-r)`   | `-`       | 優先バージョン
-| `--channel`<br />`(-c)`   | `-`       | PEARチャネルの名前
+| `--channel`<br />`(-c)`   | `-`       | PEARチャンネルの名前
 
 
 `plugin:upgrade`タスクはプラグインをアップグレードしようとします:
 
     ./symfony plugin:upgrade sfGuardPlugin
 
-デフォルトのチャネルは`symfony`です。
+デフォルトのチャンネルは`symfony`です。
 
 プラグインがWebコンテンツを格納する場合(画像、スタイルシートもしくはJavaScript)、
 Windowsではタスクは`web/%name%`ディレクトリのコンテンツもアップグレードします。
@@ -1651,7 +1651,7 @@ rsync実行ファイルに渡されるオプションを指定することがで
 
     ./symfony project:freeze /path/to/symfony/data/directory
 
-タスクはsymfonyのデータディレクトリへのパスの必須の引数
+タスクは必須の引数としてsymfonyのデータディレクトリへのパス
 を受け取ります。
 
 タスクはsymfonyの埋め込みファイルに切り替えるために
@@ -1768,7 +1768,7 @@ symfony 1.1のリリースにアップグレードします。
 
 詳細な情報はこれらのタスクのヘルプページを参照してください。
 
-確認のプロンプトを回避するには、`no-confirmation`オプションを渡すことができます:
+確認のプロンプトを回避するには、`no-confirmation`オプションを渡します:
 
     ./symfony propel:buil-all --no-confirmation
 
@@ -1813,7 +1813,7 @@ symfony 1.1のリリースにアップグレードします。
 詳細な情報はこれらのタスクのヘルプページを参照してください。
 
 確認を回避するには、`no-confirmation`オプション
-を渡すことができます:
+を渡します:
 
     ./symfony propel:buil-all-load --no-confirmation
 
@@ -1843,14 +1843,14 @@ symfony 1.1のリリースにアップグレードします。
 `config/*schema.yml`のスキーマ情報を読み込みます。
 
 タスクは`config/databases.yml`で定義された`propel`接続を使います。
-`--connection`オプションを使うことで別の接続が使えます:
+`--connection`オプションを指定することで別の接続が使えます:
 
     ./symfony propel:build-filters --connection="name"
 
 モデルのフィルタフォームクラスは`lib/filter`に作成されます。
 
-このタスクは`lib/filter`のカスタムクラスをけっしてオーバーライドしません。
-It only replaces base classes generated in `lib/filter/base`.
+このタスクは`lib/filter`のカスタムクラスをけっして上書きしません。
+これは`lib/filter/base`で生成された既定クラスを置き換えます。
 
 ### `propel::build-forms`
 
@@ -1878,13 +1878,13 @@ It only replaces base classes generated in `lib/filter/base`.
 `config/*schema.yml`のスキーマ情報を読み取ります。
 
 タスクは`config/databases.yml`で定義された`propel`接続を使います。
-`--connection`オプションを使うことで別の接続を使うことができます:
+`--connection`オプションを指定することで別の接続を使うことができます:
 
     ./symfony propel:build-forms --connection="name"
 
 モデルのフォームクラスは`lib/form`に作成されます。
 
-このタスクは`lib/form`のカスタムクラスをけっしてオーバーライドしません。
+このタスクは`lib/form`のカスタムクラスをけっして上書きしません。
 これは`lib/form/base`に生成された基底クラスのみを置き換えます。
 
 ### `propel::build-model`
@@ -1909,7 +1909,7 @@ It only replaces base classes generated in `lib/filter/base`.
 タスクはプロジェクトとインストールされたすべてのプラグインから`config/*schema.xml`かつ/もしくは
 `config/*schema.yml`のスキーマ情報を読み込みます。
 
-YMLとXMLスキーマファイルを混ぜることができます。
+YAMLとXMLスキーマファイルを混ぜることができます。
 タスクはPropelタスクを呼び出す前にYAMLをXMLに変換します。
 
 モデルクラスのファイルは`lib/model`に作成されます。
@@ -1940,11 +1940,11 @@ YMLとXMLスキーマファイルを混ぜることができます。
 
     ./symfony propel:build-schema
 
-デフォルトでは、タスクはYMLファイルを作成しますが、XMLファイルを作成することもできます:
+デフォルトでは、タスクはYAMLファイルを作成しますが、XMLファイルを作成することもできます:
 
     ./symfony --xml propel:build-schema
 
-XMLフォーマットはYMLよりも多くの情報を格納できます。
+XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
 ### `propel::build-sql`
 
@@ -1995,18 +1995,18 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
     ./symfony propel:data-dump > data/fixtures/dump.yml
 
 デフォルトでは、タスクはデータを標準出力しますが、
-ファイルの名前を2番目の引数として渡すこともできます:
+2番目の引数としてファイルの名前を渡すこともできます:
 
     ./symfony propel:data-dump dump.yml
 
 タスクはデータを`data/fixtures/%target%`にダンプします
 (この例ではdata/fixtures/dump.yml)。
 
-ダンプファイルはYMLフォーマットで
+ダンプファイルはYAMLフォーマットで
 `propel:data-load`タスクを使うことで再インポートできます。
 
 デフォルトでは、`config/databases.yml`で定義された`propel`接続を使います。
-`connection`オプションを使うことで別の接続を使うことができます:
+`connection`オプションを指定することで別の接続を使うことができます:
 
     ./symfony propel:data-dump --connection="name"
 
@@ -2015,7 +2015,7 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
     ./symfony propel:data-dump --classes="Article,Category"
 
 アプリケーションから特定のデータベース接続を使いたい場合、
-`application`オプションを使います:
+`application`オプションを指定します:
 
     ./symfony propel:data-dump --application=frontend
 
@@ -2045,12 +2045,12 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
 タスクは`data/fixtures/`で見つかるすべてのファイルからデータをロードします。
 
 他のディレクトリからデータをロードしたい場合、
-`--dir`オプションを使うことができます:
+`--dir`オプションを使います:
 
     ./symfony propel:data-load --dir="data/fixtures" --dir="data/data"
 
 タスクは`config/databases.yml`で定義された`propel`接続を使います。
-`--connection`オプションを使うことで別の接続を使うことができます:
+`--connection`オプションを指定することで別の接続を使うことができます:
 
     ./symfony propel:data-load --connection="name"
 
@@ -2060,7 +2060,7 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
     ./symfony propel:data-load --append
 
 アプリケーションからデータベース接続を使いたい場合、 
-`application`オプションを使うことができます:
+`application`オプションを使います:
 
     ./symfony propel:data-load --application=frontend
 
@@ -2148,16 +2148,16 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
 タスクは`%model%`モデルクラス用の`%application%`アプリケーションで
 `%module%`モジュールを作成します。
 
-`--generate-in-cache`オプションを使うことで`%sf_app_cache_dir%/modules/auto%module%`の実行時に
+`--generate-in-cache`オプションを指定することで`%sf_app_cache_dir%/modules/auto%module%`の実行時に
 生成されるモジュールからアクションとテンプレートを継承する空のモジュールを作成することもできます:
 
     ./symfony propel:generate-module --generate-in-cache frontend article Article
 
-`--theme`オプションを使うことでジェネレータはカスタマイズされたテーマを使うことができます:
+`--theme`オプションを指定することでジェネレータはカスタマイズされたテーマを使うことができます:
 
     ./symfony propel:generate-module --theme="custom" frontend article Article
 
-この方法では、独自の慣習で独自のモジュールジェネレータを作ることができます。
+この方法では、独自仕様に合わせてモジュールジェネレータを作ることができます。
 
 ### `propel::generate-module-for-route`
 
@@ -2237,7 +2237,7 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
 作成されるモジュールは`%sf_app_cache_dir%/modules/auto%module%`の実行時に生成されるモジュールから
 アクションとテンプレートを継承する空のモジュールです。
 
-ジェネレータは`--theme`オプションを使うことでカスタマイズされたテーマを使うことができます:
+ジェネレータは`--theme`オプションを指定することでカスタマイズされたテーマを使うことができます:
 
     ./symfony propel:init-admin --theme="custom" frontend article Article
 
@@ -2270,16 +2270,16 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
 実行する前に、データベースのすべてのデータが削除されるのでタスクは本当に実行するか確認します。
 
 確認を回避するには、`--no-confirmation`
-オプションを渡すことができます:
+オプションを渡します:
 
     ./symfony propel:insert-sql --no-confirmation
 
 タスクは`databases.yml`からデータベース設定を読み込みます。
-`--application`もしくは`--env`オプションを渡すことで
-特定のアプリケーション/環境を使うことができます。
+`--application`もしくは`--env`オプションを渡せば
+特定のアプリケーションの環境を使うことができます。
 
 与えられた接続でSQLステートメントをロードしたいだけなら
- `--connection`オプションを使うこともできます。
+ `--connection`オプションを指定することもできます。
 
 ### `propel::schema-to-xml`
 
@@ -2293,7 +2293,7 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
 
 
 
-`propel:schema-to-xml`タスクはYMLスキーマをXMLスキーマに変換します:
+`propel:schema-to-xml`タスクはYAMLスキーマをXMLスキーマに変換します:
 
     ./symfony propel:schema-to-xml
 
@@ -2309,7 +2309,7 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
 
 
 
-`propel:schema-to-yml`タスクはXMLスキーマをYMLに変換します:
+`propel:schema-to-yml`タスクはXMLスキーマをYAMLに変換します:
 
     ./symfony propel:schema-to-yml
 
@@ -2340,7 +2340,7 @@ XMLフォーマットはYMLよりも多くの情報を格納できます。
 ### `test::coverage`
 
 `test::coverage`タスクはテストのコードカバレッジを出力します:
-　
+
     $ php symfony test:coverage [--detailed] test_name lib_name
 
 
@@ -2392,7 +2392,7 @@ libファイルもしくはlibディレクトリの欲しいコードカバレ�
 
     ./symfony test:functional frontend article
 
-いくつかのコントローラ用の機能テストをすべて立ち上げることもできます:
+複数のコントローラ用の機能テストをすべて立ち上げることもできます:
 
     ./symfony test:functional frontend article comment
 
@@ -2421,7 +2421,7 @@ libファイルもしくはlibディレクトリの欲しいコードカバレ�
 
     ./symfony test:unit strtolower
 
-いくつかの名前のユニットテストを立ち上げることもできます:
+複数の名前のユニットテストを立ち上げることもできます:
 
     ./symfony test:unit strtolower strtoupper
 
