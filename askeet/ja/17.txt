@@ -4,20 +4,20 @@
 復習
 ----
 
-[昨日](16.txt)、askeetアプリケーションは[オンライン](http://www.askeet.com)に公開され、機能の調節と追加についてたくさんのフィードバックを既に得ました。ユーザーの入力はWeb2.0のアプリケーションのデザインの基礎で、アプリケーションのコンセプトが新しい場合でも、可能な限り、実験をしなければなりません。
+[昨日](16.txt)、askeetアプリケーションは[オンライン](http://www.askeet.com)に公開され、機能の調節と追加についてたくさんのフィードバックをすでに得ました。ユーザーの入力はWeb 2.0のアプリケーションのデザインの基礎で、アプリケーションのコンセプトが新しい場合でも、可能な限り、実験をしなければなりません。
 
 しかし、21日に計画されていない機能を追加します。その前にaskeetを通して、Webアプリケーション開発の高度なテクニックをお見せします。今日学ぶのはHTTP認証を要求する外部APIのプログラミングです。
 
-昨日、小さな変更をたくさん行ったので、askeetリポジトリから[release_day_17](http://svn.askeet.com/tags/release_day_17/)とタグ付けされたバージョンのaskeetを新しくダウンロードして今日のチュートリアルを始めることをお勧めします。
+昨日、小さな変更をたくさん行ったので、askeetリポジトリから[release_day_17](http://svn.askeet.com/tags/release_day_17/)とタグづけされたバージョンのaskeetを新しくダウンロードして今日のチュートリアルを始めることをお勧めします。
 
 API
 ---
 
 アプリケーションプログラミングインターフェイス([Application Programming Interface](http://en.wikipedia.org/wiki/Application_programming_interface))、または**API**はアプリケーション上の外部Webサイトを含められる特別なサービスのための開発者インターフェイスです。[Google Maps](http://www.google.com/apis/maps/)または[Flickr](http://www.flickr.com/services/api/response.rest.html)などはAPIのおかげでインターネット上での多くのWebサイトを拡張するために使用されています。
 
-askeetは例外を認めませんが、サービスの人気を高めるために、他のサイトで利用可能であるべきだということを信じます。[11日目](11.txt)に開発されたRSSフィードはその要求への最初のアプローチでしたが、私達はもっとよくすることができます。
+askeetは例外を認めませんが、サービスの人気を高めるために、他のサイトで利用可能であるべきだということを信じます。[11日目](11.txt)に開発されたRSSフィードはその要求への最初のアプローチでしたが、私たちはもっとよくすることができます。
 
-askeetはユーザーによる質問への回答のAPIを提供する予定です。このAPIへのアクセスはHTTP認証を通したaskeetの登録ユーザーに限定されます。選択されたAPIのレスポンスフォーマットは[Representational State Transfer](http://en.wikipedia.org/wiki/REST)もしくはRESTで、WebにおいてメインAPIの大抵の出力と類似するレスポンスはシンプルなXMLブロックです:
+askeetはユーザーによる質問への回答のAPIを提供する予定です。このAPIへのアクセスはHTTP認証を通したaskeetの登録ユーザーに限定されます。選択されたAPIのレスポンスフォーマットは[Representational State Transfer](http://en.wikipedia.org/wiki/REST)もしくはRESTで、WebにおいてメインAPIのたいていの出力と類似するレスポンスはシンプルなXMLブロックです:
 
     [xml]
     <?xml version="1.0" encoding="utf-8" ?>
@@ -147,7 +147,7 @@ APIの使用をaskeetの登録ユーザーに制限することを選びまし�
 
 `Autorization`属性は再送信されるHTTPリクエストに追加されます。これは[base64](http://en.wikipedia.org/wiki/Base64)でエンコードされた 'login:password'の文字列を含みます。それが`authenticateUser()`メソッドで`$_SERVER['PHP_AUTH_USER']`と`$_SERVER['PHP_AUTH_PW']`が探すものです。
 
->**Note**: base64は入力の暗号化バージョンを出力しません。base64でエンコードされた文字列をデコードするのは[とても簡単](http://makcoder.sourceforge.net/demo/base64.php)で、パスワードを平文にします。例えば `ZmFicG90OnN5bWZvbnk=`をデコードすると `fabpot:symfony`です。インターネット上での平文でのパスワードの転送(Webフォームに入力されたときなど)は傍受されることを考慮しなければなりません。この理由からHTTP認証は重要ではない内容とサービスに限定しなければなりません。APIの呼び出しと同様に、追加の保護機能はHTTPSプロトコルを要求することによって実現されます。
+>**Note**: base64は入力の暗号化バージョンを出力しません。base64でエンコードされた文字列をデコードするのは[とても簡単](http://makcoder.sourceforge.net/demo/base64.php)で、パスワードを平文にします。たとえば `ZmFicG90OnN5bWZvbnk=`をデコードすると `fabpot:symfony`です。インターネット上での平文でのパスワードの転送(Webフォームに入力されたときなど)は傍受されることを考慮しなければなりません。この理由からHTTP認証は重要ではない内容とサービスに限定しなければなりません。APIの呼び出しと同様に、追加の保護機能はHTTPSプロトコルを要求することによって実現されます。
 
 ログインとパスワードが提供され、ユーザーのデータベースに存在するのであれば、`index`アクションが実行されます。さもなければ、`error`アクション(空)に転送し、`errorSuccess.php`テンプレートを表示します:
 
@@ -157,7 +157,7 @@ APIの使用をaskeetの登録ユーザーに制限することを選びまし�
       <err code="<?php echo $error_code ?>" msg="<?php echo $error_message ?>" />
     </rsp>
 
-もちろん、`api`モジュールのすべてのビューをXMLcontent-typeに設定し、デコレータの動作を停止させることが必要です。`askeet/apps/frontend/modules/api/config/`ディレクトリの`view.yml`によって行うことができます:
+もちろん、`api`モジュールのすべてのビューのContent-TypeをXMLに設定し、デコレータの動作を停止させることが必要です。`askeet/apps/frontend/modules/api/config/`ディレクトリの`view.yml`によって行うことができます:
 
     all:
       has_layout: off
@@ -165,7 +165,7 @@ APIの使用をaskeetの登録ユーザーに制限することを選びまし�
       http_metas:
         content-type: text/xml
 
->**Note**: `index`アクションがエラーの場合、`sfView::ERROR`の代わりに`forward('api', 'error')`を返すのはすべての`api`モジュールのアクションが同じビューを使用しているからです。`index`アクションの他のもの、例えば`popular`が`sfView::ERROR`で終わるのを想像してください。同じ内容で二つの同一のエラービュー(`indexError.php`と`popularError.php`)を提供しなければなりません。`forward()`を選べばコードの反復が抑制され、他のアクションの実行が強制されます。
+>**Note**: `index`アクションがエラーの場合、`sfView::ERROR`の代わりに`forward('api', 'error')`を返すのはすべての`api`モジュールのアクションが同じビューを使用しているからです。`index`アクションの他のもの、たとえば`popular`が`sfView::ERROR`で終わるのを想像してください。同じ内容で2つの同一のエラービュー(`indexError.php`と`popularError.php`)を提供しなければなりません。`forward()`を選べばコードの反復が抑制され、他のアクションの実行が強制されます。
 
 APIレスポンス
 -------------
@@ -316,7 +316,7 @@ Rebuild the model, and add to the `user/show` template the following code:
 
 Webサービスを開発すること、外部のサービスを統合することをsymfonyで実現するのはそれほど難しくないでしょう。
 
-明日は、フィルタについてお話をする機会があります。またコードを少し追加するだけでaskeet.comを例えばphp.askeet.comtとsymfony.askeet.comとサブプロジェクトに分割します。まだsymfonyで開発するスピードとパワーに納得していなかったら、考えが変わるかもしれません。
+明日は、フィルタについてお話をする機会があります。またコードを少し追加するだけでaskeet.comをたとえばphp.askeet.comtとsymfony.askeet.comとサブプロジェクトに分割します。まだsymfonyで開発するスピードとパワーに納得していなかったら、考えが変わるかもしれません。
 
-いつもの通り、今日のコードを`/tags/release_day_17`とタグ付けされた[askeet SVNリポジトリ](http://svn.askeet.com/tags/release_day_17/)にコミットしておきました。アドベントカレンダーチュートリアルに関する質問と提案は[askeetフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)で歓迎します。それではまた明日!
+いつもの通り、今日のコードを`/tags/release_day_17`とタグづけされた[askeet SVNリポジトリ](http://svn.askeet.com/tags/release_day_17/)にコミットしておきました。アドベントカレンダーチュートリアルに関する質問と提案は[askeetフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)で歓迎します。それではまた明日!
 
