@@ -39,7 +39,7 @@ symfony公式サイトの[インストールの手引きのページ](http://www
 インストールしたいブランチを選ぶ必要があります。
 
 
-例えば[symfony 1.2](http://www.symfony-project.org/installation/1_2)など選んだバージョン用の
+たとえば[symfony 1.2](http://www.symfony-project.org/installation/1_2)など選んだバージョン用の
 インストールの手引きのページに向かいます。
 
 "**Source Download**"セクションの元で、`.tgz`フォーマットもしくは`.zip`フォーマットで
