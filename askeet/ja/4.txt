@@ -81,7 +81,7 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
 
 新しい部分はdiv要素の`answers`です。ここは質問に対しての全ての回答を表示し(Propelの`$question->getAnswers()`メソッドを使用)、その個々で、信頼性の合計、回答した人の名前、日付、内容が表示されます(訳注：「信頼性の合計」はコード中にないと思う SVNを見るとある)。
 
-`format_date()`は初期宣言が必要なテンプレートヘルパーのもう一つの使用例です。ヘルパーの構文やその他のヘルパーについては、symfony bookの[国際化ヘルパーの章](http://www.symfony-project.org/book/1_0/13-I18n-and-L10n)(これらのヘルパーは面倒な日付のフォーマットを楽にしてくれます)を参照してください。
+`format_date()`は初期宣言が必要なテンプレートヘルパーのもう1つの使用例です。ヘルパーの構文やその他のヘルパーについては、symfony bookの[国際化ヘルパーの章](http://www.symfony-project.org/book/1_0/13-I18n-and-L10n)(これらのヘルパーは面倒な日付のフォーマットを楽にしてくれます)を参照してください。
 
 >**Note**: Propelでは関連するテーブルの取得用メソッド名には、テーブル名の後に's'をつけるだけになっています。このため、`->getRelevancys()`というような変な名前のメソッドになっていますが、このメソッドを使えば長いSQLコードを書かなくても良くなるので大目に見てください(訳注：中学で習う「yをiに変えてes」の基本がなってないと言うこと)。
 
@@ -142,7 +142,7 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
       return $this->getFirstName().' '.$this->getLastName();
     }
 
-なぜこのメソッドは`getFullName()`みたいなものではなくて`__toString()`なのでしょう？PHP5において、`__toString()`メソッドはオブジェクトを文字として表現するために使われるデフォルトのメソッドだからです。ということは同じ結果を表示するにも
+なぜこのメソッドは`getFullName()`みたいなものではなくて`__toString()`なのでしょう？PHP 5において、`__toString()`メソッドはオブジェクトを文字として表現するために使われるデフォルトのメソッドだからです。ということは同じ結果を表示するにも
 
     [php]
     posted by <?php echo $answer->getUser()->getFirstName().' '.$answer->getUser()->getLastName() ?> 
@@ -157,7 +157,7 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
 同じことは繰り返さない
 ---------------------
 
-アジャイルな開発で重複するコードは避けるという良い教訓があります。これは "Don't Repeat Yourself" (D.R.Y.)(訳注：同じことは繰り返さない)と言われています。重複されたコードはカプセル化されたコードを使うより、レビューするにも、変更するにも、テストするにも、確認するにも２倍かかってしまいますし、アプリケーションのメンテナンス性も下げます。また、今日のチュートリアルの最後の部分を見てみると、昨日書かれた`listSuccess.php`テンプレートと`showSuccess.php`には、重複部分があることに気づくと思います:
+アジャイルな開発で重複するコードは避けるという良い教訓があります。これは "Don't Repeat Yourself" (D.R.Y.)(訳注：同じことは繰り返さない)と言われています。重複するコードはカプセル化されたコードを使うより、レビューするにも、変更するにも、テストするにも、確認するにも2倍かかってしまいますし、アプリケーションのメンテナンス性も下げます。また、今日のチュートリアルの最後の部分を見てみると、昨日書かれた`listSuccess.php`テンプレートと`showSuccess.php`には、重複部分があることに気づくと思います:
 
     [php]
     <div class="interested_block">
@@ -166,7 +166,7 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
       </div>
     </div>
 
-よって最初の [リファクタリング](http://en.wikipedia.org/wiki/Refactoring) は、この２つのテンプレートから重複する部分を抜き出し、**フラグメント(コードの破片)** 又は再利用可能なコードにしていきます。`_interested_user.php`というファイルを`askeet/apps/frontend/modules/question/template/`ディレクトリに作り、下のコードを書いてください:
+よって最初の [リファクタリング](http://en.wikipedia.org/wiki/Refactoring) は、この２つのテンプレートから重複する部分を抜き出し、**フラグメント(コードの断片)** 又は再利用可能なコードにしていきます。`_interested_user.php`というファイルを`askeet/apps/frontend/modules/question/template/`ディレクトリに作り、下のコードを書いてください:
 
     [php]
     <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
@@ -183,7 +183,7 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
 フラグメントはオブジェクトに対するアクセスを持っていません。このフラグメントでは`$question`変数を使っているので、`include_partial`の呼び出しで定義されなくてはいけません。また、フラグメントのファイル名にある`_`は、`template/`ディレクトリにおいてフラグメントとそうでないものとを区別するために使われています。フラグメントについて詳しくは、symfonyブックの [ビューの章](http://www.symfony-project.org/book/1_0/07-Inside-the-View-Layer) を読んでください。
 
 モデルの変更 パート２
--------------------------
+--------------------
 
 新しく作ったこのフラグメントで`$question->getInterests()`はデータベースにリクエストを発行し、`Interest`クラスのオブジェクト配列を返します。これでは関心のある人の数を持ってくるだけにしてはかなり重い処理で、データベースへの処理もかなりのものになってしまいます。`listSuccess.php`テンプレートでも同じ事をして、しかも質問のリスト内でのループです。ちょっと最適化が必要ですね。
 
@@ -274,7 +274,7 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
       }
     }
 
-まず始めにCreole経由でのデータベース接続を直にオープンします。`->begin()`と`->commit()`宣言の間は、トランザクションが全ての処理の成功を保証します。何か失敗するようなことがあれば、例外が投げられ以前の状態に戻す為にロールバック処理がデータベースで実行されます。
+まず始めにCreole経由でのデータベース接続を直にオープンします。`->begin()`と`->commit()`宣言の間は、トランザクションが全ての処理の成功を保証します。何か失敗するようなことがあれば、例外が投げられ以前の状態に戻すためにロールバック処理がデータベースで実行されます。
 
 ### テンプレートの変更
 
@@ -292,8 +292,8 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
 
 リクエスト、実行回数の数を考えてもこの方が良いですね。Webデバッグツールバーにあるデータベースアクセス回数を見ても一目瞭然です。また、データベースアイコンをクリックすると現在のページでの実行されたSQLの詳細が確認できます:
 
-![リファクタリング以前のデータベースクエリ](/images/askeet/debug_before_day4.gif)
-![リファクタリング後のデータベースクエリ](/images/askeet/debug_after_day4.gif)
+![リファクタリング実施前のデータベースクエリ](/images/askeet/debug_before_day4.gif)
+![リファクタリング実施後のデータベースクエリ](/images/askeet/debug_after_day4.gif)
 
 ### 変更点の正当性テスト
 
@@ -314,21 +314,21 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
 回答にも同じ事を
 ----------------
 
-`count($question->getInterests())`にしたことは、`count($answer->getRelevancys())`にも適用できます。違いといえば、質問には”関心”という一つの票があるだけですが、回答にはプラスとマイナスな票があるということです。すでにどうやってモデルに変更を加えるか分かっているので、サクッと説明します。一応下がその変更点です。[askeet SVN リポジトリ](http://svn.askeet.com/tags/release_day_4/) を使ってコピーすれば、わざわざ手でかく必要もありません。
+`count($question->getInterests())`にしたことは、`count($answer->getRelevancys())`にも適用できます。違いといえば、質問には”関心”という一つの票があるだけですが、回答にはプラスとマイナスな票があるということです。すでにどうやってモデルに変更を加えるか分かっているので、サクッと説明します。一応下がその変更点です。[askeet SVN リポジトリ](http://svn.askeet.com/tags/release_day_4/) を使ってコピーすれば、わざわざ手で書く必要もありません。
 
-*`schema.xml`の`answer`テーブルに下の項目を追加
+*`schema.xml`の`answer`テーブルに下の項目を追加する
 
         [xml]
         <column name="relevancy_up" type="integer" default="0" />
         <column name="relevancy_down" type="integer" default="0" />
 
-* モデルを再設定して、データベースを更新します
+* モデルを再設定して、データベースを更新する
 
         $ symfony propel-build-model
         $ symfony propel-build-sql
         $ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
         
-*`lib/model/Relevancy.php`にある`Relevancy`クラスの`->save()`メソッドをオーバーライドします 
+*`lib/model/Relevancy.php`にある`Relevancy`クラスの`->save()`メソッドをオーバーライドする 
 
         [php]
         public function save($con = null)
@@ -363,7 +363,7 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
           }
         }
 
-*`Answer`クラスに次の2つのメソッドを追加:
+*`Answer`クラスに次の2つのメソッドを追加する:
 
         [php]
         public function getRelevancyUpPercent()
@@ -380,7 +380,7 @@ Propelを知っている人なら、ここでは`Question`テーブルに対し�
           return $total ? sprintf('%.0f', $this->getRelevancyDown() * 100 / $total) : 0;
         }
 
-*`question/templates/showSuccess.php`の回答に関する部分を以下のように変更します:
+*`question/templates/showSuccess.php`の回答に関する部分を以下のように変更する:
 
         [php]
         <div id="answers">
