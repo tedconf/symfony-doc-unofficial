@@ -25,17 +25,17 @@ To illustrate the process of creating a behavior, let's start with an already ex
     // in lib/model/ArticlePeer.php
     class ArticlePeer extends BaseArticlePeer()
     {
-      public function doSelectRS(Criteria $criteria, $con = null)
+      public function doSelectStmt(Criteria $criteria, $con = null)
       {
         $criteria->add(self::DELETED_AT, null, Criteria::ISNULL);
         
-        return parent::doSelectRS($criteria, $con);
+        return parent::doSelectStmt($criteria, $con);
       }
     }
 
 Of course, that implies adding a new timestamp field called `deleted_at` to the `article` table.
 
->**Note**: The reason why the method extension applies to `doSelectRS()` instead of `doSelect()` is because the former is used not only by `doSelect()`, but also by `doCount()`.
+>**Note**: The reason why the method extension applies to `doSelectStmt()` instead of `doSelect()` is because the former is used not only by `doSelect()`, but also by `doCount()`.
 
 The combination of a new field and altered methods gives to the `Article` object a "paranoid" behavior. For now, the word "behavior" just refers to a set of methods.
 
@@ -68,14 +68,14 @@ The first step is to remove any code from the model classes, and to add hooks to
     // in lib/model/ArticlePeer.php
     class ArticlePeer extends BaseArticlePeer()
     {
-      public function doSelectRS(Criteria $criteria, $con = null)
+      public function doSelectStmt(Criteria $criteria, $con = null)
       {
-        foreach (sfMixer::getCallables('ArticlePeer:doSelectRS:doSelectRS') as $callable)
+        foreach (sfMixer::getCallables('ArticlePeer:doSelectStmt:doSelectStmt') as $callable)
         {
           call_user_func($callable, 'ArticlePeer', $criteria, $con);
         }
         
-        return parent::doSelectRS($criteria, $con);
+        return parent::doSelectStmt($criteria, $con);
       }
     }
     
@@ -99,14 +99,14 @@ The first step is to remove any code from the model classes, and to add hooks to
     // in lib/model/CommentPeer.php
     class CommentPeer extends BaseCommentPeer()
     {
-      public function doSelectRS(Criteria $criteria, $con = null)
+      public function doSelectStmt(Criteria $criteria, $con = null)
       {
-        foreach (sfMixer::getCallables('CommentPeer:doSelectRS:doSelectRS') as $callable)
+        foreach (sfMixer::getCallables('CommentPeer:doSelectStmt:doSelectStmt') as $callable)
         {
           call_user_func($callable, 'CommentPeer', $criteria, $con);
         }
         
-        return parent::doSelectRS($criteria, $con);
+        return parent::doSelectStmt($criteria, $con);
       }
     }
 
@@ -125,7 +125,7 @@ Next, you must put the behavior code in a new class, save this class in a direct
         return true;
       }
       
-      public function doSelectRS($class, Criteria $criteria, $con = null)
+      public function doSelectStmt($class, Criteria $criteria, $con = null)
       {
         $criteria->add(constant("$class::DELETED_AT"), null, Criteria::ISNULL);
       }
@@ -137,9 +137,9 @@ Finally, you must register the methods of the new `ParanoidBehavior` class on th
     // Step 3
     // in config/config.php
     sfMixer::register('Article:delete:pre', array('ParanoidBehavior', 'preDelete'));
-    sfMixer::register('ArticlePeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+    sfMixer::register('ArticlePeer:doSelectStmt:doSelectStmt', array('ParanoidBehavior', 'doSelectStmt'));
     sfMixer::register('Comment:delete:pre', array('ParanoidBehavior', 'preDelete'));
-    sfMixer::register('CommentPeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+    sfMixer::register('CommentPeer:doSelectStmt:doSelectStmt', array('ParanoidBehavior', 'doSelectStmt'));
 
 By the power of Mixins, the code of the behavior can be reused across several model objects.
 
@@ -161,9 +161,9 @@ You need to rebuild the model for the hooks to be inserted in the generated mode
 The hooks are added to the `Base` classes, the ones under the `lib/model/om/` directory. For instance, here is an extract of the generated `BaseArticlePeer` class with behaviors hooks enabled:
 
     [php]
-    public static function doSelectRS(Criteria $criteria, $con = null)
+    public static function doSelectStmt(Criteria $criteria, $con = null)
     {
-      foreach (sfMixer::getCallables('BaseArticlePeer:doSelectRS:doSelectRS') as $callable)
+      foreach (sfMixer::getCallables('BaseArticlePeer:doSelectStmt:doSelectStmt') as $callable)
       {
         call_user_func($callable, 'BaseArticlePeer', $criteria, $con);
       }
@@ -171,7 +171,7 @@ The hooks are added to the `Base` classes, the ones under the `lib/model/om/` di
       // Rest of the code
     }
 
-That's almost exactly the same hook as the one added by hand to the custom `ArticlePeer` during step 1. The difference is that the registered hook name is `BaseArticlePeer:doSelectRS:doSelectRS` instead of `ArticlePeer:doSelectRS:doSelectRS`. So you can remove the code added to the custom classes during Step 1. This means that when Behaviors are enabled in the `propel.ini`, you no longer need to add hooks manually inside your model classes.
+That's almost exactly the same hook as the one added by hand to the custom `ArticlePeer` during step 1. The difference is that the registered hook name is `BaseArticlePeer:doSelectStmt:doSelectStmt` instead of `ArticlePeer:doSelectStmt:doSelectStmt`. So you can remove the code added to the custom classes during Step 1. This means that when Behaviors are enabled in the `propel.ini`, you no longer need to add hooks manually inside your model classes.
 
 As the name of the hooks changed (they are now all prefixed by `Base`), the way the methods of the Paranoid behavior were registered in Step 3 must be changed. But before doing so, have a look at the complete list of hooks added:
 
@@ -182,7 +182,7 @@ As the name of the hooks changed (they are now all prefixed by `Base`), the way 
     [className]:save:post      // after save
     [className]:[methodName]   // inside __call() (allows for new methods)
     // Hooks added to the base Peer class
-    [PeerClassName]:doSelectRS:doSelectRS
+    [PeerClassName]:doSelectStmt:doSelectStmt
     [PeerClassName]:doSelectJoin:doSelectJoin
     [PeerClassName]:doSelectJoinAll:doSelectJoinAll
     [PeerClassName]:doSelectJoinAllExcept:doSelectJoinAllExcept
@@ -190,6 +190,7 @@ As the name of the hooks changed (they are now all prefixed by `Base`), the way 
     [PeerClassName]:doUpdate:post
     [PeerClassName]:doInsert:pre
     [PeerClassName]:doInsert:post
+    [PeerClassName]:doCount:doCount
 
 >**Note**: As of symfony 1.0, there is only one hook related to the `doSelect` methods, instead of the four hooks described above. This explains why some behaviors work only with symfony 1.1 and not with symfony 1.0, which has an incomplete support for behaviors.
 
@@ -243,11 +244,11 @@ You still need to rewrite the other hook registrations to use the `Base` hook na
     // in config/config.php
     sfMixer::register('BaseArticle:undelete', array('ParanoidBehavior', 'undelete'));
     sfMixer::register('BaseArticle:delete:pre', array('ParanoidBehavior', 'preDelete'));
-    sfMixer::register('BaseArticlePeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+    sfMixer::register('BaseArticlePeer:doSelectStmt:doSelectStmt', array('ParanoidBehavior', 'doSelectStmt'));
 
     sfMixer::register('BaseComment:undelete', array('ParanoidBehavior', 'undelete'));
     sfMixer::register('BaseComment:delete:pre', array('ParanoidBehavior', 'preDelete'));
-    sfMixer::register('BaseCommentPeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+    sfMixer::register('BaseCommentPeer:doSelectStmt:doSelectStmt', array('ParanoidBehavior', 'doSelectStmt'));
 
 But this code is not very D.R.Y., since you need to repeat the whole list of methods for each class. Imagine the pain if the behavior provided several dozens methods! It would be much more efficient if you could separate the registration process in two phases:
 
@@ -264,7 +265,7 @@ Symfony provides a utility class, called `sfPropelBehavior`, which does this job
     ));
     sfPropelBehavior::registerHooks('paranoid', array(
       ':delete:pre'                => array('ParanoidBehavior', 'preDelete'),
-      'Peer:doSelectRS:doSelectRS' => array('ParanoidBehavior', 'doSelectRS')
+      'Peer:doSelectStmt:doSelectStmt' => array('ParanoidBehavior', 'doSelectStmt')
     ));
     
     // Phase 2
@@ -354,7 +355,7 @@ So you are now ready to rewrite the `ParanoidBehavior` class to take the `column
         return true;
       }
       
-      public function doSelectRS($class, $criteria, $con = null)
+      public function doSelectStmt($class, $criteria, $con = null)
       {
         $columnName = sfConfig::get('propel_behavior_paranoid_'.$class.'_column', 'deleted_at');
         $criteria->add(call_user_func(array($class, 'translateFieldName'), $columnName, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_COLNAME), null, Criteria::ISNULL);
