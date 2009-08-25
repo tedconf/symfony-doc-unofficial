@@ -179,6 +179,12 @@ feature.
 
 Most of the time, the default is fine.
 
+>**WARNING**
+>This setting is used in many different places in the framework,
+>and so its value is cached in several places. After changing it,
+>the configuration cache must be cleared, even in the development
+>environment.
+
 ### ~`enabled_modules`~
 
 *Default*: `[default]`
