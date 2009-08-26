@@ -38,11 +38,12 @@ dal browser web, ciò rappresenta una buona soluzione per la sicurezza dell'appl
 
 
 ### Configurazione del Web Server
-È giunto il momento di cambiare la configurazione di Apache in modo
+
+È giunto il momento di cambiare la configurazione di Apache, in modo
 da rendere accessibile esternamente il nuovo progetto.
 
 Individuare e aprire il file di configurazione `httpd.conf` e aggiungere le seguenti
-rige alla fine dello stesso:
+righe alla fine dello stesso:
 
    
     #Essere sicuri che la riga seguente sia presente un'unica volta all'interno 
@@ -86,8 +87,8 @@ quindi il sito web sarà raggiungibile al seguente URL:
 
     http://localhost:8080/
 
-È possibile sostituire `8080` con qualsiasi altro numero ma è preferibile utilizzare
-numeri superiori a `1024` in quanto non richiedono privilegi di amministratore.
+È possibile sostituire `8080` con qualsiasi altro numero, ma è preferibile utilizzare
+numeri superiori a `1024`, in quanto non richiedono privilegi di amministratore.
 
 >**SIDEBAR**
 >Configurazione di un dominio dedicato
@@ -107,21 +108,18 @@ numeri superiori a `1024` in quanto non richiedono privilegi di amministratore.
 >
 >Il dominio `sfproject.localhost` utilizzato nella configurazione di Apache
 >deve essere dichiarato localmente. Su un sistema Linux, modificare il file `/etc/hosts`.
->In un sistema Windows invece il file si trova nella directory `C:\WINDOWS\system32\drivers\etc\`.
+>In un sistema Windows, invece, il file si trova nella directory `C:\WINDOWS\system32\drivers\etc\`.
 >
 >Aggiungere la riga seguente:
 >
 >     127.0.0.1 sfproject.localhost
 
-
 ### Testare la nuova configurazione 
 
-Riavviare Apache e controllare che sia possibile l'accesso alla nuova applicazione
+Riavviare Apache e controllare che sia possibile l'accesso alla nuova applicazione,
 aprendo un browser web e digitando `http://localhost:8080/index.php/` oppure
-`http://sfproject.localhost/index.php/`, ciò dipende dalla configurazione scelta
+`http://sfproject.localhost/index.php/`, a seconda dalla configurazione scelta
 nella precedente sezione.
-
-
 
 ![Congratulazioni](http://www.symfony-project.org/images/jobeet/1_2/01/congratulations.png)
 >**TIP**
@@ -144,8 +142,7 @@ grazie all' `sf/` alias.
 ![web debug toolbar](http://www.symfony-project.org/images/jobeet/1_2/01/web_debug_toolbar.png)
 
 >**NOTE**
->
 >La creazione e configurazione del progetto è leggermente differente se si volesse
->utilizzare symfony in combinazione con IIS server in ambiente Windows.
+>utilizzare symfony in combinazione col server IIS in ambiente Windows.
 >Le istruzioni di configurazioni sono disponibili nel 
 >[tutorial relativo](http://www.symfony-project.com/cookbook/1_0/web_server_iis).

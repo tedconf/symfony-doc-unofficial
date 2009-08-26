@@ -60,7 +60,7 @@ Lanciare lo script di verifica della configurazione dalla riga di comando:
 
     $ php check_configuration.php
 
-Se c'è un problema con la configurazione attuale di PHP, il risultato del
+Se c'è un problema con la configurazione di PHP, il risultato del
 comando darà alcuni consigli su cosa sistemare e su come farlo.
 
 Si dovrebbe eseguire lo script anche da un browser e sistemare gli

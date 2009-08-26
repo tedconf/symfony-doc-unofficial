@@ -2,16 +2,24 @@ Gli ambienti
 ============
 
 Guardando nella directory `web/`, ci saranno due file PHP:
-`index.php` e `frontend_dev.php`. Questi file sono chiamati front controller e vengono utilizzati per gestire tutte le richieste fatte all'applicazione. 
-Ma perchè avere due front controller per ogni applicazione?
+`index.php` e `frontend_dev.php`. Questi file sono chiamati **front controller**
+e vengono utilizzati per gestire tutte le richieste fatte all'applicazione. 
+Ma perché avere due front controller per ogni applicazione?
 
-Entrambi i file puntano alla stessa applicazione, ma per ambienti differenti.
-Quando viene sviluppata un'applicazione, ad eccezione di quelle sviluppate direttamente sul server di produzione, diversi **ambienti** sono necessari:
+Entrambi i file puntano alla stessa applicazione, ma per **ambienti** differenti.
+Quando viene sviluppata un'applicazione, ad eccezione di quelle sviluppate
+direttamente sul server di produzione, diversi ambienti sono necessari:
 
-  * L'**ambiente di sviluppo**: Questo ambiente è utilizzato dagli **sviluppatori web** quando devono lavorare sull'applicazione per aggiungere nuove funzionalità, correggere problemi, etc..
-  * L'**ambiente di test**: Questo ambiente è usato per testare automaticamente l'applicazione.
-  * L'**ambiente di staging**: Questo ambiente è utilizzato dal **cliente** per provare l'applicazione e per comunicare eventuali problemi o mancanza di funzionalità.
-  * L'**ambiente di produzione**: Quest'ultimo ambiente è quello che verrà usato dagli **utenti finali**.
+  * L'**ambiente di sviluppo**: Questo ambiente è utilizzato dagli
+    **sviluppatori web** quando devono lavorare sull'applicazione per
+    aggiungere nuove funzionalità, correggere problemi, etc..
+  * L'**ambiente di test**: Questo ambiente è usato per testare
+    automaticamente l'applicazione.
+  * L'**ambiente di stage**: Questo ambiente è utilizzato dal
+    **cliente** per provare l'applicazione e per comunicare eventuali
+    problemi o mancanza di funzionalità.
+  * L'**ambiente di produzione**: Quest'ultimo ambiente è quello che
+    verrà usato dagli **utenti finali**.
 
 Cosa rende ogni ambiente differente? Ad esempio nell'ambiente di sviluppo, 
 l'applicazione deve registrare tutti dettagli delle richieste per rendere 
@@ -25,7 +33,10 @@ correlate, direttamente all'interno del browser:
 
 ![Una eccezione nell'ambiente di sviluppo](http://www.symfony-project.org/images/jobeet/1_2/01/exception_dev.png)
 
-Ma nell'ambiente di produzione la cache deve essere attivata e, ovviamente, l'applicazione deve mostrare i messaggi di errore personalizzati invece che lo stack delle eccezioni. Quindi, l'ambiente di produzione, deve essere ottimizzato per le performance e la user experience.
+Ma nell'ambiente di produzione la cache deve essere attivata e, ovviamente,
+l'applicazione deve mostrare i messaggi di errore personalizzati invece
+che lo stack delle eccezioni. Quindi, l'ambiente di produzione deve essere
+ottimizzato per le prestazioni e per la user experience.
 
 ![Una eccezione nell'ambiente di produzione](http://www.symfony-project.org/images/jobeet/1_2/01/exception_prod.png)
 

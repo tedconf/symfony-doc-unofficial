@@ -4,11 +4,11 @@ Introduzione
 Il framework symfony è un framework MVC full-stack che aiuta a sviluppare
 siti web più velocemente. Inoltre segue una serie di best practice che 
 aiutano a sviluppare siti web sicuri e facilmente manutenibili. Essere fautore
-delle best practice inizia già da quando decidi di installare il framework.
+delle best practice inizia già dalla decisione di installare il framework.
 
-Installare symfony non è molto diverso dall'installare ogni altro software PHP
-ma per rendere l'installazione sicura fin dall'inizio, non ci si può limitare
-a caricare tutti i file nella web root directory come descritto in molte
+Installare symfony non è molto diverso dall'installare ogni altro software PHP,
+ma, per rendere l'installazione sicura fin dall'inizio, non ci si può limitare
+a caricare tutti i file nella directory root del server web, come descritto in molte
 guide all'installazione. Il processo richiederà poco tempo in più per installare
 symfony, ma lo sforzo ha il suo valore. Inoltre, come per l'installazione di
 tutti gli altri software PHP, esistono molte piccole trappole in cui si può cadere
