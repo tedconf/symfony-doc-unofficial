@@ -164,7 +164,7 @@ l'inglese o lingue europee.
 
 L'impostazione `csrf_secret` specifica una chiave univoca di sicurezza per 
 l'applicazione. Se non è impostata a `false`, attiva la protezione CSRF per 
-tutti i form generati dal form framework. Questa impostazione è utilizzata anche 
+tutti i form generati dal framework dei form. Questa impostazione è utilizzata anche 
 dall'helper `link_to()` quando c'è la necessità di convertire un link ad un form
 (per simulare un metodo HTTP `DELETE` per esempio).
 
@@ -180,10 +180,16 @@ univoca.
 *Predefinito*: `utf-8`
 
 L'impostazione `charset` specifica il set di caratteri che verrà utilizzato in ogni 
-situazione dal framework: dal `Content-Type` header della response alla funzionalità
-di escaping dell'output.
+situazione dal framework: dall'header di risposta `Content-Type` alla funzionalità
+di escape dell'output.
 
 Il più delle volte il valore predefinito va bene.
+
+>**WARNING**
+>Questa impostazione è usata in diversi posti nel framework,
+>quindi il suo valore è messo in cache in molti posti. Dopo
+>averlo cambiato, occorre pulire la cache della configurazione,
+>anche nell'ambiente di sviluppo.
 
 ### ~`enabled_modules`~
 
