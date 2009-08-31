@@ -98,7 +98,7 @@ ad una pagina protetta.
 
 ### ~`secure`~
 
-L'azione `secure` viene eseguita quando un utente non ha le credenziale richieste.
+L'azione `secure` viene eseguita quando un utente non ha le credenziali richieste.
 
 ### ~`module_disabled`~
 
