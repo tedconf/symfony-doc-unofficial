@@ -303,7 +303,7 @@ Per cambiare la configurazione di una specifica applicazione, usare l'opzione `a
 
 È anche possibile specificare il nome della connessione e il nome della classe per il database:
 
-    ./symfony configure:database --name=main --class=sfDoctrineDatabase mysql:host=localhost;dbname=example root
+    ./symfony configure:database --name=main --class=sfDoctrineDatabase mysql:host=localhost;dbname=example root mYsEcret
 
 ATTENZIONE: Il file `propel.ini` è aggiornato anche quando si utilizza un database `Propel`
 e si configura con `all` per gli ambienti, senza l'opzione `app`.
