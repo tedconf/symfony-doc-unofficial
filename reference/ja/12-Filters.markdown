@@ -8,8 +8,8 @@ filters.yml設定ファイル
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 最初の章で説明したように、`filters.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を受け、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効で、
+[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
 
 `filters.yml`設定ファイルは名前つきフィルタ定義のリストを
 格納できます:
@@ -109,7 +109,7 @@ symfonyは複数のフィルタを1つのチェーンとして実行するので
       param:
         type: rendering
 
-`rendering`フィルタはブラウザへのレスポンスの出力に責務を担います。
+`rendering`フィルタはブラウザへのレスポンス出力の責務を担います。
 これは最初に登録されるフィルタになるので、
 リクエストを管理する機会を持つ最後のフィルタにもなります。
 

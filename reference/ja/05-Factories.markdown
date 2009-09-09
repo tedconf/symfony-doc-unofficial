@@ -14,7 +14,7 @@ factories.yml設定ファイル
 
 はじめの章で説明したように、`factories.yml`ファイルは
 [**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)をインクルードできます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効になり、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
 
 `factories.yml`設定ファイルは名前つきのファクトリのリストを格納します:
 
@@ -253,9 +253,9 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 当てはまります。
 
 >**NOTE**
->予期していないふるまいを避けるために、ユーザークラスはタイムアウトよりも長くするために
->セッションガーベッジコレクタ用の最大限の期限を
->強制します(`session.gc_maxlifetime`)。
+>予期していないふるまいを避けるために、ユーザークラスはセッションガーベッジコレクタ用の
+>最大限の期限(`session.gc_maxlifetime`)をタイムアウトよりも長くなるように
+>強制します。
 
 ### `use_flash`
 
@@ -330,7 +330,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 
 >**NOTE**
 >それぞれのオプションの説明は`session_set_cookie_params()`関数の説明は
->PHPの公式サイトに説明から由来しています。
+>PHPの公式サイトに説明に由来しています。
 
 ### `session_cache_limiter`
 
@@ -364,7 +364,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 >[`cache`](#chapter_04-Settings_sub_cache)設定が
 >`on`にセットされている場合にのみこのファクトリは作成されます。
 
-ビューキャッシュマネージャーの設定は`param`キーを格納しません。
+ビューキャッシュマネージャーの設定は`param`キーを含みません。
 この設定は`view_cache`ファクトリを通して行われます。
 これはビューキャッシュマネージャーによって使われる
 内部のキャッシュオブジェクトを定義します。

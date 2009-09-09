@@ -195,8 +195,8 @@ symfonyによって利用されるメカニズムです(loggerファクトリを
 | ---------- | -----------
 | `priority` | 優先順位(`sfLogger::EMERG`、`sfLogger::ALERT`、`sfLogger::CRIT`、`sfLogger::ERR`、 `sfLogger::WARNING`、`sfLogger::NOTICE`、`sfLogger::INFO`、もしくは`sfLogger::DEBUG`)
 
-The `command.log` event is the mechanism used by symfony to do the logging for
-the symfony CLI utility (`logger`ファクトリを参照)。
+`command.log`イベントはsymfonyのCLIユーティリティーでロギングを行うために
+symfonyによって利用されるメカニズムです。(`logger`ファクトリを参照)。
 
 ### `command.pre_command`
 

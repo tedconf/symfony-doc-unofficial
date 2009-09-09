@@ -17,8 +17,8 @@ databases.yml設定ファイル
 
 はじめの章で説明したように、`databases.yml`ファイルは
 [**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納します。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効になり、
+[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
 
 `databases.yml`で説明したそれぞれの接続はデータベースオブジェクトを設定するために
 使用する、名前、データベースハンドラクラスの名前、
@@ -79,7 +79,7 @@ Propel
           persistent: true
           pooling:    true
 
-次のパラメータは`param`セクションの元で定義できます:
+次のパラメータは`param`セクションの下で定義できます:
 
  | キー         | 説明                                      | デフォルトの値|
  | ------------ | ---------------------------------------- | ------------- |
@@ -113,7 +113,7 @@ Doctrine
             seqname_format: %s_seq
             tblname_format: %s
 
-次のパラメータは`param`セクションの元でカスタマイズできます:
+次のパラメータは`param`セクションの下でカスタマイズできます:
 
  | キー          | 説明                                    | デフォルト値   |
  | ------------ | ---------------------------------------- | ------------- |
@@ -123,7 +123,7 @@ Doctrine
  | `encoding`   | デフォルトの文字集合                      | `UTF-8`       |
  | `attributes` | Doctrine属性のセット                     | -             |
 
-次の属性は`attributes`セクションの元でカスタマイズできます:
+次の属性は`attributes`セクションの下でカスタマイズできます:
 
  | キー                | 説明                                     | デフォルト値   |
  | ------------------- | ---------------------------------------- | ------------- |

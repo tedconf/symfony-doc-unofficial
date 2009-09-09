@@ -12,7 +12,7 @@
 走査されます。
 
 最初の章で説明したように、`autoload.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を受け、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効で、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
 
 >**NOTE**
 >`autoload.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
@@ -64,8 +64,8 @@
  * `files`: PHPクラスのために明示的に解析するファイルの配列
  * `ext`: PHPクラスの拡張子(デフォルトは`.php`)
 
-たとえば、`lib/`ディレクトリの元でプロジェクト内部で大きなライブラリを埋め込み、
-オートロード機能がすでにサポートされている場合、パフォーマンスの押し上げの恩恵を受けるために
+たとえば、`lib/`ディレクトリの下でプロジェクト内部で大きなライブラリを埋め込み、
+オートロード機能がすでにサポートされている場合、パフォーマンスの向上させるために
 `project`のオートロード設定を修正することでsymfonyのデフォルトのオートロードシステムから
 そのライブラリを除外できます:
 
@@ -130,8 +130,8 @@
     - %SF_SYMFONY_LIB_DIR%/action/sfActions.class.php
 
 はじめの章で説明したように、`core_compile.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効で、
+[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
 
 >**NOTE**
 >`core_compile.yml`設定ファイルはPHPファイルとしてキャッシュされます; 

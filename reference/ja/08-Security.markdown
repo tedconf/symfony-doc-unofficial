@@ -1,7 +1,7 @@
 security.yml設定ファイル
 ========================
 
-`security.yml`設定ファイルは
+`security.yml`設定ファイルに
 symfonyアプリケーション用の認証と認可を記述します。
 
 >**TIP**
@@ -18,7 +18,7 @@ symfonyアプリケーション用の認証と認可を記述します。
       is_secure: off
 
 はじめの章で説明したように、`security.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)から恩恵を受け、
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効になり、
 [**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
 
 アプリケーションのデフォルト設定はモジュールの`config/`ディレクトリで

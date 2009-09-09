@@ -31,8 +31,8 @@ cache.yml設定ファイル
 >選ぶ方法が決まります。
 
 はじめの章で説明したように、`cache.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)の恩恵を受け、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を格納できます。
+[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効になり、
+[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
 
 >**NOTE**
 >`cache.yml`設定ファイルはPHPファイルとしてキャッシュされます;
@@ -57,7 +57,7 @@ cache.yml設定ファイル
   * アプリケーションのデフォルト設定(`default`キーの下)
 
 >**CAUTION**
->クエリ文字列の`GET`パラメータでやってくる、
+>クエリ文字列の`GET`パラメータで送信されてくるリクエストや、
 >`POST`、`PUT`、もしくは`DELETE`メソッドで投稿されたリクエストは
 >設定に関わらずけっしてキャッシュされません。
 

@@ -218,7 +218,7 @@ adminジェネレータの外見はとても簡単に調整できます。
   * `sf_admin_form_row`
   * フィールドの型に依存するクラス: `sf_admin_text`、`sf_admin_boolean`、
     `sf_admin_date`、`sf_admin_time`、もしくは`sf_admin_foreignkey`。
-  * `sf_admin_form_field_COLUMN`。`COLUMN`がカラム名である
+  * `sf_admin_form_field_COLUMN`。`COLUMN`がカラムの名前です。
 
 `list`ページにおいて、それぞれのフィールドのHTMLコンテナは次のクラスを持ちます:
 
@@ -365,7 +365,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 同じオプションは`list`、`edit`、もしくは`new`エントリでアクションを
 定義する際に使うことができます。
 
-### name
+### `name`
 
 *デフォルト*: アクションのキー
 
@@ -373,7 +373,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 
 ### `action`
 
-*デフォルト*: アクションの名前に基づいて定義される
+*デフォルト*: アクションの名前に基づいて定義されます。
 
 `action`オプションは接頭辞の`execute`無しで実行するアクションの名前を定義します。
 
@@ -646,7 +646,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 
 >**TIP**
 >`new`と`edit`セクションの両方で`class`オプションを定義できますが、
->1つのクラスを使用し条件ロジックを使用する違いを
+>1つのクラスを使用し条件ロジックを使用し違いを
 >考慮する方がベターです。
 
 `edit`
