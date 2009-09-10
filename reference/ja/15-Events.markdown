@@ -89,13 +89,13 @@ notifierはリスナーは`isProcessed()`メソッドを呼び出すことで
 
 ### `filter`
 
-`filter()`メソッドはすべてのリスナーを通知します。これらは与えられた値をフィルターリング可能で、
+`filter()`メソッドはすべてのリスナーを通知します。これらは与えられた値をフィルタリング可能で、
 notifierによって2番目の引数として渡され、3番目の引数としてリスナーのcallableによって読み取りされます。
-すべてのリスナーには値が渡され、これらはフィルターリングされた値を返さなければなりません。
+すべてのリスナーには値が渡され、これらはフィルタリングされた値を返さなければなりません。
 すべてのリスナーの実行は保証されます。
 
 notifierは`getReturnValue()`メソッドを呼び出すことで
-フィルターリングされた値を取得できます:
+フィルタリングされた値を取得できます:
 
     [php]
     $ret = $event->getReturnValue();
@@ -105,70 +105,70 @@ notifierは`getReturnValue()`メソッドを呼び出すことで
 イベント
 -------
 
- * [`application`](#chapter_15-Events_sub_application)
-   * [`application.log`](#chapter_15-Events_sub_application_log)
- * [`command`](#chapter_15-Events_sub_command)
-   * [`command.log`](#chapter_15-Events_sub_command_log)
-   * [`command.pre_command`](#chapter_15-Events_sub_command_pre_command)
-   * [`command.post_command`](#chapter_15-Events_sub_command_post_command)
-   * [`command.filter_options`](#chapter_15-Events_sub_command_filter_options)
- * [`configuration`](#chapter_15-Events_sub_configuration)
-   * [`configuration.method_not_found`](#chapter_15-Events_sub_configuration_method_not_found)
- * [`component`](#chapter_15-Events_sub_component)
-   * [`component.method_not_found`](#chapter_15-Events_sub_component_method_not_found)
- * [`context`](#chapter_15-Events_sub_context)
-   * [`context.load_factories`](#chapter_15-Events_sub_context_load_factories)
- * [`controller`](#chapter_15-Events_sub_controller)
-   * [`controller.change_action`](#chapter_15-Events_sub_controller_change_action)
-   * [`controller.method_not_found`](#chapter_15-Events_sub_controller_method_not_found)
-   * [`controller.page_not_found`](#chapter_15-Events_sub_controller_page_not_found)
- * [`plugin`](#chapter_15-Events_sub_plugin)
-   * [`plugin.pre_install`](#chapter_15-Events_sub_plugin_pre_install)
-   * [`plugin.post_install`](#chapter_15-Events_sub_plugin_post_install)
-   * [`plugin.pre_uninstall`](#chapter_15-Events_sub_plugin_pre_uninstall)
-   * [`plugin.post_uninstall`](#chapter_15-Events_sub_plugin_post_uninstall)
- * [`request`](#chapter_15-Events_sub_request)
-   * [`request.filter_parameters`](#chapter_15-Events_sub_request_filter_parameters)
-   * [`request.method_not_found`](#chapter_15-Events_sub_request_method_not_found)
- * [`response`](#chapter_15-Events_sub_response)
-   * [`response.method_not_found`](#chapter_15-Events_sub_response_method_not_found)
-   * [`response.filter_content`](#chapter_15-Events_sub_response_filter_content)
- * [`routing`](#chapter_15-Events_sub_routing)
-   * [`routing.load_configuration`](#chapter_15-Events_sub_routing_load_configuration)
- * [`task`](#chapter_15-Events_sub_task)
-   * [`task.cache.clear`](#chapter_15-Events_sub_task_cache_clear)
- * [`template`](#chapter_15-Events_sub_template)
-   * [`template.filter_parameters`](#chapter_15-Events_sub_template_filter_parameters)
- * [`user`](#chapter_15-Events_sub_user)
-   * [`user.change_culture`](#chapter_15-Events_sub_user_change_culture)
-   * [`user.method_not_found`](#chapter_15-Events_sub_user_method_not_found)
-   * [`user.change_authentication`](#chapter_15-Events_sub_user_change_authentication)
- * [`view`](#chapter_15-Events_sub_view)
-   * [`view.configure_format`](#chapter_15-Events_sub_view_configure_format)
-   * [`view.method_not_found`](#chapter_15-Events_sub_view_method_not_found)
- * [`view.cache`](#chapter_15-Events_sub_view_cache)
-   * [`view.cache.filter_content`](#chapter_15-Events_sub_view_cache_filter_content)
+ * [`application`](#chapter_15_application)
+   * [`application.log`](#chapter_15_sub_application_log)
+ * [`command`](#chapter_15_command)
+   * [`command.log`](#chapter_15_sub_command_log)
+   * [`command.pre_command`](#chapter_15_sub_command_pre_command)
+   * [`command.post_command`](#chapter_15_sub_command_post_command)
+   * [`command.filter_options`](#chapter_15_sub_command_filter_options)
+ * [`configuration`](#chapter_15_configuration)
+   * [`configuration.method_not_found`](#chapter_15_sub_configuration_method_not_found)
+ * [`component`](#chapter_15_component)
+   * [`component.method_not_found`](#chapter_15_sub_component_method_not_found)
+ * [`context`](#chapter_15_context)
+   * [`context.load_factories`](#chapter_15_sub_context_load_factories)
+ * [`controller`](#chapter_15_controller)
+   * [`controller.change_action`](#chapter_15_sub_controller_change_action)
+   * [`controller.method_not_found`](#chapter_15_sub_controller_method_not_found)
+   * [`controller.page_not_found`](#chapter_15_sub_controller_page_not_found)
+ * [`plugin`](#chapter_15_plugin)
+   * [`plugin.pre_install`](#chapter_15_sub_plugin_pre_install)
+   * [`plugin.post_install`](#chapter_15_sub_plugin_post_install)
+   * [`plugin.pre_uninstall`](#chapter_15_sub_plugin_pre_uninstall)
+   * [`plugin.post_uninstall`](#chapter_15_sub_plugin_post_uninstall)
+ * [`request`](#chapter_15_request)
+   * [`request.filter_parameters`](#chapter_15_sub_request_filter_parameters)
+   * [`request.method_not_found`](#chapter_15_sub_request_method_not_found)
+ * [`response`](#chapter_15_response)
+   * [`response.method_not_found`](#chapter_15_sub_response_method_not_found)
+   * [`response.filter_content`](#chapter_15_sub_response_filter_content)
+ * [`routing`](#chapter_15_routing)
+   * [`routing.load_configuration`](#chapter_15_sub_routing_load_configuration)
+ * [`task`](#chapter_15_task)
+   * [`task.cache.clear`](#chapter_15_sub_task_cache_clear)
+ * [`template`](#chapter_15_template)
+   * [`template.filter_parameters`](#chapter_15_sub_template_filter_parameters)
+ * [`user`](#chapter_15_user)
+   * [`user.change_culture`](#chapter_15_sub_user_change_culture)
+   * [`user.method_not_found`](#chapter_15_sub_user_method_not_found)
+   * [`user.change_authentication`](#chapter_15_sub_user_change_authentication)
+ * [`view`](#chapter_15_view)
+   * [`view.configure_format`](#chapter_15_sub_view_configure_format)
+   * [`view.method_not_found`](#chapter_15_sub_view_method_not_found)
+ * [`view.cache`](#chapter_15_view_cache)
+   * [`view.cache.filter_content`](#chapter_15_sub_view_cache_filter_content)
 
 <div class="pagebreak"></div>
 
 `application`
 -------------
 
-### `application.log`
+### ~`application.log`~
 
 *通知メソッド*: `notify`
 
 *デフォルトの通知元クラス*: たくさんのクラス
 
 | パラメーター  | 説明
-| ---------- | -----------
-| `priority` | 優先順位(`sfLogger::EMERG`、`sfLogger::ALERT`、`sfLogger::CRIT`、`sfLogger::ERR`、 `sfLogger::WARNING`、`sfLogger::NOTICE`、`sfLogger::INFO`、もしくは`sfLogger::DEBUG`)
+| ------------ | -----------
+| `priority`   | 優先順位(`sfLogger::EMERG`、`sfLogger::ALERT`、`sfLogger::CRIT`、`sfLogger::ERR`、 `sfLogger::WARNING`、`sfLogger::NOTICE`、`sfLogger::INFO`、もしくは`sfLogger::DEBUG`)
 
 `application.log`イベントはWebリクエストに対してロギングを行うために
 symfonyによって利用されるメカニズムです(loggerファクトリを参照)。
 このイベントはたいていのsymfonyのコアコンポーネントによって通知されます。
 
-### `application.throw_exception`
+### ~`application.throw_exception`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -185,7 +185,7 @@ symfonyによって利用されるメカニズムです(loggerファクトリを
 `command`
 ---------
 
-### `command.log`
+### ~`command.log`~
 
 *通知メソッド*: `notify`
 
@@ -198,7 +198,7 @@ symfonyによって利用されるメカニズムです(loggerファクトリを
 `command.log`イベントはsymfonyのCLIユーティリティーでロギングを行うために
 symfonyによって利用されるメカニズムです。(`logger`ファクトリを参照)。
 
-### `command.pre_command`
+### ~`command.pre_command`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -211,7 +211,7 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 
 タスクが実行される直前に`command.pre_command`イベントが通知されます。
 
-### `command.post_command`
+### ~`command.post_command`~
 
 *通知メソッド*: `notify`
 
@@ -219,7 +219,7 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 
 タスクが実行される直後に`command.post_command`イベントが通知されます。
 
-### `command.filter_options`
+### ~`command.filter_options`~
 
 *通知メソッド*: `filter`
 
@@ -230,12 +230,12 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 | `command_manager` | `sfCommandManager`インスタンス
 
 タスクCLIのオプションが解析される前に`command.filter_options`イベントが
-通知されます。このイベントはユーザーに渡されるオプションをフィルターリングするために使うことができます。
+通知されます。このイベントはユーザーに渡されるオプションをフィルタリングするために使うことができます。
 
 `configuration`
 ---------------
 
-### `configuration.method_not_found`
+### ~`configuration.method_not_found`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -253,7 +253,7 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 `component`
 -----------
 
-### `component.method_not_found`
+### ~`component.method_not_found`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -271,7 +271,7 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 `context`
 ---------
 
-### `context.load_factories`
+### ~`context.load_factories`~
 
 *通知メソッド*: `notify`
 
@@ -284,7 +284,7 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 `controller`
 ------------
 
-### `controller.change_action`
+### ~`controller.change_action`~
 
 *通知メソッド*: `notify`
 
@@ -297,7 +297,7 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 
 アクションが実行される直前に`controller.change_action`が通知されます。
 
-### `controller.method_not_found`
+### ~`controller.method_not_found`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -313,16 +313,16 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 このイベントをリスニングすることで、継承を使わずに
 クラスにメソッドを追加することができます。
 
-### `controller.page_not_found`
+### ~`controller.page_not_found`~
 
 *通知メソッド*: `notify`
 
 *デフォルトの通知元クラス*: `sfController`
 
 | パラメーター| 説明
-| --------- | -----------
-| `module`  | 404エラーを生成するモジュールの名前
-| `action`  | 404エラーを生成するアクションの名前
+| ----------- | -----------
+| `module`    | 404エラーを生成するモジュールの名前
+| `action`    | 404エラーを生成するアクションの名前
 
 リクエストの処理の間に404エラーが生成されたときに`controller.page_not_found`が通知されます。
 
@@ -332,7 +332,7 @@ Eメールを送信する、エラー、イベントをロギングするなど�
 `plugin`
 --------
 
-### `plugin.pre_install`
+### ~`plugin.pre_install`~
 
 *通知メソッド*: `notify`
 
@@ -346,20 +346,20 @@ Eメールを送信する、エラー、イベントをロギングするなど�
 
 プラグインがインストールされる直前に`plugin.pre_install`イベントが通知されます。
 
-### `plugin.post_install`
+### ~`plugin.post_install`~
 
 *通知メソッド*: `notify`
 
 *デフォルトの通知元クラス*: `sfPluginManager`
 
 | パラメーター    | 説明
-| ------------ | -----------
-| `channel`    | プラグインのチャンネル
-| `plugin`     | プラグインの名前
+| -------------- | -----------
+| `channel`      | プラグインのチャンネル
+| `plugin`       | プラグインの名前
 
 プラグインがインストールされた直後に`plugin.post_install`イベントが通知されます。
 
-### `plugin.pre_uninstall`
+### ~`plugin.pre_uninstall`~
 
 *通知メソッド*: `notify`
 
@@ -372,7 +372,7 @@ Eメールを送信する、エラー、イベントをロギングするなど�
 
 プラグインがアンインストールされる直前に`plugin.pre_uninstall`イベントが通知されます。
 
-### `plugin.post_uninstall`
+### ~`plugin.post_uninstall`~
 
 *通知メソッド*: `notify`
 
@@ -388,7 +388,7 @@ Eメールを送信する、エラー、イベントをロギングするなど�
 `request`
 ---------
 
-### `request.filter_parameters`
+### ~`request.filter_parameters`~
 
 *通知メソッド*: `filter`
 
@@ -400,7 +400,7 @@ Eメールを送信する、エラー、イベントをロギングするなど�
 
 リクエストパラメーターが初期化されるときに`request.filter_parameters`イベントが通知されます。
 
-### `request.method_not_found`
+### ~`request.method_not_found`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -419,7 +419,7 @@ Eメールを送信する、エラー、イベントをロギングするなど�
 `response`
 ----------
 
-### `response.method_not_found`
+### ~`response.method_not_found`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -435,7 +435,7 @@ Eメールを送信する、エラー、イベントをロギングするなど�
 このイベントをリスニングすることで、継承を使わずに、
 クラスにメソッドを追加できます。
 
-### `response.filter_content`
+### ~`response.filter_content`~
 
 *通知メソッド*: `filter`
 
@@ -447,7 +447,7 @@ Eメールを送信する、エラー、イベントをロギングするなど�
 `routing`
 ---------
 
-### `routing.load_configuration`
+### ~`routing.load_configuration`~
 
 *通知メソッド*: `notify`
 
@@ -459,7 +459,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 `task`
 ------
 
-### `task.cache.clear`
+### ~`task.cache.clear`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -477,7 +477,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 `template`
 ----------
 
-### `template.filter_parameters`
+### ~`template.filter_parameters`~
 
 *通知メソッド*: `filter`
 
@@ -490,7 +490,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 `user`
 ------
 
-### `user.change_culture`
+### ~`user.change_culture`~
 
 *通知メソッド*: `notify`
 
@@ -503,7 +503,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 リクエストの間にユーザーのcultureが変更されるときに
 `user.change_culture`イベントが通知されます。
 
-### `user.method_not_found`
+### ~`user.method_not_found`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -519,15 +519,15 @@ routingファクトリがルーティング設定をロードするときに`rou
 このイベントをリスニングすることで、継承を使わずに
 クラスにメソッドを追加できます。
 
-### `user.change_authentication`
+### ~`user.change_authentication`~
 
 *通知メソッド*: `notify`
 
 *デフォルトの通知元クラス*: `sfBasicSecurityUser`
 
 | パラメーター       | 説明
-| --------------- | -----------
-| `authenticated` | ユーザーが認証されているかどうか
+| ----------------- | -----------
+| `authenticated`   | ユーザーが認証されているかどうか
 
 ユーザーの認証ステータスが変更されるときに
 `user.change_authentication`イベントが通知されます。
@@ -535,7 +535,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 `view`
 ------
 
-### `view.configure_format`
+### ~`view.configure_format`~
 
 *通知メソッド*: `notify`
 
@@ -552,7 +552,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 通知されます。このイベントによってリクエストされたフォーマットに従って
 ビューとレスポンスオブジェクトを変更できます。
 
-### `view.method_not_found`
+### ~`view.method_not_found`~
 
 *通知メソッド*: `notifyUntil`
 
@@ -569,7 +569,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 `view.cache`
 ------------
 
-### `view.cache.filter_content`
+### ~`view.cache.filter_content`~
 
 *通知メソッド*: `filter`
 

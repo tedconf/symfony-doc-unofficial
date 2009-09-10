@@ -1,7 +1,7 @@
 databases.yml設定ファイル
 ========================
 
-`databases.yml`はデータベース接続の設定を可能にします。
+~`databases.yml`~はデータベース接続の設定を可能にします。
 これはsymfonyに搭載されているORMであるPropelとDoctrineの両方で
 使われます。
 
@@ -16,9 +16,9 @@ databases.yml設定ファイル
 >デフォルトの設定をオーバーライドできます。
 
 はじめの章で説明したように、`databases.yml`ファイルは
-[**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効になり、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
+[**環境を認識し**](#chapter_03_environment_awareness)、
+[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、
+[**定数**](#chapter_03_constants)を含むことができます。
 
 `databases.yml`で説明したそれぞれの接続はデータベースオブジェクトを設定するために
 使用する、名前、データベースハンドラクラスの名前、
@@ -41,8 +41,8 @@ databases.yml設定ファイル
 
 >**NOTE**
 >`databases.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->プロセスは`sfDatabaseConfigHandler`
->[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
+>プロセスは~`sfDatabaseConfigHandler`~
+>[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 -
 

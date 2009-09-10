@@ -1,15 +1,15 @@
 filters.yml設定ファイル
 ======================
 
-`filters.yml`設定ファイルはすべてのリクエストで実行される
+~`filters.yml`~設定ファイルはすべてのリクエストで実行される
 フィルターチェーンを記述します。
 
 アプリケーション用のメインの`filters.yml`設定ファイルは
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 最初の章で説明したように、`filters.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効で、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
+[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、
+[**定数**](#chapter_03_constants)を含むことができます。
 
 `filters.yml`設定ファイルは名前つきフィルター定義のリストを
 格納できます:
@@ -23,7 +23,7 @@ filters.yml設定ファイル
 
     # ...
 
-コントローラがリクエストに対してフィルターを初期化するとき、
+コントローラーがリクエストに対してフィルターを初期化するとき、
 `filters.yml`ファイルを読み込みフィルターオブジェクトを設定するために使われる
 フィルター(`class`)とパラメーター(`param`)のクラス名を探すことで
 フィルターを登録します:
@@ -66,7 +66,7 @@ symfonyは複数のフィルターを1つのチェーンとして実行するの
 
 2つの特別な名前のフィルター: `rendering`と`execution`があります。
 これらは両方とも必須で`type`パラメーターで識別されます。
-`rendering`フィルターは常に最初に登録されフィルターリングされ
+`rendering`フィルターは常に最初に登録されフィルタリングされ
 `execution`フィルターは最後のものになります:
 
     [yml]
@@ -84,19 +84,19 @@ symfonyは複数のフィルターを1つのチェーンとして実行するの
 
 >**NOTE**
 >`filters.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->処理は`sfFilterConfigHandler`
->[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
+>処理は~`sfFilterConfigHandler`~
+>[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 <div class="pagebreak"></div>
 
 フィルター
---------
+----------
 
- * [`rendering`](#chapter_12-Filters_sub_rendering)
- * [`security`](#chapter_12-Filters_sub_security)
- * [`cache`](#chapter_12-Filters_sub_cache)
- * [`common`](#chapter_12-Filters_sub_common)
- * [`execution`](#chapter_12-Filters_sub_execution)
+ * [`rendering`](#chapter_12_rendering)
+ * [`security`](#chapter_12_security)
+ * [`cache`](#chapter_12_cache)
+ * [`common`](#chapter_12_common)
+ * [`execution`](#chapter_12_execution)
 
 `rendering`
 -----------
@@ -132,7 +132,7 @@ symfonyは複数のフィルターを1つのチェーンとして実行するの
 `security`フィルターは`security`型を持たなければなりません。
 
 `security`フィルターのきめ細かい設定は
-`security.yml`設定[ファイル](#chapter_08-Security)を通して行われます。
+`security.yml`設定[ファイル](#chapter_08)を通して行われます。
 
 >**TIP**
 >必須のアクションが`security.yml`でセキュアなものとして設定されていない場合、

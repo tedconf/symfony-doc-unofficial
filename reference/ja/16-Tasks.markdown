@@ -5,7 +5,7 @@ symfonyフレームワークはコマンドラインインターフェイスツ�
 組み込みのタスクによって開発者はプロジェクトの間に繰り返される
 たくさんのタスクを実行できるようになります。
 
-引数無しで`symfony` CLIを実行すると、
+引数なしで`symfony` CLIを実行すると、
 利用可能なタスクの一覧が表示されます:
 
     $ php symfony
@@ -38,95 +38,95 @@ CLIツールは値の有無とオプションの長短の表記をそれぞれ�
 ---------------
 
  * グローバルタスク
-   * [`help`](#chapter_16-Tasks_sub_help)
-   * [`list`](#chapter_16-Tasks_sub_list)
- * [`app`](#chapter_16-Tasks_sub_app)
-   * [`app::routes`](#chapter_16-Tasks_sub_app_routes)
- * [`cache`](#chapter_16-Tasks_sub_cache)
-   * [`cache::clear`](#chapter_16-Tasks_sub_cache_clear)
- * [`configure`](#chapter_16-Tasks_sub_configure)
-   * [`configure::author`](#chapter_16-Tasks_sub_configure_author)
-   * [`configure::database`](#chapter_16-Tasks_sub_configure_database)
- * [`doctrine`](#chapter_16-Tasks_sub_doctrine)
-   * [`doctrine::build-all`](#chapter_16-Tasks_sub_doctrine_build_all)
-   * [`doctrine::build-all-load`](#chapter_16-Tasks_sub_doctrine_build_all_load)
-   * [`doctrine::build-all-reload`](#chapter_16-Tasks_sub_doctrine_build_all_reload)
-   * [`doctrine::build-all-reload-test-all`](#chapter_16-Tasks_sub_doctrine_build_all_reload_test_all)
-   * [`doctrine::build-db`](#chapter_16-Tasks_sub_doctrine_build_db)
-   * [`doctrine::build-filters`](#chapter_16-Tasks_sub_doctrine_build_filters)
-   * [`doctrine::build-forms`](#chapter_16-Tasks_sub_doctrine_build_forms)
-   * [`doctrine::build-model`](#chapter_16-Tasks_sub_doctrine_build_model)
-   * [`doctrine::build-schema`](#chapter_16-Tasks_sub_doctrine_build_schema)
-   * [`doctrine::build-sql`](#chapter_16-Tasks_sub_doctrine_build_sql)
-   * [`doctrine::data-dump`](#chapter_16-Tasks_sub_doctrine_data_dump)
-   * [`doctrine::data-load`](#chapter_16-Tasks_sub_doctrine_data_load)
-   * [`doctrine::dql`](#chapter_16-Tasks_sub_doctrine_dql)
-   * [`doctrine::drop-db`](#chapter_16-Tasks_sub_doctrine_drop_db)
-   * [`doctrine::generate-admin`](#chapter_16-Tasks_sub_doctrine_generate_admin)
-   * [`doctrine::generate-migration`](#chapter_16-Tasks_sub_doctrine_generate_migration)
-   * [`doctrine::generate-migrations-db`](#chapter_16-Tasks_sub_doctrine_generate_migrations_db)
-   * [`doctrine::generate-migrations-models`](#chapter_16-Tasks_sub_doctrine_generate_migrations_models)
-   * [`doctrine::generate-module`](#chapter_16-Tasks_sub_doctrine_generate_module)
-   * [`doctrine::generate-module-for-route`](#chapter_16-Tasks_sub_doctrine_generate_module_for_route)
-   * [`doctrine::insert-sql`](#chapter_16-Tasks_sub_doctrine_insert_sql)
-   * [`doctrine::migrate`](#chapter_16-Tasks_sub_doctrine_migrate)
-   * [`doctrine::rebuild-db`](#chapter_16-Tasks_sub_doctrine_rebuild_db)
- * [`generate`](#chapter_16-Tasks_sub_generate)
-   * [`generate::app`](#chapter_16-Tasks_sub_generate_app)
-   * [`generate::module`](#chapter_16-Tasks_sub_generate_module)
-   * [`generate::project`](#chapter_16-Tasks_sub_generate_project)
-   * [`generate::task`](#chapter_16-Tasks_sub_generate_task)
- * [`i18n`](#chapter_16-Tasks_sub_i18n)
-   * [`i18n::extract`](#chapter_16-Tasks_sub_i18n_extract)
-   * [`i18n::find`](#chapter_16-Tasks_sub_i18n_find)
- * [`log`](#chapter_16-Tasks_sub_log)
-   * [`log::clear`](#chapter_16-Tasks_sub_log_clear)
-   * [`log::rotate`](#chapter_16-Tasks_sub_log_rotate)
- * [`plugin`](#chapter_16-Tasks_sub_plugin)
-   * [`plugin::add-channel`](#chapter_16-Tasks_sub_plugin_add_channel)
-   * [`plugin::install`](#chapter_16-Tasks_sub_plugin_install)
-   * [`plugin::list`](#chapter_16-Tasks_sub_plugin_list)
-   * [`plugin::publish-assets`](#chapter_16-Tasks_sub_plugin_publish_assets)
-   * [`plugin::uninstall`](#chapter_16-Tasks_sub_plugin_uninstall)
-   * [`plugin::upgrade`](#chapter_16-Tasks_sub_plugin_upgrade)
- * [`project`](#chapter_16-Tasks_sub_project)
-   * [`project::clear-controllers`](#chapter_16-Tasks_sub_project_clear_controllers)
-   * [`project::deploy`](#chapter_16-Tasks_sub_project_deploy)
-   * [`project::disable`](#chapter_16-Tasks_sub_project_disable)
-   * [`project::enable`](#chapter_16-Tasks_sub_project_enable)
-   * [`project::freeze`](#chapter_16-Tasks_sub_project_freeze)
-   * [`project::permissions`](#chapter_16-Tasks_sub_project_permissions)
-   * [`project::unfreeze`](#chapter_16-Tasks_sub_project_unfreeze)
-   * [`project::upgrade1.1`](#chapter_16-Tasks_sub_project_upgrade1_1)
-   * [`project::upgrade1.2`](#chapter_16-Tasks_sub_project_upgrade1_2)
- * [`propel`](#chapter_16-Tasks_sub_propel)
-   * [`propel::build-all`](#chapter_16-Tasks_sub_propel_build_all)
-   * [`propel::build-all-load`](#chapter_16-Tasks_sub_propel_build_all_load)
-   * [`propel::build-filters`](#chapter_16-Tasks_sub_propel_build_filters)
-   * [`propel::build-forms`](#chapter_16-Tasks_sub_propel_build_forms)
-   * [`propel::build-model`](#chapter_16-Tasks_sub_propel_build_model)
-   * [`propel::build-schema`](#chapter_16-Tasks_sub_propel_build_schema)
-   * [`propel::build-sql`](#chapter_16-Tasks_sub_propel_build_sql)
-   * [`propel::data-dump`](#chapter_16-Tasks_sub_propel_data_dump)
-   * [`propel::data-load`](#chapter_16-Tasks_sub_propel_data_load)
-   * [`propel::generate-admin`](#chapter_16-Tasks_sub_propel_generate_admin)
-   * [`propel::generate-module`](#chapter_16-Tasks_sub_propel_generate_module)
-   * [`propel::generate-module-for-route`](#chapter_16-Tasks_sub_propel_generate_module_for_route)
-   * [`propel::graphviz`](#chapter_16-Tasks_sub_propel_graphviz)
-   * [`propel::init-admin`](#chapter_16-Tasks_sub_propel_init_admin)
-   * [`propel::insert-sql`](#chapter_16-Tasks_sub_propel_insert_sql)
-   * [`propel::schema-to-xml`](#chapter_16-Tasks_sub_propel_schema_to_xml)
-   * [`propel::schema-to-yml`](#chapter_16-Tasks_sub_propel_schema_to_yml)
- * [`test`](#chapter_16-Tasks_sub_test)
-   * [`test::all`](#chapter_16-Tasks_sub_test_all)
-   * [`test::coverage`](#chapter_16-Tasks_sub_test_coverage)
-   * [`test::functional`](#chapter_16-Tasks_sub_test_functional)
-   * [`test::unit`](#chapter_16-Tasks_sub_test_unit)
+   * [`help`](#chapter_16_sub_help)
+   * [`list`](#chapter_16_sub_list)
+ * [`app`](#chapter_16_app)
+   * [`app::routes`](#chapter_16_sub_app_routes)
+ * [`cache`](#chapter_16_cache)
+   * [`cache::clear`](#chapter_16_sub_cache_clear)
+ * [`configure`](#chapter_16_configure)
+   * [`configure::author`](#chapter_16_sub_configure_author)
+   * [`configure::database`](#chapter_16_sub_configure_database)
+ * [`doctrine`](#chapter_16_doctrine)
+   * [`doctrine::build-all`](#chapter_16_sub_doctrine_build_all)
+   * [`doctrine::build-all-load`](#chapter_16_sub_doctrine_build_all_load)
+   * [`doctrine::build-all-reload`](#chapter_16_sub_doctrine_build_all_reload)
+   * [`doctrine::build-all-reload-test-all`](#chapter_16_sub_doctrine_build_all_reload_test_all)
+   * [`doctrine::build-db`](#chapter_16_sub_doctrine_build_db)
+   * [`doctrine::build-filters`](#chapter_16_sub_doctrine_build_filters)
+   * [`doctrine::build-forms`](#chapter_16_sub_doctrine_build_forms)
+   * [`doctrine::build-model`](#chapter_16_sub_doctrine_build_model)
+   * [`doctrine::build-schema`](#chapter_16_sub_doctrine_build_schema)
+   * [`doctrine::build-sql`](#chapter_16_sub_doctrine_build_sql)
+   * [`doctrine::data-dump`](#chapter_16_sub_doctrine_data_dump)
+   * [`doctrine::data-load`](#chapter_16_sub_doctrine_data_load)
+   * [`doctrine::dql`](#chapter_16_sub_doctrine_dql)
+   * [`doctrine::drop-db`](#chapter_16_sub_doctrine_drop_db)
+   * [`doctrine::generate-admin`](#chapter_16_sub_doctrine_generate_admin)
+   * [`doctrine::generate-migration`](#chapter_16_sub_doctrine_generate_migration)
+   * [`doctrine::generate-migrations-db`](#chapter_16_sub_doctrine_generate_migrations_db)
+   * [`doctrine::generate-migrations-models`](#chapter_16_sub_doctrine_generate_migrations_models)
+   * [`doctrine::generate-module`](#chapter_16_sub_doctrine_generate_module)
+   * [`doctrine::generate-module-for-route`](#chapter_16_sub_doctrine_generate_module_for_route)
+   * [`doctrine::insert-sql`](#chapter_16_sub_doctrine_insert_sql)
+   * [`doctrine::migrate`](#chapter_16_sub_doctrine_migrate)
+   * [`doctrine::rebuild-db`](#chapter_16_sub_doctrine_rebuild_db)
+ * [`generate`](#chapter_16_generate)
+   * [`generate::app`](#chapter_16_sub_generate_app)
+   * [`generate::module`](#chapter_16_sub_generate_module)
+   * [`generate::project`](#chapter_16_sub_generate_project)
+   * [`generate::task`](#chapter_16_sub_generate_task)
+ * [`i18n`](#chapter_16_i18n)
+   * [`i18n::extract`](#chapter_16_sub_i18n_extract)
+   * [`i18n::find`](#chapter_16_sub_i18n_find)
+ * [`log`](#chapter_16_log)
+   * [`log::clear`](#chapter_16_sub_log_clear)
+   * [`log::rotate`](#chapter_16_sub_log_rotate)
+ * [`plugin`](#chapter_16_plugin)
+   * [`plugin::add-channel`](#chapter_16_sub_plugin_add_channel)
+   * [`plugin::install`](#chapter_16_sub_plugin_install)
+   * [`plugin::list`](#chapter_16_sub_plugin_list)
+   * [`plugin::publish-assets`](#chapter_16_sub_plugin_publish_assets)
+   * [`plugin::uninstall`](#chapter_16_sub_plugin_uninstall)
+   * [`plugin::upgrade`](#chapter_16_sub_plugin_upgrade)
+ * [`project`](#chapter_16_project)
+   * [`project::clear-controllers`](#chapter_16_sub_project_clear_controllers)
+   * [`project::deploy`](#chapter_16_sub_project_deploy)
+   * [`project::disable`](#chapter_16_sub_project_disable)
+   * [`project::enable`](#chapter_16_sub_project_enable)
+   * [`project::freeze`](#chapter_16_sub_project_freeze)
+   * [`project::permissions`](#chapter_16_sub_project_permissions)
+   * [`project::unfreeze`](#chapter_16_sub_project_unfreeze)
+   * [`project::upgrade1.1`](#chapter_16_sub_project_upgrade1_1)
+   * [`project::upgrade1.2`](#chapter_16_sub_project_upgrade1_2)
+ * [`propel`](#chapter_16_propel)
+   * [`propel::build-all`](#chapter_16_sub_propel_build_all)
+   * [`propel::build-all-load`](#chapter_16_sub_propel_build_all_load)
+   * [`propel::build-filters`](#chapter_16_sub_propel_build_filters)
+   * [`propel::build-forms`](#chapter_16_sub_propel_build_forms)
+   * [`propel::build-model`](#chapter_16_sub_propel_build_model)
+   * [`propel::build-schema`](#chapter_16_sub_propel_build_schema)
+   * [`propel::build-sql`](#chapter_16_sub_propel_build_sql)
+   * [`propel::data-dump`](#chapter_16_sub_propel_data_dump)
+   * [`propel::data-load`](#chapter_16_sub_propel_data_load)
+   * [`propel::generate-admin`](#chapter_16_sub_propel_generate_admin)
+   * [`propel::generate-module`](#chapter_16_sub_propel_generate_module)
+   * [`propel::generate-module-for-route`](#chapter_16_sub_propel_generate_module_for_route)
+   * [`propel::graphviz`](#chapter_16_sub_propel_graphviz)
+   * [`propel::init-admin`](#chapter_16_sub_propel_init_admin)
+   * [`propel::insert-sql`](#chapter_16_sub_propel_insert_sql)
+   * [`propel::schema-to-xml`](#chapter_16_sub_propel_schema_to_xml)
+   * [`propel::schema-to-yml`](#chapter_16_sub_propel_schema_to_yml)
+ * [`test`](#chapter_16_test)
+   * [`test::all`](#chapter_16_sub_test_all)
+   * [`test::coverage`](#chapter_16_sub_test_coverage)
+   * [`test::functional`](#chapter_16_sub_test_functional)
+   * [`test::unit`](#chapter_16_sub_test_unit)
 
 
 <div class="pagebreak"></div>
 
-### `help`
+### ~`help`~
 
 `help`タスクはタスク用のヘルプメッセージを表示します:
 
@@ -140,10 +140,7 @@ CLIツールは値の有無とオプションの長短の表記をそれぞれ�
 
 
 
-
-
-
-### `list`
+### ~`list`~
 
 `list`タスクはタスクの一覧を表示します:
 
@@ -169,7 +166,7 @@ CLIツールは値の有無とオプションの長短の表記をそれぞれ�
 `app`
 -----
 
-### `app::routes`
+### ~`app::routes`~
 
 `app::routes`タスクはアプリケーション用の現在のルートを表示します:
 
@@ -192,7 +189,7 @@ CLIツールは値の有無とオプションの長短の表記をそれぞれ�
 `cache`
 -------
 
-### `cache::clear`
+### ~`cache::clear`~
 
 `cache::clear`タスクはキャッシュをクリアします:
 
@@ -239,7 +236,7 @@ CLIツールは値の有無とオプションの長短の表記をそれぞれ�
 `configure`
 -----------
 
-### `configure::author`
+### ~`configure::author`~
 
 `configure::author`タスクはプロジェクトの著者を設定します:
 
@@ -258,11 +255,11 @@ CLIツールは値の有無とオプションの長短の表記をそれぞれ�
 
     ./symfony configure:author "Fabien Potencier <fabien.potencier@symfony-project.com>"
 
-それぞれの生成ファイルでPHPDocヘッダーをあらかじめ設定するために著者の名前はジェネレータによって使われます。
+それぞれの生成ファイルでPHPDocヘッダーをあらかじめ設定するために著者の名前はジェネレーターによって使われます。
 
 値は[config/properties.ini]に保存されます。
 
-### `configure::database`
+### ~`configure::database`~
 
 `configure::database`タスクはデータベースのDSNを設定します:
 
@@ -303,13 +300,13 @@ CLIツールは値の有無とオプションの長短の表記をそれぞれ�
 
     ./symfony configure:database --name=main --class=sfDoctrineDatabase mysql:host=localhost;dbname=example root
 
-WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設定する際に
+WARNING: `Propel`データベースを使い`app`なしで`all`環境用に設定する際に
 `propel.ini`ファイルも更新されます。
 
 `doctrine`
 ----------
 
-### `doctrine::build-all`
+### ~`doctrine::build-all`~
 
 `doctrine::build-all`タスクはDoctrineモデル、SQLを生成しデータベースを初期化します:
 
@@ -347,7 +344,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:buil-all-load --no-confirmation
 
-### `doctrine::build-all-load`
+### ~`doctrine::build-all-load`~
 
 `doctrine::build-all-load`タスクはDoctrineモデル、SQLを生成し、データベースを初期化し、フィクスチャデータをロードします:
 
@@ -389,7 +386,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:build-all-load --no-confirmation
 
-### `doctrine::build-all-reload`
+### ~`doctrine::build-all-reload`~
 
 `doctrine::build-all-reload`タスクはDoctrineモデル、SQLを生成し、データベースを初期化し、データをロードします:
 
@@ -424,7 +421,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
     ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
 
-### `doctrine::build-all-reload-test-all`
+### ~`doctrine::build-all-reload-test-all`~
 
 `doctrine::build-all-reload-test-all`タスクはDoctrineモデル、SQLを生成し、データベースを初期化し、データをロードしてすべてのテストを実施します:
 
@@ -462,7 +459,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 `doctrine:data-load`タスクなのでアプリケーションの引数を受け取ります。
 詳細な情報は`doctrine:data-load`のヘルプページを参照してください。
 
-### `doctrine::build-db`
+### ~`doctrine::build-db`~
 
 `doctrine::build-db`タスクは現在のモデル用のデータベースを作成します:
 
@@ -484,7 +481,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
 タスクは`config/doctrine/databases.yml`の接続情報を読み込みます:
 
-### `doctrine::build-filters`
+### ~`doctrine::build-filters`~
 
 `doctrine::build-filters`タスクは現在のモデル用のフィルターフォームクラスを作成します:
 
@@ -520,7 +517,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 このタスクは`lib/filter`のカスタムタスクをオーバーライドしません。
 これは`lib/filter/base`で生成された基底クラスのみを置き換えます。
 
-### `doctrine::build-forms`
+### ~`doctrine::build-forms`~
 
 `doctrine::build-forms`タスクは現在のモデル用のフォームクラスを作成します:
 
@@ -556,7 +553,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 このタスクは`lib/form`のカスタムクラスをけっしてオーバーライドしません。
 これは`lib/form/base`で生成された基底クラスのみを置き換えます。
 
-### `doctrine::build-model`
+### ~`doctrine::build-model`~
 
 `doctrine::build-model`タスクは現在のモデル用のクラスを作成します:
 
@@ -577,14 +574,14 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
     ./symfony doctrine:build-model
 
 タスクはプロジェクトとインストールしたすべてのプラグインから
-`config/doctrine/*.yml`のスキーマ情報を読み取ります。
+`config/doctrine/*.yml`のスキーマ情報を読み込みます。
 
 モデルクラスファイルは`lib/model/doctrine`で作成されます。
 
-このタスクは`lib/model/doctrine`のカスタムタスクを決してオーバーライドしません。
+このタスクは`lib/model/doctrine`のカスタムタスクをけして上書きしません。
 これは`lib/model/doctrine/base`のファイルのみを置き換えます。
 
-### `doctrine::build-schema`
+### ~`doctrine::build-schema`~
 
 `doctrine::build-schema` タスクは既存のデータベースからスキーマを作成します:
 
@@ -604,9 +601,9 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:build-schema
 
-タスクは`config/doctrine`でYAMLファイルを作成します。
+タスクは`config/doctrine`にYAMLファイルを作成します。
 
-### `doctrine::build-sql`
+### ~`doctrine::build-sql`~
 
 `doctrine::build-sql`タスクは現在のモデル用のSQLを作成します:
 
@@ -630,7 +627,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     doctrine.database = mysql
 
-### `doctrine::data-dump`
+### ~`doctrine::data-dump`~
 
 `doctrine::data-dump`タスクはフィクスチャディレクトリにデータをダンプします:
 
@@ -660,7 +657,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:data-load frontend
 
-### `doctrine::data-load`
+### ~`doctrine::data-load`~
 
 `doctrine::data-load`タスクはフィクスチャディレクトリからデータをロードします:
 
@@ -695,7 +692,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:data-load --append frontend
 
-### `doctrine::dql`
+### ~`doctrine::dql`~
 
 `doctrine::dql`タスクはDQLクエリを実行し結果を表示します:
 
@@ -723,7 +720,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:dql --show-sql "FROM User u"
 
-### `doctrine::drop-db`
+### ~`doctrine::drop-db`~
 
 `doctrine::drop-db`タスクは現在のモデル用のデータベースを削除します:
 
@@ -746,7 +743,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
 タスクは`config/doctrine/databases.yml`の接続情報を読み込みます:
 
-### `doctrine::generate-admin`
+### ~`doctrine::generate-admin`~
 
 `doctrine::generate-admin`タスクはDoctrineのadminモジュールを生成します:
 
@@ -794,7 +791,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
         model:              Article
         with_wildcard_routes:   true
 
-### `doctrine::generate-migration`
+### ~`doctrine::generate-migration`~
 
 `doctrine::generate-migration`タスクはマイグレーションクラスを生成します:
 
@@ -817,7 +814,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:generate-migration
 
-### `doctrine::generate-migrations-db`
+### ~`doctrine::generate-migrations-db`~
 
 `doctrine::generate-migrations-db`タスクは既存のデータベース接続からマイグレーションクラスを生成します:
 
@@ -837,7 +834,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:generate-migration
 
-### `doctrine::generate-migrations-models`
+### ~`doctrine::generate-migrations-models`~
 
 `doctrine::generate-migrations-models`タスクは既存のモデルのセットからマイグレーションクラスを生成します:
 
@@ -857,7 +854,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:generate-migration
 
-### `doctrine::generate-module`
+### ~`doctrine::generate-module`~
 
 `doctrine::generate-module`タスクはDoctrineモジュールを生成します:
 
@@ -897,13 +894,13 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:generate-module --generate-in-cache frontend article Article
 
-`--theme`オプションを指定することでジェネレータはカスタマイズされたテーマを使うことができます:
+`--theme`オプションを指定することでジェネレーターはカスタマイズされたテーマを使うことができます:
 
     ./symfony doctrine:generate-module --theme="custom" frontend article Article
 
-この方法では、独自仕様に合わせてモジュールジェネレータを作成できます。
+この方法では、独自仕様に合わせてモジュールジェネレーターを作成できます。
 
-### `doctrine::generate-module-for-route`
+### ~`doctrine::generate-module-for-route`~
 
 `doctrine::generate-module-for-route`タスクはルートの定義用のDoctrineモジュールを生成します:
 
@@ -933,7 +930,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 タスクは`routing.yml`で見つかる`%article%`のルート定義用の`%frontend%`アプリケーションで
 モジュールを作成します。
 
-### `doctrine::insert-sql`
+### ~`doctrine::insert-sql`~
 
 `doctrine::insert-sql`タスクは現在のモデルにSQLをinsertします:
 
@@ -956,7 +953,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 タスクはデータベースに接続しすべての`lib/model/doctrine/*.php`ファイル用の
 テーブルを作成します。
 
-### `doctrine::migrate`
+### ~`doctrine::migrate`~
 
 `doctrine::migrate`タスクは現在/指定されたバージョンのデータベースにマイグレートします:
 
@@ -979,7 +976,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
    ./symfony doctrine:migrate
 
-### `doctrine::rebuild-db`
+### ~`doctrine::rebuild-db`~
 
 `doctrine::rebuild-db`タスクは現在のモデル用のデータベースを作成します:
 
@@ -1005,7 +1002,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 `generate`
 ----------
 
-### `generate::app`
+### ~`generate::app`~
 
 `generate::app`タスクは新しいアプリケーションを生成します:
 
@@ -1030,7 +1027,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
     ./symfony generate:app frontend
 
 このタスクは`web/`ディレクトリに
-2つのフロントコントローラも作成します:
+2つのフロントコントローラーも作成します:
 
     web/%application%.php`     運用環境用
     web/%application%_dev.php` 開発環境用
@@ -1051,7 +1048,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
     ./symfony generate:app frontend --csrf-secret=UniqueSecret
 
 
-### `generate::module`
+### ~`generate::module`~
 
 `generate::module`タスクは新しいモジュールを生成します:
 
@@ -1088,7 +1085,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 アプリケーションに同じ名前のモジュールがすでにある場合、
 `sfCommandException`を投げます。
 
-### `generate::project`
+### ~`generate::project`~
 
 `generate::project`タスクは新しいプロジェクトを生成します:
 
@@ -1111,7 +1108,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 現在のディレクトリがすでにsymfonyのプロジェクトを含む場合、
 これは`sfCommandException`を投げます。
 
-### `generate::task`
+### ~`generate::task`~
 
 `generate::task`タスクは新しいタスク用のスケルトンクラスを作成します:
 
@@ -1161,7 +1158,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 `i18n`
 ------
 
-### `i18n::extract`
+### ~`i18n::extract`~
 
 `i18n::extract`タスクはPHPファイルから国際化された文字列を抽出します:
 
@@ -1211,7 +1208,7 @@ i18nメッセージカタログでこれらを保存するには、`--auto-save`
 
     ./symfony i18n:extract --auto-delete frontend fr
 
-### `i18n::find`
+### ~`i18n::find`~
 
 `i18n::find`タスクはアプリケーションで"i18n ready"ではない文字列を見つけます:
 
@@ -1244,7 +1241,7 @@ i18nメッセージカタログでこれらを保存するには、`--auto-save`
 `log`
 -----
 
-### `log::clear`
+### ~`log::clear`~
 
 `log::clear`タスクはログファイルをクリアします:
 
@@ -1260,7 +1257,7 @@ i18nメッセージカタログでこれらを保存するには、`--auto-save`
 
     ./symfony log:clear
 
-### `log::rotate`
+### ~`log::rotate`~
 
 `log::rotate`タスクはアプリケーションのログファイルのローテーションを行います:
 
@@ -1292,7 +1289,7 @@ i18nメッセージカタログでこれらを保存するには、`--auto-save`
 `plugin`
 --------
 
-### `plugin::add-channel`
+### ~`plugin::add-channel`~
 
 `plugin::add-channel`タスクは新しいPEARチャンネルを追加します:
 
@@ -1311,7 +1308,7 @@ i18nメッセージカタログでこれらを保存するには、`--auto-save`
 
     ./symfony plugin:add-channel symfony.plugins.pear.example.com
 
-### `plugin::install`
+### ~`plugin::install`~
 
 `plugin::install`タスクはプラグインをインストールします:
 
@@ -1375,7 +1372,7 @@ WebサイトでホストされているPEARパッケージをインストール�
 タスクはこれらのアセットのために`web/`の元で`%name%`シンボリックリンクを作成します。
 Windowsでは、タスクはこれらすべてのファイルを`web/%name%`ディレクトリにコピーします。
 
-### `plugin::list`
+### ~`plugin::list`~
 
 `plugin::list`タスクはインストールされたプラグインの一覧を表示します:
 
@@ -1393,7 +1390,7 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 
 これはそれぞれのプラグインのチャンネルとバージョンも表示します。
 
-### `plugin::publish-assets`
+### ~`plugin::publish-assets`~
 
 `plugin::publish-assets`タスクはすべてのプラグイン用のWebアセットを公開します:
 
@@ -1416,7 +1413,7 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 実際これはそれぞれのプラグインに`plugin.post_install`イベントを送信します。
 
 
-### `plugin::uninstall`
+### ~`plugin::uninstall`~
 
 `plugin::uninstall`タスクはプラグインをアンインストールします:
 
@@ -1458,7 +1455,7 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 タスクは`web/%name%`シンボリックリンク(Unix系)
 もしくはディレクトリ(Windows)も削除します。
 
-### `plugin::upgrade`
+### ~`plugin::upgrade`~
 
 `plugin::upgrade`タスクはプラグインをアップグレードします:
 
@@ -1492,9 +1489,9 @@ Windowsではタスクは`web/%name%`ディレクトリのコンテンツもア�
 `project`
 ---------
 
-### `project::clear-controllers`
+### ~`project::clear-controllers`~
 
-`project::clear-controllers`タスクは運用環境以外のコントローラをクリアします:
+`project::clear-controllers`タスクは運用環境以外のコントローラーをクリアします:
 
     $ php symfony project:clear-controllers  
 
@@ -1505,15 +1502,15 @@ Windowsではタスクは`web/%name%`ディレクトリのコンテンツもア�
 
 
 `project:clear-controllers`タスクは運用環境以外の
-コントローラをクリアします:
+コントローラーをクリアします:
 
     ./symfony project:clear-controllers
 
-運用環境以外のすべてのフロントコントローラを削除するために
+運用環境以外のすべてのフロントコントローラーを削除するために
 運用サーバーでこのタスクを使うことができます。
 
 `frontend`と`backend`という名前の2つのアプリケーションがある場合、
-`web/`にはデフォルトのコントローラは4つあります:
+`web/`にはデフォルトのコントローラーは4つあります:
 
     index.php
     frontend_dev.php
@@ -1521,15 +1518,15 @@ Windowsではタスクは`web/%name%`ディレクトリのコンテンツもア�
     backend_dev.php
 
 `project:clear-controllers`タスクを実行した後で、
-`web/`には2つのフロントコントローラが残ります:
+`web/`には2つのフロントコントローラーが残ります:
 
     index.php
     backend.php
 
 デバッグモードとWebデバッグツールバーが無効なので
-これら2つのコントローラは安全です。
+これら2つのコントローラーは安全です。
 
-### `project:deploy`
+### ~`project:deploy`~
 
 `project:deploy`タスクはプロジェクトを別のサーバーにデプロイします:
 
@@ -1591,7 +1588,7 @@ rsync実行ファイルに渡されるオプションを指定することがで
 
     ./symfony project:deploy --go --rsync-options=avz
 
-### `project::disable`
+### ~`project::disable`~
 
 `project::disable`タスクは与えられた環境のアプリケーションを無効にします:
 
@@ -1611,7 +1608,7 @@ rsync実行ファイルに渡されるオプションを指定することがで
 
     ./symfony project:disable frontend prod
 
-### `project::enable`
+### ~`project::enable`~
 
 `project::enable`タスクは与えられた環境のアプリケーションを有効にします:
 
@@ -1631,7 +1628,7 @@ rsync実行ファイルに渡されるオプションを指定することがで
 
     ./symfony project:enable frontend prod
 
-### `project::freeze`
+### ~`project::freeze`~
 
 `project::freeze`タスクはsymfonyライブラリを凍結します:
 
@@ -1657,7 +1654,7 @@ rsync実行ファイルに渡されるオプションを指定することがで
 タスクはsymfonyの埋め込みファイルに切り替えるために
 `config/config.php`も変更します。
 
-### `project::permissions`
+### ~`project::permissions`~
 
 `project::permissions`タスクはsymfonyのディレクトリのパーミッションを修正します:
 
@@ -1672,7 +1669,7 @@ rsync実行ファイルに渡されるオプションを指定することがで
 
     ./symfony project:permissions
 
-### `project::unfreeze`
+### ~`project::unfreeze`~
 
 `project::unfreeze`タスクはsymfonyライブラリの凍結を解除します:
 
@@ -1692,15 +1689,11 @@ symfonyのすべてのコアファイルを取り除きます:
 タスクは`project:freeze`コマンドが使われる前に使われていたsymfonyの古いファイルに
 切り替えるために`config/config.php`も変更します。
 
-### `project::upgrade1.1`
+### ~`project::upgrade1.1`~
 
 `project::upgrade1.1`タスクはsymfonyのプロジェクトをsymfony 1.1のリリースにアップグレードします:
 
     $ php symfony project:upgrade1.1  
-
-
-
-
 
 
 
@@ -1711,7 +1704,7 @@ symfony 1.1のリリースにアップグレードします。
 
 このタスクが行うことに関する情報を得るにはUPGRADE_TO_1_1ファイルを参照するようお願いします。
 
-### `project::upgrade1.2`
+### ~`project::upgrade1.2`~
 
 `project::upgrade1.2`タスクはsymfonyプロジェクトを(1.1)からsymfony 1.2リリースにアップグレードします:
 
@@ -1733,7 +1726,7 @@ symfony 1.1のリリースにアップグレードします。
 `propel`
 --------
 
-### `propel::build-all`
+### ~`propel::build-all`~
 
 `propel::build-all`タスクはPropelモデルとフォームクラス、SQLを生成しデータベースを初期化します:
 
@@ -1777,7 +1770,7 @@ symfony 1.1のリリースにアップグレードします。
 
     ./symfony propel:build-all --classes-only
 
-### `propel::build-all-load`
+### ~`propel::build-all-load`~
 
 `propel::build-all-load`タスクはPropelモデルとフォームクラス、SQLを生成し、
 データベースを初期化し、データをロードします:
@@ -1817,7 +1810,7 @@ symfony 1.1のリリースにアップグレードします。
 
     ./symfony propel:buil-all-load --no-confirmation
 
-### `propel::build-filters`
+### ~`propel::build-filters`~
 
 `propel::build-filters`タスクは現在のモデル用のフィルターフォームクラスを作成します:
 
@@ -1852,7 +1845,7 @@ symfony 1.1のリリースにアップグレードします。
 このタスクは`lib/filter`のカスタムクラスをけっして上書きしません。
 これは`lib/filter/base`で生成された既定クラスを置き換えます。
 
-### `propel::build-forms`
+### ~`propel::build-forms`~
 
 `propel::build-forms`タスクは現在のモデル用のフォームクラスを作成します:
 
@@ -1887,7 +1880,7 @@ symfony 1.1のリリースにアップグレードします。
 このタスクは`lib/form`のカスタムクラスをけっして上書きしません。
 これは`lib/form/base`に生成された基底クラスのみを置き換えます。
 
-### `propel::build-model`
+### ~`propel::build-model`~
 
 `propel::build-model`タスクは現在のモデル用のクラスを作成します:
 
@@ -1917,7 +1910,7 @@ YAMLとXMLスキーマファイルを混ぜることができます。
 このタスクは`lib/model`のカスタムクラスをけっして置き換えません。
 `lib/model/om`と`lib/model/map`のファイルのみを置き換えます。
 
-### `propel::build-schema`
+### ~`propel::build-schema`~
 
 `propel::build-schema`タスクは既存のデータベースからスキーマを作成します:
 
@@ -1946,7 +1939,7 @@ YAMLとXMLスキーマファイルを混ぜることができます。
 
 XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
-### `propel::build-sql`
+### ~`propel::build-sql`~
 
 `propel::build-sql`タスクは現在のモデル用のSQLを作成します:
 
@@ -1969,7 +1962,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
     propel.database = mysql
 
-### `propel::data-dump`
+### ~`propel::data-dump`~
 
 `propel::data-dump`タスクはデータをフィクスチャディレクトリにダンプします:
 
@@ -2019,7 +2012,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
     ./symfony propel:data-dump --application=frontend
 
-### `propel::data-load`
+### ~`propel::data-load`~
 
 `propel::data-load`タスクはフィクスチャディレクトリからデータをロードします:
 
@@ -2064,7 +2057,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
     ./symfony propel:data-load --application=frontend
 
-### `propel::generate-admin`
+### ~`propel::generate-admin`~
 
 `propel::generate-admin`タスクはPropelのadminモジュールを生成します:
 
@@ -2113,7 +2106,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
         model:                Article
         with_wildcard_routes: true
 
-### `propel::generate-module`
+### ~`propel::generate-module`~
 
 `propel::generate-module`タスクはPropelモジュールを生成します:
 
@@ -2153,13 +2146,13 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
     ./symfony propel:generate-module --generate-in-cache frontend article Article
 
-`--theme`オプションを指定することでジェネレータはカスタマイズされたテーマを使うことができます:
+`--theme`オプションを指定することでジェネレーターはカスタマイズされたテーマを使うことができます:
 
     ./symfony propel:generate-module --theme="custom" frontend article Article
 
-この方法では、独自仕様に合わせてモジュールジェネレータを作ることができます。
+この方法では、独自仕様に合わせてモジュールジェネレーターを作ることができます。
 
-### `propel::generate-module-for-route`
+### ~`propel::generate-module-for-route`~
 
 `propel::generate-module-for-route`タスクはルート定義用のPropelモジュールを生成します:
 
@@ -2189,9 +2182,9 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 タスクは`routing.yml`で見つかる`%article%`ルート定義用の
 `%frontend%`アプリケーションでモジュールを作成します。
 
-### `propel::graphviz`
+### ~`propel::graphviz`~
 
-`propel::graphviz`タスクは現在のオブジェクトモデルのgraphivizによるチャートを生成します:
+`propel::graphviz`タスクは現在のオブジェクトモデルのgraphvizによるチャートを生成します:
 
     $ php symfony propel:graphviz [--phing-arg="..."] 
 
@@ -2208,7 +2201,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
     ./symfony propel:graphviz
 
-### `propel::init-admin`
+### ~`propel::init-admin`~
 
 `propel::init-admin`タスクはPropelのadminモジュールを初期化します:
 
@@ -2237,11 +2230,11 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 作成されるモジュールは`%sf_app_cache_dir%/modules/auto%module%`の実行時に生成されるモジュールから
 アクションとテンプレートを継承する空のモジュールです。
 
-ジェネレータは`--theme`オプションを指定することでカスタマイズされたテーマを使うことができます:
+ジェネレーターは`--theme`オプションを指定することでカスタマイズされたテーマを使うことができます:
 
     ./symfony propel:init-admin --theme="custom" frontend article Article
 
-### `propel::insert-sql`
+### ~`propel::insert-sql`~
 
 `propel::insert-sql`タスクは現在のモデル用のSQLをinsertします:
 
@@ -2281,7 +2274,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 与えられた接続でSQLステートメントをロードしたいだけなら
  `--connection`オプションを指定することもできます。
 
-### `propel::schema-to-xml`
+### ~`propel::schema-to-xml`~
 
 `propel::schema-to-xml`タスクは`schema.yml`から`schema.xml`を作成します:
 
@@ -2297,7 +2290,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
     ./symfony propel:schema-to-xml
 
-### `propel::schema-to-yml`
+### ~`propel::schema-to-yml`~
 
 `propel::schema-to-yml`タスクは`schema.xml`から`schema.yml`を作成します:
 
@@ -2316,7 +2309,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 `test`
 ------
 
-### `test::all`
+### ~`test::all`~
 
 `test::all`タスクはすべてのテストを立ち上げます:
 
@@ -2337,7 +2330,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 1つもしくは複数のテストが失敗する場合、手動もしくは`test:unit`と`test:functional`タスクで
 これらを立ち上げることで問題の修正に取り組むことができます。
 
-### `test::coverage`
+### ~`test::coverage`~
 
 `test::coverage`タスクはテストのコードカバレッジを出力します:
 
@@ -2365,7 +2358,7 @@ libファイルもしくはlibディレクトリの欲しいコードカバレ�
 
     ./symfony test:coverage --detailed test/unit/model lib/model
 
-### `test::functional`
+### ~`test::functional`~
 
 `test::functional`タスクは機能テストを立ち上げます:
 
@@ -2376,7 +2369,7 @@ libファイルもしくはlibディレクトリの欲しいコードカバレ�
 | 引数          | デフォルト | 説明
 | ------------- | --------- | -----------
 | `application` | `-`       | アプリケーションの名前
-| `controller`  | `-`       | コントローラの名前
+| `controller`  | `-`       | コントローラーの名前
 
 
 
@@ -2387,16 +2380,16 @@ libファイルもしくはlibディレクトリの欲しいコードカバレ�
 
 タスクは`test/functional/%application%`で見つかるすべてのテストを立ち上げます。
 
-コントローラの名前を渡すことで特定のコントローラ用の
+コントローラーの名前を渡すことで特定のコントローラー用の
 すべての機能テストを立ち上げることができます:
 
     ./symfony test:functional frontend article
 
-複数のコントローラ用の機能テストをすべて立ち上げることもできます:
+複数のコントローラー用の機能テストをすべて立ち上げることもできます:
 
     ./symfony test:functional frontend article comment
 
-### `test::unit`
+### ~`test::unit`~
 
 `test::unit`タスクはユニットテストを立ち上げます:
 

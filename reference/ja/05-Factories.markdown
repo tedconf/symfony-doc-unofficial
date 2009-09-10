@@ -13,8 +13,8 @@ factories.yml設定ファイル
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 はじめの章で説明したように、`factories.yml`ファイルは
-[**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効になり、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
+[**環境を認識し**](#chapter_03_environment_awareness)、
+[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を含むことができます。
 
 `factories.yml`設定ファイルは名前つきのファクトリのリストを格納します:
 
@@ -28,7 +28,7 @@ factories.yml設定ファイル
     # ...
 
 サポートされるファクトリの名前は次の通りです: `controller`、`logger`、`i18n`、`request`、
-`response`、`routing`、`storage`、`user`、`view_cache`、と
+`response`、`routing`、`storage`、`user`、`view_cache`と
 `view_cache_manager`
 
 `sfContext`がファクトリを初期化するとき、ファクトリオブジェクトを設定するために
@@ -55,7 +55,7 @@ factories.yml設定ファイル
 
 >**NOTE**
 >`factories.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->プロセスは`sfFactoryConfigHandler`
+>プロセスは~`sfFactoryConfigHandler`~
 >[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 <div class="pagebreak"></div>
@@ -63,76 +63,76 @@ factories.yml設定ファイル
 ファクトリ
 ---------
 
- * [`request`](#chapter_05-Factories_sub_request)
+ * [`request`](#chapter_05_request)
 
-   * [`formats`](#chapter_05-Factories_sub_formats)
-   * [`path_info_array`](#chapter_05-Factories_sub_path_info_array)
-   * [`path_info_key`](#chapter_05-Factories_sub_path_info_key)
-   * [`relative_url_root`](#chapter_05-Factories_sub_relative_url_root)
+   * [`formats`](#chapter_05_sub_formats)
+   * [`path_info_array`](#chapter_05_sub_path_info_array)
+   * [`path_info_key`](#chapter_05_sub_path_info_key)
+   * [`relative_url_root`](#chapter_05_sub_relative_url_root)
 
- * [`response`](#chapter_05-Factories_response)
+ * [`response`](#chapter_05_response)
 
-   * [`charset`](#chapter_05-Factories_sub_charset)
-   * [`http_protocol`](#chapter_05-Factories_sub_http_protocol)
-   * [`send_http_headers`](#chapter_05-Factories_sub_send_http_headers)
+   * [`charset`](#chapter_05_sub_charset)
+   * [`http_protocol`](#chapter_05_sub_http_protocol)
+   * [`send_http_headers`](#chapter_05_sub_send_http_headers)
 
- * [`user`](#chapter_05-Factories_sub_user)
+ * [`user`](#chapter_05_user)
 
-   * [`default_culture`](#chapter_05-Factories_sub_default_culture)
-   * [`timeout`](#chapter_05-Factories_sub_timeout)
-   * [`use_flash`](#chapter_05-Factories_sub_use_flash)
+   * [`default_culture`](#chapter_05_sub_default_culture)
+   * [`timeout`](#chapter_05_sub_timeout)
+   * [`use_flash`](#chapter_05_sub_use_flash)
 
- * [`storage`](#chapter_05-Factories_sub_storage)
+ * [`storage`](#chapter_05_storage)
 
-   * [`auto_start`](#chapter_05-Factories_sub_auto_start)
-   * [`database`](#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`db_table`](#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`db_id_col`](#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`db_data_col`](#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`db_time_col`](#chapter_05-Factories_sub_database_storage_specific_options)
-   * [`session_cache_limiter`](#chapter_05-Factories_sub_session_cache_limiter)
-   * [`session_cookie_domain`](#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_httponly`](#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_lifetime`](#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_path`](#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_cookie_secure`](#chapter_05-Factories_sub_session_set_cookie_params_parameters)
-   * [`session_name`](#chapter_05-Factories_sub_session_name)
+   * [`auto_start`](#chapter_05_sub_auto_start)
+   * [`database`](#chapter_05_sub_database_storage_specific_options)
+   * [`db_table`](#chapter_05_sub_database_storage_specific_options)
+   * [`db_id_col`](#chapter_05_sub_database_storage_specific_options)
+   * [`db_data_col`](#chapter_05_sub_database_storage_specific_options)
+   * [`db_time_col`](#chapter_05_sub_database_storage_specific_options)
+   * [`session_cache_limiter`](#chapter_05_sub_session_cache_limiter)
+   * [`session_cookie_domain`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_cookie_httponly`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_cookie_lifetime`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_cookie_path`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_cookie_secure`](#chapter_05_sub_session_set_cookie_params_parameters)
+   * [`session_name`](#chapter_05_sub_session_name)
 
- * [`view_cache_manager`](#chapter_05-Factories_sub_view_cache_manager)
- * [`view_cache`](#chapter_05-Factories_sub_view_cache)
- * [`i18n`](#chapter_05-Factories_sub_i18n)
+ * [`view_cache_manager`](#chapter_05_view_cache_manager)
+ * [`view_cache`](#chapter_05_view_cache)
+ * [`i18n`](#chapter_05_i18n)
 
-   * [`cache`](#chapter_05-Factories_sub_cache)
-   * [`debug`](#chapter_05-Factories_sub_debug)
-   * [`source`](#chapter_05-Factories_sub_source)
-   * [`untranslated_prefix`](#chapter_05-Factories_sub_untranslated_prefix)
-   * [`untranslated_suffix`](#chapter_05-Factories_sub_untranslated_suffix)
+   * [`cache`](#chapter_05_sub_cache)
+   * [`debug`](#chapter_05_sub_debug)
+   * [`source`](#chapter_05_sub_source)
+   * [`untranslated_prefix`](#chapter_05_sub_untranslated_prefix)
+   * [`untranslated_suffix`](#chapter_05_sub_untranslated_suffix)
 
- * [`routing`](#chapter_05-Factories_sub_routing)
+ * [`routing`](#chapter_05_routing)
 
-   * [`cache`](#chapter_05-Factories_sub_cache)
-   * [`extra_parameters_as_query_string`](#chapter_05-Factories_sub_extra_parameters_as_query_string)
-   * [`generate_shortest_url`](#chapter_05-Factories_sub_generate_shortest_url)
-   * [`lazy_routes_deserialize`](#chapter_05-Factories_sub_lazy_routes_deserialize)
-   * [`lookup_cache_dedicated_keys`](#chapter_05-Factories_sub_lookup_cache_dedicated_keys)
-   * [`load_configuration`](#chapter_05-Factories_sub_load_configuration)
-   * [`segment_separators`](#chapter_05-Factories_sub_segment_separators)
-   * [`suffix`](#chapter_05-Factories_sub_suffix)
-   * [`variable_prefixes`](#chapter_05-Factories_sub_variable_prefixes)
+   * [`cache`](#chapter_05_sub_cache)
+   * [`extra_parameters_as_query_string`](#chapter_05_sub_extra_parameters_as_query_string)
+   * [`generate_shortest_url`](#chapter_05_sub_generate_shortest_url)
+   * [`lazy_routes_deserialize`](#chapter_05_sub_lazy_routes_deserialize)
+   * [`lookup_cache_dedicated_keys`](#chapter_05_sub_lookup_cache_dedicated_keys)
+   * [`load_configuration`](#chapter_05_sub_load_configuration)
+   * [`segment_separators`](#chapter_05_sub_segment_separators)
+   * [`suffix`](#chapter_05_sub_suffix)
+   * [`variable_prefixes`](#chapter_05_sub_variable_prefixes)
 
- * [`logger`](#chapter_05-Factories_sub_logger)
+ * [`logger`](#chapter_05_logger)
 
-   * [`level`](#chapter_05-Factories_sub_level)
-   * [`loggers`](#chapter_05-Factories_sub_loggers)
+   * [`level`](#chapter_05_sub_level)
+   * [`loggers`](#chapter_05_sub_loggers)
 
- * [`controller`](#chapter_05-Factories_sub_controller)
+ * [`controller`](#chapter_05_controller)
 
 <div class="pagebreak"></div>
 
 `request`
 ---------
 
-*sfContextアクセサ*: `$context->getRequest()`
+*sfContextアクセサー*: `$context->getRequest()`
 
 *デフォルトコンフィギュレーション*:
 
@@ -153,12 +153,12 @@ factories.yml設定ファイル
           rdf:  application/rdf+xml
           atom: application/atom+xml
 
-### `path_info_array`
+### ~`path_info_array`~
 
 `path_info_array`オプションは情報を読み取るために使われるグローバルなPHP配列を定義します。
 設定によってはデフォルトの`SERVER`の値を`ENV`に変更するとよいでしょう。
 
-### `path_info_key`
+### ~`path_info_key`~
 
 `path_info_key`オプションは`PATH_INFO`の情報が見つかる
 キーを定義します。
@@ -166,22 +166,22 @@ factories.yml設定ファイル
 `IIFR`もしくは`ISAPI`のようなrewriteモジュールつきのIISを使う場合、
 この値を`HTTP_X_REWRITE_URL`に変更するとよいでしょう。
 
-### `formats`
+### ~`formats`~
 
 `formats`オプションはファイル拡張子と`Content-Type`の配列です。
 リクエストURIの拡張子に基づいて、レスポンスの`Content-Type`を自動的に管理するために
 symfonyによって使われます。
 
-### `relative_url_root`
+### ~`relative_url_root`~
 
-`relative_url_root`オプションはフロントコントローラ前のURLの部分を定義します。
+`relative_url_root`オプションはフロントコントローラー前のURLの部分を定義します。
 たいていの場合、これはフレームワークによって自動的に検出されるので
 変更する必要はありません。
 
 `response`
 ----------
 
-*sfContextアクセサ*: `$context->getResponse()`
+*sfContextアクセサー*: `$context->getResponse()`
 
 *デフォルトコンフィギュレーション*:
 
@@ -201,19 +201,19 @@ symfonyによって使われます。
       param:
         send_http_headers: false
 
-### `send_http_headers`
+### ~`send_http_headers`~
 
 `send_http_headers`オプションはレスポンスがレスポンスのコンテンツに沿って
 HTTPレスポンスヘッダーを送信するかを指定します。この設定は
 出力の後でヘッダーを送信しようとすると警告を発する
 PHPの`header()`関数でヘッダーが送信されるので、テストの際に便利です。
 
-### `charset`
+### ~`charset`~
 
 `charset`オプションはレスポンスに使う文字集合を定義します。
 デフォルトでは、`settings.yml`の`charset`設定が使われます。 
 
-### `http_protocol`
+### ~`http_protocol`~
 
 `http_protocol`オプションはレスポンスに使うHTTPプロトコルのバージョンを定義します。
 デフォルトでは、利用可能であれば`$_SERVER['SERVER_PROTOCOL']`の値をチェックします。
@@ -222,7 +222,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 `user`
 ------
 
-*sfContextのアクセサ*: `$context->getUser()`
+*sfContextのアクセサー*: `$context->getUser()`
 
 *デフォルトコンフィギュレーション*:
 
@@ -237,10 +237,10 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 
 >**NOTE**
 >デフォルトでは、`myUser`クラスは`sfBasicSecurityUser`を継承します。
->これは[`security.yml`](#chapter_08-Security)設定ファイルで
+>これは[`security.yml`](#chapter_08)設定ファイルで
 >設定できます。
 
-### `timeout`
+### ~`timeout`~
 
 `timeout`オプションはユーザー認証のタイムアウトを定義します。
 これはセッションのタイムアウトとは関係ありません。
@@ -257,11 +257,11 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 >最大限の期限(`session.gc_maxlifetime`)をタイムアウトよりも長くなるように
 >強制します。
 
-### `use_flash`
+### ~`use_flash`~
 
 `use_flash`オプションはflashコンポーネントを有効もしくは無効にします。
 
-### `default_culture`
+### ~`default_culture`~
 
 `default_culture`オプションはサイトに始めて訪問したユーザーのために
 デフォルトのcultureを定義します。デフォルトでは、
@@ -269,7 +269,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 たいていの場合これで十分です。
 
 >**CAUTION**
->`factories.yml`もしくは`settings.yml`の`default_culture`設定を変更する場合、
+>`factories.yml`もしくは`settings.yml`の~`default_culture`~設定を変更する場合、
 >結果を確認するためにブラウザのCookieを
 >クリアする必要があります。
 
@@ -279,7 +279,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 ストレージファクトリはHTTPリクエスト間のユーザーデータを一貫させるために
 ユーザーファクトリによって使われます。
 
-*sfContextアクセサ*: `$context->getStorage()`
+*sfContextアクセサー*: `$context->getStorage()`
 
 *デフォルトコンフィギュレーション*:
 
@@ -297,12 +297,12 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
       param:
         session_path: %SF_TEST_CACHE_DIR%/sessions
 
-### `auto_start`
+### ~`auto_start`~
 
 `auto_start`オプションは(`session_start()`関数を通して)PHPのセッション自動開始機能を
 有効もしくは無効にします。
 
-### `session_name`
+### ~`session_name`~
 
 `session_name`オプションはユーザーセッションを保存するために
 symfonyによって使用されるCookieの名前を定義します。デフォルトの名前は`symfony`で、
@@ -315,24 +315,24 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 次のオプションの値で[`session_set_cookie_params()`](http://www.php.net/session_set_cookie_params)
 関数を呼び出します:
 
- * `session_cookie_lifetime`: セッションCookieの寿命、秒単位で
-                                定義。
- * `session_cookie_path`:   Cookieが機能するドメイン上のパス。
+ * ~`session_cookie_lifetime`~: セッションCookieの期限、秒単位で
+                                定義する。
+ * ~`session_cookie_path`~:   Cookieが機能するドメイン上のパス。
                               ドメインのすべてのパスに対して単独のスラッシュ(`/`)
                               を使う。
- * `session_cookie_domain`: Cookieのドメイン、たとえば`www.php.net`。
+ * ~`session_cookie_domain`~: Cookieのドメイン、たとえば`www.php.net`。
                               すべてのサブドメインにCookieを見えるようにするためには
                               `.php.net`のように接頭辞としてドットをドメインにつけなければなりません。
- * `session_cookie_secure`: `true`の場合Cookieはセキュアなコネクションを通してのみ
+ * ~`session_cookie_secure`~: `true`の場合Cookieはセキュアなコネクションを通してのみ
                               送信されます。
- * `session_cookie_httponly`: `true`にセットされている場合、セッションCookieを設定する際に
+ * ~`session_cookie_httponly`~: `true`にセットされている場合、セッションCookieを設定する際に
                                 PHPは`httponly`フラグを送信しようとします。
 
 >**NOTE**
 >それぞれのオプションの説明は`session_set_cookie_params()`関数の説明は
 >PHPの公式サイトに説明に由来しています。
 
-### `session_cache_limiter`
+### ~`session_cache_limiter`~
 
 `session_cache_limiter`オプションがセットされている場合、PHPの
 [`session_cache_limiter()`](http://www.php.net/session_cache_limiter)
@@ -343,16 +343,16 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 `sfDatabaseSessionStorage`クラスを継承するストレージを使うとき、
 いくつかの追加オプションが利用可能です:
 
- * `database`:     データベースの名前(必須)
- * `db_table`:     テーブルの名前(必須)
- * `db_id_col`:    主キーのカラムの名前(デフォルトは`sess_id`)
- * `db_data_col`:  データカラムの名前(デフォルトは`sess_data`)
- * `db_time_col`:  時間カラムの名前(デフォルトは`sess_time`)
+ * ~`database`~:     データベースの名前(必須)
+ * ~`db_table`~:     テーブルの名前(必須)
+ * ~`db_id_col`~:    主キーのカラムの名前(デフォルトは`sess_id`)
+ * ~`db_data_col`~:  データカラムの名前(デフォルトは`sess_data`)
+ * ~`db_time_col`~:  時間カラムの名前(デフォルトは`sess_time`)
 
 `view_cache_manager`
 --------------------
 
-*sfContextアクセサ*: `$context->getViewCacheManager()`
+*sfContextアクセサー*: `$context->getViewCacheManager()`
 
 *デフォルトコンフィギュレーション*:
 
@@ -372,7 +372,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 `view_cache`
 ------------
 
-*sfContextアクセサ*: 無し(`view_cache_manager`ファクトリによって直接使われる)
+*sfContextアクセサー*: なし(`view_cache_manager`ファクトリによって直接使われる)
 
 *デフォルトコンフィギュレーション*:
 
@@ -395,7 +395,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 `i18n`
 ------
 
-*sfContextアクセサ*: `$context->getI18N()`
+*sfContextアクセサー*: `$context->getI18N()`
 
 *デフォルトコンフィギュレーション*:
 
@@ -419,26 +419,26 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 >[`i18n`](#chapter_04-Settings_sub_i18n)設定が
 >`on`にセットされている場合のみこのファクトリが定義されます。
 
-### `source`
+### ~`source`~
 
-`source`オプションは翻訳用コンテナの種類を定義します。
+`source`オプションは翻訳用コンテナーの種類を定義します。
 
-*組み込みのコンテナ*: `XLIFF`、`SQLite`、`MySQL`、と`gettext`
+*組み込みのコンテナー*: `XLIFF`、`SQLite`、`MySQL`、と`gettext`
 
-### `debug`
+### ~`debug`~
 
 `debug`オプションはデバッグモードをセットします。`on`にセットされる場合、
 未翻訳のメッセージは接頭辞と接尾辞によってデコレートされます(下記を参照)。
 
-### `untranslated_prefix`
+### ~`untranslated_prefix`~
 
 `untranslated_prefix`は未翻訳のメッセージに使われる接頭辞を定義します。
 
-### `untranslated_suffix`
+### ~`untranslated_suffix`~
 
 `untranslated_suffix`は未翻訳のメッセージに使われる接尾辞を定義します。
 
-### `cache`
+### ~`cache`~
 
 `cache`オプションは国際化データのキャッシュに使われる匿名キャッシュファクトリ
 を定義します(詳細な情報はキャッシュのセクションを参照)。
@@ -446,7 +446,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 `routing`
 ---------
 
-*sfContextアクセサ*: `$context->getRouting()`
+*sfContextアクセサー*: `$context->getRouting()`
 
 *デフォルトコンフィギュレーション*:
 
@@ -470,14 +470,14 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
             lifetime:                  31556926
             prefix:                    %SF_APP_DIR%/routing
 
-### `variable_prefixes`
+### ~`variable_prefixes`~
 
 *デフォルト*: `:`
 
 `variable_prefixes`オプションはルートのパターンの変数名を始める
 文字のリストを定義します。
 
-### `segment_separators`
+### ~`segment_separators`~
 
 *デフォルト*: `/`と`.`
 
@@ -485,7 +485,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 たいていの場合、特定のルート以外、ルーティング全体に対してこのオプションを
 オーバーライドすることはないでしょう。
 
-### `generate_shortest_url`
+### ~`generate_shortest_url`~
 
 *デフォルト*: 新しいプロジェクトでは`true`、アップグレードしたプロジェクトには`false`
 
@@ -494,7 +494,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 symfony 1.0と1.1との後方互換性のあるルートが欲しい場合は、
 `false`にセットします。
 
-### `extra_parameters_as_query_string`
+### ~`extra_parameters_as_query_string`~
 
 *デフォルト*: 新しいプロジェクトには`true`、アップグレードしたプロジェクトには`false`
 
@@ -505,19 +505,19 @@ symfony 1.0もしくは1.1のふるまいを
 フォールバックするには`false`にセットします。このバージョンでは、
 追加パラメーターはルーティングシステムによって無視されるだけでした。
 
-### `cache`
+### ~`cache`~
 
 `cache`オプションはルーティングの設定とデータに使われる
 匿名キャッシュファクトリを定義します(詳細な情報はキャッシュセクションを参照)。
 
-### `suffix`
+### ~`suffix`~
 
 *デフォルト*: none
 
 すべてのルートに対して使用するデフォルトの接尾辞。このオプションは
 非推奨でもはや役に立ちません。
 
-### `load_configuration`
+### ~`load_configuration`~
 
 *デフォルト*: `true`
 
@@ -526,7 +526,7 @@ symfony 1.0もしくは1.1のふるまいを
 symfonyプロジェクトの外部でルーティングシステムを
 使いたい場合`false`にセットします。
 
-### `lazy_routes_deserialize`
+### ~`lazy_routes_deserialize`~
 
 *デフォルト*: `false`
 
@@ -540,7 +540,7 @@ symfonyプロジェクトの外部でルーティングシステムを
 >**CAUTION**
 >symfony 1.2.7とそれ以降でのみこの設定は利用できます。
 
-### `lookup_cache_dedicated_keys`
+### ~`lookup_cache_dedicated_keys`~
 
 *デフォルト*: `false`
 
@@ -559,7 +559,7 @@ symfonyプロジェクトの外部でルーティングシステムを
 `logger`
 --------
 
-*sfContextアクセサ*: `$context->getLogger()`
+*sfContextアクセサー*: `$context->getLogger()`
 
 *デフォルトコンフィギュレーション*:
 
@@ -595,14 +595,14 @@ symfonyプロジェクトの外部でルーティングシステムを
 >このファクトリは常に定義されますが、`logging_enabled`設定が`on`にセットされている
 >場合のみロギングが行われます。
 
-### `level`
+### ~`level`~
 
 `level`オプションはロガーのレベルを定義します。
 
 *可能な値*: `EMERG`、`ALERT`、`CRIT`、`ERR`、`WARNING`、`NOTICE`、
 `INFO`、もしくは`DEBUG`
 
-### `loggers`
+### ~`loggers`~
 
 `loggers`オプションは使用するロガーのリストを定義します。リストは
 匿名ロガーファクトリの配列です。
@@ -613,7 +613,7 @@ symfonyプロジェクトの外部でルーティングシステムを
 `controller`
 ------------
 
-*sfContextアクセサ*: `$context->getController()`
+*sfContextアクセサー*: `$context->getController()`
 
 *デフォルトコンフィギュレーション*:
 
@@ -624,12 +624,12 @@ symfonyプロジェクトの外部でルーティングシステムを
 匿名キャッシュファクトリ
 -----------------------
 
-いくつかのファクトリ(`view_cache`、`i18n`、と`routing`)はキャッシュオブジェクトを利用できます。
+いくつかのファクトリ(`view_cache`、`i18n`と`routing`)はキャッシュオブジェクトを利用できます。
 キャッシュオブジェクトの設定はすべてのファクトリと似ています。
 `cache`キーは匿名キャッシュファクトリを定義します。
 他のファクトリと同じように、これは`class`と
-`param`エントリを取ります。`param`エントリは任意のキャッシュクラスで
-利用可能な任意のオプションを取ります。
+`param`エントリをとります。`param`エントリは任意のキャッシュクラスで
+利用可能な任意のオプションをとります。
 
 最も重要なのは`prefix`オプションで異なる環境/アプリケーション/プロジェクトの間で
 キャッシュを共有するもしくは分離できるようにします。

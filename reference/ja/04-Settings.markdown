@@ -9,8 +9,8 @@ symfonyのほとんどはYAMLもしくはプレーンなPHPで書かれた設定
 `apps/APP_NAME/config/`ディレクトリで見つかります。
 
 はじめの章で説明したように、`settings.yml`ファイルは
-[**環境を認識し**](#chapter_03-Configuration-Files-Principles_sub_environment_awareness)、
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効になります。
+[**環境を認識し**](#chapter_03_environment_awareness)、
+[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になります。
 
 それぞれの環境は2つのサブセクション: `.actions`と`.settings`を持ちます。
 共通ページ用にレンダリングされるデフォルトのアクション以外は、
@@ -18,8 +18,8 @@ symfonyのほとんどはYAMLもしくはプレーンなPHPで書かれた設定
 
 >**NOTE**
 >`settings.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->プロセスは`sfDefineEnvironmentConfigHandler`
->[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
+>プロセスは~`sfDefineEnvironmentConfigHandler`~
+>[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 <div class="pagebreak"></div>
 
@@ -28,36 +28,36 @@ symfonyのほとんどはYAMLもしくはプレーンなPHPで書かれた設定
 
   * `.actions`
 
-    * [`error_404`](#chapter_04-Settings_sub_error_404)
-    * [`login`](#chapter_04-Settings_sub_error_404)
-    * [`secure`](#chapter_04-Settings_sub_secure)
-    * [`module_disabled`](#chapter_04-Settings_sub_module_disabled)
+    * [`error_404`](#chapter_04_sub_error_404)
+    * [`login`](#chapter_04_sub_error_404)
+    * [`secure`](#chapter_04_sub_secure)
+    * [`module_disabled`](#chapter_04_sub_module_disabled)
 
   * `.settings`
 
-    * [`cache`](#chapter_04-Settings_sub_cache)
-    * [`charset`](#chapter_04-Settings_sub_charset)
-    * [`check_lock`](#chapter_04-Settings_sub_check_lock)
-    * [`check_symfony_version`](#chapter_04-Settings_sub_check_symfony_version)
-    * [`compressed`](#chapter_04-Settings_sub_compressed)
-    * [`csrf_secret`](#chapter_04-Settings_sub_csrf_secret)
-    * [`default_culture`](#chapter_04-Settings_sub_default_culture)
-    * [`default_timezone`](#chapter_04-Settings_sub_default_timezone)
-    * [`enabled_modules`](#chapter_04-Settings_sub_enabled_modules)
-    * [`error_reporting`](#chapter_04-Settings_sub_error_reporting)
-    * [`escaping_strategy`](#chapter_04-Settings_sub_escaping_strategy)
-    * [`escaping_method`](#chapter_04-Settings_sub_escaping_method)
-    * [`etag`](#chapter_04-Settings_sub_etag)
-    * [`i18n`](#chapter_04-Settings_sub_i18n)
-    * [`lazy_cache_key`](#chapter_04-Settings_sub_lazy_cache_key)
-    * [`logging_enabled`](#chapter_04-Settings_sub_logging_enabled)
-    * [`no_script_name`](#chapter_04-Settings_sub_no_script_name)
-    * [`max_forwards`](#chapter_04-Settings_sub_max_forwards)
-    * [`standard_helpers`](#chapter_04-Settings_sub_standard_helpers)
-    * [`strip_comments`](#chapter_04-Settings_sub_strip_comments)
-    * [`use_database`](#chapter_04-Settings_sub_use_database)
-    * [`web_debug`](#chapter_04-Settings_sub_web_debug)
-    * [`web_debug_web_dir`](#chapter_04-Settings_sub_web_debug_web_dir)
+    * [`cache`](#chapter_04_sub_cache)
+    * [`charset`](#chapter_04_sub_charset)
+    * [`check_lock`](#chapter_04_sub_check_lock)
+    * [`check_symfony_version`](#chapter_04_sub_check_symfony_version)
+    * [`compressed`](#chapter_04_sub_compressed)
+    * [`csrf_secret`](#chapter_04_sub_csrf_secret)
+    * [`default_culture`](#chapter_04_sub_default_culture)
+    * [`default_timezone`](#chapter_04_sub_default_timezone)
+    * [`enabled_modules`](#chapter_04_sub_enabled_modules)
+    * [`error_reporting`](#chapter_04_sub_error_reporting)
+    * [`escaping_strategy`](#chapter_04_sub_escaping_strategy)
+    * [`escaping_method`](#chapter_04_sub_escaping_method)
+    * [`etag`](#chapter_04_sub_etag)
+    * [`i18n`](#chapter_04_sub_i18n)
+    * [`lazy_cache_key`](#chapter_04_sub_lazy_cache_key)
+    * [`logging_enabled`](#chapter_04_sub_logging_enabled)
+    * [`no_script_name`](#chapter_04_sub_no_script_name)
+    * [`max_forwards`](#chapter_04_sub_max_forwards)
+    * [`standard_helpers`](#chapter_04_sub_standard_helpers)
+    * [`strip_comments`](#chapter_04_sub_strip_comments)
+    * [`use_database`](#chapter_04_sub_use_database)
+    * [`web_debug`](#chapter_04_sub_web_debug)
+    * [`web_debug_web_dir`](#chapter_04_sub_web_debug_web_dir)
 
 <div class="pagebreak"></div>
 
@@ -85,21 +85,21 @@ symfonyのほとんどはYAMLもしくはプレーンなPHPで書かれた設定
 に実行するアクションを定義します。それぞれの定義は2つのコンポーネントを格納します: 1つはモジュール用
 (接尾辞は`_module`)、もう1つはアクション用です(接尾辞は`_action`)。
 
-### `error_404`
+### ~`error_404`~
 
 `error_404`アクションは404ページがレンダリングされるときに実行されます。
 
-### `login`
+### ~`login`~
 
 `login`アクションは認証されていないユーザーがセキュアなページにアクセスしようとするときに
 実行されます。
 
-### `secure`
+### ~`secure`~
 
 `secure`アクションはユーザーが求められるクレデンシャルを持たないときに
 実行されます。
 
-### `module_disabled`
+### ~`module_disabled`~
 
 `module_disabled`アクションはユーザーが無効なモジュールをリクエストするときに
 実行されます。
@@ -118,7 +118,7 @@ symfonyのほとんどはYAMLもしくはプレーンなPHPで書かれた設定
     [php]
     sfConfig::get('sf_charset');
 
-### `escaping_strategy`
+### ~`escaping_strategy`~
 
 *デフォルト*: `off`
 
@@ -139,22 +139,22 @@ symfonyのほとんどはYAMLもしくはプレーンなPHPで書かれた設定
 >`--escaping-strategy`オプションを指定することで`generate:app`タスクで
 >アプリケーションを作成するときにこの設定をセットできます。
 
-### `escaping_method`
+### ~`escaping_method`~
 
 *デフォルト*: `ESC_SPECIALCHARS`
 
 `escaping_method`設定はテンプレートでエスケープするために
 使うデフォルト関数を定義します(上記の`escaping_strategy`設定を参照)。
 
-組み込み関数の1つ: `ESC_SPECIALCHARS`、`ESC_RAW`、
-`ESC_ENTITIES`、`ESC_JS`、`ESC_JS_NO_ENTITIES`、と
-`ESC_SPECIALCHARS`を選ぶ、もしくは独自関数を作ることができます。
+組み込み関数の1つ: ~`ESC_SPECIALCHARS`~、~`ESC_RAW`~、
+~`ESC_ENTITIES`~、~`ESC_JS`~、~`ESC_JS_NO_ENTITIES`~と
+~`ESC_SPECIALCHARS`~を選ぶ、もしくは独自関数を作ることができます。
 
 たいていの場合、デフォルトの値で十分です。
 英語もしくはヨーロッパの言語のみ扱う場合のみ
 `ESC_ENTITIES`ヘルパーも使うことができます。
 
-### `csrf_secret`
+### ~`csrf_secret`~
 
 *デフォルト*: `false`
 
@@ -164,13 +164,13 @@ symfonyのほとんどはYAMLもしくはプレーンなPHPで書かれた設定
 リンクをフォームに変換することが必要なとき(たとえばHTTP `DELETE`メソッドをシミュレートする)
 この設定は`link_to()`ヘルパーにも使われます。
 
-デフォルトの値をunique secretに変更することを強くお勧めします。
+デフォルトの値を一意的な秘密の文字列に変更することを強くお勧めします。
 
 >**TIP**
 >`--csrf-secret`オプションを使用して`generate:app`で
 >アプリケーションを作成する際にこの設定は自動的にセットされます
 
-### `charset`
+### ~`charset`~
 
 *デフォルト*: `utf-8`
 
@@ -179,7 +179,7 @@ symfonyのほとんどはYAMLもしくはプレーンなPHPで書かれた設定
 
 たいていの場合、デフォルトで十分です。
 
-### `enabled_modules`
+### ~`enabled_modules`~
 
 *デフォルト*: `[default]`
 
@@ -198,7 +198,7 @@ symfonyのほとんどはYAMLもしくはプレーンなPHPで書かれた設定
 この設定から`default`モジュールを
 削除することをお勧めします。
 
-### `default_timezone`
+### ~`default_timezone`~
 
 *デフォルト*: none
 
@@ -213,7 +213,7 @@ PHPで認識される任意の[タイムゾーン](http://www.php.net/manual/cla
 >PHPの[`date_default_timezone_get()`](http://www.php.net/date_default_timezone_get)関数を呼び出すことで
 >ベストのタイムゾーンを推測しようとします。
 
-### `cache`
+### ~`cache`~
 
 *デフォルト*: `off`
 
@@ -222,11 +222,11 @@ PHPで認識される任意の[タイムゾーン](http://www.php.net/manual/cla
 >**TIP**
 >キャッシュシステムの一般設定は`factories.yml`設定ファイルの
 >[`view_cache_manager`](#chapter_05_view_cache_manager)と
->[`view_cache`](#chapter_05-Factories_sub_view_cache)セクションで行われます。
+>[`view_cache`](#chapter_05_view_cache)セクションで行われます。
 >きめ細かい設定は
->[`cache.yml`](#chapter_09-Cache)設定ファイルで行います。
+>[`cache.yml`](#chapter_09)設定ファイルで行います。
 
-### `etag`
+### ~`etag`~
 
 *デフォルト*: `dev`と`test`環境を除いて、デフォルトでは`on`
 
@@ -234,7 +234,7 @@ PHPで認識される任意の[タイムゾーン](http://www.php.net/manual/cla
 symfonyによって生成されるETagはレスポンスのコンテンツの
 単純なmd5です。
 
-### `i18n`
+### ~`i18n`~
 
 *デフォルト*: `off`
 
@@ -246,39 +246,39 @@ symfonyによって生成されるETagはレスポンスのコンテンツの
 >`factories.yml`設定ファイルの[`i18n`](#chapter_05-Factories_sub_i18n)セクションで
 >行われます。
 
-### `default_culture`
+### ~`default_culture`~
 
 *デフォルト*: `en`
 
 `default_culture`設定は国際化サブフレームワークで使われるデフォルトのcultureを定義します。
 これは任意の有効なcultureになります。
 
-### `standard_helpers`
+### ~`standard_helpers`~
 
 *デフォルト*: `[Partial, Cache, Form]`
 
 `standard_helpers`設定はすべてのテンプレート用にロードされるヘルパーグループの配列です
 (接尾辞の`Helper`を持たないgroupヘルパーの名前)。
 
-### `no_script_name`
+### ~`no_script_name`~
 
 *デフォルト*: `on`は最初に作成されるアプリケーションの`prod`環境用に、
 その他すべてでは`off`
 
-`no_script_name`設定はフロントコントローラスクリプトの名前が
+`no_script_name`設定はフロントコントローラースクリプトの名前が
 生成URLに追加されるかどうかを決定します。デフォルトでは、
 最初に作成されるアプリケーションの`prod`環境のために`generate:app`タスク
 によってこれは`on`にセットされます。
 
-すべてのフロントコントローラが同じディレクトリ(`web/`)にある場合、
+すべてのフロントコントローラーが同じディレクトリ(`web/`)にある場合、
 あきらかに、1つのアプリケーションと環境のみがこの設定を`on`にセットできます。
 `no_script_name`を`on`にセットしたアプリケーションが複数欲しい場合、
-対応するフロントコントローラをWeb公開ディレクトリのサブディレクトリの中に
+対応するフロントコントローラーをWeb公開ディレクトリのサブディレクトリの中に
 移動させます。
 
-### `lazy_cache_key`
+### ~`lazy_cache_key`~
 
-*デフォルト*: 新しいプロジェクトには`on`、アップグレードしたプロジェクトには`off`
+*デフォルト*: 新しいプロジェクトでは`on`、アップグレードしたプロジェクトでは`off`
 
 これが有効なとき、`lazy_cache_key`設定はアクションもしくはパーシャルがキャッシュ可能になるまで
 キャッシュキーの作成を遅延させます。テンプレートパーシャルの使い方によって、
@@ -291,7 +291,7 @@ symfony 1.3では最適化は常に有効なのでこの設定は削除されま
 >**CAUTION**
 >この設定はsymfony 1.2.7とそれ以降でのみ利用可能です。
 
-### `logging_enabled`
+### ~`logging_enabled`~
 
 *デフォルト*: `prod`以外のすべての環境に対して`on`
 
@@ -303,21 +303,21 @@ symfony 1.3では最適化は常に有効なのでこの設定は削除されま
 >ロギングのきめ細かい設定は
 >`factories.yml`設定ファイルで行います。
 
-### `web_debug`
+### ~`web_debug`~
 
 *デフォルト*: `dev`以外のすべての環境に対して`off`
 
 `web_debug`設定はWebデバッグツールバーを有効にします。レスポンスの
 Content-TypeがHTMLであるときにWebデバッグツールバーはページに注入されます。
 
-### `error_reporting`
+### ~`error_reporting`~
 
 *デフォルト*:
 
   * `prod`:  E_PARSE | E_COMPILE_ERROR | E_ERROR | E_CORE_ERROR | E_USER_ERROR
   * `dev`:   E_ALL | E_STRICT
   * `test`:  (E_ALL | E_STRICT) ^ E_NOTICE
-  * default: E_PARSE | E_COMPILE_ERROR | E_ERROR | E_CORE_ERROR | E_USER_ERROR
+  * デフォルト: E_PARSE | E_COMPILE_ERROR | E_ERROR | E_CORE_ERROR | E_USER_ERROR
 
 `error_reporting`設定は(ブラウザに表示されログに書き込まれる)
 PHPのエラーレポートのレベルをコントロールします。
@@ -329,11 +329,11 @@ PHPのエラーレポートのレベルをコントロールします。
 デフォルトの設定は最も利にかなったものであり、変えるべきではありません。
 
 >**NOTE**
->`prod`環境のフロントコントローラは
+>`prod`環境のフロントコントローラーは
 >`debug`を無効にしており
 >ブラウザのエラーの表示は自動的に無効になります。
 
-### `compressed`
+### ~`compressed`~
 
 *デフォルト*: `off`
 
@@ -345,13 +345,13 @@ PHPのエラーレポートのレベルをコントロールします。
 代わりにWebサーバーのネイティブな圧縮メカニズムを
 使うことをお勧めします。
 
-### `use_database`
+### ~`use_database`~
 
 *デフォルト*: `on`
 
 `use_database`はアプリケーションがデータベースを使うかどうかを決定します。
 
-### `check_lock`
+### ~`check_lock`~
 
 *デフォルト*: `off`
 
@@ -365,7 +365,7 @@ symfonyコアの`lib/exception/data/unavailable.php`ページに自動的にリ�
 >`config/unavailable.php`ファイルをプロジェクトもしくはアプリケーションに
 >追加することで無効なページ用のデフォルトテンプレートをオーバーライドできます。
 
-### `check_symfony_version`
+### ~`check_symfony_version`~
 
 *デフォルト*: `off`
 
@@ -378,7 +378,7 @@ symfonyコアの`lib/exception/data/unavailable.php`ページに自動的にリ�
 この設定は複数のプロジェクトが同じsymfonyのコードを共有する場合
 のみ役に立ちますが、推奨されません。
 
-### `web_debug_web_dir`
+### ~`web_debug_web_dir`~
 
 *デフォルト*: `/sf/sf_web_debug`
 
@@ -395,7 +395,7 @@ symfonyコアの`lib/exception/data/unavailable.php`ページに自動的にリ�
 運用環境でのみ空白のページを用意する場合、 
 この設定を`off`にセットしてみてください。
 
-### `max_forwards`
+### ~`max_forwards`~
 
 *デフォルト*: `5`
 

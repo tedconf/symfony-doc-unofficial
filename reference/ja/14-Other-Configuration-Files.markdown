@@ -4,20 +4,20 @@
 この章ではその他のsymfonyの設定ファイルを説明します。
 これらを変更する必要性はほとんどありません。
 
-`autoload.yml`
---------------
+~`autoload.yml`~
+----------------
 
 `autoload.yml`設定はsymfonyによってオートロードされる必要のあるディレクトリを決定します。
 それぞれのディレクトリはPHPクラスとインターフェイスを見つけるために
 走査されます。
 
 最初の章で説明したように、`autoload.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効で、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
+[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、[**定数**](#chapter_03_constants)を含むことができます。
 
 >**NOTE**
 >`autoload.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->処理は`sfAutoloadConfigHandler`
->[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
+>処理は~`sfAutoloadConfigHandler`~
+>[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 たいていのプロジェクトではデフォルトコンフィギュレーションで十分です:
 
@@ -77,8 +77,8 @@
         recursive:      on
         exclude:        [model, symfony, vendor/large_lib]
 
-`config_handlers.yml`
----------------------
+~`config_handlers.yml`~
+-----------------------
 
 `config_handlers.yml`設定ファイルは他のすべてのYAML設定ファイルを解析して
 解釈するために使われるコンフィギュレーションハンドラークラスを記述します。
@@ -112,8 +112,8 @@
  | `cache.yml`        | `sfCacheConfigHandler`             |
  | `module.yml`       | `sfDefineEnvironmentConfigHandler` |
 
-`core_compile.yml`
-------------------
+~`core_compile.yml`~
+--------------------
 
 `core_compile.yml`設定ファイルはsymfonyがロードする時間を加速するために
 `prod`環境で1つの大きなファイルにマージされるPHPファイルを記述します。
@@ -130,10 +130,10 @@
     - %SF_SYMFONY_LIB_DIR%/action/sfActions.class.php
 
 はじめの章で説明したように、`core_compile.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効で、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
+[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、
+[**定数**](#chapter_03_constants)を含むことができます。
 
 >**NOTE**
 >`core_compile.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->処理は`sfCompileConfigHandler`
+>処理は~`sfCompileConfigHandler`~
 >[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。

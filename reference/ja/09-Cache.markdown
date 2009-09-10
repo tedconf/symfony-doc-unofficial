@@ -1,15 +1,15 @@
 cache.yml設定ファイル
 ====================
 
-`cache.yml`設定ファイルはビューレイヤー用のキャッシュ設定を記述します。
+~`cache.yml`~設定ファイルはビューレイヤー用のキャッシュ設定を記述します。
 この設定ファイルは`settings.yml`で
-[`cache`](#chapter_04-Settings_sub_cache)設定が有効な場合のみ有効です。
+[`cache`](#chapter_04_sub_cach)設定が有効な場合のみ有効です。
 
 >**TIP**
 >クラスの設定はキャッシュのために使われ関連設定は
 >[`view_cache_manager`](#chapter_05_view_cache_manager)と
 >`factories.yml`設定ファイルの
->[`view_cache`](#chapter_05-Factories_sub_view_cache)セクション
+>[`view_cache`](#chapter_05_view_cache)セクション
 >で行われます。
 
 アプリケーションが作成されるとき、symfonyはアプリケーションの`config/`ディレクトリで
@@ -31,17 +31,17 @@ cache.yml設定ファイル
 >選ぶ方法が決まります。
 
 はじめの章で説明したように、`cache.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効になり、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
+[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、
+[**定数**](#chapter_03_constants)を含むことができます。
 
 >**NOTE**
 >`cache.yml`設定ファイルはPHPファイルとしてキャッシュされます;
->処理は`sfCacheConfigHandler`
->[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
+>処理は~`sfCacheConfigHandler`~
+>[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 アプリケーションのデフォルト設定はモジュールの`config/`ディレクトリで
 `cache.yml`ファイルを作成することでモジュールのためにオーバーライドできます。
-メインキーは接頭辞の`execute`無しのアクションの名前です(たとえば
+メインキーは接頭辞の`execute`なしのアクションの名前です(たとえば
 `executeIndex`メソッドに対して`index`)。名前にアンダースコア(`_`)の接頭辞を
 つけることでパーシャルもしくはコンポーネントもキャッシュできます。
 
@@ -61,14 +61,14 @@ cache.yml設定ファイル
 >`POST`、`PUT`、もしくは`DELETE`メソッドで投稿されたリクエストは
 >設定に関わらずけっしてキャッシュされません。
 
-`enabled`
----------
+~`enabled`~
+-----------
 
 *デフォルト*: `off`
 
 `enabled`設定は現在のスコープでのキャッシュを有効もしくは無効にします。
 
-`with_layout`
+~`with_layout`~
 ---------------
 
 *デフォルト*: `false`
@@ -80,20 +80,20 @@ cache.yml設定ファイル
 >`with_layout`オプションはパーシャルとコンポーネントキャッシュには考慮されません。
 >これらはレイアウトによってデコレートできないからです。
 
-`lifetime`
+~`lifetime`~
 ------------
 
 *デフォルト*: `86400`
 
-`lifetime`設定はサーバーサイドキャッシュの寿命を
+`lifetime`設定はサーバーサイドキャッシュの期限を
 秒単位で定義します(`86400`秒は1日に等しい)。
 
-`client_lifetime`
+~`client_lifetime`~
 -------------------
 
 *デフォルト*: `lifetime`の値と同じ
 
-`client_lifetime`設定はクライアントサイドキャッシュの寿命を
+`client_lifetime`設定はクライアントサイドキャッシュの期限を
 秒単位で定義します。
 
 すでに`Last-Modified`もしくは`Expires`ヘッダーがセットされていない限り、
@@ -102,8 +102,8 @@ cache.yml設定ファイル
 
 この値を`0`にセットすることでクライアントサイドキャッシュを無効にできます。
 
-`contextual`
-------------
+~`contextual`~
+--------------
 
 *デフォルト*: `false`
 

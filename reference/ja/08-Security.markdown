@@ -1,13 +1,13 @@
 security.yml設定ファイル
 ========================
 
-`security.yml`設定ファイルに
+~`security.yml`~設定ファイルに
 symfonyアプリケーション用の認証と認可を記述します。
 
 >**TIP**
 >`security.yml`ファイルからの設定情報は
 >[`user`](#chapter_05_user)ファクトリクラス(デフォルトは`sfBasicSecurityUser`)によって使われます。
->認証と認可の強制は`security` [フィルター](12-Filters#chapter_12_security)によって行われます。
+>認証と認可の強制は`security` [フィルター](#chapter_12_security)によって行われます。
 
 アプリケーションが作成されるとき、symfonyはアプリケーションの`config/`ディレクトリで
 デフォルトの`security.yml`ファイルを生成します。これはアプリケーション全体のセキュリティ
@@ -18,8 +18,8 @@ symfonyアプリケーション用の認証と認可を記述します。
       is_secure: off
 
 はじめの章で説明したように、`security.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効になり、
-[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含むことができます。
+[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、
+[**定数**](#chapter_03_constants)を含むことができます。
 
 アプリケーションのデフォルト設定はモジュールの`config/`ディレクトリで
 `security.yml`ファイルを作成することでオーバーライドできます。
@@ -42,11 +42,11 @@ symfonyアプリケーション用の認証と認可を記述します。
 
 >**NOTE**
 >`security.yml`設定ファイルはPHPファイルとしてキャッシュできます; 
->処理は`sfSecurityConfigHandler`
->[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
+>処理は~`sfSecurityConfigHandler`~
+>[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
-認証
-----
+~認証~
+------
 
 `security.yml`のデフォルト設定は、それぞれのアプリケーションごとにインストールされ、
 だれでもアクセスを許可します:
@@ -55,7 +55,7 @@ symfonyアプリケーション用の認証と認可を記述します。
     default:
       is_secure: off
 
-アプリケーションの`security.yml`ファイルで`is_secure`キーを`on`にセットすることで、
+アプリケーションの~`security.yml`~ファイルで`is_secure`キーを`on`にセットすることで、
 アプリケーション全体ですべてのユーザーの認証が必須になります。
 
 >**NOTE**
@@ -81,10 +81,10 @@ symfonyアプリケーション用の認証と認可を記述します。
 >loginアクションをセキュアにすることはできません。
 >これは無限ループを避けるためです。
 
-認可
-----
+~認可~
+------
 
-ユーザーが認証されるとき、*クレデンシャル*を定義することで
+ユーザーが認証されるとき、*~クレデンシャル~*を定義することで
 一部のアクションへのアクセスをさらに制限できます。クレデンシャルが定義されたとき、
 ユーザーはアクションにアクセスする必須クレデンシャルを持たなければなりません:
 
@@ -107,7 +107,7 @@ symfonyのクレデンシャルのシステムはシンプルで強力です。�
     index:
       credentials: [A, B]
 
-ユーザーがクレデンシャルA **または**クレデンシャルBを持たなければならないとき、
+ユーザーがクレデンシャルA**または**クレデンシャルBを持たなければならないとき、
 2つのペアの角かっこでこれらを囲みます:
 
     [yml]

@@ -5,7 +5,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 設定できます。
 
 はじめの章で説明したように、`view.yml`ファイルは
-[**設定カスケードのメカニズム**](#chapter_03-Configuration-Files-Principles_sub_configuration_cascade)が有効で、[**定数**](#chapter_03-Configuration-Files-Principles_sub_constants)を含む事ができます。
+[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、[**定数**](#chapter_03_constants)を含む事ができます。
 
 >**CAUTION**
 >アクションから呼び出されるテンプレートもしくはメソッドで直接使われるヘルパーのために
@@ -37,10 +37,10 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
       has_layout: on
       layout:     layout
 
-`view.yml`設定ファイルはアプリケーションによって使われるデフォルトの`layout`を定義します。
+`view.yml`設定ファイルはアプリケーションによって使われるデフォルトの~`layout`~を定義します。
 デフォルトでは、名前は`layout`で、symfonyはアプリケーションの`templates/`ディレクトリで
 `layout.php`ファイルですべてのページをデコレートします。
-`has_layout`エントリを`false`にセットすることで
+~`has_layout`~エントリを`false`にセットすることで
 デコレーションプロセスを一緒に無効にすることもできます。
 
 >**TIP**

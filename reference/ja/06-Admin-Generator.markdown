@@ -1,24 +1,24 @@
 generator.yml設定ファイル
 ========================
 
-symfonyのadminジェネレータはモデルクラス用のバックエンドインターフェイスの作成を可能にします。
+symfonyのadminジェネレーターはモデルクラス用のバックエンドインターフェイスの作成を可能にします。
 PropelもしくはDoctrineをORMとして使うことでこれは機能します。
 
 ### 作成
 
-adminジェネレータモジュールは`propel:generate-admin`もしくは
+adminジェネレーターモジュールは`propel:generate-admin`もしくは
 `doctrine:generate-admin`タスクによって作成されます:
 
     $ php symfony propel:generate-admin backend Article
 
     $ php symfony doctrine:generate-admin backend Article
 
-上記のコマンドは`Article`モデルクラス用の`article` adminジェネレータモジュールを作成します。
+上記のコマンドは`Article`モデルクラス用の`article` adminジェネレーターモジュールを作成します。
 
 >**NOTE**
 >`generator.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->処理は`sfGeneratorConfigHandler`
->[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
+>処理は~`sfGeneratorConfigHandler`~
+>[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 ### 設定ファイル
 
@@ -50,7 +50,7 @@ adminジェネレータモジュールは`propel:generate-admin`もしくは
   * `new`:     新規ページ用固有の設定
 
 最初に生成されるとき、すべてのセクションは空なものとして定義されます。
-adminジェネレータはすべての実現可能なオプションに対して適切なデフォルトを定義します:
+adminジェネレーターはすべての実現可能なオプションに対して適切なデフォルトを定義します:
 
     [yml]
     generator:
@@ -64,7 +64,7 @@ adminジェネレータはすべての実現可能なオプションに対して
           edit:    ~
           new:     ~
 
-`config`エントリを通してadminジェネレータをカスタマイズするために使うことのできる
+`config`エントリを通してadminジェネレーターをカスタマイズするために使うことのできる
 このドキュメントはすべての利用可能なオプションを説明します。
 
 >**NOTE**
@@ -77,7 +77,7 @@ adminジェネレータはすべての実現可能なオプションに対して
 仮想的な名前になります。両方のケースにおいてゲッターは
 モデルクラスで定義しなければなりません(`get`の後にキャメルケースのフィールド名が続く)。
 
-adminジェネレータは賢いのでコンテキストに基づいてフィールドをレンダリングする方法を知っています。
+adminジェネレーターは賢いのでコンテキストに基づいてフィールドをレンダリングする方法を知っています。
 レンダリングをカスタマイズするには、パーシャルもしくはコンポーネントを作ります。
 慣習では、パーシャルには接頭辞として(`_`)を、
 コンポーネントには接頭辞としてチルダ(``)をつけます:
@@ -88,7 +88,7 @@ adminジェネレータは賢いのでコンテキストに基づいてフィー
 上記の例において、`title`フィールドは`title`パーシャルによってレンダリングされ、
 `content`フィールドは`content`コンポーネントによってレンダリングされます。
 
-adminジェネレータはパーシャルとコンポーネントに対していくつかのパラメーターを渡します:
+adminジェネレーターはパーシャルとコンポーネントに対していくつかのパラメーターを渡します:
 
   * `new`と`edit`ページに対して:
 
@@ -131,19 +131,19 @@ adminジェネレータはパーシャルとコンポーネントに対してい
 
 ### 設定の継承
 
-adminジェネレータの設定は設定カスケードの原則に
+adminジェネレーターの設定はコンフィギュレーションカスケードの原則に
 基づきます。継承ルールは次の通りです:
 
  * `new`と`edit`は`form`を継承し`form`は`fields`を継承する
  * `list`は`fields`を継承する
  * `filter`は`fields`を継承する
 
-### クレデンシャル
+### ~クレデンシャル~
 
 `credential`オプション(下記を参照)を使用するユーザークレデンシャルに基づいて、
-(リストとフォーム上の)adminジェネレータのアクションを隠すことができます。
+(リストとフォーム上の)adminジェネレーターのアクションを隠すことができます。
 しかしながら、リンクもしくはボタンが現れない場合、違法なアクセスからアクションが
-適切にセキュアな状態でなければなりません。adminジェネレータの
+適切にセキュアな状態でなければなりません。adminジェネレーターの
 クレデンシャル管理機能は表示のみを考慮します。
 
 `credential`オプションはlistページのカラムを隠すためにも使うことができます。
@@ -210,9 +210,9 @@ adminジェネレータの設定は設定カスケードの原則に
 ### 外見のカスタマイズ
 
 生成テンプレートは多くの`class`と`id`属性を定義するので
-adminジェネレータの外見はとても簡単に調整できます。
+adminジェネレーターの外見はとても簡単に調整できます。
 
-`edit`もしくは`new`ページにおいて、それぞれのフィールドのHTMLコンテナは
+`edit`もしくは`new`ページにおいて、それぞれのフィールドのHTMLコンテナーは
 次のクラスを持ちます:
 
   * `sf_admin_form_row`
@@ -220,7 +220,7 @@ adminジェネレータの外見はとても簡単に調整できます。
     `sf_admin_date`、`sf_admin_time`、もしくは`sf_admin_foreignkey`。
   * `sf_admin_form_field_COLUMN`。`COLUMN`がカラムの名前です。
 
-`list`ページにおいて、それぞれのフィールドのHTMLコンテナは次のクラスを持ちます:
+`list`ページにおいて、それぞれのフィールドのHTMLコンテナーは次のクラスを持ちます:
 
   * フィールドの型に依存するクラス: `sf_admin_text`、`sf_admin_boolean`、
     `sf_admin_date`、`sf_admin_time`、もしくは`sf_admin_foreignkey`。
@@ -228,61 +228,61 @@ adminジェネレータの外見はとても簡単に調整できます。
 
 <div class="pagebreak"></div>
 
-利用可能な設定オプション
------------------------
+利用可能なコンフィギュレーションオプション
+----------------------------------------
 
- * [`actions`](#chapter_06-Admin-Generator_sub_actions)
+ * [`actions`](#chapter_06_actions)
 
-   * [`name`](#chapter_06-Admin-Generator_sub_name)
-   * [`action`](#chapter_06-Admin-Generator_sub_action)
-   * [`credentials`](#chapter_06-Admin-Generator_sub_credentials)
+   * [`name`](#chapter_06_sub_name)
+   * [`action`](#chapter_06_sub_action)
+   * [`credentials`](#chapter_06_sub_credentials)
 
- * [`fields`](#chapter_06-Admin-Generator_sub_fields)
+ * [`fields`](#chapter_06_fields)
 
-   * [`label`](#chapter_06-Admin-Generator_sub_label)
-   * [`help`](#chapter_06-Admin-Generator_sub_help)
-   * [`attributes`](#chapter_06-Admin-Generator_sub_attributes)
-   * [`credentials`](#chapter_06-Admin-Generator_sub_credentials)
-   * [`renderer`](#chapter_06-Admin-Generator_sub_renderer)
-   * [`renderer_arguments`](#chapter_06-Admin-Generator_sub_renderer_arguments)
+   * [`label`](#chapter_06_sub_label)
+   * [`help`](#chapter_06_sub_help)
+   * [`attributes`](#chapter_06_sub_attributes)
+   * [`credentials`](#chapter_06_sub_credentials)
+   * [`renderer`](#chapter_06_sub_renderer)
+   * [`renderer_arguments`](#chapter_06_sub_renderer_arguments)
 
- * [`list`](#chapter_06-Admin-Generator_sub_list)
+ * [`list`](#chapter_06_list)
 
-   * [`title`](#chapter_06-Admin-Generator_sub_title)
-   * [`display`](#chapter_06-Admin-Generator_sub_display)
-   * [`hide`](#chapter_06-Admin-Generator_sub_hide)
-   * [`layout`](#chapter_06-Admin-Generator_sub_layout)
-   * [`params`](#chapter_06-Admin-Generator_sub_params)
-   * [`sort`](#chapter_06-Admin-Generator_sub_sort)
-   * [`max_per_page`](#chapter_06-Admin-Generator_sub_max_per_page)
-   * [`pager_class`](#chapter_06-Admin-Generator_sub_pager_class)
-   * [`batch_actions`](#chapter_06-Admin-Generator_sub_batch_actions)
-   * [`object_actions`](#chapter_06-Admin-Generator_sub_object_actions)
-   * [`actions`](#chapter_06-Admin-Generator_sub_actions)
-   * [`peer_method`](#chapter_06-Admin-Generator_sub_peer_method)
-   * [`peer_count_method`](#chapter_06-Admin-Generator_sub_peer_count_method)
-   * [`table_method`](#chapter_06-Admin-Generator_sub_table_method)
-   * [`table_count_method`](#chapter_06-Admin-Generator_sub_table_count_method)
+   * [`title`](#chapter_06_sub_title)
+   * [`display`](#chapter_06_sub_display)
+   * [`hide`](#chapter_06_sub_hide)
+   * [`layout`](#chapter_06_sub_layout)
+   * [`params`](#chapter_06_sub_params)
+   * [`sort`](#chapter_06_sub_sort)
+   * [`max_per_page`](#chapter_06_sub_max_per_page)
+   * [`pager_class`](#chapter_06_sub_pager_class)
+   * [`batch_actions`](#chapter_06_sub_batch_actions)
+   * [`object_actions`](#chapter_06_sub_object_actions)
+   * [`actions`](#chapter_06_sub_actions)
+   * [`peer_method`](#chapter_06_sub_peer_method)
+   * [`peer_count_method`](#chapter_06_sub_peer_count_method)
+   * [`table_method`](#chapter_06_sub_table_method)
+   * [`table_count_method`](#chapter_06_sub_table_count_method)
 
- * [`filter`](#chapter_06-Admin-Generator_sub_filter)
+ * [`filter`](#chapter_06_filter)
 
-   * [`display`](#chapter_06-Admin-Generator_sub_display)
-   * [`class`](#chapter_06-Admin-Generator_sub_class)
+   * [`display`](#chapter_06_sub_display)
+   * [`class`](#chapter_06_sub_class)
 
- * [`form`](#chapter_06-Admin-Generator_form)
+ * [`form`](#chapter_06_form)
 
-   * [`display`](#chapter_06-Admin-Generator_sub_display)
-   * [`class`](#chapter_06-Admin-Generator_sub_class)
+   * [`display`](#chapter_06_sub_display)
+   * [`class`](#chapter_06_sub_class)
 
- * [`edit`](#chapter_06-Admin-Generator_sub_edit)
+ * [`edit`](#chapter_06_edit)
 
-   * [`title`](#chapter_06-Admin-Generator_sub_title)
-   * [`actions`](#chapter_06-Admin-Generator_sub_actions)
+   * [`title`](#chapter_06_sub_title)
+   * [`actions`](#chapter_06_sub_actions)
 
- * [`new`](#chapter_06-Admin-Generator_sub_new)
+ * [`new`](#chapter_06_new)
 
-   * [`title`](#chapter_06-Admin-Generator_sub_title)
-   * [`actions`](#chapter_06-Admin-Generator_sub_actions)
+   * [`title`](#chapter_06_sub_title)
+   * [`actions`](#chapter_06_sub_actions)
 
 <div class="pagebreak"></div>
 
@@ -293,7 +293,7 @@ adminジェネレータの外見はとても簡単に調整できます。
 この設定はすべてのページに対して定義されページごとに
 オーバーライドできます(`list`、`filter`、`form`、`edit`、と`new`)。
 
-### `label`
+### ~`label`~
 
 *デフォルト*: 人間にわかりやすいカラムの名前
 
@@ -304,13 +304,13 @@ adminジェネレータの外見はとても簡単に調整できます。
       fields:
         slug: { label: "URL shortcut" }
 
-### `help`
+### ~`help`~
 
 *デフォルト*: none
 
 `help`オプションはフィールド用に表示するヘルプテキストを定義します。
 
-### `attributes`
+### ~`attributes`~
 
 *デフォルト*: `array()`
 
@@ -321,7 +321,7 @@ adminジェネレータの外見はとても簡単に調整できます。
       fields:
         slug: { attributes: { class: foo } }
 
-### `credentials`
+### ~`credentials`~
 
 *デフォルト*: none
 
@@ -338,7 +338,7 @@ adminジェネレータの外見はとても簡単に調整できます。
 >クレデンシャルは
 >`security.yml`設定ファイルと同じルールで定義されます。
 
-### `renderer`
+### ~`renderer`~
 
 *デフォルト*: none
 
@@ -348,7 +348,7 @@ adminジェネレータの外見はとても簡単に調整できます。
 コールバックは`renderer_arguments`オプションで
 定義されたフィールドと引数の値で呼び出されます。
 
-### `renderer_arguments`
+### ~`renderer_arguments`~
 
 *デフォルト*: `array()`
 
@@ -365,19 +365,19 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 同じオプションは`list`、`edit`、もしくは`new`エントリでアクションを
 定義する際に使うことができます。
 
-### `name`
+### ~`name`~
 
 *デフォルト*: アクションのキー
 
 `name`オプションはアクションに使うラベルを定義します。
 
-### `action`
+### ~`action`~
 
 *デフォルト*: アクションの名前に基づいて定義されます。
 
-`action`オプションは接頭辞の`execute`無しで実行するアクションの名前を定義します。
+`action`オプションは接頭辞の`execute`なしで実行するアクションの名前を定義します。
 
-### `credentials`
+### ~`credentials`~
 
 *デフォルト*: none
 
@@ -391,13 +391,13 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 `list`
 ------
 
-### `title`
+### ~`title`~
 
 *デフォルト*: 接尾辞の"List"がつけられた人間にわかりやすいモデルクラスの名前
 
 `title`オプションはlistページのタイトルを定義します。
 
-### `display`
+### ~`display`~
 
 *デフォルト*: すべてのモデルのカラム、スキーマファイルでの定義順
 
@@ -415,7 +415,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >**NOTE**
 >カラムを隠す`hide`オプションもご覧ください。
 
-### `hide`
+### ~`hide`~
 
 *デフォルト*: none
 
@@ -432,11 +432,11 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >`display`と`hide`オプションが両方とも提供される場合、`hide`
 >オプションが無視されます。
 
-### `layout`
+### ~`layout`~
 
 *デフォルト*: `tabular`
 
-*可能な値*: `tabular`もしくは`stacked`
+*可能な値*: ~`tabular`~もしくは~`stacked`~
 
 `layout`オプションはlistを表示するのに使うレイアウトを定義します。
 
@@ -449,7 +449,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >`display`オプションは`stacked`レイアウトを使う際にも必要です。
 >これはユーザーによってソート可能になるカラムを定義するからです。
 
-### `params`
+### ~`params`~
 
 *デフォルト値*: none
 
@@ -465,7 +465,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 カラムの前の等号(`=`)は文字列を
 現在のオブジェクトの`edit`ページに向かうリンクに変換する規約です。
 
-### `sort`
+### ~`sort`~
 
 *デフォルト値*: none
 
@@ -477,28 +477,28 @@ PHPの`renderer`コールバックに渡す引数を定義します。
       list:
         sort: [published_at, desc]
 
-### `max_per_page`
+### ~`max_per_page`~
 
 *デフォルト値*: `20`
 
 `max_per_page`オプションは1つのページを表示するオブジェクトの
 最大数を定義します。
 
-### `pager_class`
+### ~`pager_class`~
 
 *デフォルト値*: Propelでは`sfPropelPager`、Doctrineでは`sfDoctrinePager`
 
 `pager_class`オプションはlistを表示する際に使用する
 ページャクラスを定義します。
 
-### `batch_actions`
+### ~`batch_actions`~
 
 *デフォルト値*: `{ _delete: ~ }`
 
 `batch_actions`オプションはlistのオブジェクト選択用に実行できるアクションのリスト
 を定義します。
 
-`action`を定義しない場合、adminジェネレータは
+`action`を定義しない場合、adminジェネレーターは
 接頭辞が`executeBatch`であるキャメルケースの名前のメソッドを探します。
 
 実行されるメソッドは`ids`リクエストパラメーターを通して
@@ -508,35 +508,35 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >バッチアクションの機能はオプションを
 >空の配列: `{}`にセットすることで無効にできます。
 
-### `object_actions`
+### ~`object_actions`~
 
 *デフォルト値*: `{ _edit: ~, _delete: ~ }`
 
 `object_actions`オプションはlistのそれぞれのオブジェクトで実行可能な
 アクションのリストを定義します。
 
-`action`を定義しない場合、adminジェネレータは
+`action`を定義しない場合、adminジェネレーターは
 接頭辞が`executeList`であるキャメルケースの名前のメソッドを探します。
 
 >**TIP**
 >オブジェクトアクションの機能はオプションを
 >空の配列: `{}`にセットすることで無効にできます。
 
-### `actions`
+### ~`actions`~
 
 *デフォルト値*: `{ _new: ~ }`
 
 新しいオブジェクトの作成のように、`actions`オプションは
 オブジェクトを受け取らないアクションを定義します。
 
-`action`を定義しない場合、adminジェネレータは`executeListを接頭辞とするキャメルケースの名前
+`action`を定義しない場合、adminジェネレーターは`executeListを接頭辞とするキャメルケースの名前
 のメソッドを探します。
 
 >**TIP**
 >オブジェクトアクション機能は
 >オプションを空の配列: `{}`にセットすることで無効にできます。
 
-### `peer_method`
+### ~`peer_method`~
 
 *デフォルト値*: `doSelect`
 
@@ -547,7 +547,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >このオプションはPropelに対してのみ存在します。Doctrineに対しては、`table_method`
 >オプションを使います。
 
-### `table_method`
+### ~`table_method`~
 
 *デフォルト値*: `doSelect`
 
@@ -558,7 +558,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >このオプションはDoctrineに対してのみ存在します。Propelに対しては、`peer_method`
 >オプションを使います。
 
-### `peer_count_method`
+### ~`peer_count_method`~
 
 *デフォルト値*: `doCount`
 
@@ -569,7 +569,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >このオプションはPropelに対してのみ存在します。Doctrineに対しては、
 >`table_count_method`オプションを使います。
 
-### `table_count_method`
+### ~`table_count_method`~
 
 *デフォルト値*: `doCount`
 
@@ -583,10 +583,10 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 `filter`
 --------
 
-`filter`セクションはlistページに表示されるフォームをフィルターリングするための設定を
+`filter`セクションはlistページに表示されるフォームをフィルタリングするための設定を
 定義します。
 
-### `display`
+### ~`display`~
 
 *デフォルト値*: 定義の順序で、フィルターフォームクラスで定義されたすべてのフィールド。
 
@@ -596,14 +596,14 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >フィルターフィールドは常にオプションで、表示するフィールドを設定するために
 >フィルターフォームクラスをオーバーライドする必要はありません。
 
-### `class`
+### ~`class`~
 
 *デフォルト値*: 接尾辞が`FormFilter`であるモデルクラスの名前
 
 `class`オプションは`filter`フォームに使用するフォームクラスを定義します。
 
 >**TIP**
->フィルターリング機能を完全に除外するには、`class`を`false`にセットします。
+>フィルタリング機能を完全に除外するには、`class`を`false`にセットします。
 
 `form`
 ------
@@ -612,10 +612,10 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 (最初の継承ルールを参照)。
 
 >**NOTE**
->フォームセクション(`form`、`edit`、と`new`)に関して、`label`と`help`オプションは
+>フォームセクション(`form`、`edit`と`new`)に関して、`label`と`help`オプションは
 >フォームクラスで定義されたものをオーバーライドします。
 
-### `display`
+### ~`display`~
 
 *デフォルト値*: フォームクラスで定義されたすべてのクラス。順序は定義された順序と同じ。
 
@@ -638,7 +638,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >モデルフォームで定義されるすべてのフィールドは`display`オプションに存在しなければなりません。
 >そうではない場合、予期しないバリデーションエラーになる可能性があります。
 
-### `class`
+### ~`class`~
 
 *デフォルト値*: 接尾辞が`Form`であるモデルクラスの名前
 
@@ -654,14 +654,14 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 
 `edit`セクションは`form`セクションと同じオプションを受け取ります。
 
-### `title`
+### ~`title`~
 
 *デフォルト*: 接尾辞が"Edit"である人間にわかりやすいモデルクラスの名前
 
 `title`オプションはeditページのタイトルの見出しを定義します。
 これはモデルオブジェクトのプレースホルダーを格納できます。
 
-### `actions`
+### ~`actions`~
 
 *デフォルト値*: `{ _delete: ~, _list: ~, _save: ~ }`
 
@@ -672,7 +672,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 
 `new`セクションは`form`セクションと同じオプションを受け取ります。
 
-### `title`
+### ~`title`~
 
 *デフォルト*: 接尾辞が"New"である人間にわかりやすいモデルクラスの名前
 
@@ -683,7 +683,7 @@ PHPの`renderer`コールバックに渡す引数を定義します。
 >オブジェクトが新しい場合でも、タイトルの一部として出力したい
 >デフォルトの値を格納できます。
 
-### `actions`
+### ~`actions`~
 
 *デフォルト値*: `{ _delete: ~, _list: ~, _save: ~, _save_and_add: ~ }`
 
