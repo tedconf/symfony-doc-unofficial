@@ -20,7 +20,7 @@ CLIツールは最初の引数としてタスクの名前を受け取ります:
     $ php symfony list
 
 タスクの名前はコロン(`:`)で区切られる、
-オプションの名前空間と名前で構成されます:
+オプションの名前空間と名前でコンフィギュレーションされます:
 
     $ php symfony cache:clear
 
@@ -486,7 +486,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
 ### `doctrine::build-filters`
 
-`doctrine::build-filters`タスクは現在のモデル用のフィルタフォームクラスを作成します:
+`doctrine::build-filters`タスクは現在のモデル用のフィルターフォームクラスを作成します:
 
     $ php symfony doctrine:build-filters [--connection="..."] [--model-dir-name="..."] [--filter-dir-name="..."] [--application[="..."]] [--env="..."] 
 
@@ -498,12 +498,12 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 | ------------------------- | ---------- | -----------
 | `--connection`            | `doctrine` | 接続名
 | `--model-dir-name`        | `model`    | モデルディレクトリの名前
-| `--filter-dir-name`       | `filter`   | フィルタフォームディレクトリの名前
+| `--filter-dir-name`       | `filter`   | フィルターフォームディレクトリの名前
 | `--application`           | `1`        | アプリケーションの名前
 | `--env`                   | `dev`      | 環境
 
 
-`doctrine:build-filters`タスクはスキーマからフィルタフォームクラスを作成します:
+`doctrine:build-filters`タスクはスキーマからフィルターフォームクラスを作成します:
 
     ./symfony doctrine:build-filters
 
@@ -515,7 +515,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 
     ./symfony doctrine:build-filters --connection="name"
 
-モデルフィルタフォームクラスのファイルは`lib/filter`で作成されます。
+モデルフィルターフォームクラスのファイルは`lib/filter`で作成されます。
 
 このタスクは`lib/filter`のカスタムタスクをオーバーライドしません。
 これは`lib/filter/base`で生成された基底クラスのみを置き換えます。
@@ -785,7 +785,7 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 タスクは`routing.yml`で見つかる`%article%`ルート用の`%frontend%`アプリケーションで
 モジュールを作成します。
 
-フィルタとバッチアクションを適切に動作させるために、
+フィルターとバッチアクションを適切に動作させるために、
 ルートに`wildcard`オプションを追加する必要があります:
 
     article:
@@ -1032,10 +1032,10 @@ WARNING: `Propel`データベースを使い`app`無しで`all`環境用に設�
 このタスクは`web/`ディレクトリに
 2つのフロントコントローラも作成します:
 
-    web/%application%.php`     本番環境用
+    web/%application%.php`     運用環境用
     web/%application%_dev.php` 開発環境用
 
-最初のアプリケーションに関しては、本番環境のスクリプトの名前は
+最初のアプリケーションに関しては、運用環境のスクリプトの名前は
 `index.php`です。
 
 同じ名前のアプリケーションがすでに存在する場合、
@@ -1494,7 +1494,7 @@ Windowsではタスクは`web/%name%`ディレクトリのコンテンツもア�
 
 ### `project::clear-controllers`
 
-`project::clear-controllers`タスクは本番環境以外のコントローラをクリアします:
+`project::clear-controllers`タスクは運用環境以外のコントローラをクリアします:
 
     $ php symfony project:clear-controllers  
 
@@ -1504,13 +1504,13 @@ Windowsではタスクは`web/%name%`ディレクトリのコンテンツもア�
 
 
 
-`project:clear-controllers`タスクは本番環境以外の
+`project:clear-controllers`タスクは運用環境以外の
 コントローラをクリアします:
 
     ./symfony project:clear-controllers
 
-本番環境以外のすべてのフロントコントローラを削除するために
-本番サーバーでこのタスクを使うことができます。
+運用環境以外のすべてのフロントコントローラを削除するために
+運用サーバーでこのタスクを使うことができます。
 
 `frontend`と`backend`という名前の2つのアプリケーションがある場合、
 `web/`にはデフォルトのコントローラは4つあります:
@@ -1819,7 +1819,7 @@ symfony 1.1のリリースにアップグレードします。
 
 ### `propel::build-filters`
 
-`propel::build-filters`タスクは現在のモデル用のフィルタフォームクラスを作成します:
+`propel::build-filters`タスクは現在のモデル用のフィルターフォームクラスを作成します:
 
     $ php symfony propel:build-filters [--connection="..."] [--model-dir-name="..."] [--filter-dir-name="..."] [--application[="..."]] 
 
@@ -1831,11 +1831,11 @@ symfony 1.1のリリースにアップグレードします。
 | ------------------------- | --------- | -----------
 | `--connection`            | `propel`  | 接続名
 | `--model-dir-name`        | `model`   | モデルディレクトリの名前
-| `--filter-dir-name`       | `filter`  | フィルタフォームディレクトリの名前
+| `--filter-dir-name`       | `filter`  | フィルターフォームディレクトリの名前
 | `--application`           | `1`       | アプリケーションの名前
 
 
-`propel:build-filters`タスクはスキーマからフィルタフォームクラスを作成します:
+`propel:build-filters`タスクはスキーマからフィルターフォームクラスを作成します:
 
     ./symfony propel:build-filters
 
@@ -1847,7 +1847,7 @@ symfony 1.1のリリースにアップグレードします。
 
     ./symfony propel:build-filters --connection="name"
 
-モデルのフィルタフォームクラスは`lib/filter`に作成されます。
+モデルのフィルターフォームクラスは`lib/filter`に作成されます。
 
 このタスクは`lib/filter`のカスタムクラスをけっして上書きしません。
 これは`lib/filter/base`で生成された既定クラスを置き換えます。
@@ -2104,7 +2104,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 `%frontend%`アプリケーションのモジュールを作成します。
 
 
-フィルタとバッチアクションを適切に動作させるために、 
+フィルターとバッチアクションを適切に動作させるために、 
 `wildcard`オプションをルートに追加する必要があります:
 
     article:

@@ -7,7 +7,7 @@ symfonyアプリケーション用の認証と認可を記述します。
 >**TIP**
 >`security.yml`ファイルからの設定情報は
 >[`user`](#chapter_05_user)ファクトリクラス(デフォルトは`sfBasicSecurityUser`)によって使われます。
->認証と認可の強制は`security` [フィルタ](12-Filters#chapter_12_security)によって行われます。
+>認証と認可の強制は`security` [フィルター](12-Filters#chapter_12_security)によって行われます。
 
 アプリケーションが作成されるとき、symfonyはアプリケーションの`config/`ディレクトリで
 デフォルトの`security.yml`ファイルを生成します。これはアプリケーション全体のセキュリティ

@@ -30,7 +30,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 `layout`
 --------
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     default:
@@ -50,7 +50,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 `stylesheets`
 -------------
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     default:
@@ -62,9 +62,9 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 >**NOTE**
 >`view.yml`で定義されたスタイルシートのインクルードは
 >`include_stylesheets()`ヘルパーによる手動もしくは
->[commonフィルタ](#chapter_12-Filters_sub_common)で自動的に行われます。
+>[commonフィルター](#chapter_12-Filters_sub_common)で自動的に行われます。
 
-多くのフィルタが定義されている場合、symfonyは定義と同じ順序で
+多くのフィルターが定義されている場合、symfonyは定義と同じ順序で
 これらをインクルードします:
 
     [yml]
@@ -88,7 +88,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 `javascripts`
 -------------
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     default:
@@ -100,7 +100,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 >**NOTE**
 >`view.yml`で定義されたJavaScriptファイルのインクルードは
 >`include_javascripts()`ヘルパーで手動、もしくは
->[commonフィルタ](#chapter_12-Filters_sub_common)で自動的に行われます。
+>[commonフィルター](#chapter_12-Filters_sub_common)で自動的に行われます。
 
 多くのファイルが定義されている場合、symfonyは定義と同じ順序で
 これらをインクルードします:
@@ -125,7 +125,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで
 `metas`と`http_metas`
 ---------------------
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     default:

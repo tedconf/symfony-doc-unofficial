@@ -32,7 +32,7 @@ factories.yml設定ファイル
 `view_cache_manager`
 
 `sfContext`がファクトリを初期化するとき、ファクトリオブジェクトを設定するために
-使われるファクトリ(`class`)とパラメータ(`param`)の
+使われるファクトリ(`class`)とパラメーター(`param`)の
 クラス名用の`factories.yml`ファイルを読み取ります:
 
     [yml]
@@ -42,7 +42,7 @@ factories.yml設定ファイル
 
 ファクトリをカスタマイズできることはsymfonyのコアオブジェクト用の
 デフォルトクラスの代わりにカスタムクラスを使うことができることを意味します。
-これらに送信するパラメータをカスタマイズすることで
+これらに送信するパラメーターをカスタマイズすることで
 これらのクラスのデフォルトのふるまいを変更することもできます。
 
 ファクトリクラスがオートロードできないとき、`file`パスが定義され
@@ -134,7 +134,7 @@ factories.yml設定ファイル
 
 *sfContextアクセサ*: `$context->getRequest()`
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     request:
@@ -183,7 +183,7 @@ symfonyによって使われます。
 
 *sfContextアクセサ*: `$context->getResponse()`
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     response:
@@ -193,7 +193,7 @@ symfonyによって使われます。
         charset:           %SF_CHARSET%
         send_http_headers: true
 
-*`test`環境用のデフォルト構成*:
+*`test`環境用のデフォルトコンフィギュレーション*:
 
     [yml]
     response:
@@ -224,7 +224,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 
 *sfContextのアクセサ*: `$context->getUser()`
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     user:
@@ -281,7 +281,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 
 *sfContextアクセサ*: `$context->getStorage()`
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     storage:
@@ -289,7 +289,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
       param:
         session_name: symfony
 
-*`test`環境用のデフォルト構成*:
+*`test`環境用のデフォルトコンフィギュレーション*:
 
     [yml]
     storage:
@@ -309,7 +309,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 すべてのアプリケーションが同じCookieを共有することを意味します
 (そして対応する認証と権限付与も)。
 
-### `session_set_cookie_params()`パラメータ
+### `session_set_cookie_params()`パラメーター
 
 `storage`ファクトリは
 次のオプションの値で[`session_set_cookie_params()`](http://www.php.net/session_set_cookie_params)
@@ -354,7 +354,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 
 *sfContextアクセサ*: `$context->getViewCacheManager()`
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     view_cache_manager:
@@ -374,7 +374,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 
 *sfContextアクセサ*: 無し(`view_cache_manager`ファクトリによって直接使われる)
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     view_cache:
@@ -397,7 +397,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 
 *sfContextアクセサ*: `$context->getI18N()`
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     i18n:
@@ -448,7 +448,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 
 *sfContextアクセサ*: `$context->getRouting()`
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     routing:
@@ -498,12 +498,12 @@ symfony 1.0と1.1との後方互換性のあるルートが欲しい場合は、
 
 *デフォルト*: 新しいプロジェクトには`true`、アップグレードしたプロジェクトには`false`
 
-パラメータがルートの生成に使われるとき、
+パラメーターがルートの生成に使われるとき、
 `extra_parameters_as_query_string`は
-追加パラメータをクエリ文字列に変換することも可能にします。
+追加パラメーターをクエリ文字列に変換することも可能にします。
 symfony 1.0もしくは1.1のふるまいを
 フォールバックするには`false`にセットします。このバージョンでは、
-追加パラメータはルーティングシステムによって無視されるだけでした。
+追加パラメーターはルーティングシステムによって無視されるだけでした。
 
 ### `cache`
 
@@ -534,7 +534,7 @@ symfonyプロジェクトの外部でルーティングシステムを
 デシリアライズの有効にします。たくさんのルートを抱えており、もっともマッチするのが最初のものである場合
 この設定はアプリケーションのパフォーマンスを改善できます。
 特定の状況ではパフォーマンスに悪い影響を与える可能性があるので
-本番サーバーにデプロイする前に設定をテストすることを
+運用サーバーにデプロイする前に設定をテストすることを
 強くお勧めします。
 
 >**CAUTION**
@@ -561,7 +561,7 @@ symfonyプロジェクトの外部でルーティングシステムを
 
 *sfContextアクセサ*: `$context->getLogger()`
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     logger:
@@ -582,7 +582,7 @@ symfonyプロジェクトの外部でルーティングシステムを
               level: debug
               file: %SF_LOG_DIR%/%SF_APP%_%SF_ENVIRONMENT%.log
 
-*`prod`環境用のデフォルト構成*:
+*`prod`環境用のデフォルトコンフィギュレーション*:
 
     [yml]
     logger:
@@ -615,7 +615,7 @@ symfonyプロジェクトの外部でルーティングシステムを
 
 *sfContextアクセサ*: `$context->getController()`
 
-*デフォルト構成*:
+*デフォルトコンフィギュレーション*:
 
     [yml]
     controller:
