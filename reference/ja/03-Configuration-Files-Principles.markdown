@@ -54,7 +54,7 @@ symfonyのすべての設定ファイルはコンフィギュレーションハ�
 symfonyが設定ファイルをコンパイルするとき、存在するすべての`%SF_XXX%`プレースホルダーは
 `settings.yml`からの値に置き換えられます。上記の例では、
 `SF_LOGGING_ENABLED`プレースホルダーが
-`settings.yml`で定義された`logging_enabled`設定の値に置き換えます。
+`settings.yml`で定義される`logging_enabled`設定の値に置き換えます。
 
 ### アプリケーションの設定
 
@@ -66,12 +66,12 @@ symfonyが設定ファイルをコンパイルするとき、存在するすべ�
 デフォルトでは、現在のフロントコントローラーに従ってsymfonyは
 4つの定数を定義します:
 
- | 定数                   | 説明                            | 設定メソッド          |
- | ---------------------- | ------------------------------- | -------------------- |
- | `SF_APP`               | 現在のアプリケーションの名前     | `getApplication()`   |
- | `SF_ENVIRONMENT`       | 現在の環境の名前                | `getEnvironment()`   |
- | `SF_DEBUG`             | デバッグモードが有効であるか     | `isDebug()`          |
- | `SF_SYMFONY_LIB_DIR`   | symfonyライブラリのディレクトリ | `getSymfonyLibDir()` |
+ | 定数                 | 説明                            | 設定メソッド         |
+ | -------------------- | ------------------------------ | -------------------- |
+ | `SF_APP`             | 現在のアプリケーションの名前    | `getApplication()`   |
+ | `SF_ENVIRONMENT`     | 現在の環境の名前               | `getEnvironment()`   |
+ | `SF_DEBUG`           | デバッグモードが有効であるか    | `isDebug()`          |
+ | `SF_SYMFONY_LIB_DIR` | symfonyライブラリのディレクトリ | `getSymfonyLibDir()` |
 
 ### ディレクトリ
 
@@ -84,8 +84,8 @@ symfonyは共通のプロジェクトとアプリケーションディレクト�
 
 プロジェクトのディレクトリ構造は次のように定義されます:
 
- | 定数               | デフォルトの値        |
- | ------------------ | -------------------- |
+ | 定数             | デフォルトの値        |
+ | ---------------- | -------------------- |
  | `SF_APPS_DIR`    | `SF_ROOT_DIR/apps`   |
  | `SF_CONFIG_DIR`  | `SF_ROOT_DIR/config` |
  | `SF_CACHE_DIR`   | `SF_ROOT_DIR/cache`  |
@@ -101,8 +101,8 @@ symfonyは共通のプロジェクトとアプリケーションディレクト�
 アプリケーションのディレクトリ構造は
 `SF_APPS_DIR/APP_NAME`ディレクトリの元で定義されます:
 
- | 定数                    | デフォルトの値          |
- | ----------------------- | ---------------------- |
+ | 定数                  | デフォルトの値          |
+ | --------------------- | ---------------------- |
  | `SF_APP_CONFIG_DIR`   | `SF_APP_DIR/config`    |
  | `SF_APP_LIB_DIR`      | `SF_APP_DIR/lib`       |
  | `SF_APP_MODULE_DIR`   | `SF_APP_DIR/modules`   |
@@ -111,8 +111,8 @@ symfonyは共通のプロジェクトとアプリケーションディレクト�
 
 最後に、アプリケーションのキャッシュディレクトリ構造は次のように定義されます:
 
- | 定数                      | デフォルトの値                    |
- | ------------------------- | -------------------------------- |
+ | 定数                    | デフォルトの値                    |
+ | ------------------------| -------------------------------- |
  | `SF_APP_BASE_CACHE_DIR` | `SF_CACHE_DIR/APP_NAME`          |
  | `SF_APP_CACHE_DIR`      | `SF_CACHE_DIR/APP_NAME/ENV_NAME` |
  | `SF_TEMPLATE_CACHE_DIR` | `SF_APP_CACHE_DIR/template`      |
@@ -131,7 +131,7 @@ symfonyの設定ファイルの中には環境を認識するものがありま�
 これらの解釈はsymfonyの現在の環境に依存します。これらのファイルは
 それぞれの環境ごとに変わる設定を定義するための異なるセクションを持ちます。
 新しいアプリケーションを作成するとき、symfonyは
-3つのデフォルト環境: `prod`、`test`、と`dev`を考慮する設定を作成します:
+3つのデフォルト環境: `prod`、`test`と`dev`を考慮する設定を作成します:
 
     [yml]
     prod:
@@ -153,7 +153,7 @@ symfonyが設定ファイルから値を必要とするとき、
 `all`設定に戻ります。
 
 コンフィギュレーションカスケード
--------------
+------------------------------
 
 *設定ファイル*: `core_compile.yml`、`autoload.yml`、`settings.yml`、
 `factories.yml`、`databases.yml`、`security.yml`、`cache.yml`、`app.yml`、
@@ -168,11 +168,11 @@ symfonyが設定ファイルから値を必要とするとき、
   * モジュールの設定(`PROJECT_ROOT_DIR/apps/APP_NAME/modules/MODULE_NAME/config/XXX.yml`)
   * アプリケーションの設定(`PROJECT_ROOT_DIR/apps/APP_NAME/config/XXX.yml`)
   * プロジェクトの設定(`PROJECT_ROOT_DIR/config/XXX.yml`)
-  * プラグインで定義された設定(`PROJECT_ROOT_DIR/plugins/*/config/XXX.yml`)
-  * symfonyライブラリで定義されたデフォルト設定(`SF_LIB_DIR/config/XXX.yml`)
+  * プラグインで定義される設定(`PROJECT_ROOT_DIR/plugins/*/config/XXX.yml`)
+  * symfonyライブラリで定義されるデフォルト設定(`SF_LIB_DIR/config/XXX.yml`)
 
 たとえば、アプリケーションディレクトリで定義される`settings.yml`は
-プロジェクトのメインの`config/`ディレクトリの設定の一式、および
+プロジェクトのメインの`config/`ディレクトリの設定のセット、および
 フレームワーク自身に格納されるデフォルト設定
 (`lib/config/config/settings.yml`)を継承します。
 
