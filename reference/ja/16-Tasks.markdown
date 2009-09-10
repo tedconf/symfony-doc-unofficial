@@ -298,7 +298,7 @@ CLIツールは値の有無とオプションの長短の表記をそれぞれ�
 
 接続名とデータベースのクラス名を指定することもできます:
 
-    ./symfony configure:database --name=main --class=sfDoctrineDatabase mysql:host=localhost;dbname=example root
+    ./symfony configure:database --name=main --class=sfDoctrineDatabase mysql:host=localhost;dbname=example root mYsEcret
 
 WARNING: `Propel`データベースを使い`app`なしで`all`環境用に設定する際に
 `propel.ini`ファイルも更新されます。
@@ -324,7 +324,7 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境用に設�
 | `--skip-forms`<br />`(-F)` | `-`        | フォーム生成をスキップする
 
 
-`doctrine:build-all`タスクは他の6つのタスクのショートカットです:
+`doctrine:build-all`タスクは6つのタスクのショートカットです:
 
     ./symfony doctrine:build-all
 
@@ -364,7 +364,7 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境用に設�
 | `--dir`                    | `-`        | フィクスチャを探すディレクトリ(複数の値が許可される)
 
 
-`doctrine:build-all-load`タスクは他のタスク用のショートカットです:
+`doctrine:build-all-load`タスクは7つのタスクのショートカットです:
 
     ./symfony doctrine:build-all-load
 
@@ -440,7 +440,7 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境用に設�
 | `--force`                   | `-`       | データベースの削除を強制するか
 
 
-`doctrine:build-all-reload`タスクは他の4つのタスクのショートカットです:
+`doctrine:build-all-reload`タスクは9つのタスクのショートカットです:
 
     ./symfony doctrine:build-all-reload-test-all frontend
 
