@@ -254,7 +254,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 
 >**NOTE**
 >予期していないふるまいを避けるために、ユーザークラスはセッションガーベッジコレクタ用の
->最大限の期限(`session.gc_maxlifetime`)をタイムアウトよりも長くなるように
+>最長有効期間(`session.gc_maxlifetime`)をタイムアウトよりも長くなるように
 >強制します。
 
 ### ~`use_flash`~
@@ -315,14 +315,14 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 次のオプションの値で[`session_set_cookie_params()`](http://www.php.net/session_set_cookie_params)
 関数を呼び出します:
 
- * ~`session_cookie_lifetime`~: セッションCookieの期限、秒単位で
+ * ~`session_cookie_lifetime`~: セッションCookieの有効期間、秒単位で
                                 定義する。
  * ~`session_cookie_path`~:   Cookieが機能するドメイン上のパス。
                               ドメインのすべてのパスに対して単独のスラッシュ(`/`)
                               を使う。
  * ~`session_cookie_domain`~: Cookieのドメイン、たとえば`www.php.net`。
                               すべてのサブドメインにCookieを見えるようにするためには
-                              `.php.net`のように接頭辞としてドットをドメインにつけなければなりません。
+                              `.php.net`のようにプレフィックスとしてドットをドメインにつけなければなりません。
  * ~`session_cookie_secure`~: `true`の場合Cookieはセキュアなコネクションを通してのみ
                               送信されます。
  * ~`session_cookie_httponly`~: `true`にセットされている場合、セッションCookieを設定する際に
@@ -428,15 +428,15 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 ### ~`debug`~
 
 `debug`オプションはデバッグモードをセットします。`on`にセットされる場合、
-未翻訳のメッセージは接頭辞と接尾辞によってデコレートされます(下記を参照)。
+未翻訳のメッセージはプレフィックスとサフィックスによってデコレートされます(下記を参照)。
 
 ### ~`untranslated_prefix`~
 
-`untranslated_prefix`は未翻訳のメッセージに使われる接頭辞を定義します。
+`untranslated_prefix`は未翻訳のメッセージに使われるプレフィックスを定義します。
 
 ### ~`untranslated_suffix`~
 
-`untranslated_suffix`は未翻訳のメッセージに使われる接尾辞を定義します。
+`untranslated_suffix`は未翻訳のメッセージに使われるサフィックスを定義します。
 
 ### ~`cache`~
 
@@ -514,7 +514,7 @@ symfony 1.0もしくは1.1のふるまいを
 
 *デフォルト*: none
 
-すべてのルートに対して使用するデフォルトの接尾辞。このオプションは
+すべてのルートに対して使用するデフォルトのサフィックス。このオプションは
 非推奨でもはや役に立ちません。
 
 ### ~`load_configuration`~

@@ -877,7 +877,7 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境用に設�
 | `--with-show`             | `-`       | showメソッドを生成する
 | `--singular`              | `-`       | 単数形の名前
 | `--plural`                | `-`       | 複数形の名前
-| `--route-prefix`          | `-`       | ルートの接頭辞
+| `--route-prefix`          | `-`       | ルートのプレフィックス
 | `--with-doctrine-route`   | `-`       | Doctrineのルートを使うかどうか
 | `--env`                   | `dev`     | 環境
 
@@ -2129,7 +2129,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 | `--with-show`             | `-`       | showメソッドを生成する
 | `--singular`              | `-`       | 単数形の名前
 | `--plural`                | `-`       | 複数形の名前
-| `--route-prefix`          | `-`       | ルートの接頭辞
+| `--route-prefix`          | `-`       | ルートのプレフィックス
 | `--with-propel-route`     | `-`       | Propelのルートを使うかどうか
 | `--env`                   | `dev`     | 環境
 
