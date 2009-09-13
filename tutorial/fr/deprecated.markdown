@@ -26,11 +26,11 @@ ou versions antérieures, et seront retirées dans Symfony 1.4:
   * `sfToolkit::getTmpDir()`: Vous pouvez remplacer toutes les occurences de cette 
     méthode par `sys_get_temp_dir()`,
 
-  * `sfForm::setInvalidMessage()`: Vous pouvez remplacer tous les appels à cette méthode 
-    par un appel à la nouvelle méthode `sfForm::setDefaultMessage()`,
+  * `sfValidatorBase::setInvalidMessage()`: Vous pouvez remplacer tous les appels à cette méthode 
+    par un appel à la nouvelle méthode `sfValidatorBase::setDefaultMessage()`,
 
-  * `sfForm::setRequiredMessage()`: Vous pouvez remplacer tous les appels à cette méthode 
-	  par un appel à la nouvelle méthode `sfForm::setDefaultMessage()`,
+  * `sfValidatorBase::setRequiredMessage()`: Vous pouvez remplacer tous les appels à cette méthode 
+	  par un appel à la nouvelle méthode `sfValidatorBase::setDefaultMessage()`,
 
   * `sfTesterResponse::contains()`: Vous pouvez maintenant utiliser la méthode plus performante 
     `matches()`,

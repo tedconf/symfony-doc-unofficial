@@ -26,11 +26,11 @@ before, and will be removed in symfony 1.4:
   * `sfToolkit::getTmpDir()`: You can replace all occurrences of this method
     by `sys_get_temp_dir()`
 
-  * `sfForm::setInvalidMessage()`: You can replace it by a call to the new
-    `sfForm::setDefaultMessage()` method
+  * `sfValidatorBase::setInvalidMessage()`: You can replace it by a call to the new
+    `sfValidatorBase::setDefaultMessage()` method
 
-  * `sfForm::setRequiredMessage()`: You can replace it by a call to the new
-    `sfForm::setDefaultMessage()` method
+  * `sfValidatorBase::setRequiredMessage()`: You can replace it by a call to the new
+    `sfValidatorBase::setDefaultMessage()` method
 
   * `sfTesterResponse::contains()`: You can use the more powerful `matches()`
     method
