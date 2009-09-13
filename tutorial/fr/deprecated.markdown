@@ -30,7 +30,7 @@ ou versions antérieures, et seront retirées dans Symfony 1.4:
     par un appel à la nouvelle méthode `sfForm::setDefaultMessage()`,
 
   * `sfForm::setRequiredMessage()`: Vous pouvez remplacer tous les appels à cette méthode 
-	    par un appel à la nouvelle méthode `sfForm::setDefaultMessage()`,
+	  par un appel à la nouvelle méthode `sfForm::setDefaultMessage()`,
 
   * `sfTesterResponse::contains()`: Vous pouvez maintenant utiliser la méthode plus performante 
     `matches()`,
