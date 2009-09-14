@@ -168,7 +168,7 @@ Comment mettre à jour ?
 	  layouts ou pages qui nécessitent des fichiers JavaScripts ou des feuilles de styles 
 	  doivent être mis à jour manuellement.
 
-Tâches automatiques
+Tâches Automatiques
 -------------------
 
 Les classes de tâches automatiques suivantes ont été renommées:
@@ -185,7 +185,7 @@ Les classes de tâches automatiques suivantes ont été renommées:
 
 Le troisième argument de la méthode `sfFormatter::format()` a été supprimé.
 
-Echappement des données
+Echappement des Données
 -----------------------
 
 Le helper `esc_js_no_entities()` relatif à la constante `ESC_JS_NO_ENTITIES` 
