@@ -123,7 +123,7 @@ récupérer et restituer dans le fichier `factories.yml` de votre projet:
 JavaScripts et Feuilles de Styles
 ---------------------------------
 
-### Suppression des filtres communs
+### Suppression des Filtres Communs
 
 Le filtre `sfCommonFilter` a été supprimé. Il était utilisé pour injecter des 
 balises de code JavaScripts et des feuilles de styles automatiquement dans le 
@@ -198,7 +198,7 @@ guillemets (`'` & `"`) ainsi que les retours à la ligne (`\n` & `\r`) seront
 Intégration de l'ORM Doctrine
 -----------------------------
 
-### Version minimale de Doctrine requise
+### Version Minimale de Doctrine
 
 Le lien vers le dépôt externe de Doctrine a été mis à jour afin d'utiliser 
 la toute dernière et incroyable version 1.2 de Doctrine. Vous pouvez aussi 
@@ -213,7 +213,7 @@ chaque objet au lieu de tous les supprimer avec une seule requête DQL. Ainsi,
 les évènements rattachés aux objets seront invoqués au moment de leur 
 suppression.
 
-### Rédéfinition des Schémas de Données des Plugins
+### Redéfinition des Schémas de Données dans les Plugins
 
 Vous pouvez désormais surcharger le model inclus dans le schéma de données YAML 
 d'un plugin en définissant simplement ce même modèle dans votre schéma local.
@@ -262,8 +262,8 @@ type texte sont désormais créés à partir de la classe `sfWidgetFormInputText
 Ce changement a été introduit afin de faciliter l'introspection des classes de 
 formulaire.
 
-Le Gestionnaire d'Envoi d'E-Mail
---------------------------------
+Le Gestionnaire d'Envoi d'E-Mails
+---------------------------------
 
 Symfony 1.3 dispose à présent d'un tout nouveau mécanisme d'envoi d'emails. 
 Lorsqu'une nouvelle application est créée, le fichier `factories.yml` se dote 
