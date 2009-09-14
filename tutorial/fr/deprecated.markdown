@@ -1,5 +1,5 @@
-Deprecations and removals in 1.3
-================================
+Composants supprimés ou rendus obsolètes en 1.3
+===============================================
 
 Ce document liste tous les paramètres de configuration, classes, méthodes, 
 fonctions et tâches devenus obsolètes ou bien supprimés dans Symfony 1.3.
