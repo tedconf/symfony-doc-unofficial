@@ -148,30 +148,30 @@ Ce filtre a été supprimé pour plusieurs raisons:
    the assets are included in the layout (the stylesheets in the `head` tag,
    and the JavaScripts just before the end of the `body` tag for instance)
 
- * It is always better to be explicit, rather than implicit (no magic and no
-   WTF effect; see the user mailing-list for a lot of complaints on this
-   issue)
+ * Il est toujours préférable d'être explicite plutôt qu'implicite. Prenez le 
+   temps de lire la mailing-list des utilisateurs afin de découvrir de nombreuses 
+   plaintes au sujet de la magie et des comportements extravagants.
 
- * It provides a small speed improvement
+ * Cela apporte une légère amélioration des performances.
 
-How to upgrade?
+Comment mettre à jour ?
 
-  * The `common` filter need to be removed from all `filters.yml`
-    configuration files (this is automatically done by the
-    `project:upgrade1.3` task).
+  * Le filtre `common` a besoin d'être supprimé de tous les fichiers 
+    de configuration `filters.yml`. Ceci est automatiquement réalisé
+    par la tâche `project:upgrade1.3`.
 
-  * You need to add `include_stylesheets()` and `include_javascripts()` calls
-    in your layout(s) to have the same behavior as before (this is
-    automatically done by the `project:upgrade1.3` task for HTML layouts
-    contained in the `templates/` directories of your applications - they must
-    have a `<head>` tag though; and you need to manually upgrade any other
-    layout, or any page that does not have a layout but still relies on
-    JavaScripts files and/or stylesheets).
+  * Vous avez besoin d'ajouter les appels aux helpers `include_stylesheets()` et
+    `include_javascripts()` dans vos layouts afin d'obtenir le même comportement 
+    qu'avant. Ceci est automatiquement pris en charge par la tâche `project:upgrade1.3` 
+    pour tous les layouts HTML situés dans le répertoire `templates/` de chaque 
+    application, à condition que ces derniers disposent d'un tag <head>. Tous les autres 
+	  layouts ou pages qui nécessitent des fichiers JavaScripts ou des feuilles de styles 
+	  doivent être mis à jour manuellement.
 
-Tasks
------
+Tâches automatiques
+-------------------
 
-The following task classes have been renamed:
+Les classes de tâches automatiques suivantes ont été renommées:
 
   symfony 1.2               | symfony 1.3
   ------------------------- | --------------
@@ -181,98 +181,108 @@ The following task classes have been renamed:
   `sfPropelLoadDataTask`    | `sfPropelDataLoadTask`
   `sfPropelDumpDataTask`    | `sfPropelDataDumpTask`
 
-### Formatters
+### Les Formatters
 
-The `sfFormatter::format()` third argument has been removed.
+Le troisième argument de la méthode `sfFormatter::format()` a été supprimé.
 
-Escaping
---------
+Echappement des données
+-----------------------
 
-The `esc_js_no_entities()`, refered to by `ESC_JS_NO_ENTITIES` was updated to
-correctly handle non-ANSI characters. Before this change only characters with
-ANSI value `37` to `177` were not escaped. Now it will only escape backslashes
-`\`, quotes `'` & `"` and linebreaks `\n` & `\r`.
+Le helper `esc_js_no_entities()` relatif à la constante `ESC_JS_NO_ENTITIES` 
+a été mis à jour afin de prendre en charge les caractères non ANSI. Avant ce 
+changement, tous les caractères dont la valeur ANSI est comprise entre `37` et 
+`117` n'étaient pas échappés. Désormais, le caractère `\`, les apostrophes et 
+guillemets (`'` & `"`) ainsi que les retours à la ligne (`\n` & `\r`) seront 
+échappés.
 
-Doctrine Integration
---------------------
+Intégration de l'ORM Doctrine
+-----------------------------
 
-### Required Doctrine Version
+### Version minimale de Doctrine requise
 
-The externals to Doctrine have been updated to use the latest and greatest 
-Doctrine 1.2 version. You can read about what is new in Doctrine 1.2 
+Le lien vers le dépôt externe de Doctrine a été mis à jour afin d'utiliser 
+la toute dernière et incroyable version 1.2 de Doctrine. Vous pouvez aussi 
+consulter les dernières nouveautés de Doctrine 1.2 
 [here](http://www.doctrine-project.org/upgrade/1_2).
 
-### Admin Generator Delete
+### Suppression en Masse dans le Génération d'Administration
 
-The admin generator batch delete was changed to fetch the records and issue the
-`delete()` method to each one individually instead of issuing a single DQL query
-to delete them all. The reason is so that events for deleting each individual 
-record are invoked.
+La suppression en masse du générateur d'administration a été modifié afin de 
+récupérer les enregistrements, puis d'appliquer la méthode `delete()` sur 
+chaque objet au lieu de tous les supprimer avec une seule requête DQL. Ainsi, 
+les évènements rattachés aux objets seront invoqués au moment de leur 
+suppression.
 
-### Override Doctrine Plugin Schema
+### Rédéfinition des Schémas de Données des Plugins
 
-You can override the model included in a plugins YAML schema simply by defining 
-that same model in your local schema.
+Vous pouvez désormais surcharger le model inclus dans le schéma de données YAML 
+d'un plugin en définissant simplement ce même modèle dans votre schéma local.
 
-See: http://trac.symfony-project.org/ticket/6656
+Voir: http://trac.symfony-project.org/ticket/6656
 
-With this change you could now create `config/doctrine/sfGuardUser.schema.yml` 
-with the following inside.
+Grâce à ce changement, vous pouvez maintenant créer le schéma suivant dans le 
+fichier `config/doctrine/sfGuardUser.schema.yml`.
 
     sfGuardUser:
       package: sfDoctrineGuardPlugin.lib.model.doctrine
       # ...
 
-You can customize the schema and your local version will be used instead of the
-one included in the plugin.
+Vous pouvez personnaliser le schéma à votre guise car ce sera désormais la version 
+locale qui sera utilisée à la génération du modèle au lieu de celle livrée avec le 
+plugin.
 
 >**NOTE**
->The package option is a feature of Doctrine and is used for the schemas of
->symfony plugins. This does not mean the package feature can be used independently
->to package your models. It must be used directly and only with symfony plugins.
+>L'option `package` est une nouveauté de Doctrine et utilisée pour les schémas des 
+>plugins Symfony. Cela ne veut pas dire que l'option `package` peut être utilisée 
+>indépendamment pour paqueter vos modèles. Elle doit être utilisée directement et 
+>uniquement avec les plugins Symfony.
 
-### Query logging
+### Enregistrement des Requêtes SQL
 
-The Doctrine integration logs queries run using `sfEventDispatcher` rather
-than by accessing the logger object directly. Additionally, the subject of
-these events is either the connection or statement that is running the query.
-Logging is done by the new `sfDoctrineConnectionProfiler` class, which can be
-accessed via a `sfDoctrineDatabase` object.
+Doctrine enregistre les requêtes SQL exécutées à l'aide du dispatcheur 
+d'évènement `sfEventDispatcher` au lieu d'accéder directement à l'objet 
+logger correspondant. De plus, le sujet de ces évènements est soit la 
+connexion ou bien l'objet (statement) qui exécute la requête. L'enregistrement 
+est délégué à la nouvelle classe `sfDoctrineConnectionProfiler`, qui peut 
+être atteinte depuis un objet `sfDoctrineDatabase`.
 
-Plugins
--------
+Les Plugins
+-----------
 
-If you use the `enableAllPluginsExcept()` method to manage enabled plugins in
-your `ProjectConfiguration` class, be warned that we now sort the plugins by
-name to ensure consistency across different platforms.
+Si avez recours à la méthode `enableAllPluginsExcept()` de votre classe 
+`ProjectConfiguration`pour gérer les plugins activés, alors gardez à l'esprit 
+que tous les plugins sont désormais triés par nom afin d'assurer une cohérence
+à travers les différentes plate-formes.
 
-Widgets
--------
+Les Widgets
+-----------
 
-The `sfWidgetFormInput` class is now abstract. Text input fields are now
-created with the `sfWidgetFormInputText` class. This change was made to ease
-introspection of form classes.
+La classe `sfWidgetFormInput` est maintenant déclarée abstraite. Les champs de 
+type texte sont désormais créés à partir de la classe `sfWidgetFormInputText`. 
+Ce changement a été introduit afin de faciliter l'introspection des classes de 
+formulaire.
 
-Mailer
-------
+Le Gestionnaire d'Envoi d'E-Mail
+--------------------------------
 
-Symfony 1.3 has a new mailer factory. When creating a new application, the
-`factories.yml` has sensible defaults for the `test` and `dev` environments.
-But if you upgrade an existing project, you might want to update your
-`factories.yml` with the following configuration for these environments:
+Symfony 1.3 dispose à présent d'un tout nouveau mécanisme d'envoi d'emails. 
+Lorsqu'une nouvelle application est créée, le fichier `factories.yml` se dote 
+de nouveaux paramètres par défaut pour les environnements `dev` et `test`. Mais 
+si vous mettez à jour un projet existant, vous voudrez peut-être mettre à jour 
+votre fichier `factories.yml` avec la configuration suivante pour ces environnements:
 
     [yml]
     mailer:
       param:
         delivery_strategy: none
 
-With the previous configuration, emails won't be sent. Of course, they will
-still be logged, and the `mailer` tester will still work in your functional
-tests.
+Avec la configuration précédente, les emails ne seront pas envoyés. Bien entendu, 
+ils resteront enregistrés, et le testeur `mailer` continuera de fonctionner dans 
+vos tests fonctionnels.
 
-If you'd rather want to receive all emails to a single address, you can use
-the `single_address` delivery strategy (in the `dev` environment for
-instance):
+Si vous souhaitez plutôt recevoir tous vos les emails à une même adresse, vous 
+pouvez spécifier la valeur `single_address` en guise de stratégie d'envoi des 
+emails (pour l`environnements `dev` par exemple):
 
     [yml]
     dev:
@@ -284,22 +294,26 @@ instance):
 YAML
 ----
 
-sfYAML is now more compatible with the 1.2 spec. Here are the changes you
-might need to do in your configuration files:
+sfYAML est désormais davantage compatible avec les spécifications YAML 1.2. 
+La partie suivante liste les changements que vous devrez opérer dans vos 
+fichiers de configuration:
 
- * Booleans can now only be represented with the `true` or `false` strings. If
-   you used the alternative strings in the following list, you must replace
-   them with either `true` or `false`:
+ * Les valeurs Booléennes peuvent maintenant être représentées uniquement 
+   à partir des chaînes de caractères `true` ou `false`. Si vous utilisiez 
+   une ou plusieurs des chaînes alternatives suivantes, vous devrez les 
+   remplacer par les valeurs `true` ou `false` correspondantes:
 
     * `on`, `y`, `yes`, `+`
     * `off`, `n`, `no`, `-`
 
-The `project:upgrade` task tells you where you use old syntax but does not fix
-them (to avoid loosing comments for instance). You must fix them by hand.
+La tâche automatique `project:upgrade` vous informe des endroits où vous 
+utilisez l'ancienne syntaxe mais ne les corrige pas à votre place afin 
+d'éviter de perdre des commentaires par exemple. Vous devez les corriger 
+vous même manuellement.
 
-If you don't want to check all your YAML files, you can force the YAML parser
-to use the 1.1 YAML specification by using the `sfYaml::setSpecVersion()`
-method:
+Si vous souhaitez vérifier tous vos fichiers YAML, vous pouvez forcer 
+l'analyseur syntaxique YAML à utiliser les spécifications YAML 1.1 en 
+utilisant la méthode `sfYaml::setSpecVersion()`:
 
     [php]
     sfYaml::setSpecVersion('1.1');
