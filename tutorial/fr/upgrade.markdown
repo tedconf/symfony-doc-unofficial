@@ -44,7 +44,7 @@ Pour mettre à jour un projet:
         $ php symfony doctrine:build-forms
         $ php symfony doctrine:build-filters
 
-  * Vider le cache de Symfony:
+  * Videz le cache de Symfony:
 
         $ php symfony cc
 
