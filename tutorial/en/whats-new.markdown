@@ -474,6 +474,11 @@ When an exception is thrown during autoloading, symfony now catch them and
 outputs an error to the user. That should solve some "White screen of death"
 pages.
 
+### Web Debug Toolbar
+
+If possible, the web debug toolbar is now also displayed on exception pages in
+the development environment.
+
 Propel
 ------
 
