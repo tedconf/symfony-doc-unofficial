@@ -5,12 +5,10 @@ cache.yml設定ファイル
 この設定ファイルは`settings.yml`で[`cache`](#chapter_04_sub_cach)設定が有効な場合のみアクティブになります。
 
 >**TIP**
->クラスの設定はキャッシュのために使われ関連設定は
->[`view_cache_manager`](#chapter_05_view_cache_manager)と
->`factories.yml`設定ファイルの
->[`view_cache`](#chapter_05_view_cache)セクションで行われます。
+>クラスの設定はキャッシュのために使われ関連設定は[`view_cache_manager`](#chapter_05_view_cache_manager)と`factories.yml`設定ファイルの[`view_cache`](#chapter_05_view_cache)セクションで行われます。
 
-アプリケーションが作成されるとき、symfonyはアプリケーションの`config/`ディレクトリにデフォルトの`cache.yml`ファイルを生成します。このファイルはアプリケーション全体のキャッシュを記述します(`default`キーの下で)。デフォルトでは、キャッシュはグローバルスコープで`off`にセットされています:
+アプリケーションが作成されるとき、symfonyはアプリケーションの`config/`ディレクトリにデフォルトの`cache.yml`ファイルを生成します。このファイルはアプリケーション全体のキャッシュを記述します(`default`キーの下)。
+デフォルトでは、キャッシュはグローバルスコープで`off`にセットされています:
 
     [yml]
     default:
@@ -19,19 +17,16 @@ cache.yml設定ファイル
       lifetime:    86400
 
 >**TIP**
->デフォルトでは`enabled`設定は`false`にセットされるので、
->キャッシュを選り分けて有効にする必要があります。他の方法もあります:
+>デフォルトでは`enabled`設定は`false`にセットされるので、キャッシュを選り分けて有効にする必要があります。
+>他の方法もあります:
 >グローバルスコープのキャッシュを有効にし、キャッシュする必要のない特定のページでキャッシュを無効にします。
 >どちらの方がアプリケーションの作業量が少ないのかによって選ぶ方法が決まります。
 
-はじめの章で説明したように、`cache.yml`ファイルは
-[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、
-[**定数**](#chapter_03_constants)を含むことができます。
+はじめの章で説明したように、`cache.yml`ファイルは[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を含むことができます。
 
 >**NOTE**
 >`cache.yml`設定ファイルはPHPファイルとしてキャッシュされます;
->処理は~`sfCacheConfigHandler`~
->[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>処理は~`sfCacheConfigHandler`~[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 アプリケーションのデフォルト設定はモジュールの`config/`ディレクトリに`cache.yml`ファイルを作成することでモジュールのためにオーバーライドできます。
 メインキーはプレフィックスの`execute`なしのアクションの名前です(たとえば`index`キーは`executeIndex`メソッドです)。
@@ -47,8 +42,7 @@ cache.yml設定ファイル
   * アプリケーションのデフォルト設定(`default`キーの下)
 
 >**CAUTION**
->クエリーストリングの`GET`パラメーターで送信されてくるリクエストや、
->`POST`、`PUT`、もしくは`DELETE`メソッドで投稿されたリクエストは設定に関わらず決してキャッシュされません。
+>クエリーストリングの`GET`パラメーターで送信されてくるリクエストや、`POST`、`PUT`、もしくは`DELETE`メソッドで投稿されたリクエストは設定に関わらず決してキャッシュされません。
 
 ~`enabled`~
 -----------

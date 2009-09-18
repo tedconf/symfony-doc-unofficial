@@ -8,16 +8,12 @@
 ----------------
 
 `autoload.yml`設定はsymfonyによってオートロードされる必要のあるディレクトリを決定します。
-それぞれのディレクトリはPHPクラスとインターフェイスを見つけるために
-走査されます。
+それぞれのディレクトリはPHPクラスとインターフェイスを見つけるためにスキャンされます。
 
-最初の章で説明したように、`autoload.yml`ファイルは
-[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、[**定数**](#chapter_03_constants)を含むことができます。
+最初の章で説明したように、`autoload.yml`ファイルは[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、[**定数**](#chapter_03_constants)を含むことができます。
 
 >**NOTE**
 >`autoload.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->処理は~`sfAutoloadConfigHandler`~
->[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 たいていのプロジェクトではデフォルトコンフィギュレーションで十分です:
 
@@ -64,10 +60,7 @@
  * `files`: PHPクラスのために明示的に解析するファイルの配列
  * `ext`: PHPクラスの拡張子(デフォルトは`.php`)
 
-たとえば、`lib/`ディレクトリの下でプロジェクト内部で大きなライブラリを埋め込み、
-オートロード機能がすでにサポートされている場合、パフォーマンスの向上させるために
-`project`のオートロード設定を修正することでsymfonyのデフォルトのオートロードシステムから
-そのライブラリを除外できます:
+たとえば、`lib/`ディレクトリの下でプロジェクト内部で大きなライブラリを埋め込み、オートロード機能がすでにサポートされている場合、パフォーマンスの向上させるために`project`のオートロード設定を修正することでsymfonyのデフォルトのオートロードシステムからそのライブラリを除外できます:
 
     [yml]
     autoload:
@@ -80,10 +73,8 @@
 ~`config_handlers.yml`~
 -----------------------
 
-`config_handlers.yml`設定ファイルは他のすべてのYAML設定ファイルを解析して
-解釈するために使われるコンフィギュレーションハンドラークラスを記述します。
-`settings.yml`設定ファイルをロードするために使われる
-デフォルトコンフィギュレーションは次の通りです:
+`config_handlers.yml`設定ファイルは他のすべてのYAML設定ファイルを解釈するために使われるコンフィギュレーションハンドラークラスを記述します。
+`settings.yml`設定ファイルをロードするために使われるデフォルトコンフィギュレーションは次の通りです:
 
     [yml]
     config/settings.yml:
@@ -91,36 +82,32 @@
       param:
         prefix: sf_
 
-それぞれの設定ファイルはクラス(`class`エントリ)によって定義し
-`param`セクションの下でパラメーターを定義することでさらにカスタマイズできます。
+それぞれの設定ファイルはクラス(`class`エントリ)によって定義し`param`セクションの下でパラメーターを定義することでさらにカスタマイズできます。
 
 デフォルトの`config_handlers.yml`ファイルは次のようにパーサークラスを定義します:
 
- | 設定ファイル       | コンフィギュレーションハンドラークラス                  |
- | ------------------ | ---------------------------------- |
- | `autoload.yml`     | `sfAutoloadConfigHandler`          |
- | `databases.yml`    | `sfDatabaseConfigHandler`          |
- | `settings.yml`     | `sfDefineEnvironmentConfigHandler` |
- | `app.yml`          | `sfDefineEnvironmentConfigHandler` |
- | `factories.yml`    | `sfFactoryConfigHandler`           |
- | `core_compile.yml` | `sfCompileConfigHandler`           |
- | `filters.yml`      | `sfFilterConfigHandler`            |
- | `routing.yml`      | `sfRoutingConfigHandler`           |
- | `generator.yml`    | `sfGeneratorConfigHandler`         |
- | `view.yml`         | `sfViewConfigHandler`              |
- | `security.yml`     | `sfSecurityConfigHandler`          |
- | `cache.yml`        | `sfCacheConfigHandler`             |
- | `module.yml`       | `sfDefineEnvironmentConfigHandler` |
+ | 設定ファイル       | コンフィギュレーションハンドラークラス |
+ | ------------------ | ----------------------------------- |
+ | `autoload.yml`     | `sfAutoloadConfigHandler`           |
+ | `databases.yml`    | `sfDatabaseConfigHandler`           |
+ | `settings.yml`     | `sfDefineEnvironmentConfigHandler`  |
+ | `app.yml`          | `sfDefineEnvironmentConfigHandler`  |
+ | `factories.yml`    | `sfFactoryConfigHandler`            |
+ | `core_compile.yml` | `sfCompileConfigHandler`            |
+ | `filters.yml`      | `sfFilterConfigHandler`             |
+ | `routing.yml`      | `sfRoutingConfigHandler`            |
+ | `generator.yml`    | `sfGeneratorConfigHandler`          |
+ | `view.yml`         | `sfViewConfigHandler`               |
+ | `security.yml`     | `sfSecurityConfigHandler`           |
+ | `cache.yml`        | `sfCacheConfigHandler`              |
+ | `module.yml`       | `sfDefineEnvironmentConfigHandler`  |
 
 ~`core_compile.yml`~
 --------------------
 
-`core_compile.yml`設定ファイルはsymfonyがロードする時間を加速するために
-`prod`環境で1つの大きなファイルにマージされるPHPファイルを記述します。
+`core_compile.yml`設定ファイルはsymfonyがロードする時間を加速するために`prod`環境で1つの大きなファイルにマージされるPHPファイルを記述します。
 デフォルトでは、symfonyのメインのコアクラスはこの設定ファイルで定義されます。
-アプリケーションがそれぞれのリクエストごとにロードする必要のあるいくつかのクラスに依存する場合、
-プロジェクトもしくはアプリケーションの`core_compile.yml`
-設定ファイルを作成しこれらのクラスを設定ファイルに追加できます。
+アプリケーションがそれぞれのリクエストごとにロードする必要のあるいくつかのクラスに依存する場合、プロジェクトもしくはアプリケーションの`core_compile.yml`設定ファイルを作成しこれらのクラスを設定ファイルに追加できます。
 デフォルトコンフィギュレーションの抜粋は次の通りです:
 
     [yml]
@@ -129,11 +116,8 @@
     - %SF_SYMFONY_LIB_DIR%/action/sfAction.class.php
     - %SF_SYMFONY_LIB_DIR%/action/sfActions.class.php
 
-はじめの章で説明したように、`core_compile.yml`ファイルは
-[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、
-[**定数**](#chapter_03_constants)を含むことができます。
+はじめの章で説明したように、`core_compile.yml`ファイルは[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、[**定数**](#chapter_03_constants)を含むことができます。
 
 >**NOTE**
 >`core_compile.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->処理は~`sfCompileConfigHandler`~
->[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>処理は~`sfCompileConfigHandler`~[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。

@@ -2,19 +2,15 @@ factories.yml設定ファイル
 ========================
 
 ファクトリはリクエストが存続する間にフレームワークが必要とするコアオブジェクトです。
-これらは`factories.yml`設定ファイルで設定され
-`sfContext`オブジェクトを通して常にアクセス可能です:
+これらは`factories.yml`設定ファイルで設定され`sfContext`オブジェクトを通して常にアクセス可能です:
 
     [php]
     // ユーザーファクトリを取得する
     sfContext::getInstance()->getUser();
 
-アプリケーション用のメインの`factories.yml`設定ファイルは
-`apps/APP_NAME/config/`ディレクトリで見つかります。
+アプリケーション用のメインの`factories.yml`設定ファイルは`apps/APP_NAME/config/`ディレクトリで見つかります。
 
-はじめの章で説明したように、`factories.yml`ファイルは
-[**環境を認識し**](#chapter_03_environment_awareness)、
-[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を含むことができます。
+はじめの章で説明したように、`factories.yml`ファイルは[**環境を認識し**](#chapter_03_environment_awareness)、[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を含むことができます。
 
 `factories.yml`設定ファイルは名前つきのファクトリのリストを格納します:
 
@@ -27,26 +23,19 @@ factories.yml設定ファイル
 
     # ...
 
-サポートされるファクトリの名前は次の通りです: `controller`、`logger`、`i18n`、`request`、
-`response`、`routing`、`storage`、`user`、`view_cache`と
-`view_cache_manager`
+サポートされるファクトリの名前は次の通りです: `controller`、`logger`、`i18n`、`request`、`response`、`routing`、`storage`、`user`、`view_cache`と`view_cache_manager`
 
-`sfContext`がファクトリを初期化するとき、ファクトリオブジェクトを設定するために
-使われるファクトリ(`class`)とパラメーター(`param`)の
-クラス名用の`factories.yml`ファイルを読み取ります:
+`sfContext`がファクトリを初期化するとき、ファクトリオブジェクトを設定するために使われるファクトリ(`class`)とパラメーター(`param`)のクラス名用の`factories.yml`ファイルを読み込みます:
 
     [yml]
     FACTORY_NAME:
       class: CLASS_NAME
       param: { ARRAY OF PARAMETERS }
 
-ファクトリをカスタマイズできることはsymfonyのコアオブジェクト用の
-デフォルトクラスの代わりにカスタムクラスを使うことができることを意味します。
-これらに送信するパラメーターをカスタマイズすることで
-これらのクラスのデフォルトのふるまいを変更することもできます。
+ファクトリをカスタマイズできることはsymfonyのコアオブジェクト用のデフォルトクラスの代わりにカスタムクラスを使うことができることを意味します。
+これらに送信するパラメーターをカスタマイズすることでこれらのクラスのデフォルトのふるまいを変更することもできます。
 
-ファクトリクラスがオートロードできないとき、`file`パスが定義され
-ファクトリが作成される前に自動的にインクルードできます:
+ファクトリクラスがオートロードできないとき、`file`パスが定義されファクトリが作成される前に自動的にインクルードできます:
 
     [yml]
     FACTORY_NAME:
@@ -160,23 +149,19 @@ factories.yml設定ファイル
 
 ### ~`path_info_key`~
 
-`path_info_key`オプションは`PATH_INFO`の情報が見つかる
-キーを定義します。
+`path_info_key`オプションは`PATH_INFO`の情報が見つかるキーを定義します。
 
-`IIFR`もしくは`ISAPI`のようなrewriteモジュールつきのIISを使う場合、
-この値を`HTTP_X_REWRITE_URL`に変更するとよいでしょう。
+`IIFR`もしくは`ISAPI`のようなrewriteモジュールつきのIISを使う場合、この値を`HTTP_X_REWRITE_URL`に変更するとよいでしょう。
 
 ### ~`formats`~
 
 `formats`オプションはファイル拡張子と`Content-Type`の配列です。
-リクエストURIの拡張子に基づいて、レスポンスの`Content-Type`を自動的に管理するために
-symfonyによって使われます。
+リクエストURIの拡張子に基づいて、レスポンスの`Content-Type`を自動的に管理するためにsymfonyによって使われます。
 
 ### ~`relative_url_root`~
 
 `relative_url_root`オプションはフロントコントローラー前のURLの部分を定義します。
-たいていの場合、これはフレームワークによって自動的に検出されるので
-変更する必要はありません。
+たいていの場合、これはフレームワークによって自動的に検出されるので変更する必要はありません。
 
 `response`
 ----------
@@ -203,10 +188,8 @@ symfonyによって使われます。
 
 ### ~`send_http_headers`~
 
-`send_http_headers`オプションはレスポンスがレスポンス内に含まれるコンテンツと一緒に
-HTTPレスポンスヘッダーを送信するかを指定します。この設定は
-出力の後でヘッダーを送信しようとすると警告を発する
-PHPの`header()`関数でヘッダーが送信されるので、テストの際に便利です。
+`send_http_headers`オプションはレスポンスがレスポンス内に含まれるコンテンツと一緒にHTTPレスポンスヘッダーを送信するかを指定します。
+この設定は出力の後でヘッダーを送信しようとすると警告を発するPHPの`header()`関数でヘッダーが送信されるので、テストの際に便利です。
 
 ### ~`charset`~
 
@@ -244,8 +227,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 
 `timeout`オプションはユーザー認証のタイムアウトを定義します。
 これはセッションのタイムアウトとは関係ありません。
-デフォルトの設定は30分間何もしていない
-ユーザーの認証を自動的に解除します。
+デフォルトの設定は30分間何もしていないユーザーの認証を自動的に解除します。
 
 `sfBasicSecurityUser`基底クラスを継承するユーザークラスのみがこの設定を使います。
 これは`myUser`クラスが生成される例が当てはまります。
@@ -261,10 +243,8 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 
 ### ~`default_culture`~
 
-`default_culture`オプションはサイトに始めて訪問したユーザーのために
-デフォルトのcultureを定義します。デフォルトでは、
-`settings.yml`からの`default_culture`が使用され
-たいていの場合これで十分です。
+`default_culture`オプションはサイトに始めて訪問したユーザーのためにデフォルトのcultureを定義します。
+デフォルトでは、`settings.yml`からの`default_culture`が使用されたいていの場合これで十分です。
 
 >**CAUTION**
 >`factories.yml`もしくは`settings.yml`の~`default_culture`~設定を変更する場合、
@@ -274,8 +254,7 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 `storage`
 ---------
 
-ストレージファクトリはHTTPリクエスト間のユーザーデータを一貫させるために
-ユーザーファクトリによって使われます。
+ストレージファクトリはHTTPリクエスト間のユーザーデータを一貫させるためにユーザーファクトリによって使われます。
 
 *sfContextアクセサー*: `$context->getStorage()`
 
@@ -297,49 +276,34 @@ PHPの`header()`関数でヘッダーが送信されるので、テストの際�
 
 ### ~`auto_start`~
 
-`auto_start`オプションは(`session_start()`関数を通して)PHPのセッション自動開始機能を
-有効もしくは無効にします。
+`auto_start`オプションは(`session_start()`関数を通して)PHPのセッション自動開始機能を有効もしくは無効にします。
 
 ### ~`session_name`~
 
-`session_name`オプションはユーザーセッションを保存するために
-symfonyによって使用されるCookieの名前を定義します。デフォルトの名前は`symfony`で、
-すべてのアプリケーションが同じCookieを共有することを意味します
-(そして対応する認証と権限付与も)。
+`session_name`オプションはユーザーセッションを保存するためにsymfonyによって使用されるCookieの名前を定義します。デフォルトの名前は`symfony`で、すべてのアプリケーションが同じCookieを共有することを意味します(そして対応する認証と権限付与も)。
 
 ### `session_set_cookie_params()`パラメーター
 
-`storage`ファクトリは
-次のオプションの値で[`session_set_cookie_params()`](http://www.php.net/session_set_cookie_params)
-関数を呼び出します:
+`storage`ファクトリは次のオプションの値で[`session_set_cookie_params()`](http://www.php.net/session_set_cookie_params)関数を呼び出します:
 
- * ~`session_cookie_lifetime`~: セッションCookieの有効期間、秒単位で
-                                定義する。
+ * ~`session_cookie_lifetime`~: セッションCookieの有効期間。秒単位で定義する。
  * ~`session_cookie_path`~:   Cookieが機能するドメイン上のパス。
-                              ドメインのすべてのパスに対して単独のスラッシュ(`/`)
-                              を使う。
+                              ドメインのすべてのパスに対して単独のスラッシュ(`/`)を使う。
  * ~`session_cookie_domain`~: Cookieのドメイン、たとえば`www.php.net`。
-                              すべてのサブドメインにCookieを見えるようにするためには
-                              `.php.net`のようにプレフィックスとしてドットをドメインにつけなければなりません。
- * ~`session_cookie_secure`~: `true`の場合Cookieはセキュアなコネクションを通してのみ
-                              送信されます。
- * ~`session_cookie_httponly`~: `true`にセットされている場合、セッションCookieを設定する際に
-                                PHPは`httponly`フラグを送信しようとします。
+                              すべてのサブドメインにCookieを見えるようにするためには`.php.net`のようにプレフィックスとしてドットをドメインにつけなければなりません。
+ * ~`session_cookie_secure`~: `true`の場合Cookieはセキュアなコネクションを通してのみ送信されます。
+ * ~`session_cookie_httponly`~: `true`にセットされている場合、セッションCookieを設定する際にPHPは`httponly`フラグを送信しようとします。
 
 >**NOTE**
->それぞれのオプションの説明は`session_set_cookie_params()`関数の説明は
->PHPの公式サイトに説明に由来しています。
+>それぞれのオプションの説明は`session_set_cookie_params()`関数の説明はPHPの公式サイトに説明に由来しています。
 
 ### ~`session_cache_limiter`~
 
-`session_cache_limiter`オプションがセットされている場合、PHPの
-[`session_cache_limiter()`](http://www.php.net/session_cache_limiter)
-関数が呼び出され引数としてオプションの値が渡されます。
+`session_cache_limiter`オプションがセットされている場合、PHPの[`session_cache_limiter()`](http://www.php.net/session_cache_limiter)関数が呼び出され引数としてオプションの値が渡されます。
 
 ### データベースストレージ固有のオプション
 
-`sfDatabaseSessionStorage`クラスを継承するストレージを使うとき、
-いくつかの追加オプションが利用可能です:
+`sfDatabaseSessionStorage`クラスを継承するストレージを使うとき、いくつかの追加オプションが利用可能です:
 
  * ~`database`~:     データベースの名前(必須)
  * ~`db_table`~:     テーブルの名前(必須)
@@ -359,13 +323,11 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
       class: sfViewCacheManager
 
 >**CAUTION**
->[`cache`](#chapter_04-Settings_sub_cache)設定が
->`on`にセットされている場合にのみこのファクトリは作成されます。
+>[`cache`](#chapter_04-Settings_sub_cache)設定が`on`にセットされている場合にのみこのファクトリは作成されます。
 
 ビューキャッシュマネージャーの設定は`param`キーを含みません。
 この設定は`view_cache`ファクトリを通して行われます。
-これはビューキャッシュマネージャーによって使われる
-内部のキャッシュオブジェクトを定義します。
+これはビューキャッシュマネージャーによって使われる内部のキャッシュオブジェクトを定義します。
 
 `view_cache`
 ------------
@@ -384,11 +346,9 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
         prefix:                    %SF_APP_DIR%/template
 
 >**CAUTION**
->[`cache`](#chapter_04-Settings_sub_cache)設定が
->`on`にセットされている場合のみこのファクトリが定義されます。
+>[`cache`](#chapter_04-Settings_sub_cache)設定が`on`にセットされている場合のみこのファクトリが定義されます。
 
-`view_cache`ファクトリは`sfCache`を継承するキャッシュクラスを
-定義します(詳細な情報はキャッシュのセクションを参照)。
+`view_cache`ファクトリは`sfCache`を継承するキャッシュクラスを定義します(詳細な情報はキャッシュのセクションを参照)。
 
 `i18n`
 ------
@@ -414,8 +374,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
             prefix:                    %SF_APP_DIR%/i18n
 
 >**CAUTION**
->[`i18n`](#chapter_04-Settings_sub_i18n)設定が
->`on`にセットされている場合のみこのファクトリが定義されます。
+>[`i18n`](#chapter_04-Settings_sub_i18n)設定が`on`にセットされている場合のみこのファクトリが定義されます。
 
 ### ~`source`~
 
@@ -425,8 +384,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 
 ### ~`debug`~
 
-`debug`オプションはデバッグモードをセットします。`on`にセットされる場合、
-未翻訳のメッセージはプレフィックスとサフィックスによってデコレートされます(下記を参照)。
+`debug`オプションはデバッグモードをセットします。`on`にセットされる場合、未翻訳のメッセージはプレフィックスとサフィックスによってデコレートされます(下記を参照)。
 
 ### ~`untranslated_prefix`~
 
@@ -438,8 +396,7 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 
 ### ~`cache`~
 
-`cache`オプションは国際化データのキャッシュに使われる匿名キャッシュファクトリ
-を定義します(詳細な情報はキャッシュのセクションを参照)。
+`cache`オプションは国際化データのキャッシュに使われる匿名キャッシュファクトリを定義します(詳細な情報はキャッシュのセクションを参照)。
 
 `routing`
 ---------
@@ -472,45 +429,39 @@ symfonyによって使用されるCookieの名前を定義します。デフォ�
 
 *デフォルト*: `:`
 
-`variable_prefixes`オプションはルートのパターンの変数名を始める
-文字のリストを定義します。
+`variable_prefixes`オプションはルートのパターンの変数名を始める文字のリストを定義します。
 
 ### ~`segment_separators`~
 
 *デフォルト*: `/`と`.`
 
 `segment_separators`オプションはルートセグメントの区切り文字のリストを定義します。
-たいていの場合、特定のルート以外、ルーティング全体に対してこのオプションを
-オーバーライドすることはないでしょう。
+たいていの場合、特定のルート以外、ルーティング全体に対してこのオプションをオーバーライドすることはないでしょう。
 
 ### ~`generate_shortest_url`~
 
 *デフォルト*: 新しいプロジェクトでは`true`、アップグレードしたプロジェクトには`false`
 
-`true`にセットされる場合、`generate_shortest_url`オプションは
-ルーティングシステムに実現可能な最短のルートを生成するよう伝えます。
-symfony 1.0と1.1との後方互換性のあるルートが欲しい場合は、
-`false`にセットします。
+`true`にセットされる場合、`generate_shortest_url`オプションはルーティングシステムに実現可能な最短のルートを生成するよう伝えます。
+symfony 1.0と1.1との後方互換性のあるルートが欲しい場合は、`false`にセットします。
 
 ### ~`extra_parameters_as_query_string`~
 
 *デフォルト*: 新しいプロジェクトには`true`、アップグレードしたプロジェクトには`false`
 
-ルートの生成に使われないパラメータがあるとき、
-`extra_parameters_as_query_string`はルート生成に利用していないパラメーターをクエリーストリングに変換することが可能です。
-symfony 1.0もしくは1.1のふるまいを代替するには`false`にセットします。このバージョンでは、
-ルート生成に利用していないパラメーターはルーティングシステムによって無視されるだけでした。
+ルートの生成に使われないパラメータがあるとき、`extra_parameters_as_query_string`はルート生成に利用していないパラメーターをクエリーストリングに変換することが可能です。
+symfony 1.0もしくは1.1のふるまいを代替するには`false`にセットします。
+このバージョンでは、ルート生成に利用していないパラメーターはルーティングシステムによって無視されるだけでした。
 
 ### ~`cache`~
 
-`cache`オプションはルーティング設定とデータのキャッシュに使われる
-匿名キャッシュファクトリを定義します(詳細な情報はキャッシュセクションを参照)。
+`cache`オプションはルーティング設定とデータのキャッシュに使われる匿名キャッシュファクトリを定義します(詳細な情報はキャッシュセクションを参照)。
 
 ### ~`suffix`~
 
 *デフォルト*: none
 
-すべてのルートに対して使用するデフォルトのサフィックスです。このオプションは非推奨でもはや役に立ちません。
+すべてのルートに使われるデフォルトのサフィックスです。このオプションは非推奨でもはや役に立ちません。
 
 ### ~`load_configuration`~
 
@@ -523,11 +474,9 @@ symfonyプロジェクトではない外部のルーティングシステムを�
 
 *デフォルト*: `false`
 
-`true`にセットする場合、`lazy_routes_deserialize`設定はルーティングキャッシュの遅延
-デシリアライズを有効にします。たくさんのルートを抱えており、マッチするルートが最初のものである場合
-この設定はアプリケーションのパフォーマンスを改善できます。
-特定の状況ではパフォーマンスに悪い影響を与える可能性があるので
-運用サーバーにデプロイする前に設定をテストすることを強くお勧めします。
+`true`にセットする場合、`lazy_routes_deserialize`設定はルーティングキャッシュの遅延デシリアライズを有効にします。
+たくさんのルートを抱えており、マッチするルートが最初のものである場合この設定はアプリケーションのパフォーマンスを改善できます。
+特定の状況ではパフォーマンスに悪い影響を与える可能性があるので運用サーバーにデプロイする前に設定をテストすることを強くお勧めします。
 
 >**CAUTION**
 >symfony 1.2.7とそれ以降でのみこの設定は利用できます。
@@ -537,13 +486,11 @@ symfonyプロジェクトではない外部のルーティングシステムを�
 *デフォルト*: `false`
 
 `lookup_cache_dedicated_keys`設定はルーティングキャッシュが構成される方法を決定します。
-`false`にセットされている場合、キャッシュは1つの大きな値として保存されます; `true`に
-セットされている場合それぞれのルートは独自のキャッシュストアを持ちます。
+`false`にセットされている場合、キャッシュは1つの大きな値として保存されます;
+`true`にセットされている場合それぞれのルートは独自のキャッシュストアを持ちます。
 この設定はパフォーマンス最適化設定です。
 
-経験則として、ファイルベースのキャッシュクラス(たとえば`sfFileCache`)を使う際には
-この設定を`false`に、メモリベースのキャッシュクラス(たとえば`sfAPCCache`)を使う際には`true`に
-すると良いです。
+経験則として、ファイルベースのキャッシュクラス(たとえば`sfFileCache`)を使う際にはこの設定を`false`に、メモリベースのキャッシュクラス(たとえば`sfAPCCache`)を使う際には`true`にするとよいです。
 
 >**CAUTION**
 >symfony 1.2.7とそれ以降でのみこの設定は利用可能です。
@@ -584,20 +531,17 @@ symfonyプロジェクトではない外部のルーティングシステムを�
         loggers: ~
 
 >**CAUTION**
->このファクトリは常に定義されますが、`logging_enabled`設定が`on`にセットされている
->場合のみロギングが行われます。
+>このファクトリは常に定義されますが、`logging_enabled`設定が`on`にセットされている場合のみロギングが行われます。
 
 ### ~`level`~
 
 `level`オプションはロガーのレベルを定義します。
 
-*可能な値*: `EMERG`、`ALERT`、`CRIT`、`ERR`、`WARNING`、`NOTICE`、
-`INFO`、もしくは`DEBUG`
+*可能な値*: `EMERG`、`ALERT`、`CRIT`、`ERR`、`WARNING`、`NOTICE`、`INFO`もしくは`DEBUG`
 
 ### ~`loggers`~
 
-`loggers`オプションは使用するロガーのリストを定義します。リストは
-匿名ロガーファクトリの配列です。
+`loggers`オプションは使用するロガーのリストを定義します。リストは匿名ロガーファクトリの配列です。
 
 *組み込みのロガークラス*: `sfConsoleLogger`、`sfFileLogger`、`sfNoLogger`、
 `sfStreamLogger`、と`sfVarLogger`
@@ -622,8 +566,6 @@ symfonyプロジェクトではない外部のルーティングシステムを�
 他のファクトリと同じように、これは`class`と`param`エントリをとります。
 `param`エントリは与えられたキャッシュクラスで利用可能な任意のオプションをとります。
 
-最も重要なのは`prefix`オプションで異なる環境/アプリケーション/プロジェクトの間で
-キャッシュを共有するもしくは分離できるようにします。
+最も重要なのは`prefix`オプションで異なる環境/アプリケーション/プロジェクトの間でキャッシュを共有するもしくは分離できるようにします。
 
-*組み込みのキャッシュクラス*: `sfAPCCache`、`sfEAcceleratorCache`、`sfFileCache`、
-`sfMemcacheCache`、`sfNoCache`、`sfSQLiteCache`、と`sfXCachCache`。
+*組み込みのキャッシュクラス*: `sfAPCCache`、`sfEAcceleratorCache`、`sfFileCache`、`sfMemcacheCache`、`sfNoCache`、`sfSQLiteCache`と`sfXCachCache`

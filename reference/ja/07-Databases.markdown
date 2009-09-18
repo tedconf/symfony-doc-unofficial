@@ -11,11 +11,9 @@ databases.yml設定ファイル
 >そのことがメインデータベース設定ファイルがプロジェクトの`config/`ディレクトリにある理由です。
 >もちろんアプリケーションの設定ディレクトリで`databases.yml`設定ファイルを定義することでデフォルトの設定をオーバーライドできます。
 
-はじめの章で説明したように、`databases.yml`ファイルは[**環境を認識し**](#chapter_03_environment_awareness)、
-[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、
-[**定数**](#chapter_03_constants)を含むことができます。
+はじめの章で説明したように、`databases.yml`ファイルは[**環境を認識し**](#chapter_03_environment_awareness)、[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を含むことができます。
 
-`databases.yml`で説明されるそれぞれの接続はデータベースオブジェクトを設定するために使用する名前、データベースハンドラクラスの名前、パラメーター(`param`)の設定を格納しなければなりません:
+`databases.yml`で説明されるそれぞれの接続はデータベースオブジェクトを設定するために使う名前、データベースハンドラクラスの名前、パラメーター(`param`)の設定を格納しなければなりません:
 
     [yml]
     CONNECTION_NAME:
@@ -33,8 +31,7 @@ databases.yml設定ファイル
 
 >**NOTE**
 >`databases.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->プロセスは~`sfDatabaseConfigHandler`~
->[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
+>プロセスは~`sfDatabaseConfigHandler`~[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
 
 -
 

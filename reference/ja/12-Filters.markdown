@@ -135,8 +135,7 @@ symfonyは複数のフィルターを1つのチェーンとして実行するの
 `security.yml`設定[ファイル](#chapter_08)を通して行われます。
 
 >**TIP**
->必須のアクションが`security.yml`でセキュアなものとして設定されていない場合、
->`security`フィルターは実行されません。
+>必須のアクションが`security.yml`でセキュアなものとして設定されていない場合、`security`フィルターは実行されません。
 
 `cache`
 -------
@@ -150,9 +149,7 @@ symfonyは複数のフィルターを1つのチェーンとして実行するの
         condition: %SF_CACHE%
 
 `cache`フィルターはアクションとページを管理します。
-これは必要とされるHTTPキャッシュヘッダーを
-レスポンスに追加するための責務も担います
-(`Last-Modified`、`ETag`、`Cache-Control`、`Expires`、・・・)。
+これは必要とされるHTTPキャッシュヘッダーをレスポンスに追加するための責務も担います(`Last-Modified`、`ETag`、`Cache-Control`、`Expires`、・・・)。
 
 `common`
 --------
@@ -163,13 +160,10 @@ symfonyは複数のフィルターを1つのチェーンとして実行するの
     common:
       class: sfCommonFilter
 
-`common`フィルターはJavaScriptとスタイルシートがすでにインクルードされていない場合
-メインのレスポンスにこれらを追加します。
+`common`フィルターはJavaScriptとスタイルシートがすでにインクルードされていない場合メインのレスポンスにこれらを追加します。
 
 >**TIP**
->レイアウトで`include_stylesheets()`と`include_javascripts()`ヘルパーを使う場合、
->安全にこのフィルターを無効にすることが可能で、
->小さなパフォーマンスの加速の恩恵を受けます。
+>レイアウトで`include_stylesheets()`と`include_javascripts()`ヘルパーを使う場合、安全にこのフィルターを無効にすることが可能で、小さなパフォーマンスの加速の恩恵を受けます。
 
 `execution`
 -----------
@@ -182,7 +176,6 @@ symfonyは複数のフィルターを1つのチェーンとして実行するの
       param:
         type: execution
 
-`execution`フィルターはフィルターチェーンの真ん中にあり、
-すべてのアクションとビューの実行を行います。
+`execution`フィルターはフィルターチェーンの真ん中にあり、すべてのアクションとビューの実行を行います。
 
 `execution`フィルターは最後に登録されたフィルターになります。
