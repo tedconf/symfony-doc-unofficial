@@ -70,6 +70,18 @@ The `sfWidgetFormInput` class is now abstract. Text input fields are now
 created with the `sfWidgetFormInputText` class. This change was made to ease
 introspection of form classes.
 
+### I18n widgets
+
+The following widgets have been added:
+
+  * `sfWidgetFormI18nChoiceLanguage`
+  * `sfWidgetFormI18nChoiceCurrency`
+  * `sfWidgetFormI18nChoiceCountry`
+
+The first three of them replace the now deprecated
+`sfWidgetFormI18nSelectLanguage`, `sfWidgetFormI18nSelectCurrency`, and
+`sfWidgetFormI18nSelectCountry` widgets.
+
 Validators
 ----------
 

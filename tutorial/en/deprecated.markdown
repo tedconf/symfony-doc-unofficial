@@ -113,6 +113,12 @@ in symfony 1.4:
   * `sfDoctrineDataRetriever`, `sfPropelDataRetriever`: These classes are only
     used by ObjectHelper, which is deprecated
 
+  * `sfWidgetFormI18nSelectLanguage`, `sfWidgetFormI18nSelectCurrency`, and
+    `sfWidgetFormI18nSelectCountry`: Use the corresponding `Choice` widgets
+    (`sfWidgetFormI18nChoiceLanguage`, `sfWidgetFormI18nChoiceCurrency`, and
+    `sfWidgetFormI18nChoiceCountry` respectively) as they act exactly in the
+    same way, except they have more customization possibilities
+
 The following classes have been removed in symfony 1.3:
 
   * `sfCommonFilter`: see the "Removal of the common filter" section of the
