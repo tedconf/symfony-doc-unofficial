@@ -97,9 +97,11 @@ The `sfValidatorSchemaCompare` class has two new comparators:
  * `IDENTICAL`, which is equivalent to `===`;
  * `NOT_IDENTICAL`, which is equivalent to `!==`;
 
-### `sfValidatorChoiceMany`
+### `sfValidatorChoice`
 
-The `sfValidatorChoiceMany` validator has two new options:
+The `sfValidatorChoice` validator has two new options that are enabled only if
+the `multiple` option is `true` (these options are always available when using
+`sfValidatorChoiceMany`):
 
  * `min` The minimum number of values that need to be selected
  * `max` The maximum number of values that need to be selected
