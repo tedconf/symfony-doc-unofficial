@@ -235,3 +235,8 @@ removed in symfony 1.4
 The "Dynarch calendar" (found in data/web/calendar/) will be removed in
 symfony 1.4 as it is only used by the Form helper group, which will be also
 removed in symfony 1.4.
+
+As of symfony 1.3, the unavailable page will only be looked for in the
+`%SF_APP_CONFIG_DIR%/` and `%SF_CONFIG_DIR%/` directories. If you still have
+it stored in `%SF_WEB_DIR%/errors/`, you must move it before migrating to
+symfony 1.4.
