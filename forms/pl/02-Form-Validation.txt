@@ -1,0 +1,671 @@
+Rozdział 2 - Walidacja formularza
+===========================
+
+W rozdziale 1 dowiedzieliśmy się, jak tworzyć i wyświetlać podstawowy formularz kontaktowy. W tym rozdziale dowiesz się, jak efektywnie walidować formularz.
+
+Zanim zaczniemy
+---------------
+
+Formularz kontaktowy w Rozdziale 1, nie jest jeszcze w pełni funkcjonalny. Co się dzieje
+jeżeli użytkownik poda nieprawidłowy adres e-mail lub wiadomość użytkownika jest pusta?
+W takich przypadkach chcemy wyświetlać komunikaty o błędach, informujące użytkownika 
+o koniecznych poprawkach, jak pokazano na rys. 2-1.
+
+Rysunek 2-1 - Wyświetlanie komunikatów o błędach
+
+![Displaying Error Messages](/images/forms_book/en/02_01.png "Displaying Error Messages")
+
+Poniżej zasady walidacji do zaimplementowania w formularzu kontaktowym:
+
+  * `name`   : opcjonalnie
+  * `email`  : obowiązkowe, wartość musi zawierać poprawny adres e-mail
+  * `subject`: obowiązkowe, wybrana wartość musi być zgodna z listą wartości
+  * `message`: obowiązkowe, długość wiadomości wynosi co najmniej cztery znaki
+
+>**Note**    
+> Dlaczego musimy walidować  pole `subject`? Przecież tag `<select>` daje możliwość wybrania jedynie predefiniowanych wartości. Przeciętny użytkownik może wybrać jedną z wyświetlanych opcji, ale inne wartości mogą być przesłane za pomocą narzędzi, takich jak Firefox Developer Toolbar lub poprzez symulację request'a narzędziami, takimi jak `curl` lub `wget`.
+
+Listing 2-1 pokazuje template użyty w rozdziale 1.
+
+Listing 2-1 - Template formularza `Contact`
+
+    [php]
+    // apps/frontend/modules/contact/templates/indexSucces.php
+    <form action="<?php echo url_for('contact/index') ?>" method="POST">
+      <table>
+        <?php echo $form ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+Rysunek 2-2 rozdziela interakcję między aplikacją, a użytkownikiem. Pierwszym krokiem jest przedstawienie formularza użytkownikowi. Gdy użytkownik przesyła formularz i dane wejściowe są poprawne, użytkownik zostaje przekierowany na stronę thank you, w innym przypadku gdy dane wejściowe zawierają nieprawidłowe wartości, formularz jest wyświetlany ponownie z komunikatami o błędach.
+
+Rysunek 2-2 - Interakcje pomiędzy aplikacją i użytkownikiem
+
+![Interaction between the Application and the User](/images/forms_book/en/02_02.png "Interaction between the Application and the User")
+
+Walidatory
+----------
+Formularz symfony zbudowany jest z pól. Jak zauważyliśmy w rozdziale 1, każde pole może być zidentyfikowane przez unikalną nazwę. Połączyliśmy widżet z każdym polem w kolejności wyświetlanej użytkownikowi, zobaczmy teraz jak możemy dostosować metody walidacji do każdego pola.
+
+### Klasa `sfValidatorBase`
+
+Walidacja każdego pola jest wykonywana przez objekty dziedziczące z klasy `sfValidatorBase`. W celu walidacji formularza kontaktowego, musimy zdefiniować obiekty validatora dla każdego z czterech pól: `name`, `email`, `subject`, and `message`. Listing 2-2 pokazuje implementację walidatorów w klasie formularza przy użyciu metody `setValidators()`.
+	
+Listing 2-2 - Dodawanie Walidatorów do klasy `ContactForm`
+
+    [php]
+    // lib/form/ContactForm.class.php
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+      
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'subject' => new sfWidgetFormSelect(array('choices' => self::$subjects)),
+          'message' => new sfWidgetFormTextarea(),
+        ));
+        $this->widgetSchema->setNameFormat('contact[%s]');
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+        ));
+      }
+    }
+    
+Korzystamy z trzech różnych walidatorów:
+    
+  * `sfValidatorString`: waliduje ciąg znaków
+  * `sfValidatorEmail` : waliduje poprawność adresu email
+  * `sfValidatorChoice`: waliduje dane wejściowe na podstawie predefiniowanej listy wyboru
+  
+Każdy walidator pobiera listę opcji jako pierwszy argument. Podobnie jak widżety, niektóre z tych opcji są obowiązkowe, niektóre z nich są opcjonalne. Na przykład, walidator `sfValidatorChoice` ma jedną obowiązkową opcję `choices`. Każdy walidator może  mieć również ustawione opcje `required` i`trim`, zdefiniowane domyślnie w klasie `sfValidatorBase`:
+
+  | **Opcja**   | **Domyślna wartość** | **Opis**
+  | ----------- | -------------------- | ---------------
+  | required    | `true`               | Określa czy pole jest obowiązkowe
+  | trim        | `false`              | Automatycznie usuwa białe znaki na początku i na końcu ciągu znaków zanim zacznie się walidacja
+
+Zobaczmy dostępne opcje dla walidatorów dotychczas użytych:
+
+  | **Walidator**     | **Opcja obowiązkowa** | **Opcja nieobowiązkowa** |
+  | ----------------- | --------------------- | ------------------------ |
+  | sfValidatorString |                       | `max_length`             |
+  |                   |                       | `min_length`             |
+  | sfValidatorEmail  |                       | `pattern`                |
+  | sfValidatorChoice | `choices`             |                          |
+
+Jeśli próbujesz wysłać formularz z nieprawidłowymi wartościami, nie będą widoczne żadne zmiany w zachowaniu. Należy zaktualizować moduł `contact` tak aby walidowała przesłane wartości, jak pokazano na listingu 2-3.
+
+Listing 2-3 - Implementacja walidacji w module `contact`
+
+    [php]
+    class contactActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new ContactForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('contact'));
+          if ($this->form->isValid())
+          {
+            $this->redirect('contact/thankyou?'.http_build_query($this->form->getValues()));
+          }
+        }
+      }
+
+      public function executeThankyou()
+      {
+      }
+    }
+
+Listing 2-3 wprowadza wiele nowych pojęć:
+
+*W przypadku początkowego żądania `GET`, formularz jest inicjowany i przekazany do template, w celu wyświetlenia go użytkownikowi. Formularz jest wówczas w stanie początkowym - **initial state**:
+
+        [php]
+        $this->form = new ContactForm();
+        
+*Jeżeli użytkownik prześle formularz z żądaniem `POST`, metoda `bind()` wiąże formularz z danymi wejściowymi użytkownika i uruchamia mechanizm walidacji. Formularz przechodzi wówczas do stanu **bound state**.
+
+        [php]
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('contact'));
+
+*Gdy formularz jest po wykonaniu metody `bind()` możliwe jest sprawdzenie formularza przy użyciu metody `isValid()`:
+ 
+*Jeśli zwracana jest wartość `true`, formularz jest poprawny, a użytkownik może zostać przekierowany na stronę thank you:
+
+            [php]
+            if ($this->form->isValid())
+            {
+              $this->redirect('contact/thankyou?'.http_build_query($this->form->getValues()));
+            }
+
+*Jeśli nie, template `indexSuccess` jest wyświetlana tak jak pierwotnie. Proces walidacji dodaje komunikaty o błędach w formularzu  widoczne dla użytkownika.  
+>**Note**
+> Gdy formularz jest w stanie początkowym, metoda `isValid()` zawsze zwraca `false` i metoda `getValues()` zawsze zwraca pustą tablicę.
+
+Rysunek 2-3 pokazuje, że kod jest wykonywany w trakcie interakcji między aplikacją a użytkownikiem.
+
+Rysunek 2-3 - Kod wykonywany podczas interakcji między aplikacją i użytkownikiem
+
+![Code executed during the Interaction between the Application and the User](/images/forms_book/en/02_03.png "Code executed during the Interaction between the Application and the User")
+
+### Cel walidatorów
+
+Mogłeś zauważyć, że podczas przekierowania do strony thank you, nie używamy `$request->getParameter('contact')`, ale `$this->form->getValues()`. W rzeczywistości, `$request->getParameter('contact')` zwraca dane użytkownika, gdy `$this->form->getValues()` zwraca zwalidowane dane.
+
+Jeżeli formularz jest poprawny, to dlaczego te dwa wyrażenia nie są identyczne? Każdy walidator ma dwa zadania: walidacja - **validation task**, ale także oczyszczanie **cleaning task**. Metoda `getValues()` zwraca dane zwalidowane i oczyszczone.
+
+Proces oczyszczenia ma dwa główne działania: **normalizacja** i **konwersja** danych wejściowych.
+
+Przeszliśmy już proces normalizacji dzięki opcji `trim`. Jednak proces normalizacji jest np. o wiele bardziej istotny dla pola daty. `sfValidatorDate` waliduje datę. Walidator posiada wiele formatów wejściowych (timestamp, format oparty na wyrażeniach regularnych, ...). Zamiast prostego zwrotu danych wejściowych, zamienia domyślnie na format `Y-m-d H:i:s`. W związku z tym deweloper ma gwaranję stabilności formatu, niezależnie od jakości formatu wejściowego. System ten daje dużą swobodę dla użytkownika i zapewnia spójność dla dewelopera.
+
+Teraz, rozważmy taką konwersję akcji, aby przesłać plik. Walidacja plików może odbywać się za pomocą `sfValidatorFile`. Po przesłaniu pliku, zamiast zwracania nazwy pliku, walidator  zwraca obiekt `sfValidatedFile`, co ułatwia przetwarzanie informacji o pliku. Zobaczymy później w tym rozdziale, jak używać tego walidatora.
+
+>**Tip**
+>Metoda `GetValues()` zwraca tablicę wszystkich zwalidowanych i oczyszczonych danych. W celu pobrania tylko jednej wartości, co jest czasami przydatne, istnieje również metoda getValue()` : `$email = $this->form->getValue('email')`.
+
+### Nieprawidłowy formularz
+
+![Invalid Form](/images/forms_book/en/02_04.png "Invalid Form")
+
+Wywołanie `<?php echo $form ?>` automatycznie uwzględnia komunikaty o błędach związanych z polami i automatycznie wyświetla oczyszczone dane wejściowe użytkowników.
+
+Gdy formularz przetwarza dane zewnętrzne za pomocą metody `bind()`, formularz przełącza się na `bound state` i wyzwalane są następujące działania:
+
+* Wykonywany jest proces walidacji  
+
+* Komunikaty o błędach są przechowywane w formularzu, aby mogły być dostępne w template
+
+* Wartości domyślne formularza są zastąpione oczyszczonymi danymi wejściowymi użytkownika
+
+Informacja potrzebna do wyświetlania komunikatów o błędach lub danych wejściowych użytkownika są łatwo dostępne przy użyciu zmiennej `form` w template.
+
+>**Caution**
+>Jak widziałeś w rozdziale 1, możemy przekazać domyślne wartości do konstruktora klasy formularza. Po przesłaniu nieprawidłowego formularza domyślne wartości są zastępowane przesłanymi danymi, dzięki czemu użytkownik może poprawić swoje błędy. Z tego powodu nigdy nie używaj danych wejściowych jako wartości domyślnych, jak w poniższym przykładzie: `$this->form->setDefaults($request->getParameter('contact'))`.
+
+Personalizacja walidatora
+-----------------------
+### Personalizacja komunikatów o błędach
+
+Jak zauważyłeś na rysunku 2-4, komunikaty o błędach nie są tak do końca użyteczne. Zobaczmy, jak dostosować je aby były bardziej intuicyjne.
+
+Każdy walidator może dodać komunikaty błędu w formularzu, zależne od kodu błędu i komunikatu o błędzie. Każdy walidator ma co najmniej `required` i `invalid` określone w `sfValidatorBase`:
+
+  | **Kod**      | **Wiadomość**   | **Opis**
+  | ------------ | --------------- | ---------------
+  | required     | `Required.`     | Pole jest obowiązkowe i wartość jest pusta
+  | invalid      | `Invalid.`      | Wartość jest niepoprawna
+	
+Oto kody błędów związane z walidatorami, które do tej pory użyliśmy:
+
+  | **Walidator**     | **Kody błędów** |
+  | ----------------- | --------------- |
+  | sfValidatorString | `max_length`    |
+  |                   | `min_length`    |
+  | sfValidatorEmail  |                 |
+  | sfValidatorChoice |                 |
+ 
+Dostosowywanie komunikatów o błędach może być wykonane poprzez drugi argument podczas tworzenia obiektów walidacji. Listing 2-4 dostosowuje kilka komunikatów o błędach i Rysunek 2-5 pokazuje niestandardowe komunikaty o błędach w działaniu.
+
+Listing 2-4 - Personalizacja wiadomości o błędach
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+      
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(array(), array('invalid' => 'The email address is invalid.')),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4), array('required' => 'The message field is required.')),
+        ));
+      }
+    }
+
+Rysunek 2-5 - Niestandardowe komunikaty o błędach
+
+![Customized Error Messages](/images/forms_book/en/02_05.png "Customized Error Messages")
+
+Rysunek 2-6 pokazuje komunikat o błędzie, który otrzymasz przy próbie przesłania wiadomości zbyt krótkiej (ustawiliśmy minimalną długość na 4 znaki).
+
+Figure 2-6 - Komunikat o błędzie za krótki 'Too short'
+
+![Too short Message Error](/images/forms_book/en/02_06.png "Too short Message Error")
+
+Domyślny komunikat o błędzie związany z tym kodem błędu (`min_length`) różni się od wcześniejszej wiadomości, ponieważ realizuje dwie dynamiczne wartości: dane wejściowe użytkownika (`foo`) oraz minimalną liczbę znaków, ustawioną dla tego pola (`4`). Listing 2-5 dostosowuje tę wiadomość używając dynamicznych wartości, a Rysunek 2-7 pokazuje wynik.
+
+Listing 2-5 - Dostosowywanie komunikatów o błędach z dynamicznymi wartościami
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(array(), array('invalid' => 'Email address is invalid.')),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4), array(
+            'required'   => 'The message field is required',
+            'min_length' => 'The message "%value%" is too short. It must be of %min_length% characters at least.',
+          )),
+        ));
+      }
+    }
+
+Figure 2-7 - Spersonalizowane komunikaty błędów z dynamicznymi wartościami
+
+![Customized Error Messages with Dynamic Values](/images/forms_book/en/02_07.png "Customized Error Messages with Dynamic Values")
+
+Każdy komunikat o błędzie może korzystać z dynamicznych wartości, łącząc nazwę ze znakiem (`%`). Dostępne wartości są zwykle danymi wejściowych użytkownika (`value`) oraz opcje walidatora związane z danym błędem.
+
+>**Tip**
+>Jeśli chcesz sprawdzić wszystkie kody błędów, opcji i komunikaty domyślne walidatorów, możesz skorzystać z dokumentacji API online ([http://www.symfony-project.org/api/1_2/](http://www.symfony-project.org/api/1_2/)). Każdy kod, opcja i komunikat o błędzie są szczegółowo opisane, wraz z wartościami domyślnymi (na przykład `sfValidatorString` validator API jest dostępny pod adresem: [http://www.symfony-project.org/api/1_2/sfValidatorString](http://www.symfony-project.org/api/1_2/sfValidatorString)).
+
+Bezpieczeństwo walidatorów
+-------------------
+
+Domyślnie formularz jest poprawnie zwalidowany jeżeli każde pole wysłane przez użytkownika posiada własny walidator. To gwarantuje, że każde pole ma swoje zasady walidacji i nie jest możliwe, aby wprowadzić wartości do pól, które nie są zdefiniowane w formularzu.
+
+Aby pomóc zrozumieć zasady bezpieczeństwa, rozważmy obiekt użytkownika, jak pokazano na Listingu 2-6.
+
+Listing 2-6 - Klasa `User`
+
+    [php]
+    class User
+    {
+      protected
+        $name = '',
+        $is_admin = false;
+
+      public function setFields($fields)
+      {
+        if (isset($fields['name']))
+        {
+          $this->name = $fields['name'];
+        }
+
+        if (isset($fields['is_admin']))
+        {
+          $this->is_admin = $fields['is_admin'];
+        }
+      }
+
+      // ...
+    }
+
+Objekt `User` składa się z dwóch właściwości, nazwę użytkownika (`name`) i boolean, która przechowuje status administratoraora (`is_admin`). Metoda `setFields()` aktualizuje obie właściwości. Listing 2-7 pokazuje formularz powiązany z klasą `User`, pozwalający użytkownikowi zmodyfikować właściwości pola `name`.
+
+Listing 2-8 pokazuje implementację modułu `user` wykorzystującego wcześniej zdefiniowany formularz umożliwiający użytkownikowi modyfikację pola 'name'.
+
+Listing 2-8 - Implementacja modułu `user`
+
+    [php]
+    class userActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new UserForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('user'));
+          if ($this->form->isValid())
+          {
+            $user = // retrieving the current user
+
+            $user->setFields($this->form->getValues());
+
+            $this->redirect('...');
+          }
+        }
+      }
+    }
+
+Jeśli bez żadnego zabezpieczenia, użytkownik prześle formularz z wartości w polu `name` oraz `is_admin`, to nasz kod jest zagrożony. Można to łatwo zrobić za pomocą narzędzia takiego jak Firebug. W rzeczywistości wartość `is_admin` jest zawsze zwalidowane, ponieważ pole to nie ma żadnych powiązanych walidatorów w formularzu. Niezależnie od wartości, metoda `setFields()` zaktualizację nie tylko  właściwość `name`, ale również `is_admin`.
+	
+Jeśli przetestujesz ten kod z wartościami dla obu pól `name` oraz `is_admin`, otrzymasz globalny błąd, jak pokazano na rys. 2-8. System wygenerował błąd, ponieważ niektóre z przesłanych pól nie ma żadnego powiązanego ze sobą walidatora; pole `is_admin` nie jest zdefiniowane w formularzu `UserForm`.
+
+Figure 2-8 - Pozostałe błędu walidatora
+
+![Missing Validator Error](/images/forms_book/en/02_08.png "Missing Validator Error")
+
+Wszystkie walidatory, które widzieliśmy do tej pory generowały błędy związane z polami. Skąd bierze się globalny błąd? Kiedy używamy metody `setValidators()`, symfony tworzy obiekt `sfValidatorSchema`. `SfValidatorSchema` określa zbiór walidatorów. Wywołanie `setValidators()` jest równoznaczne z następującym kodem:
+
+    [php]
+    $this->setValidatorSchema(new sfValidatorSchema(array(
+      'email'   => new sfValidatorEmail(),
+      'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+      'message' => new sfValidatorString(array('min_length' => 4)),
+    )));
+
+`SfValidatorSchema` ma dwie zasady walidacji uruchomione domyślnie dla ochrony zbioru walidatorów. Zasady te mogą być konfigurowane z  opcjami `allow_extra_fields` oraz `filter_extra_fields`.
+
+Opcja `allow_extra_fields`, która jest ustawiony domyślnie na `false` sprawdza, czy wszystkie dane wejściowe użytkownika mają walidatora. Jeśli nie, to globalny błąd "Extra field name." jest wyświetlany, jak pokazano w poprzednim przykładzie. Przy pracy pozwala to programistom reagować na ostrzeżenie dotyczące braku właściwej walidacji pola.
+	
+Wróćmy do formularza kontaktowego. Zmieńmy zasady walidacji przez zmianę pola `name` na obowiązkowe. Ponieważ domyślną wartością opcji `required` jest `true`, możemy zmienić walidator `name` na:
+
+    [php]
+    $nameValidator = new sfValidatorString();
+
+Ten walidator nie ma wpływu, ponieważ nie ma opcji zarówno `min_length` ani `max_length`. W tym przypadku, możemy również zastąpić go pustym walidatorem:
+
+    [php]
+    $nameValidator = new sfValidatorPass();
+
+Zamiast określania pustego walidatora, mogliśmy się go pozbyć, ale domyśla ochrona zabezpiecza nas przed tym. Listing 2-9 pokazuje, jak wyłączyć ochronę za pomocą opcji `allow_extra_fields`.
+
+Listing 2-9 - Wyłączanie ochrony `allow_extra_fields`
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+        ));
+
+        $this->validatorSchema->setOption('allow_extra_fields', true);
+      }
+    }
+
+Teraz powinieneś być w stanie zwalidować formularz, jak pokazano na rys. 2-9.
+
+Rysunek 2-9 - Walidacja `allow_extra_fields` ustawiona na `true`
+
+![Validating with `allow_extra_fields` set to `true`](/images/forms_book/en/02_09.png "Validating with `allow_extra_fields` set to `true`")
+
+Jeśli przyjrzysz się bliżej, zauważysz, że nawet jeśli formularz jest poprawnie zwalidowany, wartość pola `name` jest pusta na stronie  thank you, mimo, że żadna wartość nie została przesłana. W rzeczywistości wartości nie było nawet w tablicy odesłana przez `$this->form->getValues()`. Wyłączenie opcji `allow_extra_fields` pozwala nam pozbyć się błędu z powodu braku walidatora, ale opcja `filter_extra_fields`, która jest ustawiona domyślnie na `true`, filtruje te wartości, usuwając je z walidowanych wartości. Jest to oczywiście możliwe, aby zmienić to zachowanie, jak pokazano na listingu 2-10.
+	
+Listing 2-10 - Wyłączenie ochrony `filter_extra_fields`
+
+    [php]
+    class ContactForm extends sfForm
+    {
+      public function configure()
+      {
+        // ...
+
+        $this->setValidators(array(
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+        ));
+
+        $this->validatorSchema->setOption('allow_extra_fields', true);
+        $this->validatorSchema->setOption('filter_extra_fields', false);
+      }
+    }
+
+Teraz powinieneś być w stanie zwalidować formularz i otrzymać dane wejściowe na stronie thank you.
+
+Zobaczymy, w rozdziale 4, że te zabezpieczenia mogą być wykorzystane do bezpiecznego serializacji obiektów Propela od wartości formularza.
+
+Walidatory logiczne
+------------------
+
+Kilka walidatorów może być zdefiniowanych dla jednego pola za pomocą logicznych walidatorów:
+
+   * `SfValidatorAnd`: Akceptacja, gdy pole poprawnie przejdzie wszystkie walidatory
+  
+   * `SfValidatorOr": Akceptacja, gdy pole poprawnie przejdzie przynajmniej jeden walidator
+
+Konstruktory operatorów logicznych to lista walidatorów będących pierwszm argumentem. Listing 2-11 używa `sfValidatorAnd` do połączenia dwóch wymaganych walidatorów dla pola `name`.
+
+Listing 2-11 - Używanie walidatora `sfValidatorAnd` 
+
+    [php]
+    class ContactForm extends sfForm
+    {
+     public function configure()
+     {
+        // ...
+
+        $this->setValidators(array(
+          // ...
+          'name' => new sfValidatorAnd(array(
+            new sfValidatorString(array('min_length' => 5)),
+            new sfValidatorRegex(array('pattern' => '/[\w- ]+/')),
+          )),
+        ));
+      }
+    }
+
+Po wysłaniu formularza, dane wejściowe pola `name` muszą być złożone co najmniej z pięciu znaków **and** spełnić wyrażenie regularne (`[\ w-]+`).
+
+Jako logiczne są walidatory same w sobie, mogą być łączone w celu określenia zaawansowanych wyrażeń logicznych, jak pokazano na Listingu 2-12.
+
+Listing 2-12 - Łączenie kilku operatorów logicznych
+
+    [php]
+    class ContactForm extends sfForm
+    {
+     public function configure()
+     {
+        // ...
+
+        $this->setValidators(array(
+          // ...
+          'name' => new sfValidatorOr(array(
+            new sfValidatorAnd(array(
+              new sfValidatorString(array('min_length' => 5)),
+              new sfValidatorRegex(array('pattern' => '/[\w- ]+/')),
+            )),
+            new sfValidatorEmail(),
+          )),
+        ));
+      }
+    }
+
+Walidatory globalne
+-----------------
+
+Każdy dotychczas używany walidator był związany z poszczególnym polem i pozwalał nam walidować tylko jedną wartość w danej chwili. Domyślnie, pomijają inne dane przesłane przez użytkownika, a czasami walidacja pola zależy od kontekstu lub od wielu innych wartości pól. Na przykład, globalny validator jest potrzebny, gdy dwa hasła muszą być takie same, lub gdy data rozpoczęcia musi być wcześniejsza niż data końcowa.
+	
+W obu tych przypadkach musimy skorzystać z globalnego walidatora do walidacji danych wejściowych użytkownika w zależności od kontekstu. Możemy wykorzystać globalny walidator przed lub po indywidualej walidacji pola przy użyciu odpowiednio pre-walidatora lub post-walidatora. Zazwyczaj lepiej jest użyć post-walidatora, ponieważ dane są już zwalidowane i oczyszczone, tzn. mają znormalizowany format. Listing 2-13 pokazuje jak zaimplementować porównanie dwóch haseł za pomocą walidatora `sfValidatorSchemaCompare`.
+
+Listing 2-13 - Używanie walidatora `sfValidatorSchemaCompare`
+
+    [php]
+    $this->validatorSchema->setPostValidator(new sfValidatorSchemaCompare('password', sfValidatorSchemaCompare::EQUAL, 'password_again'));
+
+W symfony 1.2, możesz również użyć "naturalnych" operatorów PHP zamiast  klasy stałych `sfValidatorSchemaCompare`. Poprzedni przykład jest równoważny do:
+
+    [php]
+    $this->validatorSchema->setPostValidator(new sfValidatorSchemaCompare('password', '==', 'password_again'));
+
+>**Tip**
+>Klasa `SfValidatorSchemaCompare` dziedziczy z walidatora `sfValidatorSchema`, jak każdy globalny walidator. `sfValidatorSchema` jest sam w sobie globalnym walidatorem ponieważ sprawdza całe dane wejściowe użytkownika, przepuszczając do innych walidatorów walidację każdego pola.
+
+Listing 2-14 pokazuje jak korzystać z jednego walidatora do sprawdzenia czy data rozpoczęcia jest wcześniejsza niż data zakończenia, dostosowując jednocześnie komunikat o błędzie.
+
+Listing 2-14 - Using the `sfValidatorSchemaCompare` Validator
+
+    [php]
+    $this->validatorSchema->setPostValidator(
+      new sfValidatorSchemaCompare('start_date', sfValidatorSchemaCompare::LESS_THAN_EQUAL, 'end_date',
+        array(),
+        array('invalid' => 'The start date ("%left_field%") must be before the end date ("%right_field%")')
+      )
+    );
+
+Użycie post-walidatorów zapewnia, że porównanie tych dwóch terminów będą dokładne. Bez względu na format jaki został wykorzystany przy wprowadzaniu danych, walidacja pól `start_date` i `end_date` zawsze będą konwertowane na wartości w domyślnym formacie porównywania (`Y-m-d H:i:s`).
+
+Domyślnie pre-walidatory i post-walidatory zwracają globalne błędy w formularzu. Niemniej jednak, niektóre z nich mogą podłączać błędy do konkretnego pola. Na przykład, opcja `throw_global_error` walidatora `sfValidatorSchemaCompare` może wybrać pomiędzy globalnym błędu (rys. 2-10) lub błędem związanym z pierwszym polem (rys. 2-11). Listing 2-15 pokazuje jak korzystać z opcji `throw_global_error`.
+
+Listing 2-15 - Użycie opcji `throw_global_error`
+
+    [php]
+    $this->validatorSchema->setPostValidator(
+      new sfValidatorSchemaCompare('start_date', sfValidatorSchemaCompare::LESS_THAN_EQUAL, 'end_date',
+        array('throw_global_error' => true),
+        array('invalid' => 'The start date ("%left_field%") must be before the end date ("%right_field%")')
+      )
+    );
+
+Figure 2-10 - Globalny błąd globalnego walidatora
+
+![Global Error for a global Validator](/images/forms_book/en/02_10.png "Global Error for a Global Validator")
+
+Figure 2-11 - Lokalny błąd globalnego walidatora
+
+![Local Error for a global Validator](/images/forms_book/en/02_11.png "Local Error for a Global Validator")
+
+Na koniec, użycie logicznego walidatora pozwalające Ci na łączenie kilku post-walidatorów jak pokazano Listing 2-16.
+
+Listing 2-16 - Łączenie kilku post-walidatorów z logicznym walidatorem
+
+    [php]
+    $this->validatorSchema->setPostValidator(new sfValidatorAnd(array(
+      new sfValidatorSchemaCompare('start_date', sfValidatorSchemaCompare::LESS_THAN_EQUAL, 'end_date'),
+      new sfValidatorSchemaCompare('password', sfValidatorSchemaCompare::EQUAL, 'password_again'),
+    )));
+
+Wysyłanie plików
+-----------
+
+Radzenie sobie z przesyłaniem plików w PHP, tak jak w każdym języku zorientowanym obiektowo, wymaga
+obsługi zarówno kodu HTML oraz możliwości pobierania plików po stronie serwera. W tej sekcji zobaczysz
+narzędzia oferujące developerowi wiele ułatwień. Zobaczysz także jak uniknąć popularnych pułapek.
+
+Zmieńmy formularz kontaktowy tak, aby umożliwić dołączenie pliku do
+wiadomości. Aby to zrobić, dodamy pole `file`, jak pokazano na Listingu 2-17.
+
+Listing 2-17 - Dodanie pola `file` do formularza `ContactForm`
+
+    [php]
+    // lib/form/ContactForm.class.php
+    class ContactForm extends sfForm
+    {
+      protected static $subjects = array('Subject A', 'Subject B', 'Subject C');
+
+      public function configure()
+      {
+        $this->setWidgets(array(
+          'name'    => new sfWidgetFormInput(),
+          'email'   => new sfWidgetFormInput(),
+          'subject' => new sfWidgetFormSelect(array('choices' => self::$subjects)),
+          'message' => new sfWidgetFormTextarea(),
+          'file'    => new sfWidgetFormInputFile(),
+        ));
+        $this->widgetSchema->setNameFormat('contact[%s]');
+
+        $this->setValidators(array(
+          'name'    => new sfValidatorString(array('required' => false)),
+          'email'   => new sfValidatorEmail(),
+          'subject' => new sfValidatorChoice(array('choices' => array_keys(self::$subjects))),
+          'message' => new sfValidatorString(array('min_length' => 4)),
+          'file'    => new sfValidatorFile(),
+        ));
+      }
+    }
+
+Gdy mamy widżet `sfWidgetFormInputFile` w formularzu umożliwiający przesyłanie pliku, musimy także dodać atrybut `enctype` do tagu formularza jak pokazano na listingu 2-18.
+
+Listing 2-18 - Modyfikacja template dodające pole `file`
+
+    [php]
+    <form action="<?php echo url_for('contact/index') ?>" method="POST" enctype="multipart/form-data">
+      <table>
+        <?php echo $form ?>
+        <tr>
+          <td colspan="2">
+            <input type="submit" />
+          </td>
+        </tr>
+      </table>
+    </form>
+
+>**Note**
+>Jeśli dynamicznie generujesz template związaną z formularzem, metoda `isMultipart()` obiektu formularza zwraca `true`, jeśli potrzebuje atrybutu `enctype`.
+
+Informacje o przesłanych plikach nie są przechowywane z innymi wartości przesłanymi w PHP. W następnym kroku należy zmienić wywołanie metody `bind()` aby przekazywała te informacje jako drugi argument, jak pokazano na listingu 2-19.
+
+Listing 2-19 - Przekazanie przesłanych plików do metody `bind()`
+
+
+    [php]
+    class contactActions extends sfActions
+    {
+      public function executeIndex($request)
+      {
+        $this->form = new ContactForm();
+
+        if ($request->isMethod('post'))
+        {
+          $this->form->bind($request->getParameter('contact'), $request->getFiles('contact'));
+          if ($this->form->isValid())
+          {
+            $values = $this->form->getValues();
+            // do something with the values
+
+            // ...
+          }
+        }
+      }
+
+      public function executeThankyou()
+      {
+      }
+    }
+
+Teraz, gdy formularz jest w pełni funkcjonalny, wciąż musimy zmienić akcję w celu przechowywania przesłanego pliku na dysku. Jak widzieliśmy na początku tego rozdziału, `sfValidatorFile` przekształca informacje związane z przesyłanym plikiem do obiektu `sfValidatedFile`. Listing 2-20 pokazuje jak za pomocą tego obiektu zapisać plik w katalogu `web/uploads`.
+
+Listing 2-20 - Użycie obiektu `sfValidatedFile`
+
+    [php]
+    if ($this->form->isValid())
+    {
+      $file = $this->form->getValue('file');
+
+      $filename = 'uploaded_'.sha1($file->getOriginalName());
+      $extension = $file->getExtension($file->getOriginalExtension());
+      $file->save(sfConfig::get('sf_upload_dir').'/'.$filename.$extension);
+
+      // ...
+    }
+
+Poniższ tabela pokazuje wszystkie metody obiektu `sfValidatedFile`:
+
+  | **Metoda**             | **Opis**
+  | ---------------------- | ---------------
+  | save()                 | Zapisuje przesłany plik
+  | isSaved()              | Zwraca `true` jeżeli plik został zapisany
+  | getSavedName()         | Zwraca nazwą zapisywanego pliku
+  | getExtension()         | Zwraca rozszerzenie przesyłanego pliku, zgodnie z typem mime
+  | getOriginalName()      | Zwraca nazwę przesyłanego pliku
+  | getOriginalExtension() | Zwraca rozszerzenie przesyłanego pliku
+  | getTempName()          | Zwraca ścieżkę tymczasową pliku
+  | getType()              | Zwraca type mime pliku
+  | getSize()              | Zwraca rozmiar pliku
+
+>**Tip**
+> Typ MIME dostarczany przez przeglądarki podczas przesyłania pliku nie jest wiarygodny. W celu zapewnienia maksymalnego bezpieczeństwa, funkcje `finfo_open` i `mime_content_type` oraz narzędzia `file` są wykorzystywane w trakcie sprawdzania plików. W ostateczności, jeśli funkcje nie mogą odgadnąć, typu mime lub jeżeli system ich nie obsługuje, brany jest pod uwagę typ MIME przeglądarki. Aby dodać lub zmienić funkcje odgadujące typ MIME, po prostu umieść opcję `mime_type_guessers` w konstruktorze `sfValidatorFile`.
