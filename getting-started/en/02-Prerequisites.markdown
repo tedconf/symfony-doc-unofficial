@@ -12,15 +12,16 @@ Software
 First of all, you need to check that your computer has a friendly working
 environment for web development. At a minimum, you need a web server (Apache,
 for instance), a database engine (MySQL, PostgreSQL, SQLite, or any
-PDO-compatible database engine), and PHP 5.2.4 or later.
+[PDO](http://www.php.net/PDO)-compatible database engine), and PHP 5.2.4 or
+later.
 
 Command Line Interface
 ----------------------
 
 The symfony framework comes bundled with a command line tool that automates a
 lot of work for you. If you are a Unix-like OS user, you will feel right at
-home. If you run a Windows system, it will also work fine, but you will just have
-to type a few commands at the `cmd` prompt.
+home. If you run a Windows system, it will also work fine, but you will just
+have to type a few commands at the `cmd` prompt.
 
 >**Note**
 >Unix shell commands can come in handy in a Windows environment.
@@ -53,8 +54,8 @@ Launch the configuration checker script from the command line:
 
     $ php check_configuration.php
 
-If there is a problem with your PHP configuration, the output of the
-command will give you hints on what to fix and how to fix it.
+If there is a problem with your PHP configuration, the output of the command
+will give you hints on what to fix and how to fix it.
 
 You should also execute the checker from a browser and fix the issues it might
 discover. That's because PHP can have a distinct `php.ini` configuration file

@@ -6,11 +6,11 @@ chapter as we will show you the fastest way to get you started. If you want to
 bootstrap a real world project, you can safely skip this chapter, and
 [jump](04-Symfony-Installation#chapter_04) to the next one right away.
 
-The fastest way to experiment with symfony is to install the symfony sandbox. The
-sandbox is a dead-easy-to-install pre-packaged symfony project, already
+The fastest way to experiment with symfony is to install the symfony sandbox.
+The sandbox is a dead-easy-to-install pre-packaged symfony project, already
 configured with some sensible defaults. It is a great way to practice using
-symfony without the hassle of a proper installation that respects the web
-best practices.
+symfony without the hassle of a proper installation that respects the web best
+practices.
 
 >**CAUTION**
 >As the sandbox is pre-configured to use SQLite as a database
@@ -21,7 +21,7 @@ best practices.
 
 You can download the symfony sandbox in `.tgz` or `.zip` format from the
 symfony [installation page](http://www.symfony-project.org/installation/1_2)
-or at the following URL:
+or at the following URLs:
 
     http://www.symfony-project.org/get/sf_sandbox_1_2.tgz
 

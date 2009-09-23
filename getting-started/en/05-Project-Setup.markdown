@@ -79,7 +79,7 @@ creates the default directory structure needed for the application under the
 >  * `--escaping-strategy`: Enables output escaping to prevent XSS attacks
 >  * `--csrf-secret`: Enables session tokens in forms to prevent CSRF attacks
 >
->By passing these two optional arguments to the task, you have secured your
+>By passing these two optional options to the task, you have secured your
 >future development from the two most widespread vulnerabilities found on the
 >web. That's right, symfony will automatically take security measures on your
 >behalf.
@@ -116,7 +116,7 @@ which is stored in `config/ProjectConfiguration.class.php`:
 
     [php]
     // config/ProjectConfiguration.class.php
-    require_once '/Users/fabien/work/symfony/dev/1.2/lib/autoload/sfCoreAutoload.class.php';
+    require_once '/Users/fabien/symfony-1.2/lib/autoload/sfCoreAutoload.class.php';
 
 For better portability, change the absolute path to the symfony installation
 to a relative one:
@@ -132,10 +132,10 @@ another one, and it will just work.
 
 One of the first things you might want to do is to configure the database
 connection for your project. The symfony framework supports all
-[PDO]((http://www.php.net/PDO))-supported databases (MySQL, PostgreSQL,
-SQLite, Oracle, MSSQL, ...). On top of PDO, symfony comes bundled with two ORM
-tools: Propel and Doctrine. Propel is the default one, but switching to
-Doctrine is quite easy (see the next section for more information).
+[PDO](http://www.php.net/PDO)-supported databases (MySQL, PostgreSQL, SQLite,
+Oracle, MSSQL, ...). On top of PDO, symfony comes bundled with two ORM tools:
+Propel and Doctrine. Propel is the default one, but switching to Doctrine is
+quite easy (see the next section for more information).
 
 Configuring the database is as simple as using the `configure:database` task:
 
