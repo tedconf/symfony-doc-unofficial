@@ -329,17 +329,15 @@ The `doctrine::build-all` task generates Doctrine model, SQL and initializes the
 | `--skip-forms`<br />`(-F)` | `-` | Skip generating forms
 
 
-The `doctrine:build-all` task is a shortcut for six other tasks:
+The `doctrine:build-all` task is a shortcut for three other tasks:
 
     ./symfony doctrine:build-all
 
 The task is equivalent to:
 
-    ./symfony doctrine:build-db
     ./symfony doctrine:build-model
     ./symfony doctrine:build-sql
     ./symfony doctrine:build-forms
-    ./symfony doctrine:build-filters
     ./symfony doctrine:insert-sql
 
 See those three tasks help page for more information.
@@ -369,18 +367,13 @@ The `doctrine::build-all-load` task generates Doctrine model, SQL, initializes d
 | `--dir` | `-` | The directories to look for fixtures (multiple values allowed)
 
 
-The `doctrine:build-all-load` task is a shortcut for seven other tasks:
+The `doctrine:build-all-load` task is a shortcut for two other tasks:
 
     ./symfony doctrine:build-all-load
 
 The task is equivalent to:
 
-    ./symfony doctrine:build-db
-    ./symfony doctrine:build-model
-    ./symfony doctrine:build-sql
-    ./symfony doctrine:build-forms
-    ./symfony doctrine:build-filters
-    ./symfony doctrine:insert-sql
+    ./symfony doctrine:build-all
     ./symfony doctrine:data-load
 
 The task takes an application argument because of the `doctrine:data-load`
@@ -411,7 +404,7 @@ The `doctrine::build-all-reload` task generates Doctrine model, SQL, initializes
 | `--dir` | `-` | The directories to look for fixtures (multiple values allowed)
 
 
-The `doctrine:build-all-reload` task is a shortcut for eight other tasks:
+The `doctrine:build-all-reload` task is a shortcut for five other tasks:
 
     ./symfony doctrine:build-all-reload
 
@@ -420,9 +413,6 @@ The task is equivalent to:
     ./symfony doctrine:drop-db
     ./symfony doctrine:build-db
     ./symfony doctrine:build-model
-    ./symfony doctrine:build-sql
-    ./symfony doctrine:build-forms
-    ./symfony doctrine:build-filters
     ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
 
@@ -445,7 +435,7 @@ The `doctrine::build-all-reload-test-all` task generates Doctrine model, SQL, in
 | `--force` | `-` | Whether to force dropping of the database
 
 
-The `doctrine:build-all-reload-test-all` task is a shortcut for nine other tasks:
+The `doctrine:build-all-reload` task is a shortcut for four other tasks:
 
     ./symfony doctrine:build-all-reload-test-all frontend
 
@@ -454,9 +444,6 @@ The task is equivalent to:
     ./symfony doctrine:drop-db
     ./symfony doctrine:build-db
     ./symfony doctrine:build-model
-    ./symfony doctrine:build-sql
-    ./symfony doctrine:build-forms
-    ./symfony doctrine:build-filters
     ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
     ./symfony test-all
