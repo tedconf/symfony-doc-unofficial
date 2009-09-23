@@ -119,6 +119,12 @@ in symfony 1.4:
     `sfWidgetFormI18nChoiceCountry` respectively) as they act exactly in the
     same way, except they have more customization possibilities
 
+  * `sfWidgetFormChoiceMany`, `sfWidgetFormPropelChoiceMany`,
+    `sfWidgetFormDoctrineChoiceMany`, `sfValidatorChoiceMany`,
+    `sfValidatorPropelChoiceMany`, `sfValidatorPropelDoctrineMany`: Use the
+    same classes but without `Many` at the end, and set the `multiple` option
+    to `true`
+
 The following classes have been removed in symfony 1.3:
 
   * `sfCommonFilter`: see the "Removal of the common filter" section of the

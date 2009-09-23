@@ -16,7 +16,7 @@ your projects to symfony 1.3.
 Mailer
 ------
 
-As of symfony 1.3, there is a new default mailer based on SwiftMailer 4.
+As of symfony 1.3, there is a new default mailer based on SwiftMailer 4.1.
 
 Sending an email is as simple as using the `composeAndSend()` method from an
 action:
