@@ -77,6 +77,7 @@ The following widgets have been added:
   * `sfWidgetFormI18nChoiceLanguage`
   * `sfWidgetFormI18nChoiceCurrency`
   * `sfWidgetFormI18nChoiceCountry`
+  * `sfWidgetFormI18nChoiceTimezone`
 
 The first three of them replace the now deprecated
 `sfWidgetFormI18nSelectLanguage`, `sfWidgetFormI18nSelectCurrency`, and
@@ -105,6 +106,12 @@ only if the `multiple` option is `true`:
 
  * `min` The minimum number of values that need to be selected
  * `max` The maximum number of values that need to be selected
+
+### I18n validators
+
+The following validators have been added:
+
+ * `sfValidatorI18nTimezone`
 
 sfToolkit
 ---------
