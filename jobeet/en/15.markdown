@@ -1,51 +1,6 @@
 Day 15: Web Services
 ====================
 
-<doctrine>
-Before we start
----------------
-
-On day six when we defined the route for viewing jobs named `job_show_user` in
-`apps/frontend/config/routing.yml` we had a slight mistake in the definition.
-The route should be the following:
-
-    [yml]
-    job_show_user:
-      url:     /job/:company_slug/:location_slug/:id/:position_slug
-      class:   sfDoctrineRoute
-      options:
-        model: JobeetJob
-        type:  object
-        method_for_query: retrieveActiveJob
-      param:   { module: job, action: show }
-      requirements:
-        id: \d+
-
-Notice the change from using `method` to `method_for_query`. This was a small 
-bug in symfony and a mistake in the tutorial so you will need to upgrade your
-project.
-
-We also need to make a small change to the `JobAffiliate` schema to include the
-many-to-many relationship to `JobeetCategory` to complete this day. You can see
-the full schema by looking at day three or just look at what needs to be added
-below.
-
-    [yml]
-    JobeetAffiliate:
-      # ...
-      relations:
-        JobeetCategories:
-          class: JobeetCategory
-          refClass: JobeetCategoryAffiliate
-          local: affiliate_id
-          foreign: category_id
-          foreignAlias: JobeetAffiliates
-
-Be sure to rebuild your model after making the change:
-
-    $ php symfony doctrine:build-model
-</doctrine>
-
 With the addition of feeds on Jobeet, job seekers can now be informed of new
 jobs in real-time.
 
@@ -158,7 +113,8 @@ You can now reload the data:
 
 ### The Job Web Service
 
-As always, when you create a new resource, it's a good habit to define the ~URL~ first:
+As always, when you create a new resource, it's a good habit to define the
+~URL~ first:
 
     [yml]
     # apps/frontend/config/routing.yml
@@ -218,9 +174,9 @@ activated, we need to override the default behavior of the route:
 </doctrine>
 
 If the token does not exist in the database, we throw a `sfError404Exception`
-exception. This exception class is then automatically converted to a `~404|404 Error~`
-response. This is the simplest way to generate a `404` page from a model
-class.
+exception. This exception class is then automatically converted to a `~404|404
+Error~` response. This is the simplest way to generate a `404` page from a
+model class.
 
 <propel>
 The `getForToken()` method uses two new methods we will create now.
@@ -447,12 +403,14 @@ If you try to call the web service with a non-valid token, you will have a 404
 XML page for the XML format, and a 404 JSON page for the JSON format. But for
 the YAML format, symfony does not know what to render.
 
-Whenever you create a format, a ~custom error template|Custom Error Templates~ 
-must be created. The template will be used for 404 pages, and all other exceptions.
+Whenever you create a format, a ~custom error template|Custom Error Templates~
+must be created. The template will be used for 404 pages, and all other
+exceptions.
 
-As the ~exception|Exception Handling~ should be different in the production 
-and development environment, two files are needed (`config/error/exception.yaml.php` 
-for debugging, and `config/error/error.yaml.php` for production):
+As the ~exception|Exception Handling~ should be different in the production
+and development environment, two files are needed
+(`config/error/exception.yaml.php` for debugging, and
+`config/error/error.yaml.php` for production):
 
     [php]
     // config/error/exception.yaml.php
@@ -483,8 +441,8 @@ Before trying it, you must create a layout for YAML format:
 ![404](http://www.symfony-project.org/images/jobeet/1_3/16/404.png)
 
 >**TIP**
->Overriding the 404 error and ~exception|Exception Handling~ templates for 
->built-in templates is as simple as creating a file in the `config/error/` 
+>Overriding the 404 error and ~exception|Exception Handling~ templates for
+>built-in templates is as simple as creating a file in the `config/error/`
 >directory.
 
 ~Web Service Tests|Testing (Web Services)~
@@ -571,9 +529,9 @@ The classic second step is to generate a module:
 ### Templates
 
 The `propel:generate-module` task generate the classic seven actions and their
-corresponding ~templates|Templates~. In the `templates/` directory, remove all the files
-but the `_form.php` and `newSuccess.php` ones. And for the files we keep,
-replace their content with the following:
+corresponding ~templates|Templates~. In the `templates/` directory, remove all
+the files but the `_form.php` and `newSuccess.php` ones. And for the files we
+keep, replace their content with the following:
 
     [php]
     <!-- apps/frontend/modules/affiliate/templates/newSuccess.php -->
@@ -681,10 +639,11 @@ away. Open the `JobeetAffiliateForm` file to customize the ~form|Forms~:
       }
     }
 
-The form framework supports ~many-to-many relationship|Many to Many Relationships (Forms)~ like any other column.
-By default, such a relation is rendered as a drop-down box thanks to the
-`sfWidgetFormChoice` widget. As seen during day 10, we have changed the
-rendered tag by using the `expanded` option.
+The form framework supports ~many-to-many relationship|Many to Many
+Relationships (Forms)~ like any other column. By default, such a relation is
+rendered as a drop-down box thanks to the `sfWidgetFormChoice` widget. As seen
+during day 10, we have changed the rendered tag by using the `expanded`
+option.
 
 As emails and URLs tend to be quite longer than the default size of an input
 tag, default HTML attributes can be set by using the `setAttribute()` method.
@@ -693,7 +652,8 @@ tag, default HTML attributes can be set by using the `setAttribute()` method.
 
 ### Tests
 
-The last step is to write some ~functional tests|Forms (Testing)~ for the new feature.
+The last step is to write some ~functional tests|Forms (Testing)~ for the new
+feature.
 
 Replace the generated tests for the `affiliate` module by the following code:
 
@@ -758,8 +718,8 @@ in the `JobeetTestFunctional` class:
     }
 
 But as we already have this code in the `getMostRecentProgrammingJob()`
-method, it is time to ~refactor|Refactoring~ the code and create a `getForSlug()` method
-in `JobeetCategoryPeer`:
+method, it is time to ~refactor|Refactoring~ the code and create a
+`getForSlug()` method in `JobeetCategoryPeer`:
 
     [php]
     // lib/model/JobeetCategoryPeer.php
@@ -777,13 +737,13 @@ Then, replace the two occurrences of this code in `JobeetTestFunctional`.
 The Affiliate Backend
 ---------------------
 
-For the ~backend|Backend~, an `affiliate` module must be created for affiliates to be
-activated by the administrator:
+For the ~backend|Backend~, an `affiliate` module must be created for
+affiliates to be activated by the administrator:
 
     $ php symfony propel:generate-admin backend JobeetAffiliate --module=affiliate
 
-To access the newly created module, add a link in the main menu with the number 
-of affiliate that need to be activated:
+To access the newly created module, add a link in the main menu with the
+number of affiliate that need to be activated:
 
     [php]
     <!-- apps/backend/templates/layout.php -->
@@ -979,10 +939,10 @@ The only other code to write is for the `activate`, `deactivate` actions:
 See you Tomorrow
 ----------------
 
-Thanks to the ~REST~ architecture of symfony, it is quite easy to implement web
-services for your projects. Although, we wrote code for a read-only web
-service today, you have enough symfony knowledge to implement a read-write
-web service.
+Thanks to the ~REST~ architecture of symfony, it is quite easy to implement
+web services for your projects. Although, we wrote code for a read-only web
+service today, you have enough symfony knowledge to implement a read-write web
+service.
 
 The implementation of the affiliate account creation form in the frontend and
 its backend counterpart was really easy as you are now familiar with the
@@ -996,7 +956,8 @@ If you remember requirements from day 2:
 The implementation of this feature is so easy that we will let you do it
 tonight.
 
-Tomorrow, we will implement the last missing feature of the Jobeet website,
-the search engine.
+Whenever an affiliate account is activated by the administrator, an email
+should be sent to the affiliate to confirm his subscription and give him his
+token. Sending emails is the topic we will talk about tomorrow.
 
 __ORM__
