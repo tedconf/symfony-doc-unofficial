@@ -478,7 +478,7 @@ Then, create the `extend` action:
       $this->getUser()->setFlash('notice', sprintf('Your job validity has been extended until %s.', $job->getExpiresAt('m/d/Y')));
 </propel>
 <doctrine>
-      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extended until %s.', date('m/d/Y', strtotime($job->getExpiresAt()))));
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extended until %s.', $job->getDateTimeObject('expires_at')->format('m/d/Y')));
 </doctrine>
 
       $this->redirect($this->generateUrl('job_show_user', $job));
@@ -569,7 +569,7 @@ Eventually, add a test scenario:
 <doctrine>
     $job->refresh();
     $browser->test()->is(
-      date('y/m/d', strtotime($job->getExpiresAt())),
+      $job->getDateTimeObject('expires_at')->format('y/m/d'),
       date('y/m/d', time() + 86400 * sfConfig::get('app_active_days'))
     );
 </doctrine>
