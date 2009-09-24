@@ -45,8 +45,54 @@ On the Zend Lucene documentation page, the library is described as follows:
 >about this technology, please refer to the
 >[Zend Lucene documentation](http://framework.zend.com/manual/en/zend.search.lucene.html).
 
-Zend Lucene has already been installed yesterday as part of the Zend Framework
-installation we did for sending emails.
+Installing and Configuring the Zend Framework
+---------------------------------------------
+
+The Zend Lucene ~library|Third-Party Libraries~ is part of the Zend Framework.
+As we won't need everything from the Zend Framework, we will only install the
+needed parts into the `lib/vendor/` directory, alongside the symfony framework
+itself.
+
+First, download the
+[Zend Framework](http://framework.zend.com/download/overview) and un-archive
+the files so that you have a `lib/vendor/Zend/` directory.
+
+>**NOTE**
+>The following explanations have been tested with the 1.8.0 version of
+>the Zend Framework.
+
+You can clean up the directory by removing everything but the following files
+and directories:
+
+  * `Exception.php`
+  * `Loader/`
+  * `Loader.php`
+  * `Search/`
+
+Then, add the following code to the `ProjectConfiguration` class to provide a
+simple way to register the Zend autoloader:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      static protected $zendLoaded = false;
+
+      static public function registerZend()
+      {
+        if (self::$zendLoaded)
+        {
+          return;
+        }
+
+        set_include_path(sfConfig::get('sf_lib_dir').'/vendor'.PATH_SEPARATOR.get_include_path());
+        require_once sfConfig::get('sf_lib_dir').'/vendor/Zend/Loader/Autoloader.php';
+        Zend_Loader_Autoloader::getInstance();
+        self::$zendLoaded = true;
+      }
+
+      // ...
+    }
 
 Indexing
 --------

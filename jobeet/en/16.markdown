@@ -1,0 +1,57 @@
+Sending ~Emails~
+================
+
+Whenever an affiliate account is activated by the administrator, an email
+should be sent to the affiliate to confirm his subscription and give him his
+token.
+
+The symfony framework comes bundled with one of the best PHP emailing
+solution: [Swift Mailer](http://www.swiftmailer.org/). Of course, the library
+is fully integrated with symfony, with some cool features added on top of its
+core features.
+
+Sending Emails
+--------------
+
+Edit the `activate` action to send an email when the administrator validates
+an affiliate:
+
+    [php]
+    // apps/backend/modules/affiliate/actions/actions.class.php
+    class affiliateActions extends autoAffiliateActions
+    {
+      public function executeListActivate()
+      {
+        $affiliate = $this->getRoute()->getObject();
+        $affiliate->activate();
+
+        // send an email to the affiliate
+        ProjectConfiguration::registerZend();
+        $mail = new Zend_Mail();
+        $mail->setBodyText(<<<EOF
+    Your Jobeet affiliate account has been activated.
+
+    Your token is {$affiliate->getToken()}.
+
+    The Jobeet Bot.
+    EOF
+    );
+        $mail->setFrom('jobeet@example.com', 'Jobeet Bot');
+        $mail->addTo($affiliate->getEmail());
+        $mail->setSubject('Jobeet affiliate token');
+        $mail->send();
+
+<propel>
+        $this->redirect('@jobeet_affiliate');
+</propel>
+<doctrine>
+        $this->redirect('@jobeet_affiliate_affiliate');
+</doctrine>
+      }
+
+      // ...
+    }
+
+For the code to work, you need to change `jobeet@example.com` to a real email
+address.
+
