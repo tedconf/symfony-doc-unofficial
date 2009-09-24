@@ -102,12 +102,6 @@ As the database does not exist yet and as we want to keep Jobeet database
 agnostic, let's create the schema file by hand by editing the empty
 `config/doctrine/schema.yml` file:
 
->**TIP**
->You will need to manually create the `config/doctrine/` directory in your
->project as it does not already exist:
->
->     $ mkdir config/doctrine
-
     [yml]
     # config/doctrine/schema.yml
     JobeetCategory:
@@ -188,7 +182,9 @@ the YAML format.
 >arrays are explicitly shown with `[]` and hashes with `{}`.
 >
 >If you are not yet familiar with YAML, it is time to get started as the symfony
->framework uses it extensively for its configuration files.
+>framework uses it extensively for its configuration files. A good starting point
+>is the symfony YAML component
+>[documentation](http://components.symfony-project.org/yaml/documentation).
 >
 >There is one important thing you need to remember when editing a YAML file:
 >**indentation must be done with one or more spaces, but never with
@@ -248,30 +244,14 @@ Let's use ~MySQL~ for this tutorial:
     Enter password: mYsEcret ## The password will echo as ********
 
 >**Note**
->Feel free to choose another ~database engine|Database Engine~ if you want. It 
->won't be difficult to adapt the code we will write as we will use the ORM will 
+>Feel free to choose another ~database engine|Database Engine~ if you want. It
+>won't be difficult to adapt the code we will write as we will use the ORM will
 >write the SQL for us.
 
 We need to tell symfony to use this database for the Jobeet project:
 
-<propel>
     $ php symfony configure:database
       ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
-</propel>
-<doctrine>
-The default `config/`~`databases.yml`~ contains a connection that references propel.
-Because we're using Doctrine, we need to remove the `config/databases.yml` so we
-can re-generate it for Doctrine.
-
-    $ rm config/databases.yml
-
-Now simply run the following command to generate a new database configuration 
-file for Doctrine:
-
-    $ php symfony configure:database --name=doctrine
-      ➥ --class=sfDoctrineDatabase
-      ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
-</doctrine>
 
 The `configure:database` task takes three arguments: the
 [~PDO DSN~](http://www.php.net/manual/en/pdo.drivers.php), the username, and
@@ -279,7 +259,7 @@ the password to access the database. If you don't need a password to access
 your database on the development server, just omit the third argument.
 
 >**NOTE**
->The `configure:database` ~task|Tasks~ stores the 
+>The `configure:database` ~task|Tasks~ stores the
 >~database configuration|Database Configuration~ into the
 >`config/databases.yml` configuration file. Instead of using the task, you can
 >edit this file by hand.
@@ -340,17 +320,15 @@ To actually create the tables in the database, you need to run the
 
     $ php symfony propel:insert-sql
 
-<propel>
 As the task drops the current tables before re-creating them, you are
 required to confirm the operation. You can also add the `--no-confirmation`
 option to bypass the question, which is useful if you want to run the task
 from within a non-interactive batch:
 
     $ php symfony propel:insert-sql --no-confirmation
-</propel>
 
 >**TIP**
->As for any ~command line|Command Line~ tool, symfony tasks can take arguments 
+>As for any ~command line|Command Line~ tool, symfony tasks can take arguments
 >and options.
 >Each task comes with a built-in help message that can be displayed by running
 >the `help` task:
@@ -403,8 +381,6 @@ generates three classes per table. For the `jobeet_job` table:
                     default.
 </doctrine>
 
--
-
 The column values of a record can be manipulated with a model object by using
 some ~accessors|Accessors~ (`get*()` methods) and mutators (`set*()` methods):
 
@@ -417,7 +393,7 @@ some ~accessors|Accessors~ (`get*()` methods) and mutators (`set*()` methods):
 
     $job->delete();
 
-You can also define ~foreign keys|Foreign Key~ directly by linking objects 
+You can also define ~foreign keys|Foreign Key~ directly by linking objects
 together:
 
     [php]
@@ -436,26 +412,13 @@ for the Jobeet model classes:
 You will see validators in action at the end of the day and forms will be
 explained in great details on day 10.
 
-As you will see later on, symfony ~autoloads|Autoload~ PHP classes for you, which means
-that you never need to use a `require` in your code. It is one of the numerous
-things that symfony automates for the developer but there is one downside:
-whenever you add a new class, you need to clear the symfony ~cache|Cache~. As the
-`propel:build-model` has created a lot of new classes, let's clear the cache:
-
-     $ php symfony cache:clear
-
 >**TIP**
->A symfony ~task|Tasks~ is made of a namespace and a task name. Each one can be 
->shortened as much as there is no ambiguity with other tasks. So, the following 
->commands are equivalent to `cache:clear`:
+>A symfony ~task|Tasks~ is made of a namespace and a task name. Each one can be
+>shortened as much as there is no ambiguity with other tasks. So, the following
+>commands are equivalent to `propel:build-model`:
 >
->     $ php symfony cache:cl
->     $ php symfony ca:c
->
->As the `cache:clear` task is so commonly used, it has an even shorter
->hardwired abbreviation:
->
->     $ php symfony cc
+>     $ php symfony propel:build-mo
+>     $ php symfony pro:build-mo
 
 The Initial Data
 ----------------
@@ -619,9 +582,9 @@ First, create the following ~fixture|Fixtures~ files:
 A fixtures file is written in YAML, and defines model objects, labelled with a
 unique name (for instance, we have defined two jobs labelled `job_sensio_labs`
 and `job_extreme_sensio`). This label is of great use to link related objects
-without having to define ~primary keys|Primary Key~ (which are often 
-auto-incremented and cannot be set). For instance, the `job_sensio_labs` job 
-category is `programming`, which is the label given to the 'Programming' 
+without having to define ~primary keys|Primary Key~ (which are often
+auto-incremented and cannot be set). For instance, the `job_sensio_labs` job
+category is `programming`, which is the label given to the 'Programming'
 category.
 
 >**TIP**
@@ -634,25 +597,25 @@ have decided to create one file per model for the Jobeet fixtures.
 
 <propel>
 >**TIP**
->Notice the numbers ~prefixing|Prefix~ the filenames. This is a simple way 
->to control the order of data loading. Later in the project, if we need to 
->insert some new fixture file, it will be easy as we have some free numbers 
+>Notice the numbers ~prefixing|Prefix~ the filenames. This is a simple way
+>to control the order of data loading. Later in the project, if we need to
+>insert some new fixture file, it will be easy as we have some free numbers
 >between existing ones.
 </propel>
 <doctrine>
 >**NOTE**
->Propel requires that the fixtures files be prefixed with numbers to determine 
+>Propel requires that the fixtures files be prefixed with numbers to determine
 >the order in which the files will be loaded. With Doctrine this is not required
->as all fixtures will be loaded and saved in the correct order to make sure 
+>as all fixtures will be loaded and saved in the correct order to make sure
 >foreign keys are set properly.
 </doctrine>
 
 In a fixture file, you don't need to define all columns values. If not,
 symfony will use the default value defined in the database schema. And as
 symfony uses ##ORM## to load the data into the database, all the built-in
-~behaviors|Behaviors (ORM)~ (like automatically setting the `created_at` 
-or `updated_at` columns) and the custom behaviors you might have added to 
-the model classes are activated.
+~behaviors|Behaviors (ORM)~ (like automatically setting the `created_at` or
+`updated_at` columns) and the custom behaviors you might have added to the
+model classes are activated.
 
 Loading the initial data into the database is as simple as running the
 `propel:data-load` task:
@@ -664,7 +627,9 @@ Loading the initial data into the database is as simple as running the
 >followed by the `propel:data-load` task.
 
 <doctrine>
-Run the `doctrine:build-all-reload` task to make sure everything is generated from your schema. This will generate your forms, filters, models, drop your database and re-create it with all the tables.
+Run the `doctrine:build-all-reload` task to make sure everything is generated
+from your schema. This will generate your forms, filters, models, drop your
+database and re-create it with all the tables.
 
     $ php symfony doctrine:build-all-reload
 </doctrine>
@@ -678,10 +643,10 @@ pages that interact with the database.
 
 Let's see how to display the list of jobs, how to edit an existing job, and
 how to delete a job. As explained during day 1, a symfony project is made of
-applications. Each ~application|Application~ is further divided into 
-**modules**. A ~module|Module~ is a self-contained set of PHP code that represents 
-a feature of the application (the API module for example), or a set of 
-manipulations the user can do on a model object (a job module for example).
+applications. Each ~application|Application~ is further divided into
+**modules**. A ~module|Module~ is a self-contained set of PHP code that
+represents a feature of the application (the API module for example), or a set
+of manipulations the user can do on a model object (a job module for example).
 
 Symfony is able to automatically generate a module for a given model that
 provides basic manipulation features:
@@ -690,8 +655,8 @@ provides basic manipulation features:
       ➥ --non-verbose-templates frontend job JobeetJob
 
 The `propel:generate-module` generates a `job` module in the `frontend`
-application for the `JobeetJob` model. As with most symfony tasks,
-some files and directories have been created for you under the
+application for the `JobeetJob` model. As with most symfony tasks, some files
+and directories have been created for you under the
 `apps/frontend/modules/job/` directory:
 
  | Directory    | Description
@@ -699,8 +664,8 @@ some files and directories have been created for you under the
  | `actions/`   | The module actions
  | `templates/` | The module templates
 
-The `actions/actions.class.php` file defines all the available **~action|Action~** for
-the `job` module:
+The `actions/actions.class.php` file defines all the available
+**~action|Action~** for the `job` module:
 
  | Action name    | Description
  | -------------- | -------------------------------------------------------
@@ -735,19 +700,20 @@ record should be defined in the `JobeetCategory` model class:
     }
 
 Now each time symfony needs a text representation of a category, it calls the
-~`__toString()`~ method which returns the category name. As we will need a text
-representation of all model classes at one point or another, let's define
+~`__toString()`~ method which returns the category name. As we will need a
+text representation of all model classes at one point or another, let's define
 a `__toString()` method for every model class:
 </propel>
 <doctrine>
-If you try to edit a job, you will notice the Category id drop down has a list 
-of all the category names. The value of each option is gotten from the `__toString()` method.
+If you try to edit a job, you will notice the Category id drop down has a list
+of all the category names. The value of each option is gotten from the
+`__toString()` method.
 
-Doctrine will try and provide a base ~`__toString()`~ method by guessing a 
-descriptive column name like, `title`, `name`, `subject`, etc. If you want 
-something custom then you will need to add your own `__toString()` methods like below. 
-The `JobeetCategory` model is able to guess the `__toString()` method by using the `name` 
-column of the `jobeet_category` table.
+Doctrine will try and provide a base ~`__toString()`~ method by guessing a
+descriptive column name like, `title`, `name`, `subject`, etc. If you want
+something custom then you will need to add your own `__toString()` methods
+like below. The `JobeetCategory` model is able to guess the `__toString()`
+method by using the `name` column of the `jobeet_category` table.
 </doctrine>
 
     [php]
