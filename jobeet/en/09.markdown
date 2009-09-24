@@ -1,8 +1,8 @@
 Day 9: The Functional Tests
 ===========================
 
-Yesterday, we saw how to unit test our Jobeet classes using the lime
-testing library packaged with symfony.
+Yesterday, we saw how to unit test our Jobeet classes using the lime testing
+library packaged with symfony.
 
 Today, we will write functional tests for the features we have already
 implemented in the `job` and `category` modules.
@@ -12,35 +12,36 @@ Functional Tests
 
 ~Functional tests~ are a great tool to test your application from end to end:
 from the request made by a browser to the response sent by the server. They
-~test|Testing~ all the layers of an application: the routing, the model, the actions,
-and the templates. They are very similar to what you probably already do
-manually: each time you add or modify an action, you need go to the browser
+~test|Testing~ all the layers of an application: the routing, the model, the
+actions, and the templates. They are very similar to what you probably already
+do manually: each time you add or modify an action, you need go to the browser
 and check that everything works as expected by clicking on links and checking
 elements on the rendered page. In other words, you run a scenario
 corresponding to the use case you have just implemented.
 
 As the process is manual, it is tedious and error prone. Each time you change
-something in your code, you must step through all the scenarios to ensure that you did
-not break something. That's insane. Functional tests in symfony provide a way
-to easily describe scenarios. Each scenario can then be played automatically over
-and over again by simulating the experience a user has in a browser. Like unit
-tests, they give you the confidence to code in peace.
+something in your code, you must step through all the scenarios to ensure that
+you did not break something. That's insane. Functional tests in symfony
+provide a way to easily describe scenarios. Each scenario can then be played
+automatically over and over again by simulating the experience a user has in a
+browser. Like unit tests, they give you the confidence to code in peace.
 
 >**NOTE**
 >The functional test framework does not replace tools like
->"[~Selenium~](http://selenium.seleniumhq.org/)". Selenium runs directly in the
->browser to automate testing across many platforms and browsers and as such,
->it is able to test your application's JavaScript.
+>"[~Selenium~](http://selenium.seleniumhq.org/)". Selenium runs directly in
+>the browser to automate testing across many platforms and browsers and as
+>such, it is able to test your application's JavaScript.
 
 The `sfBrowser` class
 ---------------------
 
-In symfony, functional tests are run through a special ~browser|Browser~, 
-implemented by the [~`sfBrowser`|Browser~](http://www.symfony-project.org/api/1_3/sfBrowser) 
-class. It acts as a browser tailored for your application and directly connected to it,
-without the need for a web server. It gives you access to all symfony objects
-before and after each request, giving you the opportunity to introspect them
-and do the checks you want programatically.
+In symfony, functional tests are run through a special ~browser|Browser~,
+implemented by the
+[~`sfBrowser`|Browser~](http://www.symfony-project.org/api/1_3/sfBrowser)
+class. It acts as a browser tailored for your application and directly
+connected to it, without the need for a web server. It gives you access to all
+symfony objects before and after each request, giving you the opportunity to
+introspect them and do the checks you want programatically.
 
 `sfBrowser` provides methods that simulates navigation done in a classic
 browser:
@@ -85,19 +86,18 @@ Here are some usage examples of the `sfBrowser` methods:
 The `sfTestFunctional` class
 ----------------------------
 
-We have a browser, but we need a way to introspect the symfony objects
-to do the actual testing. It can be done with lime and some `sfBrowser`
-methods like `getResponse()` and `getRequest()` but symfony provides a
-better way.
+We have a browser, but we need a way to introspect the symfony objects to do
+the actual testing. It can be done with lime and some `sfBrowser` methods like
+`getResponse()` and `getRequest()` but symfony provides a better way.
 
 The test methods are provided by another class,
 [`sfTestFunctional`](http://www.symfony-project.org/api/1_3/sfTestFunctional)
 that takes a `sfBrowser` instance in its constructor. The `sfTestFunctional`
-class delegates the tests to **~tester|Testers~** objects. Several testers are bundled
-with symfony, and you can also create your own.
+class delegates the tests to **~tester|Testers~** objects. Several testers are
+bundled with symfony, and you can also create your own.
 
-As we saw yesterday, functional tests are stored under the
-`test/functional/` directory. For Jobeet, tests are to be found in the
+As we saw yesterday, functional tests are stored under the `test/functional/`
+directory. For Jobeet, tests are to be found in the
 `test/functional/frontend/` sub-directory as each application has its own
 subdirectory. This directory already contains two files:
 `categoryActionsTest.php`, and `jobActionsTest.php` as all tasks that generate
@@ -283,12 +283,12 @@ test file. Replace the code with the following one:
 
 As with `lime`, an informational message can be inserted by calling the
 `info()` method to make the output more readable. To verify the exclusion of
-expired jobs from the homepage, we check that the ~CSS selector~
-`.jobs td.position:contains("expired")` does not match anywhere in the
-response HTML content (remember that in the fixture files, the only expired
-job we have contains "expired" in the position). When the second argument of
-the `checkElement()` method is a Boolean, the method tests the existence of
-nodes that match the CSS selector.
+expired jobs from the homepage, we check that the ~CSS selector~ `.jobs
+td.position:contains("expired")` does not match anywhere in the response HTML
+content (remember that in the fixture files, the only expired job we have
+contains "expired" in the position). When the second argument of the
+`checkElement()` method is a Boolean, the method tests the existence of nodes
+that match the CSS selector.
 
 >**TIP**
 >The `checkElement()` method is able to interpret most valid CSS3 selectors.
@@ -367,16 +367,16 @@ category (`.category_design .more_jobs` does not exist), and that there is a
 
 To test if jobs are actually sorted by date, we need to check that the first
 job listed on the homepage is the one we expect. This can be done by checking
-that the URL contains the expected ~primary key|Primary Key~. As the primary 
-key can change between runs, we need to get the ##ORM## object from the database 
-first.
+that the URL contains the expected ~primary key|Primary Key~. As the primary
+key can change between runs, we need to get the ##ORM## object from the
+database first.
 
 Even if the test works as is, we need to refactor the code a bit, as getting
 the first job of the programming category can be reused elsewhere in our
 tests. We won't move the code to the Model layer as the code is test specific.
 Instead, we will move the code to the `JobeetTestFunctional` class we have
-created earlier. This class acts as a Domain Specific 
-~functional tester class|Testers~ for Jobeet:
+created earlier. This class acts as a Domain Specific ~functional tester
+class|Testers~ for Jobeet:
 
     [php]
     // lib/test/JobeetTestFunctional.class.php
@@ -627,14 +627,14 @@ Debugging Functional Tests
 
 Sometimes a functional test fails. As symfony simulates a browser without any
 graphical interface, it can be hard to diagnose the problem. Thankfully,
-symfony provides the `~debug|Debug~()` method to output the response header and
-content:
+symfony provides the `~debug|Debug~()` method to output the response header
+and content:
 
     [php]
     $browser->with('response')->debug();
 
-The `debug()` method can be inserted anywhere in a `response` tester block
-and will halt the script execution.
+The `debug()` method can be inserted anywhere in a `response` tester block and
+will halt the script execution.
 
 Functional Tests Harness
 ------------------------
@@ -661,14 +661,14 @@ As you may expect, there is also a task to launch all tests for a project
 See you Tomorrow
 ----------------
 
-That wraps up our tour of the symfony test tools. You have no excuse
-anymore to not test your applications! With the lime framework and the
-functional test framework, symfony provides powerful tools to help you write
-tests with little effort.
+That wraps up our tour of the symfony test tools. You have no excuse anymore
+to not test your applications! With the lime framework and the functional test
+framework, symfony provides powerful tools to help you write tests with little
+effort.
 
-We have just scratched the surface of functional tests. From now on, each
-time we implement a feature, we will also write tests to learn more
-features of the test framework.
+We have just scratched the surface of functional tests. From now on, each time
+we implement a feature, we will also write tests to learn more features of the
+test framework.
 
 Tomorrow, we will talk about yet another great feature of symfony: the form
 framework.
