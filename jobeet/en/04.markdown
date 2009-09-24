@@ -7,16 +7,16 @@ relational elements to nice object oriented classes. We have also played with
 ##ORM## to describe the database schema, create the tables, and populate the
 database with some initial data.
 
-Today, we are going to customize the basic `job` module we created
-yesterday. The `job` module already has all the code we need for Jobeet:
+Today, we are going to customize the basic `job` module we created yesterday.
+The `job` module already has all the code we need for Jobeet:
 
  * A page to list all jobs
  * A page to create a new job
  * A page to update an existing job
  * A page to delete a job
 
-Although the code is ready to be used as is, we will refactor the templates
-to match closer to the Jobeet mockups.
+Although the code is ready to be used as is, we will refactor the templates to
+match closer to the Jobeet mockups.
 
 The ~MVC~ Architecture
 ----------------------
@@ -27,35 +27,35 @@ the same kind of structure: initialization and global configuration, business
 logic related to the requested page, database records fetching, and finally
 HTML code that builds the page.
 
-You may use a templating engine to separate the logic from the HTML.
-Perhaps you use a database abstraction layer to separate model interaction
-from business logic. But most of the time, you end up with a lot of code
-that is a nightmare to maintain. It was fast to build, but over time, it's
-more and more difficult to make changes, especially because nobody except you
-understands how it is built and how it works.
+You may use a templating engine to separate the logic from the HTML. Perhaps
+you use a database abstraction layer to separate model interaction from
+business logic. But most of the time, you end up with a lot of code that is a
+nightmare to maintain. It was fast to build, but over time, it's more and more
+difficult to make changes, especially because nobody except you understands
+how it is built and how it works.
 
 As with every problem, there are nice solutions. For web development, the most
 common solution for organizing your code nowadays is the
 [**MVC design pattern**](http://en.wikipedia.org/wiki/Model-view-controller).
-In short, the MVC ~design pattern|Design Patterns~ defines a way to organize your 
+In short, the MVC ~design pattern|Design Patterns~ defines a way to organize your
 code according to its nature. This pattern separates the code into 
 **three layers**:
 
-  * The **~Model~** layer defines the business logic (the database belongs
-    to this layer). You already know that symfony stores all the classes and
+  * The **~Model~** layer defines the business logic (the database belongs to
+    this layer). You already know that symfony stores all the classes and
     files related to the Model in the `lib/model/` directory.
 
-  * The **~View~** is what the user interacts with (a template engine is part of
-    this layer). In symfony, the View layer is mainly made of PHP templates.
-    They are stored in various `templates/` directories as we will see later
-    on today.
+  * The **~View~** is what the user interacts with (a template engine is part
+    of this layer). In symfony, the View layer is mainly made of PHP
+    templates. They are stored in various `templates/` directories as we will
+    see later on today.
 
-  * The **~Controller~** is a piece of code that calls the Model to get some data
-    that it passes to the View for rendering to the client. When we installed
-    symfony the first day, we saw that all requests are managed by front
-    controllers (`index.php` and `frontend_dev.php`). These front controllers
-    delegate the real work to **actions**. As we saw yesterday, these
-    actions are logically grouped into **modules**.
+  * The **~Controller~** is a piece of code that calls the Model to get some
+    data that it passes to the View for rendering to the client. When we
+    installed symfony the first day, we saw that all requests are managed by
+    front controllers (`index.php` and `frontend_dev.php`). These front
+    controllers delegate the real work to **actions**. As we saw yesterday,
+    these actions are logically grouped into **modules**.
 
 ![MVC](http://www.symfony-project.org/images/jobeet/1_3/04/mvc.png)
 
@@ -87,9 +87,9 @@ called a **~layout|Layout~** in symfony:
 
 ![Layout](http://www.symfony-project.org/images/jobeet/1_3/04/layout.png)
 
-The default layout of an application is called `layout.php` and can be
-found in the `apps/frontend/templates/` directory. This directory
-contains all the global templates for an application.
+The default layout of an application is called `layout.php` and can be found
+in the `apps/frontend/templates/` directory. This directory contains all the
+global templates for an application.
 
 Replace the default symfony layout with the following code:
 
@@ -173,13 +173,14 @@ Replace the default symfony layout with the following code:
       </body>
     </html>
 
-A symfony ~template|Templates~ is just a plain PHP file. In the layout template, you
-see calls to PHP functions and references to PHP variables. ~`$sf_content`~ is
-the most interesting variable: it is defined by the framework itself and
-contains the HTML generated by the action.
+A symfony ~template|Templates~ is just a plain PHP file. In the layout
+template, you see calls to PHP functions and references to PHP variables.
+~`$sf_content`~ is the most interesting variable: it is defined by the
+framework itself and contains the HTML generated by the action.
 
-If you browse the `job` module (`http://jobeet.localhost/frontend_dev.php/job`),
-you will see that all actions are now decorated by the layout.
+If you browse the `job` module
+(`http://jobeet.localhost/frontend_dev.php/job`), you will see that all
+actions are now decorated by the layout.
 
 The Stylesheets, Images, and JavaScripts
 ----------------------------------------
@@ -218,9 +219,9 @@ time-savers, they package code snippets frequently used in templates. The
 
 But how does the helper know which stylesheets to include?
 
-The ~View~ layer can be configured by editing the ~`view.yml`~ configuration file
-of the application. Here is the default one generated by the `generate:app`
-task:
+The ~View~ layer can be configured by editing the ~`view.yml`~ configuration
+file of the application. Here is the default one generated by the
+`generate:app` task:
 
     [yml]
     # apps/frontend/config/view.yml
@@ -283,8 +284,8 @@ This configuration will be rendered as:
 
 It works as is but the `jobs.css` file is only needed for the homepage and the
 `job.css` file is only needed for the job page. The `view.yml` configuration
-file can be customized on a per-module basis. Change the stylesheets key of the 
-application `view.yml` file to only contain the `main.css` file:
+file can be customized on a per-module basis. Change the stylesheets key of
+the application `view.yml` file to only contain the `main.css` file:
 
     [yml]
     # apps/frontend/config/view.yml
@@ -302,8 +303,8 @@ To customize the view for the `job` module, create a `view.yml` file in the
       stylesheets: [job.css]
 
 Under the `indexSuccess` and `showSuccess` sections (they are the template
-names associated with the `index` and `show` actions, as we will see later on),
-you can customize any entry found under the `default` section of the
+names associated with the `index` and `show` actions, as we will see later
+on), you can customize any entry found under the `default` section of the
 application `view.yml`. All specific entries are merged with the application
 configuration. You can also define some configuration for all actions of a
 module with the special `all` section.
@@ -336,11 +337,11 @@ You can also use this helper in the layout to include a stylesheet globally.
 Choosing between one method or the other is really a matter of taste. The
 `view.yml` file provides a way to define things for all actions of a module,
 which is not possible in a template, but the configuration is quite static. On
-the other hand, using the `use_stylesheet()` ~helper|Helpers~ is more flexible and
-moreover, everything is in the same place: the stylesheet definition and the
-HTML code. For Jobeet, we will use the `use_stylesheet()` helper, so you can
-remove the `view.yml` we have just created and update the `job` templates with
-the `use_stylesheet()` calls:
+the other hand, using the `use_stylesheet()` ~helper|Helpers~ is more flexible
+and moreover, everything is in the same place: the stylesheet definition and
+the HTML code. For Jobeet, we will use the `use_stylesheet()` helper, so you
+can remove the `view.yml` we have just created and update the `job` templates
+with the `use_stylesheet()` calls:
 
     [php]
     <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
@@ -372,10 +373,10 @@ associated template, `indexSuccess.php`, is the View part:
 
 ### The Action
 
-Each ~action|Action~ is represented by a method of a class. For the job homepage, the
-class is `jobActions` (the name of the module suffixed by `Actions`) and the
-method is `executeIndex()` (`execute` suffixed by the name of the action).
-It retrieves all the jobs from the database:
+Each ~action|Action~ is represented by a method of a class. For the job
+homepage, the class is `jobActions` (the name of the module suffixed by
+`Actions`) and the method is `executeIndex()` (`execute` suffixed by the name
+of the action). It retrieves all the jobs from the database:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -404,7 +405,7 @@ the `jobeet_job_list` object property.
 </propel>
 <doctrine>
 Let's have a closer look at the code: the `executeIndex()` method (the
-Controller) calls the Table `JobeetJob` to create a query to retrieve all the 
+Controller) calls the Table `JobeetJob` to create a query to retrieve all the
 jobs. It returns a `Doctrine_Collection` of `JobeetJob` objects that are assigned to
 the `jobeet_job_list` object property.
 </doctrine>
@@ -424,8 +425,8 @@ This code will make `$foo` and `$bar` variables accessible in the template.
 
 ### The Template
 
-By default, the ~template|Templates~ name associated with an action is deduced by symfony
-thanks to a convention (the action name suffixed by `Success`).
+By default, the ~template|Templates~ name associated with an action is deduced
+by symfony thanks to a convention (the action name suffixed by `Success`).
 
 The `indexSuccess.php` template generates an HTML table for all the jobs. Here
 is the current template code:
@@ -468,10 +469,10 @@ is the current template code:
     <a href="<?php echo url_for('job/new') ?>">New</a>
 
 In the template code, the `foreach` iterates through the list of `Job` objects
-(`$jobeet_job_list`), and for each job, each column value is output.
-Remember, accessing a column value is as simple as calling an accessor method
-which name begins with `get` and the ~camelCased|Code Formatting~ column name 
-(for instance the `getCreatedAt()` method for the `created_at` column).
+(`$jobeet_job_list`), and for each job, each column value is output. Remember,
+accessing a column value is as simple as calling an accessor method which name
+begins with `get` and the ~camelCased|Code Formatting~ column name (for
+instance the `getCreatedAt()` method for the `created_at` column).
 
 Let's clean this up a bit to only display a sub-set of the available columns:
 
@@ -554,8 +555,8 @@ file and replace its content with the following code:
 
 This template uses the `$job` variable passed by the action to display the job
 information. As we have renamed the variable passed to the template from
-`$jobeet_job` to `$job`, you need to also make this change in the `show` action
-(be careful, there are two occurrences of the variable):
+`$jobeet_job` to `$job`, you need to also make this change in the `show`
+action (be careful, there are two occurrences of the variable):
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -573,9 +574,9 @@ information. As we have renamed the variable passed to the template from
     }
 
 <propel>
-Notice that some Propel ~accessors|Accessors~ take arguments. As we have defined 
-the `created_at` column as a timestamp, the `getCreatedAt()` accessor takes a date
-formatting pattern as its first argument:
+Notice that some Propel ~accessors|Accessors~ take arguments. As we have
+defined the `created_at` column as a timestamp, the `getCreatedAt()` accessor
+takes a date formatting pattern as its first argument:
 
     [php]
     $job->getCreatedAt('m/d/Y');
@@ -601,8 +602,8 @@ layout:
 But for the job page, we want to provide more useful information, like the
 company name and the job position.
 
-In symfony, when a zone of the layout depends on the template to be
-displayed, you need to define a slot:
+In symfony, when a zone of the layout depends on the template to be displayed,
+you need to define a slot:
 
 ![Slots](http://www.symfony-project.org/images/jobeet/1_3/04/layout_slots.png)
 
@@ -624,8 +625,8 @@ job page:
       sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()))
     ?>
 
-If the title is complex to generate, the `slot()` helper can also be used
-with a block of code:
+If the title is complex to generate, the `slot()` helper can also be used with
+a block of code:
 
     [php]
     // apps/frontend/modules/job/templates/showSuccess.php
@@ -846,8 +847,8 @@ object `addStylesheet()` and `addJavascript()` methods.
 See you Tomorrow
 ----------------
 
-Today, we have described some design patterns used by symfony. Hopefully
-the project directory structure now makes more sense. We have played with the
+Today, we have described some design patterns used by symfony. Hopefully the
+project directory structure now makes more sense. We have played with the
 templates by manipulating the layout and the template files. We have also made
 them a bit more dynamic thanks to slots and actions.
 
