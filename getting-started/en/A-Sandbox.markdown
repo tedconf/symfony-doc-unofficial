@@ -1,5 +1,5 @@
-The Sandbox
-===========
+Appendix A - The Sandbox
+========================
 
 If your goal is to give symfony a try for a few hours, keep reading this
 chapter as we will show you the fastest way to get you started. If you want to
