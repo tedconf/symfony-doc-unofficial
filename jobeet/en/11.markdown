@@ -1,9 +1,8 @@
 Day 11: Testing your Forms
 ==========================
 
-Yesterday we created our first form with symfony. People are now able to
-post a new job on Jobeet but we ran out of time before we could add some
-tests.
+Yesterday we created our first form with symfony. People are now able to post
+a new job on Jobeet but we ran out of time before we could add some tests.
 
 That's what we will do today. Along the way, we will also learn more about the
 form framework.
@@ -28,8 +27,8 @@ form framework.
 Submitting a Form
 -----------------
 
-Let's open the `jobActionsTest` file to add functional ~test|Testing~s for the job
-creation and validation process.
+Let's open the `jobActionsTest` file to add functional ~test|Testing~s for the
+job creation and validation process.
 
 At the end of the file, add the following code to get the job creation page:
 
@@ -46,10 +45,10 @@ At the end of the file, add the following code to get the job creation page:
     ;
 
 We have already used the `click()` method to simulate clicks on links. The
-same `click()` method can be used to submit a ~form|Forms~. For a form, you can pass
-the values to submit for each field as a second argument of the method. Like
-a real browser, the browser object will merge the default values of the form
-with the submitted values.
+same `click()` method can be used to submit a ~form|Forms~. For a form, you
+can pass the values to submit for each field as a second argument of the
+method. Like a real browser, the browser object will merge the default values
+of the form with the submitted values.
 
 But to pass the field values, we need to know their names. If you open the
 source code or use the Firefox Web Developer Toolbar "Forms > Display Form
@@ -60,8 +59,9 @@ Details" feature, you will see that the name for the `company` field is
 >When PHP encounters an input field with a name like `jobeet_job[company]`, it
 >automatically converts it to an array of name `jobeet_job`.
 
-To make things look a bit more clean, let's change the format to `job[%s]` by adding the
-following code at the end of the `configure()` method of `JobeetJobForm`:
+To make things look a bit more clean, let's change the format to `job[%s]` by
+adding the following code at the end of the `configure()` method of
+`JobeetJobForm`:
 
     [php]
 <propel>
@@ -73,8 +73,8 @@ following code at the end of the `configure()` method of `JobeetJobForm`:
     $this->widgetSchema->setNameFormat('job[%s]');
 
 After this change, the `company` name should be `job[company]` in your
-browser. It is now time to actually click on the "Preview your job" button
-and pass valid values to the form:
+browser. It is now time to actually click on the "Preview your job" button and
+pass valid values to the form:
 
     [php]
     // test/functional/frontend/jobActionsTest.php
@@ -105,8 +105,8 @@ and pass valid values to the form:
       end()
     ;
 
-The browser also simulates ~file uploads|File Upload~ if you pass the absolute path to the
-file to upload.
+The browser also simulates ~file uploads|File Upload~ if you pass the absolute
+path to the file to upload.
 
 After submitting the form, we checked that the executed action is `create`.
 
@@ -125,10 +125,10 @@ The form tester has several methods to test the current form status, like the
 errors.
 
 If you make a mistake in the test, and the test does not pass, you can use the
-`with('response')->~debug|Debug~()` statement we have seen during day 9. But you will
-have to dig into the generated HTML to check for error messages. That's not
-really convenient. The form tester also provides a `debug()` method that
-outputs the form status and all error messages associated with it:
+`with('response')->~debug|Debug~()` statement we have seen during day 9. But
+you will have to dig into the generated HTML to check for error messages.
+That's not really convenient. The form tester also provides a `debug()` method
+that outputs the form status and all error messages associated with it:
 
     [php]
     with('form')->debug()
@@ -136,7 +136,7 @@ outputs the form status and all error messages associated with it:
 Redirection Test
 ----------------
 
-As the form is valid, the job should have been created and the user 
+As the form is valid, the job should have been created and the user
 ~redirected|Redirection (Test)~ to the `show` page:
 
     [php]
@@ -162,8 +162,9 @@ Eventually, we want to test that the job has been created in the database and
 check that the `is_activated` column is set to `false` as the user has not
 published it yet.
 
-This can be done quite easily by using yet another ~tester|Testers~, the **##ORM##
-tester**. As the ##ORM## tester is not registered by default, let's add it now:
+This can be done quite easily by using yet another ~tester|Testers~, the
+**##ORM## tester**. As the ##ORM## tester is not registered by default, let's
+add it now:
 
 <propel>
     [php]
@@ -207,8 +208,8 @@ matching the criteria with a Boolean as the third argument (the default is
 Testing for ~Errors~
 --------------------
 
-The job ~form|Forms~ creation works as expected when we submit valid values. Let's add
-a test to check the behavior when we submit non-valid data:
+The job ~form|Forms~ creation works as expected when we submit valid values.
+Let's add a test to check the behavior when we submit non-valid data:
 
     [php]
     $browser->
@@ -244,9 +245,9 @@ form layout.
 
 Now, we need to test the admin bar found on the job preview page. When a job
 has not been activated yet, you can edit, delete, or publish the job. To test
-those three links, we will need to first create a job. But that's a lot of copy
-and paste. As I don't like to waste e-trees, let's add a job creator method in
-the `JobeetTestFunctional` class:
+those three links, we will need to first create a job. But that's a lot of
+copy and paste. As I don't like to waste e-trees, let's add a job creator
+method in the `JobeetTestFunctional` class:
 
     [php]
     // lib/test/JobeetTestFunctional.class.php
@@ -301,12 +302,13 @@ Testing the "Publish" link is now more simple:
     ;
 
 If you remember from day 10, the "Publish" link has been configured to be
-called with the HTTP `~PUT|PUT (HTTP Method)~` method. As browsers don't understand 
-`PUT` requests, the `link_to()` helper converts the link to a form with some
-JavaScript. As the test browser does not execute JavaScript, we need to force
-the method to `PUT` by passing it as a third option of the `click()` method.
-Moreover, the `link_to()` helper also embeds a ~CSRF token~ as we have enabled
-CSRF protection during day 1; the `_with_csrf` option simulates this token.
+called with the HTTP `~PUT|PUT (HTTP Method)~` method. As browsers don't
+understand `PUT` requests, the `link_to()` helper converts the link to a form
+with some JavaScript. As the test browser does not execute JavaScript, we need
+to force the method to `PUT` by passing it as a third option of the `click()`
+method. Moreover, the `link_to()` helper also embeds a ~CSRF token~ as we have
+enabled CSRF protection during day 1; the `_with_csrf` option simulates this
+token.
 
 Testing the "Delete" link is quite similar:
 
@@ -406,8 +408,9 @@ If a job is published, the edit page must return a ~404|404 Error~ status code:
     ;
 
 But if you run the tests, you won't have the expected result as we forgot to
-implement this ~security|Security~ measure yesterday. Writing tests is also a great way
-to discover bugs, as you need to think about all ~edge cases|Edge Cases~.
+implement this ~security|Security~ measure yesterday. Writing tests is also a
+great way to discover bugs, as you need to think about all ~edge cases|Edge
+Cases~.
 
 Fixing the bug is quite simple as we just need to forward to a 404 page if the
 job is activated:
@@ -424,9 +427,9 @@ job is activated:
 
 The fix is trivial, but are you sure that everything else still works as
 expected? You can open your browser and start testing all possible
-combinations to access the edit page. But there is a simpler way: run
-your test suite; if you have introduced a ~regression|Regression~, symfony will tell you
-right away.
+combinations to access the edit page. But there is a simpler way: run your
+test suite; if you have introduced a ~regression|Regression~, symfony will
+tell you right away.
 
 Back to the Future in a Test
 ----------------------------
@@ -611,10 +614,10 @@ steps:
 
 ### Built-in Security Features
 
-The `fromArray()` method takes an array of values and updates the corresponding
-column values. Does this represent a ~security|Security~ issue? What if someone tries to
-submit a value for a column for which he does not have authorization? For
-instance, can I force the `token` column?
+The `fromArray()` method takes an array of values and updates the
+corresponding column values. Does this represent a ~security|Security~ issue?
+What if someone tries to submit a value for a column for which he does not
+have authorization? For instance, can I force the `token` column?
 
 Let's write a test to simulate a job submission with a `token` field:
 
@@ -632,8 +635,8 @@ Let's write a test to simulate a job submission with a `token` field:
       end()
     ;
 
-When submitting the form, you must have an `extra_fields` global error.
-That's because by default forms do not allow extra fields to be present in the
+When submitting the form, you must have an `extra_fields` global error. That's
+because by default forms do not allow extra fields to be present in the
 submitted values. That's also why all form fields must have an associated
 validator.
 
@@ -669,25 +672,22 @@ really want the value, set the `filter_extra_fields` option to `false`:
 
 ### ~XSS~ and ~CSRF~ Protection
 
-During day 1, we created the `frontend` application with the following command
-line:
+During day 1, you learned the the `generate:app` task created a secured
+application by default.
 
-    $ php symfony generate:app --escaping-strategy=on
-       ➥ --csrf-secret=Unique$ecret frontend
+First, it enabled the protection against XSS. It means that all variables used
+in templates are escaped by default. If you try to submit a job description
+with some HTML tags inside, you will notice that when symfony renders the job
+page, the HTML tags from the description are not interpreted, but rendered as
+plain text.
 
-The `--escaping-strategy` option enables the protection against XSS. It means
-that all variables used in templates are escaped by default. If you try to
-submit a job description with some HTML tags inside, you will notice that when
-symfony renders the job page, the HTML tags from the description are not
-interpreted, but rendered as plain text.
-
-The `--csrf-secret` option enabled the CSRF protection. When you provide this
-option, all forms embed a `_csrf_token` hidden field.
+Then, it enabled the CSRF protection. When a CSRF token is set, all forms
+embed a `_csrf_token` hidden field.
 
 >**TIP**
 >The escaping strategy and the CSRF secret can be changed at any time by
 >editing the `apps/frontend/config/settings.yml` ~configuration|onfiguration~
->file. As for the `databases.yml` file, the settings are configurable by 
+>file. As for the `databases.yml` file, the settings are configurable by
 >environment:
 >
 >     [yml]
@@ -703,11 +703,11 @@ option, all forms embed a `_csrf_token` hidden field.
 Maintenance Tasks
 -----------------
 
-Even if symfony is a web framework, it comes with a ~command line|Command Line~ tool.
-You have already used it to create the default directory structure of the
-project and the application, but also to generate various files for the model.
-Adding a new ~task|Tasks~ is quite easy as the tools used by the symfony command line
-are packaged in a framework.
+Even if symfony is a web framework, it comes with a ~command line|Command
+Line~ tool. You have already used it to create the default directory structure
+of the project and the application, but also to generate various files for the
+model. Adding a new ~task|Tasks~ is quite easy as the tools used by the
+symfony command line are packaged in a framework.
 
 When a user creates a job, he must activate it to put it online. But if not,
 the database will grow with stale jobs. Let's create a task that remove stale
@@ -753,8 +753,8 @@ jobs from the database. This task will have to be run regularly in a cron job.
       }
     }
 
-The task configuration is done in the `configure()` method. Each task must have
-a unique name (`namespace`:`name`), and can have arguments and options.
+The task configuration is done in the `configure()` method. Each task must
+have a unique name (`namespace`:`name`), and can have arguments and options.
 
 >**TIP**
 >Browse the built-in symfony tasks (`lib/task/`) for more examples of usage.
