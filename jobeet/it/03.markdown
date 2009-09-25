@@ -104,12 +104,6 @@ Siccome il database non esiste ancora e non vogliamo prendere decisioni su
 di esso (come realizzarlo), creeremo lo schema a mano modificando un file vuoto
 `config/schema.yml`:
 
->**TIP**
->Si avrà bisogno di creare a mano la cartella `config/doctrine/` nel progetto,
->perché non esiste ancora:
->
->     $ mkdir config/doctrine
-
     [yml]
     # config/doctrine/schema.yml
     JobeetCategory:
@@ -193,6 +187,8 @@ formato YAML.
 >
 >Se non avete familiarità con YAML, è il momento di iniziare ad usarlo, visto
 >che il framework symfony lo utilizza ampiamente per i suoi file di configurazione.
+> Un buon punto di inizio è il componente YAML di symfony
+>[documentazione](http://components.symfony-project.org/yaml/documentation).
 >
 >C'è una cosa importante da ricordare quando si modifica un file
 >YAML: **l'indentazione deve essere fatta con uno o più spazi, mai
@@ -264,25 +260,8 @@ Per questo tutorial useremo ~MySQL~.
 
 Occorre dire a symfony di usare questo database per Jobeet:
 
-<propel>
     $ php symfony configure:database 
       ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
-</propel>
-<doctrine>
-
-Il file `config/~databases.yml~` contiene una connessione riferita a propel.
-Siccome stiamo usando Doctrine, occorre cancellare `config/databases.yml`,
-in modo da poterlo rigenerare per Doctrine.
-
-    $ rm config/databases.yml
-
-Ora eseguiamo i comandi seguenti per generare un nuovo file di configurazione
-del database per Doctrine:
-
-    $ php symfony configure:database --name=doctrine 
-      ➥ --class=sfDoctrineDatabase 
-      ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
-</doctrine>
 
 Il task `configure:database` accetta tre parametri: il
 [~DSN di PDO~](http://www.php.net/manual/it/pdo.drivers.php), il nome utente
@@ -350,14 +329,12 @@ Per creare le tabelle nel database, si deve eseguire il task `propel:insert-sql`
 
     $ php symfony propel:insert-sql
 
-<propel>
 Dato che questo task elimina le tabelle correnti dal database prima di
 ricrearle, è richiesta una conferma dell'operazione. Si può comunque aggiungere
 il parametro --no-confirmation per saltare questa domanda, cosa che potrebbe
 essere utile durante l'esecuzione di un processo batch non interattivo.
 
     $ php symfony propel:insert-sql --no-confirmation
-</propel>
 
 >**TIP**
 >Come ogni tool da ~riga di comando|Riga di comando~, symfony accetta parametri ed opzioni.
@@ -458,16 +435,11 @@ puliamo la ~cache|Cache~:
 
 >**TIP**
 >Un ~task|Task~ di symfony è composto da un namespace e da un nome. Ognuno può essere
->accorciato se non c'è ambiguità con altri task. Per cui il seguente comando è
->equivalente a `cache:clear`:
+>ccorciato se non c'è ambiguità con altri task. Per cui il seguente comando è
+>equivalente a `propel:build-model`:
 >
->     $ php symfony cache:cl
->     $ php symfony ca:c
->
->Siccome il task `cache:clear` è usato spesso, è stato ulteriormente accorciato
->in:
->
->     $ php symfony cc
+>     $ php symfony propel:build-mo
+>     $ php symfony pro:build-mo
 
 I Dati Iniziali
 ---------------
