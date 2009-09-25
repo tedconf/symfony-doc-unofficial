@@ -21,19 +21,19 @@ Il file di configurazione `factories.yml` contiene un elenco di dichiarazioni di
 
     [yml]
     FACTORY_1:
-      # definizione della factory 1
+      # definizione del factory 1
 
     FACTORY_2:
-      # definizione della factory 2
+      # definizione del factory 2
 
     # ...
 
-I nomi delle factory supportate sono: `controller`, `logger`, `i18n`, `request`,
+I nomi dei factory supportati sono: `controller`, `logger`, `i18n`, `request`,
 `response`, `routing`, `storage`, `user`, `view_cache`, e
 `view_cache_manager`.
 
-Quando `sfContext` inizializza le factory, legge dal file `factories.yml`
-i nomi delle classi delle factory (`class`) ed i relativi parametri (`param`)
+Quando `sfContext` inizializza i factory, legge dal file `factories.yml`
+i nomi delle classi dei factory (`class`) ed i relativi parametri (`param`)
 per configurare i corrispettivi oggetti:
 
     [yml]
@@ -41,14 +41,14 @@ per configurare i corrispettivi oggetti:
       class: NOME_DELLA_CLASSE
       param: { ARRAY DI PARAMETRI }
 
-La possibilità di modificare le factory significa che è possibile usare una classe
+La possibilità di modificare i factory significa che è possibile usare una classe
 personalizzata per istanziare un oggetto del core di symfony piuttosto che quella 
 predefinita. È inoltre possibile cambiare anche il comportamento di queste classi 
 modificando i parametri inviati alle stesse.
 
-Se la classe di una factory non può essere caricata automaticamente, deve essere definito 
+Se la classe di un factory non può essere caricata automaticamente, deve essere definito 
 un parametro `file` che sarà utilizzato per indicare il percorso della classe che verrà
-automaticamente usato prima che la factory sia creata:
+automaticamente usato prima che il factory sia creato:
 
     [yml]
     FACTORY_NAME:
@@ -206,14 +206,14 @@ cambiamenti.
 ### ~`send_http_headers`~
 
 L'opzione `send_http_headers` specifica quando deve essere inviato un
-response headers insieme ad un response content. Questa opzione è particolarmente 
+header di risposta insieme al contenuto della risposta. Questa opzione è particolarmente 
 comoda per fare test, in quanto gli header sono inviati tramite la funzione PHP 
-`header()` che invia avvisi se si sta provando ad inviare headers dopo a qualche tipo
+`header()`, che invia un warning se si sta provando ad inviare header dopo qualche tipo
 di output.
 
 ### ~`charset`~
 
-L'opzione `charset` definisce il charset da utilizzare nel response. Il valore predefinito,
+L'opzione `charset` definisce il charset da utilizzare nella risposta. Il valore predefinito,
 preso dal parametro `charset` nel file `settings.yml`, è quello che serve la maggior parte
 delle volte.
 
@@ -265,7 +265,7 @@ L'opzione `use_flash` abilita o disabilita il componente flash.
 ### ~`default_culture`~
 
 L'opzione `default_culture` definisce la direttiva di traduzione da usare per 
-l'utente che entra nel sito per la prima volta. Se non dichiarato utilizza il valore 
+l'utente che entra nel sito per la prima volta. Se non dichiarato, utilizza il valore 
 `default_culture` impostato nel file `settings.yml`.
 
 >**CAUTION**
@@ -275,7 +275,7 @@ l'utente che entra nel sito per la prima volta. Se non dichiarato utilizza il va
 `storage`
 ---------
 
-La factory storage è usata dalla factory user per salvare i dati dell'utente tra
+Il factory storage è usato dal factory user per salvare i dati dell'utente tra
 una richiesta HTTP e l'altra.
 
 *sfContext Accessor*: `$context->getStorage()`
@@ -310,7 +310,7 @@ autenticazioni e autorizzazioni).
 
 ### `session_set_cookie_params()` parameters
 
-La factory `storage`  chiama la funzione
+Il factory `storage`  chiama la funzione
 [`session_set_cookie_params()`](http://www.php.net/session_set_cookie_params)
 con il valore delle seguenti opzioni:
 
@@ -322,9 +322,9 @@ con il valore delle seguenti opzioni:
  * ~`session_cookie_domain`~: Dominio del cookie, per esempio `www.php.net`. Per
                               rendere visibili i cookie su tutti i sotto domini,
                               il dominio deve essere preceduto da un punto, come `.php.net`.
- * ~`session_cookie_secure`~: Se `true` il cookie sarà inviato solo su connessioni
+ * ~`session_cookie_secure`~: Se `true`, il cookie sarà inviato solo su connessioni
                               sicure.
- * ~`session_cookie_httponly`~: Se è impostato a `true` allora PHP tenterà di inviare il
+ * ~`session_cookie_httponly`~: Se è impostato a `true`, PHP tenterà di inviare il
                                 flag `httponly` quando imposta il cookie di sessione.
 
 >**NOTE**
@@ -621,12 +621,12 @@ Factory cache anonimi
 
 Alcuni factory (`view_cache`, `i18n` e `routing`) possono trarre vantaggio da
 un oggetto cache se definito nella loro configurazione. La configurazione
-dell'oggetto cache è simile per tutti i factory. La chiave `cache` definisce una
-cache factory anonima. Come ogni altro factory, prende le voci `class` e
-`param`. La voce `param` può prendere qualunque opzione disponibile per la data
+dell'oggetto cache è simile per tutti i factory. La chiave `cache` definisce un
+factory cache anonimo. Come ogni altro factory, accetta le voci `class` e
+`param`. La voce `param` può accettare qualunque opzione disponibile per la data
 classe cache.
 
-L'opzione `prefix` è la più importante dal momento che permette di condividere o
+L'opzione `prefix` è la più importante, dal momento che permette di condividere o
 separare una cache tra differenti ambienti/applicazioni/progetti.
 
 *Classi cache disponibili*: `sfAPCCache`, `sfEAcceleratorCache`, `sfFileCache`,

@@ -1584,7 +1584,7 @@ vengono inviati:
     /cache/*
     /log/*
 
-Si possono anche creare file `rsync.txt` e `rsync_include.txt`.
+Si possono anche creare dei file `rsync.txt` e `rsync_include.txt`.
 
 Se è necessario personalizzare i file `rsync*.txt` basati su un server,
 si può passare l'opzione `rsync-dir`:
@@ -1602,7 +1602,7 @@ Il task `project::disable` disabilita un'applicazione in un dato ambiente:
 
     $ php symfony project:disable  applicazione amb
 
-*Alias(es)*: `disable`
+*Alias*: `disable`
 
 | Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
@@ -1622,7 +1622,7 @@ Il task `project::enable` abilita una applicazione in un dato ambiente:
 
     $ php symfony project:enable  applicazione amb
 
-*Alias(es)*: `enable`
+*Alias*: `enable`
 
 | Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
@@ -1912,7 +1912,7 @@ Il task `propel:build-model` crea classi di modelli per lo schema:
     ./symfony propel:build-model
 
 Il task legge le informazioni dello schema in `config/*schema.xml` e/o
-`config/*schema.yml` dal pogetto e da tutti i plugin installati.
+`config/*schema.yml` dal progetto e da tutti i plugin installati.
 
 Si possono mischiare file dello schema YML e XML. Il task convertirà
 quelli YML in XML prima di chiamare il task Propel.
@@ -1920,7 +1920,7 @@ quelli YML in XML prima di chiamare il task Propel.
 Il file con le classi dei moelli sono creati in `lib/model`.
 
 Questo task non sovrascriverà mai le classi personalizzate in  `lib/model`.
-Sostituisce soltanto i files presenti in `lib/model/om` e `lib/model/map`.
+Sostituisce soltanto i file presenti in `lib/model/om` e `lib/model/map`.
 
 ### ~`propel::build-schema`~
 

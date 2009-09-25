@@ -215,20 +215,20 @@ da questa configurazione.
 
 *Predefinito*: none
 
-L'impostazione `default_timezone` definisce la timezone predefinita utilizzata
-da PHP. Può essere una qualsiasi [timezone](http://www.php.net/manual/en/class.datetimezone.php)
-riconosciuta da PHP.
+L'impostazione `default_timezone` definisce il fuso orario predefinito usato
+da PHP. Può essere un qualsiasi [fuso orario](http://www.php.net/manual/en/class.datetimezone.php)
+riconosciuto da PHP.
 
 >**NOTE**
->Se non viene definita nessuna timezone verrà chiesto di definirne una nel file
->`php.ini`. Altrimenti symfony cercherà di indovinare la migliore timezone
+>Se non viene definito nessun fuso orario, verrà chiesto di definirne uno nel file
+>`php.ini`. Altrimenti, symfony cercherà di indovinare il migliore fuso orario
 >applicabile utilizzando la funzione PHP [`date_default_timezone_get()`](http://www.php.net/date_default_timezone_get).
 
 ### ~`cache`~
 
 *Predefinito*: `off`
 
-L'impostazione `cache` abilita o meno il caching dei template.
+L'impostazione `cache` abilita o meno la cache dei template.
 
 >**TIP**
 >La configurazione generale del sistema della cache viene specificata nelle sezioni 
@@ -243,7 +243,7 @@ L'impostazione `cache` abilita o meno il caching dei template.
 
 L'impostazione `etag` abilita e disabilita la generazione automatica degli header 
 HTTP `ETag`. L'ETag generato da symfony è un semplice md5 del contenuto della 
-response.
+risposta.
 
 ### ~`i18n`~
 
@@ -305,7 +305,7 @@ Verrà rimossa in symfony 1.3, in quanto l'ottimizzazione sarà sempre abilitata
 *Predefinito*: `on` per tutti gli ambienti escluso `prod`
 
 L'impostazione `logging_enabled` abilita il sub-framework dei log. Impostandola 
-a `false` si bypassa completamente il meccanismo di log e si ottiene un piccolo
+a `false`, si aggira completamente il meccanismo di log e si ottiene un piccolo
 guadagno in termini di prestazioni.
 
 >**TIP**
@@ -317,7 +317,7 @@ guadagno in termini di prestazioni.
 *Predefinito*: `off` per tutti gli ambienti escluso `dev`
 
 L'impostazione `web_debug` abilita la web debug toolbar. La web debug toolbar 
-viene inserita in una pagina quando il content type della response è HTML.
+viene inserita in una pagina quando il content type della risposta è HTML.
 
 ### ~`error_reporting`~
 
@@ -383,7 +383,7 @@ L'impostazione `check_symfony_version` abilita e disabilita il controllo della
 versione corrente di symfony eseguito ad ogni richiesta. Se abilitato symfony 
 pulirà la cache in modo automatico quando il framework verrà aggiornato.
 
-È vivamente sconsigliato di impostare questo valore su `on` dato che aggiunge
+È vivamente sconsigliato di impostare questo valore su `on`, dato che aggiunge
 un leggero overhead e perché è veramente semplice ripulire la cache quando si
 esegue il deploy di un nuovo progetto. Questa impostazione è utile solamente
 quando molti progetti condividono lo stesso codice symfony, cosa che comunque
