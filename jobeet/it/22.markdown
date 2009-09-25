@@ -1,528 +1,492 @@
-Giorno 22: La Cache
-===================
+Giorno 22: Il rilascio
+======================
 
-Oggi parleremo della ~cache|Cache~. Il framework symfony ha molte strategie di cache
-da offrire. Per esempio i file di ~configurazione|Configurazione~ ~YAML~ sono prima convertiti
-in PHP e poi memorizzati in cache sul filesystem. Abbiamo visto inoltre che
-i moduli generati dall'admin generator sono salvati in cache per avere
-migliori ~performance|Performance~.
+Con la configurazione del sistema della cache di ieri, il sito di Jobeet è
+pronto per essere ~rilasciato|Rilascio~ sui server di produzione.
 
-Ma oggi parleremo di un altro tipo di cache: la cache HTML. Per migliorare le
-performance del vostro sito web potete inserire in cache tutte le pagine HTML o
-solo parte di esse.
+Per ventidue giorni, abbiamo sviluppato Jobeet su una macchina di
+sviluppo e, per molti di voi, questo probabilmente vuol dire la propria
+macchina locale; tranne se sviluppate direttamente sul server di
+produzione, che è sicuramente una pessima idea. Ora è tempo di
+spostare il sito su un server di produzione.
 
-Creare un nuovo ambiente
-------------------------
+Oggi vedremo cosa serve per essere pronti prima di andare in produzione,
+che tipo di ~strategie di rilascio|Strategie di rilascio~ si possono usare e anche gli strumenti
+necessari per un rilascio di successo.
 
-Di default la funzionalità per la cache dei template è abilitata nel file di
-configurazione `settings.yml` per l'~ambiente|Ambienti~ `prod` ma non per quello `test` o
-`dev`:
+Preparare il ~server|Server web~ di produzione
+----------------------------------------------
 
-    [yml]
-    prod:
-      .settings:
-        cache: on
+Prima di rilasciare il progetto in produzione, occorre assicurarsi che
+il server di produzione sia correttamente configurato. Si può rileggere
+il giorno 1, in cui abbiamo spiegato come configurare il server web.
 
-    dev:
-      .settings:
-        cache: off
-
-    test:
-      .settings:
-        cache: off
-
-Siccome abbiamo bisogno di testare la funzionalità di cache prima di andare
-in produzione possiamo attivare la cache per l'ambiente `dev` o possiamo crearne
-uno nuovo. Ricordate che un ambiente è definito dal suo nome (una stringa), un
-front controller associato e opzionalmente un insieme di valori di configurazione
-specifici.
-
-Per giocare con la cache su Jobeet andremo a creare un ambiente `cache`
-simile a quello `prod` ma con le informazioni dei log e di debug disponibili
-nell'ambiente `dev`.
-
-Create il front controller associato con il nuovo ambiente `cache` copiando
-il `dev` front controller `web/frontend_dev.php` in `web/frontend_cache.php`:
-
-    [php]
-    // web/frontend_cache.php
-    if (!in_array(@$_SERVER['REMOTE_ADDR'], array('127.0.0.1', '::1')))
-    {
-      die('You are not allowed to access this file. Check '.basename(__FILE__).' for more information.');
-    }
-
-    require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
-
-    $configuration = ProjectConfiguration::getApplicationConfiguration('frontend', 'cache', true);
-    sfContext::createInstance($configuration)->dispatch();
-
-È tutto quello che dovete fare. Il nuovo ambiente `cache` è utilizzabile. 
-L'unica differenza è il secondo parametro del metodo `getApplicationConfiguration()`,
-che rappresenta il nome dell'ambiente, `cache`.
-
-Potete testare l'ambiente `cache` nel vostro browser chiamando il suo front
-controller:
-
-    http://jobeet.localhost/frontend_cache.php/
+In questa sezione assumeremo che siano già stati installati il server
+web, il database e PHP 5.2.4 o successivo.
 
 >**NOTE**
->Lo script del front controller inizia con una parte di codice che si assicura
->del fatto che la chiamata venga fatta da un indirizzo IP locale. Questa misura 
->di sicurezza protegge il front controller dall'essere chiamato sui server di
->produzione. Parleremo in modo più approfondito di questo argomento nel tutorial
->di domani.
+>Se non si dispone di un accesso SSH al server web, saltare la parte in
+>cui occorre l'accesso alla linea di comando.
 
-Per adesso l'ambiente `cache` eredita la configurazione dalla configurazione di
-default. Modificate il file di configurazione `settings.yml` per aggiungere la 
-configurazione specifica dell'ambiente `cache`:
+### Configurazione del server
 
-    [yml]
-    # apps/frontend/config/settings.yml
-    cache:
-      .settings:
-        error_reporting: <?php echo (E_ALL | E_STRICT)."\n" ?>
-        web_debug:       on
-        cache:           on
-        etag:            off
+Primo, occorre verificare che PHP sia installato con tutte le estensioni
+necessarie e che sia correttamente configurato. Come per il giorno 1,
+useremo lo script `check_configuration.php` fornito da symfony.
+Poiché non installeremo symfony sul server di produzione, scarichiamo
+il file direttamente dal sito di symfony:
 
-In queste impostazioni la funzionalità di cache dei template viene attivata con 
-l'impostazione `cache` mentre la ~web debug toolbar|Web debug toolbar~ è stata abilitata con 
-l'impostazione `web_debug`.
+    http://trac.symfony-project.org/browser/branches/1.2/data/bin/check_configuration.php?format=raw
 
-<propel>
-Siccome vogliamo anche il ~log|Log~ delle query SQL, abbiamo bisogno di cambiare la
-configurazione del database. Modificate `databases.yml` e aggiungete la seguente
-configurazione all'inizio del file:
+Copiamo il file nella cartella principale del web ed eseguiamolo nel
+browser **e** dalla linea di comando:
 
-    [yml]
-    # config/databases.yml
-    cache:
-      propel:
-        class: sfPropelDatabase
-        param:
-          classname: DebugPDO
-</propel>
+    $ php check_configuration.php
 
-Visto che la configurazione di default salva in cache tutte le impostazioni
-avrete bisogno di cancellarla prima di poter vedere i cambiamenti nel vostro
-browser:
+Risolviamo ogni errore fatale trovato dallo script e ripetiamo il processo
+finché tutto non sia a posto in **entrambi** gli ambienti.
+
+### ~Acceleratore~ PHP
+
+Per il server di produzione, probabilmente si vorranno le migliori
+performance possibili. Installare un
+[acceleratore PHP](http://en.wikipedia.org/wiki/PHP_accelerator)
+fornirà il miglioramento ottimale per i vostri soldi.
+
+>**NOTE**
+>Da Wikipedia: Un acceleratore PHP funziona mettendo in cache il bytecode
+>compilato degli script PHP, per evitare l'overhead dell'analisi e della
+>compilazione del codice sorgente in ogni richiesta.
+
+[~APC~](http://www.php.net/apc) è uno dei più popolari ed è molto facile
+installarlo:
+
+    $ pecl install APC
+
+A seconda del proprio sistema operativo, lo si potrà installare anche con
+il gestore dei pacchetti nativo.
+
+>**NOTE**
+>Prendetevi un po' di tempo per imparare a
+>[configurare APC](http://www.php.net/manual/it/apc.configuration.php).
+
+
+Le librerie di symfony
+----------------------
+
+### Includere symfony
+
+Uno dei grandi punti di forza di symfony è che il progetto è auto-contenuto.
+Tutti i file necessari al progetto sono sotto la cartella principale del
+progetto. E si può spostare il progetto in un'altra cartella senza
+cambiare nulla all'interno del progetto stesso, perché symfony usa solo
+percorsi relativi. Ciò vuol dire che la cartella sul server di
+produzione non deve essere la stessa della propria macchina di
+sviluppo.
+
+Il solo percorso assoluto che si può eventualmente trovare è nel file
+`config/ProjectConfiguration.class.php`; ma ce ne siamo occupati durante
+il giorno 1. Verifichiamo che contenga veramente un percorso relativo
+all'autoloader principale di symfony:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    require_once dirname(__FILE__).'/../lib/vendor/symfony/lib/autoload/sfCoreAutoload.class.php';
+
+### ~Aggiornare|Aggiornamento~ symfony
+
+Anche se tutto è auto-contenuto in una singola cartella, aggiornare symfony
+ad una nuova versione è ugualmente facilissimo.
+
+Si potrebbe voler aggiornare ogni volta symfony all'ultima versione,
+perché si risolvono continuamente bug ed eventuali questioni
+di sicurezza. La buona notizia è che tutte le versioni di
+symfony sono mantenute per almeno un anno e che durante il periodo
+di manutenzione non vengono mai aggiunte nuove feature, nemmeno le
+più piccole. Quindi è sempre rapido e sicuro aggiornare da una
+versione minore ad un'altra.
+
+Aggiornare symfony è semplice come cambiare il contenuto della
+cartella `lib/vendor/symfony/`. Se symfony è già stato installato
+da un archivio, cancellare i file attuali e sostituirli con quelli nuovi.
+
+Se si usa ~Subversion~ per il progetto, si può anche collegare il progetto
+all'ultimo tag di symfony 1.2:
+
+    $ svn propedit svn:externals lib/vendor/
+      # symfony http://svn.symfony-project.com/tags/RELEASE_1_3_1/
+
+Aggiornare symfony è allora semplice come cambiare il tag dell'ultima
+versione di symfony.
+
+Si può anche usare il ramo 1.2 per avere gli aggiornamenti in
+tempo reale:
+
+    $ svn propedit svn:externals lib/vendor/
+      # symfony http://svn.symfony-project.com/branches/1.2/
+
+Ora, ogni volta che si fa un `svn up`, si avrà l'ultima versione di
+symfony 1.2.
+
+Quando si aggiorna ad una nuova versione, si consiglia di pulire sempre
+la cache, specialmente nell'ambiente di produzione:
 
     $ php symfony cc
 
-Ora se aggiornate la pagina nel browser la web debug toolbar dovrebbe essere 
-presente nell'angolo in alto a destra della pagina, come succede per l'ambiente
+>**TIP**
+>Se si ha anche un accesso FTP al server di produzione, si può simulare
+>un `symfony cc` semplicemente cancellando tutti i file e le cartelle
+>sotto la cartella `cache/`.
+
+Si può anche testare una nuova versione di symfony senza sostituire
+quella esistente. Se si vuole solo testare una nuova versione e si
+vuole poter tornare indietro facilmente, installare symfony in un'altra
+cartella (ad esempio `lib/vendor/symfony_test`), cambiare il percorso
+nella classe `ProjectConfiguration`, pulire la cache e il gioco è
+fatto. Tornare indietro è facile come cancellare la cartella e
+ricambiare il percorso in `ProjectConfiguration`.
+
+Messa a punto della ~configurazione|Configurazione~
+---------------------------------------------------
+
+### Configurazione del database
+
+La maggior parte delle volte, il database di produzione ha delle
+credenziali diverse rispetto a quello locale. Grazie agli ambienti
+di symfony, è molto facile avere una configurazione diversa
+per il database di produzione:
+
+    $ php symfony configure:database 
+      ➥ "mysql:host=localhost;dbname=prod_dbname" prod_user prod_pass
+
+Si può anche modificare direttamente il file di configurazione `databases.yml`.
+
+### ~Risorse~
+
+Siccome Jobeet usa dei plugin che includono delle ~risorse|Risorse dei plugin~,
+symfony crea un link simbolico relativo nella cartella `web/`. Il task
+`plugin:publish-assets` rigenera o crea tali link, se si installa il plugin
+senza usare il task `plugin:install`:
+
+    $ php symfony plugin:publish-assets
+
+### ~Personalizzare|Personalizzazione~ le ~pagine di errore|Pagine di errore~
+
+Prima di andare in produzione, è meglio personalizzare le
+~pagine predefinite di symfony|Pagine predefinite di symfony~, come
+la pagina "~Page Not Found|Errore 404~" o la pagina dell'eccezione.
+
+Abbiamo già configurato la pagina di errore per il formato `YAML` durante
+il giorno 16, creando dei file `error.yaml.php` e `exception.yaml.php` nella
+cartella `config/error/`. Il file `error.yaml.php` è usato da symfony
+per l'ambiente `prod`, mentre `exception.yaml.php` è usato nell'ambiente
 `dev`.
 
-Configurazione della Cache
---------------------------
-
-La cache dei template di symfony può essere configurata attraverso il file 
-~`cache.yml`~. La configurazione di default per l'applicazione può essere trovata 
-in `apps/frontend/config/cache.yml`:
-
-    [yml]
-    default:
-      enabled:     off
-      with_layout: false
-      lifetime:    86400
-
-Di default, visto che tutte le pagine possono contenere contenuti dinamici, la
-cache è disabilitata in modo globale (`enabled: off`). Non abbiamo bisogno di 
-cambiare questa impostazione dato che abiliteremo la cache pagina per pagina.
-
-L'impostazione `lifetime` definisce la ~durata della cache|Durata della cache~
-lato server in secondi (`86400` secondi equivalgono ad un giorno).
-
->**TIP**
->Potete anche lavorare in modo contrario: abilitare la cache in modo globale e 
->poi disabilitarla su pagine specifiche che non devono essere inserite in cache. 
->Dipende da quale metodo rappresenta quello meno impegnativo per la vostra 
->applicazione.
-
-Cache delle pagine
-------------------
-
-Siccome l'homepage di Jobeet sarà probabilmente la pagina più visitata del sito,
-invece che richiedere i dati dal database ogni volta che un utente vi accede, può
-essere inserita in cache.
-
-Create un file `cache.yml` per il modulo `sfJobeetJob`:
-
-    [yml]
-    # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
-    index:
-      enabled:     on
-      with_layout: true
-
->**TIP**
->Il file di configurazione `cache.yml` ha le stesse proprietà di ogni altro file di
->configurazione, come `view.yml`. Significa, per esempio, che potete abilitare la
->cache per tutte le azioni di un modulo utilizzando la chiave speciale `all`.
-
-Se aggiornate la pagina nel browser, vedrete che symfony ha decorato la pagina
-con un box che indica i contenuti inseriti in cache:
-
-![Cache pulita](http://www.symfony-project.org/images/jobeet/1_3/22/fresh_cache.png)
-
-Il box offre alcune preziose informazioni riguardo la cache per il debugging, 
-come la durata di vita della cache e la sua età.
-
-Se aggiornate ancora la pagina il colore del box cambia da verde a giallo 
-indicando che la pagina è stata recuperata dalla cache:
-
-![Cache](http://www.symfony-project.org/images/jobeet/1_3/22/cache.png)
-
-Notate inoltre che nessuna richiesta a database è stata effettuate nel secondo
-caso come mostrato nella web debug toolbar.
-
->**TIP**
->Anche se il linguaggio può cambiare da utente ad utente la cache continuerà a 
->funzionare visto che la lingua è integrata nell'URL.
-
-Quando una pagina è memorizzabile in cache e se la cache non esiste ancora, symfony salva
-l'oggetto di risposta nella cache alla fine della richiesta. Per tutte le richieste
-future symfony invierà la risposta in cache senza richiamare il controllore:
-
-![Flusso della cache di una paginaw](http://www.symfony-project.org/images/jobeet/1_3/22/flow_cache_page.png)
-
-Questo ha un grosso impatto sulle ~performance|Performance~, come potete constatare personalmente
-usando strumenti come [JMeter](http://jakarta.apache.org/jmeter/).
-
->**NOTE**
->Una richiesta in ingresso con un parametro `GET` o inviata con un metodo `POST`,
->`PUT`, o `DELETE` non verrà mai inserita in cache da symfony, indipendentemente dalla 
->configurazione.
-
-La pagina per l'inserimento di un'offerta di lavoro può essere inserita in cache:
-
-    [yml]
-    # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
-    new:
-      enabled:     on
-
-    index:
-      enabled:     on
-
-    all:
-      with_layout: true
-
-Dato che le due pagine possono essere inserite in cache con il layout abbiamo
-creato una sezione `all` che definisce la configurazione di default per
-tutte le azioni del modulo `sfJobeetJob`.
-
-Pulire la Cache
----------------
-
-Se volete pulire la cache delle pagine potete usare il task `cache:clear`:
-
-    $ php symfony cc
-    
-Il task `cache:clear` pulisce tutte le cache di symfony salvate nella cartella
-`cache/`. Inoltre ha delle opzioni per pulire in modo selettivo alcune parti della
-cache. Per eliminare solamente la cache dei template per l'ambiente `cache`
-utilizzate i parametri `--type` e `--env` options:
-
-    $ php symfony cc --type=template --env=cache
-
-Invece di pulire la cache ogni volta che fate delle modifiche potete disabilitare
-la cache aggiungendo ogni query string nell'URL o utilizzando il pulsante 
-"Ignore cache" della web debug toolbar:
-
-![Web Debug Toolbar](http://www.symfony-project.org/images/jobeet/1_3/22/debug.png)
-
-Cache dell'azione
------------------
-
-A volte non potete inserire in cache una pagina intera, ma il template
-dell'~azione|Azione~ può comunque essere inserito. Guardiamola diversamente, potete
-inserire tutto in cache tranne che il layout.
-
-Per l'applicazione Jobeet, non possiamo mettere in cache l'intera pagina,
-perché c'è la barra della cronologia degli ultimi annunci consultati.
-
-Cambiamo la configurazione della cache per il modulo `job_module` di
-conseguenza:
-
-    [yml]
-    # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
-    new:
-      enabled:     on
-
-    index:
-      enabled:     on
-
-    all:
-      with_layout: false
-
-Cambiando l'impostazione di `with_layout` a `false` avrete disabilitato la cache 
-del layout.
-
-Pulite la cache:
-
-    $ php symfony cc
-
-Ricaricate la pagina nel browser per vederne le differenze:
-
-![Cache azione](http://www.symfony-project.org/images/jobeet/1_3/22/action_cache.png)
-
-Anche se il flusso della richiesta è molto simile nel diagramma semplificato, 
-usare la cache senza il layout è molto più dispendioso dal lato delle risorse.
-
-![Flusso della cache dell'azione](http://www.symfony-project.org/images/jobeet/1_3/22/flow_cache_action.png)
-
-Cache di ~Partial~ e ~Component~
---------------------------------
-
-Per i siti web altamente dinamici a volte è impossibile inserire in cache l'intero
-template dell'azione. Per questi casi avete bisogno di configurare la cache ad un
-livello di granularità maggiore. Fortunatamente anche partial e component possono
-essere inseriti in cache.
-
-![Cache di partial](http://www.symfony-project.org/images/jobeet/1_3/22/partial_cache.png)
-
-Inseriamo in cache il component `language` creando un file `cache.yml` per il 
-modulo `sfJobeetLanguage`:
-
-    [yml]
-    # plugins/sfJobeetJob/modules/sfJobeetLanguage/config/cache.yml
-    _language:
-      enabled: on
-
-Configurare la cache per un partial o un component è semplice quanto aggiungere
-una riga con il suo nome. L'opzione `with_layout` non viene presa in considerazione
-per questo tipo di cache visto che non nè avrebbe alcun senso:
-
-![Flusso della cache di Partial e Component](http://www.symfony-project.org/images/jobeet/1_3/22/flow_cache_partial.png)
-
->**SIDEBAR**
->~Contestuale|Cache contestuale~ o no?
->
->Lo stesso component o partial può essere usato in molti template diversi.
->Ad esempio il partial `_list.php` dei lavori può essere usato nei moduli
->`sfJobeetJob` e `sfJobeetCategory`. Siccome la resa è sempre la stessa, il partial
->non dipende dal contesto in cui è usato e la cache è la stessa per
->tutti i template (la cache resta ovviamente diversa per un diverso
->insieme di parametri).
->
->Ma a volte l'output di un partial o di un component sono diversi, a
->seconda dell'azione in cui sono inclusi (pensiamo ad esempio al menù
->laterale di un blog, che cambia leggermente tra la homepage e le pagine
->dei post). In questi casi il partial o il component sono contestuali, e
->la cache deve essere configurata di conseguenza, impostando l'opzione
->`contextual` a `true`:
->
->     [yml]
->     _sidebar:
->       enabled:    on
->       contextual: true
-
-Form in cache
--------------
-
-Memorizzare la pagina di creazione del lavoro in cache è problematico,
-perché essa contiene un form. Per capire meglio il problema, andate
-alla pagina "Post a Job" nel vostro browser, in modo da metterla in cache.
-Quindi cancellate il cookie di sessione e provate di nuovo ad inviare
-il form. Dovreste vedere un messaggio di errore che vi avverte di
-un attacco ~CSRF~:
-
-![CSRF e Cache](http://www.symfony-project.org/images/jobeet/1_3/22/csrf.png)
-
-Perché? Siccome abbiamo configurato un segreto CSRF quando abbiamo creato
-l'applicazione frontend, symfony inserisce un token CSRF in tutti i form.
-Per proteggersi dagli attacchi CSRF, questo token è unico per ogni
-utente e per ogni form.
-
-La prima volta che la pagina viene mostrata, il codice HTML del form
-viene memorizzato nella cache con il token dell'utente attuale. Se
-successivamente arriva un altro utente, la pagina in cache sarà
-mostrata, con il token CSRF del primo utente. Quando si invia
-il form, i token non corrispondono e viene lanciato un errore.
-
-Come possiamo risolvere il problema, visto che sembra legittimo
-memorizzare il form nella cache? Il form di creazione del lavoro non
-dipende dall'utente e non modifica nulla per l'utente attuale. In
-questo caso, non serve nessuna protezione CSRF, quindi possiamo
-rimuovere il token CSRF:
-
-    [php]
-     // plugins/sfJobeetJob/lib/form/JobeetJobForm.class.php
-    class JobeetJobForm extends BaseJobeetJobForm
-    {
-      public function __construct(BaseObject $object = null, $options = array(), $CSRFSecret = null)
-      {
-        parent::__construct($object, $options, false);
-      }
-
-      // ...
-    }
-
-Dopo aver fatto questa modifica, puliamo la cache e riproviamo lo stesso
-scenario, per verificare che ora funzioni come ci si aspetta.
-
-La stessa configurazione deve essere applicata al form della lingua,
-perché è contenuto nel layout e verrà memorizzato in cache. Siccome
-usiamo `sfLanguageForm`, invece di creare una nuova classe, per
-togliere solo il token CSRF, facciamolo dall'azione e dal component
-del modulo `sfJobeetLanguage`:
-
-    [php]
-    // plugins/sfJobeetJob/modules/sfJobeetLanguage/actions/components.class.php
-    class sfJobeetLanguageComponents extends sfComponents
-    {
-      public function executeLanguage(sfWebRequest $request)
-      {
-        $this->form = new sfFormLanguage($this->getUser(), array('languages' => array('en', 'fr')));
-        unset($this->form[$this->form->getCSRFFieldName()]);
-      }
-    }
-
-    // plugins/sfJobeetJob/modules/sfJobeetLanguage/actions/actions.class.php
-    class sfJobeetLanguageActions extends sfActions
-    {
-      public function executeChangeLanguage(sfWebRequest $request)
-      {
-        $form = new sfFormLanguage($this->getUser(), array('languages' => array('en', 'fr')));
-        unset($form[$form->getCSRFFieldName()]);
-
-        // ...
-      }
-    }
-
-`getCSRFFieldName()` restituisce il nome del campo che contiene il token
-CSRF. Togliendo questo campo, il widget ed il validatore associato vengono
-rimossi.
-
-~Rimuovere la cache~
---------------------
-
-Ogni volta che un utente inserisce ed attiva un lavoro, la homepage deve
-essere aggiornata per elencare il nuovo lavoro.
-
-Siccome non abbiamo bisogno che il lavoro appaia in tempo reale nella
-homepage, la strategia migliore è quella di abbassare il tempo di
-scadenza della cache ad un valore accettabile:
-
-    [yml]
-    # plugins/sfJobeetJob/modules/sfJobeetJob/config/cache.yml
-    index:
-      enabled:  on
-      lifetime: 600
-
-Al posto della configurazione predefinita di un giorno, la cache per la
-homepage sarà rimossa automaticamente ogni dieci minuti.
-
-Ma se si vuole aggiornare la homepage non appena un utente attiva un
-nuovo lavoro, basta modificare il metodo `executePublish()` del modulo
-`sfJobeetJob` aggiungendo una pulizia manuale della cache:
-
-    [php]
-    // plugins/sfJobeetJob/modules/sfJobeetJob/actions/actions.class.php
-    public function executePublish(sfWebRequest $request)
-    {
-      $request->checkCSRFProtection();
-
-      $job = $this->getRoute()->getObject();
-      $job->publish();
-
-      if ($cache = $this->getContext()->getViewCacheManager())
-      {
-        $cache->remove('sfJobeetJob/index?sf_culture=*');
-        $cache->remove('sfJobeetCategory/show?id='.$job->getJobeetCategory()->getId());
-      }
-
-      $this->getUser()->setFlash('notice', sprintf('Your job is now online for %s days.', sfConfig::get('app_active_days')));
-
-      $this->redirect($this->generateUrl('job_show_user', $job));
-    }
-
-La cache è gestita dalla classe `sfViewCacheManager`. Il metodo `remove()`
-rimuove la cache associata con un URI interno. Per rimuovere la cache
-per tutti i possibili parametri di una variabile, usare `*` come valore.
-Il valore `sf_culture=*` che abbiamo usato nel codice qui sopra vuol dire
-che symfony rimuoverà la cache per le homepage Inglese e Francese.
-
-Siccome il gestore della cache è `null` quando la cache è disattivata,
-abbiamo inserito la rimozione nella cache in un blocco `if`.
-
->**SIDEBAR**
->La classe `sfContext`
->
->L'oggetto ~`sfContext`~ contiene riferimenti agli oggetti principali di
->symfony, come la richiesta, la risposta, l'utente, eccetera. Siccome
->`sfContext` agisce come un singleton, si può usare l'istruzione
->`sfContext::getInstance()` per ottenerlo in qualsiasi punto, ed avere
->quindi accesso a qualsiasi oggetto principale di symfony:
->
->     [php]
->     $user = sfContext::getInstance()->getUser();
->
->Ogni volta che volete usare `sfContext::getInstance()` in una classe,
->pensateci due volte, perché introduce un forte ~accoppiamento|Accoppiamento~. Quasi
->sempre è meglio passare l'oggetto necessario come parametro.
->
->Si può anche usare `sfContext` come un registro ed aggiungere i propri
->oggetti usando il metodo `set()`. Accetta come parametro un nome
->ed un oggetto, mentre il metodo `get()` può essere usato
->successivamente per recuperare un oggetto in base al nome:
->
->     [php]
->     sfContext::getInstance()->set('job', $job);
->     $job = sfContext::getInstance()->get('job');
-
-~Testare la cache|Test della cache~
------------------------------------
-
-Prima di iniziare, occorre cambiare la configurazione per l'ambiente
-`test`, per abilitare la cache:
+Quindi, per personalizzare la pagina predefinita dell'~eccezione|Gestione delle eccezioni~
+per il ~formato|Formati~ HTML, creiamo due file: `config/error/error.html.php` e
+`config/error/exception.html.php`.
+
+La pagina `404` (pagina non trovata) può essere personalizzata cambiando le
+impostazioni `error_404_module` e `error_404_action`:
 
     [yml]
     # apps/frontend/config/settings.yml
-    test:
-      .settings:
-        error_reporting: <?php echo ((E_ALL | E_STRICT) ^ E_NOTICE)."\n" ?>
-        cache:           on
-        web_debug:       off
-        etag:            off
+    all:
+      .actions:
+        error_404_module: default
+        error_404_action: error404
 
-Testiamo la pagina di creazione di un lavoro:
+Personalizzare la ~struttura|Struttura~ delle cartelle
+------------------------------------------------------
+
+Per strutturare meglio e per standardizzare il codice, symfony ha una
+struttura predefinita di cartelle, con nomi predefiniti. Ma a volte non
+si ha altra scelta che cambiare la struttura, a causa di alcune
+costrizioni esterne.
+
+Si possono configurare i nomi delle cartelle nella classe
+`config/ProjectConfiguration.class.php`.
+
+### La ~cartella radice del web|Cartella radice del web~
+
+Su alcuni host web, non si può modificare il nome della cartella radice
+del web. Ipotizziamo che sul vostro host web sia chiamata `public_html/`
+invece di `web/`:
 
     [php]
-    // test/functional/frontend/jobActionsTest.php
-    $browser->
-      info('  7 - Job creation page')->
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setWebDir($this->getRootDir().'/public_html');
+      }
+    }
 
-      get('/fr/')->
-      with('view_cache')->isCached(true, false)->
+Il metodo `setWebDir()` accetta il percorso assoluto della cartella radice
+del web. Se inoltre si sposta questa cartella altrove, non dimenticate di
+modificare gli script dei front controller per verificare che i percorsi
+del file `ProjectConfiguration` siano ancora validi:
 
-      createJob(array('category_id' => $browser->getProgrammingCategory()->getId()), true)->
+    [php]
+    require_once(dirname(__FILE__).'/../config/ProjectConfiguration.class.php');
 
-      get('/fr/')->
-      with('view_cache')->isCached(true, false)->
-      with('response')->checkElement('.category_programming .more_jobs', '/29/')
-    ;
+### Le cartelle ~Cache~ e ~Log~
 
-Il tester `view_cache` è usato per testare la cache. Il metodo `isCached()`
-accetta due booleani:
+Il framework symfony scrive solo in due sotto-cartelle: `cache/` e `log/`.
+Per motivi di ~sicurezza|Sicurezza~, alcuni host web non impostano i
+~permessi di scrittura|Permessi di scrittura~ per la cartella principale.
+In questo caso, si possono spostare queste cartelle da qualche altra parte:
 
-  * Se la pagina deve essere in cache o no
-  * Se la cache è col layout o no
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->setCacheDir('/tmp/symfony_cache');
+        $this->setLogDir('/tmp/symfony_logs');
+      }
+    }
+
+Come per il metodo `setWebDir()`, `setCacheDir()` e `setLogDir()` accettano
+un percorso assoluto rispettivamente alle cartelle `cache/` e `log/`.
+
+I ~factory|Factory~
+-------------------
+
+Durante il tutorial Jobeet, abbiamo parlato degli oggetti principali di
+symfony, come `sfUser`, `sfRequest`, `sfResponse`, `sfI18N`,
+`sfRouting`, eccetera. Questi oggetti sono automaticamente creati,
+configurati e gestiti dal framework symfony. Sono sempre accessibili
+dall'oggetto ~`sfContext`~ e, come molte altre cose nel framework, sono
+configurabili tramite un file di configurazione: ~`factories.yml`~.
+Questo file è configurabile per ambiente.
+
+Quando `sfContext` inizializza i factory principali, esso legge il file
+`factories.yml` per i nomi delle classi (`class`) ed i parametri
+(`param`) da passare al costruttore:
+
+    [yml]
+    response:
+      class: sfWebResponse
+      param:
+        send_http_headers: false
+
+Nel codice precedente, per creare un factory per la risposta, symfony
+instanzia un oggetto `sfWebResponse` e passa l'opzione `send_http_headers`
+come parametro.
+
+La possibilità di personalizzare i factory vuol dire che si può usare
+una classe personalizzata per gli oggetti principali di symfony, al
+posto di quelli predefiniti. Si può anche cambiare il comportamento
+standard di tali classi, cambiando i parametri da inviare loro.
+
+Diamo uno sguardo ad alcune classiche personalizzazioni che vorreste
+fare.
+
+### Nome del ~cookie|Cookie~
+
+Per gestire la ~sessione|Sessione~, symfony usa un cookie. Questo cookie ha come
+nome predefinito `symfony`, il quale può essere cambiato in `factories.yml`.
+Sotto la chiave `all`, aggiungere la seguente configurazione per
+cambiare il nome del cookie in `jobeet`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    storage:
+      class: sfSessionStorage
+      param:
+        session_name: jobeet
+
+### Memorizzazione della sessione
+
+La classe di memorizzazione predefinita della sessione è `sfSessionStorage`.
+Essa usa il filesystem per memorizzare le informazioni sulla sessione. Se si
+hanno molti server web, probabilmente si vorranno memorizzare le sessioni in
+un posto unico, come una tabella di database:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    storage:
+      class: sfPDOSessionStorage
+      param:
+        session_name: jobeet
+        db_table:     session
+<propel>
+        database:     propel
+</propel>
+<doctrine>
+        database:     doctrine
+</doctrine>
+        db_id_col:    id
+        db_data_col:  data
+        db_time_col:  time
+
+### Scadenza della sessione
+
+Per default, la sessione dell'utente scade dopo `1800` secondi. Si può cambiare
+modificando la voce `user`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    user:
+      class: myUser
+      param:
+        timeout: 1800
+
+### ~Log~
+
+Per default, non ci sono log nell'~ambiente|Ambienti~ `prod`, essendo il
+nome della classe `sfNoLogger`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    prod:
+      logger:
+        class:   sfNoLogger
+        param:
+          level:   err
+          loggers: ~
+
+Si può ad esempio abilitare il log su filesystem cambiando il nome della
+classe in `sfFileLogger`:
+
+    [yml]
+    # apps/frontend/config/factories.yml
+    logger:
+      class: sfFileLogger
+      param:
+        level: error
+        file:  %SF_LOG_DIR%/%SF_APP%_%SF_ENVIRONMENT%.log
+
+>**NOTE**
+>Nel file di configurazione `factories.yml`, le stringhe `%XXX%` sono
+>sostituite con i loro corrispettivi valori dall'oggetto `sfConfig`.
+>Quindi, `%SF_APP%` in un file di configurazione è equivalente a
+>`sfConfig::get('sf_app')` nel codice PHP. Questa notazione può anche
+>essere usata nei file di configurazione `app.yml`. È molto utile quando
+>ci si deve riferire ad un percorso in un file di configurazione senza
+>usare il nome del percorso (`SF_ROOT_DIR`, `SF_WEB_DIR`, ...).
+
+~Rilascio~
+----------
+
+### Cosa rilasciare?
+
+Al rilascio del sito Jobeet su un server di produzione, occorre fare
+attenzione a non rilasciare file non necessari o sovrascrivere file
+caricati dagli utenti, come ad esempio i loghi delle compagnie.
+
+In un progetto symfony, ci sono tre cartelle da escludere dai
+trasferimenti: `cache/`, `log/` e `web/uploads/`. Tutto il resto
+può essere trasferito così com'è.
+
+Per motivi di sicurezza, si potrebbero non voler trasferire i
+front controller che non siano di produzione, come gli script
+`frontend_dev.php`, `backend_dev.php` e `frontend_cache.php`.
+
+### Strategie di rilascio
+
+In questa sezione ipotizzeremo che si abbia un pieno controllo sui
+server di produzione. Se si dispone solamente di un accesso FTP,
+l'unica possibile soluzione è il trasferimento di
+tutti i file ad ogni rilascio.
+
+Il modo più semplice di rilasciare il sito è quello di usare il
+~task|Task~ `project:deploy`. Esso utilizza `SSH` e `rsync` per collegarsi
+e trasferire i file da un computer ad un altro.
+
+I server per il task `project:deploy` possono essere configurati nel
+file di configurazione `config/properties.ini`:
+
+    [ini]
+    # config/properties.ini
+    [production]
+      host=www.jobeet.org
+      port=22
+      user=jobeet
+      dir=/var/www/jobeet/
+
+Per rilasciare su un server `production` appena configurato, usare
+il task `project:deploy`:
+
+    $ php symfony project:deploy production
+
+>**NOTE**
+>Prima di eseguire il task `project:deploy` per la prima volta, occorre
+>collegarsi manualmente al server per aggiungere la chiave nel file
+>degli host conosciuti.
+
+Se si esegue questo comando, symfony simulerà solamente il trasferimento.
+Per rilasciare veramente il sito, aggiungere l'opzione `--go`:
+
+    $ php symfony project:deploy production --go
+
+>**NOTE**
+>Anche se è possibile fornire la password di SSH nel file `properties.ini`,
+>è meglio configurare il server con una chiave SSH per consentire
+>connessioni senza password.
+
+Per default, symfony non trasferirà le cartelle di cui abbiamo parlato nella
+sezione precedente, né gli script dei front controller di `dev`. Questo
+perché il task `project:deploy` esclude i file e le cartelle configurate
+nel file `config/rsync_exclude.txt`:
+
+    # config/rsync_exclude.txt
+    .svn
+    /web/uploads/*
+    /cache/*
+    /log/*
+    /web/*_dev.php
+
+Per Jobeet, occorre aggiungere il file `frontend_cache.php`:
+
+    # config/rsync_exclude.txt
+    .svn
+    /web/uploads/*
+    /cache/*
+    /log/*
+    /web/*_dev.php
+    /web/frontend_cache.php
 
 >**TIP**
->Anche con tutti gli strumenti forniti dal framwork dei test funzionali,
->è a volte più facile diagnosticare i problemi col browser. È molto
->facile farlo. Basta creare un front controller per l'ambiente `test`.
->Anche i ~log|Log~ memorizzati in `log/frontend_test.log` possono rivelarsi
->molto utili.
+>Si può anche creare un file `config/rsync_include.txt` per forzare
+>il trasferimento di alcuni file e cartelle.
+
+Anche se il task `project:deploy` è molto flessibile, si potrebbe
+volerlo personalizzare ulteriormente. Siccome il rilascio varia molto
+a seconda della configurazione e della topologia dei server, non
+esitate ad estendere il task predefinito.
+
+Ogni volta che si rilascia un sito in produzione, non dimenticare di
+pulire la cache, almeno quella di configurazione, sul server di
+produzione:
+
+    $ php symfony cc --type=config
+
+Se alcune rotte sono state cambiate, si dovrà pulire anche la
+cache del routing:
+
+    $ php symfony cc --type=routing
+
+>**NOTE**
+>La pulizia selettiva della cache consente di mantenere alcune parti
+>di cache, come quelle dei template.
 
 A domani
 --------
 
-Come molte altre caratteristiche di symfony, il sotto-framework della cache
-è molto flessibile e consente allo sviluppatore di configurare la cache
-ad un livello di granularità molto fine.
+Il rilascio di un progetto è l'ultima parte del ciclo di vita dello
+sviluppo con symfony. Non vuol dire che abbiamo finito. Al contrario:
+un sito è qualcosa che ha una vita sua. Probabilmente si dovranno
+risolvere dei bug e magari aggiungere nuove feature nel tempo.
+Ma grazie alla struttura di symfony e agli strumenti a
+disposizione, l'aggiornamento del sito sarà facile, veloce
+e sicuro.
 
-Domani parleremo dell'ultimo passo del ciclo di vita di un'applicazione:
-il rilascio su server di produzione.
+Domani è l'ultimo giorno del tutorial Jobeet. Sarà tempo di fare
+un passo indietro e riguardare quello che avete imparato durante
+i ventitré giorni di Jobeet.
 
 __ORM__
