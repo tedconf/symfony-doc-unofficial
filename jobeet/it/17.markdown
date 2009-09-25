@@ -45,8 +45,58 @@ Nella pagina di documentazione di Zend Lucene, la libreria è descritta così:
 >tecnologia, fate riferimento alla
 >[documentazione di Zend Lucene](http://framework.zend.com/manual/en/zend.search.lucene.html).
 
-Zend Lucene è già stato installato ieri come parte dell'installazione di Zend
-Framework, che abbiamo fatto per inviare le email.
+### Installare e configurare Zend Framework
+
+La libreria Zend ~Mail|Librerie di terze parti~ è parte di Zend Framework. Siccome non vogliamo
+l'intero Zend Framework, installeremo solo le parti necessarie nella
+cartella `lib/vendor/`, insieme a symfony stesso.
+
+Innanzitutto, scarichiamo
+[Zend Framework](http://framework.zend.com/download/overview) e
+scompattiamo i file nella cartella `lib/vendor/Zend/`.
+
+>**NOTE**
+>Le istruzioni seguenti sono state testate con la versione 1.8.0 di
+
+Si può ripulire la cartella cancellando tutto tranne i seguenti file e cartelle:
+
+  * `Exception.php`
+  * `Loader/`
+  * `Loader.php`
+  * `Mail/`
+  * `Mail.php`
+  * `Mime/`
+  * `Mime.php`
+  * `Search/`
+
+>**NOTE**
+>La cartella `Search/` non serve per l'invio di email, ma sarà usata per
+>il tutorial di domani.
+
+Quindi, aggiungiamo il seguente codice alla classe `ProjectConfiguration`,
+per fornire un modo semplice per registrare l'autoloader di Zend:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      static protected $zendLoaded = false;
+
+      static public function registerZend()
+      {
+        if (self::$zendLoaded)
+        {
+          return;
+        }
+
+        set_include_path(sfConfig::get('sf_lib_dir').'/vendor'.PATH_SEPARATOR.get_include_path());
+        require_once sfConfig::get('sf_lib_dir').'/vendor/Zend/Loader/Autoloader.php';
+        Zend_Loader_Autoloader::getInstance();
+        self::$zendLoaded = true;
+      }
+
+      // ...
+    }
 
 Indicizzazione
 --------------
