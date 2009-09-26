@@ -10,7 +10,7 @@ factories.yml設定ファイル
 
 アプリケーション用のメインの`factories.yml`設定ファイルは`apps/APP_NAME/config/`ディレクトリで見つかります。
 
-はじめの章で説明したように、`factories.yml`ファイルは[**環境を認識し**](#chapter_03_environment_awareness)、[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を含むことができます。
+はじめの章で説明したように、`factories.yml`ファイルは[**環境を認識し**](#chapter_03_environment_awareness)、[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を格納することができます。
 
 `factories.yml`設定ファイルは名前つきのファクトリのリストを格納します:
 
@@ -156,7 +156,7 @@ factories.yml設定ファイル
 ### ~`formats`~
 
 `formats`オプションはファイル拡張子と`Content-Type`の配列です。
-リクエストURIの拡張子に基づいて、レスポンスの`Content-Type`を自動的に管理するためにsymfonyによって使われます。
+リクエストURIの拡張子に基づいて、レスポンスの`Content-Type`を自動管理するためにsymfonyによって使われます。
 
 ### ~`relative_url_root`~
 
@@ -188,7 +188,7 @@ factories.yml設定ファイル
 
 ### ~`send_http_headers`~
 
-`send_http_headers`オプションはレスポンスがレスポンス内に含まれるコンテンツと一緒にHTTPレスポンスヘッダーを送信するかを指定します。
+`send_http_headers`オプションはレスポンス内に含まれるコンテンツと一緒にHTTPレスポンスヘッダーを送信するかを指定します。
 この設定は出力の後でヘッダーを送信しようとすると警告を発するPHPの`header()`関数でヘッダーが送信されるので、テストの際に便利です。
 
 ### ~`charset`~
@@ -280,7 +280,7 @@ factories.yml設定ファイル
 
 ### ~`session_name`~
 
-`session_name`オプションはユーザーセッションを保存するためにsymfonyによって使用されるCookieの名前を定義します。デフォルトの名前は`symfony`で、すべてのアプリケーションが同じCookieを共有することを意味します(そして対応する認証と権限付与も)。
+`session_name`オプションはユーザーセッションを保存するためにsymfonyによって使われるCookieの名前を定義します。デフォルトの名前は`symfony`で、すべてのアプリケーションが同じCookieを共有することを意味します(そして対応する認証と権限付与も)。
 
 ### `session_set_cookie_params()`パラメーター
 
@@ -459,7 +459,7 @@ symfony 1.0もしくは1.1のふるまいを代替するには`false`にセッ�
 
 ### ~`suffix`~
 
-*デフォルト*: none
+*デフォルト*: なし
 
 すべてのルートに使われるデフォルトのサフィックスです。このオプションは非推奨でもはや役に立ちません。
 

@@ -4,7 +4,7 @@ security.yml設定ファイル
 ~`security.yml`~設定ファイルにsymfonyアプリケーション用の認証と認可を記述します。
 
 >**TIP**
->`security.yml`ファイルからの設定情報は[`user`](#chapter_05_user)ファクトリクラス(デフォルトは`sfBasicSecurityUser`)によって使われます。
+>`security.yml`ファイルからのコンフィギュレーション情報は[`user`](#chapter_05_user)ファクトリクラス(デフォルトは`sfBasicSecurityUser`)によって使われます。
 >認証と認可の施行は`security`[フィルター](#chapter_12_security)によって行われます。
 
 アプリケーションが作成されるとき、symfonyはアプリケーションの`config/`ディレクトリにデフォルトの`security.yml`ファイルを生成します。
@@ -14,9 +14,9 @@ security.yml設定ファイル
     default:
       is_secure: off
 
-はじめの章で説明したように、`security.yml`ファイルは[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を含むことができます。
+はじめの章で説明したように、`security.yml`ファイルは[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を格納することができます。
 
-アプリケーションのデフォルト設定はモジュールの`config/`ディレクトリで`security.yml`ファイルを作成することでオーバーライドできます。
+アプリケーションのデフォルトコンフィギュレーションはモジュールの`config/`ディレクトリで`security.yml`ファイルを作成することでオーバーライドできます。
 メインキーはプレフィックスの`execute`を伴わないアクションの名前です(たとえば`index`キーは`executeIndex`メソッドの設定)。
 
 アクションがセキュアかどうかを判断するために、symfonyは次の順序で情報を探します:

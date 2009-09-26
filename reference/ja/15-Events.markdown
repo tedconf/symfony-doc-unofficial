@@ -6,12 +6,12 @@ Event Dispatcherはコアコンポーネントの間のコミュニケーショ�
 
 オブジェクトはディスパッチャーにイベントを通知し、他のオブジェクトは特定のイベントをリスニングするためにディスパッチャーに接続できます。
 
-イベントはドット(`.`)で区切られた名前空間と名前でコンフィギュレーションされる単なる名前です。
+イベントはドット(`.`)で区切られた名前空間と名前で構成される単なる名前です。
 
 使い方
 ------
 
-最初にイベントオブジェクトを作成することでイベントを通知できます:
+最初にイベントオブジェクトを作ることでイベントを通知できます:
 
     [php]
     $event = new sfEvent($this, 'user.change_culture', array('culture' => $culture));
@@ -20,7 +20,7 @@ Event Dispatcherはコアコンポーネントの間のコミュニケーショ�
 
     $dispatcher->notify($event);
 
-`sfEvent`コンストラクタは3つの引数を受け取ります:
+`sfEvent`コンストラクターは3つの引数を受け取ります:
 
   * イベントの"subject"(たいていの場合、これはイベントを通知するオブジェクトだが
     `null`にもなる)
@@ -42,12 +42,12 @@ Event Dispatcherはコアコンポーネントの間のコミュニケーショ�
     [php]
     public function listenToChangeCultureEvent(sfEvent $event)
     {
-      // 新しいcultureでメッセージフォーマットオブジェクトを変更する
+      // メッセージフォーマットオブジェクトを新しいcultureで変更する
       $this->setCulture($event['culture']);
     }
 
 リスナーは最初の引数としてイベントを受け取ります。
-イベントオブジェクトはイベントの情報を得るためのいくつかのメソッドを持ちます:
+イベントオブジェクトはイベントの情報を得るためのメソッドをいくつか持ちます:
 
   * `getSubject()`: イベントに添付するsubjectオブジェクトを取得する
   * `getParameters()`: イベントパラメーターを返す
@@ -74,7 +74,7 @@ Event Dispatcherはコアコンポーネントの間のコミュニケーショ�
 
 チェーンを停止させるリスナーは`setReturnValue()`メソッドを呼び出すこともできます。
 
-notifierはリスナーは`isProcessed()`メソッドを呼び出すことで処理されたイベントが保有されているかチェックできます:
+通知元のオブジェクトはリスナーは`isProcessed()`メソッドを呼び出すことで処理されたイベントが保有されているかチェックできます:
 
     [php]
     if ($event->isProcessed())
@@ -85,11 +85,11 @@ notifierはリスナーは`isProcessed()`メソッドを呼び出すことで処
 ### `filter`
 
 `filter()`メソッドはすべてのリスナーを通知します。
-これらは与えられた値をフィルタリング可能で、notifierによって2番目の引数として渡され、3番目の引数としてリスナーのcallableによって読み取りされます。
+これらは任意の値をフィルタリング可能で、通知元オブジェクトによって2番目の引数として渡され、3番目の引数としてリスナーのcallableによって読み取りされます。
 すべてのリスナーには値が渡され、これらはフィルタリングされた値を返さなければなりません。
 すべてのリスナーの実行は保証されます。
 
-notifierは`getReturnValue()`メソッドを呼び出すことでフィルタリングされた値を取得できます:
+通知元オブジェクトは`getReturnValue()`メソッドを呼び出すことでフィルタリングされた値を取得できます:
 
     [php]
     $ret = $event->getReturnValue();
@@ -167,7 +167,7 @@ notifierは`getReturnValue()`メソッドを呼び出すことでフィルタリ
 
 *デフォルトの通知元クラス*: `sfException`
 
-リクエストの処理の間に補足されない例外が投げられるときに`application.throw_exception`イベントが通知されます。
+リクエスト処理の間に補足されない例外が投げられるときに`application.throw_exception`イベントが通知されます。
 
 補足されない例外が投げられたときに特別なことを行うためにこのイベントをリスニングできます(Emailメールを送信する、もしくはエラーをロギングするなど)。
 イベントを処理することでsymfonyのデフォルトの例外管理メカニズムをオーバーライドすることもできます。
@@ -185,7 +185,7 @@ notifierは`getReturnValue()`メソッドを呼び出すことでフィルタリ
 | ---------- | -----------
 | `priority` | 優先順位(`sfLogger::EMERG`、`sfLogger::ALERT`、`sfLogger::CRIT`、`sfLogger::ERR`、 `sfLogger::WARNING`、`sfLogger::NOTICE`、`sfLogger::INFO`、もしくは`sfLogger::DEBUG`)
 
-`command.log`イベントはsymfonyのCLIユーティリティーでロギングを行うために
+`command.log`イベントはsymfonyのCLIユーティリティでロギングを行うために
 symfonyによって利用されるメカニズムです。(`logger`ファクトリを参照)。
 
 ### ~`command.pre_command`~
@@ -199,7 +199,7 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 | `arguments` | CLIに渡される引数の配列
 | `options`   | CLIに渡されるオプションの配列
 
-タスクが実行される直前に`command.pre_command`イベントが通知されます。
+タスクの実行直前に`command.pre_command`イベントが通知されます。
 
 ### ~`command.post_command`~
 
@@ -207,7 +207,7 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 
 *デフォルトの通知元クラス*: `sfTask`
 
-タスクが実行される直後に`command.post_command`イベントが通知されます。
+タスクの実行直後に`command.post_command`イベントが通知されます。
 
 ### ~`command.filter_options`~
 
@@ -314,7 +314,7 @@ symfonyによって利用されるメカニズムです。(`logger`ファクト�
 | `module`    | 404エラーを生成するモジュールの名前
 | `action`    | 404エラーを生成するアクションの名前
 
-リクエストの処理の間に404エラーが生成されたときに`controller.page_not_found`が通知されます。
+リクエスト処理の間に404エラーが生成されたときに`controller.page_not_found`が通知されます。
 
 Eメールを送信する、エラー、イベントをロギングするなど、404ページが表示されるときに
 何か特別なことを行うためにこのイベントをリスニングできます。
@@ -443,7 +443,7 @@ Eメールを送信する、エラー、イベントをロギングするなど�
 
 *デフォルトの通知元クラス*: `sfRouting`
 
-routingファクトリがルーティング設定をロードするときに`routing.load_configuration`イベントが
+routingファクトリがルーティングコンフィギュレーションをロードするときに`routing.load_configuration`イベントが
 通知されます。
 
 `task`
@@ -458,7 +458,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 | パラメーター | 説明
 | --------- | -----------
 | `app`     | アプリケーションの名前
-| `type`    | キャッシュの種類(`all`、`config`、`i18n`、`routing`、`module`、と`template`)
+| `type`    | キャッシュの種類(`all`、`config`、`i18n`、`routing`、`module`と`template`)
 | `env`     | 環境
 
 ユーザーが`cache:clear`タスクでCLIからキャッシュをクリアするときに
@@ -552,7 +552,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 | `method`    | 呼び出され見つからないメソッドの名前
 | `arguments` | メソッドに渡される引数
 
-メソッドが`sfView`クラスで定義されたときに`view.method_not_found`イベントが通知されます。
+メソッドが`sfView`クラスで定義されるときに`view.method_not_found`イベントが通知されます。
 このイベントをリスニングすることで、継承を使わずに、クラスにメソッドを追加できます。
 
 `view.cache`
@@ -567,7 +567,7 @@ routingファクトリがルーティング設定をロードするときに`rou
 | パラメーター  | 説明
 | ---------- | -----------
 | `response` | レスポンスオブジェクト
-| `uri`      | キャッシュされたコンテンツのURI
+| `uri`      | キャッシュされるコンテンツのURI
 | `new`      | コンテンツがキャッシュの中で新しいものかどうか
 
-コンテンツがキャッシュから読み取られるときに`view.cache.filter_content`イベントが通知されます。
+コンテンツがキャッシュから読み込まれるときに`view.cache.filter_content`イベントが通知されます。

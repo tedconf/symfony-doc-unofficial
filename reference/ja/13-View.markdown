@@ -3,7 +3,7 @@ view.yml設定ファイル
 
 Viewレイヤーは`view.yml`設定ファイルを編集することで設定できます。
 
-はじめの章で説明したように、`view.yml`ファイルは[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、[**定数**](#chapter_03_constants)を含む事ができます。
+はじめの章で説明したように、`view.yml`ファイルは[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効で、[**定数**](#chapter_03_constants)を格納することができます。
 
 >**CAUTION**
 >アクションから呼び出されるテンプレートもしくはメソッドで直接使われるヘルパーのためにたいていの場合この設定ファイルは非推奨です。
@@ -52,9 +52,9 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで設定で
 `stylesheets`エントリは現在のビューで使うスタイルシートの配列を定義します。
 
 >**NOTE**
->`view.yml`で定義されたスタイルシートのインクルードは`include_stylesheets()`ヘルパーによる手動もしくは[commonフィルター](#chapter_12-Filters_sub_common)で自動的に行われます。
+>`view.yml`で定義されるスタイルシートのインクルードは`include_stylesheets()`ヘルパーによる手動もしくは[commonフィルター](#chapter_12-Filters_sub_common)で自動的に行われます。
 
-多くのフィルターが定義されている場合、symfonyは定義と同じ順序でこれらをインクルードします:
+複数のフィルターが定義されている場合、symfonyは定義と同じ順序でこれらをインクルードします:
 
     [yml]
     stylesheets: [main.css, foo.css, bar.css]
@@ -125,7 +125,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで設定で
 `http_metas`と`metas`設定はレイアウトにインクルードするメタタグの定義を可能にします。
 
 >**NOTE**
->`view.yml`で定義されたメタタグのインクルードは`include_metas()`と`include_http_metas()`ヘルパーで手動で行うことができます。
+>`view.yml`で定義されるメタタグのインクルードは`include_metas()`と`include_http_metas()`ヘルパーで手動で行うことができます。
 
 静的なメタ情報(Content-Typeなど)に対するレイアウトのHTMを純粋に保つ、もしくは動的なメタ情報(タイトルや説明)のためのスロットのためにこれらの設定は*非推奨*です。
 

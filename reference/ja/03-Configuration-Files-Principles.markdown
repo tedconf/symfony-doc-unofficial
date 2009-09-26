@@ -33,10 +33,10 @@ symfonyのすべての設定ファイルはコンフィギュレーションハ�
 いくつかの設定ファイルはあらかじめ定義されている定数の使用を許容します。
 定数は`%XXX%`(XXXは大文字のキー)で表記されるプレースホルダーで宣言され"コンパイル"の時に実際の値に置き換えられます。
 
-### 設定のコンフィギュレーション
+### コンフィギュレーション設定
 
-定数は`settings.yml`設定ファイルで定義された任意の値を設定することができます。
-プレースホルダーのキーは`SF_`のプレフィックスがつけられた大文字の設定キー名です:
+定数は`settings.yml`設定ファイルで定義される任意の値を設定することができます。
+プレースホルダーのキーは`SF_`のプレフィックスがつけられた大文字の設定キーの名前です:
 
     [yml]
     logging: %SF_LOGGING_ENABLED%
@@ -112,7 +112,7 @@ symfonyは共通のプロジェクトとアプリケーションディレクト�
 
 symfonyの設定ファイルの中には環境を認識するものがあります。
 環境の解釈は現在symfonyが動作している環境に依存します。これら設定ファイルはそれぞれの環境ごとに変化するべき設定を定義するための異なるセクションを持ちます。
-新しいアプリケーションを作成するとき、symfonyは3つのデフォルト環境: `prod`、`test`と`dev`を含む気の利いた設定ファイルを作成します:
+新しいアプリケーションを作成するとき、symfonyは3つのデフォルト環境: `prod`、`test`と`dev`を含む適切な設定ファイルを作成します:
 
     [yml]
     prod:
@@ -138,15 +138,15 @@ symfonyが設定ファイルから値を必要とするとき、現在の環境�
 
 設定ファイルはプロジェクトのディレクトリ構造に格納されるいくつかの`config/`サブディレクトリで定義できます。
 
-設定がコンパイルされるとき、すべての異なるファイルからの値は次の優先順位に従ってマージされます
+コンフィギュレーションがコンパイルされるとき、すべての異なるファイルからの値は次の優先順位に従ってマージされます
 
-  * モジュールの設定(`PROJECT_ROOT_DIR/apps/APP_NAME/modules/MODULE_NAME/config/XXX.yml`)
-  * アプリケーションの設定(`PROJECT_ROOT_DIR/apps/APP_NAME/config/XXX.yml`)
-  * プロジェクトの設定(`PROJECT_ROOT_DIR/config/XXX.yml`)
-  * プラグインで定義される設定(`PROJECT_ROOT_DIR/plugins/*/config/XXX.yml`)
-  * symfonyライブラリで定義されるデフォルト設定(`SF_LIB_DIR/config/XXX.yml`)
+  * モジュールのコンフィギュレーション(`PROJECT_ROOT_DIR/apps/APP_NAME/modules/MODULE_NAME/config/XXX.yml`)
+  * アプリケーションのコンフィギュレーション(`PROJECT_ROOT_DIR/apps/APP_NAME/config/XXX.yml`)
+  * プロジェクトのコンフィギュレーション(`PROJECT_ROOT_DIR/config/XXX.yml`)
+  * プラグインで定義されるコンフィギュレーション(`PROJECT_ROOT_DIR/plugins/*/config/XXX.yml`)
+  * symfonyライブラリで定義されるデフォルトのコンフィギュレーション(`SF_LIB_DIR/config/XXX.yml`)
 
-たとえば、アプリケーションディレクトリで定義される`settings.yml`はプロジェクトのメインの`config/`ディレクトリの設定のセット、およびフレームワーク自身に格納されるデフォルト設定(`lib/config/config/settings.yml`)を継承します。
+たとえば、アプリケーションディレクトリで定義される`settings.yml`はプロジェクトのメインの`config/`ディレクトリのコンフィギュレーションのセット、およびフレームワーク自身に格納されるデフォルトコンフィギュレーション(`lib/config/config/settings.yml`)を継承します。
 
 >**TIP**
 >設定ファイルが環境を認識し複数のディレクトリで定義できる場合、次の優先順位リストが適用されます:
