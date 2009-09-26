@@ -183,6 +183,21 @@ The Doctrine and Propel form classes now include a developer-friendly
 `->doUpdateObject()` method. This method receives an array of values from
 `->updateObject()` that has already been processed by `->processValues()`.
 
+### `sfForm::enableLocalCSRFProtection()` and `sfForm::disableLocalCSRFProtection()`
+
+Using the `sfForm::enableLocalCSRFProtection()` and
+`sfForm::disableLocalCSRFProtection()` methods, you can now easily configure
+the CSRF protection from the `configure()` method of your form classes.
+
+To disable the CSRF protection for a form, add the following line in its
+`configure()` method:
+
+    [php]
+    $this->disableLocalCSRFProtection();
+
+By calling the `disableLocalCSRFProtection()`, the CSRF protection will be
+disabled, even if you pass a CSRF secret when creating a form instance.
+
 Validators
 ----------
 
