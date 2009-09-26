@@ -83,6 +83,24 @@ The first three of them replace the now deprecated
 `sfWidgetFormI18nSelectLanguage`, `sfWidgetFormI18nSelectCurrency`, and
 `sfWidgetFormI18nSelectCountry` widgets.
 
+### Fluent Interface
+
+The widgets now implement a fluid interface for the following methods:
+
+  * `sfWidgetForm`: `setDefault()`, `setLabel()`, `setIdFormat()`,
+    `setHidden()`
+
+  * `sfWidget`: `addRequiredOption()`, `addOption()`, `setOption()`,
+    `setOptions()`, `setAttribute()`, `setAttributes()`
+
+  * `sfWidgetFormSchema`: `setDefault()`, `setDefaults()`,
+    `addFormFormatter()`, `setFormFormatterName()`, `setNameFormat()`,
+    `setLabels()`, `setLabel()`, `setHelps()`, `setHelp()`, `setParent()`
+
+  * `sfWidgetFormSchemaDecorator`: `addFormFormatter()`,
+    `setFormFormatterName()`, `setNameFormat()`, `setLabels()`, `setHelps()`,
+    `setHelp()`, `setParent()`, `setPositions()`
+
 Validators
 ----------
 
@@ -112,6 +130,46 @@ only if the `multiple` option is `true`:
 The following validators have been added:
 
  * `sfValidatorI18nTimezone`
+
+### Default Error Messages
+
+You can now define default error messages globally by using the
+`sfForm::setDefaultMessage()` method:
+
+   [php]
+   sfValidatorBase::setDefaultMessage('required', 'This field is required.');
+
+The previous code will override the default 'Required.' message for all
+validators. Note that the default messages must be defined before any
+validator is created (the configuration class is a good place).
+
+>**NOTE**
+>The `setRequiredMessage()` and `setInvalidMessage()` methods are
+>deprecated and call the new `setDefaultMessage()` method.
+
+When symfony displays an error, the error message to use is determined as
+follows:
+
+ * Symfony looks for a message passed when the validator was created (via the
+   second argument of the validator constructor);
+
+ * If it is not defined, it looks for a default message defined with
+   the `setDefaultMessage()` method;
+
+ * If it is not defined, it falls back to the default message defined by the
+   validator itself (when the message has been added with the `addMessage()`
+   method).
+
+### Fluent Interface
+
+The validators now implement a fluid interface for the following methods:
+
+  * `sfValidatorSchema`: `setPreValidator()`, `setPostValidator()`
+
+  * `sfValidatorErrorSchema`: `addError()`, `addErrors()`
+
+  * `sfValidatorBase`: `addMessage()`, `setMessage()`, `setMessages()`,
+    `addOption()`, `setOption()`, `setOptions()`, `addRequiredOption()`
 
 sfToolkit
 ---------
@@ -198,37 +256,11 @@ To disable the CSRF protection for a form, add the following line in its
 By calling the `disableLocalCSRFProtection()`, the CSRF protection will be
 disabled, even if you pass a CSRF secret when creating a form instance.
 
-Validators
-----------
+### Fluent Interface
 
-### Default Error Messages
-
-You can now define default error messages globally by using the
-`sfForm::setDefaultMessage()` method:
-
-    [php]
-    sfValidatorBase::setDefaultMessage('required', 'This field is required.');
-
-The previous code will override the default 'Required.' message for all
-validators. Note that the default messages must be defined before any
-validator is created (the configuration class is a good place).
-
->**NOTE**
->The `setRequiredMessage()` and `setInvalidMessage()` methods are
->deprecated and call the new `setDefaultMessage()` method.
-
-When symfony displays an error, the error message to use is determined as
-follows:
-
-  * Symfony looks for a message passed when the validator was created (via the
-    second argument of the validator constructor);
-
-  * If it is not defined, it looks for a default message defined with
-    the `setDefaultMessage()` method;
-
-  * If it is not defined, it falls back to the default message defined by the
-    validator itself (when the message has been added with the `addMessage()`
-    method).
+Some `sfForm` methods now implement a fluent interface: `setValidators()`,
+`setValidator()`, `setValidatorSchema()`, `setWidgets()`, `setWidget()`,
+`setWidgetSchema()`, `setOption()`, `setDefault()`, and `setDefaults()`.
 
 Autoloaders
 -----------
