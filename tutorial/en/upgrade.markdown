@@ -171,6 +171,11 @@ The following task classes have been renamed:
   `sfPropelLoadDataTask`    | `sfPropelDataLoadTask`
   `sfPropelDumpDataTask`    | `sfPropelDataDumpTask`
 
+The signature for the `*:data-load` tasks has changed. Specific directories or
+files must now be provided as arguments. The `--dir` option has been removed.
+
+    $ php symfony doctrine:data-load data/fixtures/dev
+
 ### Formatters
 
 The `sfFormatter::format()` third argument has been removed.

@@ -104,6 +104,24 @@ The widgets now implement a fluid interface for the following methods:
 The `sfValidatorRegex` has a new `must_match` option. If set to `false`, the
 regex must not match for the validator to pass.
 
+The `pattern` option of `sfValidatorRegex` can now be an instance of
+`sfCallable` that returns a regex when called.
+
+### `sfValidatorUrl`
+
+The `sfValidatorUrl` has a new `protocols` option. This allows you to specify
+what protocols to allow:
+
+    [php]
+    $validator = new sfValidatorUrl(array('protocols' => array('http', 'https')));
+
+The following protocols are allowed by default:
+
+ * `http`
+ * `https`
+ * `ftp`
+ * `ftps`
+
 ### `sfValidatorSchemaCompare`
 
 The `sfValidatorSchemaCompare` class has two new comparators:
@@ -634,14 +652,13 @@ statement in the `ProjectConfiguration` class.
 ### `sfPluginConfiguration::connectTests()`
 
 You can connect a plugin's tests to the `test:*` tasks by calling that plugin
-configuration's `->connectTests()` method.
+configuration's `->connectTests()` method in the new `setupPlugins()` method:
 
     [php]
     class ProjectConfiguration extends sfProjectConfiguration
     {
-      public function loadPlugins()
+      public function setupPlugins()
       {
-        parent::loadPlugins();
         $this->pluginConfigurations['sfExamplePlugin']->connectTests();
       }
     }
@@ -964,3 +981,33 @@ The content of the request is now accessible via the `getContent()` method.
 When a request comes in with either a PUT or a DELETE HTTP method with a
 content type set to `application/x-www-form-urlencoded`, symfony now parses
 the raw body and makes the parameters accessible like normal POST parameters.
+
+## Action
+
+### `redirect()`
+
+The `sfAction::redirect()` method family is now compatible with the `url_for()`
+signature introduced in symfony 1.2:
+
+    [php]
+    // symfony 1.2
+    $this->redirect(array('sf_route' => 'article_show', 'sf_subject' => $article));
+
+    // symfony 1.3
+    $this->redirect('article_show', $article);
+
+This enhancement was also applied to `redirectIf()` and `redirectUnless()`.
+
+## Helpers
+
+### `link_to_if()`, `link_to_unless()`
+
+The `link_to_if()` and `link_to_unless()` helpers are now compatible with the
+`link_to()` signature introduced in symfony 1.2:
+
+    [php]
+    // symfony 1.2
+    <?php echo link_to_unless($foo, '@article_show?id='.$article->getId()) ?>
+
+    // symfony 1.3
+    <?php echo link_to_unless($foo, 'article_show', $article) ?>
