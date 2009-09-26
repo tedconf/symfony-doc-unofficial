@@ -977,9 +977,9 @@ Two params are available in factories.yml:
 Request
 -------
 
-### `getRawBody()`
+### `getContent()`
 
-The raw body of the request is now accessible via the `getRawBody()` method.
+The content of the request is now accessible via the `getContent()` method.
 
 ### PUT and DELETE parameters
 
