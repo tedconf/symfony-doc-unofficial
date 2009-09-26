@@ -1,0 +1,787 @@
+はじめてのsymfonyのプロジェクト
+==============================
+
+試してみたいですか？1時間で十分な機能を持つWebアプリを一緒に構築しましょう。
+お望みのものは？booksellerアプリケーション？別のアイディアは？blog！
+いいですね。はじめましょう。
+
+このチュートリアルではローカルマシンにApacheをインストールして動かしていることを前提とします。
+PHP 5.2.4およびそれ以降が必要にもなります。
+
+symfonyをインストールしてプロジェクトを初期化する
+-----------------------------------------------
+
+速く進めるために、symfonyサンドボックスを使います。
+これは空のsymfonyプロジェクトですべての必須ライブラリがすでに含まれており、基本的なコンフィギュレーションが行われています。
+他のインストール方法よりも優れたサンドボックスの大きな利点はsymfonyですぐに実験を始められることです。
+
+ここ: [sf_sandbox_1_2.tgz](http://www.symfony-project.org/get/sf_sandbox_1_2.tgz)
+もしくはここ: [sf_sandbox_1_2.zip](http://www.symfony-project.org/get/sf_sandbox_1_2.zip)から入手し、Web公開ディレクトリのrootで展開してください。
+Linuxシステムでは、tarファイルのものと同じパーミッションを維持することが推奨されます(例えば`tar`コマンドで`-p`オプションを指定します)。
+詳細はincluded `README`ファイルを参照してください。 
+結果のファイル構造は次のようになります:
+
+    www/
+      sf_sandbox/
+        apps/
+          frontend/
+        cache/
+        config/
+        data/
+        doc/
+        lib/
+        log/
+        plugins/
+        test/
+        web/
+          css/
+          images/
+          js/
+
+これは`frontend`**アプリケーション*を含む`sf_sandbox`**プロジェクト**を示します。
+次のURLをリクエストしてサンドボックスをテストしてください:
+
+    http://localhost/sf_sandbox/web/index.php/
+
+初期ページを見ることになります。
+
+![初期ページ](/images/tutorials/mfp_1_2/first-congrats.png)
+
+symfonyをカスタムフィルダーにインストールしVirtual HostもしくはAliasで
+Webサーバーをセットアップすることもできます。symfony bookに
+[symfonyのインストール方法](http://www.symfony-project.org/book/1_2/03-Running-Symfony)
+と[symfonyのディレクトリ構造](http://www.symfony-project.org/book/1_2/02-Exploring-Symfony-s-Code)に関する詳細な情報があります。
+
+データモデルを初期化する
+-----------------------
+
+blogは投稿を処理し、これらのコメントを有効にします。
+`sf_sandbox/config/`で`schema.yml`ファイルを作り次のデータモデルをペーストします:
+
+    [yml]
+    propel:
+      blog_post:
+        id:           ~
+        title:        { type: varchar(255), required: true }
+        excerpt:      { type: longvarchar }
+        body:         { type: longvarchar }
+        created_at:   ~
+      blog_comment:
+        id:           ~
+        blog_post_id: ~
+        author:       { type: varchar(255) }
+        email:        { type: varchar(255) }
+        body:         { type: longvarchar }
+        created_at:   ~
+
+この設定ファイルはYAML構文を使います。
+これはとてもシンプルな言語でXMLのようなツリー構造をインデントで記述できます。
+さらに、XMLよりも速く読み書きできます。
+唯一のことは、インデントは意味を持ち、タブが禁止です。
+インデントにスペースを使うことを覚えておいてください。
+[コンフィギュレーションの章](http://www.symfony-project.org/book/1_2/05-Configuring-Symfony)でYAMLとsymfonyのコンフィギュレーションの詳しい情報が見つかります。
+
+このスキーマはblogに必要なテーブルの2つの構造を記述します。
+`blog_post`と`blog_comment`は生成される関連クラスの名前です。
+ファイルを保存し、コマンドラインを開き、`sf_sandbox/`ディレクトリの中で次のコマンドを入力します:
+
+    $ php symfony propel:build-model
+
+>**Note**: 
+>`symfony`コマンドを呼び出すとき、コマンドラインのフォルダーがプロジェクトのroot(`sf_sandbox/`)に設定されていることを確認してください。
+>'Could not perform XLST transformation'というエラーを受け取るのであればphp.iniファイルでphp_xslエクステンションを有効にしてあるかチェックしてください。
+
+少数のクラスが`sf_sandbox/lib/model/`ディレクトリの中に作られます。
+ORMシステムのクラスが存在し、これらによってSQLクエリを書かずにオブジェクト指向のコードからリレーショナルデータベースにアクセスできます。
+デフォルトでは、この目的のためにsymfonyはPropelライブラリを使います。
+これらのクラスはアプリケーションの**モデル**の一部です(詳細は[モデルの章](http://www.symfony-project.org/book/1_2/08-Inside-the-Model-Layer)を参照)。
+
+データベーステーブルを初期化するためにスキーマをSQL文に変換する必要があります。
+デフォルトでは、symfonyのサンドボックスはSQLiteファイルでそのまま動くように設定されているので、データベースの初期化は必要ありません。
+SQLiteエクステンションがインストールされ正しく有効になっているか確認する必要もあります
+(`php.ini`でチェックします - [PHPのドキュメント](http://php.net/manual/ref.sqlite.php))を参照してください。
+
+デフォルトでは、`sf_sandbox`プロジェクトは`sf_sandbox/data/`に設置された`sandbox.db`という名前のデータベースを使います。
+
+MySQLに切り替えたいのであれば、`configure:database`タスクを使います:
+
+    $ php symfony configure:database "mysql:dbname=symfony_project;host=localhost" root mypassword
+
+`symfony_project`データベースが利用可能でパスワードの`mypassword`を使って`root`ユーザーがアクセスできることを確認してください。
+
+設定を満たすようにDSN引数(ユーザー名、パスワード、ホスト、とデータベース名)を変更しコマンドラインもしくはwebインターフェイスでデータベースを作ります([モデルの章](http://www.symfony-project.org/book/1_2/08-Inside-the-Model-Layer)を参照)。
+それから、`sf_sandbox/config/databases.yml`を開き、'phptype'を'mysql'に'database'をMySQLデータベースの名前にセットします。
+
+>**Caution**
+>Unix系でSQLiteをデータベースエンジンとして使うのであれば、パーミッションを変更しなければなりません:
+>
+>     $ chmod 777 data data/sandbox.db
+
+コマンドラインで次のコマンドを入力します:
+
+    $ php symfony propel:build-sql
+
+`sf_sandbox/data/sql/`の中で`lib.model.schema.sql`ファイルが作られます。
+SQL文はこのファイルにあり同じテーブル構造を持つデータベースを初期化するために使われます。
+
+SQLファイルをもとにテーブル構造をビルドするには、次のコマンドを入力します:
+
+    $ php symfony propel:insert-sql
+
+>**Note**: この時点で警告があってもご心配なく。これは正常な動作です。
+>`lib.model.schema.sql`からテーブルを追加する前に、`propel:insert-sql`コマンドは既存のテーブルを削除します。
+>この時点では削除するテーブルは存在しません。
+
+blogの投稿とコメントを作成および編集したいので、モデルスキーマをもとにフォームも生成する必要があります:
+
+    $ php symfony propel:build-forms
+
+このタスクは`sf_sandbox/lib/form/`ディレクトリでクラスを生成します。
+モデルオブジェクトをフォームとして管理するためにこれらのクラスが使われます。
+
+>**Tip**
+>上記のコマンドすべては`propel:build-all`を1つ呼び出すだけで実行できます。
+
+アプリケーションを作る
+----------------------
+
+blogの基本機能は投稿とコメントをCreate、Retrieve、UpdateとDelete(CRUD)することです。
+symfonyを始めたばかりなので、ゼロからsymfonyのコードを書かず、使うコードの生成をsymfonyに任せ必要に応じて修正します。
+symfonyはCRUDインターフェイスを自動的に生成するためのデータモデルを解釈できます:
+
+    $ php symfony propel:generate-module --non-verbose-templates --with-show frontend post BlogPost
+    $ php symfony propel:generate-module --non-verbose-templates frontend comment BlogComment
+    $ php symfony cache:clear
+
+>**Tip**
+>`propel:generate-module`タスクを使う際に、`--non-verbose-templates`オプションを指定しました。
+>任意のタスクの利用可能な引数とオプションの意味を学びたければ、特別な`help`タスクを使います:
+>
+>     $ php symfony help propel:generate-module
+
+2つのモジュール(`post`と`comment`)があり`BlogPost`と`BlogComment`クラスのオブジェクトをこれらで操作します。
+**モジュール**は通常似た目的を持つ1つのページもしくは複数のページのグループを表します。
+新しいモジュールは`sf_sandbox/apps/frontend/modules/`ディレクトリに設置されており、これらは次のURLからアクセスできます:
+
+    http://localhost/sf_sandbox/web/frontend_dev.php/post
+    http://localhost/sf_sandbox/web/frontend_dev.php/comment
+
+コメントをしようとすると、エラーが表示されます。
+symfonyが記事のオブジェクトを文字列に変換する方法を知らないからです。
+`BlogPost`クラス(`lib/model/BlogPost.php`)を編集し`__toString()`メソッドを追加します:
+
+    [php]
+    class BlogPost extends BaseBlogPost
+    {
+      public function __toString()
+      {
+        return $this->getTitle();
+      }
+    }
+
+最後に、`sf_sandbox/web/css/main.css`に次の内容を追加します:
+
+    body, td
+    {
+      font-family: Arial, Verdana, sans-serif;
+      font-size: 12px;
+    }
+
+    td { margin: 4px; padding: 4px; }
+
+blogのコンテンツを増やすために新しい記事をいくつかご自由に作ってください。
+
+![post CRUD](/images/tutorials/mfp_1_2/first-crud.png)
+
+[ジェネレーター](http://www.symfony-project.org/book/1_2/14-Generators)とsymfonyプロジェクトの説明[構造](http://www.symfony-project.org/book/1_2/04-The-Basics-of-Page-Creation)(プロジェクト、アプリケーション、モジュール)の詳細をご覧ください。
+
+>**Note**: 
+>上記のURLにおいて、メインスクリプトの名前 - symfonyでは*フロントコントローラー*と呼ばれます - が`index.php`から`frontend_dev.php`に変更されました。
+>2つのスクリプトは同じアプリケーション(`frontend`)にアクセスしますが、異なる環境にあります。
+>`frontend_dev.php`によって、**開発環境**のアプリケーションにアクセスすれば、スクリーン右上のデバッグツールバーとライブコンフィギュレーションエンジンのような手軽な開発ツールが提供されます。
+>それぞれのページの処理が速く動くように最適化された**運用環境**のフロントコントローラーである`index.php`を使うよりも遅い理由です。
+>運用環境を使い続けたいのであれば、次のURLで`frontend_dev.php/`を`index.php/`に置き換え、変更を見る前にキャッシュをクリアすることをお忘れなく:
+>
+>     $ php symfony cache:clear
+>
+>     http://localhost/sf_sandbox/web/index.php/
+
+[環境](http://www.symfony-project.org/book/1_2/05-Configuring-Symfony#chapter_05_environments)の詳細をご覧ください。
+
+レイアウトを修正する
+-------------------
+
+2つの新しいモジュールの間を往来するために、blogはグローバルナビゲーションが必要です。
+
+グローバルテンプレートの`sf_sandbox/apps/frontend/tempでlates/layout.php`を編集し
+`<body>`タグの内容を変更します:
+
+    [php]
+    <div id="container" style="width:700px;margin:0 auto;border:1px solid grey;padding:10px">
+      <div id="navigation" style="display:inline;float:right">
+        <ul>
+          <li><?php echo link_to('List of posts', 'post/index') ?></li>
+          <li><?php echo link_to('List of comments', 'comment/index') ?></li>
+        </ul>
+      </div>
+      <div id="title">
+        <h1><?php echo link_to('My first symfony project', '@homepage') ?></h1>
+      </div>
+
+      <div id="content" style="clear:right">
+        <?php echo $sf_data->getRaw('sf_content') ?>
+      </div>
+    </div>
+
+1時間は短いので、貧弱なデザインと内部タグのCSSを使うことにご容赦願いします。
+
+![レイアウトのなかのpost CRUD](/images/tutorials/mfp_1_2/first-crud-layout.png)
+
+その場所で、ページのタイトルを変更できます。
+アプリケーションのビュー設定ファイル(`sf_sandbox/apps/frontend/config/view.yml`)を編集し、`title`キーを表示する行を探し適切なものに変更します。
+これらのいくつかの行がハッシュ記号でコメントアウトされていることに注意してください - 望むのであればこれらのコメントを解除できます。
+
+    default:
+      http_metas:
+        content-type: text/html
+
+      metas:
+        title:        The best blog ever
+        #description:  symfony project
+        #keywords:     symfony, project
+        #language:     en
+        robots:       index, follow
+
+ホームページ自身を変更する必要があります。
+ホームページでは`default`モジュールのデフォルトテンプレートが使われます。
+これはフレームワークの中にありますがアプリケーションディレクトリにはありません。
+これを上書きするには、カスタムの`main`モジュールを作ります:
+
+    $ php symfony generate:module frontend main
+
+デフォルトでは、`index`アクションは初期ページのスクリーンを示します。
+これを削除するには、`sf_sandbox/apps/frontend/modules/main/actions/actions.class.php`を編集し次のように`executeIndex()`メソッドの内容を削除します:
+
+    [php]
+    /**
+     * Executes index action
+     *
+     * @param sfRequest $request A request object
+     */
+    public function executeIndex(sfWebRequest $request)
+    {
+    }
+
+歓迎メッセージを表示するために`sf_sandbox/apps/frontend/modules/main/templates/indexSuccess.php`ファイルを編集します:
+
+    [php]
+    <h1>Welcome to my new blog</h1>
+    <p>You are the <?php echo rand(1000,5000) ?>th visitor today.</p>
+
+ホームページがリクエストされたときにどのアクションを実行するのかsymfonyに教えなければなりません。
+これを行うには、`sf_sandbox/apps/frontend/config/routing.yml`を編集して`homepage`ルールを次のように変更します:
+
+    [yml]
+    homepage:
+      url:   /
+      param: { module: main, action: index }
+
+ホームページを再度リクエストして結果をチェックします:
+
+    http://localhost/sf_sandbox/web/frontend_dev.php/
+
+![新しいホームページ](/images/tutorials/mfp_1_2/first-welcome.png)
+
+新しいWebアプリを使い始めましょう。
+テストの記事を作ったことを確認し、記事にコメントのテストもしてください。
+
+詳細は[ビューとテンプレートの章](http://www.symfony-project.org/book/1_2/07-Inside-the-View-Layer)を調べてください。
+
+アクションからのデータをテンプレートに渡す
+-----------------------------------------
+
+速かったでしょう？
+下記の投稿に表示されるコメントを得るために`comment`モジュールを`post`モジュールに混ぜてみましょう。
+
+最初に、投稿コメントを投稿表示テンプレートに利用できるようにする必要があります。
+symfonyでは、この種のロジックは**アクション**で維持されます。 
+アクションファイルの`sf_sandbox/apps/frontend/modules/post/actions/actions.class.php`を編集し4行追加することで`executeShow()`メソッドを変更します:
+
+    [php]
+    public function executeShow(sfWebRequest $request)
+    {
+      $this->blog_post = BlogPostPeer::retrieveByPk($request->getParameter('id'));
+      $this->forward404Unless($this->blog_post);
+
+      $c = new Criteria();
+      $c->add(BlogCommentPeer::BLOG_POST_ID, $request->getParameter('id'));
+      $c->addAscendingOrderByColumn(BlogCommentPeer::CREATED_AT);
+      $this->comments = BlogCommentPeer::doSelect($c);
+    }
+
+`Criteria`と`-Peer`オブジェクトはPropelのオブジェクトリレーショナルマッピングの一部です。
+基本的に、これら4行は現在の`blog_post`に関連するコメントを得るための`blog_comment`テーブルへのSQLクエリを扱います。
+では最後の行を追加することで投稿表示用のテンプレートである`sf_sandbox/apps/frontend/modules/post/templates/showSuccess.php`を修正します:
+
+    [php]
+    // ...
+    <?php use_helper('Text', 'Date') ?>
+
+    <hr />
+    <?php if ($comments) : ?>
+      <p><?php echo count($comments) ?> comments to this post.</p>
+      <?php foreach ($comments as $comment): ?>
+        <p><em>posted by <?php echo $comment->getAuthor() ?> on <?php echo format_date($comment->getCreatedAt()) ?></em></p>
+        <div class="comment" style="margin-bottom:10px;">
+          <?php echo simple_format_text($comment->getBody()) ?>
+        </div>
+      <?php endforeach; ?>
+    <?php endif; ?>
+
+このページは'ヘルパー'と呼ばれる新しいPHP関数を使います。
+これらは通常はより多くの時間とコードを必要とする同じタスクをあなたの代わりに行います。
+最初の投稿用の新しいコメントを作り、リストの番号をクリックするか、もしくは次のURLを直接入力することで、最初の投稿を再度確認します:
+
+    http://localhost/sf_sandbox/web/frontend_dev.php/post/show?id=1
+
+![投稿の下のコメント](/images/tutorials/mfp_1_2/first-comments-under-post.png)
+
+よくなってきています。
+
+アクションをテンプレートにリンクする詳細は[命名慣習](http://www.symfony-project.org/book/1_2/07-Inside-the-View-Layer)を参照してください。
+
+
+別のテーブルに関連するレコードを追加する
+--------------------------------------
+
+現在投稿にコメントを直接追加することはできません;
+投稿を編集したい場合、新しい投稿を作るためにコメント編集セクションに移動し、ドロップダウンメニューを使ってコメントしたい投稿を選びます。
+スクリーンは次のようになります:
+
+![関連コメント](/images/tutorials/mfp_1_2/related-comment-1.png)
+
+それぞれの投稿編集ページにコメント編集機能に直行するためのリンクがあるとよいので、ですので最初にこれをアレンジしてみましょう。
+`sf_sandbox/apps/frontend/modules/post/templates/showSuccess.php`テンプレートにおいて、一番下に次の行を加えます:
+
+    [php]
+    <?php echo link_to('Add a comment', 'comment/new?blog_post_id='.$blog_post->getId()) ?>
+
+`link_to()`ヘルパーは`comment`モジュールの`edit`アクションを指し示すハイパーリンクを作るので、投稿の詳細ページから直接コメントすることができます。 
+しかしながら、この時点で、コメントの編集ページはコメントに関連する投稿を選択するフォーム要素も提供します。
+そのキーを指定するコメント編集ページのURLが呼び出される場合これは(投稿の主キーを含む)隠しフィールドに置き換えるのがベストです。
+
+symfonyでは、フォームはクラスによって管理されます。
+変更を行うために`BlogCommentForm`クラスを編集しましょう。
+`sf_sandbox/lib/form/`ディレクトリのもとに設置されます:
+
+    [php]
+    class BlogCommentForm extends BaseBlogCommentForm
+    {
+      /**
+       * Configure method, called when the form is instantiated
+       */
+      public function configure()
+      {
+        $this->widgetSchema['blog_post_id'] = new sfWidgetFormInputHidden();
+      }
+    }
+
+>**Note**: フォームフレームワークの詳細に関しては、[Forms Book](http://www.symfony-project.org/book/forms/1_2/ja/)を読むことをお勧めします。
+
+それから投稿idはURLに渡されるリクエストパラメーターから自動的に設定されなければなりません。
+これは `comment`モジュールの`executeNew()`メソッドを次のように置き換えることで実現できます。
+
+    [php]
+    class commentActions extends sfActions
+    {
+      public function executeNew(sfWebRequest $request)
+      {
+        $this->form = new BlogCommentForm();
+        $this->form->setDefault('blog_post_id', $request->getParameter('blog_post_id'));
+      }
+
+      // ...
+    }
+
+この変更を行った後で、コメントをつける投稿を明示的に指定しなくてもコメントを直接追加できるようになります:
+
+![関連コメント](/images/tutorials/mfp_1_2/related-comment-2.png)
+
+次に、コメントを追加した後で、コメント編集ページよりもコメントに関連する投稿にユーザーを戻すことが望ましいです。
+これを実現するには、`processForm`メソッドを編集する必要があります。
+`sf_sandbox/apps/frontend/modules/comment/actions/actions.class.php`のなかの次の行を見つけてください:
+
+    [php]
+    if ($request->isMethod('post'))
+    {
+      $this->form->bind($request->getParameter('blog_comment'));
+      if ($this->form->isValid())
+      {
+        $blog_comment = $this->form->save();
+
+        $this->redirect('comment/edit?id='.$blog_comment->getId());
+      }
+    }
+
+そして読み込むようにリダイレクトリンクの行を変更します:
+
+    [php]
+    $this->redirect('post/show?id='.$blog_comment->getBlogPostId());
+
+これによってコメントが保存されるときに、ユーザーがコメントが関連する投稿に戻ることが保証されます。
+特筆する価値のあることが2つあります:
+最初に、保存はフォームオブジェクトでsaveメソッドを呼び出すだけで実現あれます(これはフォームはPropelモデルに関連づけされるのでそれゆえオブジェクトをシリアライズしてデータベースに戻す方法を知っているから)。
+2番目に、ページが順次リフレッシュされるとき、POSTアクションを再び繰り返したいかユーザーに尋ねないようにするために、保存の後で即座にリダイレクトすることです。
+
+はい、このセクションの内容をまとめます。blogが欲しかったですか？
+blogが手に入りました。
+ちなみに、ここでsymfonyのアクションの内容をたくさん取り上げたので、詳細は[マニュアル](http://www.symfony-project.org/book/1_2/06-Inside-the-Controller-Layer)を見るとよいでしょう。
+
+フォームバリデーション
+---------------------
+
+訪問者はコメントを入力できますか、データなしもしくはあきらかに間違ったデータで
+フォームを投稿するとどうなるでしょうか？
+データベースに無効なデータが入ることになります。
+この状況を回避するために、許可されるデータを指定するためにバリデーションルールをセットアップする必要があります。
+
+symfonyがフォームクラスを作成したとき、スクリーンでレンダリングするためのフォーム要素を生成し、スキーマをイントロスペクトすることでデフォルトバリデーションルールも追加されました。
+`blog_post`テーブルでは`title`は必須なので、タイトルなしでフォームを投稿することはできません。
+255文字より長いタイトルを持つ記事を投稿することもできません。
+
+`BlogCommentForm`クラスでこれらのルールをいくつかオーバーライドしてみましょう。
+では、ファイルを開き、`configure()`メソッドの終わりに次のPHPコードを追加します:
+
+    [php]
+    $this->validatorSchema['email'] = new sfValidatorEmail(
+      array('required' => false),
+      array('invalid' => 'The email address is not valid'));
+
+`email`カラム用のバリデーターを再定義することで、デフォルトのふるまいをオーバーライドしました。
+
+この新しいルールが用意されたなら、間違ったEメールアドレスでコメントを保存してみてください
+ - 頑強なフォームがあります！
+たくさんのことが気がつきます: まず第一に、フォームはデータを含み、データはフォーム投稿の間に自動的に保存されます。
+これによってユーザーは入力し直さなくて済みます(通常はプログラマーが手作業でアレンジしなければならない種類のもの)。
+また、エラー(このケースでは)は関連バリデーションテストを失敗したフィールドの隣に表示されます。
+
+フォームの保存プロセスがどのように行われるのか少し説明するのによい機会です。
+これは、`/sf_sandbox/apps/frontend/modules/comment/actions/actions.class.php`で以前編集した次のアクションのコードを使います:
+
+    [php]
+    $this->form = new BlogCommentForm(BlogCommentPeer::retrieveByPk($request->getParameter('id')));
+
+    if ($request->isMethod('post'))
+    {
+      $this->form->bind($request->getParameter('blog_comment'));
+      if ($this->form->isValid())
+      {
+        $blog_comment = $this->form->save();
+
+        $this->redirect('post/show?id='.$blog_comment->getBlogPostId());
+      }
+    }
+
+フォームオブジェクトがインスタンス化された後で、次のことが起こります:
+
+ * コードはHTTPメソッドがPOSTであるかチェックします。
+ * パラメーター配列の`blog_comment`が読み取られます。
+`getParameter()`メソッドはこの名前がフォームの中の値の配列であり、単独の値ではないことを検出し、これらを連想配列として返します(例えばフォーム要素の`blog_comment[author]`は`author`のキーを持つ配列として返される)
+ * フォームオブジェクトのフォーム要素を満たすために値が使われる**バインディング**と呼ばれるプロセスを経てこの連想配列がフォームに送り込まれます。この後で、値は渡されたもしくは失敗したバリデーションチェックのどちらかに決定されます。
+ * フォームが妥当な場合のみ保存に進み、その後でページは即座にshowアクションにリダイレクトします。
+
+![フォームバリデーション](/images/tutorials/mfp_1_2/first-form-validation.png)
+
+Find more about
+[フォームバリデーション](http://www.symfony-project.org/book/forms/1_2/ja/02-Form-Validation).
+
+URLフォーマットを変更する
+------------------------
+
+URLがどのようにレンダリングされるのかお気づきでしたか？
+これらをユーザーと検索エンジンによりフレンドリーにできます。
+投稿タイトルを投稿用のURLとして使ってみましょう。
+
+問題は投稿タイトルがスペースのような特別な文字を含む可能性があることです。
+これらをエスケープするだけなら、URLに`%20`のような見苦しい文字列が含まれるようになるので、クリーンでストリッピングされたタイトルを得るために、モデルを`BlogPost`オブジェクトの新しいメソッドで拡張する必要があります。
+これを行うには、`sf_sandbox/lib/model/`ディレクトリに置かれている`BlogPost.php`を編集し、次のメソッドを追加します:
+
+    [php]
+    public function getStrippedTitle()
+    {
+      $result = strtolower($this->getTitle());
+
+      // strip all non word chars
+      $result = preg_replace('/\W/', ' ', $result);
+
+      // replace all white space sections with a dash
+      $result = preg_replace('/\ +/', '-', $result);
+
+      // trim dashes
+      $result = preg_replace('/\-$/', '', $result);
+      $result = preg_replace('/^\-/', '', $result);
+
+      return $result;
+    }
+
+`post`モジュール用の`permalink`アクションを作ることができます。
+`sf_sandbox/apps/frontend/modules/post/actions/actions.class.php`に次のメソッドを追加します:
+
+    [php]
+    public function executePermalink($request)
+    {
+      $posts = BlogPostPeer::doSelect(new Criteria());
+      $title = $request->getParameter('title');
+      foreach ($posts as $post)
+      {
+        if ($post->getStrippedTitle() == $title)
+        {
+          $request->setParameter('id', $post->getId());
+
+          return $this->forward('post', 'show');
+        }
+      }
+
+      $this->forward404();
+    }
+
+投稿リストはそれぞれの投稿のために`show`アクションの代わりにこの`permalink`アクションを呼び出します。
+`sf_sandbox/apps/frontend/modules/post/templates/indexSuccess.php`において、`id`テーブルヘッダーとセルを削除し、これから`Title`セルを変更します:
+
+    [php]
+    <td><?php echo $blog_post->getTitle() ?></td>
+
+これを行うためには、which uses a named rule we will create in a second:
+
+    [php]
+    <td><?php echo link_to($blog_post->getTitle(), '@post?title='.$blog_post->getStrippedTitle()) ?></td>
+
+さらにもう1つのステップ: `sf_sandbox/apps/frontend/config/`ディレクトリに置かれている`routing.yml`を編集し一番上に次のルールを追加します:
+
+    list_of_posts:
+      url:   /latest_posts
+      param: { module: post, action: index }
+
+    post:
+      url:   /blog/:title
+      param: { module: post, action: permalink }
+
+再度アクションの新しいURLに再度向かいましょう。
+エラーになる場合、ルーティングキャッシュをクリアすることが必要な場合があります。 
+これを行うには、`sf_sandbox`フォルダーの中で次のコマンドラインを入力します:
+
+    $ php symfony cc
+
+![ルーティングされるURL](/images/tutorials/mfp_1_2/first-routing.png)
+
+詳細は[スマートURLの章](http://www.symfony-project.org/book/1_2/09-Links-and-the-Routing-System)で調べてください。
+
+フロントエンドをクリーンナップする
+--------------------------------
+
+これをblogにするのであれば、誰もが投稿を許可されているので少し奇妙に感じるでしょう！ 
+これでは一般的なblogとして機能しないので、テンプレートを少しきれいにしてみましょう。
+
+テンプレートの`sf_sandbox/apps/frontend/modules/post/templates/showSuccess.php`において、次の行を削除することで'edit'リンクを削除します:
+
+    <a href="<?php echo url_for('post/edit?id='.$blog_post->getId()) ?>">Edit</a>
+    &nbsp;
+
+`sf_sandbox/apps/frontend/modules/post/templates/indexSuccess.php`テンプレートにも同じことを行い次のコードを削除します:
+
+    <a href="<?php echo url_for('post/edit') ?>">New</a>
+
+`sf_sandbox/apps/frontend/modules/post/actions/actions.class.php`から次のメソッドも削除します:
+
+ * `executeEdit`
+ * `executeDelete`
+
+このことは読者がさらに投稿できないことを意味します。これは必須です。
+
+バックエンドの生成
+------------------
+
+記事を書けるようにするために、次のコマンドを入力してバックエンドアプリケーションを作りましょう(`sf_sandbox`プロジェクトディレクトリから):
+
+    $ php symfony generate:app backend
+    $ php symfony propel:init-admin backend post BlogPost
+    $ php symfony propel:init-admin backend comment BlogComment
+
+今回は、[adminジェネレーター](http://www.symfony-project.org/book/1_2/14-Generators)を使います。
+これは基本的なCRUDジェネレーターよりもはるかに多くの機能とカスタマイズ方法を提供します。
+
+`frontend`アプリケーションに行った作業のように、グローバルナビゲーションを追加するためにレイアウト(`apps/backend/templates/layout.php`)を編集します:
+
+    <div id="navigation">
+      <ul style="list-style:none;">
+        <li><?php echo link_to('Manage posts', 'post/index') ?></li>
+        <li><?php echo link_to('Manage comments', 'comment/index') ?></li>
+      </ul>
+    </div>
+    <div id="content">
+      <?php echo $sf_data->getRaw('sf_content') ?>
+    </div>
+
+次のURLから開発環境の新しいバックオフィスアプリケーションにアクセスできます:
+
+    http://localhost/sf_sandbox/web/backend_dev.php/post
+
+![生成された基本的なadmin](/images/tutorials/mfp_1_2/first-basic-admin.png)
+
+生成adminの大きな利点は設定ファイルを編集することで簡単にカスタマイズできることです。
+
+`sf_sandbox/apps/backend/modules/post/config/generator.yml`を次のように変更します:
+
+    generator:
+      class:              sfPropelAdminGenerator
+      param:
+        model_class:      BlogPost
+        theme:            default
+        fields:
+          title:          { name: Title }
+          excerpt:        { name: Excerpt }
+          body:           { name: Body }
+          nb_comments:    { name: Comments }
+          created_at:     { name: Creation date }
+        list:
+          title:          Post list
+          layout:         tabular
+          display:        [=title, excerpt, nb_comments, created_at]
+          object_actions:
+            _edit:        ~
+            _delete:      ~
+          max_per_page:   5
+          filters:        [title, created_at]
+        edit:
+          title:          Post detail
+          fields:
+            title:        { type: input_tag, params: size=53 }
+            excerpt:      { type: textarea_tag, params: size=50x2 }
+            body:         { type: textarea_tag, params: size=50x10 }
+            created_at:   { type: input_date_tag, params: rich=on }
+
+`blog_post`テーブルの既存のカラムの間で、adminは`nb_comments`用のカラム(もしくはゲッターメソッド)を
+探すことに注意してください。
+これらは生成された値でカラムではないので、モデル(`sf_sandbox/lib/model/BlogPost.php`)にゲッターを追加します:
+
+    [php]
+    public function getNbComments()
+    {
+      return count($this->getBlogComments());
+    }
+
+変更を確認するためにpostのadministrationスクリーンをリフレッシュします:
+
+![カスタマイズされた生成admin](/images/tutorials/mfp_1_2/first-custom-admin.png)
+
+バックエンドへのアクセスを制限する
+--------------------------------
+
+現在バックエンドアプリケーションは誰でもアクセスできます。それゆえアクセス制限が必要です。
+`apps/backend/config/`の中の`security.yml`という名前をファイルを編集し内容をリセットします:
+
+    all:
+      is_secure: on
+
+ログインしていないかぎり、もはやこれらのモジュールにアクセスできません。 
+しかしながら、現在ログインアクションは存在しません！もちろん、簡単に追加できます。
+これを行うためには、symfonyの公式サイトから適切なプラグイン - sfGuardPluginをインストールしてみましょう。
+次のコマンドを入力してください:
+
+    $ php symfony plugin:install sfGuardPlugin
+
+このコマンドはsymfonyのプラグインレポジトリからプラグインをダウンロードします。
+この時点でコマンドラインはインストールが成功したことを示します:
+
+    $ php symfony plugin:install sfGuardPlugin
+    >> plugin    installing plugin "sfGuardPlugin"
+    >> sfPearFrontendPlugin Attempting to discover channel "pear.symfony-project.com"...
+    >> sfPearFrontendPlugin downloading channel.xml ...
+    >> sfPearFrontendPlugin Starting to download channel.xml (663 bytes)
+    >> sfPearFrontendPlugin .
+    >> sfPearFrontendPlugin ...done: 663 bytes
+    >> sfPearFrontendPlugin Auto-discovered channel "pear.symfony-project.com", alias
+    >> sfPearFrontendPlugin "symfony", adding to registry
+    >> sfPearFrontendPlugin Attempting to discover channel
+    >> sfPearFrontendPlugin "plugins.symfony-project.org"...
+    >> sfPearFrontendPlugin downloading channel.xml ...
+    >> sfPearFrontendPlugin Starting to download channel.xml (639 bytes)
+    >> sfPearFrontendPlugin ...done: 639 bytes
+    >> sfPearFrontendPlugin Auto-discovered channel "plugins.symfony-project.org", alias
+    >> sfPearFrontendPlugin "symfony-plugins", adding to registry
+    >> sfPearFrontendPlugin downloading sfGuardPlugin-2.2.0.tgz ...
+    >> sfPearFrontendPlugin Starting to download sfGuardPlugin-2.2.0.tgz (18,589 bytes)
+    >> sfPearFrontendPlugin ...done: 18,589 bytes
+    >> sfSymfonyPluginManager Installation successful for plugin "sfGuardPlugin"
+
+次に、プラグインを有効にする必要があります。
+ログインシステムを有効にするために`sf_sandbox/apps/backend/config/settings.yml`を次のように編集します。
+`all:`キーのコメントを解除し次の内容を追加します:
+
+    # (Some stuff here)
+    all:
+      .actions:
+        login_module:    sfGuardAuth   # 認証されていないユーザーのときに呼び出される
+        login_action:    signin     # セキュアなページにアクセスしようとする
+
+        secure_module:   sfGuardAuth   # ユーザーが持たないときに呼び出される
+        secure_action:   secure    # アクションに必須のクレデンシャル
+
+      .settings:
+        enabled_modules: [default, sfGuardAuth, sfGuardGroup, sfGuardPermission, sfGuardUser]
+
+では、`sf_sandbox/apps/backend/lib/myUser.class.php`を編集することで新しいユーザーシステムを有効にします:
+
+    [php]
+    class myUser extends sfGuardSecurityUser
+    {
+    }
+
+モデル、フォームとフィルターを組み込む必要がありますので、新しいSQLを生成する必要があり、またデータベースのテーブルを更新する必要があります:
+
+    $ php symfony propel:build-model
+    $ php symfony propel:build-forms
+    $ php symfony propel:build-filters
+    $ php symfony propel:build-sql
+    $ php symfony propel:insert-sql
+
+>**Note**
+>`propel:insert-sql`タスクを立ち上げるとき、symfonyはすべてのテーブルを再作成するためにこれらを削除します。
+>開発でこれが頻繁に繰り替えされるので、symfonyは初期データをフィクスチャに保存できます
+>(詳細は[データベースを投入する](http://www.symfony-project.org/book/1_2/16-Application-Management-Tools#chapter_16_populating_a_database)のセクションを参照)。
+
+またキャッシュをクリアします。最後に次のコマンドを実行してユーザーを作成します:
+
+    $ symfony guard:create-user --application=backend jon SoMePasSwOrD
+
+post administrationモジュールをバックエンドシステムのデフォルトにしましょう。
+これを行うには、`apps/backend/config/routing.yml`ファイルを開き
+`homepage`を見つけます。モジュールを`default`から`post`に変更します。
+
+この時点で、投稿管理機能にアクセスしようとすると(http://localhost/sf_sandbox/web/backend_dev.php/post)、有効なユーザー名とパスワードを入力しなければなりません:
+
+![ログインフォーム](/images/tutorials/mfp_1_2/logon.png)
+
+詳細は[セキュリティ](http://www.symfony-project.org/book/1_2/06-Inside-the-Controller-Layer#chapter_06_action_security)をご覧ください。
+
+まとめ
+------
+
+はい、1時間が過ぎました。
+できました。
+運用環境で2つのアプリケーションを使って遊ぶことができます:
+
+    frontend:   http://localhost/sf_sandbox/web/index.php/
+    backend:    http://localhost/sf_sandbox/web/backend.php/
+
+この時点で、エラーに遭遇する場合、アクションがキャッシュに設置された後で変更したことが原因であることがあります(開発環境のキャッシュは有効ではありません)。
+キャッシュをクリアするには、次のコマンドを入力するだけです:
+
+    $ php symfony cc
+
+ご覧の通り、アプリケーションは速くてスムーズに動きます。
+とてもクールでしょ？
+コードを探求したり、新しいモジュールを追加したり、ページのデザインを変更したりしてみてください。
+
+[公式サイトのwiki](http://trac.symfony-project.org/wiki/ApplicationsDevelopedWithSymfony)に
+あなたが取り組んでいるsymfony製のアプリケーションを掲載することをお忘れなく。
