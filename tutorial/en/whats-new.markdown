@@ -1,5 +1,4 @@
-What's new in symfony 1.3?
-==========================
+# What's new in symfony 1.3?
 
 This tutorial is a quick technical introduction for symfony 1.3.
 It is for developers who have already worked with symfony 1.2
@@ -13,8 +12,7 @@ found in the symfony distribution.
 You will have there all the information needed to safely upgrade
 your projects to symfony 1.3.
 
-Mailer
-------
+## Mailer
 
 As of symfony 1.3, there is a new default mailer based on SwiftMailer 4.1.
 
@@ -38,8 +36,7 @@ message:
 As the mailer is quite powerful, refer to the documentation for more
 information.
 
-Security
---------
+## Security
 
 When a new application is created with the `generate:app` task, the security
 settings are now enabled by default:
@@ -53,8 +50,7 @@ settings are now enabled by default:
     default generated password, by editing the `settings.yml` configuration
     file, or by using the `--csrf-secret` option.
 
-Widgets
--------
+## Widgets
 
 ### Default Labels
 
@@ -101,8 +97,7 @@ The widgets now implement a fluid interface for the following methods:
     `setFormFormatterName()`, `setNameFormat()`, `setLabels()`, `setHelps()`,
     `setHelp()`, `setParent()`, `setPositions()`
 
-Validators
-----------
+## Validators
 
 ### `sfValidatorRegex`
 
@@ -171,8 +166,7 @@ The validators now implement a fluid interface for the following methods:
   * `sfValidatorBase`: `addMessage()`, `setMessage()`, `setMessages()`,
     `addOption()`, `setOption()`, `setOptions()`, `addRequiredOption()`
 
-sfToolkit
----------
+## sfToolkit
 
 The `getTmpDir()` method has been deprecated and is no longer used in the
 symfony core classes. You can replace usage of this method by the built-in
@@ -181,8 +175,7 @@ this method.
 
 This method will be removed in the symfony 1.4.
 
-Forms
------
+## Forms
 
 ### `sfForm::useFields()`
 
@@ -263,8 +256,7 @@ Some `sfForm` methods now implement a fluent interface: `addCSRFProtection()`,
 `setWidget()`, `setWidgetSchema()`, `setOption()`, `setDefault()`, and
 `setDefaults()`.
 
-Autoloaders
------------
+## Autoloaders
 
 All symfony autoloaders are now case-insensitive. PHP is case-insensitive, now
 so is symfony.
@@ -276,8 +268,7 @@ new `sfAutoloadAgain` class will reload the standard symfony autoloader and
 search the filesystem for the class in question. The net effect is that you no
 longer have to run `symfony cc` after adding a new class to a project.
 
-Tests
------
+## Tests
 
 ### Speed up Testing
 
@@ -372,8 +363,7 @@ functional tests. This was not possible in previous versions of symfony.
     [php]
     $browser->addListener('context.load_factories', array($browser, 'listenForNewContext'));
 
-Tasks
------
+## Tasks
 
 The symfony CLI now attempts to detect the width of your terminal window and
 formats lines to fit. If detection is not possible the CLI defaults to 78
@@ -522,8 +512,7 @@ representation of a task object.
 
 The XML output is mostly useful for third-party tools like IDEs.
 
-Exceptions
-----------
+## Exceptions
 
 ### Autoloading
 
@@ -536,8 +525,7 @@ pages.
 If possible, the web debug toolbar is now also displayed on exception pages in
 the development environment.
 
-Propel
-------
+## Propel
 
 ### `propel:insert-sql`
 
@@ -567,8 +555,7 @@ This configuration will result in the following method in `BaseArticle`:
       return $this->getTitle();
     }
 
-Routing
--------
+## Routing
 
 ### Default Requirements
 
@@ -577,8 +564,7 @@ The default `\d+` requirement is now only applied to a
 means you no longer have to provide an alternate requirement when a
 non-numeric column is specified (i.e. `slug`).
 
-CLI
----
+## CLI
 
 ### Output Colorization
 
@@ -590,8 +576,7 @@ platform).
 As of symfony 1.3, you can force the use of colors for the output by passing
 the global `--color` option.
 
-I18N
-----
+## I18N
 
 ### Data update
 
@@ -606,8 +591,7 @@ for the tenth item in a language list might fail.
 All sorting on this locale dependend data is now also performed locale dependend.
 `sfCultureInfo->sortArray()` can be used for that.
 
-Plugins
--------
+## Plugins
 
 Before symfony 1.3, all plugins were enabled by default, except for the
 `sfDoctrinePlugin` and the `sfCompat10Plugin` ones:
@@ -662,8 +646,7 @@ configuration's `->connectTests()` method.
       }
     }
 
-Settings
---------
+## Settings
 
 ### `sf_file_link_format`
 
@@ -683,8 +666,7 @@ For example, if you want to open files in TextMate, add the following to
 The `%f` placeholder will be replaced with file's absolute path and the `%l`
 placeholder will be replaced with the line number.
 
-Doctrine Integration
---------------------
+## Doctrine
 
 ### Generating Form Classes
 
@@ -909,8 +891,7 @@ the following are valid `sfFormFilterDoctrine` table methods:
       $query->select('title, body');
     }
 
-Web Debug Toolbar
------------------
+## Web Debug Toolbar
 
 ### `sfWebDebugPanel::setStatus()`
 
@@ -932,8 +913,7 @@ Panels can also inspect request parameters by accessing the web debug
     [php]
     $requestParameters = $this->webDebug->getOption('request_parameters');
 
-Partials
---------
+## Partials
 
 ### Slots improvements
 
@@ -944,8 +924,7 @@ specifying the default slot content to return if none is provided by the slot:
     <?php echo get_slot('foo', 'bar') // will output 'bar' if slot 'foo' is not defined ?>
     <?php include_slot('foo', 'bar') // will output 'bar' if slot 'foo' is not defined ?>
 
-Pagers
-------
+## Pagers
 
 The `sfDoctrinePager` and `sfPropelPager` methods now implement the `Iterator`
 and `Countable` interfaces.
@@ -960,8 +939,7 @@ and `Countable` interfaces.
       <p>No results.</p>
     <?php endif; ?>
 
-View cache
-----------
+## View cache
 
 The view cache manager nows accept params in factories.yml. Generating the
 cache key for a view has been refactored in different methods to ease extending the class.
@@ -975,8 +953,7 @@ Two params are available in factories.yml:
     include the host name part. In practice, it says if page cache should be
     hostname dependant.
 
-Request
--------
+## Request
 
 ### `getContent()`
 
