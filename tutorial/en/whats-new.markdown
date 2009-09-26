@@ -258,9 +258,10 @@ disabled, even if you pass a CSRF secret when creating a form instance.
 
 ### Fluent Interface
 
-Some `sfForm` methods now implement a fluent interface: `setValidators()`,
-`setValidator()`, `setValidatorSchema()`, `setWidgets()`, `setWidget()`,
-`setWidgetSchema()`, `setOption()`, `setDefault()`, and `setDefaults()`.
+Some `sfForm` methods now implement a fluent interface: `addCSRFProtection()`,
+`setValidators()`, `setValidator()`, `setValidatorSchema()`, `setWidgets()`,
+`setWidget()`, `setWidgetSchema()`, `setOption()`, `setDefault()`, and
+`setDefaults()`.
 
 Autoloaders
 -----------
