@@ -974,3 +974,15 @@ Two params are available in factories.yml:
     include the host name part. In practice, it says if page cache should be
     hostname dependant.
 
+Request
+-------
+
+### `getRawBody()`
+
+The raw body of the request is now accessible via the `getRawBody()` method.
+
+### PUT and DELETE parameters
+
+When a request comes in with either a PUT or a DELETE HTTP method with a
+content type set to `application/x-www-form-urlencoded`, symfony now parses
+the raw body and makes the parameters accessible like normal POST parameters.
