@@ -59,13 +59,13 @@ e saranno rimossi in symfony 1.4:
     metodi dell'oggetto `sfApplicationConfiguration`. Essendo tutti i metodi della
     classe `sfLoader` deprecati, la classe `sfLoader` sarà rimossa in symfony 1.4.
 
-  * `sfController::sendEmail()`
+  * `sfController::sendEmail()`: Usare il nuovo mailer di symfony 1.3 in sostituzione.
 
   * `sfGeneratorManager::initialize()`: Non fa nulla.
 
   * `debug_message()`: Usare l'helper `log_message()` in sostituzione.
 
-  * `sfWebRequest::getMethodName()`: Usaree `getMethod()` in sostituzione.
+  * `sfWebRequest::getMethodName()`: Usare `getMethod()` in sostituzione.
 
   * `sfDomCssSelector::getTexts()` e `sfDomCssSelector::getElements()`
 
