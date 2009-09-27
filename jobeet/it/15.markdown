@@ -1,50 +1,6 @@
 Giorno 15: Web Service
 ======================
 
-<doctrine>
-Prima di iniziare
----------------
-
-Nel giorno sei abbiamo definito la rotta per vedere i lavori, chiamata
-`job_show_user` in `apps/frontend/config/routing.yml`, abbiamo fatto un piccolo
-errore nella definizione.
-La rotta dovrebbe essere la seguente.
-
-    [yml]
-    job_show_user:
-      url:     /job/:company_slug/:location_slug/:id/:position_slug
-      class:   sfDoctrineRoute
-      options:
-        model: JobeetJob
-        type:  object
-        method_for_query: retrieveActiveJob
-      param:   { module: job, action: show }
-      requirements:
-        id: \d+
-
-Notare la modifica tra usare `method` e `method_for_query`. Era un piccolo
-bug in symfony ed un errore nel tutorial, quindi è necessario aggiornare
-il progetto.
-
-Occorre anche una piccola modifica allo schema `JobAffiliate`, per includere
-una relazione molti-a-molti con `JobeetCategory`. Lo schema completo è
-nel giorno tre, le cose da aggiungere sono qui di seguito.
-
-    [yml]
-    JobeetAffiliate:
-      # ...
-      relations:
-        JobeetCategories:
-          class: JobeetCategory
-          refClass: JobeetCategoryAffiliate
-          local: affiliate_id
-          foreign: category_id
-          foreignAlias: JobeetAffiliates
-
-Assicuratevi di ricostruire il modello dopo aver fatto le modifiche:
-
-    $ php symfony doctrine:build-model
-</doctrine>
 
 Con l'aggiunta dei feed su Jobeet, chi è in cerca di lavoro sarà informato
 sulle nuove offerte di lavoro in tempo reale.
@@ -985,7 +941,8 @@ Se ricordate i requisiti dal giorno 2:
 L'implementazione di questa feature è così facile che ve la lasceremo fare
 stasera.
 
-Domani implementeremo l'ultima feature mancante del sito Jobeet, il motore
-di ricerca. 
+Ogni volta che l'account di un affiliato è attivato dall'amministratore, una email
+deve essere inviata agli affiliati per confermare la loro iscrizione e dargli
+un token. L'invio delle email è l'argomento di cui parleremo domani.
 
 __ORM__
