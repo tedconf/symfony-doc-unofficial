@@ -70,8 +70,7 @@ your database on the development server, just omit the third argument.
 
 Now, create the frontend application by running the `generate:app` task:
 
-    $ php symfony generate:app --escaping-strategy=on
-      ➥ --csrf-secret=UniqueSecret frontend
+    $ php symfony generate:app frontend
 
 >**TIP**
 >Because the symfony shortcut file is executable, Unix users can replace all
@@ -93,22 +92,25 @@ creates the default directory structure needed for the application under the
  | `modules/`   | The application code (MVC)
  | `templates/` | The global template files
 
->**TIP**
->When calling the `generate:app` task, you have also passed two security-related
->*options*:
+>**SIDEBAR**
+>Security
 >
->  * `--escaping-strategy`: Enables output escaping to prevent XSS attacks
->  * `--csrf-secret`: Enables session tokens in forms to prevent CSRF attacks
+>By default, the `generate:app` task has secured our application from the two
+>most widespread vulnerabilities found on the web. That's right, symfony
+>automatically takes ~security|Security~ measures on our behalf.
 >
->By passing these two optional options to the task, you have secured your
->future development from the two most widespread vulnerabilities found on the
->web. That's right, symfony will automatically take security measures on your
->behalf.
+>To prevent ~XSS~ attacks, output escaping has been enabled; and to prevent
+>~CSRF~ attacks, a random CSRF secret has been generated.
+>
+>Of course, you can tweak these settings thanks to the following *options*:
+>
+>  * `--escaping-strategy`: Enables or disables output escaping
+>  * `--csrf-secret`: Enables session tokens in forms
 >
 >If you know nothing about
 >[XSS](http://en.wikipedia.org/wiki/Cross-site_scripting) or
->[CSRF](http://en.wikipedia.org/wiki/CSRF), take the time to learn more about
->these security vulnerabilities.
+>[CSRF](http://en.wikipedia.org/wiki/CSRF), take the time to learn more these
+>security vulnerabilities.
 
 ### Directory Structure Rights
 
