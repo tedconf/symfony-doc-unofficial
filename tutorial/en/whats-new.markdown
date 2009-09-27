@@ -8,7 +8,7 @@ and who want to quickly learn new features of symfony 1.3.
 First, please note that symfony 1.3 is compatible with PHP 5.2.4 or later.
 
 If you want to upgrade from 1.2, please read the
-[UPGRADE](http://www.symfony-project.org/installation/1_3/upgrade) file
+[UPGRADE](http://www.symfony-project.org/tutorial/1_3/en/upgrade) file
 found in the symfony distribution.
 You will have there all the information needed to safely upgrade
 your projects to symfony 1.3.
