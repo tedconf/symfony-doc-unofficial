@@ -66,7 +66,7 @@ Tutti i test unitari scritti col framework lime iniziano con lo stesso codice:
     [php]
     require_once dirname(__FILE__).'/../bootstrap/unit.php';
 
-    $t = new lime_test(1, new lime_output_color());
+    $t = new lime_test(1);
 
 Innanzitutto, viene incluso il file iniziale `unit.php`, per inizializzare alcune
 cose. Poi, viene creato un oggetto `lime_test`, a cui è passato come parametro
@@ -126,7 +126,7 @@ Creiamo un file `test/unit/JobeetTest.php` ed inseriamoci il seguente codice:
     // test/unit/JobeetTest.php
     require_once dirname(__FILE__).'/../bootstrap/unit.php';
 
-    $t = new lime_test(1, new lime_output_color());
+    $t = new lime_test(1);
     $t->pass('This test always passes.');
 
 Per lanciare i test, si può eseguire direttamente il file:
@@ -140,7 +140,8 @@ Oppure usare il task `test:unit`:
 ![Test su linea di comando](http://www.symfony-project.org/images/jobeet/1_3/08/cli_tests.png)
 
 >**Note**: la linea di comando di ~Windows~ sfortunatamente non è in grado di
->evidenziare i risultati dei test in rosso o in verde.
+>evidenziare i risultati dei test in rosso o in verde. Ma se si usa Cygwin,
+>è possibile forzare symfony a usare i colori passando l'opzione `--color` al task.
 
 Testare `slugify`
 -----------------
@@ -164,7 +165,7 @@ Sostituiamo il contenuto del file di test col seguente codice:
     // test/unit/JobeetTest.php
     require_once dirname(__FILE__).'/../bootstrap/unit.php';
 
-    $t = new lime_test(6, new lime_output_color());
+    $t = new lime_test(6);
 
     $t->is(Jobeet::slugify('Sensio'), 'sensio');
     $t->is(Jobeet::slugify('sensio labs'), 'sensio-labs');
@@ -196,7 +197,7 @@ messaggi al file dei test `slugify`:
     [php]
     require_once dirname(__FILE__).'/../bootstrap/unit.php';
 
-    $t = new lime_test(6, new lime_output_color());
+    $t = new lime_test(6);
 
     $t->comment('::slugify()');
     $t->is(Jobeet::slugify('Sensio'), 'sensio',
@@ -296,12 +297,15 @@ Ipotizziamo che sia passato del tempo e che uno dei vostri utenti vi abbia
 riportato uno strano ~bug~: alcuni link di lavori puntano ad una pagina di
 errore 404. Dopo alcune investigazioni, trovate che per qualche ragione questi
 lavori mancano dello slug della compagnia, della posizione o del posto.
-Come è possibile? Avete cercato in tutte le righe del database e le
-colonne sono sicuramente non vuote. Ci pensate per un po' e poi trovate
-la soluzione. Quando una stringa contiene solo caratteri non-ASCII, il metodo
-`slugify()` la converte in una stringa vuota. Contenti per aver trovato la
-causa, aprite la classe `Jobeet` e risolvete il problema nel modo giusto.
-È una cattiva idea. Prima, aggiungiamo un test:
+
+Come è possibile?
+
+Avete cercato in tutte le righe del database e le colonne sono sicuramente
+non vuote. Ci pensate per un po' e poi trovate la soluzione. Quando una stringa
+contiene solo caratteri non-ASCII, il metodo `slugify()` la converte in una
+stringa vuota. Contenti per aver trovato la causa, aprite la classe `Jobeet`
+e risolvete il problema nel modo giusto. È una cattiva idea.
+Prima, aggiungiamo un test:
 
     [php]
     $t->is(Jobeet::slugify(' - '), 'n-a',
@@ -580,7 +584,7 @@ Innanzitutto, dobbiamo creare il file `JobeetJobTest.php` in `test/unit/model`:
     // test/unit/model/JobeetJobTest.php
     include(dirname(__FILE__).'/../../bootstrap/##ORM##.php');
 
-    $t = new lime_test(1, new lime_output_color());
+    $t = new lime_test(1);
 
 Poi, iniziamo aggiungendo un testo per il metodo `getCompanySlug()`:
 
