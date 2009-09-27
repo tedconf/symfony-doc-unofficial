@@ -195,7 +195,7 @@ sfToolkit
 The `getTmpDir()` method has been deprecated and is no longer used in the
 symfony core classes. You can replace usage of this method by the built-in
 `sys_get_temp_dir()` PHP function. The `getTmpDir()` is now just a proxy to
-this method.
+this function.
 
 This method will be removed in the symfony 1.4.
 
