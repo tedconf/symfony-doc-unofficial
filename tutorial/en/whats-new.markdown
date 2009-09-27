@@ -154,8 +154,8 @@ The following validators have been added:
 You can now define default error messages globally by using the
 `sfForm::setDefaultMessage()` method:
 
-   [php]
-   sfValidatorBase::setDefaultMessage('required', 'This field is required.');
+    [php]
+    sfValidatorBase::setDefaultMessage('required', 'This field is required.');
 
 The previous code will override the default 'Required.' message for all
 validators. Note that the default messages must be defined before any
