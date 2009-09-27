@@ -38,7 +38,6 @@ Settings
     * [`cache`](#chapter_04_sub_cache)
     * [`charset`](#chapter_04_sub_charset)
     * [`check_lock`](#chapter_04_sub_check_lock)
-    * [`check_symfony_version`](#chapter_04_sub_check_symfony_version)
     * [`compressed`](#chapter_04_sub_compressed)
     * [`csrf_secret`](#chapter_04_sub_csrf_secret)
     * [`default_culture`](#chapter_04_sub_default_culture)
@@ -50,11 +49,11 @@ Settings
     * [`etag`](#chapter_04_sub_etag)
     * [`i18n`](#chapter_04_sub_i18n)
     * [`lazy_cache_key`](#chapter_04_sub_lazy_cache_key)
+    * [`file_link_format`](#chapter_04_sub_file_link_format)
     * [`logging_enabled`](#chapter_04_sub_logging_enabled)
     * [`no_script_name`](#chapter_04_sub_no_script_name)
     * [`max_forwards`](#chapter_04_sub_max_forwards)
     * [`standard_helpers`](#chapter_04_sub_standard_helpers)
-    * [`strip_comments`](#chapter_04_sub_strip_comments)
     * [`use_database`](#chapter_04_sub_use_database)
     * [`web_debug`](#chapter_04_sub_web_debug)
     * [`web_debug_web_dir`](#chapter_04_sub_web_debug_web_dir)
@@ -120,7 +119,7 @@ instance, to get the value of the `charset` setting, use:
 
 ### ~`escaping_strategy`~
 
-*Default*: `off`
+*Default*: `on`
 
 The `escaping_strategy` setting is a Boolean setting that determines if the
 output escaper sub-framework is enabled. When enabled, all variables made
@@ -133,7 +132,7 @@ in a JavaScript script tag for example.
 
 The output escaper sub-framework uses the `charset` setting for the escaping.
 
-It is highly recommended to change the default value to `on`.
+It is highly recommended to leave the default value to `on`.
 
 >**TIP**
 >This settings can be set when you create an application with the
@@ -156,14 +155,15 @@ languages.
 
 ### ~`csrf_secret`~
 
-*Default*: `false`
+*Default*: a randomly generated secret
 
 The `csrf_secret` is a unique secret for your application. If not set to
 `false`, it enables CSRF protection for all forms defined with the form
 framework. This settings is also used by the `link_to()` helper when it needs
 to convert a link to a form (to simulate a `DELETE` HTTP method for example).
 
-It is highly recommended to change the default value to a unique secret.
+It is highly recommended to change the default value to a unique secret of
+your choice.
 
 >**TIP**
 >This settings can be set when you create an application with the
@@ -291,12 +291,22 @@ until after checking whether an action or partial is cacheable. This can
 result in a big performance improvement, depending on your usage of template
 partials.
 
-This setting was introduced in symfony 1.2.7 to improve performance without
-breaking backward compatibility with previous 1.2 releases. It will be removed
-in symfony 1.3 as the optimization will always be enabled.
+### ~`file_link_format`~
 
->**CAUTION**
->This setting is only available for symfony 1.2.7 and up.
+*Default*: none
+
+In the debug message, file paths are clickable links if the
+`sf_file_link_format` or if the `xdebug.file_link_format` PHP configuration
+value is set.
+
+For example, if you want to open files in TextMate, you can use the following
+value:
+
+    [yml]
+    txmt://open?url=file://%f&line=%l
+
+The `%f` placeholder will be replaced with file's absolute path and the `%l`
+placeholder will be replaced with the line number.
 
 ### ~`logging_enabled`~
 
@@ -371,40 +381,9 @@ redirected to the symfony core `lib/exception/data/unavailable.php` page.
 >You can override the default unavailable template by adding a
 >`config/unavailable.php` file to your project or application.
 
-### ~`check_symfony_version`~
-
-*Default*: `off`
-
-The `check_symfony_version` enables or disables checking of the current
-symfony version upon every request. If enabled, symfony will clear the cache
-automatically when the framework is upgraded.
-
-It is highly recommended to not set this to `on` as it adds a small overhead,
-and because it is simple to just clear the cache when you deploy a new version
-of your project. This setting is only useful if several projects share the
-same symfony code, which is not recommended.
-
 ### ~`web_debug_web_dir`~
 
 *Default*: `/sf/sf_web_debug`
 
 The `web_debug_web_dir` sets the web path to the web debug toolbar assets
 (images, stylesheets, and JavaScript files).
-
-### ~`strip_comments`~
-
-*Default*: `on`
-
-The `strip_comments` determines if symfony should strip the comments when
-compiling core classes. This setting is only used if the application `debug`
-setting is set to `off`.
-
-If you have blank pages in the production environment only, try to set this
-setting to `off`.
-
-### ~`max_forwards`~
-
-*Default*: `5`
-
-The `max_forwards` setting sets the maximum number of internal forwards
-allowed before symfony throws an exception. This is to avoid infinite loops.

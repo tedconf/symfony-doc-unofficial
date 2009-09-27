@@ -17,6 +17,17 @@ class sfSymfony2CommandApplication extends sfSymfonyCommandApplication
   {
     $this->loadTasks(new ProjectConfiguration(getcwd(), $this->dispatcher));
   }
+
+  public function registerTask(sfTask $task)
+  {
+    try
+    {
+      parent::registerTask($task);
+    }
+    catch (Exception $e)
+    {
+    }
+  }
 }
 
 class sfMarkdownFormatter extends sfFormatter

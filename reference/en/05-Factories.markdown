@@ -63,6 +63,15 @@ will be automatically included before the factory is created:
 Factories
 ---------
 
+ * [`mailer`](#chapter_05_mailer)
+
+  * [`charset`](#chapter_05_sub_charset)
+  * [`delivery_address`](#chapter_05_sub_delivery_address)
+  * [`delivery_strategy`](#chapter_05_sub_delivery_strategy)
+  * [`spool_arguments`](#chapter_05_sub_spool_arguments)
+  * [`spool_class`](#chapter_05_sub_spool_class)
+  * [`transport`](#chapter_05_sub_transport)
+
  * [`request`](#chapter_05_request)
 
    * [`formats`](#chapter_05_sub_formats)
@@ -99,6 +108,10 @@ Factories
    * [`session_name`](#chapter_05_sub_session_name)
 
  * [`view_cache_manager`](#chapter_05_view_cache_manager)
+
+   * [`cache_key_use_vary_headers`](chapter_05_sub_cache_key_use_vary_headers)
+   * [`cache_key_use_host_name`](chapter_05_sub_cache_key_use_host_name)
+
  * [`view_cache`](#chapter_05_view_cache)
  * [`i18n`](#chapter_05_i18n)
 
@@ -128,6 +141,142 @@ Factories
  * [`controller`](#chapter_05_controller)
 
 <div class="pagebreak"></div>
+
+`mailer`
+--------
+
+*sfContext Accessor*: `$context->getMailer()`
+
+*Default configuration*:
+
+    [yml]
+    mailer:
+      class: sfMailer
+      param:
+        logging:           %SF_LOGGING_ENABLED%
+        charset:           %SF_CHARSET%
+        delivery_strategy: realtime
+        transport:
+          class: Swift_SmtpTransport
+          param:
+            host:       localhost
+            port:       25
+            encryption: ~
+            username:   ~
+            password:   ~
+
+*Default configuration for the `test` environment*:
+
+    [yml]
+    mailer:
+      param:
+        delivery_strategy: none
+
+*Default configuration for the `dev` environment*:
+
+    [yml]
+    mailer:
+      param:
+        delivery_strategy: none
+
+### ~`charset`~
+
+The `charset` option defines the charset to use for the mail messages. By
+default, it uses the `charset` setting from `settings.yml`.
+
+### ~`delivery_strategy`~
+
+The `delivery_strategy` option defines how email messages are delivered by the
+mailer. Four strategies are available by default, which should suit all the
+common needs:
+
+ * `realtime`:       Messages are sent in realtime.
+
+ * `single_address`: Messages are sent to a single address.
+
+ * `spool`:          Messages are stored in a queue.
+
+ * `none`:           Messages are simply ignored.
+
+### ~`delivery_address`~
+
+The `delivery_address` option defines the recipient of all message when the
+`delivery_strategy` is set to `single_address`.
+
+### ~`spool_class`~
+
+The `spool_class` option defines the spool class to use when the
+`delivery_strategy` is set to `spool`:
+
+  * ~`Swift_FileSpool`~: Messages are stored on the filesystem.
+
+  * ~`Swift_DoctrineSpool`~: Messages are stored in a Doctrine model.
+
+  * ~`Swift_PropelSpool`~: Messages are stored in a Propel model.
+
+>**NOTE**
+>When the spool is instantiated, the ~`spool_arguments`~ option is used as the
+>constructor arguments.
+
+### ~`spool_arguments`~
+
+The `spool_arguments` option defines the constructor arguments of the spool.
+Here are the options available for the built-in queues classes:
+
+ * `Swift_FileSpool`:
+
+    * The absolute path of the queue directory (messages are stored in
+      this directory)
+
+ * `Swift_DoctrineSpool`:
+
+    * The Doctrine model to use to store the messages (`MailMessage` by
+      default)
+
+    * The column name to use for message storage (`message` by default)
+
+    * The method to call to retrieve the messages to send (optional). It
+      receives the queue options as a argument.
+
+ * `Swift_PropelSpool`:
+
+    * The Propel model to use to store the messages (`MailMessage` by default)
+
+    * The column name to use for message storage (`message` by default)
+
+    * The method to call to retrieve the messages to send (optional). It
+      receives the queue options as a argument.
+
+The configuration below shows a typical configuration for a Doctrine spool:
+
+    [yml]
+    # configuration in factories.yml
+    mailer:
+      class: sfMailer
+      param:
+        delivery_strategy: spool
+        spool_class:       Swift_DoctrineSpool
+        spool_arguments:   [ MailMessage, message, getSpooledMessages ]
+
+### ~`transport`~
+
+The `transport` option defines the transport to use to actually send email
+messages.
+
+The `class` setting can be any class that implements from `Swift_Transport`,
+and three are provided by default:
+
+  * ~`Swift_SmtpTransport`~: Uses a SMTP server to send messages.
+
+  * ~`Swift_SendmailTransport`~: Uses `sendmail` to send messages.
+
+  * ~`Swift_MailTransport`~: Uses the native PHP `mail()` function to send
+    messages.
+
+You can further configure the transport by setting the `param` setting. The
+["Transport Types"](http://swiftmailer.org/docs/transport-types) section of
+the Swift Mailer official documentation describes all you need to know about
+the built-in transport classes and their different parameters.
 
 `request`
 ---------
@@ -359,14 +508,29 @@ several additional options are available:
     [yml]
     view_cache_manager:
       class: sfViewCacheManager
+      param:
+        cache_key_use_vary_headers: true
+        cache_key_use_host_name:    true
 
 >**CAUTION**
 >This factory is only created if the [`cache`](#chapter_04_sub_cache)
 >setting is set to `on`.
 
-The view cache manager configuration does not include a `param` key. This
-configuration is done via the `view_cache` factory, which defines the
-underlying cache object used by the view cache manager.
+Most configuration of this factory is done via the `view_cache` factory, which
+defines the underlying cache object used by the view cache manager.
+
+### ~`cache_key_use_vary_headers`~
+
+The `cache_key_use_vary_headers` option specifies if the cache keys should
+include the vary headers part. In practice, it says if the page cache should
+be HTTP header dependent, as specified in `vary` cache parameter (default
+value: `true`).
+
+### ~`cache_key_use_host_name`~
+
+The `cache_key_use_host_name` option specifies if the cache keys should
+include the host name part. In practice, it says if page cache should be
+hostname dependent (default value: `true`).
 
 `view_cache`
 ------------
@@ -459,15 +623,9 @@ i18n data (see the Cache section for more information).
         default_action:                   index
         debug:                            %SF_DEBUG%
         logging:                          %SF_LOGGING_ENABLED%
-        generate_shortest_url:            true
-        extra_parameters_as_query_string: true
-        cache:
-          class: sfFileCache
-          param:
-            automatic_cleaning_factor: 0
-            cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
-            lifetime:                  31556926
-            prefix:                    %SF_APP_DIR%/routing
+        generate_shortest_url:            false
+        extra_parameters_as_query_string: false
+        cache:                            ~
 
 ### ~`variable_prefixes`~
 
@@ -504,6 +662,8 @@ by the routing system.
 
 ### ~`cache`~
 
+*Default*: none
+
 The `cache` option defines an anonymous cache factory to be used for caching
 routing configuration and data (see the Cache section for more information).
 
@@ -533,9 +693,6 @@ are among the first ones. It is strongly advised to test the setting before
 deploying to production, as it can harm your performance in certain
 circumstances.
 
->**CAUTION**
->This setting is only available for symfony 1.2.7 and up.
-
 ### ~`lookup_cache_dedicated_keys`~
 
 *Default*: `false`
@@ -548,9 +705,6 @@ performance optimization setting.
 As a rule of thumb, setting this to `false` is better when using a file-based
 cache class (`sfFileCache` for instance), and setting it to `true` is better
 when using a memory-based cache class (`sfAPCCache` for instance).
-
->**CAUTION**
->This setting is only available for symfony 1.2.7 and up.
 
 `logger`
 --------

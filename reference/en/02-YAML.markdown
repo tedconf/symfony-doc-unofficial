@@ -112,11 +112,6 @@ Nulls in YAML can be expressed with `null` or `~`.
 
 Booleans in YAML are expressed with `true` and `false`.
 
->**NOTE**
->The symfony YAML parser also recognize `on`, `off`, `yes`, and `no` but
->it is strongly discouraged to use them as it has been removed from the
->YAML specifications as of version 1.2.
-
 ### Dates
 
 YAML uses the ISO-8601 standard to express dates:

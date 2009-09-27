@@ -9,10 +9,9 @@ object pager or yet another database abstraction layer. However, this also
 comes at a cost; learning all the available features and all the built-in
 configuration possibilities does not happen overnight.
 
-The [*Practical Symfony*](http://www.symfony-project.org/jobeet/) book,
-released at the end of 2008, is a great way for a beginner to learn symfony,
-understand how it works, and also see best web development practices in
-action.
+The [*Practical Symfony*](http://www.symfony-project.org/jobeet/) book is a
+great way for a beginner to learn symfony, understand how it works, and also
+see best web development practices in action.
 
 When you begin working on your own projects, you need a reference guide. A
 book where you can easily find answers to your questions at your fingertips.

@@ -123,6 +123,11 @@ Events
    * [`controller.change_action`](#chapter_15_sub_controller_change_action)
    * [`controller.method_not_found`](#chapter_15_sub_controller_method_not_found)
    * [`controller.page_not_found`](#chapter_15_sub_controller_page_not_found)
+ * [`form`](#chapter_15_form)
+   * [`form.post_configure`](#chapter_15_sub_form_post_configure)
+   * [`form.filter_values`](#chapter_15_sub_form_filter_values)
+   * [`form.validation_error`](#chapter_15_sub_form_validation_error)
+   * [`form.method_not_found`](#chapter_15_sub_form_method_not_found)
  * [`plugin`](#chapter_15_plugin)
    * [`plugin.pre_install`](#chapter_15_sub_plugin_pre_install)
    * [`plugin.post_install`](#chapter_15_sub_plugin_post_install)
@@ -329,6 +334,53 @@ during the handling of a request.
 
 You can listen to this event to do something special whenever a 404 page
 occurs, like sending an email, or logging the error. the event.
+
+`form`
+------
+
+### ~`form.post_configure`~
+
+*Notify method*: `notify`
+
+*Default notifiers*: `sfFormSymfony`
+
+The `form.post_configure` event is notified after every form is configured.
+
+### ~`form.filter_values`~
+
+*Notify method*: `filter`
+
+*Default notifiers*: `sfFormSymfony`
+
+The `form.filter_values` event filters the merged, tainted parameters and
+files array just prior to binding.
+
+### ~`form.validation_error`~
+
+*Notify method*: `notify`
+
+*Default notifiers*: `sfFormSymfony`
+
+| Parameter  | Description
+| ---------- | ------------------
+| `error`    | The error instance
+
+The `form.validation_error` event is notified whenever form validation fails.
+
+### ~`form.method_not_found`~
+
+*Notify method*: `notifyUntil`
+
+*Default notifiers*: `sfFormSymfony`
+
+| Parameter   | Description
+| ----------- | -----------
+| `method`    | The name of the called missing method
+| `arguments` | The arguments passed to the method
+
+The `form.method_not_found` event is notified when a method is not defined in
+the `sfFormSymfony` class. By listening to this event, a method can be added
+to the class, without using inheritance.
 
 `plugin`
 --------
