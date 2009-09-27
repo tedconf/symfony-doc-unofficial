@@ -3,52 +3,12 @@ Día 3: El Modelo De Datos
 
 Aquellos de ustedes locos por abrir el editor de texto y hacer algo de PHP estarán encantados de saber que el tutorial de hoy nos introduce algo en el desarrollo. Vamos a definir el modelo de datos Jobeet, utilizaremos un ORM para interactuar con la base de datos, y construiremos el primer módulo de la aplicación. Pero como Symfony hace una gran parte del trabajo por nosotros, vamos a tener un módulo web totalmente funcional sin tener que escribir mucho código PHP.
 
-<doctrine>
-Activando `sfDoctrinePlugin`
----------------------------
-
-Si estás leyendo esto, entonces has decidido completar el tutorial de Jobeet con el ORM Doctrine en lugar de Propel. Esto es simple ya que todo lo que necesitas hacer primero es habilitar `sfDoctrinePlugin` y deshabilitar `sf#PropelPlugin`. Esto puede ser hecho con el siguiente código en tu `config/ProjectConfiguration.class.php`.
-
-    [php]
-    public function setup()
-    {
-      $this->enablePlugins(array('sfDoctrinePlugin'));
-      $this->disablePlugins(array('sf#PropelPlugin'));
-    }
-
-Si prefieres tener todos los plugins habilitados por defecto, puedes hacer lo siguiente:
-
-    [php]
-    public function setup()
-    {
-      $this->enableAllPluginsExcept(array('sf#PropelPlugin', 'sfCompat10Plugin'));
-    }
-
->**NOTE**
->Despues de este cambio tendrás un error hasta que configures el 
->archivo `config/databases.yml` en un paso posterior a la utilización de `sfDoctrineDatabase`.
-
-Después de realizar estos cambios, debes asegurarte de borrar el cache.
-
-    $ php symfony cc
-
-Como veremos más adelante en el tutorial, cada plugin puede tener recursos web (imágenes,
-hojas de estilo, y javascripts). Cuando se instala o activa un nuevo plugin, debemos instalarlos vía la tarea `plugin:publish-assets`:
-
-    $ php symfony plugin:publish-assets
-
-También, vamos a necesitamos quitar el directorio `web/sf#PropelPlugin`:
-
-    $ rm web/sf#PropelPlugin
-    
-</doctrine>
-
 El Modelo Relacional
 --------------------
 
 Los casos de uso que escribimos ayer describen los principales objetos de nuestro proyecto: puestos de trabajo, afiliados, y las categorías. Aquí está el correspondiente diagrama de entidad relación:
 
-![Diagrama de Entidad Relación](http://www.symfony-project.org/images/jobeet/1_2/03/diagram.png)
+![Diagrama de Entidad Relación](http://www.symfony-project.org/images/jobeet/1_3/03/diagram.png)
 
 Además de las columnas descritas en los casos de uso, también hemos añadido un campo `created_at` a algunas tablas. Symfony reconoce estos campos y establece el valor de la hora actual de sistema cuando un registro es creado. Esto es lo mismo para el campo `updated_at`: su valor se establece siempre a la hora del sistema en que el registro se actualiza.
 
@@ -120,12 +80,6 @@ Como la base de datos no existe todavía, y como queremos mantener la base de da
 </propel>
 <doctrine>
 Como la base de datos no existe todavía, y como queremos mantener la base de datos Jobeet agnóstica, vamos a crear el archivo de esquema a mano editando el archivo vacío `config/doctrine/schema.yml`:
-
->**TIP**
->Necesitas crear manualmente el directorio `config/doctrine/` en tu 
->proyecto ya que éste no existe aún:
->
->     $ mkdir config/doctrine
 
     [yml]
     # config/doctrine/schema.yml
@@ -207,7 +161,8 @@ El esquema es la traducción directa de un diagrama de entidad relación en form
 >los arrays explícitamente se muestran con `[]` y los hashes o array asociativos con `{}`.
 >
 >Si todavía no están familiarizados con YAML, es hora de empezar con él pues el 
->framework Symfony lo utiliza ampliamente para sus archivos de configuración.
+>framework Symfony lo utiliza ampliamente para sus archivos de configuración. Un buen punto 
+>de partida es la [documentación](http://components.symfony-project.org/yaml/documentation) del componente YAML de Symfony.
 >
 >Hay una cosa importante que necesitas recordar cuando estás editando un archivo YAML:
 >**la indentación debe hacerse con uno o mas espacios en blanco, pero nunca con
@@ -283,19 +238,8 @@ Vamos a usar MySQL para este tutorial:
 
 Tenemos que decirle a Symfony que base de datos usar para el proyecto Jobeet:
 
-<propel>
     $ php symfony configure:database
       ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
-</propel>
-<doctrine>
-    $ php symfony configure:database --name=doctrine
-      ➥ --class=sfDoctrineDatabase
-      ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
-
->**NOTE**
->Después de configurar la conexión de doctrine a la base de datos, necesitarás manualmente 
->editar `config/databases.yml` y quitar cualquier conexión que haga referencia a propel.
-</doctrine>
 
 La tarea `configure:database` emplea tres argumentos: el
 [PDO DSN](http://www.php.net/manual/en/pdo.drivers.php), el nombre de usuario, y
@@ -357,11 +301,9 @@ Para realmente crear las tablas en la base de datos, necesitas ejecutar la tarea
 
     $ php symfony propel:insert-sql
 
-<propel>
 Como la tarea elimina las tablas existentes antes de re-crearlas, necesitas confirmar la operación. También puedes añadir la opción `--no-confirmation` para saltearte la pregunta, lo cual es útil si deseas ejecutar la tarea desde un proceso no interactivo:
 
-    $ php symfony propel:insert-sql --no-confirmation
-</propel>    
+    $ php symfony propel:insert-sql --no-confirmation   
 
 >**TIP**
 >Como con cualquier herramienta de línea de comandos, las tareas symfony pueden tener argumentos y opciones.
@@ -422,22 +364,13 @@ La tarea `propel:build-all` es un acceso directo para las tareas que han ejecuta
 
 Verás los validadores en acción al final del día y los formularios se explicarán en gran detalle en el día 10.
 
-Como verás más adelante, Symfony automáticamente carga las clases PHP por nosotros, lo que significa que nunca más necesitarás utilizar un `require` en tu código. Esta es una de las numerosas cosas que automatiza Symfony para el desarrollador, pero hay un inconveniente:
-siempre que agreges una nueva clase, necesitarás borrar la caché de Symfony. Como la tarea `propel:build-model` ha creado un montón de nuevas clases, vamos a borrar la caché:
-
-     $ php symfony cache:clear
-
 >**TIP**
 >Una tarea symfony está hecha de un nombre y un espacio de nombres. Cada una puede ser más breve
 >en tanto no haya ambigüedad con otras tareas. Por lo tanto, los siguientes comandos
->son equivalentes a `cache:clear`:
+>son equivalentes a `propel:build-model`:
 >
->     $ php symfony cache:cl
->     $ php symfony ca:c
->
->Como la tarea `cache:clear` es muy usada, ésta tiene una abreviación aún más corta:
->
->     $ php symfony cc
+>     $ php symfony propel:build-mo
+>     $ php symfony pro:build-mo
 
 
 Los Datos Iniciales
@@ -666,7 +599,7 @@ Ahora puedes probar el módulo job en un navegador:
 
      http://jobeet.localhost/frontend_dev.php/job
 
-![El módulo Job](http://www.symfony-project.org/images/jobeet/1_2/03/job.png)
+![El módulo Job](http://www.symfony-project.org/images/jobeet/1_3/03/job.png)
 
 <propel>
 Si intentas editar un puesto de trabajo, tendrás una excepción porque Symfony necesita de un texto que represente una categoría. Un objeto de PHP se representa definiendo el método mágico PHP `__toString()`. El texto de representación de una categoría
@@ -725,7 +658,7 @@ columna descriptiva de nombre como ser, `title`, `name`, `subject`, etc. Si quie
 
 Ahora puedes editar y crear puestos de trabajo. Trata de dejar un campo obligatorio en blanco, o tratar de dar una fecha no válida. Así es, Symfony ha creado básicas reglas de validación analizando el esquema de base de datos.
 
-![Validación](http://www.symfony-project.org/images/jobeet/1_2/03/validation.png)
+![Validación](http://www.symfony-project.org/images/jobeet/1_3/03/validation.png)
 
 Nos vemos mañana
 ----------------
