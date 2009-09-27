@@ -6,7 +6,7 @@ serve per aggiornare i propri progetti basati su symfony 1.2.
 
 Per informazioni più dettagliate su cosa è stato modificato/aggiunto in
 symfony 1.3, si può leggere il tutorial
-[Cosa c'è di nuovo?](http://www.symfony-project.org/tutorial/1_3/it/whats-new).
+[Che c'è di nuovo?](http://www.symfony-project.org/tutorial/1_3/it/whats-new).
 
 >**CAUTION**
 >symfony 1.3 è compatibile con PHP 5.2.4 e versioni successive.
