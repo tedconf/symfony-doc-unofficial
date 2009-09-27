@@ -443,7 +443,7 @@ To generate a project for Propel, use the `--orm` option:
 If you don't want to use Propel or Doctrine, you can pass `none` to the
 `--orm` option:
 
-  $ php /path/to/symfony generate:project foo --orm=none
+    $ php /path/to/symfony generate:project foo --orm=none
 
 The new `--installer` option allows you to pass a PHP script that can further
 customize the newly created project. The script is executed in the context of
