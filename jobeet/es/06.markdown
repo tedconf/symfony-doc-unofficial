@@ -1,5 +1,5 @@
 ﻿Día 6: Más acerca del Modelo
-===========================
+============================
 
 Ayer fue un gran día. Aprendiste como crear URLs amigables y como usar el framework Symfony para automatizar un montón de cosas por ti.
 
@@ -129,7 +129,7 @@ Puedes ver por tí mismo que Doctrine tiene una claúsula where para la columna 
 
 Esto esta bueno, pero es bastante molesto tener que cambiar del navegador , al IDE, y el archivo log cada vez que necesitas probar un cambio. Gracias a la barra web de depuración de symfony, toda la información que necesitas esta también disponible dentro de la comodidad de tu navegador:
 
-![Sentencias SQL en la web debug toolbar](http://www.symfony-project.org/images/jobeet/1_2/06/web_debug_sql.png)
+![Sentencias SQL en la web debug toolbar](http://www.symfony-project.org/images/jobeet/1_3/06/web_debug_sql.png)
 
 Serialización de Objetos
 ------------------------
@@ -172,8 +172,8 @@ Cuando necesitas hacer algo automáticamente antes que un objeto ##ORM## sea gua
       {
         if ($this->isNew() && !$this->getExpiresAt())
         {
-          $now = $this->getCreatedAt() ? strtotime($this->getCreatedAt()) : time();
-          $this->setExpiresAt(date('Y-m-d h:i:s', $now + 86400 * 30));
+          $now = $this->getCreatedAt() ? $this->getDateTimeObject('created_at')->format('U') : time();
+          $this->setExpiresAt(date('Y-m-d H:i:s', $now + 86400 * 30));
         }
 
         return parent::save($conn);
@@ -305,8 +305,8 @@ Vamos a actualizar el código para tomar esta nueva configuración en cuenta:
     {
       if ($this->isNew() && !$this->getExpiresAt())
       {
-        $now = $this->getCreatedAt() ? strtotime($this->getCreatedAt()) : time();
-        $this->setExpiresAt(date('Y-m-d h:i:s', $now + 86400 * sfConfig::get('app_active_days')));
+        $now = $this->getCreatedAt() ? $this->getDateTimeObject('created_at')->format('U') : time();
+        $this->setExpiresAt(date('Y-m-d H:i:s', $now + 86400 * sfConfig::get('app_active_days')));
       }
 
       return parent::save($conn);
@@ -640,7 +640,7 @@ y agrega esta nueva configuración en `app.yml`:
       active_days:          30
       max_jobs_on_homepage: 10
 
-![Página de Inicio ordenada por Categoría](http://www.symfony-project.org/images/jobeet/1_2/06/homepage.png)
+![Página de Inicio ordenada por Categoría](http://www.symfony-project.org/images/jobeet/1_3/06/homepage.png)
 
 Datos Dinámicos
 ---------------
@@ -684,12 +684,13 @@ Ten cuidado, al analizar YAML no olvides ninguna indentación.
 Manten en mente los siguientes simples tips cuando añadas código PHP a un archivo YAML 
 
  * La declaración `<?php ?>` debe siempre empezar la linea o ser incrustada en un valor.
+ 
  * Si una declaración `<?php ?>` finaliza una linea, necesitarás explícitamente agregar una nueva linea ("\n").
 
 Puedes ahora recargar los archivos de datos con la tarea `propel:data-load` y ver si solo  `10` puestos de trabajo son mostrados en la página de inicio para la categoría `Programming`.
 En la siguiente captura de pantalla, tenemos modificado el número máximo de puestos de trabajo a cinco para hacer una imágen mas pequeña:
 
-![Paginación](http://www.symfony-project.org/images/jobeet/1_2/06/pagination.png)
+![Paginación](http://www.symfony-project.org/images/jobeet/1_3/06/pagination.png)
 
 Asegurar la Página
 ------------------
@@ -723,11 +724,6 @@ Por defecto, el `sfPropelRoute` usa el método estandar `doSelectOne()` para obt
       requirements:
         id: \d+
         sf_method: [GET]
-
-<doctrine>
->**NOTE**
->El item `method_for_query` no funciona en las versiones anteriores a la 1.2.2.
-</doctrine>
 
 <propel>
 El método `doSelectActive()` recibirá el objeto `Criteria` ya listo por parte de la ruta:
@@ -766,7 +762,7 @@ El método `retrieveActiveJob` recibirá el objeto `Doctrine_Query` ya listo por
 
 Ahora, si tratas de ontener un puesto de trabajo expirado, serás enviadoa una página 404.
 
-![Error 404 para un puesto de trabajo expirado](http://www.symfony-project.org/images/jobeet/1_2/06/exception.png)
+![Error 404 para un puesto de trabajo expirado](http://www.symfony-project.org/images/jobeet/1_3/06/exception.png)
 
 Enlazar a la Página de la Categoría
 -----------------------------------
@@ -779,20 +775,9 @@ Pero, aguarda un minuto. La hora no terminó aun y ya hemos trabajado mucho. Por
 Nos vemos Mañana
 ----------------
 
-Para trabajar sobre una implementación en tu proyecto local. Por favor, usa la [API documentation](http://www.symfony-project.org/api/1_2/) y toda la [documentation](http://www.symfony-project.org/doc/1_2/) disponible en el sitio web de Symfony para ayudarte. Nos veremos tra vez mañana con nuestra implementación.
+Para trabajar sobre una implementación en tu proyecto local. Por favor, usa la [API documentation](http://www.symfony-project.org/api/1_3/) y toda la [documentation](http://www.symfony-project.org/doc/1_3/) disponible en el sitio web de Symfony para ayudarte. Nos veremos tra vez mañana con nuestra implementación.
 
 ¡Suerte!
-
->**Note**
->Si deseas comprobar el código del día de hoy, o de cualquier otro día, el código esta
->disponible día a día en el repositorio SVN oficial de Jobeet
->(`http://svn.jobeet.org/##ORM_LOWER##/`).
->
->Por ejemplo, puedes obtener el código de hoy de la
->etiqueta `release_day_06`:
->
->       $ svn co http://svn.jobeet.org/##ORM_LOWER##/tags/release_day_06/ jobeet/
->
 
 Feedback
 --------
