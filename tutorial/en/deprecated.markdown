@@ -61,7 +61,8 @@ before, and will be removed in symfony 1.4:
     the class `sfLoader` are deprecated, the `sfLoader` class will be removed
     in symfony 1.4.
 
-  * `sfController::sendEmail()`
+  * `sfController::sendEmail()`: Use the new mailer feature of Symfony 1.3
+    instead.
 
   * `sfGeneratorManager::initialize()`: It does nothing.
 
