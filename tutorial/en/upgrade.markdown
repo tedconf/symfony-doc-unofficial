@@ -5,7 +5,7 @@ This document describes the changes made in symfony 1.3 and what need
 to be done to upgrade your symfony 1.2 projects.
 
 If you want more detailed information on what has been changed/added in symfony 1.3,
-you can read the [What's new?](http://www.symfony-project.org/tutorial/1_3/whats-new) tutorial.
+you can read the [What's new?](http://www.symfony-project.org/tutorial/1_3/en/whats-new) tutorial.
 
 >**CAUTION**
 >symfony 1.3 is compatible with PHP 5.2.4 or later.

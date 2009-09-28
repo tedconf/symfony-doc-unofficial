@@ -6,7 +6,7 @@ qu'il faut accomplir pour mettre à jour vos projets Symfony 1.2.
 
 Si vous souhaitez davantage d'informations concernant les ajouts et 
 changements de Symfony 1.3, vous pouvez consulter le tutoriel 
-[What's new?](http://www.symfony-project.org/tutorial/1_3/whats-new).
+[What's new?](http://www.symfony-project.org/tutorial/1_3/en/whats-new).
 
 >**CAUTION**
 >Symfony 1.3 est compatible avec PHP 5.2.4 ou ultérieurs.
