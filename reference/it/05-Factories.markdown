@@ -65,6 +65,15 @@ automaticamente usato prima che il factory sia creato:
 Factory
 ---------
 
+ * [`mailer`](#chapter_05_mailer)
+
+  * [`charset`](#chapter_05_sub_charset)
+  * [`delivery_address`](#chapter_05_sub_delivery_address)
+  * [`delivery_strategy`](#chapter_05_sub_delivery_strategy)
+  * [`spool_arguments`](#chapter_05_sub_spool_arguments)
+  * [`spool_class`](#chapter_05_sub_spool_class)
+  * [`transport`](#chapter_05_sub_transport)
+
  * [`request`](#chapter_05_request)
 
    * [`formats`](#chapter_05_sub_formats)
@@ -101,6 +110,10 @@ Factory
    * [`session_name`](#chapter_05_sub_session_name)
 
  * [`view_cache_manager`](#chapter_05_view_cache_manager)
+
+   * [`cache_key_use_vary_headers`](chapter_05_sub_cache_key_use_vary_headers)
+   * [`cache_key_use_host_name`](chapter_05_sub_cache_key_use_host_name)
+   
  * [`view_cache`](#chapter_05_view_cache)
  * [`i18n`](#chapter_05_i18n)
 
@@ -130,6 +143,142 @@ Factory
  * [`controller`](#chapter_05_controller)
 
 <div class="pagebreak"></div>
+
+`mailer`
+--------
+
+*sfContext Accessor*: `$context->getMailer()`
+
+*Configurazione predefinita*:
+
+    [yml]
+    mailer:
+      class: sfMailer
+      param:
+        logging:           %SF_LOGGING_ENABLED%
+        charset:           %SF_CHARSET%
+        delivery_strategy: realtime
+        transport:
+          class: Swift_SmtpTransport
+          param:
+            host:       localhost
+            port:       25
+            encryption: ~
+            username:   ~
+            password:   ~
+
+*Configurazione predefinita per l'ambiente `test`*:
+
+    [yml]
+    mailer:
+      param:
+        delivery_strategy: none
+
+*Configurazione predefinita per l'ambiente `dev`*:
+
+    [yml]
+    mailer:
+      param:
+        delivery_strategy: none
+
+### ~`charset`~
+
+L'opzione `charset` definisce l'insieme di caratteri da usare per i mesaggi di mail. Per
+impostazione predefinita, usa l'impostazione `charset` da `settings.yml`.
+
+### ~`delivery_strategy`~
+
+L'opzione `delivery_strategy` definisce come i messaggi email vengono consegnati dal
+mailer. Per impostazione predefinita sono disponibili quattro strategie, che dovrebbero soddisfare tutte le
+esigenze più comuni:
+
+ * `realtime`:       I messaggi vengono inviati in tempo reale.
+
+ * `single_address`: I messaggi vengono inviati a un singolo indirizzo.
+
+ * `spool`:          I messaggi vengono memorizzati in una coda.
+
+ * `none`:           I messaggi vengono semplicemente ignorati.
+
+### ~`delivery_address`~
+
+L'opzione `delivery_address` definisce il destinatario di tutti i messaggi quando
+`delivery_strategy` è imposatto a `single_address`.
+
+### ~`spool_class`~
+
+L'opzione `spool_class` definisce la classe di spool da usare quando
+`delivery_strategy` è impostato a `spool`:
+
+  * ~`Swift_FileSpool`~: I messaggi sono memorizzati sul filesystem.
+
+  * ~`Swift_DoctrineSpool`~: I messaggi sono memorizzati in un modello di Doctrine.
+
+  * ~`Swift_PropelSpool`~: I messaggi sono memorizzati in un modello di Propel.
+
+>**NOTE**
+>Quando lo spool è istanziato, l'opzione ~`spool_arguments`~ è usata come
+>argomento del costruttore.
+
+### ~`spool_arguments`~
+
+L'opzione `spool_arguments` definisce gli argomenti del costruttore dello spool.
+Queste sono le opzioni disponibili per le classi built-in delle code:
+
+ * `Swift_FileSpool`:
+
+    * Il percorso assoluto della cartella delle code (i messaggi vengono memorizzati in
+      questa cartella)
+
+ * `Swift_DoctrineSpool`:
+
+    * Il modello di Doctrine da usare per memorizzare i messaggi (Predefinito `MailMessage`)
+
+    * Il nome della colonna da usare per memorizzare il messaggio (Predefinito `message`)
+
+    * Il metodo da chiamare per recuperare i messaggi da inviare (facoltativo). Esso
+      riceve le opzioni della coda come argomento.
+
+ * `Swift_PropelSpool`:
+
+    * Il modello di Propel da usare per memorizzare i messaggi (Predefinito `MailMessage`)
+
+    * Il nome della colonna da usare per memorizzare il messaggio (Predefinito `message`)
+
+    * Il metodo da chiamare per recuperare i messaggi da inviare (facoltativo). Esso
+      riceve le opzioni della coda come argomento.
+
+La configurazione sottostante è una configurazione tipica per uno spool di Doctrine:
+
+    [yml]
+    # configurazione in factories.yml
+    mailer:
+      class: sfMailer
+      param:
+        delivery_strategy: spool
+        spool_class:       Swift_DoctrineSpool
+        spool_arguments:   [ MailMessage, message, getSpooledMessages ]
+
+### ~`transport`~
+
+L'opzione `transport` definisce il mezzo da usare per inviare effettivamente i
+messaggi email.
+
+L'impostazione `class` può essere qualunque classe che implementa `Swift_Transport`,
+e ne sono fornite tre predefinite:
+
+  * ~`Swift_SmtpTransport`~: Usa un server SMTP per inviare i messaggi.
+
+  * ~`Swift_SendmailTransport`~: Usa `sendmail` per inviare i messaggi.
+
+  * ~`Swift_MailTransport`~: Usa la funzione PHP nativa `mail()` per inviare
+    i messaggi.
+
+È possibile configurare ulteriormente il mezzo con cui viene inviata la mail
+impostando `param`. La sezione
+["Transport Types"](http://swiftmailer.org/docs/transport-types) della
+documentazione ufficiale di Swift Mailer descrive tutto quello che dovete sapere
+sulle classi di trasporto built-in e i loro differenti parametri.
 
 `request`
 ---------
