@@ -507,14 +507,29 @@ sono disponibili molte altre opzioni:
     [yml]
     view_cache_manager:
       class: sfViewCacheManager
+      param:
+        cache_key_use_vary_headers: true
+        cache_key_use_host_name:    true
 
 >**CAUTION**
 >Questo factory è creato solo se l'impostazione [`cache`](#chapter_04_sub_cache)
 >è impostata su `on`.
 
-La configurazione del gestore della cache della vista non include una chiave `param`. Questa
-configurazione è fatta attraverso il factory `view_cache`, che definisce il
-sottostante oggetto cache usato dal gestore della cache della vista.
+La maggior parte della configurazione di questo factory è fatta tramite il factory `view_cache`, che
+definisce l'oggetto cache sottostante usato dal gestore cache della vista.
+
+### ~`cache_key_use_vary_headers`~
+
+L'opzione `cache_key_use_vary_headers` specifica se le chiavi della cache devono
+includere le parti variabili degli header. In pratica, dice se la cache della pagina deve
+essere dipendente dall'header HTTP, come specificato nel parametro della cache `vary` (valore
+predefinito: `true`).
+
+### ~`cache_key_use_host_name`~
+
+L'opzione `cache_key_use_host_name` specifica se le chiavi della cache devono
+includere la parte del nome host. In pratica, dice se la cache della pagina deve essere
+dipendente dal nome dell'host (valore predefinito: `true`).
 
 `view_cache`
 ------------
@@ -607,15 +622,9 @@ in cache i dati i18n (vedere la sezione Cache per maggiori informazioni).
         default_action:                   index
         debug:                            %SF_DEBUG%
         logging:                          %SF_LOGGING_ENABLED%
-        generate_shortest_url:            true
-        extra_parameters_as_query_string: true
-        cache:
-          class: sfFileCache
-          param:
-            automatic_cleaning_factor: 0
-            cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
-            lifetime:                  31556926
-            prefix:                    %SF_APP_DIR%/routing
+        generate_shortest_url:            false
+        extra_parameters_as_query_string: false
+        cache:                            ~
 
 ### ~`variable_prefixes`~
 
@@ -652,12 +661,14 @@ dal sistema delle rotte.
 
 ### ~`cache`~
 
+*Predefinito*: nessuno
+
 L'opzione `cache` definisce un factory cache anonimo da usare per mettere in cache
 la configurazione delle rotte e i dati (vedere la sezione Cache per maggiori informazioni).
 
 ### ~`suffix`~
 
-*Predefinito*: none
+*Predefinito*: nessuno
 
 Il suffisso predefinito da utilizzare per tutte le rotte. Questa opzione è deprecata e non è
 più di nessuna utilità.
@@ -681,8 +692,6 @@ delle corrispondenze con le rotte sono collocate nelle prime posizioni. Si consi
 di verificare l'impostazione prima di andare in produzione, perché in certe circostanze
 può fare degradare le prestazioni.
 
->**CAUTION**
->Questa impostazione è disponibile solo per symfony 1.2.7 o superiore.
 
 ### ~`lookup_cache_dedicated_keys`~
 
@@ -697,8 +706,6 @@ Come regola generale, l'impostazione a `false` è migliore quando si usa una cla
 basata su file (per esempio `sfFileCache`), l'impostazione a `true` è migliore
 quando si usa una classe cache basata sulla memoria (per esempio `sfAPCCache`).
 
->**CAUTION**
->Questo parametro è disponibile solo dalla versione 1.2.7 in poi di symfony.
 
 `logger`
 --------
