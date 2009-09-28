@@ -114,10 +114,6 @@ I valori nulli in YAML possono essere espressi con `null` o `~`.
 
 I booleani in YAML sono espressi con `true` e `false`.
 
->**NOTE**
->L'interprete YAML di symfony riconosce anche `on`, `off`, `yes` e `no`, ma
->il loro uso è fortemente scoraggiato, in quanto sono stati rimossi dalle
->specifiche YAML dalla versione 1.2.
 
 ### Date
 
