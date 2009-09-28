@@ -82,19 +82,23 @@ PDO構文でもDSN情報を指定できます。
           password:     password
 
 >**TIP**
->PDOスタイルの構文を利用することでより優れた柔軟性とPDOへの接続に関する非標準の情報を指定できます。たとえば、接続する際に非標準のunix_socketのパスもしくはポートをPDO構文で指定すればより柔軟に対応できます。`configure:database`コマンドはPDOスタイルでのみ動作します。
+>PDOスタイルの構文を利用することでより優れた柔軟性とPDOへの接続に関する非標準の情報を指定できます。
+>たとえば、接続する際に非標準のunix_socketのパスもしくはポートをPDO構文で指定すればより柔軟に対応できます。>`configure:database`コマンドはPDOスタイルでのみ動作します。
 
 ## データベースからインポートする
 
-Doctrineは既存のデータベースから`config/doctrine/schema.yml`スキーマファイルを生成する機能を持ちます。インポートしたいデータベースに対してDoctrineの接続を設定して次のコマンドを走らせるだけです。
+Doctrineは既存のデータベースから`config/doctrine/schema.yml`スキーマファイルを生成する機能を持ちます。
+インポートしたいデータベースに対してDoctrineの接続を設定して次のコマンドを走らせるだけです。
 
 >**NOTE**
->これはPropelスキーマをDoctrineのものに変換する良い方法です。Propelを利用してデータベースを作成し、Doctrineを利用して作成されたデータベースからスキーマを生成します。
+>これはPropelスキーマをDoctrineのものに変換するよい方法です。
+>Propelを利用してデータベースを作成し、Doctrineを利用して作成されたデータベースからスキーマを生成します。
 
     $ ./symfony doctrine:build-schema
     >> doctrine  generating yaml schema from database
 
-`config/doctrine/schema.yml` の中を見るとデータベースに関するYAML形式の情報が見つかります。この例ではユーザーテーブルが1つあります。
+`config/doctrine/schema.yml`の中を見るとデータベースに関するYAML形式の情報が見つかります。
+この例ではユーザーテーブルが1つあります。
 
     CREATE TABLE user (id BIGINT AUTO_INCREMENT, username VARCHAR(255), password VARCHAR(255), PRIMARY KEY(id)) ENGINE = INNODB;
 
@@ -135,7 +139,8 @@ Doctrineは並列接続をする機能を提供します。クエリが適切な
           username: user
           password: secret
 
-マスターデータベースにバインドしたい`Client`モデルがあるとします。次のように`config/doctrine/schema.yml`にYAMLコードを設定することで、モデルを直に定義できます。
+マスターデータベースにバインドしたい`Client`モデルがあるとします。
+次のように`config/doctrine/schema.yml`にYAMLコードを設定することで、モデルを直接定義できます。
 
     Client:
       connection: master
@@ -159,7 +164,10 @@ Doctrineは並列接続をする機能を提供します。クエリが適切な
          foreignAlias: Stores
 
 >**Note**
->テーブルは個別のデータベースの中にあるのでデータは遅延ロードのみできます。現在DoctrineはデータベースをまたがったテーブルをjoinするSQLの生成をサポートしません。また、テーブルに設定されたexport属性に注意してください。これはcreate table文だけをエクスポートして外部キーの制約はエクスポートしないようにDoctrineに指示します。
+>テーブルは個別のデータベースの中にあるのでデータは遅延ロードのみできます。
+>現在DoctrineはデータベースをまたがったテーブルをjoinするSQLの生成をサポートしません。
+>また、テーブルに設定されたexport属性に注意してください。
+>これはCREATE TABLE文だけをエクスポートして外部キーの制約はエクスポートしないようにDoctrineに指示します。
 
 ## 接続属性
 
@@ -177,7 +185,8 @@ sfDoctrinePluginによって次のように`config/databases.yml`ファイルの
 ここで指定した属性は接続が作成されたときに`Doctrine_Connection`インスタンスに設定されます。
 
 >**NOTE**
->Doctrineの属性は機能の設定と制御のためにあります。属性の詳細は [Doctrineの公式ドキュメント](http://www.doctrine-project.org/documentation/manual/1_0/ja/configuration)で読むことができます。
+>Doctrineの属性は機能の設定と制御のためにあります。
+属性の詳細は [Doctrineの公式ドキュメント](http://www.doctrine-project.org/documentation/manual/1_0/ja/configuration)で読むことができます。
 
 ## すべてをビルドする
 
@@ -223,7 +232,9 @@ sfDoctrinePluginによって次のように`config/databases.yml`ファイルの
     >> doctrine  loading data fixtures from "/Us...ymfony12doctrine/data/fixtures"
 
 >**Note**
->YAMLスキーマファイルから生成されたモデルは`lib/model/doctrine and lib/model/doctrine/base`で見ることができます。ベースディレクトリの中にモデルが存在しないとき、モデルをビルドするたびに生成フォルダの中のファイルは書き換えられます。`lib/model/doctrine`の中のクラスを編集することでモデルをカスタマイズできます。
+>YAMLスキーマファイルから生成されたモデルは`lib/model/doctrine and lib/model/doctrine/base`で見ることができます。
+>ベースディレクトリの中にモデルが存在しないとき、モデルをビルドするたびに生成フォルダの中のファイルは書き換えられます。
+>`lib/model/doctrine`の中のクラスを編集することでモデルをカスタマイズできます。
 
 `lib/model/doctrine/base/BaseClient.class.php`の内容は次のようになります。
 
@@ -253,7 +264,9 @@ sfDoctrinePluginによって次のように`config/databases.yml`ファイルの
     }
 
 >**TIP**
->開発の最中に`./symfony doctrine:build-all-reload-test-all`コマンドを走らせることは一般的なやり方です。このコマンドによって環境全体がリビルドされテストスイートのすべてが実施されます。これは新しい回帰が起きていないことを保証するために新しいコードをコミットする前に実行する前に使うすばらしいコマンドです。
+>開発の最中に`./symfony doctrine:build-all-reload-test-all`コマンドを走らせることは一般的なやり方です。
+>このコマンドによって環境全体がリビルドされテストスイートのすべてが実施されます。
+>これは新しい回帰が起きていないことを保証するために新しいコードをコミットする前に実行する前に使うすばらしいコマンドです。
 
 -
 

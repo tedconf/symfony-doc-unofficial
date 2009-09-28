@@ -3,13 +3,18 @@
 
 ## 属性
 
-Doctrineは機能と設定を属性(attribute)で制御します。属性を異なるレベルの階層で定義できます。属性の中にはすべてのレベルで指定できるものもあればそうではないものもあります。この章ではそれぞれのレベルで属性を指定する方法を説明します。属性は、個別の接続、モデルごとにグローバルに指定できます。
+Doctrineは機能と設定を属性(attribute)で制御します。属性を異なるレベルの階層で定義できます。
+属性の中にはすべてのレベルで指定できるものもあればそうではないものもあります。
+この章ではそれぞれのレベルで属性を指定する方法を説明します。属性は、個別の接続、モデルごとにグローバルに指定できます。
 
 symfonyでは`config/ProjectConfiguration.class.php`もしくは`apps/appname/config/appnameConfiguration.class.php`の中でDoctrineの構成を制御できます。
 
 ### グローバル
 
-設定の中で`configureDoctrine()`を作ることでグローバル属性を制御できます。すべてのグローバル属性はSingletonの`Doctrine_Manager`インスタンスで設定されます。`sfDoctrinePlugin`の`config.php`がロードされるときにこのメソッドが起動します。これは接続が存在する前なので、この時点では`Doctrine_Manager`属性のみが制御できます。
+設定の中で`configureDoctrine()`を作ることでグローバル属性を制御できます。
+すべてのグローバル属性はSingletonの`Doctrine_Manager`インスタンスで設定されます。
+`sfDoctrinePlugin`の`config.php`がロードされるときにこのメソッドが起動します。
+これは接続が存在する前なので、この時点では`Doctrine_Manager`属性のみが制御できます。
 
     [php]
     public function configureDoctrine(Doctrine_Manager $manager)
@@ -20,7 +25,8 @@ symfonyでは`config/ProjectConfiguration.class.php`もしくは`apps/appname/co
 
 ### すべての接続
 
-設定クラスの中で`configureDoctrineConnection()`を作ることで接続属性ごとに制御できます。`config/databases.yml`で記述されている順序でそれぞれの接続がsymfonyによってインスタンス化されるとき`sfDoctrineDatabase`の中でこのメソッドが呼び出されます。
+設定クラスの中で`configureDoctrineConnection()`を作ることで接続属性ごとに制御できます。
+`config/databases.yml`で記述されている順序でそれぞれの接続がsymfonyによってインスタンス化されるとき`sfDoctrineDatabase`の中でこのメソッドが呼び出されます。
 
     [php]
     public function configureDoctrineConnection(Doctrine_Connection $connection)
@@ -42,7 +48,8 @@ symfonyでは`config/ProjectConfiguration.class.php`もしくは`apps/appname/co
            use_dql_callbacks: true
            use_native_enum:  true
 
-それぞれの接続ごとに異なる設定を用意するのであれば個別の接続ごとに起動する特別な関数を作ることもできます。`master`という名前の接続を用意するのであれば`config/ProjectConfniguration.class.php`ファイルの中で`configureDoctrineConnectionMaster()`という名前の関数を作ることが必要になります。
+それぞれの接続ごとに異なる設定を用意するのであれば個別の接続ごとに起動する特別な関数を作ることもできます。
+`master`という名前の接続を用意するのであれば`config/ProjectConfniguration.class.php`ファイルの中で`configureDoctrineConnectionMaster()`という名前の関数を作ることが必要になります。
 
     [php]
     public function configureDoctrineConnectionMaster(Doctrine_Connection $connection)
@@ -66,7 +73,8 @@ Doctrine用の最後のレベルの階層はモデルです。YAMLフォーマ�
         name: string(255)
         description: string(500)
 
-PHPコードを利用して属性を`lib/model/doctrine`の中の生成モデルクラスに設定することもできます。`lib/model/doctrine/Store.class.php`を確認して追加属性をいくつか指定するために`setTableDefinition()`をオーバーライドします。
+PHPコードを利用して属性を`lib/model/doctrine`の中の生成モデルクラスに設定することもできます。
+`lib/model/doctrine/Store.class.php`を確認して追加属性をいくつか指定するために`setTableDefinition()`をオーバーライドします。
 
     [php]
     public function setTableDefinition()
@@ -77,9 +85,12 @@ PHPコードを利用して属性を`lib/model/doctrine`の中の生成モデル
 
 ## モデルのビルド方法を設定する
 
-sfDoctrinePluginはモデルのデフォルトのビルド方法のオプションをいくつか上書きする機能を提供します。これらの設定は`sfConfig`クラスの中で`doctrine_model_builder_options`という名前のパラメータを使うことで制御できます。
+sfDoctrinePluginはモデルのデフォルトのビルド方法のオプションをいくつか上書きする機能を提供します。
+これらの設定は`sfConfig`クラスの中で`doctrine_model_builder_options`という名前のパラメーターを使うことで制御できます。
 
-モデルを生成するときに使われる基底クラスを変更する例は次の通りです。基底クラスをたとえば`myDoctrineRecord`と設定できます。symfonyのオートロード機能がクラスを見つけられるようになっているか確認してください。
+モデルを生成するときに使われる基底クラスを変更する例は次の通りです。
+基底クラスをたとえば`myDoctrineRecord`と設定できます。
+symfonyのオートロード機能がクラスを見つけられるようになっているか確認してください。
 
     [php]
     public function configureDoctrine(Doctrine_Manager $manager)
@@ -99,14 +110,14 @@ sfDoctrinePluginはモデルのデフォルトのビルド方法のオプショ�
 
 モデルのビルドプロセスのための異なる値に変更できるすべてのオプションの一覧です。
 
-| 名前                 | 説明                             | デフォルト       |
-|----------------------|----------------------------------|------------------|
-| suffix               | 生成クラス用に使う接尾辞         | .class.php       |
-| generateBaseClasses  | 基底クラスを生成するかどうか     | true             |
-| generateTableClasses | テーブルクラスを生成するかどうか | true             |
-| baseClassPrefix      | 基底クラスに使う接頭辞の単語     | Base             |
-| baseClassesDirectory | 基底クラスを生成するディレクトリ | base             |
-| baseClassName        | モデルが継承するスーパークラス   | sfDoctrineRecord |
+| 名前                 | 説明                               | デフォルト       |
+|----------------------|------------------------------------|------------------|
+| suffix               | 生成クラス用に使うサフィックス      | .class.php       |
+| generateBaseClasses  | 基底クラスを生成するかどうか        | true             |
+| generateTableClasses | テーブルクラスを生成するかどうか    | true             |
+| baseClassPrefix      | 基底クラスに使うプレフィックスの単語| Base             |
+| baseClassesDirectory | 基底クラスを生成するディレクトリ    | base             |
+| baseClassName        | モデルが継承するスーパークラス      | sfDoctrineRecord |
 
 ## Doctrineライブラリパスをカスタマイズする
 
@@ -120,7 +131,8 @@ sfDoctrinePluginを利用すれば、設定値を1つ変更するだけで、簡
     $ cd lib/vendor
     $ svn co http://svn.doctrine-project.org/branches/1.0.10/lib doctrine
 
-これで、プラグインとしてバンドルされていたバージョンの代わりに、先程チェックアウトしたバージョンを設定できます。次のように、`ProjectConfiguration::setup()`メソッドと`sfConfig`で、`sfDoctrinePlugin_doctrine_lib_path`の値を変更する必要があります:
+これで、プラグインとしてバンドルされていたバージョンの代わりに、さきほどチェックアウトしたバージョンを設定できます。
+次のように、`ProjectConfiguration::setup()`メソッドと`sfConfig`で、`sfDoctrinePlugin_doctrine_lib_path`の値を変更する必要があります:
 
     [php]
     public function setup()
