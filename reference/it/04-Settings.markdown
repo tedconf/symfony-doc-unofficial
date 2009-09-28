@@ -39,7 +39,6 @@ Impostazioni
     * [`cache`](#chapter_04_sub_cache)
     * [`charset`](#chapter_04_sub_charset)
     * [`check_lock`](#chapter_04_sub_check_lock)
-    * [`check_symfony_version`](#chapter_04_sub_check_symfony_version)
     * [`compressed`](#chapter_04_sub_compressed)
     * [`csrf_secret`](#chapter_04_sub_csrf_secret)
     * [`default_culture`](#chapter_04_sub_default_culture)
@@ -51,11 +50,11 @@ Impostazioni
     * [`etag`](#chapter_04_sub_etag)
     * [`i18n`](#chapter_04_sub_i18n)
     * [`lazy_cache_key`](#chapter_04_sub_lazy_cache_key)
+    * [`file_link_format`](#chapter_04_sub_file_link_format)
     * [`logging_enabled`](#chapter_04_sub_logging_enabled)
     * [`no_script_name`](#chapter_04_sub_no_script_name)
     * [`max_forwards`](#chapter_04_sub_max_forwards)
     * [`standard_helpers`](#chapter_04_sub_standard_helpers)
-    * [`strip_comments`](#chapter_04_sub_strip_comments)
     * [`use_database`](#chapter_04_sub_use_database)
     * [`web_debug`](#chapter_04_sub_web_debug)
     * [`web_debug_web_dir`](#chapter_04_sub_web_debug_web_dir)
@@ -122,7 +121,7 @@ utilizzare:
 
 ### ~`escaping_strategy`~
 
-*Predefinito*: `off`
+*Predefinito*: `on`
 
 L'impostazione `escaping_strategy` è un valore Booleano che determina se il 
 sub-framework per l'escape dell'output è abilitato o meno. Quando è abilitato
@@ -137,7 +136,7 @@ in uno script Javascript).
 Il sub-framework che si occupa dell'escape dell'output utilizza l'impostazione
 `charset` per il suo compito.
 
-È vivamente consigliato di cambiare il valore predefinito a `on`.
+È vivamente consigliato di lasciare il valore predefinito a `on`.
 
 >**TIP**
 >Queste impostazioni possono essere dichiarate quando si crea un'applicazione 
@@ -160,7 +159,7 @@ l'inglese o lingue europee.
 
 ### ~`csrf_secret`~
 
-*Predefinito*: `false`
+*Predefinito*: una chiave segreta generata casualmente
 
 L'impostazione `csrf_secret` specifica una chiave univoca di sicurezza per 
 l'applicazione. Se non è impostata a `false`, attiva la protezione CSRF per 
@@ -169,7 +168,7 @@ dall'helper `link_to()` quando c'è la necessità di convertire un link ad un fo
 (per simulare un metodo HTTP `DELETE` per esempio).
 
 È vivamente consigliato di cambiare il valore predefinito con una chiave segreta
-univoca.
+univoca di vostra scelta.
 
 >**TIP**
 >Queste impostazioni possono essere dichiarate quando si crea un'applicazione 
@@ -293,12 +292,22 @@ Quando abilitata l'impostazione `lazy_cache_key` ritarda la creazione di una chi
 cache fino a che non verrà verificato se l'azione o il partial può essere inserito
 in cache o meno.
 
-Questa impostazione è stata introdotta in symfony 1.2.7 per aumentare le performance
-senza inficiare la retrocompatibilità con le precedenti release delle 1.2.
-Verrà rimossa in symfony 1.3, in quanto l'ottimizzazione sarà sempre abilitata.
+### ~`file_link_format`~
 
->**CAUTION**
->Questa impostazione è disponibile solo per symfony 1.2.7 e superiori.
+*Predefinito*: nessuno
+
+Nel messaggio di debug, i percorsi dei file sono link cliccabili se
+è impostato il valore di configurazione PHP di `sf_file_link_format` o di
+`xdebug.file_link_format`.
+
+Per esempio, se si vogliono aprire file in TextMate, si può utilizzare il seguente
+valore:
+
+    [yml]
+    txmt://open?url=file://%f&line=%l
+
+Il segnaposto `%f` sarà sostituito con il percorso assoluto del file e il
+segnaposto `%l` sarà sostituito con il numero di linea.
 
 ### ~`logging_enabled`~
 
@@ -375,19 +384,6 @@ messa a disposizione dal core di symfony.
 >È possibile sovrascrivere il template predefinito aggiungendo un file 
 >`config/unavailable.php` al progetto o all'applicazione.
 
-### ~`check_symfony_version`~
-
-*Predefinito*: `off`
-
-L'impostazione `check_symfony_version` abilita e disabilita il controllo della 
-versione corrente di symfony eseguito ad ogni richiesta. Se abilitato symfony 
-pulirà la cache in modo automatico quando il framework verrà aggiornato.
-
-È vivamente sconsigliato di impostare questo valore su `on`, dato che aggiunge
-un leggero overhead e perché è veramente semplice ripulire la cache quando si
-esegue il deploy di un nuovo progetto. Questa impostazione è utile solamente
-quando molti progetti condividono lo stesso codice symfony, cosa che comunque
-non è raccomandata.
 
 ### ~`web_debug_web_dir`~
 
@@ -396,21 +392,3 @@ non è raccomandata.
 L'impostazione `web_debug_web_dir` definisce il percorso per i file della 
 web debug toolbar (immagini, fogli di stile e file JavaScript).
 
-### ~`strip_comments`~
-
-*Predefinito*: `on`
-
-L'impostazione `strip_comments` determina se symfony può ignorare i commenti quando 
-compila le classi del core. Questa impostazione viene utilizzata solamente se
-l'impostazione `debug` è impostata a `off`.
-
-Se si verificano pagine bianche solamente nell'ambiente di produzione provare ad
-impostare il valore a `off`.
-
-### ~`max_forwards`~
-
-*Predefinito*: `5`
-
-L'impostazione `max_forwards` definisce il massimo numero di forward interni 
-permessi prima che symfony generi un'eccezione. Questo serve per prevenire loop
-infiniti.
