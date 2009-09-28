@@ -25,7 +25,7 @@ della vista:
     # ...
 
 >**NOTE**
->Il file di configurazione `view.yml` viene messe in cache come file
+>Il file di configurazione `view.yml` viene messo in cache come file
 >PHP; tale processo è gestito autonomamente dalla
 >[classe](#chapter_14_config_handlers_yml) ~`sfViewConfigHandler`~.
 
