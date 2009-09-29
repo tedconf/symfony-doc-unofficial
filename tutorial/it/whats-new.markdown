@@ -621,4 +621,448 @@ Da symfony 1.3, si può forzare l'uso di colori per l'output, passando l'opzione
 globale `--color`.
 
 
-TODO
+I18N
+----
+
+### Aggiornamento dei dati
+
+I dati usati per tutte le operazioni I18N sono stati aggiornati dal
+`progetto ICU`. Ora symfony ha circa 330 file di localizzazione, rispetto
+ai circa 70 di symfony 1.2. Si noti che i dati aggiornati potrebbero essere
+leggermente diversi da quelli precedenti, quindi ad esempio un test che
+verifichi il decimo elemento in una lista di lingue potrebbe fallire.
+
+### Ordinamento in base alla localizzazione dell'utente
+
+Tutti gli ordinamenti sui dati localizzati ora sono eseguiti in base
+alla localizzazione stessa. A tale scopo si può usare `sfCultureInfo->sortArray()`.
+
+Plugin
+------
+
+Prima di symfony 1.3, tutti i plugin erano abilitati in modo predefinito, eccetto
+`sfDoctrinePlugin` e `sfCompat10Plugin`:
+
+    [php]
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        // for compatibility / remove and enable only the plugins you want
+        $this->enableAllPluginsExcept(array('sfDoctrinePlugin', 'sfCompat10Plugin'));
+      }
+    }
+
+Per i nuovi progetti creati con symfony 1.3, i plugin devono essere
+esplicitamente abilitati nella classe `ProjectConfiguration` per poter
+essere usati:
+
+    [php]
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+        $this->enablePlugins('sfDoctrinePlugin');
+      }
+    }
+
+Il task `plugin:install` abilita automaticamente i plugin che installa (e
+`plugin:uninstall` li disabilita). Se si installa un plugin tramite
+Subversion, occorre abilitarlo a mano.
+
+Se si vuole usare un plugin del core, come `sfProtoculousPlugin` o
+`sfCompat10Plugin`, basta aggiungere il corrispondente comando `enablePlugins()`
+nella classe `ProjectConfiguration`.
+
+>**NOTE**
+>Se si aggiorna un progetto dalla versione 1.2, il vecchio comportamento
+>sarà ancora attivo, perché il task di aggiornamento non modifica il file
+>`ProjectConfiguration`. Il cambio di comportamento è solo per i nuovi
+>progetti basati su symfony 1.3.
+
+### `sfPluginConfiguration::connectTests()`
+
+Si possono connettere i test di un plugin ai task `test:*` richiamando
+il metodo `->connectTests()` della configurazione del plugin stesso, nel
+nuovo metodo `setupPlugins()`:
+
+    [php]
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setupPlugins()
+      {
+        $this->pluginConfigurations['sfExamplePlugin']->connectTests();
+      }
+    }
+
+Impostazioni
+------------
+
+### `sf_file_link_format`
+
+Symfony 1.3 formatta i percorsi dei file come link cliccabili, ovunque sia
+possibile (ad esempio nel template dell'eccezione). A questo scopo viene
+usato `sf_file_link_format`, se impostato, altrimenti symfony cercherà
+il valore `xdebug.file_link_format` nella configurazione di PHP.
+
+Ad esempio, se si vogliono aprire i file in TextMate, si aggiungano le
+seguenti righe in `settings.yml`:
+
+    [yml]
+    all:
+      .settings:
+        file_link_format: txmt://open?url=file://%f&line=%l
+
+Il segnaposto `%f` sarà sostituito con il percorso assoluto del file ed il
+segnamposto `%l` sarà sostituito dal numero di riga.
+
+Integrazione con Doctrine
+-------------------------
+
+### Generazione delle Classi dei Form
+
+È ora possibile specificare delle opzioni aggiuntive per symfony nei file YAML
+degli schema di Doctrine. Abbiamo aggiunto alcune opzioni per disabilitare la
+generazione di classi di form e di filtri.
+
+Ad esempio, in un tipico modello di riferimento molti-a-molti, non si ha
+bisogno di generare classi di form né di filtri. Quindi si può fare in
+nel modo seguente.
+
+    UserGroup:
+      options:
+        symfony:
+          form: false
+          filter: false
+      columns:
+        user_id:
+          type: integer
+          primary: true
+        group_id:
+          type: integer
+          primary: true
+
+### Ereditarietà delle Classi dei Form
+
+Quando si generano form dai modelli, i modelli contengono ereditarietà.
+Le classi figlie generate rispetterano l'ereditarietà e genereranno
+form che seguono la stessa struttura di ereditarietà.
+
+### Nuovi Task
+
+Abbiamo introdotto alcuni nuovi task che aiutano nello sviluppo con Doctrine.
+
+#### Create Model Tables
+
+Si possono ora creare individualmente le tabelle per uno specifico array di
+modelli. Le tabelle saranno eliminate e create nuovamente. Questo è utile
+se si stanno sviluppando nuovi modelli su un progetto/database esistente e
+non si vuole cancellare l'intero database, ma solo ricostruire un
+sottoinsieme di tabelle.
+
+    $ php symfony doctrine:create-model-tables Model1 Model2 Model3
+
+#### Delete Model Files
+
+Spesso si cambiano modelli, li si rinomina, si rimuovono quelli non più
+usati e via dicendo nello schema YAML. Quando lo si fa, si resta con 
+modelli, form e filtri orfani. Ora si possono pulire manualmente i file
+generati da un modello usando il task `doctrine:delete-model-files`.
+
+    $ php symfony doctrine:delete-model-files ModelName
+
+Il task troverà tutti i file generati e li mostrerà prima di chiedere una
+conferma di cancellazione.
+
+#### Clean Model Files
+
+Si può automatizzare il processo appena visto e trovare quali modelli
+esistono sul disco ma non nello schema YAML, usando il task
+`doctrine:clean-model-files`.
+
+    $ php symfony doctrine:clean-model-files
+
+Il task confronterà i file di schema YAML con i modelli ed i file che
+sono stati generati e determinerà quali rimuovere. Questi modelli
+sono passati al task `doctrine:delete-model-files`. Una conferma
+sarà richiesta prima della cancellazione effettiva.
+
+#### Reload Data
+
+Spesso si ha l'esigenza di azzerare il database e ricaricare le fixture.
+Il task  `doctrine:build-all-reload` si occupa di questo, ma fa anche
+un sacco di altre cose (generazione di modelli, form, filtri, ecc.) e
+questo, in un grosso progetto, può portar via del tempo. Ora si può
+usare il task `doctrine:reload-data`.
+
+Il seguente comando:
+
+    $ php symfony doctrine:reload-data
+
+equivale ad eseguire questi comandi:
+
+    $ php symfony doctrine:drop-db
+    $ php symfony doctrine:build-db
+    $ php symfony doctrine:insert-sql
+    $ php symfony doctrine:data-load
+
+#### Altri Build
+
+Il nuovo task `doctrine:build` consente di specificare esattamente cosa si
+vuole che symfony e Doctrine costruiscano. Questo task replica la
+funzionalità di molte combinazioni esistenti di task, che sono state tutte
+deprecate in favore di questa soluzione più flessibile.
+
+Ecco alcuni possibili utilizzi di `doctrine:build`:
+
+    $ php symfony doctrine:build --db --and-load
+
+Questo elimina (`:drop-db`) e crea (`:build-db`) il database, crea le
+tabelle configurate in `schema.yml` (`:insert-sql`) e carica le fixture
+(`:data-load`).
+
+    $ php symfony doctrine:build --all-classes --and-migrate
+
+Questo costruisce il modello (`:build-model`), i form (`:build-forms`), i
+filtri (`:build-filters`) ed esegue le migrazioni pendenti (`:migrate`).
+
+    $ php symfony doctrine:build --model --and-migrate --and-append=data/fixtures/categories.yml
+
+Questo costruisce il modello (`:build-model`), migra il database (`:migrate`)
+ed appende le fixture per le categorie
+(`:data-load --append --dir=data/fixtures/categories.yml`).
+
+Per ulteriori informazioni, si veda la pagina di aiuto del task
+`doctrine:build`.
+
+#### Nuova opzione: `--migrate`
+
+I seguenti task ora includono un'opzione `--migrate`, che sostituirà
+il task annidato `doctrine:insert-sql` con `doctrine:migrate`.
+
+  * `doctrine:build-all`
+  * `doctrine:build-all-load`
+  * `doctrine:build-all-reload`
+  * `doctrine:build-all-reload-test-all`
+  * `doctrine:rebuild-db`
+  * `doctrine:reload-data`
+
+#### `doctrine:generate-migration --editor-cmd`
+
+Il task `doctrine:generate-migration` ora include un'opzione
+`--editor-cmd`, che sarà eseguita una volta  che la classe della
+migrazione sarà creata, per una facile modifica.
+
+    $ php symfony doctrine:generate-migration AddUserEmailColumn --editor-cmd=mate
+
+Questo esempio genererà la nuova classe di migrazione ed aprirà il nuovo
+file in TextMate.
+
+### Setter e Getter di Date
+
+Abbiamo aggiunto nuovi metodi per recuperare i valori di date o timestamp
+di Doctrine come istanze di oggetti DateTime di PHP.
+
+    [php]
+    echo $article->getDateTimeObject('created_at')
+      ->format('m/d/Y');
+
+Si posson anche impostare dei valori di date semplicemente richiamando il
+metodo `setDateTimeObject` e pasando un'istanza valida `DateTime`.
+
+    [php]
+    $article->setDateTimeObject('created_at', new DateTime('09/01/1985'));
+
+### Output dei Task DQL come Tabelle di Dati
+
+Quando si eseguiva il comando `doctrine:dql`, questo mostrava i dati solo
+come YAML. Abbiamo aggiunto una nuova opzione `--table`. Tale opzione consente
+di mostrare i dati in formato tabulare, similmente a come fa MySQL da
+linea di comando.
+
+Quindi ora si può fare come segue.
+
+    $ ./symfony doctrine:dql "FROM Article a" --table
+    >> doctrine  executing dql query
+    DQL: FROM Article a
+    +----+-----------+----------------+---------------------+---------------------+
+    | id | author_id | is_on_homepage | created_at          | updated_at          |
+    +----+-----------+----------------+---------------------+---------------------+
+    | 1  | 1         |                | 2009-07-07 18:02:24 | 2009-07-07 18:02:24 |
+    | 2  | 2         |                | 2009-07-07 18:02:24 | 2009-07-07 18:02:24 |
+    +----+-----------+----------------+---------------------+---------------------+
+    (2 results)
+
+### Debug delle query nei test funzionali
+
+La classe `sfTesterDoctrine` ora include un metodo `->debug()`. Questo metodo
+mostra informazioni sulle query che sono state eseguite nell'attuale
+contesto.
+
+    [php]
+    $browser->
+      get('/articles')->
+      with('doctrine')->debug()
+    ;
+
+Si possono vedere solo le ultime query eseguite passando un intero al metodo
+oppure mostrare solo le query che contengono una stringa o che soddisfano
+un'espressione regolare, passando una stringa.
+
+    [php]
+    $browser->
+      get('/articles')->
+      with('doctrine')->debug('/from articles/i')
+    ;
+
+### `sfFormFilterDoctrine`
+
+La classe `sfFormFilterDoctrine` ora può ricevere un oggetto
+`Doctrine_Query` tramite l'opzione `query`:
+
+    [php]
+    $filter = new ArticleFormFilter(array(), array(
+      'query' => $table->createQuery()->select('title, body'),
+    ));
+
+Il metodo specificato tramite `->setTableMethod()` (o anche tramite
+l'opzione `table_method`) non è più richiesto per restituire un
+oggetto query. Qualsiasi dei seguenti metodi `sfFormFilterDoctrine` è valido:
+
+    [php]
+    // works in symfony >= 1.2
+    public function getQuery()
+    {
+      return $this->createQuery()->select('title, body');
+    }
+
+    // works in symfony >= 1.2
+    public function filterQuery(Doctrine_Query $query)
+    {
+      return $query->select('title, body');
+    }
+
+    // works in symfony >= 1.3
+    public function modifyQuery(Doctrine_Query $query)
+    {
+      $query->select('title, body');
+    }
+
+Web Debug Toolbar
+-----------------
+
+### `sfWebDebugPanel::setStatus()`
+
+Ogni pannello nella web debug toolbar può specificare uno stato, che
+influirà sul colore di sfondo del titolo. Ad esempio, il colore di sfondo
+del pannello di log cambia quando un messaggio con priorità maggiore di
+`sfLogger::INFO` viene loggato.
+
+### Parametro di richiesta `sfWebDebugPanel`
+
+Si può ora specificare un pannello da aprire al caricamento della pagina,
+passando un parametro `sfWebDebugPanel` all'URL. Ad esempio, passando
+`?sfWebDebugPanel=config`, la web debug toolbar sarà visualizzata
+con il pannello di configurazione aperto.
+
+I pannelli possono anche ispezionare i parametri di richiesta, accedendo
+all'opzione `request_parameters`:
+
+    [php]
+    $requestParameters = $this->webDebug->getOption('request_parameters');
+
+Partial
+-------
+
+### Miglioramenti agli Slot
+
+Gli helper `get_slot()` e `include_slot()` ora accettano un secondo
+parametro per specificare il contenuto predefinito dello slot, da
+restituire se nessun contenuto viene fornito dallo slot stesso:
+
+    [php]
+    <?php echo get_slot('pippo', 'pluto') // mostrerà 'pluto' se lo slot 'pippo' non è definito ?>
+    <?php include_slot('pippo', 'pluto') // mostrerà 'pluto' se lo slot 'pippo' non è definito ?>
+
+Pager
+-----
+
+I metodi `sfDoctrinePager` e `sfPropelPager` ora implementano le interfacce
+`Iterator` e `Countable`.
+
+    <?php if (count($pager)): ?>
+      <ul>
+        <?php foreach ($pager as $article): ?>
+          <li><?php echo link_to($article->getTitle(), 'article_show', $article) ?></li>
+        <?php endforeach; ?>
+      </ul>
+    <?php else: ?>
+      <p>No results.</p>
+    <?php endif; ?>
+
+Cache della Vista
+-----------------
+
+Il gestore della cache della vista ora accetta parametri in
+`factories.yml`. La generazione della chiave di cache per una vista è
+stata rifattorizzata in diversi metodi, per facilitare l'estensione
+della classe.
+
+Due parametri sono disponibili in `factories.yml`:
+
+  * `cache_key_use_vary_headers` (predefinito: `true`): specifica se
+    le chiavi della cache debbano includere la parte "vary" degli header.
+    In pratica, dice se la cache della pagina debba essere dipendente
+    dagli header http, come specificato nel parametro `vary` della cache.
+
+  * `cache_key_use_host_name` (predefinito: `true`): specifica se
+    le chiavi della cache debbano includere la parte del nome dell'host.
+    In pratica, dice se la cache della pagina debba essere dipendente
+    dal nome dell'host.
+
+Richiesta
+---------
+
+### `getContent()`
+
+Il contenuto della richiesta è ora accessibile tramite il metodo
+`getContent()`.
+
+### Parametri PUT e DELETE
+
+Quando una richiesta arriva con metodo HTTP PUT o DELETE ed il
+content-type impostato a `application/x-www-form-urlencoded`, symfony 
+ora analizza il body grezzo e rende i parametri accessibili come
+normali parametri POST.
+
+Azioni
+------
+
+### `redirect()`
+
+La famiglia dei metodi `sfAction::redirect()` è ora compatibile con la
+firma di `url_for()` introdotta in in symfony 1.2:
+
+    [php]
+    // symfony 1.2
+    $this->redirect(array('sf_route' => 'article_show', 'sf_subject' => $article));
+
+    // symfony 1.3
+    $this->redirect('article_show', $article);
+
+Questo miglioramento si applica anche a `redirectIf()` e `redirectUnless()`.
+
+Helper
+------
+
+### `link_to_if()`, `link_to_unless()`
+
+Gli helper `link_to_if()` e `link_to_unless()` sono ora compatibili con la firma
+di `link_to()` introdotta in symfony 1.2:
+
+    [php]
+    // symfony 1.2
+    <?php echo link_to_unless($foo, '@article_show?id='.$article->getId()) ?>
+
+    // symfony 1.3
+    <?php echo link_to_unless($foo, 'article_show', $article) ?>

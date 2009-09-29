@@ -621,7 +621,7 @@ for the tenth item in a language list might fail.
 
 ### Sorting according to user locale
 
-All sorting on this locale dependend data is now also performed locale dependend.
+All sorting on this locale dependent data is now also performed locale dependent.
 `sfCultureInfo->sortArray()` can be used for that.
 
 Plugins
@@ -727,7 +727,7 @@ or filter form classes generated. So you can now do the following.
 
 ### Form Classes Inheritance
 
-When you generate forms from your models, and your models contain inheritance. 
+When you generate forms from your models, your models contain inheritance. 
 The generated child classes will respect the inheritance and generate forms
 that follow the same inheritance structure.
 
@@ -904,7 +904,7 @@ via the `query` option:
     ));
 
 The table method specified via `->setTableMethod()` (or now via the
-`table_method` option), is no longer required to return a query object. Any of
+`table_method` option) is no longer required to return a query object. Any of
 the following are valid `sfFormFilterDoctrine` table methods:
 
     [php]
