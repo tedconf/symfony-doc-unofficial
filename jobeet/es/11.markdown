@@ -20,7 +20,7 @@ framework de formularios.
 >
 >Los componentes symfony-independentes de la **Plataforma Symfony** son:
 >
->![La Plataforma Symfony](http://www.symfony-project.org/images/jobeet/1_2/11/platform.png)
+>![La Plataforma Symfony](http://www.symfony-project.org/images/jobeet/1_3/11/platform.png)
 
 Enviando un Formulario
 ----------------------
@@ -403,6 +403,14 @@ A continuación, la actualización del código del enlace "Extend" en el partial
 Entonces, crea la acción `extend`:
 
     [php]
+    <!-- apps/frontend/modules/job/templates/_admin.php -->
+    <?php if ($job->expiresSoon()): ?>
+     - <?php echo link_to('Extend', 'job_extend', $job, array('method' => 'put')) ?> for another <?php echo sfConfig::get('app_active_days') ?> days
+    <?php endif; ?>
+
+Then, create the `extend` action:
+
+    [php]
     // apps/frontend/modules/job/actions/actions.class.php
     public function executeExtend(sfWebRequest $request)
     {
@@ -415,7 +423,7 @@ Entonces, crea la acción `extend`:
       $this->getUser()->setFlash('notice', sprintf('Your job validity has been extended until %s.', $job->getExpiresAt('m/d/Y')));
 </propel>
 <doctrine>
-      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extended until %s.', date('m/d/Y', strtotime($job->getExpiresAt()))));
+      $this->getUser()->setFlash('notice', sprintf('Your job validity has been extended until %s.', $job->getDateTimeObject('expires_at')->format('m/d/Y')));
 </doctrine>
 
       $this->redirect($this->generateUrl('job_show_user', $job));
@@ -505,7 +513,7 @@ Finalmente, añadir un escenario de prueba:
 <doctrine>
     $job->refresh();
     $browser->test()->is(
-      date('y/m/d', strtotime($job->getExpiresAt())),
+      $job->getDateTimeObject('expires_at')->format('y/m/d'),
       date('y/m/d', time() + 86400 * sfConfig::get('app_active_days'))
     );
 </doctrine>
@@ -591,14 +599,16 @@ La prueba debe pasar ahora, pero el valor `token`, se ha excluido de los valores
 
 ### Protección XSS y CSRF 
 
-Durante el día 1, hemos creado la aplicación `frontend` con la siguiente línea de comandos:
+Durante el día 1, aprendiste la tarea `generate:app` creando una aplicación segura por defecto.
 
-    $ php symfony generate:app --escaping-strategy=on --csrf-secret=Unique$ecret frontend
+Primero, se habilitó la protección contra XSS. Esto significa que todas las variables 
+utilizadas en las plantillas se escaparán por defecto. Si intentas enviar una 
+descripción del trabajo con algunas etiquetas HTML dentro, te darás cuenta que cuando
+Symfony muestra la página del puesto de trabajo, las etiquetas HTML de la descripción 
+no se interpretan, pero si se ven como texto plano sin formato.
 
-La opción `--escaping-strategy` habilita la protección contra XSS. Esto significa que todas las variables utilizadas en las plantillas por defecto, se escaparán. Si intentas enviar una descripción del trabajo con algunas etiquetas HTML dentro, te darás cuenta que cuando
-Symfony muestra la página del puesto de trabajo, las etiquetas HTML de la descripción no se interpretan, pero si se ven como texto sin formato.
-
-La opción `--csrf-secret` habilita la protección CSRF. Al ofrecer esta opción, todos los Formularios incrustar un campo oculto `_csrf_token`.
+Entonces se habilita la protección CSRF. Cuando un token CSRF es configurado, 
+todos los formularios incrustan un campo oculto `_csrf_token`.
 
 >**TIP**
 >La estrategia de escape y el CSRF secreto se pueden cambiar en cualquier momento
@@ -612,7 +622,7 @@ La opción `--csrf-secret` habilita la protección CSRF. Al ofrecer esta opción
 >         csrf_secret: Unique$ecret
 >
 >         # Output escaping settings
->         escaping_strategy: on
+>         escaping_strategy: true
 >         escaping_method:   ESC_SPECIALCHARS
 
 Tareas de Mantenimiento
