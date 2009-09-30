@@ -428,7 +428,8 @@ Il task è equivalente a:
 
 ### ~`doctrine::build-all-reload-test-all`~
 
-Il task `doctrine::build-all-reload-test-all` genera modelli per Doctrine, l'SQL, inizializza il database, carica i datie lancia tutti i test:
+Il task `doctrine::build-all-reload-test-all` genera modelli per Doctrine, l'SQL,
+inizializza il database, carica i dati e lancia tutti i test:
 
     $ php symfony doctrine:build-all-reload-test-all [--application[="..."]] [--env="..."] [--append] [--dir="..."] [--force] 
 

@@ -324,7 +324,7 @@ con il valore delle seguenti opzioni:
                               il dominio deve essere preceduto da un punto, come `.php.net`.
  * ~`session_cookie_secure`~: Se `true`, il cookie sarà inviato solo su connessioni
                               sicure.
- * ~`session_cookie_httponly`~: Se è impostato a `true`, PHP tenterà di inviare il
+ * ~`session_cookie_httponly`~: Se `true`, PHP tenterà di inviare il
                                 flag `httponly` quando imposta il cookie di sessione.
 
 >**NOTE**
@@ -361,7 +361,7 @@ sono disponibili molte altre opzioni:
 
 >**CAUTION**
 >Questo factory è creato solo se l'impostazione [`cache`](#chapter_04_sub_cache)
->è impostata su `on`.
+>è `on`.
 
 La configurazione del gestore della cache della vista non include una chiave `param`. Questa
 configurazione è fatta attraverso il factory `view_cache`, che definisce il
@@ -385,7 +385,7 @@ sottostante oggetto cache usato dal gestore della cache della vista.
 
 >**CAUTION**
 >Questo factory è definito solo se l'impostazione [`cache`](#chapter_04_sub_cache)
->è impostata a `on`.
+>è `on`.
 
 Il factory `view_cache` definisce una classe cache che deve ereditare da
 `sfCache` (vedere la sezione Cache per maggiori informazioni).
@@ -415,7 +415,7 @@ Il factory `view_cache` definisce una classe cache che deve ereditare da
 
 >**CAUTION**
 >Questo factory è definito solo se l'impostazione [`i18n`](#chapter_04_sub_i18n)
->è impostata a `on`.
+>è `on`.
 
 ### ~`source`~
 
@@ -425,7 +425,7 @@ L'opzione `source` definisce il tipo di contenitore per le traduzioni.
 
 ### ~`debug`~
 
-L'opzione `debug` imposta la modalità debug. Se impostato a `on`, i messaggi
+L'opzione `debug` imposta la modalità debug. Se `on`, i messaggi
 non tradotti sono decorati con un prefisso e un suffisso (vedere sotto).
 
 ### ~`untranslated_prefix`~
@@ -487,9 +487,9 @@ rotte, ma per alcune specifiche rotte.
 
 *Predefinito*: `true` per i nuovi progetti, `false` per i progetti aggiornati
 
-Se impostata `true`, l'opzione `generate_shortest_url` chiederà al sistema
+Se `true`, l'opzione `generate_shortest_url` chiederà al sistema
 per le rotte di generare la rotta più corta possibile. Impostare a `false` se si vuole
-che le rotte siano compatibili all'indietro con symfony 1.0 e 1.1.
+che le rotte siano retrocompatibili con symfony 1.0 e 1.1.
 
 ### ~`extra_parameters_as_query_string`~
 
@@ -525,7 +525,7 @@ sistema delle rotte di symfony fuori da un progetto symfony.
 
 *Predefinito*: `false`
 
-Se impostata a `true`, l'impostazione `lazy_routes_deserialize` abilita la
+Se `true`, l'impostazione `lazy_routes_deserialize` abilita la
 de-serializzazione "lazy" della cache delle rotte. Questa opzione può migliorare le
 prestazioni delle applicazioni se si ha un elevato numero di rotte e se la maggior parte
 delle corrispondenze con le rotte sono collocate nelle prime posizioni. Si consiglia vivamente
@@ -540,9 +540,9 @@ può fare degradare le prestazioni.
 *Predefinito*: `false`
 
 L'impostazione `lookup_cache_dedicated_keys` determina come la cache del routing è
-costruita. Quando impostata a `false`, la cache è memorizzata come un solo grande valore; quando
-è impostata a `true`, ciascuna rotta ha la sua memorizzazione nella cache. Questa impostazione è
-per ottimizzare le performance.
+costruita. Se `false`, la cache è memorizzata come un solo grande valore; se
+`true`, ciascuna rotta ha la sua memorizzazione nella cache. Questa impostazione
+ottimizza le prestazioni.
 
 Come regola generale, l'impostazione a `false` è migliore quando si usa una classe cache
 basata su file (per esempio `sfFileCache`), l'impostazione a `true` è migliore
@@ -588,7 +588,7 @@ quando si usa una classe cache basata sulla memoria (per esempio `sfAPCCache`).
 
 >**CAUTION**
 >Questo factory è sempre definito, ma il logging si verifica soltanto se
->l'impostazione `logging_enabled` è impostata a `on`.
+>l'impostazione `logging_enabled` è `on`.
 
 ### ~`level`~
 

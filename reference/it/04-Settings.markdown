@@ -293,8 +293,8 @@ Quando abilitata l'impostazione `lazy_cache_key` ritarda la creazione di una chi
 cache fino a che non verrà verificato se l'azione o il partial può essere inserito
 in cache o meno.
 
-Questa impostazione è stata introdotta in symfony 1.2.7 per aumentare le performance
-senza inficiare la retrocompatibilità con le precedenti release delle 1.2.
+Questa impostazione è stata introdotta in symfony 1.2.7 per aumentare le prestazioni
+senza inficiare la retrocompatibilità con le versioni precedenti alla 1.2.
 Verrà rimossa in symfony 1.3, in quanto l'ottimizzazione sarà sempre abilitata.
 
 >**CAUTION**

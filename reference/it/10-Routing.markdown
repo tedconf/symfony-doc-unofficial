@@ -113,10 +113,10 @@ L'impostazione `class` consente di cambiare la classe route da usare per la rott
 
 *Predefinito*: `/`
 
-L'impostazione `url` è il pattern che deve confrontare una URL entrante con la rotta
+L'impostazione `url` è lo schema che deve confrontare un URL entrante con la rotta
 che deve essere usata per la richiesta corrente.
 
-Il pattern è costituito da segmenti:
+Lo schema è costituito da segmenti:
 
  * variabili (una parola con prefisso [due punti `:`](#chapter_05_sub_variable_prefixes))
  * costanti
@@ -165,11 +165,11 @@ espressioni regolari a cui i valori della variabile devono corrispondere.
 
 *Predefinito*: `null`
 
-Se valorizzato a `collection`, la rotta verrà letta come una collezione di rotte.
+Se valorizzato a `collection`, la rotta verrà letta come un insieme di rotte.
 
 >**NOTE**
 >Questa impostazione è automaticamente valorizzata a `collection` dalla classe che gestisce
->il config se il nome `class` contiene la parola `Collection`. Questo significa che
+>la configurazione, se il nome `class` contiene la parola `Collection`. Questo significa che,
 >la maggior parte delle volte, non si ha la necessità di usare questa impostazione.
 
 ~`sfRoute`~
@@ -185,8 +185,8 @@ impostazioni richieste per configurare una rotta.
 
 *Predefinito*: `get`
 
-L'opzione `sf_method` deve essere utilizzata nell'array `requirements`. Si applica
-la richiesta HTTP nel processo di confronto rotte.
+L'opzione `sf_method` deve essere utilizzata nell'array `requirements`. Definisce
+la richiesta HTTP nel processo di ricerca della rotta corrispondente.
 
 ~`sfObjectRoute`~
 -----------------
@@ -203,22 +203,23 @@ associato con la rotta corrente.
 
 L'opzione `type` è obbligatoria ed è il tipo di rotta che si vuole per il
 modello; essa può essere `object` o `list`. Una rotta di tipo `object`
-rappresenta un oggetto per un singolo modello e una rotta di tipo `list` rappresenta una
-collezione di oggetti di modelli.
+rappresenta un oggetto per un singolo modello e una rotta di tipo `list` rappresenta un
+insieme di oggetti di modelli.
 
 ### ~`method`~
 
-L'opzione `type` è obbligatoria. È il metodo da chiamare sulla classe del modello
+L'opzione `method` è obbligatoria. È il metodo da chiamare sulla classe del modello
 per recuperare l'oggetto (o gli oggetti) associati a questa rotta. Deve essere un
-metodo statico. Il metodo è chiamato con i parametri della rotta scansionata come
+metodo statico. Il metodo è richiamato con i parametri della rotta analizzata come
 parametro.
 
 ### ~`allow_empty`~
 
 *Predefinito*: `true`
 
-Se l'opzione `allow_empty` è assegnata a `false`, la rotta lancerà una
-eccezione 404 se nessun oggetto è restituito dalla chiamata a `model` `method`.
+Se l'opzione `allow_empty` è `false`, la rotta lancerà una
+eccezione 404 se la chiamata al metodo `method` del modello `model` non restituisce
+alcun oggetto.
 
 ### ~`convert`~
 
@@ -238,7 +239,7 @@ della rotta (come definito dall'impostazione `url`).
 
 L'opzione `method_for_criteria` definisce il metodo chiamato sulla classe del
 modello Peer per recuperare l'oggetto (o gli oggetti) associati con la richiesta corrente. Il
-metodo è chiamato con i parametri della rotta scansionata come parametro.
+metodo è chiamato con i parametri della rotta analizzata come parametro.
 
 ~`sfDoctrineRoute`~
 -------------------
@@ -257,7 +258,7 @@ Se l'opzione non è assegnata, la richiesta è solo "eseguita" con il metodo
 ~`sfRouteCollection`~
 ---------------------
 
-La classe base `sfRouteCollection` rappresenta una collezione di rotte.
+La classe base `sfRouteCollection` rappresenta un insieme di rotte.
 
 ~`sfObjectRouteCollection`~
 ---------------------------
@@ -275,9 +276,8 @@ L'opzione `actions` definisce un array di azioni autorizzate per la rotta. Le
 azioni devono essere un sotto insieme di tutte le azioni disponibili: `list`, `new`, `create`,
 `edit`, `update`, `delete` e `show`.
 
-Se l'opzione è assegnata a `false`, il valore predefinito, tutte le azioni saranno disponibili
-eccetto per la `show` se l'opzione `with_show` è assegnata a `false` (vedere
-sotto).
+Se l'opzione è `false`, il valore predefinito, tutte le azioni saranno disponibili,
+eccetto l'azione `show` se l'opzione `with_show` è `false` (vedere sotto).
 
 ### ~`module`~
 
@@ -303,7 +303,7 @@ univoco per l'oggetto del modello.
 
 *Predefinito*: `true`
 
-L'opzione `with_show` è usata quando l'opzione `actions` è assegnata a `false` per
+L'opzione `with_show` è usata quando l'opzione `actions` è `false` per
 determinare se l'azione `show` deve essere inclusa nell'elenco delle azioni
 autorizzate per la rotta.
 
@@ -346,14 +346,14 @@ rotte jolly: una per un singolo oggetto, ed un'altra per collezioni di oggetti.
 *Predefinito*: `sfObjectRoute`
 
 L'opzione `route_class` può sovrascrivere l'oggetto della rotta predefinita utilizzata
-per la collezione.
+per l'insieme.
 
 ### ~`collection_actions`~
 
 *Predefinito*: Un array vuoto
 
 Le opzioni `collection_actions` definiscono un array di azioni aggiuntive
-disponibili per la collezione di rotte.
+disponibili per l'insieme di rotte.
 
 ### ~`object_actions`~
 
@@ -372,6 +372,6 @@ l'opzione `route_class`).
 ~`sfDoctrineRouteCollection`~
 -----------------------------
 
-La classe per la rotta `sfDoctrineRouteCollection` estende `sfRouteCollection`,
+La classe per la rotta `sfDoctrineRouteCollection` estende `sfRouteCollection`
 e cambia la classe predefinita della rotta a `sfDoctrineRoute` (vedere sopra
 l'opzione `route_class`).

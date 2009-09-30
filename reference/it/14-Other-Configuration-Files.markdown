@@ -8,8 +8,8 @@ essere cambiati.
 ----------------
 
 La configurazione `autoload.yml` determina quali cartelle necessitano di essere
-autocaricate da symfony. Ogni cartella è scansionata per classi e 
-interfaccie PHP.
+caricate automaticamente da symfony. Ogni cartella è analizzata alla ricerca di classi e 
+interfacce PHP.
 
 Come discusso in sede di introduzione, il file `autoload.yml` trae beneficio dal
 [**meccanismo di configurazione a cascata**](#chapter_03_configurazione_a_cascata) e
@@ -92,7 +92,7 @@ di configurazione `settings.yml`:
       param:
         prefix: sf_
 
-Ogni file di configurazione è definito da una classe (la entry `class`) e può essere
+Ogni file di configurazione è definito da una classe (la voce `class`) e può essere
 ulteriormente personalizzato definendo alcuni parametri sotto la sezione `param`.
 
 Il file predefinito `config_handlers.yml` definisce le classi da analizzare come segue:
