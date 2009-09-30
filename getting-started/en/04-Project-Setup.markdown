@@ -62,7 +62,7 @@ the password to access the database. If you don't need a password to access
 your database on the development server, just omit the third argument.
 
 >**TIP**
->If you want to use Propel instead of Propel, add `--orm=Propel` when creating
+>If you want to use Propel instead of Doctrine, add `--orm=Propel` when creating
 >the project with the `generate:project` task. And if you don't want to use an
 >ORM, just pass `--orm=none`.
 
