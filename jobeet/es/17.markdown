@@ -32,8 +32,50 @@ En la página de la documentación de Zend Lucene, la biblioteca se describe de 
 >bibliotecas de terceros en un proyecto symfony. Si deseas más información
 >sobre esta tecnología, por favor visita la
 >[Documentación de Zend Lucene](http://framework.zend.com/manual/en/zend.search.lucene.html).
+  
+### Instalación y Configuración del Zend Framework
 
-Zend Lucene ya se ha instalado ayer como parte de la instalación del Zend Framework que hicimos para el envío de mensajes de correo electrónico.
+Las bibliotecas Zend Lucene son parte del Zend Framework. Como no necesitamos de todo del 
+Zend Framework, sólo se necesita instalar algunas partes en el directorio `lib/vendor/`, 
+junto con el symfony framework.
+
+En primer lugar, la descarga
+[Zend Framework](http://framework.zend.com/download/overview) y descomprime los archivos 
+de modo que tengas un directorio `lib/vendor/Zend/`. 
+
+>**NOTE**
+>Las siguientes explicaciones han sido probadas con la versión 1.8.0 de the Zend Framework.
+
+Puedes limpiar el directorio eliminando todo menos los siguientes archivos y directorios:
+
+  * `Exception.php`
+  * `Loader/`
+  * `Loader.php`
+  * `Search/`
+
+Luego, agrega el código siguiente a la clase`ProjectConfiguration` para proporcionar una manera simple de registrar el Zend autoloader:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      static protected $zendLoaded = false;
+
+      static public function registerZend()
+      {
+        if (self::$zendLoaded)
+        {
+          return;
+        }
+
+        set_include_path(sfConfig::get('sf_lib_dir').'/vendor'.PATH_SEPARATOR.get_include_path());
+        require_once sfConfig::get('sf_lib_dir').'/vendor/Zend/Loader/Autoloader.php';
+        Zend_Loader_Autoloader::getInstance();
+        self::$zendLoaded = true;
+      }
+
+      // ...
+    }
 
 Indexación
 ----------
@@ -510,7 +552,7 @@ La tarea remueve todos los puestos de trabajo vencidos del índice y, a continua
 Nos vemos mañana
 ----------------
 
-Hoy, hemos implementado un completo motor de búsqueda con muchas características en menos de una hora. Cada vez que desees añadir una nueva función para tus proyectos, debes comprobar que todavía no se haya resuelto en algún otro lugar. En primer lugar, comprobar si es algo que no se haya implementado de forma nativa en el [framework Symfony](http://www.symfony-project.org/api/1_2/). Luego, busca en los 
+Hoy, hemos implementado un completo motor de búsqueda con muchas características en menos de una hora. Cada vez que desees añadir una nueva función para tus proyectos, debes comprobar que todavía no se haya resuelto en algún otro lugar. En primer lugar, comprobar si es algo que no se haya implementado de forma nativa en el [framework Symfony](http://www.symfony-project.org/api/1_3/). Luego, busca en los 
 [plugins symfony](http://www.symfony-project.org/plugins/). Y no olvides visitar las [bibliotecas del Zend Framework ](http://framework.zend.com/manual/en/)
 y los [ezComponent](http://ezcomponents.org/docs) también.
 
