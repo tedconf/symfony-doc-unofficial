@@ -336,9 +336,9 @@ Inoltre sostitusce il metodo `contains()`, meno potente:
 
     [php]
     $browser->with('response')->begin()->
-      matches('/I have \d+ apples/')->    // accetta un'espressione regolare come parametro
-      matches('!/I have \d+ apples/')->   // un punto esclamativo iniziale nega l'espressione regolare
-      matches('!/I have \d+ apples/i')->  // si possono usare anche i modificatori
+      matches('/Ho \d+ mele/')->    // accetta un'espressione regolare come parametro
+      matches('!/Ho \d+ mele/')->   // un punto esclamativo iniziale nega l'espressione regolare
+      matches('!/Ho \d+ mele/i')->  // si possono usare anche i modificatori
     end();
 
 ### Output XML Compatibile con JUnit

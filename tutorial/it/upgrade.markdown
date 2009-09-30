@@ -157,7 +157,7 @@ Come aggiornare?
     viene fatto automaticamente dal task `project:upgrade1.3` per i layout HTML
     contenuti nelle cartelle `templates/` delle applicazioni - ma solo se hanno
     un tag `<head>`; occorre aggiornare manualmente ogni altro layout e ogni altra
-    pagina che non ha un layout, ma si basta su file JavaScript e/o fogli di stile).
+    pagina che non ha un layout, ma si basa su file JavaScript e/o fogli di stile).
 
 Task
 ----
@@ -230,7 +230,7 @@ di quella inclusa nel plugin.
 >essere usata indipendentemente per impacchettare i propri modelli. Deve essere
 >usata direttamente e solo per i plugin di symfony.
 
-### Log delle Quer
+### Log delle Query
 
 L'integrazione con Doctrine esegue il log delle query usando `sfEventDispatcher`,
 invece che accedendo direttamente all'oggetto logger. Inoltre, l'oggetto di questi
