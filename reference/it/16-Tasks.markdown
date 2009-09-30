@@ -50,6 +50,7 @@ I task disponibili
    * [`configure::author`](#chapter_16_sub_configure_author)
    * [`configure::database`](#chapter_16_sub_configure_database)
  * [`doctrine`](#chapter_16_doctrine)
+   * [`doctrine::build`](#chapter_16_sub_doctrine_build)
    * [`doctrine::build-all`](#chapter_16_sub_doctrine_build_all)
    * [`doctrine::build-all-load`](#chapter_16_sub_doctrine_build_all_load)
    * [`doctrine::build-all-reload`](#chapter_16_sub_doctrine_build_all_reload)
@@ -60,8 +61,11 @@ I task disponibili
    * [`doctrine::build-model`](#chapter_16_sub_doctrine_build_model)
    * [`doctrine::build-schema`](#chapter_16_sub_doctrine_build_schema)
    * [`doctrine::build-sql`](#chapter_16_sub_doctrine_build_sql)
+   * [`doctrine::clean-model-files`](#chapter_16_sub_doctrine_clean_model_files)
+   * [`doctrine::create-model-tables`](#chapter_16_sub_doctrine_create_model_tables)
    * [`doctrine::data-dump`](#chapter_16_sub_doctrine_data_dump)
    * [`doctrine::data-load`](#chapter_16_sub_doctrine_data_load)
+   * [`doctrine::delete-model-files`](#chapter_16_sub_doctrine_delete_model_files)
    * [`doctrine::dql`](#chapter_16_sub_doctrine_dql)
    * [`doctrine::drop-db`](#chapter_16_sub_doctrine_drop_db)
    * [`doctrine::generate-admin`](#chapter_16_sub_doctrine_generate_admin)
@@ -73,6 +77,7 @@ I task disponibili
    * [`doctrine::insert-sql`](#chapter_16_sub_doctrine_insert_sql)
    * [`doctrine::migrate`](#chapter_16_sub_doctrine_migrate)
    * [`doctrine::rebuild-db`](#chapter_16_sub_doctrine_rebuild_db)
+   * [`doctrine::reload-data`](#chapter_16_sub_doctrine_reload_data)
  * [`generate`](#chapter_16_generate)
    * [`generate::app`](#chapter_16_sub_generate_app)
    * [`generate::module`](#chapter_16_sub_generate_module)
@@ -96,11 +101,10 @@ I task disponibili
    * [`project::deploy`](#chapter_16_sub_project_deploy)
    * [`project::disable`](#chapter_16_sub_project_disable)
    * [`project::enable`](#chapter_16_sub_project_enable)
-   * [`project::freeze`](#chapter_16_sub_project_freeze)
+   * [`project::optimize`](#chapter_16_sub_project_optimize)
    * [`project::permissions`](#chapter_16_sub_project_permissions)
-   * [`project::unfreeze`](#chapter_16_sub_project_unfreeze)
-   * [`project::upgrade1.1`](#chapter_16_sub_project_upgrade1_1)
-   * [`project::upgrade1.2`](#chapter_16_sub_project_upgrade1_2)
+   * [`project::send-emails`](#chapter_16_sub_project_send_emails)
+   * [`project::upgrade1.3`](#chapter_16_sub_project_upgrade1_3)
  * [`propel`](#chapter_16_propel)
    * [`propel::build-all`](#chapter_16_sub_propel_build_all)
    * [`propel::build-all-load`](#chapter_16_sub_propel_build_all_load)
@@ -119,6 +123,8 @@ I task disponibili
    * [`propel::insert-sql`](#chapter_16_sub_propel_insert_sql)
    * [`propel::schema-to-xml`](#chapter_16_sub_propel_schema_to_xml)
    * [`propel::schema-to-yml`](#chapter_16_sub_propel_schema_to_yml)
+ * [`symfony`](#chapter_16_symfony)
+   * [`symfony::test`](#chapter_16_sub_symfony_test)
  * [`test`](#chapter_16_test)
    * [`test::all`](#chapter_16_sub_test_all)
    * [`test::coverage`](#chapter_16_sub_test_coverage)
@@ -132,7 +138,7 @@ I task disponibili
 
 Il task `help` mostra l'aiuto per un task:
 
-    $ php symfony help  [task_name]
+    $ php symfony help [--xml] [task_name]
 
 *Altri nomi*: `h`
 
@@ -141,7 +147,18 @@ Il task `help` mostra l'aiuto per un task:
 | `nome_task` | `aiuto` | Il nome del task
 
 
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--xml`               | `-`         | To output help as XML
 
+
+Il task `help` mostra l'aiuto per un dato task:
+
+    ./symfony help test:all
+
+E' anche possibile visualizzare l'aiuto in formato XML utilizzando l'opzione `--xml`:
+
+    ./symfony help test:all --xml
 
 
 
@@ -149,7 +166,7 @@ Il task `help` mostra l'aiuto per un task:
 
 Il task `list` elenca i task:
 
-    $ php symfony list  [spazionomi]
+    $ php symfony list [--xml] [namespace]
 
 
 
@@ -158,6 +175,9 @@ Il task `list` elenca i task:
 | `spazionomi` | `-` | Il nome dello spazionomi
 
 
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--xml`               | `-`         | Per visualizzare l'aiuto in XML
 
 
 Il task `list` elenca tutti i task:
@@ -167,6 +187,10 @@ Il task `list` elenca tutti i task:
 È anche possibile visualizzare i task per uno spazionomi specifico:
 
     ./symfony list test
+
+È anche possibile visualizzare l'informazione in XML utilizzando l'opzione `--xml`:
+
+    ./symfony list --xml
 
 `app`
 -----
@@ -303,7 +327,7 @@ Per cambiare la configurazione di una specifica applicazione, usare l'opzione `a
 
 È anche possibile specificare il nome della connessione e il nome della classe per il database:
 
-    ./symfony configure:database --name=main --class=sfDoctrineDatabase mysql:host=localhost;dbname=example root mYsEcret
+    ./symfony configure:database --name=main --class=ProjectDatabase mysql:host=localhost;dbname=example root mYsEcret
 
 ATTENZIONE: Il file `propel.ini` è aggiornato anche quando si utilizza un database `Propel`
 e si configura con `all` per gli ambienti, senza l'opzione `app`.
@@ -311,11 +335,86 @@ e si configura con `all` per gli ambienti, senza l'opzione `app`.
 `doctrine`
 ----------
 
+### ~`doctrine::build`~
+
+Il task `doctrine::build` genera il codice basato sullo schema:
+
+    $ php symfony doctrine:build [--application[="..."]] [--env="..."] [--no-confirmation] [--all] [--all-classes] [--model] [--forms] [--filters] [--sql] [--db] [--and-migrate] [--and-load[="..."]] [--and-append[="..."]] 
+
+
+
+
+
+| Opzione (Abbreviazione) | Predefinito | Descrizione
+| ----------------------- | ----------- | -----------
+| `--application` | `1` | Il nome dell'applicazione
+| `--env` | `dev` | L'ambiente
+| `--no-confirmation` | `-` | Per forzare  l'eliminazione del database
+| `--all` | `-` | Crea tutto e reinizializza il database
+| `--all-classes` | `-` | Crea tutte le classi
+| `--model` | `-` | Crea le classi dei modelli
+| `--forms` | `-` | Crea le classi dei form
+| `--filters` | `-` | Crea le classi dei filtri
+| `--sql` | `-` | Crea l'SQL
+| `--db` | `-` | Cancella, crea, e inserisce l'SQL o migra il database
+| `--and-migrate` | `-` | Migra il database
+| `--and-load` | `-` | Carica i dati delle fixture (sono consentiti più valori)
+| `--and-append` | `-` | Appende i dati delle fixture (sono consentiti più valori)
+
+
+Il task `doctrine:build` genera il codice basato sullo schema:
+
+    ./symfony doctrine:build
+
+E' necessario specificare cosa si vuole creare. Per esempio, se si vogliono
+creare le classi dei modelli e dei form, usare le opzioni `--model` e `--forms`:
+
+    ./symfony doctrine:build --model --forms
+
+E' possibile usare l'opzione abbreviata `--all` se si vogliono generare tutte le classi e
+i file SQL e ricreare il database:
+
+    ./symfony doctrine:build --all
+
+Questo è equivalente a lanciare i seguenti task:
+
+    ./symfony doctrine:drop-db
+    ./symfony doctrine:build-db
+    ./symfony doctrine:build-model
+    ./symfony doctrine:build-forms
+    ./symfony doctrine:build-filters
+    ./symfony doctrine:build-sql
+    ./symfony doctrine:insert-sql
+
+È inoltre possibile generare solo i file delle classi usando l'opzione abbreviata
+`--all-classes`. Quando questa opzione è usata da sola, il database non sarà modificato.
+
+    ./symfony doctrine:build --all-classes
+
+L'opzione `--and-migrate` eseguirà le migrazioni in attesa, una volta che la creazione
+è terminata:
+
+    ./symfony doctrine:build --db --and-migrate
+
+L'opzione `--and-load` caricherà i dati del progetto e del plugin dalle
+cartelle `data/fixtures/`:
+
+    ./symfony doctrine:build --db --and-migrate --and-load
+
+Per specificare quali fixture caricare, aggiungere un parametro all'opzione `--and-load`:
+
+    ./symfony doctrine:build --all --and-load="data/fixtures/dev/"
+
+Per appendere i dati delle fixture senza cancellare nessun record dal database, includere
+l'opzione `--and-append`:
+
+    ./symfony doctrine:build --all --and-append
+
 ### ~`doctrine::build-all`~
 
 Il task `doctrine::build-all` genera i modelli per Doctrine, l'SQL e inizializza il database:
 
-    $ php symfony doctrine:build-all [--application[="..."]] [--env="..."] [--no-confirmation] [--skip-forms|-F] 
+    $ php symfony doctrine:build-all [--application[="..."]] [--env="..."] [--no-confirmation] [-F|--skip-forms] [--migrate] 
 
 *Altri nomi*: `doctrine-build-all`
 
@@ -326,7 +425,8 @@ Il task `doctrine::build-all` genera i modelli per Doctrine, l'SQL e inizializza
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
 | `--no-confirmation` | `-` | Non chiedere conferma
-| `--skip-forms`<br />`(-F)` | `-` | Saltare la generazione dei form
+| `--skip-forms`<br />`(-F)` | `-` | Salta la generazione dei form
+| `--migrate` | `-` | Migra invece di reinizializzare il database
 
 
 Il task `doctrine:build-all` è una scorciatoia per sei altri task:
@@ -348,6 +448,18 @@ Per saltare la conferma, si può passare l'opzione
 `no-confirmation`:
 
     ./symfony doctrine:buil-all-load --no-confirmation
+
+Utilizzare l'opzione `--migrate` se si vogliono eseguire le migrazioni
+del progetto piuttosto che l'inserimento dell'SQL di Doctrine.
+
+    ./symfony doctrine:build-all --migrate
+
+Questo è equivalente a:
+
+    ./symfony doctrine:build-model
+    ./symfony doctrine:build-sql
+    ./symfony doctrine:build-forms
+    ./symfony doctrine:migrate
 
 ### ~`doctrine::build-all-load`~
 
