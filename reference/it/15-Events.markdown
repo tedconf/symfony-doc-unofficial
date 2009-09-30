@@ -127,6 +127,11 @@ Eventi
    * [`controller.change_action`](#chapter_15_sub_controller_change_action)
    * [`controller.method_not_found`](#chapter_15_sub_controller_method_not_found)
    * [`controller.page_not_found`](#chapter_15_sub_controller_page_not_found)
+ * [`form`](#chapter_15_form)
+   * [`form.post_configure`](#chapter_15_sub_form_post_configure)
+   * [`form.filter_values`](#chapter_15_sub_form_filter_values)
+   * [`form.validation_error`](#chapter_15_sub_form_validation_error)
+   * [`form.method_not_found`](#chapter_15_sub_form_method_not_found)
  * [`plugin`](#chapter_15_plugin)
    * [`plugin.pre_install`](#chapter_15_sub_plugin_pre_install)
    * [`plugin.post_install`](#chapter_15_sub_plugin_post_install)
@@ -340,6 +345,52 @@ Si può ascoltare questo evento per fare qualcosa di speciale quando
 si verifica un errore 404, come ad esempio inviare una e-mail o
 scrivere l'errore su un log.
 
+`form`
+------
+
+### ~`form.post_configure`~
+
+*Metodo di notifica*: `notify`
+
+*Notificatori predefiniti*: `sfFormSymfony`
+
+L'evento `form.post_configure` è notificato dopo dopo che ogni form è configurato.
+
+### ~`form.filter_values`~
+
+*Metodo di notifica*: `filter`
+
+*Notificatori predefiniti*: `sfFormSymfony`
+
+L'evento `form.filter_values` filtra gli array di parametri e file uniti
+appena prima di fare il binding.
+
+### ~`form.validation_error`~
+
+*Metodo di notifica*: `notify`
+
+*Notificatori predefiniti*: `sfFormSymfony`
+
+| Parametro  | Descrizione
+| ---------- | -------------------
+| `error`    | L'istanza di errore
+
+L'evento `form.validation_error` è notificato quando la validazione del form fallisce.
+
+### ~`form.method_not_found`~
+
+*Metodo di notifica*: `notifyUntil`
+
+*Notificatori predefiniti*: `sfFormSymfony`
+
+| Parametro   | Descrizione
+| ----------- | -----------
+| `method`    | Il nome del metodo chiamato mancante
+| `arguments` | Gli argomento passati al metodo
+
+L'evento `form.method_not_found` è notificato quando un metodo non è definito
+nella classe `sfFormSymfony`. Ascoltando questo evento, un metodo può essere aggiunto
+alla classe, senza utilizzare l'ereditarietà.
 
 `plugin`
 --------
