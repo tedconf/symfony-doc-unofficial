@@ -465,7 +465,7 @@ Questo è equivalente a:
 
 Il task `doctrine::build-all-load` genera i modelli per Doctrine, l'SQL, inizializza il database e carica i dati con le fixture:
 
-    $ php symfony doctrine:build-all-load [--application[="..."]] [--env="..."] [--connection="..."] [--no-confirmation] [--skip-forms|-F] [--dir="..."] 
+    $ php symfony doctrine:build-all-load [--application[="..."]] [--env="..."] [--no-confirmation] [-F|--skip-forms] [--migrate] [--dir="..."] [--append] 
 
 *Altri nomi*: `doctrine-build-all-load`
 
@@ -475,10 +475,11 @@ Il task `doctrine::build-all-load` genera i modelli per Doctrine, l'SQL, inizial
 | --------------------- | ----------- | -----------
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
-| `--connection` | `doctrine` | Il nome della connessione
-| `--no-confirmation` | `-` | Non chiedere conferma
+| `--no-confirmation` | `-` | Non chiede conferma
 | `--skip-forms`<br />`(-F)` | `-` | Saltare la generazione dei form
+| `--migrate` | `-` | Migra invece di reinizializzare il database
 | `--dir` | `-` | Le cartelle in cui guardare per le fixture (sono ammessi più valori)
+| `--append` | `-` | Non cancella i dati presenti nel database
 
 
 Il task `doctrine:build-all-load` è una scorciatoia per sette altri task:
@@ -503,11 +504,16 @@ Per saltare la conferma, è possibile passare l'opzione
 
     ./symfony doctrine:build-all-load --no-confirmation
 
+Aggiungere l'opzione `--migrate` se sul progetto si vuole lanciare la migrazione
+invece dell'inserimento dell'SQL di Doctrine.
+
+    ./symfony doctrine:build-all-load --migrate
+
 ### ~`doctrine::build-all-reload`~
 
 Il task `doctrine::build-all-reload` genera i modelli per Doctrine, l'SQL, inizializza il database e carica i dati:
 
-    $ php symfony doctrine:build-all-reload [--application[="..."]] [--env="..."] [--connection="..."] [--no-confirmation] [--skip-forms|-F] [--dir="..."] 
+    $ php symfony doctrine:build-all-reload [--application[="..."]] [--env="..."] [--no-confirmation] [-F|--skip-forms] [--migrate] [--dir="..."] [--append] 
 
 *Altri nomi*: `doctrine-build-all-reload`
 
@@ -517,10 +523,11 @@ Il task `doctrine::build-all-reload` genera i modelli per Doctrine, l'SQL, inizi
 | --------------------- | ----------- | -----------
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
-| `--connection` | `doctrine` | Il nome della connessione
 | `--no-confirmation` | `-` | Non chiedere conferma
 | `--skip-forms`<br />`(-F)` | `-` | Saltare la generazione dei form
+| `--migrate` | `-` | Migra invece di reinizializzare il database
 | `--dir` | `-` | Le cartelle in cui guardare per le fixture (sono ammessi più valori)
+| `--append` | `-` | Non cancella i dati presenti nel database
 
 
 Il task `doctrine:build-all-reload` è una scorciatoia per otto altri task:
@@ -538,11 +545,16 @@ Il task è equivalente a:
     ./symfony doctrine:insert-sql
     ./symfony doctrine:data-load
 
+Aggiungere l'opzione `--migrate` se sul progetto si vuole lanciare la migrazione
+invece dell'inserimento dell'SQL di Doctrine.
+
+    ./symfony doctrine:build-all-reload --migrate
+
 ### ~`doctrine::build-all-reload-test-all`~
 
 Il task `doctrine::build-all-reload-test-all` genera modelli per Doctrine, l'SQL, inizializza il database, carica i datie lancia tutti i test:
 
-    $ php symfony doctrine:build-all-reload-test-all [--application[="..."]] [--env="..."] [--append] [--dir="..."] [--force] 
+    $ php symfony doctrine:build-all-reload-test-all [--application[="..."]] [--env="..."] [--no-confirmation] [-F|--skip-forms] [--migrate] [--dir="..."] [--append]
 
 *Altri nomi*: `doctrine-build-all-reload-test-all`
 
@@ -552,9 +564,11 @@ Il task `doctrine::build-all-reload-test-all` genera modelli per Doctrine, l'SQL
 | --------------------- | ----------- | -----------
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
+| `--no-confirmation` | `-` | Do not ask for confirmation
+| `--skip-forms`<br />`(-F)` | `-` | Salta la creazione dei form
+| `--migrate` | `-` | Migra invece di reinizializzare il database
+| `--dir` | `-` | Le cartelle dove cercare le fixture (sono ammessi più valori)
 | `--append` | `-` | Non cancella i dati presenti nel database
-| `--dir` | `-` | Le cartelle in cui guardare per le fixture (sono ammessi più valori)
-| `--force` | `-` | Per forzare l'eliminazione del database
 
 
 Il task `doctrine:build-all-reload-test-all` è una scorciatoia per nove altri task:
@@ -574,7 +588,12 @@ Il task è equivalente a:
     ./symfony test-all
 
 Il task accetta una applicazione come parametro per via del task
-`doctrine:data-load`. Vedere la pagina di aiuto si `doctrine:data-load` per maggiori informazioni.
+`doctrine:data-load`. Vedere la pagina di aiuto di `doctrine:data-load` per maggiori informazioni.
+
+Aggiungere l'opzione `--migrate` se sul progetto si vuole lanciare la migrazione
+invece dell'inserimento dell'SQL di Doctrine.
+
+    ./symfony doctrine:build-all-reload-test-all --migrate
 
 ### ~`doctrine::build-db`~
 
@@ -602,7 +621,7 @@ Il task legge le informazioni per la connessione dal file `config/doctrine/datab
 
 Il task `doctrine::build-filters` crea le classi per il filtro dei form per il corrente modello:
 
-    $ php symfony doctrine:build-filters [--connection="..."] [--model-dir-name="..."] [--filter-dir-name="..."] [--application[="..."]] [--env="..."] 
+    $ php symfony doctrine:build-filters [--application[="..."]] [--env="..."] [--model-dir-name="..."] [--filter-dir-name="..."] 
 
 
 
@@ -610,11 +629,11 @@ Il task `doctrine::build-filters` crea le classi per il filtro dei form per il c
 
 | Opzione (Scorciatoia) | Predefinito | Descrizione
 | --------------------- | ----------- | -----------
-| `--connection` | `doctrine` | Il nome della connessione
-| `--model-dir-name` | `model` | Il nome della cartella per il modello
-| `--filter-dir-name` | `filter` | Il nome della cartella per il filtro del form
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
+| `--model-dir-name` | `model` | Il nome della cartella per il modello
+| `--filter-dir-name` | `filter` | Il nome della cartella per il filtro del form
+
 
 
 Il task `doctrine:build-filters` crea le classi per i filtri del form dallo schema:
@@ -623,11 +642,6 @@ Il task `doctrine:build-filters` crea le classi per i filtri del form dallo sche
 
 Il task legge le informazioni dello schema in `config/*schema.xml` e/o
 `config/*schema.yml` dal progetto e da tutti i plugin installati.
-
-Il task utilizza la connessione `doctrine` così come definita in `config/databases.yml`.
-Si può usare un'altra connessione utilizzando l'opzione `--connection`:
-
-    ./symfony doctrine:build-filters --connection="name"
 
 I file con le classe dei filtri per il modello dei form sono create in `lib/filter`.
 
@@ -638,7 +652,7 @@ Sostituisce unicamente le classi base generate in `lib/filter/base`.
 
 Il task `doctrine::build-forms` crea le classi dei form per il corrente modello:
 
-    $ php symfony doctrine:build-forms [--connection="..."] [--model-dir-name="..."] [--form-dir-name="..."] [--application[="..."]] [--env="..."] 
+    $ php symfony doctrine:build-forms [--application[="..."]] [--env="..."] [--model-dir-name="..."] [--form-dir-name="..."]  
 
 
 
@@ -646,11 +660,10 @@ Il task `doctrine::build-forms` crea le classi dei form per il corrente modello:
 
 | Opzione (Scorciatoia) | Predefinito | Descrizione
 | --------------------- | ----------- | -----------
-| `--connection` | `doctrine` | Il nome della connessione
-| `--model-dir-name` | `model` | Il nome della cartella per il modello
-| `--form-dir-name` | `form` | Il nome della cartella per il filtro del form
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
+| `--model-dir-name` | `model` | Il nome della cartella per il modello
+| `--form-dir-name` | `form` | Il nome della cartella per il filtro del form
 
 
 Il task `doctrine:build-forms` crea le classi per i form dallo schema:
@@ -659,11 +672,6 @@ Il task `doctrine:build-forms` crea le classi per i form dallo schema:
 
 Il task legge le informazioni dello schema in `config/*schema.xml` e/o
 `config/*schema.yml` dal progetto e da tutti i plugin installati.
-
-Il task usa la connessione `doctrine` così come definita in `config/databases.yml`.
-Si può usare un'altra connessione utilizzando l'opzione `--connection`:
-
-    ./symfony doctrine:build-forms --connection="name"
 
 Le classi con i modelli dei form sono create in `lib/form`.
 
@@ -744,6 +752,47 @@ L'SQL generato è ottimizzato per il database configurato in `config/databases.y
 
     doctrine.database = mysql
 
+### ~`doctrine::clean-model-files`~
+
+Il task `doctrine::clean-model-files` cancella tutte le classi dei modelli generate,
+per i modelli che non esistono più nello schema YAML:
+
+    $ php symfony doctrine:clean-model-files [--no-confirmation] 
+
+*Alias(es)*: `doctrine:clean`
+
+
+
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--no-confirmation` | `-` | Non chiede la conferma
+
+
+
+
+### ~`doctrine::create-model-tables`~
+
+Il task `doctrine::create-model-tables` cancella e ricrea le tabelle per i modelli specificati:
+
+    $ php symfony doctrine:create-model-tables [--application[="..."]] [--env="..."] [modello1] ... [modelloN]
+
+
+
+| Argomento | Predefinito | Descrizione
+| --------- | ----------- | -----------
+| `models`  | `-`         | L'elenco dei modelli
+
+
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--application` | `frontend` | Il nome dell'applicazione
+| `--env` | `dev` | L'ambiente
+
+
+`doctrine:create-model-tables` cancella e ricrea le tabelle per i modelli specificati:
+
+    ./symfony doctrine:create-model-tables User
+
 ### ~`doctrine::data-dump`~
 
 Il task `doctrine::data-dump` copia i dati nella cartella delle fixture:
@@ -776,12 +825,15 @@ il task `doctrine:data-load`.
 
 ### ~`doctrine::data-load`~
 
-Il task `doctrine::data-load` carica i dati dalla cartella fixture:
+Il task `doctrine::data-load` carica i dati delle fixture YAML:
 
-    $ php symfony doctrine:data-load [--application[="..."]] [--env="..."] [--append] [--connection="..."] [--dir="..."] 
+    $ php symfony doctrine:data-load [--application[="..."]] [--env="..."] [--append] [cartella_o_file1] ... [cartella_o_fileN] 
 
 *Altri nomi*: `doctrine-load-data`
 
+| Argomento | Predefinito | Descrizione
+| --------- | ----------- | -----------
+| `dir_or_file` | `-` | Cartelal o file da caricare
 
 
 | Opzione (Scorciatoia) | Predefinito | Descrizione
@@ -789,31 +841,49 @@ Il task `doctrine::data-load` carica i dati dalla cartella fixture:
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
 | `--append` | `-` | Non cancella i dati presenti nel database
-| `--connection` | `doctrine` | Il nome della connessione
-| `--dir` | `-` | Le cartelle in cui guardare per le fixture (sono ammessi più valori)
 
 
 Il task `doctrine:data-load` carica i dati delle fixture nel database:
 
-    ./symfony doctrine:data-load frontend
+    ./symfony doctrine:data-load
 
 Il task carica dati da tutti i file trovati in `data/fixtures/`.
 
-Se si vuole caricare dati da altre cartelle, si può utilizzare
-l'opzione `--dir`:
+Se si vuole caricare dati da file specifici 0 cartelle, si può aggiungerle
+come argomento:
 
-    ./symfony doctrine:data-load --dir="data/fixtures" --dir="data/data" frontend
+    ./symfony doctrine:data-load data/fixtures/dev data/fixtures/users.yml
 
 Se non si vuole che il task rimuova i dati esistenti nel database,
 usare l'opzione `--append`:
 
-    ./symfony doctrine:data-load --append frontend
+    ./symfony doctrine:data-load --append
+
+### ~`doctrine::delete-model-files`~
+
+Il task `doctrine::delete-model-files` cancella tutti i relativi file generati automaticamente
+per un determinato nome del modello:
+
+    $ php symfony doctrine:delete-model-files [--no-confirmation] nome
+
+
+
+| Argomento | Predefinito | Descrizione
+| --------- | ----------- | -----------
+| `name` | `-` | Il nome del modello per cui si desidera cancellare tutti i file correlati
+
+
+| Opzione (Scorciatoia) | Predefinito | Description
+| --------------------- | ----------- | -----------Descrizione
+| `--no-confirmation` | `-` | Non chiede la conferma
+
+
 
 ### ~`doctrine::dql`~
 
 Il task `doctrine::dql` esegue una query DQL e visualizza i risultati:
 
-    $ php symfony doctrine:dql [--application[="..."]] [--env="..."] [--show-sql] dql_query
+    $ php symfony doctrine:dql [--application[="..."]] [--env="..."] [--show-sql] [--table] dql_query
 
 *Altri nomi*: `doctrine-dql`
 
@@ -925,11 +995,17 @@ Il task `doctrine::generate-migration` genera la classe di migrazione:
 | --------------------- | ----------- | -----------
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
+| `--editor-cmd` | `-` | Apre lo script con questo comando al momento della creazione
 
 
 Il task `doctrine:generate-migration` genera il modello di migrazione
 
-    ./symfony doctrine:generate-migration
+    ./symfony doctrine:generate-migration AddUserEmailColumn
+
+E' possibile aggiungere l'opzione `--editor-cmd` per aprire la nuova classe di migrazione
+nell'editor preferito al momento della creazione:
+
+    ./symfony doctrine:generate-migration AddUserEmailColumn --editor-cmd=mate
 
 ### ~`doctrine::generate-migrations-db`~
 
@@ -1098,7 +1174,7 @@ Il task `doctrine:migrate` migra il database alla versione corrente/specificata
 
 Il task `doctrine::rebuild-db` crea il database per il modello corrente:
 
-    $ php symfony doctrine:rebuild-db [--application[="..."]] [--env="..."] [--no-confirmation] 
+    $ php symfony doctrine:rebuild-db [--application[="..."]] [--env="..."] [--no-confirmation] [--migrate] 
 
 *Altri nomi*: `doctrine-rebuild-db`
 
@@ -1109,6 +1185,7 @@ Il task `doctrine::rebuild-db` crea il database per il modello corrente:
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
 | `--no-confirmation` | `-` | Per non chiedere conferma alla eliminazione del database
+| `--migrate` | `-` | Migra invece di reinizializzare il database
 
 
 Il task `doctrine:rebuild-db` crea il database:
@@ -1116,6 +1193,43 @@ Il task `doctrine:rebuild-db` crea il database:
     ./symfony doctrine:rebuild-db
 
 Il task legge le informazioni di connessione in `config/doctrine/databases.yml`:
+
+Aggiungere l'opzione `--migrate`se si vuole lanciare la migrazione sull'applicazione
+invece che inserire l'SQL di Doctrine.
+
+    ./symfony doctrine:rebuild-db --migrate
+
+### ~`doctrine::reload-data`~
+
+Il task `doctrine::reload-data` ricarica i database e le fixture per il progetto:
+
+    $ php symfony doctrine:reload-data [--application[="..."]] [--env="..."] [--no-confirmation] [--dir="..."] [--migrate] [--append] 
+
+*Alias(es)*: `doctrine-reload-data`
+
+
+
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--application` | `1` | Il nome dell'applicazione
+| `--env` | `dev` | L'ambiente
+| `--no-confirmation` | `-` | non chiede la conferma
+| `--dir` | `-` | Le cartelle dove cercare le fixture (sono ammessi valori multipli)
+| `--migrate` | `-` | Migra invece di reinizializzare il database
+| `--append` | `-` | Non cancella i dati presenti nel database
+
+
+Il task `doctrine:reload-data` cancella il database, lo ricrea e carica le fixture
+Si chiama con:
+
+    php symfony doctrine:reload-data
+  
+Il task è equivalente a:
+
+    ./symfony doctrine:drop-db
+    ./symfony doctrine:build-db
+    ./symfony doctrine:insert-sql
+    ./symfony doctrine:data-load` 
 
 `generate`
 ----------
@@ -1135,8 +1249,8 @@ Il task `generate::app` genera una nuova applicazione:
 
 | Opzione (Scorciatoia) | Predefinito | Descrizione
 | --------------------- | ----------- | -----------
-| `--escaping-strategy` | `` | Strategia per l'escape in uscita
-| `--csrf-secret` | `` | Stringa segreta da usare per la protezione CSRF
+| `--escaping-strategy` | `1` | Strategia per l'escape in uscita
+| `--csrf-secret` | `1` | Stringa segreta da usare per la protezione CSRF
 
 
 Il task `generate:app` la struttura di base delle cartelle
@@ -1156,9 +1270,12 @@ Per la prima applicazione, lo script nell'ambiente di produzione è chiamato
 Se esiste già una applicazione con lo stesso nome,
 viene lanciata una eccezione `sfCommandException`.
 
-Si può abilitare l'escape dell'output (per prevenire attacchi XSS) utilizzando l'opzione `escaping-strategy`:
+Per impostazione predefinita, l'escape dell'output è abilitato (per prevenire attacchi XSS),
+ed è anche generata una una stringa casuale segreta per prevenire CSRF.
 
-    ./symfony generate:app frontend --escaping-strategy=on
+Si può disabilitare l'escape dell'output utilizzando l'opzione `escaping-strategy`:
+
+    ./symfony generate:app frontend --escaping-strategy=false
 
 Si può abilitare il token di sessione nei form (per prevenire CSRF) definendo
 una stringa segreta con l'opzione `csrf-secret`:
@@ -1208,7 +1325,7 @@ viene lanciata una eccezione `sfCommandException`.
 
 Il task `generate::project` genera un nuovo progetto:
 
-    $ php symfony generate:project  name
+    $ php symfony generate:project [--orm="..."] [--installer="..."] name
 
 *Altri nomi*: `init-project`
 
@@ -1217,6 +1334,10 @@ Il task `generate::project` genera un nuovo progetto:
 | `nome` | `-` | Il nome del progetto
 
 
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--orm` | `Doctrine` | L'ORM da usare per impostazione predefinita
+| `--installer` | `-` | Uno script di installazione da eseguire
 
 
 Il task `generate:project` crea nella cartella corrente 
@@ -1226,6 +1347,20 @@ la struttura di base delle cartelle per un nuovo progetto:
 
 Se la cartella corrente contiene già un progetto di symfony,
 viene lanciata una eccezione `sfCommandException`.
+
+Per impostazione predefinita, il task configura Doctrine come ORM. Se si vuole utilizzare
+Propel, usare l'opzione `--orm`:
+
+    ./symfony generate:project blog --orm=Propel
+
+Se non si vuole utilizzare un ORM, passare `none` all'opzione `--orm`:
+
+    ./symfony generate:project blog --orm=none
+
+E' anche possibile passare l'opzione `--installer` per personalizzare ulteriormente
+il progetto:
+
+    ./symfony generate:project blog --installer=./installer.php
 
 ### ~`generate::task`~
 
@@ -1243,7 +1378,7 @@ Il task `generate::task` crea lo scheletro di una classe per un nuovo task:
 | Opzione (Scorciatoia) | Predefinito | Descrizione
 | --------------------- | ----------- | -----------
 | `--dir` | `lib/task` | La cartella dove creare il task
-| `--use-database` | `propel` | Se il task necessita di inizializzazione del modello per accedere al database
+| `--use-database` | `doctrine` | Se il task necessita di inizializzazione del modello per accedere al database
 | `--brief-description` | `-` | Una breve descrizione del task (appare nell'elenco dei task)
 
 
@@ -1261,8 +1396,8 @@ questa cartella sarà creata.
 
     ./symfony generate:task namespace:name --dir=plugins/myPlugin/lib/task
 
-Se si vuole il valore predefinito del task a una connessione diversa da `propel`, fornire
-il nome di questa connessione con l'opzione `--use-database`:
+Se si vuole il valore predefinito del task a una connessione diversa da `doctrine`,
+fornire il nome di questa connessione con l'opzione `--use-database`:
 
     ./symfony generate:task namespace:name --use-database=main
 
@@ -1432,7 +1567,7 @@ Il task `plugin:add-channel` aggiunge un nuovo canale PEAR:
 
 Il task `plugin::install` installa un plugin:
 
-    $ php symfony plugin:install [--stability|-s="..."] [--release|-r="..."] [--channel|-c="..."] [--install_deps|-d] [--force-license] name
+    $ php symfony plugin:install [-s|--stability="..."] [-r|--release="..."] [-c|--channel="..."] [-d|--install_deps] [--force-license] name
 
 *Altri nomi*: `plugin-install`
 
@@ -1514,16 +1649,17 @@ Fornisce anche il canale e la versione per ciascun plugin.
 
 Il task `plugin::publish-assets` pubblica gli elementi web per tutti i plugin:
 
-    $ php symfony plugin:publish-assets [--core-only] [--symfony-lib-dir="..."] 
+    $ php symfony plugin:publish-assets [--core-only] [plugin1] ... [pluginN]
 
 
-
+| Argomento | Predefinito | Descrizione
+| --------- | ----------- | -----------
+| `plugins` | `-` | Pubblica gli elementi web di questa plugin
 
 
 | Opzione (Scorciatoia) | Predefinito | Descrizione
 | --------------------- | ----------- | -----------
 | `--core-only` | `-` | Se assegnato verranno pubblicati gli elementi web solo per i core plugin
-| `--symfony-lib-dir` | `-` | La cartella lib di symfony
 
 
 Il task `plugin:publish-assets` pubblicherà gli elementi web per tutti i plugin.
@@ -1532,12 +1668,16 @@ Il task `plugin:publish-assets` pubblicherà gli elementi web per tutti i plugin
 
 In realtà questo invierà l'evento `plugin.post_install` per ciascun plugin.
 
+E' possibile specificare quale/i plugin dovrebbero installare i loro elementi web, passando
+i nomi delle plugin come argomenti:
+
+    ./symfony plugin:publish-assets sfDoctrinePlugin
 
 ### ~`plugin::uninstall`~
 
 Il task `plugin::uninstall` disinstalla un plugin:
 
-    $ php symfony plugin:uninstall [--channel|-c="..."] [--install_deps|-d] nome
+    $ php symfony plugin:uninstall [-c|--channel="..."] [-d|--install_deps] name
 
 *Altri nomi*: `plugin-uninstall`
 
@@ -1579,7 +1719,7 @@ o le cartelle (sotto Windows).
 
 Il task `plugin::upgrade` aggiorna un plugin:
 
-    $ php symfony plugin:upgrade [--stability|-s="..."] [--release|-r="..."] [--channel|-c="..."] nome
+    $ php symfony plugin:upgrade [-s|--stability="..."] [-r|--release="..."] [-c|--channel="..."] name
 
 *Altri nomi*: `plugin-upgrade`
 
@@ -1663,7 +1803,7 @@ Il task `project::deploy` copia i file di un progetto su un altro server:
 | --------------------- | ----------- | -----------
 | `--go` | `-` | Esegue l'invio dei file
 | `--rsync-dir` | `config` | La cartella dove cercare i file rsync*.txt
-| `--rsync-options` | `-azC --force --delete` | Opzioni da passare all'eseguibile rsync
+| `--rsync-options` | `-azC --force --delete --progress` | Opzioni da passare all'eseguibile rsync
 
 
 Il task `project:deploy` copia i file di un progetto su un server:
@@ -1712,67 +1852,75 @@ l'opzione `rsync-options` (il valore predefinito è `-azC`):
 
 Il task `project::disable` disabilita un'applicazione in un dato ambiente:
 
-    $ php symfony project:disable  applicazione amb
+    $ php symfony project:disable  amb [app1] ... [appN]
 
 *Alias*: `disable`
 
 | Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
-| `applicazione` | `-` | Il nome dell'applicazione
 | `amb` | `-` | Il nome dell'ambiente
+| `app` | `-` | Il nome dell'applicazione
 
 
 
+Il task `project:disable` disabilita un ambiente:
 
-Il task `project:disable` disabilita una applicazione per un ambiente specifico:
+    ./symfony project:disable prod
 
-    ./symfony project:disable frontend prod
+E' anche possibile specificare applicazioni individuali da disabilitare in questo
+ambiente:
+
+    ./symfony project:disable prod frontend backend
+
 
 ### ~`project::enable`~
 
 Il task `project::enable` abilita una applicazione in un dato ambiente:
 
-    $ php symfony project:enable  applicazione amb
+    $ php symfony project:enable  amb [app1] ... [appN]
 
 *Alias*: `enable`
 
 | Parametro | Predefinito | Descrizione
 | --------- | ----------- | -----------
-| `applicazione` | `-` | Il nome dell'applicazione
 | `amb` | `-` | Il nome dell'ambiente
+| `app` | `-` | Il nome dell'applicazione
 
 
 
 
-Il task `project:enable` abilita una applicazione per uno specifico ambiente:
+
+Il task `project:enable` abilita uno specifico ambiente:
 
     ./symfony project:enable frontend prod
 
-### ~`project::freeze`~
+E' possibile anche specificare applicazioni individuali da abilitare in questo
+ambiente:
 
-Il task `project::freeze` congela le librerie di symfony:
+    ./symfony project:enable prod frontend backend
 
-    $ php symfony project:freeze  symfony_data_dir
+### ~`project::optimize`~
 
-*Altri nomi*: `freeze`
+Il task `project::optimize` ottimizza un progetto per migliorare le performance:
 
-| Parametro | Predefinito | Descrizione
+    $ php symfony project:optimize  applicazione [ambiente]
+
+
+
+| Argomento | Predefinito | Descrizione
 | --------- | ----------- | -----------
-| `symfony_data_dir` | `-` | La cartella dati di symfony
+| `applicazione` | `-` | Il nome del server
+| `ambiente` | `prod` | Il nome del server
 
 
 
 
-Il task `project:freeze` copia tutti i file core di symfony al
-corrente progetto:
+`project:optimize` ottimizza un progetto per migliorare le performance:
 
-    ./symfony project:freeze /path/to/symfony/data/directory
+    ./symfony project:optimizes frontend prod
 
-Il task si aspetta il parametro obbligatorio del percorso alla cartella dei dati
-symfony.
-
-Il task cambia anche `config/config.php` per passare ai
-file incorporati in symfony.
+Questo task deve essere utilizzato solo su un server di produzione. Non dimenticare
+di rilanciare il task ogni volta che il progetto subisce delle modifiche.
 
 ### ~`project::permissions`~
 
@@ -1790,50 +1938,32 @@ Il task `project:permissions` corregge i permessi delle cartelle:
 
     ./symfony project:permissions
 
-### ~`project::unfreeze`~
 
-Il task `project::unfreeze` scongela le librerie di symfony:
+### ~`project::send-emails`~
 
-    $ php symfony project:unfreeze  
+Il task `project::send-emails` invia le email memorizzate in una cosa:
 
-*Altri nomi*: `unfreeze`
-
-
-
-
-
-Il task `project:unfreeze` rimuove tutti i file core di symfony dal
-corrente progetto:
-
-    ./symfony project:unfreeze
-
-Il task cambia anche `config/config.php` per passare ai
-vecchi file di symfony usati prima del comando `project:freeze`.
-
-### ~`project::upgrade1.1`~
-
-Il task `project::upgrade1.1` aggiorna un progetto symfony alla versione 1.1:
-
-    $ php symfony project:upgrade1.1  
+    $ php symfony project:send-emails [--application[="..."]] [--env="..."] 
 
 
 
 
 
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--application` | `1` | Il nome dell'applicazione
+| `--env` | `dev` | L'ambiente
 
 
-Il task `project:upgrade1.1` aggiorna un progetto symfony
-basato sulla versione 1.0 alla versione 1.1.
+`project:send-emails` invia le email memorizzate in una coda:
 
-    ./symfony project:upgrade1.1
+    php symfony project:send-emails
 
-Prego leggere il file UPGRADE_TO_1_1 per avere informazioni su cosa fa questo task.
+### ~`project::upgrade1.3`~
 
-### ~`project::upgrade1.2`~
+Il task `project::upgrade1.3` aggiorna un progetto symfony alla versione 1.3 di symfony (dalla 1.2):
 
-Il task `project::upgrade1.2` task aggiorna un progetto symfony alla versione 1.2 (dalla versione 1.1):
-
-    $ php symfony project:upgrade1.2  
+    $ php symfony project:upgrade1.3  
 
 
 
@@ -1841,12 +1971,13 @@ Il task `project::upgrade1.2` task aggiorna un progetto symfony alla versione 1.
 
 
 
-Il task `project:upgrade1.2` aggiorna un progetto symfony
-basato sulla versione 1.1 alla versione 1.2.
+Il task `project:upgrade1.3` ggiorna un progetto symfony basato sulla versione 1.2
+alla versione 1.3 di symfony.
 
-    ./symfony project:upgrade1.2
+    ./symfony project:upgrade1.3
 
-Prego leggere il file UPGRADE_TO_1_2 per avere informazioni su cosa fa questo task.
+Si prega di leggere il file UPGRADE_TO_1_3 per avere informazioni su cosa fa questo task.
+
 
 `propel`
 --------
@@ -1855,7 +1986,7 @@ Prego leggere il file UPGRADE_TO_1_2 per avere informazioni su cosa fa questo ta
 
 Il task `propel::build-all` genera modelli per Propel classi per i form, l'SQL e inizializza il database:
 
-    $ php symfony propel:build-all [--application[="..."]] [--env="..."] [--connection="..."] [--no-confirmation] [--skip-forms|-F] [--classes-only|-C] [--phing-arg="..."] 
+    $ php symfony propel:build-all [--application[="..."]] [--env="..."] [--connection="..."] [--no-confirmation] [-F|--skip-forms] [-C|--classes-only] [--phing-arg="..."] 
 
 *Altri nomi*: `propel-build-all`
 
@@ -1899,7 +2030,7 @@ Per creare tutte le classi ma saltare l'inizializzazione del database, usare l'o
 
 Il task `propel::build-all-load` genera modelli per Propel e classi per i form, l'SQL, inizializza il database e carica i dati:
 
-    $ php symfony propel:build-all-load [--application[="..."]] [--env="..."] [--connection="..."] [--no-confirmation] [--skip-forms|-F] [--classes-only|-C] [--phing-arg="..."] [--append] [--dir="..."] 
+    $ php symfony propel:build-all-load [--application[="..."]] [--env="..."] [--connection="..."] [--no-confirmation] [-F|--skip-forms] [-C|--classes-only] [--phing-arg="..."] [--append] [--dir="..."] 
 
 *Altri nomi*: `propel-build-all-load`
 
@@ -2138,12 +2269,15 @@ l'opzione `application`:
 
 ### ~`propel::data-load`~
 
-Il task `propel::data-load` carica i dati dalla cartella delle fixture:
+Il task `propel::data-load` carica i dati delle fixture YAML:
 
-    $ php symfony propel:data-load [--application[="..."]] [--env="..."] [--append] [--connection="..."] [--dir="..."] 
+    $ php symfony propel:data-load [--application[="..."]] [--env="..."] [--append] [--connection="..."] [dir_or_file1] ... [dir_or_fileN] 
 
 *Altri nomi*: `propel-load-data`
 
+| Argomento | Predefinito | Descrizione
+| --------- | ----------- | -----------
+| `dir_or_file` | `-` | Cartella o file da caricare
 
 
 | Opzione (Scorciatoia) | Predefinito | Descrizione
@@ -2152,7 +2286,6 @@ Il task `propel::data-load` carica i dati dalla cartella delle fixture:
 | `--env` | `cli` | L'ambiente
 | `--append` | `-` | Non cancellare i dati presenti nel database
 | `--connection` | `propel` | Il nome della connessione
-| `--dir` | `-` | Le cartelle da guardare per le fixture (più valori ammessi)
 
 
 Il task `propel:data-load` carica le fixture con i dati nel database:
@@ -2161,10 +2294,10 @@ Il task `propel:data-load` carica le fixture con i dati nel database:
 
 Il task carica i dati da tutti i file trovati in `data/fixtures/`.
 
-Se si vogliono caricare dati da altre cartelle, si può utilizzare
-l'opzione `--dir`:
+Se si vogliono caricare dati da file specifici o cartelle, si può aggiungerle
+come argomento:
 
-    ./symfony propel:data-load --dir="data/fixtures" --dir="data/data"
+    ./symfony propel:data-load data/fixtures/dev data/fixtures/users.yml
 
 Il task usa la connessione `propel` così come è definita in `config/databases.yml`.
 Si può usare un'altra connessione utilizzando l'opzione `--connection`:
@@ -2433,6 +2566,31 @@ Il task `propel:schema-to-yml` converte schemi XML in YML:
 
     ./symfony propel:schema-to-yml
 
+`symfony`
+---------
+
+### ~`symfony::test`~
+
+Il task `symfony::test` lancia la suite test di symfony:
+
+    $ php symfony symfony:test [-u|--update-autoloader] [-f|--only-failed] [--xml="..."] [--rebuild-all] 
+
+
+
+
+
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--update-autoloader`<br />`(-u)` | `-` | Aggiorna la classe sfCoreAutoload
+| `--only-failed`<br />`(-f)` | `-` | Lancia solo i test che l'ultima volta sono falliti
+| `--xml` | `-` | Il nome del file di log XML compatibile con JUnit
+| `--rebuild-all` | `-` | Ricarica tutti i file di fixture generati
+
+
+Il task `test:all` lancia la suite test di symfony:
+
+    ./symfony symfony:test
+
 `test`
 ------
 
@@ -2440,12 +2598,15 @@ Il task `propel:schema-to-yml` converte schemi XML in YML:
 
 Il task `test::all` lancia tutti i test:
 
-    $ php symfony test:all  
+    $ php symfony test:all [-f|--only-failed] [--xml="..."] 
 
 *Altri nomi*: `test-all`
 
 
-
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--only-failed`<br />`(-f)` | `-` | Lancia solo i test che l'ultima volta sono falliti
+| `--xml` | `-` | Il nome del file di log XML compatibile con JUnit
 
 
 Il test `test:all` lancia tutti i test unitari e funzionali:
@@ -2454,8 +2615,29 @@ Il test `test:all` lancia tutti i test unitari e funzionali:
 
 Il task lancia tutti i test trovati in `test/`.
 
-Se uno o più test falliscono, si può provare a risolvere il problema lanciandoli
+
+Se alcuni test falliscono, si può usare l'opzione `--trace` per avere più
+informazioni sul problema:
+
+      `./symfony test:all -t
+
+Oppure si può provare a risolvere il problema lanciandoli
 a mano o con i task `test:unit` e `test:functional`.
+
+Usare l'opzione `--only-failed` per forzare il task a eseguire solo i test
+che sono falliti durante la precedente esecuzione:
+
+      `./symfony test:all --only-failed
+
+Ecco come funziona: la prima volta, tutti i test vengono lanciati normalmente. Ma per
+le successive esecuzioni dei test, solo i test che sono falliti l'ultima volta vengono eseguiti. Appena
+viene corretto il codice, alcuni test passeranno e saranno rimossi dalla sequenza di esecuzione.
+Quando tutti i test passano, viene lanciata l'intera suite di test... si può quindi proseguire
+e ripetere.
+
+Il task può generare un file di log XML compatibile con JUnit, utilizzando l'opzione `--xml`:
+
+    ./symfony test:all --xml=log.xml
 
 ### ~`test::coverage`~
 
@@ -2492,7 +2674,7 @@ Per mostrare le linee non coperte, passare l'opzione `--detailed`:
 
 Il task `test::functional` lancia i test funzionali:
 
-    $ php symfony test:functional  applicazione [controller1] ... [controllerN]
+    $ php symfony test:functional [--xml="..."] applicazione [controller1] ... [controllerN]
 
 *Altri nomi*: `test-functional`
 
@@ -2502,6 +2684,9 @@ Il task `test::functional` lancia i test funzionali:
 | `controller` | `-` | Il nome del controller
 
 
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--xml` | `-` | Il nome per il file di log XML compatibile con JUnit
 
 
 Il task `test:functional` lancia i test funzionali per una
@@ -2510,6 +2695,11 @@ data applicazione:
     ./symfony test:functional frontend
 
 Il task lancia tutti i test trovati in `test/functional/%application%`.
+
+Se alcuni test falliscono, è possibile usare l'opzione `--trace` per avere più
+informazioni sul problema:
+
+      `./symfony test:functional frontend -t
 
 È possibile lanciare tutti i test funzionali per uno specifico controller
 fornendo il nome del controller:
@@ -2520,11 +2710,15 @@ Si possono anche lanciare tutti i test funzionali per diversi controller:
 
     ./symfony test:functional frontend article comment
 
+Il task può generare un file di log XML compatibile con JUnit, utilizzando l'opzione `--xml`:
+
+    ./symfony test:functional --xml=log.xml
+
 ### ~`test::unit`~
 
 Il task `test::unit` lancia i test unitari:
 
-    $ php symfony test:unit  [nome1] ... [nomeN]
+    $ php symfony test:unit [--xml="..."] [nome1] ... [nomeN]
 
 *Altri nomi*: `test-unit`
 
@@ -2533,6 +2727,9 @@ Il task `test::unit` lancia i test unitari:
 | `nome` | `-` | Il nome del test
 
 
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--xml` | `-` | Il nome per il file di log XML compatibile con JUnit
 
 
 Il task `test:unit` lancia i test unitari:
@@ -2540,6 +2737,11 @@ Il task `test:unit` lancia i test unitari:
     ./symfony test:unit
 
 Il task lancia tutti i test trovati in `test/unit`.
+
+Se alcuni test falliscono, è possibile usare l'opzione `--trace` per avere più
+informazioni sul problema:
+
+      `./symfony test:unit -t
 
 Si possono lanciare test unitari con un nome specifico
 
@@ -2549,4 +2751,6 @@ Si possono anche lanciare test unitari per più test:
 
     ./symfony test:unit strtolower strtoupper
 
+Il task può generare un file di log XML compatibile con JUnit, utilizzando l'opzione `--xml`:
 
+    ./symfony test:unit --xml=log.xml
