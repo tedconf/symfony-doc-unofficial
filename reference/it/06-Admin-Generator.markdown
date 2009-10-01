@@ -116,7 +116,7 @@ modello:
 
 ### Oggetti segnaposto
 
-Alcune opzioni possono prendere oggetti del modello segnaposto. Un segnaposto è una stringa
+Alcune opzioni possono prendere segnaposti per oggetti del modello. Un segnaposto è una stringa
 che segue il modello: `%%NOME%%`. La stringa `NOME` può essere qualunque cosa possa
 essere convertita a un metodo getter valido di un oggetto (`get` più un suffisso
 costituito dalla stringa `NOME` con il primo carattere maiuscolo). Per esempio, `%%titolo%%` sarà
@@ -142,7 +142,7 @@ a cascata. Le regole di ereditarietà sono le seguenti:
 ### ~Credenziali~
 
 Nel generatore di admin (sulle liste e sui form) le azioni possono essere nascoste,
-in base alle credenziali dell'utente usando l'opzione `credential` (vedere sotto).
+in base alle credenziali dell'utente, usando l'opzione `credential` (vedere sotto).
 Tuttavia, anche se il collegamento o il bottone non appaiono, le azioni devono
 essere adeguatamente protette da accessi illeciti. La gestione delle credenziali nel
 generatore di admin si prende cura solo della visualizzazione.
@@ -188,7 +188,7 @@ Ogni modello generato può essere sovrascritto:
  | `_form.php`                  | Visualizza il form
  | `_form_actions.php`          | Visualizza le azioni del form
  | `_form_field.php`            | Visualizza un singolo campo del form
- | `_form_fieldset.php`         | Visualizza fieldset del form 
+ | `_form_fieldset.php`         | Visualizza il fieldset del form 
  | `_form_footer.php`           | Visualizza il piè di pagina del form
  | `_form_header.php`           | Visualizza l'intestazione del form
  | `_list.php`                  | Visualizza l'elenco
