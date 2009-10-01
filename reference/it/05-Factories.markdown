@@ -57,7 +57,7 @@ automaticamente usato prima che il factory sia creato:
 
 >**NOTE**
 >Il file di configurazione `factories.yml` viene salvato in cache come file PHP; Il processo
->è automaticamente gestito dalla [class](#chapter_14_config_handlers_yml) 
+>è automaticamente gestito dalla [classe](#chapter_14_config_handlers_yml) 
 > ~`sfFactoryConfigHandler`~.
 
 <div class="pagebreak"></div>
@@ -472,7 +472,7 @@ in cache i dati i18n (vedere la sezione Cache per maggiori informazioni).
 
 *Predefinito*: `:`
 
-L'opzione `variable_prefixes`definisce l'elenco dei caratteri che iniziano un
+L'opzione `variable_prefixes` definisce l'elenco dei caratteri che iniziano un
 nome variabile in uno schema di rotta.
 
 ### ~`segment_separators`~
