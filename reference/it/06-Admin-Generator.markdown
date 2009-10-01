@@ -1,7 +1,7 @@
 Il file di configurazione generator.yml
 =======================================
 
-Il generatore di admin di symfony permette la creazione di una interfaccia di backend per
+Il generatore di admin di symfony permette la creazione di una interfaccia di backend
 per le classi del modello. Funziona utilizzando sia Propel che Doctrine come ORM.
 
 ### Creazione
