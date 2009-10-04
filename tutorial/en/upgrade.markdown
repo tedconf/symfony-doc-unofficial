@@ -184,9 +184,10 @@ Escaping
 --------
 
 The `esc_js_no_entities()`, refered to by `ESC_JS_NO_ENTITIES` was updated to
-correctly handle non-ANSI characters. Before this change only characters with
-ANSI value `37` to `177` were not escaped. Now it will only escape backslashes
-`\`, quotes `'` & `"` and linebreaks `\n` & `\r`.
+correctly handle non-ANSI characters. Before this change all but characters with
+ANSI value `37` to `177` were escaped. Now it will only escape backslashes
+`\`, quotes `'` & `"` and linebreaks `\n` & `\r`. However it is unlikely that
+you previously relied on this broken behaviour.
 
 Doctrine Integration
 --------------------
