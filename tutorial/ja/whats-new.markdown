@@ -168,15 +168,6 @@ symfonyがエラーを表示するとき、次のように使用されるエラ�
   * `sfValidatorBase`: `addMessage()`, `setMessage()`, `setMessages()`,
     `addOption()`, `setOption()`, `setOptions()`, `addRequiredOption()`
 
-sfToolkit
----------
-
-`getTmpDir()`メソッドは廃止予定になりもはやsymfonyコアクラスでは使われていません。
-このメソッドはPHP組み込みの`sys_get_temp_dir()`関数で置き換えることができます。
-`getTmpDir()`はこの関数へのプロキシです。
-
-このメソッドはsymfony1.4で廃止されます。
-
 フォーム
 -----
 

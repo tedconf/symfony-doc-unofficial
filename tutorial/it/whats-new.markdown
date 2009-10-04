@@ -191,16 +191,6 @@ I validatori ora implementano un'interfaccia fluida per i seguenti metodi:
   * `sfValidatorBase`: `addMessage()`, `setMessage()`, `setMessages()`,
     `addOption()`, `setOption()`, `setOptions()`, `addRequiredOption()`
 
-sfToolkit
----------
-
-Il metodo `getTmpDir()` è stato deprecato e non viene più usato nelle classi
-principali di symfony. Si può sostituire l'utilizzo di tale metodo con la funzione
-di libreria di PHP `sys_get_temp_dir()`. Ora `getTmpDir()` non è altro che un
-proxy a tale funzione.
-
-Questo metodo sarà rimosso in symfony 1.4.
-
 Form
 ----
 
