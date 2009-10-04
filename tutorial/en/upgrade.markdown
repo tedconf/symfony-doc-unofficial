@@ -52,8 +52,9 @@ Deprecations
 ------------
 
 During the symfony 1.3 development, we have deprecated and removed some
-settings, classes, methods, functions, and tasks. Please refer to the
-DEPRECATED_IN_1_3 for more information.
+settings, classes, methods, functions, and tasks. Please refer to 
+[Deprecations in 1.3](http://www.symfony-project.org/tutorial/1_3/en/deprecated)
+for more information.
 
 Autoloading
 -----------

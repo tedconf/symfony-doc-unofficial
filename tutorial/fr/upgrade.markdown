@@ -53,7 +53,8 @@ Composants obsolètes
 
 Au cours du développement de symfony 1.3, nous avons rendu obsolètes et supprimés
 quelques paramètres de configurations, des classes, des méthodes, des fonctions et tâches. Nous vous invitons à
-vous référer au document DEPRECATED_IN_1_3 pour plus d'informations.
+vous référer au document [Composants obsolètes en 1.3](http://www.symfony-project.org/tutorial/1_3/fr/deprecated)
+pour plus d'informations.
 
 Autochargement des classes
 --------------------------

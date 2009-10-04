@@ -54,8 +54,9 @@ Deprecati
 ---------
 
 Durante lo sviluppo di symfony 1.3, sono stati deprecate e rimosse alcune
-impostazioni, classi, metodi, funzioni e task. Si faccia riferimento al file
-DEPRECATED_IN_1_3 per maggiori informazioni.
+impostazioni, classi, metodi, funzioni e task. Si faccia riferimento al
+[Deprecati in 1.3](http://www.symfony-project.org/tutorial/1_3/it/deprecated)
+per maggiori informazioni.
 
 Autoload
 --------

@@ -3,7 +3,7 @@
 
 このドキュメントではsymfony 1.3で行われた変更と1.2プロジェクトをアップグレードするために必要な作業を説明します。
 
-symfony 1.3で変更/追加されたものの詳細を知りたければ、[What's new?](http://www.symfony-project.org/tutorial/1_3/en/whats-new)チュートリアルをご覧ください。
+symfony 1.3で変更/追加されたものの詳細を知りたければ、[What's new?](http://www.symfony-project.org/tutorial/1_3/ja/whats-new)チュートリアルをご覧ください。
 
 >**CAUTION**
 >symfony 1.3はPHP 5.2.4とそれ以降と互換性があります。
@@ -46,7 +46,7 @@ symfony 1.3で変更/追加されたものの詳細を知りたければ、[What
 --------
 
 symfony 1.3の開発の間、設定、クラス、メソッド、関数とタスクを廃止予定にするもしくは削除してきました。
-詳細な情報はDEPRECATED_IN_1_3を参照してくださるようお願いします。
+詳細な情報は[Deprecated in 1.3](http://www.symfony-project.org/tutorial/1_3/ja/deprecated)を参照してくださるようお願いします。
 
 Autoloading
 -----------
