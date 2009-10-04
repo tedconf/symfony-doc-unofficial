@@ -990,6 +990,7 @@ Pager
 I metodi `sfDoctrinePager` e `sfPropelPager` ora implementano le interfacce
 `Iterator` e `Countable`.
 
+    [php]
     <?php if (count($pager)): ?>
       <ul>
         <?php foreach ($pager as $article): ?>
