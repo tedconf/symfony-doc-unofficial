@@ -185,9 +185,10 @@ Echappement des Données
 -----------------------
 
 Le helper `esc_js_no_entities()` relatif à la constante `ESC_JS_NO_ENTITIES` a été mis à jour
-afin de prendre en charge les caractères non ANSI. Avant ce changement, seuls les caractères dont
-la valeur ANSI est comprise entre `37` et `177` n'étaient pas échappés. Désormais, le caractère `\`, les apostrophes et 
-guillemets (`'` & `"`) ainsi que les retours à la ligne (`\n` & `\r`) seront échappés.
+afin de prendre en charge les caractères non ANSI. Avant ce changement, tous les caractères dont
+la valeur ANSI est comprise entre `37` et `177` étaient échappés. Désormais,c'est seulement le caractère `\`, les apostrophes et 
+guillemets (`'` & `"`) ainsi que les retours à la ligne (`\n` & `\r`). Cependant il est peu probable que vous ayez précédemment
+compté sur ce mauvais comportement.
 
 Intégration de l'ORM Doctrine
 -----------------------------
