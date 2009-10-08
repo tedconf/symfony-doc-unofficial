@@ -9,11 +9,10 @@ Le fichier de configuration principal `settings.yml` pour une application peut �
 le répertoire `apps/APP_NAME/config/`.
 
 Comme indiqué dans l'introduction, le fichier `settings.yml` est
-[**sensible à l'environnement**](#chapter_03_environment_awareness), et bénéficie du
-[**mécanisme de configuration en cascade**](#chapter_03_configuration_cascade).
+[**sensible à l'environnement**](#chapter_03_sensibilisation_a_l_environnement), et bénéficie du
+[**mécanisme de configuration en cascade**](#chapter_03_configuration_en_cascade).
 
-Chaque section d'un environnement comprend deux sous-sections : `.actions` et `.settings`. 
-Each environment section has two sub-sections: `.actions` and `.settings`. Toutes
+Chaque section d'un environnement comprend deux sous-sections : `.actions` et `.settings`. Toutes
 les directives de configuration passe par la sous-section `.settings`, à l'exception des
 actions par défaut pour restituer certaines pages communes.
 
@@ -107,7 +106,7 @@ désactivé.
 La sous-section `.settings`
 ---------------------------
 
-La sous-section `.settings` est l'endroit où la configuration du framework se produit. Les
+La sous-section `.settings` est l'endroit où  se réalise la configuration du framework. Les
 paragraphes qui suivent décrivent tous les paramètres possibles et sont à peu près classé par ordre
 d'importance.
 
@@ -122,7 +121,7 @@ exemple, pour obtenir la valeur du paramètre `charset`, utilisez :
 
 *Par défaut*: `on`
 
-Le paramètre `escaping_strategy` est un paramètre booléen  qui détermine si
+Le paramètre `escaping_strategy` est un paramètre booléen qui détermine si
 l'échappement de sortie du sous-framework est activé ou non. Lorsqu'il est activé, toutes les variables
 disponibles dans les templates sont automatiquement échappé en appelant le helper
 définie par le paramètre `escaping_method` (voir ci-dessous).
@@ -133,7 +132,7 @@ d'une balise d'un script JavaScript.
 
 L'échappement de sortie du sous-framework utilise le paramètre `charset` pour échapper.
 
-Il est fortement recommandé de laisser la valeur par défaut `on`.
+Il est fortement recommandé de laisser la valeur par défaut à `on`.
 
 >**TIP**
 >Ce réglage peut être activé lorsque vous créez une application avec la tâche
@@ -276,7 +275,7 @@ est ajouté ou non dans l'URL générée. Par défaut il est réglé sur `on` pa
 la tâche `generate:app` pour l'environnement de `prod` de la première application
 créée. 
 
-De toute évidence, une seul couple application/environnement peut avoir le paramètre à
+De toute évidence, un seul couple application/environnement peut avoir le paramètre à
 `on`, dans le cas où tous les contrôleurs frontaux sont dans le même répertoire (`web/`). Si vous voulez
 plus d'une application avec `no_script_name` à `on`, déplacez le(s) contrôleur(s)
 correspondant(s) dans un sous-répertoire du répertoire racine
@@ -337,13 +336,13 @@ est incluse dans une page si le contenu de la réponse est du HTML.
   * default: E_PARSE | E_COMPILE_ERROR | E_ERROR | E_CORE_ERROR | E_USER_ERROR
 
 Le paramètre `error_reporting` contrôle le niveau de rapport d'erreurs PHP (qui sera
-affichée dans le navigateur et écrits dans les journaux).
+affiché dans le navigateur et écrit dans les journaux).
 
 >**TIP**
 >Le site PHP a quelques informations sur la façon d'utiliser les
 >[opérateurs sur les bits](http://www.php.net/language.operators.bitwise).
 
-La configuration par défaut est le plus sensible, et ne devrait pas être modifié.
+La configuration par défaut est la plus sensible, et ne devrait pas être modifiée.
 
 >**NOTE**
 >L'affichage des erreurs dans le navigateur est automatiquement désactivé
@@ -355,7 +354,7 @@ La configuration par défaut est le plus sensible, et ne devrait pas être modif
 *Par défaut*: `off`
 
 Le paramètre `compressed` permet la compression native de la réponse PHP. S'il est à
-`on`, symfony utilisera [`ob_gzhandler`](http://www.php.net/ob_gzhandler) une fonction
+`on`, symfony utilisera [`ob_gzhandler`](http://www.php.net/ob_gzhandler), une fonction
 callback de `ob_start()`.
 
 Il est recommandé de le laisser à `off` et utiliser le mécanisme de compression
@@ -374,8 +373,8 @@ Le `use_database` détermine si l'application utilise une base de données ou no
 Le paramètre `check_lock` active ou désactive le système de verrouillage de l'application
 déclenchée par des tâches telles que `cache:clear` et `project:disable`.
 
-S'il est défini à `on`, tooutes les requêtes vers des applications désactivés seront automatiquement
-redirigés vers la page du noyau symfony `lib/exception/data/unavailable.php`.
+S'il est défini à `on`, toutes les requêtes vers des applications désactivées seront automatiquement
+redirigées vers la page du noyau symfony `lib/exception/data/unavailable.php`.
 
 >**TIP**
 >Vous pouvez remplacer le template par défaut disponible en ajoutant
