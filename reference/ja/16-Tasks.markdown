@@ -495,13 +495,13 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境を設定�
 タスクはプロジェクトとすべてのインストールしたプラグインから`config/*schema.xml`かつ/または`config/*schema.yml`のスキーマ情報を読み込みます。
 
 タスクは`config/databases.yml`で定義された`doctrine`接続を使います。
-`--connection`オプションを指定することで別の接続を使うことができます:
+`--connection`オプションをつけることで別の接続を使うことができます:
 
     ./symfony doctrine:build-filters --connection="name"
 
 モデルフィルターフォームクラスのファイルは`lib/filter`で作成されます。
 
-このタスクは`lib/filter`の中のカスタムタスクを上書きしません。
+このタスクは`lib/filter`のなかのカスタムタスクを上書きしません。
 これは`lib/filter/base`で生成された基底クラスのみを置き換えます。
 
 ### ~`doctrine::build-forms`~
@@ -527,13 +527,13 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境を設定�
 タスクは`プロジェクトとすべてのインストールしたプラグインからconfig/*schema.xml`かつ/もしくは`config/*schema.yml`のスキーマ情報を読み取ります。
 
 タスクは`config/databases.yml`で定義される`doctrine`接続を使います。
-`--connection`オプションを指定することで別の接続を使うことができます:
+`--connection`オプションをつけることで別の接続を使うことができます:
 
     ./symfony doctrine:build-forms --connection="name"
 
 モデルフォームクラスのファイルは`lib/form`で作成されます。
 
-このタスクは`lib/form`の中のカスタムクラスをけっして上書きしません。
+このタスクは`lib/form`のなかのカスタムクラスをけっして上書きしません。
 これは`lib/form/base`で生成された基底クラスのみを置き換えます。
 
 ### ~`doctrine::build-model`~
@@ -560,7 +560,7 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境を設定�
 
 モデルクラスファイルは`lib/model/doctrine`で作成されます。
 
-このタスクは`lib/model/doctrine`の中のカスタムタスクをけっして上書きしません。
+このタスクは`lib/model/doctrine`のなかのカスタムタスクをけっして上書きしません。
 これは`lib/model/doctrine/base`のファイルのみを置き換えます。
 
 ### ~`doctrine::build-schema`~
@@ -662,7 +662,7 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境を設定�
 
 タスクは`data/fixtures/`で見つかるすべてのファイルからデータをロードします。
 
-他のディレクトリからデータをロードしたい場合、`--dir`オプションを指定することができます:
+ほかのディレクトリからデータをロードしたい場合、`--dir`オプションをつけます:
 
     ./symfony doctrine:data-load --dir="data/fixtures" --dir="data/data" frontend
 
@@ -864,11 +864,11 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境を設定�
 
 `%model%`モデルクラスの`%application%`アプリケーションの`%module%`モジュールを作成します。
 
-`--generate-in-cache`オプションを指定することで`%sf_app_cache_dir%/modules/auto%module%`で実行時に生成されたモジュールからアクションとテンプレートを継承する空のモジュールを作成することもできます:
+`--generate-in-cache`オプションをつけることで`%sf_app_cache_dir%/modules/auto%module%`で実行時に生成されたモジュールからアクションとテンプレートを継承する空のモジュールを作ることもできます:
 
     ./symfony doctrine:generate-module --generate-in-cache frontend article Article
 
-`--theme`オプションを指定することでジェネレーターはカスタマイズされたテーマを使うことができます:
+`--theme`オプションをつけることでジェネレーターはカスタマイズされたテーマを使うことができます:
 
     ./symfony doctrine:generate-module --theme="custom" frontend article Article
 
@@ -1006,7 +1006,7 @@ WARNING: `Propel`データベースを使い`app`なしで`all`環境を設定�
 
 すでに同じ名前のアプリケーションが存在する場合、`sfCommandException`が投げられます。
 
-(XSSを防止するために)`escaping-strategy`オプションを指定することで出力エスケーピングを有効にできます:
+(XSSを防止するために)`escaping-strategy`オプションをつけることで出力エスケーピングを有効にできます:
 
     ./symfony generate:app frontend --escaping-strategy=on
 
@@ -1498,7 +1498,7 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 
     ./symfony project:deploy --go --rsync-dir=config/production production
 
-最後に、`rsync-options`オプションを指定することで、rsync実行ファイルに渡されるオプションを指定することができます(デフォルトは`-azC`):
+最後に、`rsync-options`オプションをつけることで、rsync実行ファイルに渡されるオプションを指定することができます(デフォルトは`-azC`):
 
     ./symfony project:deploy --go --rsync-options=avz
 
@@ -1636,7 +1636,7 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 | `--phing-arg`                | `-`       | Phingの任意の引数(複数の値が可)
 
 
-`propel:build-all`タスクは他の5つのタスクのショートカットです:
+`propel:build-all`タスクはほかの5つのタスクのショートカットです:
 
     ./symfony propel:build-all
 
@@ -1680,7 +1680,7 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 | `--dir`                      | `-`       | フィクスチャを探すディレクトリ(複数の値が許可される)
 
 
-`propel:build-all-load`タスクは他の2つのタスクのショートカットです:
+`propel:build-all-load`タスクはほかの2つのタスクのショートカットです:
 
     ./symfony propel:build-all-load
 
@@ -1717,13 +1717,13 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 タスクはプロジェクトとすべてのインストールされたプラグインから`config/*schema.xml`かつ/もしくは`config/*schema.yml`のスキーマ情報を読み込みます。
 
 タスクは`config/databases.yml`で定義された`propel`接続を使います。
-`--connection`オプションを指定することで別の接続が使えます:
+`--connection`オプションをつけることで別の接続が使えます:
 
     ./symfony propel:build-filters --connection="name"
 
 モデルのフィルターフォームクラスは`lib/filter`に作成されます。
 
-このタスクは`lib/filter`の中のカスタムクラスをけっして上書きしません。
+このタスクは`lib/filter`のなかのカスタムクラスをけっして上書きしません。
 これは`lib/filter/base`で生成された既定クラスを置き換えます。
 
 ### ~`propel::build-forms`~
@@ -1747,8 +1747,8 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 
 タスクはプロジェクトとインストールしたすべてのプラグインから`config/*schema.xml`かつ/もしくは`config/*schema.yml`のスキーマ情報を読み込みます。
 
-タスクは`config/databases.yml`で定義された`propel`接続を使います。
-`--connection`オプションを指定することで別の接続を使うことができます:
+タスクは`config/databases.yml`で定義される`propel`接続を使います。
+`--connection`オプションをつけることで別の接続を使うことができます:
 
     ./symfony propel:build-forms --connection="name"
 
@@ -1782,7 +1782,7 @@ YAMLとXMLスキーマファイルを混ぜることができます。
 
 モデルクラスのファイルは`lib/model`に作成されます。
 
-このタスクは`lib/model`の中のカスタムクラスをけっして置き換えません。
+このタスクは`lib/model`のなかのカスタムクラスをけっして置き換えません。
 `lib/model/om`と`lib/model/map`のファイルのみを置き換えます。
 
 ### ~`propel::build-schema`~
@@ -1868,8 +1868,8 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
 `propel:data-load`タスクを使うことでダンプファイルをYAMLフォーマットで再インポートできます。
 
-デフォルトでは、`config/databases.yml`で定義された`propel`接続を使います。
-`connection`オプションを指定することで別の接続を使うことができます:
+デフォルトでは、`config/databases.yml`で定義される`propel`接続を使います。
+`connection`オプションをつけることで別の接続を使うことができます:
 
     ./symfony propel:data-dump --connection="name"
 
@@ -1905,12 +1905,12 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
 タスクは`data/fixtures/`で見つかるすべてのファイルからデータをロードします。
 
-他のディレクトリからデータをロードしたい場合、`--dir`オプションを指定します:
+ほかのディレクトリからデータをロードしたい場合、`--dir`オプションを指定します:
 
     ./symfony propel:data-load --dir="data/fixtures" --dir="data/data"
 
-タスクは`config/databases.yml`で定義された`propel`接続を使います。
-`--connection`オプションを指定することで別の接続を使うことができます:
+タスクは`config/databases.yml`で定義される`propel`接続を使います。
+`--connection`オプションをつけることで別の接続を使うことができます:
 
     ./symfony propel:data-load --connection="name"
 
@@ -2001,11 +2001,11 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
 タスクは`%model%`モデルクラス用の`%application%`アプリケーションで`%module%`モジュールを作成します。
 
-`--generate-in-cache`オプションを指定することで`%sf_app_cache_dir%/modules/auto%module%`の実行時に生成されるモジュールからアクションとテンプレートを継承する空のモジュールを作成することもできます:
+`--generate-in-cache`オプションをつけることで`%sf_app_cache_dir%/modules/auto%module%`の実行時に生成されるモジュールからアクションとテンプレートを継承する空のモジュールを作成することもできます:
 
     ./symfony propel:generate-module --generate-in-cache frontend article Article
 
-`--theme`オプションを指定することでジェネレーターはカスタマイズされたテーマを使うことができます:
+`--theme`オプションをつけることでジェネレーターはカスタマイズされたテーマを使うことができます:
 
     ./symfony propel:generate-module --theme="custom" frontend article Article
 
@@ -2084,7 +2084,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 
 作成されるモジュールは`%sf_app_cache_dir%/modules/auto%module%`の実行時に生成されるモジュールからアクションとテンプレートを継承する空のモジュールです。
 
-ジェネレーターは`--theme`オプションを指定することでカスタマイズされたテーマを使うことができます:
+ジェネレーターは`--theme`オプションをつけることでカスタマイズされたテーマを使うことができます:
 
     ./symfony propel:init-admin --theme="custom" frontend article Article
 
@@ -2121,7 +2121,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 タスクは`databases.yml`からデータベース設定を読み込みます。
 `--application`もしくは`--env`オプションを渡せば特定のアプリケーションの環境を使うことができます。
 
-任意の接続でSQLステートメントをロードしたいだけなら`--connection`オプションを指定することもできます。
+任意の接続でSQLステートメントをロードしたいだけなら`--connection`オプションをつけます。
 
 ### ~`propel::schema-to-xml`~
 

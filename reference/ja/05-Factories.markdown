@@ -1,7 +1,7 @@
 factories.yml設定ファイル
 ========================
 
-ファクトリはリクエストが存続する間にフレームワークが必要とするコアオブジェクトです。
+ファクトリはリクエストが存続するあいだにフレームワークが必要とするコアオブジェクトです。
 これらは`factories.yml`設定ファイルで設定され`sfContext`オブジェクトを通して常にアクセス可能です:
 
     [php]
@@ -23,7 +23,7 @@ factories.yml設定ファイル
 
     # ...
 
-サポートされるファクトリの名前は次の通りです: `controller`、`logger`、`i18n`、`request`、`response`、`routing`、`storage`、`user`、`view_cache`と`view_cache_manager`
+サポートされるファクトリの名前は次のとおりです: `controller`、`logger`、`i18n`、`request`、`response`、`routing`、`storage`、`user`、`view_cache`と`view_cache_manager`
 
 `sfContext`がファクトリを初期化するとき、ファクトリオブジェクトを設定するために使われるファクトリ(`class`)とパラメーター(`param`)のクラス名用の`factories.yml`ファイルを読み込みます:
 
@@ -254,7 +254,7 @@ factories.yml設定ファイル
 `storage`
 ---------
 
-ストレージファクトリはHTTPリクエスト間のユーザーデータを一貫させるためにユーザーファクトリによって使われます。
+ストレージファクトリはHTTPリクエストのあいだのユーザーデータを一貫させるためにユーザーファクトリによって使われます。
 
 *sfContextアクセサー*: `$context->getStorage()`
 
@@ -563,9 +563,9 @@ symfonyプロジェクトではない外部のルーティングシステムを�
 いくつかのファクトリ(`view_cache`、`i18n`と`routing`)はそれぞれ設定で定義されている場合、効果のあるキャッシュオブジェクトを利用できます。
 キャッシュオブジェクトの設定はすべてのファクトリと似ています。
 `cache`キーは匿名キャッシュファクトリを定義します。
-他のファクトリと同じように、これは`class`と`param`エントリをとります。
+ほかのファクトリと同じように、これは`class`と`param`エントリをとります。
 `param`エントリは与えられたキャッシュクラスで利用可能な任意のオプションをとります。
 
-最も重要なのは`prefix`オプションで異なる環境/アプリケーション/プロジェクトの間でキャッシュを共有するもしくは分離できるようにします。
+最も重要なのは`prefix`オプションで異なる環境/アプリケーション/プロジェクトのあいだでキャッシュを共有するもしくは分離できるようにします。
 
 *組み込みのキャッシュクラス*: `sfAPCCache`、`sfEAcceleratorCache`、`sfFileCache`、`sfMemcacheCache`、`sfNoCache`、`sfSQLiteCache`と`sfXCachCache`
