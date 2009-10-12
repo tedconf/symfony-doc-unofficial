@@ -214,6 +214,16 @@ By default, the array of fields is also used to change the fields order. You
 can pass `false` as the second argument to `useFields()` to disable the
 automatic reordering.
 
+### `sfForm::getEmbeddedForm($name)`
+
+You can now access a particular embedded form using the `->getEmbeddedForm()`
+method.
+
+### `sfForm::renderHiddenFields()`
+
+The `->renderHiddenFields()` method now renders hidden fields from embedded
+forms.
+
 ### `sfFormSymfony`
 
 The new `sfFormSymfony` class introduces the event dispatcher to symfony
@@ -380,6 +390,17 @@ functional tests. This was not possible in previous versions of symfony.
     [php]
     $browser->addListener('context.load_factories', array($browser, 'listenForNewContext'));
 
+### A better `->click()`
+
+You can now pass any CSS selector to the `->click()` method, making it much
+easier to target the element you want semantically.
+
+    [php]
+    $browser
+      ->get('/login')
+      ->click('form[action$="/login"] input[type="submit"]')
+    ;
+
 Tasks
 -----
 
@@ -530,6 +551,15 @@ representation of a task object.
 
 The XML output is mostly useful for third-party tools like IDEs.
 
+### `project:optimize`
+
+Running this task reduces the number of disk reads performed during runtime by
+caching the location of your application's template files. This task should
+only be used on a production server. Don't forget to re-run the task each time
+the project changes.
+
+    $ php symfony project:optimize
+
 Exceptions
 ----------
 
@@ -544,36 +574,18 @@ pages.
 If possible, the web debug toolbar is now also displayed on exception pages in
 the development environment.
 
-Propel
-------
+Propel Integration
+------------------
+
+Propel has been upgraded to version 1.4. Please visit Propel's site for more
+information on their upgrade
+(http://propel.phpdb.org/trac/wiki/Users/Documentation/1.4).
 
 ### `propel:insert-sql`
 
 Before `propel:insert-sql` removes all data from a database, it asks for a
 confirmation. As this task can remove data from several databases, it now also
 displays the name of the connections of the related databases.
-
-### `isPrimaryString` column attribute
-
-You can now include an `isPrimaryString` attribute in `schema.yml` and symfony
-will generate a `__toString()` method in the model class that returns the
-value of that column.
-
-    [yml]
-    classes:
-      Article:
-        columns:
-          id:     ~
-          title:  { type: varchar(255), isPrimaryString: true }
-          body:   { type: longvarchar }
-
-This configuration will result in the following method in `BaseArticle`:
-
-    [php]
-    public function __toString()
-    {
-      return $this->getTitle();
-    }
 
 Routing
 -------
@@ -827,6 +839,11 @@ which will execute once the migration class is created for easy editing.
 This example will generate the new migration class and open the new file in
 TextMate.
 
+#### `doctrine:generate-migrations-diff`
+
+This new task will automatically generate complete migration classes for you,
+based on your old and new schemas.
+
 ### Date Setters and Getters
 
 We've added two new methods for retrieving Doctrine date or timestamp values as
@@ -841,6 +858,20 @@ and passing a valid `DateTime` instance.
 
     [php]
     $article->setDateTimeObject('created_at', new DateTime('09/01/1985'));
+
+### `doctrine:migrate --down`
+
+The `doctrine:migrate` now includes `up` and `down` options that will migrate
+your schema one step in the requested direction.
+
+    $ php symfony doctrine:migrate --down
+
+### `doctrine:migrate --dry-run`
+
+If your database supports rolling back DDL statements (MySQL does not), you
+can take advantage of the new `dry-run` option.
+
+    $ php symfony doctrine:migrate --dry-run
 
 ### Output DQL Task as Table of Data
 
@@ -916,6 +947,37 @@ the following are valid `sfFormFilterDoctrine` table methods:
       $query->select('title, body');
     }
 
+Customizing a form filter is now easier. To add a filtering field, all you
+have to do is add the widget and a method to process it.
+
+    [php]
+    class UserFormFilter extends BaseUserFormFilter
+    {
+      public function configure()
+      {
+        $this->widgetSchema['name'] = new sfWidgetFormInputText();
+        $this->validatorSchema['name'] = new sfValidatorString(array('required' => false));
+      }
+
+      public function addNameColumnQuery($query, $field, $value)
+      {
+        if (!empty($value))
+        {
+          $query->andWhere(sprintf('CONCAT(%s.f_name, %1$s.l_name) LIKE ?', $query->getRootAlias()), $value);
+        }
+      }
+    }
+
+In earlier versions you would have need to extend `getFields()` in addition to
+creating a widget and method to get this to work.
+
+### Configuring Doctrine
+
+You can now listen to the events `doctrine.configure` and
+`doctrine.configure_connection` to configure Doctrine. This means the Doctrine
+configuration can be easily customized from a plugin, as long as the plugin is
+enabled prior to `sfDoctrinePlugin`.
+
 Web Debug Toolbar
 -----------------
 
@@ -986,6 +1048,16 @@ Two params are available in `factories.yml`:
     should include the host name part. In practice, it says if page cache
     should be hostname dependent.
 
+### Cache more
+
+The view cache manager no longer refuses to cache based on whether there are
+values in the `$_GET` or `$_POST` arrays. The logic now simply confirms the
+current request is of the GET method before checking `cache.yml`. This means
+the following pages are now cachable:
+
+  * `/js/my_compiled_javascript.js?cachebuster123`
+  * `/users?page=3`
+
 Request
 -------
 
@@ -1030,3 +1102,35 @@ The `link_to_if()` and `link_to_unless()` helpers are now compatible with the
 
     // symfony 1.3
     <?php echo link_to_unless($foo, 'article_show', $article) ?>
+
+Context
+-------
+
+You can now listen to `context.method_not_found` to dynamically add methods to
+`sfContext`. This is useful if you are added a lazy-loading factory, perhaps
+from a plugin.
+
+    [php]
+    class myContextListener
+    {
+      protected
+        $factory = null;
+
+      public function listenForMethodNotFound(sfEvent $event)
+      {
+        $context = $event->getSubject();
+
+        if ('getLazyLoadingFactory' == $event['method'])
+        {
+          if (null === $this->factory)
+          {
+            $this->factory = new myLazyLoadingFactory($context->getEventDispatcher());
+          }
+
+          $event->setReturnValue($this->factory);
+
+          return true;
+        }
+      }
+    }
+
