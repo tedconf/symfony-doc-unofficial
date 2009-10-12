@@ -2189,7 +2189,7 @@ XMLフォーマットはYAMLよりも多くの情報を格納できます。
 | `--detailed`              | `-`       | 詳細な情報を出力する
 
 
-`test:coverage`タスクはテストディレクトリもしくはテストディレクトリとlibファイルもしくはlibディレクトリの欲しいコードカバレージを出力します:
+`test:coverage`タスクはテストディレクトリもしくはテストディレクトリとlibファイルもしくはlibディレクトリのほしいコードカバレージを出力します:
 
     ./symfony test:coverage test/unit/model lib/model
 
