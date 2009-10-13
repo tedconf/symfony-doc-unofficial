@@ -49,7 +49,7 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで設定で
     default:
       stylesheets: [main.css]
 
-`stylesheets`エントリは現在のビューで使うスタイルシートの配列を定義します。
+`stylesheets`エントリーは現在のビューで使うスタイルシートの配列を定義します。
 
 >**NOTE**
 >`view.yml`で定義されるスタイルシートのインクルードは`include_stylesheets()`ヘルパーによる手動もしくは[commonフィルター](#chapter_12-Filters_sub_common)で自動的に行われます。
@@ -82,10 +82,10 @@ Viewレイヤーは`view.yml`設定ファイルを編集することで設定で
     default:
       javascripts: []
 
-`javascripts`エントリは現在のビューに使うJavaScriptファイルの配列を定義します。
+`javascripts`エントリーは現在のビューに使うJavaScriptファイルの配列を定義します。
 
 >**NOTE**
->`view.yml`で定義されたJavaScriptファイルのインクルードは`include_javascripts()`ヘルパーで手動、もしくは[commonフィルター](#chapter_12-Filters_sub_common)で自動的に行われます。
+>`view.yml`で定義されるJavaScriptファイルのインクルードは`include_javascripts()`ヘルパーで手動、もしくは[commonフィルター](#chapter_12-Filters_sub_common)で自動的に行われます。
 
 多くのファイルが定義されている場合、symfonyは定義と同じ順序でこれらをインクルードします:
 
