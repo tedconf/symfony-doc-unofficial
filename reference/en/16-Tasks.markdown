@@ -71,6 +71,7 @@ Available Tasks
    * [`doctrine::generate-admin`](#chapter_16_sub_doctrine_generate_admin)
    * [`doctrine::generate-migration`](#chapter_16_sub_doctrine_generate_migration)
    * [`doctrine::generate-migrations-db`](#chapter_16_sub_doctrine_generate_migrations_db)
+   * [`doctrine::generate-migrations-diff`](#chapter_16_sub_doctrine_generate_migrations_diff)
    * [`doctrine::generate-migrations-models`](#chapter_16_sub_doctrine_generate_migrations_models)
    * [`doctrine::generate-module`](#chapter_16_sub_doctrine_generate_module)
    * [`doctrine::generate-module-for-route`](#chapter_16_sub_doctrine_generate_module_for_route)
@@ -106,6 +107,7 @@ Available Tasks
    * [`project::send-emails`](#chapter_16_sub_project_send_emails)
    * [`project::upgrade1.3`](#chapter_16_sub_project_upgrade1_3)
  * [`propel`](#chapter_16_propel)
+   * [`propel::build`](#chapter_16_sub_propel_build)
    * [`propel::build-all`](#chapter_16_sub_propel_build_all)
    * [`propel::build-all-load`](#chapter_16_sub_propel_build_all_load)
    * [`propel::build-filters`](#chapter_16_sub_propel_build_filters)
@@ -846,7 +848,7 @@ use the `--append` option:
 
 The `doctrine::delete-model-files` task delete all the related auto generated files for a given model name.:
 
-    $ php symfony doctrine:delete-model-files [--no-confirmation] name
+    $ php symfony doctrine:delete-model-files [--no-confirmation] name1 ... [nameN]
 
 
 
@@ -954,13 +956,13 @@ The task creates a module in the `%frontend%` application for the
 `%article%` route definition found in `routing.yml`.
 
 For the filters and batch actions to work properly, you need to add
-the `wildcard` option to the route:
+the `with_wildcard_routes` option to the route:
 
     article:
       class: sfDoctrineRouteCollection
       options:
-        model:              Article
-        with_wildcard_routes:   true
+        model:                Article
+        with_wildcard_routes: true
 
 ### ~`doctrine::generate-migration`~
 
@@ -1010,6 +1012,26 @@ The `doctrine::generate-migrations-db` task generate migration classes from exis
 The `doctrine:generate-migration` task generates migration classes from existing database connections
 
     ./symfony doctrine:generate-migration
+
+### ~`doctrine::generate-migrations-diff`~
+
+The `doctrine::generate-migrations-diff` task generate migration classes by producing a diff between your old and new schema.:
+
+    $ php symfony doctrine:generate-migrations-diff [--application[="..."]] [--env="..."] 
+
+
+
+
+
+| Option (Shortcut) | Default | Description
+| ----------------- | ------- | -----------
+| `--application` | `1` | The application name
+| `--env` | `dev` | The environment
+
+
+The `doctrine:generate-migrations-diff` task generates migration classes by producing a diff between your old and new schema.
+
+    ./symfony doctrine:generate-migrations-diff
 
 ### ~`doctrine::generate-migrations-models`~
 
@@ -1135,7 +1157,7 @@ The task connects to the database and creates tables for all the
 
 The `doctrine::migrate` task migrates database to current/specified version:
 
-    $ php symfony doctrine:migrate [--application[="..."]] [--env="..."] [version]
+    $ php symfony doctrine:migrate [--application[="..."]] [--env="..."] [--up] [--down] [--dry-run] [version]
 
 *Alias(es)*: `doctrine-migrate`
 
@@ -1148,11 +1170,27 @@ The `doctrine::migrate` task migrates database to current/specified version:
 | ----------------- | ------- | -----------
 | `--application` | `1` | The application name
 | `--env` | `dev` | The environment
+| `--up` | `-` | Migrate up one version
+| `--down` | `-` | Migrate down one version
+| `--dry-run` | `-` | Do not persist migrations
 
 
-The `doctrine:migrate` task migrates database to current/specified version
+The `doctrine:migrate` task migrates the database:
 
     ./symfony doctrine:migrate
+
+Provide a version argument to migrate to a specific version:
+
+    ./symfony doctrine:migrate 10
+
+To migration up or down one migration, use the `--up` or `--down` options:
+
+    ./symfony doctrine:migrate --down
+
+If your database supports rolling back DDL statements, you can run migrations
+in dry-run mode using the `--dry-run` option:
+
+    ./symfony doctrine:migrate --dry-run
 
 ### ~`doctrine::rebuild-db`~
 
@@ -1888,24 +1926,34 @@ environment:
 
 The `project::optimize` task optimizes a project for better performance:
 
-    $ php symfony project:optimize  environment [application]
+    $ php symfony project:optimize  [env] [app1] ... [appN]
 
 
 
 | Argument | Default | Description
-| -------- | ------- | --------------------
-| `env`    | `prod`  | The environment
-| `app`    | `-`     | The application name
+| -------- | ------- | -----------
+| `env` | `prod` | The environment name
+| `app` | `-` | The application name
 
 
 
 
 The `project:optimize` optimizes a project for better performance:
 
-    ./symfony project:optimizes prod frontend
+    ./symfony project:optimize
 
 This task should only be used on a production server. Don't forget to re-run
 the task each time the project changes.
+
+You can specify an environment other than `prod` by passing it as an
+argument:
+
+    ./symfony project:optimize staging
+
+You can further specify one or more applications to optimize by passing
+additional arguments:
+
+    ./symfony project:optimize prod frontend
 
 ### ~`project::permissions`~
 
@@ -1964,6 +2012,73 @@ Please read the UPGRADE_TO_1_3 file to have information on what this task does.
 
 `propel`
 --------
+
+### ~`propel::build`~
+
+The `propel::build` task generate code based on your schema:
+
+    $ php symfony propel:build [--application[="..."]] [--env="..."] [--no-confirmation] [--all] [--all-classes] [--model] [--forms] [--filters] [--sql] [--db] [--and-load[="..."]] [--and-append[="..."]] 
+
+
+
+
+
+| Option (Shortcut) | Default | Description
+| ----------------- | ------- | -----------
+| `--application` | `1` | The application name
+| `--env` | `dev` | The environment
+| `--no-confirmation` | `-` | Whether to force dropping of the database
+| `--all` | `-` | Build everything and reset the database
+| `--all-classes` | `-` | Build all classes
+| `--model` | `-` | Build model classes
+| `--forms` | `-` | Build form classes
+| `--filters` | `-` | Build filter classes
+| `--sql` | `-` | Build SQL
+| `--db` | `-` | Drop, create, and insert SQL
+| `--and-load` | `-` | Load fixture data (multiple values allowed)
+| `--and-append` | `-` | Append fixture data (multiple values allowed)
+
+
+The `propel:build` task generates code based on your schema:
+
+    ./symfony propel:build
+
+You must specify what you would like built. For instance, if you want model
+and form classes built use the `--model` and `--forms` options:
+
+    ./symfony propel:build --model --forms
+
+You can use the `--all` shortcut option if you would like all classes and
+SQL files generated and the database rebuilt:
+
+    ./symfony propel:build --all
+
+This is equivalent to running the following tasks:
+
+    ./symfony propel:build-model
+    ./symfony propel:build-forms
+    ./symfony propel:build-filters
+    ./symfony propel:build-sql
+    ./symfony propel:insert-sql
+
+You can also generate only class files by using the `--all-classes` shortcut
+option. When this option is used alone, the database will not be modified.
+
+    ./symfony propel:build --all-classes
+
+The `--and-load` option will load data from the project and plugin
+`data/fixtures/` directories:
+
+    ./symfony propel:build --db --and-load
+
+To specify what fixtures are loaded, add a parameter to the `--and-load` option:
+
+    ./symfony propel:build --all --and-load="data/fixtures/dev/"
+
+To append fixture data without erasing any records from the database, include
+the `--and-append` option:
+
+    ./symfony propel:build --all --and-append
 
 ### ~`propel::build-all`~
 
@@ -2337,7 +2452,7 @@ The task creates a module in the `%frontend%` application for the
 `%article%` route definition found in `routing.yml`.
 
 For the filters and batch actions to work properly, you need to add
-the `wildcard` option to the route:
+the `with_wildcard_routes` option to the route:
 
     article:
       class: sfPropelRouteCollection
