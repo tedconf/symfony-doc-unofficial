@@ -1909,8 +1909,8 @@ Il task `project::optimize` ottimizza un progetto per migliorare le performance:
 
 | Argomento | Predefinito | Descrizione
 | --------- | ----------- | -----------
-| `ambiente` | `prod` | L'ambiente
-| `applicazione` | `-` | Il nome dell'applicazione
+| `amb` | `prod` | L'ambiente
+| `app` | `-` | Il nome dell'applicazione
 
 
 
