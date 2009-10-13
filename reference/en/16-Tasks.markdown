@@ -1888,21 +1888,21 @@ environment:
 
 The `project::optimize` task optimizes a project for better performance:
 
-    $ php symfony project:optimize  application [environment]
+    $ php symfony project:optimize  environment [application]
 
 
 
 | Argument | Default | Description
-| -------- | ------- | -----------
-| `application` | `-` | The server name
-| `environment` | `prod` | The server name
+| -------- | ------- | --------------------
+| `env`    | `prod`  | The environment
+| `app`    | `-`     | The application name
 
 
 
 
 The `project:optimize` optimizes a project for better performance:
 
-    ./symfony project:optimizes frontend prod
+    ./symfony project:optimizes prod frontend
 
 This task should only be used on a production server. Don't forget to re-run
 the task each time the project changes.

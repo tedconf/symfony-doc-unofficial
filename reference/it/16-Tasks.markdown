@@ -1903,21 +1903,21 @@ ambiente:
 
 Il task `project::optimize` ottimizza un progetto per migliorare le performance:
 
-    $ php symfony project:optimize  applicazione [ambiente]
+    $ php symfony project:optimize  ambiente [applicazione]
 
 
 
 | Argomento | Predefinito | Descrizione
 | --------- | ----------- | -----------
-| `applicazione` | `-` | Il nome del server
-| `ambiente` | `prod` | Il nome del server
+| `ambiente` | `prod` | L'ambiente
+| `applicazione` | `-` | Il nome dell'applicazione
 
 
 
 
 `project:optimize` ottimizza un progetto per migliorare le performance:
 
-    ./symfony project:optimizes frontend prod
+    ./symfony project:optimizes prod frontend
 
 Questo task deve essere utilizzato solo su un server di produzione. Non dimenticare
 di rilanciare il task ogni volta che il progetto subisce delle modifiche.

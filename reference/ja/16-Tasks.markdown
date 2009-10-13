@@ -1642,16 +1642,16 @@ Windowsでは、タスクはこれらすべてのファイルを`web/%name%`デ�
 
 `project::optimize`タスクはよりよいパフォーマンスのためにプロジェクトを最適化する:
 
-    $ php symfony project:optimize  application [environment]
+    $ php symfony project:optimize  environment [application]
 
 | 引数          | デフォルト | 説明
 | ------------- | ---------- | -----------------------
-| `application` | `-`        | アプリケーションの名前
 | `environment` | `prod`     | 環境
+| `application` | `-`        | アプリケーションの名前
 
 `project:optimize`はよりよいパフォーマンスのためにプロジェクトを最適化します:
 
-    ./symfony project:optimizes frontend prod
+    ./symfony project:optimizes prod frontend
 
 このタスクは運用サーバーのみで使うべきです。
 プロジェクトを変更するたびにタスクを再実行することをお忘れなく。
