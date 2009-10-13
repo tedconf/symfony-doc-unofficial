@@ -105,13 +105,14 @@ might want to add some routing cache to see if it helps. Here is the symfony
 
     [yml]
     routing:
-      cache:
-        class: sfFileCache
-        param:
-          automatic_cleaning_factor: 0
-          cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
-          lifetime:                  31556926
-          prefix:                    %SF_APP_DIR%/routing
+      param:
+        cache:
+          class: sfFileCache
+          param:
+            automatic_cleaning_factor: 0
+            cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
+            lifetime:                  31556926
+            prefix:                    %SF_APP_DIR%/routing
 
 JavaScripts and Stylesheets
 ---------------------------
