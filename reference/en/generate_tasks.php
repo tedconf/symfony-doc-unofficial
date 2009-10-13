@@ -1,6 +1,6 @@
 <?php
 
-require_once 'lib/autoload/sfCoreAutoload.class.php';
+require_once '/Users/fabien/work/symfony/dev/1.3/lib/autoload/sfCoreAutoload.class.php';
 sfCoreAutoload::register();
 
 $dispatcher = new sfEventDispatcher();
