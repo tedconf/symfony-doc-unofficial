@@ -8,7 +8,7 @@ factories.yml設定ファイル
     // ユーザーファクトリを取得する
     sfContext::getInstance()->getUser();
 
-アプリケーション用のメインの`factories.yml`設定ファイルは`apps/APP_NAME/config/`ディレクトリで見つかります。
+アプリケーションのメインの`factories.yml`設定ファイルは`apps/APP_NAME/config/`ディレクトリで見つかります。
 
 はじめの章で説明したように、`factories.yml`ファイルは[**環境を認識し**](#chapter_03_environment_awareness)、[**コンフィギュレーションカスケードのメカニズム**](#chapter_03_configuration_cascade)が有効になり、[**定数**](#chapter_03_constants)を格納することができます。
 
@@ -25,14 +25,14 @@ factories.yml設定ファイル
 
 サポートされるファクトリの名前は次のとおりです: `controller`、`logger`、`i18n`、`request`、`response`、`routing`、`storage`、`user`、`view_cache`と`view_cache_manager`
 
-`sfContext`がファクトリを初期化するとき、ファクトリオブジェクトを設定するために使われるファクトリ(`class`)とパラメーター(`param`)のクラス名用の`factories.yml`ファイルを読み込みます:
+`sfContext`がファクトリを初期化するとき、ファクトリオブジェクトを設定するために使われるファクトリ(`class`)とパラメーター(`param`)のクラス名の`factories.yml`ファイルを読み込みます:
 
     [yml]
     FACTORY_NAME:
       class: CLASS_NAME
       param: { ARRAY OF PARAMETERS }
 
-ファクトリをカスタマイズできることはsymfonyのコアオブジェクト用のデフォルトクラスの代わりにカスタムクラスを使うことができることを意味します。
+ファクトリをカスタマイズできることはsymfonyのコアオブジェクトのデフォルトクラスの代わりにカスタムクラスを使うことができることを意味します。
 これらに送信するパラメーターをカスタマイズすることでこれらのクラスのデフォルトのふるまいを変更することもできます。
 
 ファクトリクラスがオートロードできないとき、`file`パスが定義されファクトリが作成される前に自動的にインクルードできます:
@@ -44,13 +44,12 @@ factories.yml設定ファイル
 
 >**NOTE**
 >`factories.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
->プロセスは~`sfFactoryConfigHandler`~
->[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
+>プロセスは~`sfFactoryConfigHandler`~[クラス](#chapter_14-Other-Configuration-Files_config_handlers_yml)によって自動的に管理されます。
 
 <div class="pagebreak"></div>
 
 ファクトリ
----------
+----------
 
  * [`request`](#chapter_05_request)
 
@@ -178,7 +177,7 @@ factories.yml設定ファイル
         charset:           %SF_CHARSET%
         send_http_headers: true
 
-*`test`環境用のデフォルトコンフィギュレーション*:
+*`test`環境のデフォルトコンフィギュレーション*:
 
     [yml]
     response:
@@ -220,8 +219,7 @@ factories.yml設定ファイル
 
 >**NOTE**
 >デフォルトでは、`myUser`クラスは`sfBasicSecurityUser`を継承します。
->これは[`security.yml`](#chapter_08)設定ファイルで
->設定できます。
+>これは[`security.yml`](#chapter_08)設定ファイルで設定できます。
 
 ### ~`timeout`~
 
@@ -233,9 +231,7 @@ factories.yml設定ファイル
 これは`myUser`クラスが生成される例が当てはまります。
 
 >**NOTE**
->予期していないふるまいを避けるために、ユーザークラスはセッションガーベッジコレクタ用の
->最長有効期間(`session.gc_maxlifetime`)をタイムアウトよりも長くなるように
->強制します。
+>予期していないふるまいを避けるために、ユーザークラスはセッションガーベッジコレクターの最長有効期間(`session.gc_maxlifetime`)をタイムアウトよりも長くなるように強制します。
 
 ### ~`use_flash`~
 
@@ -244,12 +240,10 @@ factories.yml設定ファイル
 ### ~`default_culture`~
 
 `default_culture`オプションはサイトに始めて訪問したユーザーのためにデフォルトのcultureを定義します。
-デフォルトでは、`settings.yml`からの`default_culture`が使用されたいていの場合これで十分です。
+デフォルトでは、`settings.yml`からの`default_culture`が使用されるたいていの場合これで十分です。
 
 >**CAUTION**
->`factories.yml`もしくは`settings.yml`の~`default_culture`~設定を変更する場合、
->結果を確認するためにブラウザのCookieを
->クリアする必要があります。
+>`factories.yml`もしくは`settings.yml`の~`default_culture`~設定を変更する場合、結果を確認するためにブラウザのCookieをクリアする必要があります。
 
 `storage`
 ---------
@@ -266,7 +260,7 @@ factories.yml設定ファイル
       param:
         session_name: symfony
 
-*`test`環境用のデフォルトコンフィギュレーション*:
+*`test`環境のデフォルトコンフィギュレーション*:
 
     [yml]
     storage:
@@ -280,7 +274,8 @@ factories.yml設定ファイル
 
 ### ~`session_name`~
 
-`session_name`オプションはユーザーセッションを保存するためにsymfonyによって使われるCookieの名前を定義します。デフォルトの名前は`symfony`で、すべてのアプリケーションが同じCookieを共有することを意味します(そして対応する認証と権限付与も)。
+`session_name`オプションはユーザーセッションを保存するためにsymfonyによって使われるCookieの名前を定義します。
+デフォルトの名前は`symfony`で、すべてのアプリケーションが同じCookieを共有することを意味します(そして対応する認証と権限付与も)。
 
 ### `session_set_cookie_params()`パラメーター
 
@@ -384,7 +379,8 @@ factories.yml設定ファイル
 
 ### ~`debug`~
 
-`debug`オプションはデバッグモードをセットします。`on`にセットされる場合、未翻訳のメッセージはプレフィックスとサフィックスによってデコレートされます(下記を参照)。
+`debug`オプションはデバッグモードをセットします。
+`on`にセットされる場合、未翻訳のメッセージはプレフィックスとサフィックスによってデコレートされます(下記を参照)。
 
 ### ~`untranslated_prefix`~
 
@@ -449,7 +445,7 @@ symfony 1.0と1.1との後方互換性のあるルートがほしい場合は、
 
 *デフォルト*: 新しいプロジェクトには`true`、アップグレードしたプロジェクトには`false`
 
-ルートの生成に使われないパラメータがあるとき、`extra_parameters_as_query_string`はルート生成に利用していないパラメーターをクエリーストリングに変換することが可能です。
+ルートの生成に使われないパラメーターがあるとき、`extra_parameters_as_query_string`はルート生成に利用していないパラメーターをクエリーストリングに変換することが可能です。
 symfony 1.0もしくは1.1のふるまいを代替するには`false`にセットします。
 このバージョンでは、ルート生成に利用していないパラメーターはルーティングシステムによって無視されるだけでした。
 
@@ -461,7 +457,8 @@ symfony 1.0もしくは1.1のふるまいを代替するには`false`にセッ�
 
 *デフォルト*: なし
 
-すべてのルートに使われるデフォルトのサフィックスです。このオプションは非推奨でもはや役に立ちません。
+すべてのルートに使われるデフォルトのサフィックスです。
+このオプションは非推奨でもはや役に立ちません。
 
 ### ~`load_configuration`~
 
@@ -521,7 +518,7 @@ symfonyプロジェクトではない外部のルーティングシステムを�
               level: debug
               file: %SF_LOG_DIR%/%SF_APP%_%SF_ENVIRONMENT%.log
 
-*`prod`環境用のデフォルトコンフィギュレーション*:
+*`prod`環境のデフォルトコンフィギュレーション*:
 
     [yml]
     logger:
@@ -541,10 +538,11 @@ symfonyプロジェクトではない外部のルーティングシステムを�
 
 ### ~`loggers`~
 
-`loggers`オプションは使用するロガーのリストを定義します。リストは匿名ロガーファクトリの配列です。
+`loggers`オプションは使用するロガーのリストを定義します。
+リストは匿名ロガーファクトリの配列です。
 
 *組み込みのロガークラス*: `sfConsoleLogger`、`sfFileLogger`、`sfNoLogger`、
-`sfStreamLogger`、と`sfVarLogger`
+`sfStreamLogger`と`sfVarLogger`
 
 `controller`
 ------------
@@ -558,13 +556,13 @@ symfonyプロジェクトではない外部のルーティングシステムを�
       class: sfFrontWebController
 
 匿名キャッシュファクトリ
------------------------
+------------------------
 
 いくつかのファクトリ(`view_cache`、`i18n`と`routing`)はそれぞれ設定で定義されている場合、効果のあるキャッシュオブジェクトを利用できます。
 キャッシュオブジェクトの設定はすべてのファクトリと似ています。
 `cache`キーは匿名キャッシュファクトリを定義します。
-ほかのファクトリと同じように、これは`class`と`param`エントリをとります。
-`param`エントリは与えられたキャッシュクラスで利用可能な任意のオプションをとります。
+ほかのファクトリと同じように、これは`class`と`param`エントリーをとります。
+`param`エントリーは与えられたキャッシュクラスで利用可能な任意のオプションをとります。
 
 もっとも重要なのは`prefix`オプションで異なる環境/アプリケーション/プロジェクトのあいだでキャッシュを共有するもしくは分離できるようにします。
 
