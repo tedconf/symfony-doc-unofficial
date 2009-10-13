@@ -71,6 +71,7 @@ I task disponibili
    * [`doctrine::generate-admin`](#chapter_16_sub_doctrine_generate_admin)
    * [`doctrine::generate-migration`](#chapter_16_sub_doctrine_generate_migration)
    * [`doctrine::generate-migrations-db`](#chapter_16_sub_doctrine_generate_migrations_db)
+   * [`doctrine::generate-migrations-diff`](#chapter_16_sub_doctrine_generate_migrations_diff)
    * [`doctrine::generate-migrations-models`](#chapter_16_sub_doctrine_generate_migrations_models)
    * [`doctrine::generate-module`](#chapter_16_sub_doctrine_generate_module)
    * [`doctrine::generate-module-for-route`](#chapter_16_sub_doctrine_generate_module_for_route)
@@ -106,6 +107,7 @@ I task disponibili
    * [`project::send-emails`](#chapter_16_sub_project_send_emails)
    * [`project::upgrade1.3`](#chapter_16_sub_project_upgrade1_3)
  * [`propel`](#chapter_16_propel)
+   * [`propel::build`](#chapter_16_sub_propel_build)
    * [`propel::build-all`](#chapter_16_sub_propel_build_all)
    * [`propel::build-all-load`](#chapter_16_sub_propel_build_all_load)
    * [`propel::build-filters`](#chapter_16_sub_propel_build_filters)
@@ -864,7 +866,7 @@ usare l'opzione `--append`:
 Il task `doctrine::delete-model-files` cancella tutti i relativi file generati automaticamente
 per un determinato nome del modello:
 
-    $ php symfony doctrine:delete-model-files [--no-confirmation] nome
+    $ php symfony doctrine:delete-model-files [--no-confirmation] name1 ... [nameN]
 
 
 
@@ -970,13 +972,13 @@ Il task crea un modulo nell'applicazione `%frontend%` per la
 definizione di rotta `%article%` trovata in `routing.yml`.
 
 Per fare funzionare correttamente i filtri e le azioni batch, è necessario aggiungere
-l'opzione `wildcard` alla rotta:
+l'opzione `with_wildcard_routes` alla rotta:
 
     article:
       class: sfDoctrineRouteCollection
       options:
-        model:              Article
-        with_wildcard_routes:   true
+        model:                Article
+        with_wildcard_routes: true
 
 ### ~`doctrine::generate-migration`~
 
@@ -1026,6 +1028,28 @@ Il task `doctrine::generate-migrations-db` genera le classi di migrazione per le
 Il task `doctrine:generate-migration` genera classi di migrazione dalle esistenti connessioni al database
 
     ./symfony doctrine:generate-migration
+
+### ~`doctrine::generate-migrations-diff`~
+
+Il task `doctrine::generate-migrations-diff` genera classi di migrazione realizzando
+una differenza tra il vecchio e il nuovo schema.:
+
+    $ php symfony doctrine:generate-migrations-diff [--application[="..."]] [--env="..."] 
+
+
+
+
+
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--application` | `1` | Il nome dell'applicazione
+| `--env` | `dev` | L'ambiente
+
+
+Il task `doctrine:generate-migrations-diff` genera classi di migrazione realizzando
+una differenza tra il vecchio e il nuovo schema.
+
+    ./symfony doctrine:generate-migrations-diff
 
 ### ~`doctrine::generate-migrations-models`~
 
@@ -1151,7 +1175,7 @@ file `lib/model/doctrine/*.php`.
 
 Il task `doctrine::migrate` esegue la migrazione del database alla versione corrente/specificata
 
-    $ php symfony doctrine:migrate [--application[="..."]] [--env="..."] [version]
+    $ php symfony doctrine:migrate [--application[="..."]] [--env="..."] [--up] [--down] [--dry-run] [version]
 
 *Altro nomi*: `doctrine-migrate`
 
@@ -1164,11 +1188,27 @@ Il task `doctrine::migrate` esegue la migrazione del database alla versione corr
 | --------------------- | ----------- | -----------
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
+| `--up` | `-` | Migra avanti di una versione
+| `--down` | `-` | Migra indietro di una versione
+| `--dry-run` | `-` | Non persistono le migrazioni
 
 
-Il task `doctrine:migrate` migra il database alla versione corrente/specificata
+Il task `doctrine:migrate` migra il database:
 
     ./symfony doctrine:migrate
+
+Fornire un numero di versione per migrare ad una versione specifica:
+
+    ./symfony doctrine:migrate 10
+
+Per migrare avanti e indietro di una versione, usare le opzioni `--up` o `--down`:
+
+    ./symfony doctrine:migrate --down
+
+Se il database supporta il rollback di istruzioni DDL, è possibile eseguire le migrazioni
+in modalità dry-run usando l'opzione `--dry-run`:
+
+    ./symfony doctrine:migrate --dry-run
 
 ### ~`doctrine::rebuild-db`~
 
@@ -1903,13 +1943,13 @@ ambiente:
 
 Il task `project::optimize` ottimizza un progetto per migliorare le performance:
 
-    $ php symfony project:optimize  ambiente [applicazione]
+    $ php symfony project:optimize  amb [app1] ... [appN]
 
 
 
 | Argomento | Predefinito | Descrizione
 | --------- | ----------- | -----------
-| `amb` | `prod` | L'ambiente
+| `amb` | `prod` | Il nome dell'ambiente
 | `app` | `-` | Il nome dell'applicazione
 
 
@@ -1917,10 +1957,20 @@ Il task `project::optimize` ottimizza un progetto per migliorare le performance:
 
 `project:optimize` ottimizza un progetto per migliorare le performance:
 
-    ./symfony project:optimizes prod frontend
+    ./symfony project:optimize
 
 Questo task deve essere utilizzato solo su un server di produzione. Non dimenticare
 di rilanciare il task ogni volta che il progetto subisce delle modifiche.
+
+E' possibile specificare ambiente diverso da `prod` passandolo come
+argomento:
+
+    ./symfony project:optimize staging
+
+E' anche possibile specificare una o più applicazioni da ottimizzare passando
+ulteriori argomenti:
+
+    ./symfony project:optimize prod frontend
 
 ### ~`project::permissions`~
 
@@ -1981,6 +2031,73 @@ Si prega di leggere il file UPGRADE_TO_1_3 per avere informazioni su cosa fa que
 
 `propel`
 --------
+
+### ~`propel::build`~
+
+Il task `propel::build` genera il codice basandosi sullo schema:
+
+    $ php symfony propel:build [--application[="..."]] [--env="..."] [--no-confirmation] [--all] [--all-classes] [--model] [--forms] [--filters] [--sql] [--db] [--and-load[="..."]] [--and-append[="..."]] 
+
+
+
+
+
+| Opzione (Scorciatoia) | Predefinito | Descrizione
+| --------------------- | ----------- | -----------
+| `--application` | `1` | Il nome dell'applicazione
+| `--env` | `dev` | L'ambiente
+| `--no-confirmation` | `-` | Se forzare la cancellazione del database
+| `--all` | `-` | Ricrea tutto e reinizializza il database
+| `--all-classes` | `-` | Crea tutte le classi
+| `--model` | `-` | Crea le classi dei modelli
+| `--forms` | `-` | Crea le classi dei form
+| `--filters` | `-` | Crea le classi dei filtri
+| `--sql` | `-` | Crea l'SQL
+| `--db` | `-` | Cancella, crea, e inserisce l'SQL
+| `--and-load` | `-` | Carica i dati delle fixture (sono ammessi valori multipli)
+| `--and-append` | `-` | Aggiunge i dati delle fixture (sono ammessi valori multipli)
+
+
+Il task `propel:build` genera il codice basandosi sullo schema:
+
+    ./symfony propel:build
+
+E' necessario specificare cosa si vuole creare. Ad esempio, se si vogliono
+creare le classi dei modelli e dei form  si usano le opzioni `--model` e `--forms`:
+
+    ./symfony propel:build --model --forms
+
+E' possibile usare l'opzione scorciatoia `--all` se si vogliono generare tutte le classi,
+i file SQL e ricreare il database:
+
+    ./symfony propel:build --all
+
+Questo è equivalente a lanciare i seguenti task:
+
+    ./symfony propel:build-model
+    ./symfony propel:build-forms
+    ./symfony propel:build-filters
+    ./symfony propel:build-sql
+    ./symfony propel:insert-sql
+
+Si possono generare solo i file delle classi usando l'opzione scorciatoia `--all-classes`.
+Quando questa opzione è usata da sola, il database non sarà modificato.
+
+    ./symfony propel:build --all-classes
+
+L'opzione `--and-load` caricherà i dati dalle cartelle `data/fixtures/`
+del progetto e dei plugin:
+
+    ./symfony propel:build --db --and-load
+
+Per specificare quali fixtures vanno caricate, aggiungere un parametro all'opzione `--and-load`:
+
+    ./symfony propel:build --all --and-load="data/fixtures/dev/"
+
+Per aggiungere i dati delle fixture senza cancellare nessun record dal database, aggiungere
+l'opzione `--and-append`:
+
+    ./symfony propel:build --all --and-append
 
 ### ~`propel::build-all`~
 
