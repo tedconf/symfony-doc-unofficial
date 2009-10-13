@@ -24,7 +24,7 @@ The above command creates an `article` admin generator module for the
 ### Configuration File
 
 The configuration of such a module can be done in the
-`apps/backend/modules/job/article/generator.yml` file:
+`apps/backend/modules/model/article/generator.yml` file:
 
     [yml]
     generator:
@@ -158,13 +158,13 @@ When configuration is not sufficient, you can override the generated methods:
  | `executeIndex()`       | `list` view action
  | `executeFilter()`      | Updates the filters
  | `executeNew()`         | `new` view action
- | `executeCreate()`      | Creates a new Job
+ | `executeCreate()`      | Creates a new record
  | `executeEdit()`        | `edit` view action
- | `executeUpdate()`      | Updates a Job
- | `executeDelete()`      | Deletes a Job
+ | `executeUpdate()`      | Updates a record
+ | `executeDelete()`      | Deletes a record
  | `executeBatch()`       | Executes a batch action
  | `executeBatchDelete()` | Executes the `_delete` batch action
- | `processForm()`        | Processes the Job form
+ | `processForm()`        | Processes the record form
  | `getFilters()`         | Returns the current filters
  | `setFilters()`         | Sets the filters
  | `getPager()`           | Returns the list pager
@@ -187,7 +187,7 @@ Each generated template can be overridden:
  | `_flashes.php`               | Renders the flash messages
  | `_form.php`                  | Displays the form
  | `_form_actions.php`          | Displays the form actions
- | `_form_field.php`            | Displays a singe form field
+ | `_form_field.php`            | Displays a single form field
  | `_form_fieldset.php`         | Displays a form fieldset
  | `_form_footer.php`           | Displays the form footer
  | `_form_header.php`           | Displays the form header
@@ -628,7 +628,7 @@ The `display` option defines the ordered list of fields to display.
 This option can also be used to arrange fields into groups:
 
     [yml]
-    # apps/backend/modules/job/config/generator.yml
+    # apps/backend/modules/model/config/generator.yml
     config:
       form:
         display:
