@@ -24,7 +24,7 @@ la classe del modello `Article`.
 ### File di configurazione
 
 La configurazione di un modulo può essere fatta nel
-file `apps/backend/modules/job/article/generator.yml`:
+file `apps/backend/modules/model/article/generator.yml`:
 
     [yml]
     generator:
@@ -158,13 +158,13 @@ Quando la configurazione non è sufficiente, è possibile sovrascrivere i metodi
  | `executeIndex()`       | Azione `list` della vista
  | `executeFilter()`      | Aggiorna i filtri
  | `executeNew()`         | Azione `new` della vista
- | `executeCreate()`      | Crea un nuovo lavoro
+ | `executeCreate()`      | Crea un nuovo record
  | `executeEdit()`        | Azione `edit` della vista
- | `executeUpdate()`      | Aggiorna un lavoro
- | `executeDelete()`      | Cancella un lavoro
+ | `executeUpdate()`      | Aggiorna un record
+ | `executeDelete()`      | Cancella un record
  | `executeBatch()`       | Esegue una azione batch
  | `executeBatchDelete()` | Esegue l'azione batch `_delete`
- | `processForm()`        | Processa il form di lavoro
+ | `processForm()`        | Processa il form del record
  | `getFilters()`         | Restituisce i filtri correnti
  | `setFilters()`         | Assegna i filtri
  | `getPager()`           | Restituisce il paginatore dell'elenco
@@ -628,7 +628,7 @@ L'opzione `display` definisce l'elenco ordinato dei campi da visualizzare.
 Questa opzione può anche essere usata per organizzare i campi in gruppi:
 
     [yml]
-    # apps/backend/modules/job/config/generator.yml
+    # apps/backend/modules/model/config/generator.yml
     config:
       form:
         display:
