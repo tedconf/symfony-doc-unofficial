@@ -217,6 +217,16 @@ Di default, l'array di campi è usato anche per cambiare l'ordine
 dei campi. Si può passare `false` come secondo parametro di `useFields()`
 per disabilitare il riordinamento automatico.
 
+### `sfForm::getEmbeddedForm($name)`
+
+Ora si può accedere ad uno specifico form annidato, usando il metodo
+`->getEmbeddedForm()`.
+
+### `sfForm::renderHiddenFields()`
+
+Il metodo `->renderHiddenFields()` ora rende i campi hidden per i form
+annidati.
+
 ### `sfFormSymfony`
 
 La nuova classe `sfFormSymfony` introduce il dispatcher di eventi per i
@@ -389,6 +399,18 @@ precedenti versioni di symfony.
     [php]
     $browser->addListener('context.load_factories', array($browser, 'listenForNewContext'));
 
+
+### Un `->click()` migliore
+
+Ora si può passare qualsiasi selettore CSS al metodo `->click()`, rendendo più
+facile scegliere in modo semantico l'elemento che si vuole.
+
+    [php]
+    $browser
+      ->get('/login')
+      ->click('form[action$="/login"] input[type="submit"]')
+    ;
+
 Task
 ----
 
@@ -543,6 +565,15 @@ rappresentazione XML di uno oggetto task.
 
 L'output XML è molto utile per strumenti di terze parti come gli IDE.
 
+### `project:optimize`
+
+L'esecuzione di questo task riduce il numero di letture su disco  a runtime,
+mettendo in cache la dislocazione dei file dei template dell'applicazione.
+Questo task dovrebbe essere usato solo su un server di produzione. Non
+dimenticare di eseguire nuovamente il task ogni volta che il progetto cambia.
+
+    $ php symfony project:optimize
+
 Eccezioni
 ---------
 
@@ -557,36 +588,18 @@ delle pagine bianche.
 Se possibile, la web debug toolbar ora viene mostrata anche sulle pagine
 delle eccezioni, nell'ambiente di sviluppo.
 
-Propel
-------
+Integrazione con Propel
+-----------------------
+
+Propel è stato aggiornato alla versione 1.4. Si faccia riferimento al sito
+di Propel per maggior informazioni sull'aggiornamento
+(http://propel.phpdb.org/trac/wiki/Users/Documentation/1.4).
 
 ### `propel:insert-sql`
 
 Prima che `propel:insert-sql` rimuova tutti i dati da un database, chiede una
 conferma. Poiché questo task può rimuovere dati da molti database, ora mostra
 il nome della connessione dei database coinvolti.
-
-### Attributo di colonna `isPrimaryString`
-
-Si può ora includere un attributo `isPrimaryString` nel file `schema.yml` e symfony
-genererà un metodo `__toString()`, che restituisce il valore della colonna, nella
-classe del modello.
-
-    [yml]
-    classes:
-      Article:
-        columns:
-          id:     ~
-          title:  { type: varchar(255), isPrimaryString: true }
-          body:   { type: longvarchar }
-
-Questa condifurazione creerà il seguente metodo in `BaseArticle`:
-
-    [php]
-    public function __toString()
-    {
-      return $this->getTitle();
-    }
 
 Routing
 -------
@@ -735,7 +748,7 @@ nel modo seguente.
 ### Ereditarietà delle Classi dei Form
 
 Quando si generano form dai modelli, i modelli contengono ereditarietà.
-Le classi figlie generate rispetterano l'ereditarietà e genereranno
+Le classi figlie generate rispetteranno l'ereditarietà e genereranno
 form che seguono la stessa struttura di ereditarietà.
 
 ### Nuovi Task
@@ -848,6 +861,11 @@ migrazione sarà creata, per una facile modifica.
 Questo esempio genererà la nuova classe di migrazione ed aprirà il nuovo
 file in TextMate.
 
+#### `doctrine:generate-migrations-diff`
+
+Questo nuovo task genererà automaticamente delle classi per una completa
+migrazione, in base agli schemi vecchi e a quelli nuovi.
+
 ### Setter e Getter di Date
 
 Abbiamo aggiunto nuovi metodi per recuperare i valori di date o timestamp
@@ -862,6 +880,20 @@ metodo `setDateTimeObject` e pasando un'istanza valida `DateTime`.
 
     [php]
     $article->setDateTimeObject('created_at', new DateTime('09/01/1985'));
+
+### `doctrine:migrate --down`
+
+`doctrine:migrate` ora include delle opzioni `up` e `down`, che migreranno
+lo schema di un passo nella direzione richiesta.
+
+    $ php symfony doctrine:migrate --down
+
+### `doctrine:migrate --dry-run`
+
+Se il database in uso supporta i comandi di rolling back DDL (MySQL non lo fa),
+si può trarre vantaggio dalla nuova opzione `dry-run`.
+
+    $ php symfony doctrine:migrate --dry-run
 
 ### Output dei Task DQL come Tabelle di Dati
 
@@ -938,6 +970,38 @@ oggetto query. Qualsiasi dei seguenti metodi `sfFormFilterDoctrine` è valido:
       $query->select('title, body');
     }
 
+La personalizzazione di un form filtro è ora più facile. Per aggiungere
+un campo al filtro, basta aggiungere il widget ed un metodo per
+processarlo.
+
+    [php]
+    class UserFormFilter extends BaseUserFormFilter
+    {
+      public function configure()
+      {
+        $this->widgetSchema['name'] = new sfWidgetFormInputText();
+        $this->validatorSchema['name'] = new sfValidatorString(array('required' => false));
+      }
+
+      public function addNameColumnQuery($query, $field, $value)
+      {
+        if (!empty($value))
+        {
+          $query->andWhere(sprintf('CONCAT(%s.f_name, %1$s.l_name) LIKE ?', $query->getRootAlias()), $value);
+        }
+      }
+    }
+
+Nelle precedenti versioni, si aveva bisogno anche di estendere `getFields()` per
+fare in modo che il filtro funzionasse.
+
+### Configurare Doctrine
+
+Si può ora ascoltare gli eventi `doctrine.configure` e doctrine.configure_connection`
+per configurare Doctrine. Questo vuol dire che la configurazione di Doctrine
+può essere facilmente personalizzata da un plugin, a patto che il plugin sia
+abilitato prima di `sfDoctrinePlugin`.
+
 Web Debug Toolbar
 -----------------
 
@@ -1011,6 +1075,16 @@ Due parametri sono disponibili in `factories.yml`:
     In pratica, dice se la cache della pagina debba essere dipendente
     dal nome dell'host.
 
+### Più Cache
+
+Il gestore della cache delle viste non rifiuta più di mettere in cache
+in presenza di valori in `$_GET` o `$_POST`.La logica ora conferma solo
+che la richiesta corrente ha il metodo GET prima di verificare `cache.yml`.
+Questo vuol dire che le seguenti pagine ora possono andare in cache:
+
+  * `/js/my_compiled_javascript.js?cachebuster123`
+  * `/users?page=3`
+
 Richiesta
 ---------
 
@@ -1057,3 +1131,34 @@ di `link_to()` introdotta in symfony 1.2:
 
     // symfony 1.3
     <?php echo link_to_unless($foo, 'article_show', $article) ?>
+
+Context
+-------
+
+Si può ora ascoltare `context.method_not_found` per aggiungere dinamicamente
+dei metodi a `sfContext`. Questo è utile quando si aggiunge un factory con
+lazy-loading, magari da un plugin.
+
+    [php]
+    class myContextListener
+    {
+      protected
+        $factory = null;
+
+      public function listenForMethodNotFound(sfEvent $event)
+      {
+        $context = $event->getSubject();
+
+        if ('getLazyLoadingFactory' == $event['method'])
+        {
+          if (null === $this->factory)
+          {
+            $this->factory = new myLazyLoadingFactory($context->getEventDispatcher());
+          }
+
+          $event->setReturnValue($this->factory);
+
+          return true;
+        }
+      }
+    }
