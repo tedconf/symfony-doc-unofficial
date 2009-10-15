@@ -597,6 +597,18 @@ The default `\d+` requirement is now only applied to a
 means you no longer have to provide an alternate requirement when a
 non-numeric column is specified (i.e. `slug`).
 
+### `sfObjectRouteCollection` options
+
+A new `default_params` option has been added to `sfObjectRouteCollection`. It
+allows for default parameters to be registered for each generated route:
+
+    [yml]
+    forum_topic:
+      class: sfDoctrineRouteCollection
+      options:
+        default_params:
+          section: forum
+
 CLI
 ---
 
