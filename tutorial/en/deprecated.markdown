@@ -247,3 +247,7 @@ As of symfony 1.3, the unavailable page will only be looked for in the
 `%SF_APP_CONFIG_DIR%/` and `%SF_CONFIG_DIR%/` directories. If you still have
 it stored in `%SF_WEB_DIR%/errors/`, you must move it before migrating to
 symfony 1.4.
+
+The `doc/` directory at the root of a project is not generated anymore, as it
+was not used by symfony itself. And so the related `sf_doc_dir` has also been
+removed.
