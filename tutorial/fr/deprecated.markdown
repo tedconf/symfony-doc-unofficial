@@ -247,3 +247,7 @@ A partir de symfony 1.3, la page indisponible sera seulement visible dans
 les répertoires `%SF_APP_CONFIG_DIR%/` et `%SF_CONFIG_DIR%/`. Si vous l'avez encore
 stockée dans `%SF_WEB_DIR%/errors/`, vous devez la déplacer avant de migrer vers
 symfony 1.4.
+ 
+Le répertoire `doc/` à la racine d'un projet n'est plus généré, car il
+n'est même pas utilisé par symfony. Ainsi, le sf_doc_dir relatif à ce répertoire a été
+également supprimé.
