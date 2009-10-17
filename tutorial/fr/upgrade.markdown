@@ -105,13 +105,14 @@ correspond à la configuration par défaut de Symfony 1.2 que vous pouvez dans v
 
     [yml]
     routing:
-      cache:
-        class: sfFileCache
-        param:
-          automatic_cleaning_factor: 0
-          cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
-          lifetime:                  31556926
-          prefix:                    %SF_APP_DIR%/routing
+      param:
+        cache: 
+          class: sfFileCache 
+          param: 
+            automatic_cleaning_factor: 0 
+            cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing 
+            lifetime:                  31556926 
+            prefix:                    %SF_APP_DIR%/routing
 
 JavaScripts et Feuilles de Styles
 ---------------------------------
