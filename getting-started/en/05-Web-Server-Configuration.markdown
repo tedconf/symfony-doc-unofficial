@@ -85,28 +85,29 @@ they do not require administrator rights.
 >If you are an administrator on your machine, it is better to setup
 >virtual hosts instead of adding a new port each time you start a new
 >project. Instead of choosing a port and add a `Listen` statement,
->choose a domain name and add a `ServerName` statement:
+>choose a domain name (for instance the real domain name with
+>`.localhost` added at the end) and add a `ServerName` statement:
 >
 >     # This is the configuration for your project
 >     <VirtualHost 127.0.0.1:80>
->       ServerName sfproject.localhost
+>       ServerName www.myproject.com.localhost
 >       <!-- same configuration as before -->
 >     </VirtualHost>
 >
->The domain name `sfproject.localhost` used in the Apache configuration
+>The domain name `www.myproject.com.localhost` used in the Apache configuration
 >has to be declared locally. If you run a Linux system, it has to be
 >done in the `/etc/hosts` file. If you run Windows XP, this file is
 >located in the `C:\WINDOWS\system32\drivers\etc\` directory.
 >
 >Add in the following line:
 >
->     127.0.0.1 sfproject.localhost
+>     127.0.0.1 www.myproject.com.localhost
 
 ### Test the New Configuration
 
 Restart Apache, and check that you now have access to the new application by
 opening a browser and typing `http://localhost:8080/index.php/`, or
-`http://sfproject.localhost/index.php/` depending on the Apache configuration
+`http://www.myproject.com.localhost/index.php/` depending on the Apache configuration
 you chose in the previous section.
 
 ![Congratulations](http://www.symfony-project.org/images/getting-started/1_3/congratulations.png)
@@ -120,7 +121,7 @@ You should also try to access the application in the development environment
 (see the next section for more information about environments). Type in the
 following URL:
 
-    http://sfproject.localhost/frontend_dev.php/
+    http://www.myproject.com.localhost/frontend_dev.php/
 
 The web debug toolbar should show in the top right corner, including small
 icons proving that your `sf/` alias configuration is correct.
