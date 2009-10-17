@@ -127,26 +127,3 @@ so that your web server can write to them:
 >`cache/` and `log/`. The content of these directories should be ignored
 >by your SCM (by editing the `svn:ignore` property if you use Subversion
 >for instance).
-
-### The symfony Path
-
-You can get the symfony version used by your project by typing:
-
-    $ php symfony -V
-
-The `-V` option also displays the path to the symfony installation directory,
-which is stored in `config/ProjectConfiguration.class.php`:
-
-    [php]
-    // config/ProjectConfiguration.class.php
-    require_once '/Users/fabien/symfony-1.3/lib/autoload/sfCoreAutoload.class.php';
-
-For better portability, change the absolute path to the symfony installation
-to a relative one:
-
-    [php]
-    // config/ProjectConfiguration.class.php
-    require_once dirname(__FILE__).'/../lib/vendor/symfony/lib/autoload/sfCoreAutoload.class.php';
-
-That way, you can move the project directory anywhere on your machine or
-another one, and it will just work.
