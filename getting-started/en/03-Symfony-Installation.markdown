@@ -1,7 +1,8 @@
 Symfony Installation
 ====================
 
-### Project Directory
+Initializing the Project Directory
+----------------------------------
 
 Before installing symfony, you first need to create a directory that will host
 all the files related to your project:
@@ -28,23 +29,44 @@ Or on Windows:
 >production environments, we strongly advise you to configure your web
 >server as explained in the web server configuration section.
 
-### Symfony Installation
-
-Create a directory to host the symfony framework library files:
-
-    $ mkdir -p lib/vendor
+Choosing the Symfony Version
+----------------------------
 
 Now, you need to install symfony. As the symfony framework has several stable
-branches, you need to choose the one you want to install by reading the
+versions, you need to choose the one you want to install by reading the
 [installation page](http://www.symfony-project.org/installation) on the
 symfony website.
 
-Go to the installation page for the version you have just chosen,
-[symfony 1.3](http://www.symfony-project.org/installation/1_3) for instance.
+This tutorial assumes you want to install symfony 1.3.
+
+Choosing the Symfony Installation Location
+-------------------------------------------
+
+You can install symfony globally on your machine, or embed it into each of
+your project. The latter is the recommended one as projects will then be
+totally independent from each others. Upgrading your locally installed symfony
+won't break some of your projects unexpectedly. It means you will be able to
+have projects on different versions of symfony, and upgrade them one at a time
+as you see fit.
+
+As a best practice, many people install the symfony framework files in the
+`lib/vendor` project directory. So, first, create this directory:
+
+    $ mkdir -p lib/vendor
+
+Installing Symfony
+------------------
+
+### Installing from an archive
+
+The easiest way to install symfony is to download the archive for the version
+you choose from the symfony website. Go to the installation page for the
+version you have just chosen, symfony
+[1.3](http://www.symfony-project.org/installation/1_3) for instance.
 
 Under the "**Source Download**" section, you will find the archive in `.tgz`
 or in `.zip` format. Download the archive, put it under the freshly created
-`lib/vendor/` directory and un-archive it:
+`lib/vendor/` directory, un-archive it, and rename the directory to `symfony`:
 
     $ cd lib/vendor
     $ tar zxpf symfony-1.3.0.tgz
@@ -55,16 +77,40 @@ Under Windows, unzipping the zip file can be achieved using Windows Explorer.
 After you rename the directory to `symfony`, there should be a directory
 structure similar to `c:\dev\sfproject\lib\vendor\symfony`.
 
->**TIP**
->If you use Subversion, it is even better to use the `svn:externals`
->property to embed symfony into your project in the `lib/vendor/`
->directory, which benefits from the bug fixes made in the stable branch
->automatically:
->
->     http://svn.symfony-project.com/branches/1.3/
+### Installing from Subversion (recommended)
 
-Check that symfony is correctly installed by using the symfony command line to
-display the symfony version (note the capital `V`):
+If you use Subversion, it is even better to use the `svn:externals` property
+to embed symfony into your project in the `lib/vendor/` directory:
+
+    $ svn pe svn:externals lib/vendor/
+
+If everything goes well, this command will run your favorite editor to give
+you the opportunity to configure the external Subversion sources.
+
+>**TIP**
+>On Windows, you can use tools like [TortoiseSVN](http://tortoisesvn.net/)
+>to do everything without the need to use the console.
+
+If you are conservative, tie your project to a specific release (a subversion
+tag):
+
+    symfony http://svn.symfony-project.com/tags/RELEASE_1_3_0
+
+Whenever a new release comes out (as announced on the symfony
+[blog](http://www.symfony-project.org/blog/)), you will need to change the URL
+to the new version.
+
+If you want to go the bleeding-edge route, use the 1.3 branch:
+
+    symfony http://svn.symfony-project.com/branches/1.3/
+
+Using the branch makes your project benefits from the bug fixes automatically
+whenever you run a `svn update`.
+
+### Installation Verification
+
+Now that symfony is installed, check that everything is working by using the
+symfony command line to display the symfony version (note the capital `V`):
 
     $ cd ../..
     $ php lib/vendor/symfony/data/bin/symfony -V
