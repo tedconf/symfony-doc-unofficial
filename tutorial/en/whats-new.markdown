@@ -587,6 +587,12 @@ Before `propel:insert-sql` removes all data from a database, it asks for a
 confirmation. As this task can remove data from several databases, it now also
 displays the name of the connections of the related databases.
 
+### `propel:generate-module`, `propel:generate-admin`, `propel:generate-admin-for-route`
+
+The `propel:generate-module`, `propel:generate-admin`, and
+`propel:generate-admin-for-route` tasks now takes a `--actions-base-class` option that allows
+the configuration of the actions base class for the generated modules.
+
 Routing
 -------
 
@@ -989,6 +995,12 @@ You can now listen to the events `doctrine.configure` and
 `doctrine.configure_connection` to configure Doctrine. This means the Doctrine
 configuration can be easily customized from a plugin, as long as the plugin is
 enabled prior to `sfDoctrinePlugin`.
+
+### `doctrine:generate-module`, `doctrine:generate-admin`, `doctrine:generate-admin-for-route`
+
+The `doctrine:generate-module`, `doctrine:generate-admin`, and
+`doctrine:generate-admin-for-route` tasks now takes a `--actions-base-class` option that allows
+the configuration of the actions base class for the generated modules.
 
 Web Debug Toolbar
 -----------------
