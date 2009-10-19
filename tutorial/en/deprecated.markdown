@@ -12,7 +12,9 @@ removed in symfony 1.4:
 
   * `sfCompat10Plugin`: By deprecating this plugin, we also deprecate all
     other elements in the framework that rely on this plugin to work (1.0
-    admin generator, and 1.0 form system).
+    admin generator, and 1.0 form system). It also includes the default admin
+    generator theme for 1.0 located in
+    `lib/plugins/sfPropelPlugin/data/generator/sfPropelAdmin`.
 
   * `sfProtoculousPlugin`: The helpers provided by this plugin do not
     support unobstrusiveness, and as such should not be used anymore.
@@ -207,6 +209,9 @@ The following tasks are deprecated in symfony 1.3, and will be removed in
 symfony 1.4:
 
   * All symfony 1.0 task aliases.
+
+  * `propel:init-admin`: This task generated admin generator modules for
+    symfony 1.0.
 
 The following Doctrine tasks have been merged into `doctrine:build` and will
 be removed in symfony 1.4:
