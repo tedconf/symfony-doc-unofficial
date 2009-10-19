@@ -1,16 +1,16 @@
-4. fejezet - Propel integrï¿½ciï¿½
+4. fejezet - Propel integráció
 ==============================
 
-Egy webes projektben az ï¿½rlapok ï¿½ltalï¿½ban a model objektumok manipulï¿½lï¿½sï¿½ra szolgï¿½lnak. A model objektumok adatai legtï¿½bbszï¿½r adatbï¿½zisba kerï¿½lnek egy ORM segï¿½tsï¿½gï¿½vel. A symfony ï¿½rlap rendszere egy plusz rï¿½teget biztosï¿½t a Propellel, a symfony beï¿½ptett ORM-jï¿½vel, valï¿½ egyï¿½ttmï¿½kï¿½dï¿½shez, lehetï¿½vï¿½ tï¿½ve a modelen alapulï¿½ ï¿½rlapok kï¿½nnyebb kezelï¿½sï¿½t.
+Egy webes projektben az ûrlapok általában a model objektumok manipulálására szolgálnak. A model objektumok adatai legtöbbször adatbázisba kerülnek egy ORM segítségével. A symfony ûrlap rendszere egy plusz réteget biztosít a Propellel, a symfony beéptett ORM-jével, való együttmûködéshez, lehetõvé téve a modelen alapuló ûrlapok könnyebb kezelését.
 
-Ebben a fejezetben az ï¿½rlapok Propel objektumokkal valï¿½ integrï¿½ciï¿½jï¿½t nï¿½zzï¿½k ï¿½t rï¿½szletesen. Ajï¿½nlott a Propel ï¿½s a symfony integrï¿½ciï¿½ alapos ismerete. Ehhez a "The Definitive Guide to symfony" [Inside the Model Layer](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer) fejezete ad segï¿½tsï¿½get.
+Ebben a fejezetben az ûrlapok Propel objektumokkal való integrációját nézzük át részletesen. Ajánlott a Propel és a symfony integráció alapos ismerete. Ehhez a "The Definitive Guide to symfony" [Inside the Model Layer](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer) fejezete ad segítséget.
 
-Elï¿½kï¿½szï¿½tï¿½s
+Elõkészítés
 -----------
 
-Ebben a fejezetben egy cikkeket kezelï¿½ rendszert fogunk kï¿½szï¿½teni. Kezdjï¿½k az adatbï¿½zis sï¿½mï¿½val. ï¿½t tï¿½blï¿½t fogunk hasznï¿½lni: `article`, `author`, `category`, `tag` ï¿½s `article_tag`, ahogy a 4-1 mellï¿½kleten lï¿½thatï¿½.
+Ebben a fejezetben egy cikkeket kezelõ rendszert fogunk készíteni. Kezdjük az adatbázis sémával. Öt táblát fogunk használni: `article`, `author`, `category`, `tag` és `article_tag`, ahogy a 4-1 mellékleten látható.
 
-4-1 mellï¿½klet - Adatbï¿½zis sï¿½ma
+4-1 melléklet - Adatbázis séma
 
     [yml]
     // config/schema.yml
@@ -48,25 +48,25 @@ Ebben a fejezetben egy cikkeket kezelï¿½ rendszert fogunk kï¿½szï¿½teni. Kezdjï¿
         article_id:   { type: integer, foreignTable: article, foreignReference: id, primaryKey: true, onDelete: cascade }
         tag_id:       { type: integer, foreignTable: tag, foreignReference: id, primaryKey: true, onDelete: cascade }
 
-A tï¿½blï¿½k kï¿½zï¿½tti kapcsolatok a kï¿½vetkezï¿½k:
+A táblák közötti kapcsolatok a következõk:
 
-  * 1-n kapcsolat az `article` ï¿½s az `author` tï¿½bla kï¿½zï¿½tt: egy cikknek egy ï¿½s csak egy szerzï¿½je lehet
-  * 1-n kapcsolat az `article` ï¿½s a `category` tï¿½bla kï¿½zï¿½tt: egy cikk maximum egy kategï¿½riï¿½ba tartozhat
-  * n-n kapcsolat az `article` ï¿½s a `tag` tï¿½bla kï¿½zï¿½tt
+  * 1-n kapcsolat az `article` és az `author` tábla között: egy cikknek egy és csak egy szerzõje lehet
+  * 1-n kapcsolat az `article` és a `category` tábla között: egy cikk maximum egy kategóriába tartozhat
+  * n-n kapcsolat az `article` és a `tag` tábla között
 
-ï¿½rlap osztï¿½lyok generï¿½lï¿½sa
+Ûrlap osztályok generálása
 --------------------------
 
-Az `article`, `author`, `category` ï¿½s `tag` tï¿½blï¿½k adatait szeretnï¿½nk szerkeszteni. Ahhoz, hogy ezt megtehessï¿½k ï¿½rlapokat kell kï¿½szï¿½teni, amelyek a felsorolt tï¿½blï¿½khoz kapcsolï¿½dnak, valamint a widgeteket ï¿½s a validatorokat az adatbï¿½zis sï¿½mï¿½hoz kell igazï¿½tani. Habï¿½r kï¿½zzel is lehet ï¿½rlapot kï¿½szï¿½teni, mï¿½gis ez egy hosszï¿½ ï¿½s fï¿½rasztï¿½ feladat, ï¿½sszessï¿½gï¿½ben hasonlï¿½ dolgokat kell ismï¿½telni tï¿½bb fileban is (oszlop- ï¿½s mezï¿½nevek, oszlopok ï¿½s mezï¿½k maximï¿½lis mï¿½rete, ...). Tovï¿½bbï¿½ minden esetben, amikor a model vï¿½ltozik, a hozzï¿½ kapcsolï¿½dï¿½ ï¿½rlapnak is vï¿½ltoznia kell. Szerencsï¿½re a Propel plugin rendelkezik egy beï¿½pï¿½tett taskkal, `propel:build-forms`, amely automatizï¿½lja az modelhez kapcsolï¿½dï¿½ ï¿½rlapok lï¿½trehozï¿½sï¿½t:
+Az `article`, `author`, `category` és `tag` táblák adatait szeretnénk szerkeszteni. Ahhoz, hogy ezt megtehessük ûrlapokat kell készíteni, amelyek a felsorolt táblákhoz kapcsolódnak, valamint a widgeteket és a validatorokat az adatbázis sémához kell igazítani. Habár kézzel is lehet ûrlapot készíteni, mégis ez egy hosszú és fárasztó feladat, összességében hasonló dolgokat kell ismételni több fileban is (oszlop- és mezõnevek, oszlopok és mezõk maximális mérete, ...). Továbbá minden esetben, amikor a model változik, a hozzá kapcsolódó ûrlapnak is változnia kell. Szerencsére a Propel plugin rendelkezik egy beépített taskkal, `propel:build-forms`, amely automatizálja az modelhez kapcsolódó ûrlapok létrehozását:
 
     $ ./symfony propel:build-forms
 
-Az ï¿½rlap generï¿½lï¿½s alatt a task minden tï¿½blï¿½hoz kï¿½szï¿½t egy ï¿½rlap osztï¿½lyt a modelnek leginkï¿½bb megfelelï¿½ widgetek ï¿½s validatorok felhasznï¿½lï¿½sï¿½val, valamint figyelembe veszi a tï¿½blï¿½k kï¿½zï¿½tti kapcsolatokat is.
+Az ûrlap generálás alatt a task minden táblához készít egy ûrlap osztályt a modelnek leginkább megfelelõ widgetek és validatorok felhasználásával, valamint figyelembe veszi a táblák közötti kapcsolatokat is.
 
 >**Note**
->A `propel:build-all` ï¿½s `propel:build-all-load` taskok automatikusan meghï¿½vjï¿½k a `propel:build-forms` taskot.
+>A `propel:build-all` és `propel:build-all-load` taskok automatikusan meghívják a `propel:build-forms` taskot.
 
-A task futtatï¿½sa utï¿½n egy file struktï¿½ra jï¿½n lï¿½tre a `lib/form/` kï¿½nyvtï¿½r alatt. A pï¿½lda sï¿½mï¿½hoz tartozï¿½ fileok a kï¿½vetkezï¿½k:
+A task futtatása után egy file struktúra jön létre a `lib/form/` könyvtár alatt. A példa sémához tartozó fileok a következõk:
 
     lib/
       form/
@@ -83,35 +83,35 @@ A task futtatï¿½sa utï¿½n egy file struktï¿½ra jï¿½n lï¿½tre a `lib/form/` kï¿½n
           BaseCategoryForm.class.php
           BaseTagForm.class.php
 
-A `propel:build-forms` task minden tï¿½blï¿½hoz kï¿½t osztï¿½lyt kï¿½szï¿½t, egy alaposztï¿½lyt a `lib/form/base` kï¿½nyvtï¿½rba ï¿½s egyet a `lib/form/` alï¿½. Pï¿½ldï¿½ul az `author` tï¿½blï¿½hoz tartozï¿½ ï¿½rlap egy `BaseAuthorForm` ï¿½s egy `AuthorForm` osztï¿½lybï¿½l ï¿½ll, amelyeket `lib/form/base/BaseAuthorForm.class.php` ï¿½s `lib/form/AuthorForm.class.php` fileok tartalmaznak.
+A `propel:build-forms` task minden táblához két osztályt készít, egy alaposztályt a `lib/form/base` könyvtárba és egyet a `lib/form/` alá. Például az `author` táblához tartozó ûrlap egy `BaseAuthorForm` és egy `AuthorForm` osztályból áll, amelyeket `lib/form/base/BaseAuthorForm.class.php` és `lib/form/AuthorForm.class.php` fileok tartalmaznak.
 
 >**SIDEBAR**
->Generï¿½lt ï¿½rlap kï¿½nyvtï¿½rak
+>Generált ûrlap könyvtárak
 >
->A `propel:build-forms` task ï¿½ltal generï¿½lt fileok struktï¿½rï¿½ja hasonlï¿½ a Propelï¿½hez. A Propel sï¿½mï¿½ban megadott `package` (csomag) attribï¿½tum a tï¿½blï¿½k rï¿½szhalmazokra tï¿½rtï¿½nï¿½ bontï¿½sï¿½t teszi lehetï¿½vï¿½. Az alapï¿½rtemezett csomag a `lib.model`, tehï¿½t a Propel a `lib/model/` kï¿½nyvtï¿½r alï¿½ hozza lï¿½tre a modeleket ï¿½s a `lib/form/` alï¿½ az ï¿½rlapokat. A `lib.model.cms` csomag hasznï¿½latï¿½val, ahogy a lenti pï¿½ldï¿½n is lï¿½thatï¿½, a Propel osztï¿½lyok a `lib/model/cms/`, az ï¿½rlap osztï¿½lyok pedig a `lib/form/cms/` kï¿½nyvtï¿½r alï¿½ kerï¿½lnek.
+>A `propel:build-forms` task által generált fileok struktúrája hasonló a Propeléhez. A Propel sémában megadott `package` (csomag) attribútum a táblák részhalmazokra történõ bontását teszi lehetõvé. Az alapértemezett csomag a `lib.model`, tehát a Propel a `lib/model/` könyvtár alá hozza létre a modeleket és a `lib/form/` alá az ûrlapokat. A `lib.model.cms` csomag használatával, ahogy a lenti példán is látható, a Propel osztályok a `lib/model/cms/`, az ûrlap osztályok pedig a `lib/form/cms/` könyvtár alá kerülnek.
 >
 >     [php]
 >     propel:
 >       _attributes: { noXsd: false, defaultIdMethod: none, package: lib.model.cms }
 >       # ...
 >
->A csomagok hasznï¿½lata nagyon hasznos, ha az adatbï¿½zis sï¿½mï¿½t szï¿½t szeretnï¿½nk vï¿½lasztani, ï¿½s egy pluginba szeretnï¿½nk csomagolni a hozzï¿½ tartozï¿½ ï¿½rlapokat, ahogy azt az 5. fejezetben lï¿½tni fogjuk.
+>A csomagok használata nagyon hasznos, ha az adatbázis sémát szét szeretnénk választani, és egy pluginba szeretnénk csomagolni a hozzá tartozó ûrlapokat, ahogy azt az 5. fejezetben látni fogjuk.
 >
->Propel csomagokkal kapcsolatos tovï¿½bbi informï¿½ciï¿½ a "The Definitive Guide to symfony" kï¿½nyv [Inside the Model Layer](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer) fejezetï¿½ben talï¿½lhatï¿½.
+>Propel csomagokkal kapcsolatos további információ a "The Definitive Guide to symfony" könyv [Inside the Model Layer](http://www.symfony-project.org/book/1_1/08-Inside-the-Model-Layer) fejezetében található.
 
-Foglaljuk ï¿½ssze egy tï¿½blï¿½zatba az `AuthorForm` ï¿½rlap definï¿½ciï¿½jï¿½ban szereplï¿½ osztï¿½lyok kï¿½zï¿½tti kï¿½lï¿½nbsï¿½geket.
+Foglaljuk össze egy táblázatba az `AuthorForm` ûrlap definíciójában szereplõ osztályok közötti különbségeket.
 
-  | **Osztï¿½ly**    | **Csomag**    | **Kinek kï¿½szï¿½lt** | **Leï¿½rï¿½s**
+  | **Osztály**    | **Csomag**    | **Kinek készült** | **Leírás**
   | -------------- | ------------- | ----------------- | ---------------
-  | AuthorForm     | project       | fejlesztï¿½         | Felï¿½lï¿½rja a generï¿½lt ï¿½rlapot
-  | BaseAuthorForm | project       | symfony           | A sï¿½mï¿½n alapul, `propel:build-forms` task minden egyes futtatï¿½sakor ï¿½jragenerï¿½lï¿½dik
-  | BaseFormPropel | project       | fejlesztï¿½         | Propel alapï¿½ ï¿½rlapok globï¿½lis mï¿½dosï¿½tï¿½sï¿½ra szolgï¿½l
-  | sfFormPropel   | Propel plugin | symfony           | Propel ï¿½rlapok alapja
-  | sfForm         | symfony       | symfony           | Symfony ï¿½rlapok alapja
+  | AuthorForm     | project       | fejlesztõ         | Felülírja a generált ûrlapot
+  | BaseAuthorForm | project       | symfony           | A sémán alapul, `propel:build-forms` task minden egyes futtatásakor újragenerálódik
+  | BaseFormPropel | project       | fejlesztõ         | Propel alapú ûrlapok globális módosítására szolgál
+  | sfFormPropel   | Propel plugin | symfony           | Propel ûrlapok alapja
+  | sfForm         | symfony       | symfony           | Symfony ûrlapok alapja
 
-Az `Author` osztï¿½lybï¿½l szï¿½rmazï¿½ objektum lï¿½trehozï¿½sï¿½hoz ï¿½s szerkesztï¿½sï¿½hez az `AuthorForm` osztï¿½lyt fogjuk hasznï¿½lni (4-2 mellï¿½klet). ï¿½szrevehetjï¿½k, hogy ez az osztï¿½ly nem tartalmaz metï¿½dusokat, mindent a `BaseAuthorForm` osztï¿½lytï¿½l ï¿½rï¿½kï¿½l, amely a konfigurï¿½ciï¿½n alapul. Az `AuthorForm` szolgï¿½l az alap ï¿½rlap konfigurï¿½ciï¿½ testreszabï¿½sï¿½ra.
+Az `Author` osztályból származó objektum létrehozásához és szerkesztéséhez az `AuthorForm` osztályt fogjuk használni (4-2 melléklet). Észrevehetjük, hogy ez az osztály nem tartalmaz metódusokat, mindent a `BaseAuthorForm` osztálytól örököl, amely a konfiguráción alapul. Az `AuthorForm` szolgál az alap ûrlap konfiguráció testreszabására.
 
-4-2 mellï¿½klet - `AuthorForm` osztï¿½ly
+4-2 melléklet - `AuthorForm` osztály
 
     [php]
     class AuthorForm extends BaseAuthorForm
@@ -121,9 +121,9 @@ Az `Author` osztï¿½lybï¿½l szï¿½rmazï¿½ objektum lï¿½trehozï¿½sï¿½hoz ï¿½s szerk
       }
     }
 
-A 4-3 mellï¿½kleten lï¿½thatï¿½ a `BaseAuthorForm` osztï¿½ly, a hozzï¿½ tartozï¿½ validatorokkal ï¿½s widgetekkel, amely az `author` tï¿½bla modeljï¿½n alapul.
+A 4-3 mellékleten látható a `BaseAuthorForm` osztály, a hozzá tartozó validatorokkal és widgetekkel, amely az `author` tábla modeljén alapul.
 
-4-3 mellï¿½klet - `BaseAuthorForm` osztï¿½ly, az `author` tï¿½bla ï¿½rlap reprezentï¿½ciï¿½ja
+4-3 melléklet - `BaseAuthorForm` osztály, az `author` tábla ûrlap reprezentációja
 
     [php]
     class BaseAuthorForm extends BaseFormPropel
@@ -157,16 +157,16 @@ A 4-3 mellï¿½kleten lï¿½thatï¿½ a `BaseAuthorForm` osztï¿½ly, a hozzï¿½ tartozï¿
       }
     }
 
-A lï¿½trejï¿½tt osztï¿½ly nï¿½hï¿½ny kivï¿½tellel nagyon hasonlï¿½t az elï¿½zï¿½ fejezetben kï¿½szï¿½tett ï¿½rlapokhoz:
+A létrejött osztály néhány kivétellel nagyon hasonlít az elõzõ fejezetben készített ûrlapokhoz:
 
-  * A szï¿½lï¿½ osztï¿½ly a `BaseFormPropel` az `sfForm` helyett
-  * A validator ï¿½s widget konfigurï¿½ciï¿½ a `setup()` metï¿½dusban talï¿½hatï¿½, nem pedig a `configure()`ban
-  * A `getModelName()` metï¿½dus a kapcsolï¿½dï¿½ Propel osztï¿½ly nevï¿½vel tï¿½r vissza
+  * A szülõ osztály a `BaseFormPropel` az `sfForm` helyett
+  * A validator és widget konfiguráció a `setup()` metódusban taláható, nem pedig a `configure()`ban
+  * A `getModelName()` metódus a kapcsolódó Propel osztály nevével tér vissza
 
 >**SIDEBAR**
->Propel ï¿½rlapok globï¿½lis testreszabï¿½sa
+>Propel ûrlapok globális testreszabása
 >
->A `propel:build-forms` a tï¿½blï¿½khoz tartozï¿½ ï¿½rlaposztï¿½lyokon felï¿½l lï¿½trehoz mï¿½g egy `BaseFormPropel` osztï¿½lyt is. Ez egy ï¿½res osztï¿½ly, amely ï¿½se az ï¿½sszes `lib/form/base/` alatt lï¿½trehozott osztï¿½lynak, lehetï¿½sï¿½get biztosï¿½tva minden Propel ï¿½rlap viselkedï¿½sï¿½nek egysï¿½ges megvï¿½ltoztatï¿½sï¿½hoz. Pï¿½ldï¿½nknï¿½l maradva, egyszerï¿½en megvï¿½ltoztathatï¿½ a Propel ï¿½rlapokhoz tartozï¿½ alapï¿½rtelmezett formï¿½zï¿½ (formatter):
+>A `propel:build-forms` a táblákhoz tartozó ûrlaposztályokon felül létrehoz még egy `BaseFormPropel` osztályt is. Ez egy üres osztály, amely õse az összes `lib/form/base/` alatt létrehozott osztálynak, lehetõséget biztosítva minden Propel ûrlap viselkedésének egységes megváltoztatásához. Példánknál maradva, egyszerûen megváltoztatható a Propel ûrlapokhoz tartozó alapértelmezett formázó (formatter):
 >
 >     [php]
 >     abstract class BaseFormPropel extends sfFormPropel
@@ -177,41 +177,41 @@ A lï¿½trejï¿½tt osztï¿½ly nï¿½hï¿½ny kivï¿½tellel nagyon hasonlï¿½t az elï¿½zï¿½
 >       }
 >     }
 >
->Lï¿½tjuk, hogy a `BaseFormPropel` osztï¿½ly az `sfFormPropel` osztï¿½lybï¿½l szï¿½rmazik. Ez az osztï¿½ly tartalmazza a Propel specifikus funkciï¿½kat, tï¿½bbek kï¿½zï¿½tt az ï¿½rlaprï¿½l elkï¿½ldï¿½tt adatokbï¿½l kï¿½szï¿½lt objektum adatbï¿½zisba mentï¿½sï¿½t is.
+>Látjuk, hogy a `BaseFormPropel` osztály az `sfFormPropel` osztályból származik. Ez az osztály tartalmazza a Propel specifikus funkciókat, többek között az ûrlapról elküldött adatokból készült objektum adatbázisba mentését is.
 
 >**TIP**
->A szï¿½lï¿½ osztï¿½lyok a `setup()` metï¿½dust hasznï¿½ljï¿½k a konfigurï¿½lï¿½shoz a `configure()` helyett. Ez lehetï¿½vï¿½ teszi a fejlesztï¿½ szï¿½mï¿½ra, hogy felï¿½lï¿½rja a beï¿½llï¿½tï¿½sokat a nï¿½lkï¿½l, hogy a `parent::configure()` hï¿½vï¿½ssal foglalkoznia kellene.
+>A szülõ osztályok a `setup()` metódust használják a konfiguráláshoz a `configure()` helyett. Ez lehetõvé teszi a fejlesztõ számára, hogy felülírja a beállításokat a nélkül, hogy a `parent::configure()` hívással foglalkoznia kellene.
 
-Az ï¿½rlap mezï¿½k nevei megfelelnek a sï¿½mï¿½ban hasznï¿½lt mezï¿½nevekkel: `id`, `first_name`, `last_name` ï¿½s `email`.
+Az ûrlap mezõk nevei megfelelnek a sémában használt mezõnevekkel: `id`, `first_name`, `last_name` és `email`.
 
-A `propel:build-forms` task az `author` tï¿½bla minden mezï¿½jï¿½hez lï¿½trehoz egy widgetet ï¿½s egy validatort a sï¿½ma definï¿½ciï¿½nak megfelelï¿½en. A task mindig a lehetï¿½ legbiztonsï¿½gosabb validator ï¿½llï¿½tja be. Nï¿½zzï¿½k meg az `id` mezï¿½t. Ellenï¿½rizhetnï¿½nk az ï¿½rtï¿½kï¿½t ï¿½gy is, hogy ï¿½rvï¿½nyes egï¿½sz-e. Ehelyett a beï¿½llï¿½tott validator lehetï¿½vï¿½ teszi, hogy ï¿½rvï¿½nyesï¿½tsï¿½k a mezï¿½t, mint egy mï¿½r lï¿½tezï¿½t (egy mï¿½r meglï¿½vï¿½ objektum szerkesztï¿½sekor) vagy hogy az azonosï¿½tï¿½ ï¿½res-e (egy ï¿½j objektum lï¿½trehozï¿½sakor). Ez egy erï¿½sebb ï¿½rvï¿½nyesï¿½tï¿½s.
+A `propel:build-forms` task az `author` tábla minden mezõjéhez létrehoz egy widgetet és egy validatort a séma definíciónak megfelelõen. A task mindig a lehetõ legbiztonságosabb validator állítja be. Nézzük meg az `id` mezõt. Ellenõrizhetnénk az értékét úgy is, hogy érvényes egész-e. Ehelyett a beállított validator lehetõvé teszi, hogy érvényesítsük a mezõt, mint egy már létezõt (egy már meglévõ objektum szerkesztésekor) vagy hogy az azonosító üres-e (egy új objektum létrehozásakor). Ez egy erõsebb érvényesítés.
 
-A lï¿½trehozott ï¿½rlapok azonnal hasznï¿½lhatï¿½k. Adjuk a templatehez a `<?php echo $form ?>`t ï¿½s egy mï¿½kï¿½dï¿½ ï¿½rlapot kapunk ï¿½rvï¿½nyesï¿½tï¿½ssel egyï¿½tt **anï¿½lkï¿½l, hogy akï¿½r egy sor kï¿½dot kellett volna ï¿½rnunk**.
+A létrehozott ûrlapok azonnal használhatók. Adjuk a templatehez a `<?php echo $form ?>`t és egy mûködõ ûrlapot kapunk érvényesítéssel együtt **anélkül, hogy akár egy sor kódot kellett volna írnunk**.
 
-Azon tï¿½l, hogy ebbï¿½l gyors prototï¿½pust kï¿½szï¿½thetï¿½nk, a lï¿½trehozott osztï¿½lyok egyszerï¿½en kiterjeszthetï¿½k anï¿½lkï¿½l, hogy a generï¿½lt osztï¿½lyokat mï¿½dosï¿½tani kellene. Mindez a szï¿½lï¿½ ï¿½s ï¿½rlap osztï¿½lyok ï¿½rï¿½klï¿½dï¿½si mechanizmusï¿½nak kï¿½szï¿½nhetï¿½.
+Azon túl, hogy ebbõl gyors prototípust készíthetünk, a létrehozott osztályok egyszerûen kiterjeszthetõk anélkül, hogy a generált osztályokat módosítani kellene. Mindez a szülõ és ûrlap osztályok öröklõdési mechanizmusának köszönhetõ.
 
-Vï¿½gï¿½l minden adatbï¿½zis sï¿½ma vï¿½ltoztatï¿½s esetï¿½n a task ï¿½jra lï¿½trehozza az ï¿½rlapokat a mï¿½dosï¿½tï¿½soknak megfelelï¿½en anï¿½lkï¿½l, hogy korï¿½bbi sajï¿½t beï¿½llï¿½tï¿½saink elvesznï¿½nek.
+Végül minden adatbázis séma változtatás esetén a task újra létrehozza az ûrlapokat a módosításoknak megfelelõen anélkül, hogy korábbi saját beállításaink elvesznének.
 
-A CRUD generï¿½tor
+A CRUD generátor
 ----------------
 
-Most, hogy elkï¿½szï¿½ltek az ï¿½rlap osztï¿½lyok, lï¿½ssuk milyen egyszerï¿½ lï¿½trehozni egy symfony modult az objektumok kezelï¿½sï¿½hez. Szeretnï¿½nk lï¿½trehozni, szerkeszteni ï¿½s tï¿½rï¿½lni az `Article`, `Author`, `Category` ï¿½s `Tag` osztï¿½lyokhoz tartozï¿½ objektumokat.
-Kezdjï¿½k egy, az `Author` osztï¿½ly kezelï¿½sï¿½t vï¿½gzï¿½ modul kï¿½szï¿½tï¿½sï¿½vel. Bï¿½r kï¿½zzel is lï¿½trehozhatï¿½, a Propel plugin biztosï¿½t egy `propel:generate-crud` taskot, ami egy Propel objektumhoz tartozï¿½ CRUD modult ï¿½llï¿½t elï¿½. A korï¿½bban lï¿½trehozott ï¿½rlapot hasznï¿½ljuk mindehhez:
+Most, hogy elkészültek az ûrlap osztályok, lássuk milyen egyszerû létrehozni egy symfony modult az objektumok kezeléséhez. Szeretnénk létrehozni, szerkeszteni és törölni az `Article`, `Author`, `Category` és `Tag` osztályokhoz tartozó objektumokat.
+Kezdjük egy, az `Author` osztály kezelését végzõ modul készítésével. Bár kézzel is létrehozható, a Propel plugin biztosít egy `propel:generate-crud` taskot, ami egy Propel objektumhoz tartozó CRUD modult állít elõ. A korábban létrehozott ûrlapot használjuk mindehhez:
 
     $ ./symfony propel:generate-crud frontend author Author
 
-A `propel:generate-crud` hï¿½rom paramï¿½tert vï¿½r:
+A `propel:generate-crud` három paramétert vár:
 
-  * `frontend` : az alkalmazï¿½s neve, amelyben a modult lï¿½trehozzuk
+  * `frontend` : az alkalmazás neve, amelyben a modult létrehozzuk
   * `author`   : a modul neve
-  * `Author`   : a model osztï¿½ly neve, amelyhez modult hozunk lï¿½tre
+  * `Author`   : a model osztály neve, amelyhez modult hozunk létre
 
 >**Note**
->A CRUD a Creation / Retrieval / Update / Deletion (lï¿½trehozï¿½s, visszatï¿½ltï¿½s, frissï¿½tï¿½s, tï¿½rlï¿½s) rï¿½vidï¿½tï¿½se, ï¿½sszefoglalja azt a nï¿½gy alapmï¿½veletet, amelyet model adatokon vï¿½gre szoktunk hajtani.
+>A CRUD a Creation / Retrieval / Update / Deletion (létrehozás, visszatöltés, frissítés, törlés) rövidítése, összefoglalja azt a négy alapmûveletet, amelyet model adatokon végre szoktunk hajtani.
 
-A 4-4 mellï¿½kleten lï¿½thatï¿½, hogy a task 5 actiont hozott lï¿½tre, melyek lehetï¿½vï¿½ teszik az `Author` osztï¿½ly objektumainak listï¿½zï¿½sï¿½t (`index`), lï¿½trehozï¿½sï¿½t (`create`), mï¿½dosï¿½tï¿½sï¿½t (`edit`), mentï¿½sï¿½t (`save`) ï¿½s tï¿½rlï¿½sï¿½t (`delete`).
+A 4-4 mellékleten látható, hogy a task 5 actiont hozott létre, melyek lehetõvé teszik az `Author` osztály objektumainak listázását (`index`), létrehozását (`create`), módosítását (`edit`), mentését (`save`) és törlését (`delete`).
 
-4-4 mellï¿½klet - A task ï¿½ltal generï¿½lt `authorActions` osztï¿½ly
+4-4 melléklet - A task által generált `authorActions` osztály
 
     [php]
     // apps/frontend/modules/author/actions/actions.class.php
@@ -261,13 +261,13 @@ A 4-4 mellï¿½kleten lï¿½thatï¿½, hogy a task 5 actiont hozott lï¿½tre, melyek le
       }
     }
 
-Ebben a modulban az ï¿½rlap kezelï¿½sï¿½vel hï¿½rom metï¿½dus foglalkozik: `create`, `edit` ï¿½s `update`. A `propel:generate-crud` task a `--non-atomic-actions` opciï¿½val beï¿½llï¿½thatï¿½, hogy egyetlen metï¿½dussal oldja meg ennek a hï¿½romnak a funkcionalitï¿½sï¿½t.
+Ebben a modulban az ûrlap kezelésével három metódus foglalkozik: `create`, `edit` és `update`. A `propel:generate-crud` task a `--non-atomic-actions` opcióval beállítható, hogy egyetlen metódussal oldja meg ennek a háromnak a funkcionalitását.
 
     $ ./symfony propel:generate-crud frontend author Author --non-atomic-actions
 
-A `--non-atomic-actions` ï¿½ltal generï¿½lt kï¿½d (4-5 mellï¿½klet) tï¿½mï¿½rebb, de kevï¿½sbï¿½ ï¿½tlï¿½thatï¿½.
+A `--non-atomic-actions` által generált kód (4-5 melléklet) tömörebb, de kevésbé átlátható.
 
-4-5 mellï¿½klet - A `--non-atomic-actions` opciï¿½val generï¿½lt `authorActions` osztï¿½ly
+4-5 melléklet - A `--non-atomic-actions` opcióval generált `authorActions` osztály
 
     [php]
     class authorActions extends sfActions
@@ -303,13 +303,13 @@ A `--non-atomic-actions` ï¿½ltal generï¿½lt kï¿½d (4-5 mellï¿½klet) tï¿½mï¿½rebb
       }
     }
 
-A task kï¿½t template filet generï¿½l: `indexSuccess` ï¿½s `editSuccess`. Az `editSuccess` a `<?php echo $form ?>` hasznï¿½lata nï¿½lkï¿½l jï¿½n lï¿½tre. A `--non-verbose-templates` opciï¿½val mï¿½dosï¿½thatï¿½ ez a viselkedï¿½s:
+A task két template filet generál: `indexSuccess` és `editSuccess`. Az `editSuccess` a `<?php echo $form ?>` használata nélkül jön létre. A `--non-verbose-templates` opcióval módosítható ez a viselkedés:
 
     $ ./symfony propel:generate-crud frontend author Author --non-verbose-templates
 
-Ez az opciï¿½ a prototï¿½pus kï¿½szï¿½tï¿½s fï¿½zisï¿½ban lehet hasznos (4-6 mellï¿½klet).
+Ez az opció a prototípus készítés fázisában lehet hasznos (4-6 melléklet).
 
-4-6 mellï¿½klet - A `editSuccess` template
+4-6 melléklet - A `editSuccess` template
 
     [php]
     // apps/frontend/modules/author/templates/editSuccess.class.php
@@ -336,31 +336,31 @@ Ez az opciï¿½ a prototï¿½pus kï¿½szï¿½tï¿½s fï¿½zisï¿½ban lehet hasznos (4-6 mel
     </form>
 
 >**TIP**
->A `--with-show` opciï¿½ segï¿½tsï¿½gï¿½vel generï¿½lt kï¿½d tartalmaz egy `show` action is az objektum tartalmï¿½nak megtekintï¿½sï¿½hez (csak olvashatï¿½).
+>A `--with-show` opció segítségével generált kód tartalmaz egy `show` action is az objektum tartalmának megtekintéséhez (csak olvasható).
 
-Most mï¿½r megnyithatjuk az elkï¿½szï¿½lt modult a bï¿½ngï¿½szï¿½ban, a 4-1 ï¿½s 4-2 ï¿½bra szerinti megjelenï¿½st lï¿½thatjuk. Jï¿½tszunk egy kicsit ezzel a felï¿½lettel. A lï¿½trehozott modul segï¿½tsï¿½gï¿½vel listï¿½zhatjuk a szerzï¿½ket, ï¿½jakat vehetï¿½nk fel, szerkeszthetjï¿½k, mï¿½dosï¿½thatjuk ï¿½s tï¿½rï¿½lhetjï¿½k ï¿½ket. Vegyï¿½k ï¿½szre, hogy az ï¿½rvï¿½nyesï¿½tï¿½ szabï¿½lyok is mï¿½kï¿½dnek.
+Most már megnyithatjuk az elkészült modult a böngészõban, a 4-1 és 4-2 ábra szerinti megjelenést láthatjuk. Játszunk egy kicsit ezzel a felülettel. A létrehozott modul segítségével listázhatjuk a szerzõket, újakat vehetünk fel, szerkeszthetjük, módosíthatjuk és törölhetjük õket. Vegyük észre, hogy az érvényesítõ szabályok is mûködnek.
 
-4-1 ï¿½bra - Szerzï¿½k listï¿½ja
+4-1 ábra - Szerzõk listája
 
-![Szerzï¿½k listï¿½ja](/images/forms_book/en/04_01.png "Szerzï¿½k listï¿½ja")
+![Szerzõk listája](/images/forms_book/en/04_01.png "Szerzõk listája")
 
-4-2 ï¿½bra - Egy szerzï¿½ szerkesztï¿½se mezï¿½ ï¿½rvï¿½nyesï¿½tï¿½ssel
+4-2 ábra - Egy szerzõ szerkesztése mezõ érvényesítéssel
 
-![Egy szerzï¿½ szerkesztï¿½se mezï¿½ ï¿½rvï¿½nyesï¿½tï¿½ssel](/images/forms_book/en/04_02.png "Egy szerzï¿½ szerkesztï¿½se mezï¿½ ï¿½rvï¿½nyesï¿½tï¿½ssel")
+![Egy szerzõ szerkesztése mezõ érvényesítéssel](/images/forms_book/en/04_02.png "Egy szerzõ szerkesztése mezõ érvényesítéssel")
 
-Most megismï¿½telhetjï¿½k a mï¿½veletet az `Article` osztï¿½lyra is:
+Most megismételhetjük a mûveletet az `Article` osztályra is:
 
     $ ./symfony propel:generate-crud frontend article Article --non-verbose-templates --non-atomic-actions
 
-A lï¿½trejï¿½tt kï¿½d nagyon hasonlï¿½t az `Author` osztï¿½lyhoz lï¿½trehozottra, de ha ï¿½j cikket akarunk kï¿½szï¿½teni, a 4-3 ï¿½brï¿½n lï¿½thatï¿½ vï¿½gzetes hibï¿½val leï¿½ll.
+A létrejött kód nagyon hasonlít az `Author` osztályhoz létrehozottra, de ha új cikket akarunk készíteni, a 4-3 ábrán látható végzetes hibával leáll.
 
-4-3 ï¿½bra - A kapcsolt tï¿½blï¿½knak definiï¿½lniuk kell a `__toString()` metï¿½dust
+4-3 ábra - A kapcsolt tábláknak definiálniuk kell a `__toString()` metódust
 
-![A kapcsolt tï¿½blï¿½knak definiï¿½lniuk kell a `__toString()` metï¿½dust](/images/forms_book/en/04_03.png "A kapcsolt tï¿½blï¿½knak definiï¿½lniuk kell a `__toString()` metï¿½dust")
+![A kapcsolt tábláknak definiálniuk kell a `__toString()` metódust](/images/forms_book/en/04_03.png "A kapcsolt tábláknak definiálniuk kell a `__toString()` metódust")
 
-Az `ArticleForm` ï¿½rlap az `sfWidgetFormPropelSelect` widgetet hasznï¿½lja az `Article` ï¿½s az `Author` objektum kï¿½zï¿½tti kapcsolat reprezentï¿½lï¿½sï¿½ra. Ez a widget a szerzï¿½kbï¿½l egy legï¿½rdï¿½lï¿½ listï¿½t kï¿½szï¿½t. Megjelenï¿½tï¿½skor a szerzï¿½i objektumokat karakterlï¿½nccï¿½ alakï¿½tja a `__toString()` metï¿½dus segï¿½tsï¿½gï¿½vel, amit definiï¿½lni kell az `Author` osztï¿½lyban (4-7 mellï¿½klet).
+Az `ArticleForm` ûrlap az `sfWidgetFormPropelSelect` widgetet használja az `Article` és az `Author` objektum közötti kapcsolat reprezentálására. Ez a widget a szerzõkbõl egy legördülõ listát készít. Megjelenítéskor a szerzõi objektumokat karakterlánccá alakítja a `__toString()` metódus segítségével, amit definiálni kell az `Author` osztályban (4-7 melléklet).
 
-4-7 mellï¿½klet - Az `Author` osztï¿½ly `__toString()` metï¿½dusa
+4-7 melléklet - Az `Author` osztály `__toString()` metódusa
 
     [php]
     class Author extends BaseAuthor
@@ -371,17 +371,17 @@ Az `ArticleForm` ï¿½rlap az `sfWidgetFormPropelSelect` widgetet hasznï¿½lja az `
       }
     }
 
-Az `Author` osztï¿½lyhoz hasonlï¿½an elkï¿½szï¿½thetjï¿½k a tï¿½bbi osztï¿½lyhoz (`Article`, `Category` ï¿½s `Tag`) is a `__toString()` metï¿½dust.
+Az `Author` osztályhoz hasonlóan elkészíthetjük a többi osztályhoz (`Article`, `Category` és `Tag`) is a `__toString()` metódust.
 
 >**Tip**
->Az `sfWidgetFormPropelSelect` widget `method` opciï¿½jï¿½val beï¿½llï¿½thatï¿½ az objektum konvertï¿½lï¿½shoz hasznï¿½lt metï¿½dusa.
+>Az `sfWidgetFormPropelSelect` widget `method` opciójával beállítható az objektum konvertáláshoz használt metódusa.
 
 The Figure 4-4 Shows how to create an article after having implemented the `__toString()` method.
 
 
-4-4 ï¿½bra - Egy cikk lï¿½trehozï¿½sa
+4-4 ábra - Egy cikk létrehozása
 
-![Egy cikk lï¿½trehozï¿½sa](/images/forms_book/en/04_04.png "Egy cikk lï¿½trehozï¿½sa")
+![Egy cikk létrehozása](/images/forms_book/en/04_04.png "Egy cikk létrehozása")
 
 Customizing the generated Forms
 -------------------------------
@@ -396,7 +396,7 @@ Let's start with configuring the validators and widgets generated by default.
 
 The `ArticleForm` form has a `slug` field. The slug is a string of characters that uniquely representing the article in the URL. For instance, the slug of an article whose title is "Optimize the developments with symfony" is `12-optimize-the-developments-with-symfony`, `12` being the article `id`. This field is usually automatically computed when the object is saved, depending on the `title`, but it has the potential to be explicitly overridden by the user. Even if this field is required in the schema, it can not be compulsory to the form. That is why we modify the validator and make it optional, as in Listing 4-8. We will also customize the `content` field increasing its size and forcing the user to type in at least five characters.
 
-4-8 mellï¿½klet - Customizing Validators and Widgets
+4-8 melléklet - Customizing Validators and Widgets
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -419,7 +419,7 @@ We use here the `validatorSchema` and `widgetSchema` objects as PHP arrays. Thes
 
 To make sure two articles can not have the same `slug`, a uniqueness constraint has been added in the schema definition. This constraint on the database level is reflected in the `ArticleForm` form using the `sfValidatorPropelUnique` validator. This validator can check the uniqueness of any form field. It is helpful among other things to check the uniqueness of an email address of a login for instance. Listing 4-9 shows how to use it in the `ArticleForm` form.
 
-4-9 mellï¿½klet - Using the `sfValidatorPropelUnique` validator to check the Uniqueness of a field
+4-9 melléklet - Using the `sfValidatorPropelUnique` validator to check the Uniqueness of a field
 
     [php]
     class BaseArticleForm extends BaseFormPropel
@@ -438,7 +438,7 @@ The `sfValidatorPropelUnique` validator is a `postValidator` running on the whol
 
 Let's Customize now the `active` field of the `author` table, used to know if an author is active. Listing 4-10 shows how to exclude inactive authors from the `ArticleForm` form, modifying the `criteria` option of the `sfWidgetPropelSelect` widget connected to the `author_id` field. The `criteria` option accepts a Propel Criteria object, allowing to narrow down the list of available options in the rolling list.
 
-4-10 mellï¿½klet - Customizing the `sfWidgetPropelSelect` widget
+4-10 melléklet - Customizing the `sfWidgetPropelSelect` widget
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -456,7 +456,7 @@ Let's Customize now the `active` field of the `author` table, used to know if an
 
 Even if the widget customization can make us narrow down the list of available options, we must not forget to consider this narrowing on the validator level, as shown in Listing 4-11. Like the `sfWidgetProperSelect` widget, the `sfValidatorPropelChoice` validator accepts a `criteria` option to narrow down the options valid for a field.
 
-4-11 mellï¿½klet - Customizing the `sfValidatorPropelChoice` validator
+4-11 melléklet - Customizing the `sfValidatorPropelChoice` validator
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -475,7 +475,7 @@ Even if the widget customization can make us narrow down the list of available o
 
 In the previous example we defined the `Criteria` object directly in the `configure()` method. In our project, this criteria will certainly be helpful in other circumstances, so it is better to create a `getActiveAuthorsCriteria()` method within the `AuthorPeer` class and to call this method from `ArticleForm` as Listing 4-12 shows.
 
-4-12 mellï¿½klet - Refactoring the `Criteria` in the Model
+4-12 melléklet - Refactoring the `Criteria` in the Model
 
     [php]
     class AuthorPeer extends BaseAuthorPeer
@@ -506,7 +506,7 @@ In the previous example we defined the `Criteria` object directly in the `config
 
 The `email` being defined as a `varchar(255)` in the schema, symfony created a `sfValidatorString()` validator restraining the maximum length to 255 characters. This field is also supposed to receive a valid email, Listing 4-14 replaces the generated validator with a `sfValidatorEmail` validator.
 
-4-13 mellï¿½klet - Changing the `email` field Validator of the `AuthorForm` class
+4-13 melléklet - Changing the `email` field Validator of the `AuthorForm` class
 
     [php]
     class AuthorForm extends BaseAuthorForm
@@ -521,7 +521,7 @@ The `email` being defined as a `varchar(255)` in the schema, symfony created a `
 
 We observed in the previous chapter how to modify the generated validator. But in the case of the `email` field, it would be useful to keep the maximum length validation. In Listing 4-14, we use the `sfValidatorAnd` validator to guarantee the email validity and check the maximum length allowed for the field.
 
-4-14 mellï¿½klet - Using a multiple Validator
+4-14 melléklet - Using a multiple Validator
 
     [php]
     class AuthorForm extends BaseAuthorForm
@@ -537,7 +537,7 @@ We observed in the previous chapter how to modify the generated validator. But i
 
 The previous example is not perfect, because if we decide later to modify the length of the `email` field in the database schema, we will have to think about doing it also in the form. Instead of replacing the generated validator, it is better to add one, as shown in Listing 4-15.
 
-4-15 mellï¿½klet - Adding a Validator
+4-15 melléklet - Adding a Validator
 
     [php]
     class AuthorForm extends BaseAuthorForm
@@ -555,7 +555,7 @@ The previous example is not perfect, because if we decide later to modify the le
 
 In the database schema, the `status` field of the `article` table stores the article status as a string of characters. The possible values were defined in the `ArticePeer` class, as shown in Listing 4-16.
 
-4-16 mellï¿½klet - Defining available Statuses in the `ArticlePeer` class
+4-16 melléklet - Defining available Statuses in the `ArticlePeer` class
 
     [php]
     class ArticlePeer extends BaseArticlePeer
@@ -572,7 +572,7 @@ In the database schema, the `status` field of the `article` table stores the art
 
 When editing an article, the `status` field must be represented as a drop-down list instead of a text field. To do so, let's change the widget we used, as shown in Listing 4-17.
 
-4-17 mellï¿½klet - Changing the Widget for the `status` field
+4-17 melléklet - Changing the Widget for the `status` field
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -585,7 +585,7 @@ When editing an article, the `status` field must be represented as a drop-down l
 
 To be thorough we must also change the validator to make sure the chosen status actually belongs to the list of possible options (Listing 4-18).
 
-4-18 mellï¿½klet - Modifying the `status` Field Validator
+4-18 melléklet - Modifying the `status` Field Validator
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -604,7 +604,7 @@ To be thorough we must also change the validator to make sure the chosen status 
 
 The `article` table has two special columns, `created_at` and `updated_at`, whose update is automatically handled by Propel. We must then delete them from the form as Listing 4-19 show, to prevent the user from modifying them.
 
-4-19 mellï¿½klet - Deleting a Field
+4-19 melléklet - Deleting a Field
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -621,7 +621,7 @@ The `article` table has two special columns, `created_at` and `updated_at`, whos
 
 In order to delete a field, it is necessary to delete its validator and its widget. Listing 4-20 shows how it is also possible to delete both in one action, using the form as a PHP array.
 
-4-20 mellï¿½klet - Deleting a Field using the Form as a PHP Array
+4-20 melléklet - Deleting a Field using the Form as a PHP Array
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -636,7 +636,7 @@ In order to delete a field, it is necessary to delete its validator and its widg
 
 To sum up, Listing 4-21 and Listing 4-22 show the `ArticleForm` and `AuthorForm` forms as we customize them.
 
-4-21 mellï¿½klet - `ArticleForm` Form
+4-21 melléklet - `ArticleForm` Form
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -661,7 +661,7 @@ To sum up, Listing 4-21 and Listing 4-22 show the `ArticleForm` and `AuthorForm`
       }
     }
 
-4-22 mellï¿½klet - `AuthorForm` Form
+4-22 melléklet - `AuthorForm` Form
 
     [php]
     class AuthorForm extends BaseAuthorForm
@@ -710,7 +710,7 @@ The previous section show us how to customize forms generated by the task `prope
 
 As we observed at the beginning of the chapter, the `edit` action, shown in Listing 4-23, handles the form life cycle.
 
-4-23 mellï¿½klet - The `executeEdit` Method of the `author` Module
+4-23 melléklet - The `executeEdit` Method of the `author` Module
 
     [php]
     // apps/frontend/modules/author/actions/actions.class.php
@@ -744,7 +744,7 @@ Even if the `edit` action looks like the actions we might have describe in the p
         $author = AuthorPeer::retrieveByPk($request->getParameter('id'));
         $this->form = new AuthorForm($author);
 
-  * The widgets `name` attribute format is automatically customized to allow the retrieval of the input data in a PHP array named after the related table (`author`):
+  * The widgets `name` attribute format is automatically customize to allow the retrieval of the input data in a PHP array named after the related table (`author`):
 
         [php]
         $this->form->bind($request->getParameter('author'));
@@ -812,7 +812,7 @@ The `save()` method automatically updates the Propel objects but can not handle 
 
 Let's see how to attach a file to each article. Files are stored in the `web/uploads` directory and a reference to the file path is kept in the `file` field of the `article` table, as shown in Listing 4-24.
 
-4-24 mellï¿½klet - Schema for the `article` Table with associated File
+4-24 melléklet - Schema for the `article` Table with associated File
 
     [yml]
     // config/schema.yml
@@ -830,7 +830,7 @@ After every schema update, you need to update the object model, the database and
 
 Listing 4-25 shows how to modify the `ArticleForm` class in order to link a widget and a validator to the `file` field.
 
-4-25 mellï¿½klet - Modifying the `file` Field of the `ArticleForm` form.
+4-25 melléklet - Modifying the `file` Field of the `ArticleForm` form.
 
     [php]
     class ArticleForm extends BaseArticleForm
@@ -848,7 +848,7 @@ As for every form allowing to upload a file, does not forget to add also the `en
 
 Listing 4-26 shows the modifications to apply when saving the form to upload the file onto  the server and store its path in the `article` object.
 
-4-26 mellï¿½klet - Saving the `article` Object and the File uploaded in the Action
+4-26 melléklet - Saving the `article` Object and the File uploaded in the Action
 
     [php]
     public function executeEdit($request)
@@ -881,7 +881,7 @@ Saving the uploaded file on the filesystem allows the `sfValidatedFile` object t
 
 We observed in the previous section how to save the uploaded file in the `edit` action. One of the principles of the object oriented programming is the reusability of the code, thanks to its encapsulation in classes. Instead of duplicating the code used to save the file in each action using the `ArticleForm` form, it is better to move it in the `ArticleForm` class. Listing 4-27 shows how to override the `save()` method in order to also save the file and possibly to delete of an existing file.
 
-4-27 mellï¿½klet - Overriding the `save()` Method of the `ArticleForm` Class
+4-27 melléklet - Overriding the `save()` Method of the `ArticleForm` Class
 
     [php]
     class ArticleForm extends BaseFormPropel
@@ -941,7 +941,7 @@ We observed that the saving of an object was made within a transaction in order 
 
 Listing 4-28 shows how to use the `doSave()` method to insert in the global transaction our code saving the uploaded file. 
 
-4-28 mellï¿½klet - Overriding the `doSave()` Method in the `ArticleForm` Form
+4-28 melléklet - Overriding the `doSave()` Method in the `ArticleForm` Form
 
     [php]
     class ArticleForm extends BaseFormPropel
@@ -973,7 +973,7 @@ In our file upload example, instead of storing the absolute path to the uploaded
 
 Listing 4-29 shows how to override the `updateObject()` method of the `ArticleForm` form in order to change the value of the `file` column after the automatic update object but before it is saved.
 
-4-29 mellï¿½klet - Overriding the `updateObject()` Method and the `ArticleForm` Class
+4-29 melléklet - Overriding the `updateObject()` Method and the `ArticleForm` Class
 
     [php]
     class ArticleForm extends BaseFormPropel
