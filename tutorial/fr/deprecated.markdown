@@ -12,7 +12,9 @@ seront supprimés dans Symfony 1.4.
 
   * `sfCompat10Plugin` : En rendant ce plugin obsolète, tous les autres éléments 
     du framework qui dépendent de celui-ci pour fonctionner (générateur d'administration 1.0, 
-    et système de formulaires 1.0) ont également été rendus obsolètes.
+    et système de formulaires 1.0) ont également été rendus obsolètes. Il inclut aussi le thème par défaut
+    de l'admin generator 1.0 situé dans
+    `lib/plugins/sfPropelPlugin/data/generator/sfPropelAdmin`.
 
   * `sfProtoculousPlugin` : Les helpers fournis par ce plugin ne produisent pas de code Javascript 
     non intrusif. Par conséquent, ils ne devraient plus être utilisés.
@@ -30,7 +32,7 @@ ou versions antérieures, et seront retirées dans Symfony 1.4:
     par un appel à la nouvelle méthode `sfValidatorBase::setDefaultMessage()`
 
   * `sfValidatorBase::setRequiredMessage()` : Vous pouvez remplacer tous les appels à cette méthode 
-	  par un appel à la nouvelle méthode `sfValidatorBase::setDefaultMessage()`
+    par un appel à la nouvelle méthode `sfValidatorBase::setDefaultMessage()`
 
   * `sfTesterResponse::contains()` : Vous pouvez maintenant utiliser la méthode plus performante 
     `matches()`
@@ -207,6 +209,9 @@ Les tâches suivantes sont dépréciées dans symfony 1.3 et seront retirées da
 symfony 1.4 :
 
   * Tous les alias de tâches symfony 1.0.
+
+  * `propel:init-admin`: Cette tâche génére les modules de l'admin generator pour
+    symfony 1.0.
 
 Les tâches Doctrine suivantes ont été fusionnées dans la tâche `doctrine:build` et 
 seront supprimées dans symfony 1.4 :
