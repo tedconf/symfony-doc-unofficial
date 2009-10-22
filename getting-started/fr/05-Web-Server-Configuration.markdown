@@ -85,15 +85,16 @@ ils ne nécessitent pas de droits administrateur..
 >Si vous êtes un administrateur sur votre machine, il est préférable de configurer
 >des serveurs virtuels plutôt que d'ajouter un nouveau port à chaque fois que vous démarrez un nouveau
 >projet. Au lieu de choisir un port et d'ajouter une déclaration Listen,
->choisissez un nom de domaine et ajouter une déclaration `ServerName` :
+>choisissez un nom de domaine (par exemple le nom du domaine réel avec
+>`.localhost` ajouté à la fin) et ajouter une déclaration `ServerName` :
 >
 >     # This is the configuration for your project
 >     <VirtualHost 127.0.0.1:80>
->       ServerName sfproject.localhost
+>       ServerName www.myproject.com.localhost
 >       <!-- same configuration as before -->
 >     </VirtualHost>
 >
->Le nom du domaine `sfproject.localhost` utilisé dans la configuration d'Apache
+>Le nom du domaine `www.myproject.com.localhost` utilisé dans la configuration d'Apache
 > doit être déclaré localement. Si vous utilisez un système Linux, il doit être
 >fait dans le fichier `/etc/hosts`. 
 >done in the `/etc/hosts` file. Si vous exécutez Windows XP, ce fichier
@@ -101,13 +102,13 @@ ils ne nécessitent pas de droits administrateur..
 >
 >Ajoutez la ligne suivante:
 >
->     127.0.0.1 sfproject.localhost
+>     127.0.0.1 www.myproject.com.localhost
 
 ### Tester la nouvelle configuration
 
 Redémarrez Apache, et vérifiez que vous avez maintenant accès à la nouvelle application en
 ouvrant un navigateur et en tapant `http://localhost:8080/index.php/`, or
-`http://sfproject.localhost/index.php/` en fonction de la configuration d'Apache que
+`http://www.myproject.com.localhost/index.php/` en fonction de la configuration d'Apache que
 vous avez choisi dans la section précédente.
 
 ![Félicitations](http://www.symfony-project.org/images/getting-started/1_3/congratulations.png)
@@ -121,7 +122,7 @@ Vous devriez également essayer d'accéder à l'application dans l'environnement
 (voir la section suivante pour plus d'informations sur les environnements). Tapez
 l'adresse URL suivante:
 
-    http://sfproject.localhost/frontend_dev.php/
+    http://www.myproject.com.localhost/frontend_dev.php/
 
 La barre d'outils web de débogage devrait apparaître dans le coin supérieur droit, incluant
 de petites icônes, prouvant que la configuration de votre alias `sf/` est correct.
