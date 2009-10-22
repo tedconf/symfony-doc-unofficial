@@ -1,8 +1,8 @@
 Konfiguracja serwera WWW
 ========================
 
-Brudne rozwiązanie
-------------------
+Brzydkie rozwiązanie
+--------------------
 
 W poprzednim rozdziale, utworzyłeś katalog w którym trzymasz projekt. 
 Jeśli utworzyłeś go gdzieś w katalogu domowym na twoim serwerze WWW, możesz
@@ -85,28 +85,29 @@ nie wymagają uprawnień administratora.
 >Jeżeli jesteś administratorem własnego serwera, dobrze jest tworzyć
 >hosty virtualne, zamiast dodawać nowy port za każdym razem jak rozpoczynasz nowy
 >projekt. Zamiast wybierać port i dodawać wartość `Listen`,
->wybierz nazwę domeny i dopisz wartość `ServerName`:
+>wybierz nazwę domeny (na przykład istniejącą domenę z dopisanym na końcu
+>`.localhost`) i dodaj wartość `ServerName`:
 >
 >     # This is the configuration for your project
 >     <VirtualHost 127.0.0.1:80>
->       ServerName sfproject.localhost
+>       ServerName www.myproject.com.localhost
 >       <!-- same configuration as before -->
 >     </VirtualHost>
 >
->Nazwa domeny `sfproject.localhost` wykorzystywana w konfiguracji Apacha
+>Nazwa domeny `www.myproject.com.localhost` wykorzystywana w konfiguracji Apacha
 >została zadeklarowana lokalnie. Jeżeli korzystasz z Linuksa, możesz ustawić 
 >host w pliku `/etc/hosts`. Jeżeli masz Windowsa XP, plik ten znajduje się w
 >w katalogu `C:\WINDOWS\system32\drivers\etc\`.
 >
 >Dopisz następującą linię:
 >
->     127.0.0.1 sfproject.localhost
+>     127.0.0.1 www.myproject.com.localhost
 
 ### Test nowej konfiguracji 
 
 Zrestartuj Apacha i sprawdź, czy teraz masz dostęp do Twojej nowej aplikacji, 
 poprzez otwarcie przeglądarki i wpisanie `http://localhost:8080/index.php/`, lub
-`http://sfproject.localhost/index.php/` w zależności od ustawionej konfiguracji 
+`http://www.myproject.com.localhost/index.php/` w zależności od ustawionej konfiguracji 
 Apacha, jaką wybrałeś w poprzednim podrozdziale.  
 
 ![Konfiguracja](http://www.symfony-project.org/images/getting-started/1_3/congratulations.png)
@@ -119,7 +120,7 @@ Apacha, jaką wybrałeś w poprzednim podrozdziale.
 Możesz również spróbować otworzyć aplikację w środowisku programistycznym
 (zobacz następny rozdział na temat środowisk ) wpisując adres URL:
 
-    http://sfproject.localhost/frontend_dev.php/
+    http://www.myproject.com.localhost/frontend_dev.php/
 
 Toolbar debugowania powinien się pojawić w prawym górnym rogu, razem z małymi 
 ikonami, które świadczą o tym, że alias `sf` został skonfigurowany poprawnie. 

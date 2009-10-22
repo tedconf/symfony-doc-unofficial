@@ -128,26 +128,3 @@ stron WWW miał prawa do modyfikacji tych miejsc:
 >`cache/` oraz `log/`. Treść tych katalogów powinna być ignorowana w Twoim 
 >narzędziu SCM (na przykład poprzez nadanie właściwości `svn:ignore`, w przypadku 
 >narzędzia Subversion).
-
-### Ścieżka do symfony
-
-Możesz podejrzeć wersję symfony w wybranym projekcie wpisując:
-
-    $ php symfony -V
-
-Opcja `-V` oprócz tego pokazuje ścieżkę do katalogu instalacyjnego symfony, 
-który jest zdefiniowany w `config/ProjectConfiguration.class.php`:
-
-    [php]
-    // config/ProjectConfiguration.class.php
-    require_once '/Users/fabien/symfony-1.3/lib/autoload/sfCoreAutoload.class.php';
-
-Dla lepszej elastyczności projektu, zmień ścieżkę do bibliotek symfony, z absolutnej 
-na relatywną:
-
-    [php]
-    // config/ProjectConfiguration.class.php
-    require_once dirname(__FILE__).'/../lib/vendor/symfony/lib/autoload/sfCoreAutoload.class.php';
-
-Dzięki temu, będzie można trzymać katalog projektu gdziekolwiek na Twojej maszynie, 
-lub na którejkolwiek innej i będzie to bez problemu działać. 
