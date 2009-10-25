@@ -320,7 +320,7 @@ and repeat.
 
 When a request generates an exception, the `debug()` method of the response
 tester now outputs a readable text representation of the exception, instead of
-the normal HTML output. It makes debugging much more easier.
+the normal HTML output. It makes debugging much easier.
 
 `sfTesterResponse` has a new `matches()` method that runs a regex on the whole
 response content. It is of great help on non XML-like responses, where
