@@ -37,13 +37,15 @@ To upgrade a project:
   * You need to rebuild your models and forms due to some changes described
     below:
 
-        $ php symfony doctrine:build-model
-        $ php symfony doctrine:build-forms
-        $ php symfony doctrine:build-filters
+        # Doctrine
+        $ php symfony doctrine:build --all-classes
+
+        # Propel
+        $ php symfony propel:build --all-classes
 
   * Clear the cache:
 
-        $ php symfony cc
+        $ php symfony cache:clear
 
 The remaining sections explain the main changes made in symfony 1.3 that need
 some kind of upgrade (automatic or not).
@@ -210,19 +212,14 @@ record are invoked.
 ### Override Doctrine Plugin Schema
 
 You can override the model included in a plugins YAML schema simply by defining 
-that same model in your local schema.
-
-See: http://trac.symfony-project.org/ticket/6656
-
-With this change you could now create `config/doctrine/sfGuardUser.schema.yml` 
-with the following inside.
+that same model in your local schema. For example, to add an "email" column
+to sfDoctrineGuardPlugin's `sfGuardUser` model, add the following to
+`config/doctrine/schema.yml`:
 
     sfGuardUser:
-      package: sfDoctrineGuardPlugin.lib.model.doctrine
-      # ...
-
-You can customize the schema and your local version will be used instead of the
-one included in the plugin.
+      columns:
+        email:
+          type: string(255)
 
 >**NOTE**
 >The package option is a feature of Doctrine and is used for the schemas of
@@ -301,3 +298,56 @@ method:
 
     [php]
     sfYaml::setSpecVersion('1.1');
+
+Propel
+------
+
+The custom Propel builder classes used in previous versions of symfony have
+been replaced with new Propel 1.4 behavior classes. To take advantage of this
+enhancement your project's `propel.ini` file must be updated.
+
+Remove the old builder classes:
+
+    ; builder settings
+    propel.builder.peer.class              = plugins.sfPropelPlugin.lib.builder.SfPeerBuilder
+    propel.builder.object.class            = plugins.sfPropelPlugin.lib.builder.SfObjectBuilder
+    propel.builder.objectstub.class        = plugins.sfPropelPlugin.lib.builder.SfExtensionObjectBuilder
+    propel.builder.peerstub.class          = plugins.sfPropelPlugin.lib.builder.SfExtensionPeerBuilder
+    propel.builder.objectmultiextend.class = plugins.sfPropelPlugin.lib.builder.SfMultiExtendObjectBuilder
+    propel.builder.mapbuilder.class        = plugins.sfPropelPlugin.lib.builder.SfMapBuilderBuilder
+
+And add the new behavior classes:
+
+    ; behaviors
+    propel.behavior.default                        = symfony,symfony_i18n
+    propel.behavior.symfony.class                  = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorSymfony
+    propel.behavior.symfony_i18n.class             = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorI18n
+    propel.behavior.symfony_i18n_translation.class = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorI18nTranslation
+    propel.behavior.symfony_behaviors.class        = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorSymfonyBehaviors
+    propel.behavior.symfony_timestampable.class    = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorTimestampable
+
+The `project:upgrade` task attempts to make this change for you, but may be
+unable to if you've make local changes to `propel.ini`.
+
+The `BaseFormFilterPropel` class was incorrectly generated in
+`lib/filter/base` in symfony 1.2. This has been corrected in symfony 1.3; the
+class is now be generated in `lib/filter`. The `project:upgrade` task will
+move this file for you.
+
+Tests
+-----
+
+The unit test bootstrap file, `test/bootstrap/unit.php`, has been enhanced to
+better handle autoloading of project class files. The following lines must be
+added to this script:
+
+    [php]
+    $autoload = sfSimpleAutoload::getInstance(sfConfig::get('sf_cache_dir').'/project_autoload.cache');
+    $autoload->loadConfiguration(sfFinder::type('file')->name('autoload.yml')->in(array(
+      sfConfig::get('sf_symfony_lib_dir').'/config/config',
+      sfConfig::get('sf_config_dir'),
+    )));
+    $autoload->register();
+
+The `project:upgrade` task attempts to make this change for you, but may be
+unable to if you've make local changes to `test/bootstrap/unit.php`.

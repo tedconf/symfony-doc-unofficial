@@ -128,6 +128,12 @@ in symfony 1.4:
     same classes but without `Many` at the end, and set the `multiple` option
     to `true`
 
+  * `SfExtensionObjectBuilder`, `SfExtensionPeerBuilder`,
+    `SfMultiExtendObjectBuilder`, `SfNestedSetBuilder`,
+    `SfNestedSetPeerBuilder`, `SfObjectBuilder`, `SfPeerBuilder`: The custom
+    Propel builder classes have been ported to Propel 1.4's new behaviors
+    system
+
 The following classes have been removed in symfony 1.3:
 
   * `sfCommonFilter`: see the "Removal of the common filter" section of the

@@ -189,6 +189,11 @@ The validators now implement a fluid interface for the following methods:
   * `sfValidatorBase`: `addMessage()`, `setMessage()`, `setMessages()`,
     `addOption()`, `setOption()`, `setOptions()`, `addRequiredOption()`
 
+### `sfValidatorFile`
+
+An exception is thrown when creating an instance of sfValidatorFile if
+`file_uploads` is disabled in `php.ini`.
+
 Forms
 -----
 
@@ -382,6 +387,24 @@ selector to pinpoint which portion of the DOM to test:
       checkForm('ArticleForm', '#articleForm')->
     end();
 
+### `sfTesterResponse::isValid()`
+
+You can now check whether a repsponse is well-formed XML with the response
+tester's `->isValid()` method:
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid()->
+    end();
+
+You also validate the response again its document type be passing `true` as an
+argument:
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid(true)->
+    end();
+
 ### Listen to `context.load_factories`
 
 You can now add listeners for the `context.load_factories` event to your
@@ -465,6 +488,12 @@ following: `installDir()`, `runTask()`, `ask()`, `askConfirmation()`,
 More information can be found in this
 [post](http://www.symfony-project.org/blog/2009/06/10/new-in-symfony-1-3-project-creation-customization)
 from the official symfony blog.
+
+You can also include a second "author" argument when generating a project,
+which specifies a value to use for the `@author` doc tag when symfony
+generates new classes.
+
+    $ php /path/to/symfony generate:project foo "Joe Schmo"
 
 ### `sfFileSystem::execute()`
 
@@ -558,7 +587,13 @@ caching the location of your application's template files. This task should
 only be used on a production server. Don't forget to re-run the task each time
 the project changes.
 
-    $ php symfony project:optimize
+    $ php symfony project:optimize frontend
+
+### `generate:app`
+
+The `generate:app` task now checks for a skeleton directory in your project's
+`data/skeleton/app` directory before defaulting to the skeleton bundled in the
+core.
 
 Exceptions
 ----------
@@ -581,6 +616,11 @@ Propel has been upgraded to version 1.4. Please visit Propel's site for more
 information on their upgrade
 (http://propel.phpdb.org/trac/wiki/Users/Documentation/1.4).
 
+### Propel Behaviors
+
+The custom builder classes symfony has relied on to extend Propel have been
+ported to Propel 1.4's new behaviors system.
+
 ### `propel:insert-sql`
 
 Before `propel:insert-sql` removes all data from a database, it asks for a
@@ -592,6 +632,38 @@ displays the name of the connections of the related databases.
 The `propel:generate-module`, `propel:generate-admin`, and
 `propel:generate-admin-for-route` tasks now takes a `--actions-base-class` option that allows
 the configuration of the actions base class for the generated modules.
+
+### Propel Behaviors
+
+Propel 1.4 introduced an implementation of behaviors in the Propel codebase.
+The custom symfony builders have been ported into this new system.
+
+If you would like to add native behaviors to your Propel models, you can do so
+in `schema.yml`:
+
+    classes:
+      Article:
+        propel_behaviors:
+          timestampable: ~
+
+Or, if you use the old `schema.yml` syntax:
+
+    propel:
+      article:
+        _propel_behaviors:
+          timestampable: ~
+
+### Disabling form generation
+
+You can now disable form generation on certain models by passing parameters to
+the `symfony` Propel behavior:
+
+    classes:
+      UserGroup:
+        propel_behaviors:
+          symfony:
+            form: false
+            filter: false
 
 Routing
 -------
@@ -725,9 +797,9 @@ Doctrine Integration
 
 ### Generating Form Classes
 
-It is now possible to specify additional options for symfony in your Doctrine YAML
-schema files. We've added some options to disable the generation of form and filter
-classes.
+It is now possible to specify additional options for symfony in your Doctrine
+YAML schema files. We've added some options to disable the generation of form
+and filter classes.
 
 For example in a typical many to many reference model, you don't need any form 
 or filter form classes generated. So you can now do the following.
@@ -1001,6 +1073,14 @@ enabled prior to `sfDoctrinePlugin`.
 The `doctrine:generate-module`, `doctrine:generate-admin`, and
 `doctrine:generate-admin-for-route` tasks now takes a `--actions-base-class` option that allows
 the configuration of the actions base class for the generated modules.
+
+### Magic method doc tags
+
+The magic getter and setter methods symfony adds to your Doctrine models are
+now represented in the doc header of each generated base class. If your IDE
+supports code completion, you should now see these `getFooBar()` and
+`setFooBar()` methods show up on model objects, where `FooBar` is a CamelCased
+field name.
 
 Web Debug Toolbar
 -----------------
