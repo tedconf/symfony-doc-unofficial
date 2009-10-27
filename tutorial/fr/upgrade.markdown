@@ -37,13 +37,15 @@ Pour mettre à jour un projet:
   * Cette mise à jour implique de reconstruire vos classes de modèles et de formulaires
     suite à quelques changements décrits plus bas :
 
-        $ php symfony doctrine:build-model
-        $ php symfony doctrine:build-forms
-        $ php symfony doctrine:build-filters
+        # Doctrine
+        $ php symfony doctrine:build --all-classes
+
+        # Propel
+        $ php symfony propel:build --all-classes
 
   * Videz le cache de Symfony :
 
-        $ php symfony cc
+        $ php symfony cache:clear
 
 Les prochaines sections expliquent les principaux changements réalisés dans symfony 1.3 
 qui nécessitent une mise à jour automatique ou manuelle.
@@ -157,8 +159,8 @@ Comment mettre à jour ?
     qu'avant (ceci est automatiquement pris en charge par la tâche `project:upgrade1.3` 
     pour tous les layouts HTML situés dans le répertoire `templates/` de chaque
     application, à condition que ces derniers disposent d'un tag <head>. Tous les autres
-	layouts ou pages qui nécessitent des fichiers JavaScripts ou des feuilles de styles
-	doivent être mis à jour manuellement).
+    layouts ou pages qui nécessitent des fichiers JavaScripts ou des feuilles de styles
+    doivent être mis à jour manuellement).
 
 Tâches Automatiques
 -------------------
@@ -210,19 +212,14 @@ de leur suppression.
 ### Redéfinition des Schémas de Données dans les Plugins
 
 Vous pouvez désormais surcharger le model inclus dans le schéma de données YAML 
-d'un plugin en définissant simplement ce même modèle dans votre schéma local.
-
-Voir: http://trac.symfony-project.org/ticket/6656
-
-Grâce à ce changement, vous pouvez maintenant créer le schéma suivant dans le
-fichier `config/doctrine/sfGuardUser.schema.yml`.
+d'un plugin en définissant simplement ce même modèle dans votre schéma local. Par exemple, pour ajouter une
+colonne "email" au modèle `sfGuardUser` de sfDoctrineGuardPlugin, ajoutez ceci à
+`config/doctrine/schema.yml`:
 
     sfGuardUser:
-      package: sfDoctrineGuardPlugin.lib.model.doctrine
-      # ...
-
-Vous pouvez personnaliser le schéma à votre guise car ce sera désormais la version 
-locale qui sera utilisée à la génération du modèle au lieu de celle livrée avec le plugin.
+      columns:
+        email:
+          type: string(255)
 
 >**NOTE**
 >L'option `package` est une nouveauté de Doctrine et utilisée pour les schémas des
@@ -301,3 +298,56 @@ utilisant la méthode `sfYaml::setSpecVersion()` :
 
     [php]
     sfYaml::setSpecVersion('1.1');
+
+Propel
+------
+
+Les classes de constructeur personnalisé de Propel utilisées dans les versions précédentes de symfony ont
+été remplacées par de nouvelles classes de comportement pour Propel 1.4. Pour profiter de cette
+amélioration votre fichier `propel.ini` de votre projet doit être mis à jour.
+
+Supprimer les anciennes classes de constructeur :
+
+    ; builder settings
+    propel.builder.peer.class              = plugins.sfPropelPlugin.lib.builder.SfPeerBuilder
+    propel.builder.object.class            = plugins.sfPropelPlugin.lib.builder.SfObjectBuilder
+    propel.builder.objectstub.class        = plugins.sfPropelPlugin.lib.builder.SfExtensionObjectBuilder
+    propel.builder.peerstub.class          = plugins.sfPropelPlugin.lib.builder.SfExtensionPeerBuilder
+    propel.builder.objectmultiextend.class = plugins.sfPropelPlugin.lib.builder.SfMultiExtendObjectBuilder
+    propel.builder.mapbuilder.class        = plugins.sfPropelPlugin.lib.builder.SfMapBuilderBuilder
+
+Et ajoutez les nouvelles classes de comportement :
+
+    ; behaviors
+    propel.behavior.default                        = symfony,symfony_i18n
+    propel.behavior.symfony.class                  = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorSymfony
+    propel.behavior.symfony_i18n.class             = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorI18n
+    propel.behavior.symfony_i18n_translation.class = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorI18nTranslation
+    propel.behavior.symfony_behaviors.class        = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorSymfonyBehaviors
+    propel.behavior.symfony_timestampable.class    = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorTimestampable
+
+La tâche `project:upgrade` tente de faire ce changement pour vous, mais peut-être pas,
+si vous avez apporté des changements locaux sur `propel.ini`.
+
+La classe `BaseFormFilterPropel` a été générée incorrectement dans
+`lib/filter/base` de symfony 1.2. Cela a été corrigé dans symfony 1.3; la
+classe est maintenant générée dans `lib/filter`. La tâche `project:upgrade`
+déplacera ce fichier pour vous.
+
+Tests
+-----
+
+Le fichier de test unitaire de démarrage, `test/bootstrap/unit.php`, a été amélioré afin
+e mieux gérer le chargement automatique des fichiers de projet de classe. Les lignes suivantes doivent être
+ajoutées à ce script :
+
+    [php]
+    $autoload = sfSimpleAutoload::getInstance(sfConfig::get('sf_cache_dir').'/project_autoload.cache');
+    $autoload->loadConfiguration(sfFinder::type('file')->name('autoload.yml')->in(array(
+      sfConfig::get('sf_symfony_lib_dir').'/config/config',
+      sfConfig::get('sf_config_dir'),
+    )));
+    $autoload->register();
+
+La tâche `project:upgrade` tente de faire ce changement pour vous, mais peut-être pas,
+si vous avez apporté des changements locaux sur `test/bootstrap/unit.php`.

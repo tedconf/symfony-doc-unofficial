@@ -189,6 +189,11 @@ Les validators sont désormais implémentés d'une interface fluide pour les mé
   * `sfValidatorBase`: `addMessage()`, `setMessage()`, `setMessages()`,
     `addOption()`, `setOption()`, `setOptions()`, `addRequiredOption()`
 
+### `sfValidatorFile`
+
+Une exception est levée lors de la création d'une instance de sfValidatorFile si
+`file_uploads` est désactivé dans `php.ini`.
+
 Formulaires
 -----
 
@@ -382,6 +387,24 @@ pour identifier quelle partie du DOM est à tester :
       checkForm('ArticleForm', '#articleForm')->
     end();
 
+### `sfTesterResponse::isValid()`
+
+Vous pouvez maintenant vérifier si une réponse est au bon format XML avec la
+méthode de testeur de réponse `->isValid()` :
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid()->
+    end();
+
+Vous validez également à nouveau le type de document de la réponse en passant `true` comme
+argument :
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid(true)->
+    end();
+
 ### Ecouter `context.load_factories`
 
 Vous pouvez maintenant ajouter des écouteurs, pour vos tests fonctionnels, pour l'événement
@@ -465,6 +488,12 @@ suivantes : `installDir()`, `runTask()`, `ask()`, `askConfirmation()`,
 Plus d'informations peuvent être trouvées dans ce
 [sujet](http://www.symfony-project.org/blog/2009/06/10/new-in-symfony-1-3-project-creation-customization)
 du blog officiel de symfony.
+
+Vous pouvez également inclure un second argument "author" lors de la génération d'un projet,
+qui spécifie une valeur à utiliser pour le doc tag `@author` quand symfony
+génère de nouvelles classes.
+
+    $ php /path/to/symfony generate:project foo "Joe Schmo"
 
 ### `sfFileSystem::execute()`
 
@@ -558,7 +587,13 @@ la mise en cache de l'emplacement des fichiers templates de votre application. C
 être seulement utilisée sur un serveur de production. N'oubliez pas de ré-exécuter la tâche à chaque
 modification du projet.
 
-    $ php symfony project:optimize
+    $ php symfony project:optimize frontend
+
+### `generate:app`
+
+La tâche `generate:app` vérifie maintenant un répertoire squelette dans le répertoire
+`data/skeleton/app` de votre projet avant de fournir par défaut un squelette dans le
+noyau.
 
 Exceptions
 ----------
@@ -581,6 +616,11 @@ Propel a été mis à niveau vers la version 1.4. Merci de visiter le site de Pr
 d'informations sur sa mise à jour
 (http://propel.phpdb.org/trac/wiki/Users/Documentation/1.4).
 
+### Comportements de Propel
+
+Les classes de constructeur personnalisé de symfony réliées à l'extension Propel ont été
+portées vers le nouveau système de' comportement de Propel 1.4.
+
 ### `propel:insert-sql`
 
 Avant de supprimer toutes les données d'une base de données, `propel:insert-sql` demande une
@@ -592,6 +632,38 @@ aussi le nom des connexions des bases de données liées.
 Les tâches `propel:generate-module`, `propel:generate-admin`, et
 `propel:generate-admin-for-route` prennent désormais l'option `--actions-base-class` qui permet
 la configuration de la classe des actions de la base pour les modules générés.
+
+### Propel Behaviors
+
+Propel 1.4 introduit une implémentation des comportements dans le code de base de Propel.
+Les constructeurs personnalisés de symfony ont été portés dans ce nouveau système.
+
+Si vous souhaitez ajouter des comportements natifs à vos modèles Propel, vous pouvez le faire
+dans le `schema.yml` :
+
+    classes:
+      Article:
+        propel_behaviors:
+          timestampable: ~
+
+Ou, si vous utilisez l'ancienne syntaxe de `schema.yml` :
+
+    propel:
+      article:
+        _propel_behaviors:
+          timestampable: ~
+
+### Désactiver la génération du formulaire
+
+Vous pouvez maintenant désactiver la génération de formulaire sur certains modèles en passant des paramètres au
+comportement Propel de symfony :
+
+    classes:
+      UserGroup:
+        propel_behaviors:
+          symfony:
+            form: false
+            filter: false
 
 Routage
 -------
@@ -1001,6 +1073,14 @@ activé pour `sfDoctrinePlugin`.
 Les tâches `doctrine:generate-module`, `doctrine:generate-admin`, et 
 `doctrine:generate-admin-for-route` prend désormais une option `--actions-base-class` qui permet
 la configuration de la classe de base des actions pour les modules générés.
+
+### La méthode magique des doc tags
+
+Les méthodes magiques getter et setter de symfony ajoutés à votre modèle de Doctrine sont
+maintenant représenté dans un entête de doc de chaque classe de base générée. Si votre IDE
+supporte la complétion de code, vous devriez maintenant voir ces méthodes `getFooBar()` et
+`setFooBar()` apparaitre en haut des objets du modèle, où FooBar est un nom de champ
+noté en CamelCase.
 
 La barre d'outil web de débogage
 -----------------
