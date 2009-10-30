@@ -622,17 +622,15 @@ The `doctrine::build-filters` task creates filter form classes for the current m
 | `--filter-dir-name` | `filter` | The filter form dir name
 
 
-The `doctrine:build-filters` task creates filter form classes from the schema:
+The `doctrine:build-filters` task creates form filter classes from the schema:
 
     ./symfony doctrine:build-filters
 
-The task read the schema information in `config/*schema.xml` and/or
-`config/*schema.yml` from the project and all installed plugins.
+This task creates form filter classes based on the model. The classes are
+created in `lib/doctrine/filter`.
 
-The model filter form classes files are created in `lib/filter`.
-
-This task never overrides custom classes in `lib/filter`.
-It only replaces base classes generated in `lib/filter/base`.
+This task never overrides custom classes in `lib/doctrine/filter`.
+It only replaces base classes generated in `lib/doctrine/filter/base`.
 
 ### ~`doctrine::build-forms`~
 
@@ -656,13 +654,11 @@ The `doctrine:build-forms` task creates form classes from the schema:
 
     ./symfony doctrine:build-forms
 
-The task read the schema information in `config/*schema.xml` and/or
-`config/*schema.yml` from the project and all installed plugins.
+This task creates form classes based on the model. The classes are created
+in `lib/doctrine/form`.
 
-The model form classes files are created in `lib/form`.
-
-This task never overrides custom classes in `lib/form`.
-It only replaces base classes generated in `lib/form/base`.
+This task never overrides custom classes in `lib/doctrine/form`.
+It only replaces base classes generated in `lib/doctrine/form/base`.
 
 ### ~`doctrine::build-model`~
 
@@ -685,7 +681,7 @@ The `doctrine:build-model` task creates model classes from the schema:
     ./symfony doctrine:build-model
 
 The task read the schema information in `config/doctrine/*.yml`
-from the project and all installed plugins.
+from the project and all enabled plugins.
 
 The model classes files are created in `lib/model/doctrine`.
 
@@ -753,7 +749,10 @@ The `doctrine::clean-model-files` task delete all generated model classes for mo
 | `--no-confirmation` | `-` | Do not ask for confirmation
 
 
+The `doctrine:clean-model-files` task deletes model classes that are not
+represented in project or plugin schema.yml files:
 
+    ./symfony doctrine:clean-model-files
 
 ### ~`doctrine::create-model-tables`~
 
@@ -806,7 +805,7 @@ The task dumps the database data in `data/fixtures/%target%`.
 The dump file is in the YML format and can be reimported by using
 the `doctrine:data-load` task.
 
-    ./symfony doctrine:data-load frontend
+    ./symfony doctrine:data-load
 
 ### ~`doctrine::data-load`~
 
@@ -862,7 +861,10 @@ The `doctrine::delete-model-files` task delete all the related auto generated fi
 | `--no-confirmation` | `-` | Do not ask for confirmation
 
 
+The `doctrine:delete-model-files` task deletes all files associated with certain
+models:
 
+    ./symfony doctrine:delete-model-files Article Author
 
 ### ~`doctrine::dql`~
 
@@ -914,13 +916,13 @@ The `doctrine:drop-db` task drops the database:
 
     ./symfony doctrine:drop-db
 
-The task read connection information in `config/doctrine/databases.yml`:
+The task read connection information in `config/databases.yml`:
 
 ### ~`doctrine::generate-admin`~
 
 The `doctrine::generate-admin` task generates a Doctrine admin module:
 
-    $ php symfony doctrine:generate-admin [--module="..."] [--theme="..."] [--singular="..."] [--plural="..."] [--env="..."] application route_or_model
+    $ php symfony doctrine:generate-admin [--module="..."] [--theme="..."] [--singular="..."] [--plural="..."] [--env="..."] [--actions-base-class="..."] application route_or_model
 
 
 
@@ -937,6 +939,7 @@ The `doctrine::generate-admin` task generates a Doctrine admin module:
 | `--singular` | `-` | The singular name
 | `--plural` | `-` | The plural name
 | `--env` | `dev` | The environment
+| `--actions-base-class` | `sfActions` | The base class for the actions
 
 
 The `doctrine:generate-admin` task generates a Doctrine admin module:
@@ -1009,9 +1012,10 @@ The `doctrine::generate-migrations-db` task generate migration classes from exis
 | `--env` | `dev` | The environment
 
 
-The `doctrine:generate-migration` task generates migration classes from existing database connections
+The `doctrine:generate-migrations-db` task generates migration classes from
+existing database connections:
 
-    ./symfony doctrine:generate-migration
+    ./symfony doctrine:generate-migrations-db
 
 ### ~`doctrine::generate-migrations-diff`~
 
@@ -1029,7 +1033,8 @@ The `doctrine::generate-migrations-diff` task generate migration classes by prod
 | `--env` | `dev` | The environment
 
 
-The `doctrine:generate-migrations-diff` task generates migration classes by producing a diff between your old and new schema.
+The `doctrine:generate-migrations-diff` task generates migration classes by
+producing a diff between your old and new schema.
 
     ./symfony doctrine:generate-migrations-diff
 
@@ -1049,15 +1054,16 @@ The `doctrine::generate-migrations-models` task generate migration classes from 
 | `--env` | `dev` | The environment
 
 
-The `doctrine:generate-migration` task generates migration classes from an existing set of models
+The `doctrine:generate-migrations-models` task generates migration classes
+from an existing set of models:
 
-    ./symfony doctrine:generate-migration
+    ./symfony doctrine:generate-migrations-models
 
 ### ~`doctrine::generate-module`~
 
 The `doctrine::generate-module` task generates a Doctrine module:
 
-    $ php symfony doctrine:generate-module [--theme="..."] [--generate-in-cache] [--non-verbose-templates] [--with-show] [--singular="..."] [--plural="..."] [--route-prefix="..."] [--with-doctrine-route] [--env="..."] application module model
+    $ php symfony doctrine:generate-module [--theme="..."] [--generate-in-cache] [--non-verbose-templates] [--with-show] [--singular="..."] [--plural="..."] [--route-prefix="..."] [--with-doctrine-route] [--env="..."] [--actions-base-class="..."] application module model
 
 *Alias(es)*: `doctrine-generate-crud, doctrine:generate-crud`
 
@@ -1079,6 +1085,7 @@ The `doctrine::generate-module` task generates a Doctrine module:
 | `--route-prefix` | `-` | The route prefix
 | `--with-doctrine-route` | `-` | Whether you will use a Doctrine route
 | `--env` | `dev` | The environment
+| `--actions-base-class` | `sfActions` | The base class for the actions
 
 
 The `doctrine:generate-module` task generates a Doctrine module:
@@ -1100,11 +1107,16 @@ The generator can use a customized theme by using the `--theme` option:
 
 This way, you can create your very own module generator with your own conventions.
 
+You can also change the default actions base class (default to sfActions) of
+the generated modules:
+
+    ./symfony doctrine:generate-module --actions-base-class="ProjectActions" frontend article Article
+
 ### ~`doctrine::generate-module-for-route`~
 
 The `doctrine::generate-module-for-route` task generates a Doctrine module for a route definition:
 
-    $ php symfony doctrine:generate-module-for-route [--theme="..."] [--non-verbose-templates] [--singular="..."] [--plural="..."] [--env="..."] application route
+    $ php symfony doctrine:generate-module-for-route [--theme="..."] [--non-verbose-templates] [--singular="..."] [--plural="..."] [--env="..."] [--actions-base-class="..."] application route
 
 
 
@@ -1121,6 +1133,7 @@ The `doctrine::generate-module-for-route` task generates a Doctrine module for a
 | `--singular` | `-` | The singular name
 | `--plural` | `-` | The plural name
 | `--env` | `dev` | The environment
+| `--actions-base-class` | `sfActions` | The base class for the actions
 
 
 The `doctrine:generate-module-for-route` task generates a Doctrine module for a route definition:
@@ -1151,7 +1164,7 @@ The `doctrine:insert-sql` task creates database tables:
     ./symfony doctrine:insert-sql
 
 The task connects to the database and creates tables for all the
-`lib/model/doctrine/*.php` files.
+`lib/model/doctrine/*.class.php` files.
 
 ### ~`doctrine::migrate`~
 
@@ -1214,7 +1227,7 @@ The `doctrine:rebuild-db` task creates the database:
 
     ./symfony doctrine:rebuild-db
 
-The task read connection information in `config/doctrine/databases.yml`:
+The task read connection information in `config/databases.yml`:
 
 Include the `--migrate` option if you would like to run your application's
 migrations rather than inserting the Doctrine SQL.
@@ -1241,8 +1254,8 @@ The `doctrine::reload-data` task reloads databases and fixtures for your project
 | `--append` | `-` | Don't delete current data in the database
 
 
-The `doctrine:reload-data` task drops the database, recreates it and loads fixtures
-Call it with:
+The `doctrine:reload-data` task drops the database, recreates it and loads
+fixtures:
 
     php symfony doctrine:reload-data
   
@@ -1305,6 +1318,8 @@ a secret with the `csrf-secret` option:
 
     ./symfony generate:app frontend --csrf-secret=UniqueSecret
 
+You can customize the default skeleton used by the task by creating a
+`%sf_data_dir%/skeleton/app` directory.
 
 ### ~`generate::module`~
 
@@ -1348,13 +1363,14 @@ it throws a `sfCommandException`.
 
 The `generate::project` task generates a new project:
 
-    $ php symfony generate:project [--orm="..."] [--installer="..."] name
+    $ php symfony generate:project [--orm="..."] [--installer="..."] name [author]
 
 *Alias(es)*: `init-project`
 
 | Argument | Default | Description
 | -------- | ------- | -----------
 | `name` | `-` | The project name
+| `author` | `Your name here` | The project author
 
 
 | Option (Shortcut) | Default | Description
@@ -1384,6 +1400,11 @@ You can also pass the `--installer` option to further customize the
 project:
 
     ./symfony generate:project blog --installer=./installer.php
+
+You can optionally include a second `author` argument to specify what name to
+use as author when symfony generates new classes:
+
+    ./symfony generate:project blog "Jack Doe"
 
 ### ~`generate::task`~
 
@@ -1867,10 +1888,10 @@ you can pass a `rsync-dir` option:
 
     ./symfony project:deploy --go --rsync-dir=config/production production
 
-Last, you can specify the options passed to the rsync executable, using the 
-`rsync-options` option (defaults are `-azC`):
+Last, you can specify the options passed to the rsync executable, using the
+`rsync-options` option (defaults are `-azC --force --delete --progress`):
 
-    ./symfony project:deploy --go --rsync-options=avz
+    ./symfony project:deploy --go --rsync-options=-avz
 
 ### ~`project::disable`~
 
@@ -1926,34 +1947,24 @@ environment:
 
 The `project::optimize` task optimizes a project for better performance:
 
-    $ php symfony project:optimize  [env] [app1] ... [appN]
+    $ php symfony project:optimize  application [environment]
 
 
 
 | Argument | Default | Description
 | -------- | ------- | -----------
-| `env` | `prod` | The environment name
-| `app` | `-` | The application name
+| `application` | `-` | The server name
+| `environment` | `prod` | The server name
 
 
 
 
 The `project:optimize` optimizes a project for better performance:
 
-    ./symfony project:optimize
+    ./symfony project:optimizes frontend prod
 
 This task should only be used on a production server. Don't forget to re-run
 the task each time the project changes.
-
-You can specify an environment other than `prod` by passing it as an
-argument:
-
-    ./symfony project:optimize staging
-
-You can further specify one or more applications to optimize by passing
-additional arguments:
-
-    ./symfony project:optimize prod frontend
 
 ### ~`project::permissions`~
 
@@ -2416,7 +2427,7 @@ the `application` option:
 
 The `propel::generate-admin` task generates a Propel admin module:
 
-    $ php symfony propel:generate-admin [--module="..."] [--theme="..."] [--singular="..."] [--plural="..."] [--env="..."] application route_or_model
+    $ php symfony propel:generate-admin [--module="..."] [--theme="..."] [--singular="..."] [--plural="..."] [--env="..."] [--actions-base-class="..."] application route_or_model
 
 
 
@@ -2433,6 +2444,7 @@ The `propel::generate-admin` task generates a Propel admin module:
 | `--singular` | `-` | The singular name
 | `--plural` | `-` | The plural name
 | `--env` | `dev` | The environment
+| `--actions-base-class` | `sfActions` | The base class for the actions
 
 
 The `propel:generate-admin` task generates a Propel admin module:
@@ -2464,7 +2476,7 @@ the `with_wildcard_routes` option to the route:
 
 The `propel::generate-module` task generates a Propel module:
 
-    $ php symfony propel:generate-module [--theme="..."] [--generate-in-cache] [--non-verbose-templates] [--with-show] [--singular="..."] [--plural="..."] [--route-prefix="..."] [--with-propel-route] [--env="..."] application module model
+    $ php symfony propel:generate-module [--theme="..."] [--generate-in-cache] [--non-verbose-templates] [--with-show] [--singular="..."] [--plural="..."] [--route-prefix="..."] [--with-propel-route] [--env="..."] [--actions-base-class="..."] application module model
 
 *Alias(es)*: `propel-generate-crud, propel:generate-crud`
 
@@ -2486,6 +2498,7 @@ The `propel::generate-module` task generates a Propel module:
 | `--route-prefix` | `-` | The route prefix
 | `--with-propel-route` | `-` | Whether you will use a Propel route
 | `--env` | `dev` | The environment
+| `--actions-base-class` | `sfActions` | The base class for the actions
 
 
 The `propel:generate-module` task generates a Propel module:
@@ -2507,11 +2520,16 @@ The generator can use a customized theme by using the `--theme` option:
 
 This way, you can create your very own module generator with your own conventions.
 
+You can also change the default actions base class (default to sfActions) of
+the generated modules:
+
+    ./symfony propel:generate-module --actions-base-class="ProjectActions" frontend article Article
+
 ### ~`propel::generate-module-for-route`~
 
 The `propel::generate-module-for-route` task generates a Propel module for a route definition:
 
-    $ php symfony propel:generate-module-for-route [--theme="..."] [--non-verbose-templates] [--singular="..."] [--plural="..."] [--env="..."] application route
+    $ php symfony propel:generate-module-for-route [--theme="..."] [--non-verbose-templates] [--singular="..."] [--plural="..."] [--env="..."] [--actions-base-class="..."] application route
 
 
 
@@ -2528,6 +2546,7 @@ The `propel::generate-module-for-route` task generates a Propel module for a rou
 | `--singular` | `-` | The singular name
 | `--plural` | `-` | The plural name
 | `--env` | `dev` | The environment
+| `--actions-base-class` | `sfActions` | The base class for the actions
 
 
 The `propel:generate-module-for-route` task generates a Propel module for a route definition:
