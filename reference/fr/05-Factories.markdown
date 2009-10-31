@@ -1,4 +1,4 @@
-Le fichier de configuration factories.yml
+ï»¿Le fichier de configuration factories.yml
 ====================================
 
 Les factories sont des objets du noyau nécessaires pour le framework au cours de la vie de toutes les
