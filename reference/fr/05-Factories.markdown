@@ -1,23 +1,23 @@
 ï»¿Le fichier de configuration factories.yml
 ====================================
 
-Les factories sont des objets du noyau nécessaires pour le framework au cours de la vie de toutes les
-requêtes. Ils sont configurés dans le fichier de configuration `factories.yml` et
+Les factories sont des objets du noyau nÃ©cessaires pour le framework au cours de la vie de toutes les
+requÃªtes. Ils sont configurÃ©s dans le fichier de configuration `factories.yml` et
 toujours accessible via l'objet `sfContext` :
 
     [php]
-    // Récupère le factory de l'utilisateur
+    // RÃ©cupÃ¨re le factory de l'utilisateur
     sfContext::getInstance()->getUser();
 
 Le fichier principal de configuration `factories.yml` pour une application se trouve dans
-le répertoire `apps/APP_NAME/config/`.
+le rÃ©pertoire `apps/APP_NAME/config/`.
 
-Comme indiqué dans l'introduction, le fichier `factories.yml` est
-[**sensible à l'environnement**](#chapter_03_sensibilisation_a_l_environnement), bénéficie du
-[**mécanisme de configuration en cascade**](#chapter_03_configuration_en_cascade)
+Comme indiquÃ© dans l'introduction, le fichier `factories.yml` est
+[**sensible Ã  l'environnement**](#chapter_03_sensibilisation_a_l_environnement), bÃ©nÃ©ficie du
+[**mÃ©canisme de configuration en cascade**](#chapter_03_configuration_en_cascade)
 et peut inclure [**des constantes**](#chapter_03_constantes).
 
-Le fichier de configuration `factories.yml` contient une liste de factory nommés :
+Le fichier de configuration `factories.yml` contient une liste de factory nommÃ©s :
 
     [yml]
     FACTORY_1:
@@ -28,25 +28,25 @@ Le fichier de configuration `factories.yml` contient une liste de factory nommés
 
     # ...
 
-Les noms de factory supportés sont : `controller`, `logger`, `i18n`, `request`,
+Les noms de factory supportÃ©s sont : `controller`, `logger`, `i18n`, `request`,
 `response`, `routing`, `storage`, `user`, `view_cache`, et
 `view_cache_manager`.
 
 Lorsque le `sfContext` initialise les factories, il lit le fichier `factories.yml`
-pour le nom de la classe du factory (`class`) et les paramètres (`param`)
-utilisés pour configurer l'objet factory :
+pour le nom de la classe du factory (`class`) et les paramÃ¨tres (`param`)
+utilisÃ©s pour configurer l'objet factory :
 
     [yml]
     FACTORY_NAME:
       class: CLASS_NAME
       param: { ARRAY OF PARAMETERS }
 
-Être en mesure de personnaliser les factories signifie que vous pouvez utiliser une classe personnalisée
-pour les objets du noyau de symfony à la place de celui par défaut. Vous pouvez également modifier
-le comportement par défaut de ces classes en personnalisant les paramètres qui lui sont envoyés.
+ÃŠtre en mesure de personnaliser les factories signifie que vous pouvez utiliser une classe personnalisÃ©e
+pour les objets du noyau de symfony Ã  la place de celui par dÃ©faut. Vous pouvez Ã©galement modifier
+le comportement par dÃ©faut de ces classes en personnalisant les paramÃ¨tres qui lui sont envoyÃ©s.
 
-Si la classe du factory ne peut pas être chargées automatiquement, un chemin du fichier peut être défini et
-sera automatiquement inclus avant la création du factory :
+Si la classe du factory ne peut pas Ãªtre chargÃ©es automatiquement, un chemin du fichier peut Ãªtre dÃ©fini et
+sera automatiquement inclus avant la crÃ©ation du factory :
 
     [yml]
     FACTORY_NAME:
@@ -55,7 +55,7 @@ sera automatiquement inclus avant la création du factory :
 
 >**NOTE**
 >Le fichier de configuration `factories.yml` est mis en cache dans un fichier PHP. Le
->processus est automatiquement géré par [la classe](#chapter_14_config_handlers_yml)
+>processus est automatiquement gÃ©rÃ© par [la classe](#chapter_14_config_handlers_yml)
 >~`sfFactoryConfigHandler`~.
 
 <div class="pagebreak"></div>
@@ -147,7 +147,7 @@ Factories
 
 *sfContext Accessor*: `$context->getMailer()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     mailer:
@@ -165,14 +165,14 @@ Factories
             username:   ~
             password:   ~
 
-*Configuration par défaut pour l'environnement `test`* :
+*Configuration par dÃ©faut pour l'environnement `test`* :
 
     [yml]
     mailer:
       param:
         delivery_strategy: none
 
-*Configuration par défaut pour l'environnement `dev`* :
+*Configuration par dÃ©faut pour l'environnement `dev`* :
 
     [yml]
     mailer:
@@ -181,71 +181,71 @@ Factories
 
 ### ~`charset`~
 
-L'option `charset` définit le jeu de caractères à utiliser pour les messages électroniques. Par
-défaut, il utilise le paramètre `charset` de `settings.yml`.
+L'option `charset` dÃ©finit le jeu de caractÃ¨res Ã  utiliser pour les messages Ã©lectroniques. Par
+dÃ©faut, il utilise le paramÃ¨tre `charset` de `settings.yml`.
 
 ### ~`delivery_strategy`~
 
-L'option `delivery_strategy` définit comment les messages e-mail sont livrés par le
-mailer. Quatre stratégies sont disponibles par défaut, ce qui devrait convenir à tous les
+L'option `delivery_strategy` dÃ©finit comment les messages e-mail sont livrÃ©s par le
+mailer. Quatre stratÃ©gies sont disponibles par dÃ©faut, ce qui devrait convenir Ã  tous les
 besoins communs :
 
- * `realtime`:       Les messages sont envoyés en temps réel.
+ * `realtime`:       Les messages sont envoyÃ©s en temps rÃ©el.
 
- * `single_address`: Les messages sont envoyés à une seule adresse.
+ * `single_address`: Les messages sont envoyÃ©s Ã  une seule adresse.
 
- * `spool`:          Les messages sont stockés dans une file d'attente.
+ * `spool`:          Les messages sont stockÃ©s dans une file d'attente.
 
- * `none`:           Les messages sont tout simplement ignorés.
+ * `none`:           Les messages sont tout simplement ignorÃ©s.
 
 ### ~`delivery_address`~
 
-L'option `delivery_address` définit le bénéficiaire de tous les messages lorsque le
-`delivery_strategy` est à `single_address`.
+L'option `delivery_address` dÃ©finit le bÃ©nÃ©ficiaire de tous les messages lorsque le
+`delivery_strategy` est Ã  `single_address`.
 
 ### ~`spool_class`~
 
-L'option `spool_class` définit la classe de spool à utiliser lorsque le
-`delivery_strategy` est à `spool`:
+L'option `spool_class` dÃ©finit la classe de spool Ã  utiliser lorsque le
+`delivery_strategy` est Ã  `spool`:
 
-  * ~`Swift_FileSpool`~: Les messages sont stockés sur le système de fichiers.
+  * ~`Swift_FileSpool`~: Les messages sont stockÃ©s sur le systÃ¨me de fichiers.
 
-  * ~`Swift_DoctrineSpool`~: Les messages sont stockés dans un modèle de Doctrine.
+  * ~`Swift_DoctrineSpool`~: Les messages sont stockÃ©s dans un modÃ¨le de Doctrine.
 
-  * ~`Swift_PropelSpool`~: Les messages sont stockés dans un modèle de Propel.
+  * ~`Swift_PropelSpool`~: Les messages sont stockÃ©s dans un modÃ¨le de Propel.
 
 >**NOTE**
->Lorsque le spool est instancié, l'option ~`spool_arguments`~ est utilisée comme les
+>Lorsque le spool est instanciÃ©, l'option ~`spool_arguments`~ est utilisÃ©e comme les
 >arguments du constructeur.
 
 ### ~`spool_arguments`~
 
-L'option `spool_arguments` définit les arguments du constructeur du spool.
-Voici les options disponibles pour les classes intégrées des files d'attente :
+L'option `spool_arguments` dÃ©finit les arguments du constructeur du spool.
+Voici les options disponibles pour les classes intÃ©grÃ©es des files d'attente :
 
  * `Swift_FileSpool`:
 
-    * Le chemin absolu du répertoire de file d'attente (les messages sont stockés dans
-      ce répertoire)
+    * Le chemin absolu du rÃ©pertoire de file d'attente (les messages sont stockÃ©s dans
+      ce rÃ©pertoire)
 
  * `Swift_DoctrineSpool`:
 
-    * Le modèle de Doctrine à utiliser pour stocker les messages (`MailMessage` par
-      défaut)
+    * Le modÃ©le de Doctrine Ã  utiliser pour stocker les messages (`MailMessage` par
+      dÃ©faut)
 
-    * Le nom de la colonne à utiliser pour le stockage de messages (`message` par défaut)
+    * Le nom de la colonne Ã  utiliser pour le stockage de messages (`message` par dÃ©faut)
 
-    * La méthode à appeler pour récupérer les messages à envoyer (facultatif). Il
-      reçoit les options de la file d'attente comme un argument.
+    * La mÃ©thode Ã  appeler pour rÃ©cupÃ©rer les messages Ã  envoyer (facultatif). Il
+      reÃ§oit les options de la file d'attente comme un argument.
 
  * `Swift_PropelSpool`:
 
-    * Le modèle de Propel à utiliser pour stocker les messages (`MailMessage` par défaut)
+    * Le modÃ¨le de Propel Ã  utiliser pour stocker les messages (`MailMessage` par dÃ©faut)
 
-    * Le nom de la colonne à utiliser pour le stockage de messages (`message` par défaut)
+    * Le nom de la colonne Ã  utiliser pour le stockage de messages (`message` par dÃ©faut)
 
-    * La méthode à appeler pour récupérer les messages à envoyer (facultatif). Il
-      reçoit les options de la file d'attente comme un argument.
+    * La mÃ©thode Ã  appeler pour rÃ©cupÃ©rer les messages Ã  envoyer (facultatif). Il
+      reÃ§oit les options de la file d'attente comme un argument.
 
 La configuration ci-dessous montre une configuration typique pour un spool de Doctrine :
 
@@ -260,11 +260,11 @@ La configuration ci-dessous montre une configuration typique pour un spool de Do
 
 ### ~`transport`~
 
-L'option `transport` définit le transport à utiliser pour envoyer effectivement des messages
-électroniques.
+L'option `transport` dÃ©finit le transport Ã  utiliser pour envoyer effectivement des messages
+Ã©lectroniques.
 
-Le paramètre `class` peut être n'importe quelle classe qui implémente `Swift_Transport`,
-et trois sont fournis par défaut :
+Le paramÃ¨tre `class` peut Ãªtre n'importe quelle classe qui implÃ©mente `Swift_Transport`,
+et trois sont fournis par dÃ©faut :
 
   * ~`Swift_SmtpTransport`~: Utilise un serveur SMTP pour envoyer des messages.
 
@@ -273,17 +273,17 @@ et trois sont fournis par défaut :
   * ~`Swift_MailTransport`~: Utilise la fonction native PHP `mail()` pour envoyer
     des messages.
 
- Vous pouvez configurer le transport en définissant le paramètre `param`. La
+ Vous pouvez configurer le transport en dÃ©finissant le paramÃ¨tre `param`. La
 section ["Transport Types"](http://swiftmailer.org/docs/transport-types) de
-la documentation officielle de Swift Mailer décrit tout ce que vous devez savoir sur
-les classes intégrées dans les transports et leurs différents paramètres.
+la documentation officielle de Swift Mailer dÃ©crit tout ce que vous devez savoir sur
+les classes intÃ©grÃ©es dans les transports et leurs diffÃ©rents paramÃ¨tres.
 
 `request`
 ---------
 
 *sfContext Accessor*: `$context->getRequest()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     request:
@@ -304,36 +304,36 @@ les classes intégrées dans les transports et leurs différents paramètres.
 
 ### ~`path_info_array`~
 
-L'option `path_info_array` définit le tableau global PHP qui sera utilisée pour
-récupérer des informations. Sur certaines configurations, vous voudrez changer la
-valeur par défaut `SERVER` par `ENV`.
+L'option `path_info_array` dÃ©finit le tableau global PHP qui sera utilisÃ©e pour
+rÃ©cupÃ©rer des informations. Sur certaines configurations, vous voudrez changer la
+valeur par dÃ©faut `SERVER` par `ENV`.
 
 ### ~`path_info_key`~
 
-L'option `path_info_key` définit la clé sous laquelle l'information `PATH_INFO`
-peut être trouvée.
+L'option `path_info_key` dÃ©finit la clÃ© sous laquelle l'information `PATH_INFO`
+peut Ãªtre trouvÃ©e.
 
-Si vous utilisez ~IIS~ avec un module de réécriture comme `IIFR` ou `ISAPI`, vous devez
+Si vous utilisez ~IIS~ avec un module de rÃ©Ã©criture comme `IIFR` ou `ISAPI`, vous devez
 changer cette valeur par `HTTP_X_REWRITE_URL`.
 
 ### ~`formats`~
 
-L'option `formats` définit un tableau des extensions de fichiers et leur
-`Content-Type` correspondant. Il est utilisé par le framework pour gérer automatiquement
-le `Content-Type` de la réponse, basée sur l'extension de l'URI de la requête.
+L'option `formats` dÃ©finit un tableau des extensions de fichiers et leur
+`Content-Type` correspondant. Il est utilisÃ© par le framework pour gÃ©rer automatiquement
+le `Content-Type` de la rÃ©ponse, basÃ©e sur l'extension de l'URI de la requÃªte.
 
 ### ~`relative_url_root`~
 
-L'option `relative_url_root` définit la partie de l'URL avant que le contrôleur
-frontal. La plupart du temps, il est automatiquement détecté par le framework
-et n'a pas besoin d'être changée.
+L'option `relative_url_root` d2finit la partie de l'URL avant que le contrÃ´leur
+frontal. La plupart du temps, il est automatiquement dÃ©tectÃ© par le framework
+et n'a pas besoin d'Ãªtre changÃ©e.
 
 `response`
 ----------
 
 *sfContext Accessor*: `$context->getResponse()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     response:
@@ -343,7 +343,7 @@ et n'a pas besoin d'être changée.
         charset:           %SF_CHARSET%
         send_http_headers: true
 
-*Configuration par défaut pour l'environnement `test`* :
+*Configuration par dÃ©faut pour l'environnement `test`* :
 
     [yml]
     response:
@@ -353,29 +353,29 @@ et n'a pas besoin d'être changée.
 
 ### ~`send_http_headers`~
 
-L'option `send_http_headers` spécifie si la réponse devrait envoyer des entêtes de réponse HTTP
-ainsi que le contenu des réponses. Ce réglage est surtout
-utile pour les tests, les entêtes sont envoyées avec la fonction PHP `header()` qui
-envoie des avertissements si vous essayez d'envoyer des entêtes, après des sorties.
+L'option `send_http_headers` spÃ©cifie si la rÃ©ponse devrait envoyer des entÃªtes de rÃ©ponse HTTP
+ainsi que le contenu des rÃ©ponses. Ce rÃ©glage est surtout
+utile pour les tests, les entÃªtes sont envoyÃ©es avec la fonction PHP `header()` qui
+envoie des avertissements si vous essayez d'envoyer des entÃªtes, aprÃ¨s des sorties.
 
 ### ~`charset`~
 
-L'option `charset` définit le jeu de caractères à utiliser pour la réponse. Par défaut,
-il utilise le paramètre `charset` de `settings.yml`, qui est ce que vous voulez la plupart
+L'option `charset` dÃ©finit le jeu de caractÃ¨res Ã  utiliser pour la rÃ©ponse. Par dÃ©faut,
+il utilise le paramÃ¨tre `charset` de `settings.yml`, qui est ce que vous voulez la plupart
 du temps.
 
 ### ~`http_protocol`~
 
-L'option `http_protocol` définit la version du protocole HTTP à utiliser pour
-la réponse. Par défaut, il vérifie la valeur de `$_SERVER['SERVER_PROTOCOL']` si elle est
-disponible ou par défaut à `HTTP/1.0`.
+L'option `http_protocol` dÃ©finit la version du protocole HTTP Ã  utiliser pour
+la rÃ©ponse. Par dÃ©faut, il vÃ©rifie la valeur de `$_SERVER['SERVER_PROTOCOL']` si elle est
+disponible ou par dÃ©faut Ã  `HTTP/1.0`.
 
 `user`
 ------
 
 *sfContext Accessor*: `$context->getUser()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     user:
@@ -387,50 +387,50 @@ disponible ou par défaut à `HTTP/1.0`.
         default_culture: %SF_DEFAULT_CULTURE%
 
 >**NOTE**
->Par défaut, la classe `myUser` hérite de `sfBasicSecurityUser`,
->qui peut être configurée dans le fichier de configuration
+>Par dÃ©faut, la classe `myUser` hÃ©rite de `sfBasicSecurityUser`,
+>qui peut Ãªtre configurÃ©e dans le fichier de configuration
 >[`security.yml`](#chapter_08).
 
 ### ~`timeout`~
 
-L'option `timeout` définit le timeout pour l'authentification des utilisateurs. Il n'est pas
-lié au timeout de la session. Le réglage par défaut dés-authentifie
-automatiquement un utilisateur au bout de 30 minutes d'inactivité.
+L'option `timeout` dÃ©finit le timeout pour l'authentification des utilisateurs. Il n'est pas
+liÃ© au timeout de la session. Le rÃ©glage par dÃ©faut dÃ©s-authentifie
+automatiquement un utilisateur au bout de 30 minutes d'inactivitÃ©.
 
-Ce paramètre n'est utilisé que par les classes d'utilisateurs qui héritent de la
-classe de base `sfBasicSecurityUser`, ce qui est le cas de la classe générée
+Ce paramÃ¨tre n'est utilisÃ© que par les classes d'utilisateurs qui hÃ©ritent de la
+classe de base `sfBasicSecurityUser`, ce qui est le cas de la classe gÃ©nÃ©rÃ©e
 `myUser`.
 
 >**NOTE**
->Pour éviter un comportement inattendu, la classe utilisateur force automatiquement la
->durée de vie maximale pour le ramasse-miettes de session (`session.gc_maxlifetime`)
->à une valeur plus grande que le timeout.
+>Pour Ã©viter un comportement inattendu, la classe utilisateur force automatiquement la
+>durÃ©e de vie maximale pour le ramasse-miettes de session (`session.gc_maxlifetime`)
+>Ã  une valeur plus grande que le timeout.
 
 ### ~`use_flash`~
 
-L'option `use_flash` active ou désactive le composant flash.
+L'option `use_flash` active ou dÃ©sactive le composant flash.
 
 ### ~`default_culture`~
 
-L'option `default_culture` définit la culture à utiliser par défaut pour un utilisateur qui
-arrive sur le site pour la première fois. Par défaut, il utilise le
-paramètre `default_culture` de `settings.yml`, qui est votre choix la plupart
+L'option `default_culture` dÃ©finit la culture Ã  utiliser par dÃ©faut pour un utilisateur qui
+arrive sur le site pour la premiÃ¨re fois. Par dÃ©faut, il utilise le
+paramÃ¨tre `default_culture` de `settings.yml`, qui est votre choix la plupart
 du temps.
 
 >**CAUTION**
->Si vous changer le paramètre ~`default_culture`~ dans `factories.yml` ou dans
->`settings.yml`, vous devez effacer les cookies dans votre navigateur pour vérifier
->le résultat.
+>Si vous changer le paramÃ¨tre ~`default_culture`~ dans `factories.yml` ou dans
+>`settings.yml`, vous devez effacer les cookies dans votre navigateur pour vÃ©rifier
+>le rÃ©sultat.
 
 `storage`
 ---------
 
-Le factory storage est utilisé par le factory user pour maintenir les données utilisateur entre
-les requêtes HTTP.
+Le factory storage est utilisÃ© par le factory user pour maintenir les donnÃ©es utilisateur entre
+les requÃªtes HTTP.
 
 *sfContext Accessor*: `$context->getStorage()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     storage:
@@ -438,7 +438,7 @@ les requêtes HTTP.
       param:
         session_name: symfony
 
-*Configuration par défaut pour l'environnement `test`* :
+*Configuration par dÃ©faut pour l'environnement `test`* :
 
     [yml]
     storage:
@@ -448,34 +448,34 @@ les requêtes HTTP.
 
 ### ~`auto_start`~
 
-L'option `auto_start` active ou désactive la fonctionnalité de PHP
-d'auto-démarrage de session (via la fonction `session_start()`).
+L'option `auto_start` active ou dÃ©sactive la fonctionnalitÃ© de PHP
+d'auto-dÃ©marrage de session (via la fonction `session_start()`).
 
 ### ~`session_name`~
 
-L'option `session_name` définit le nom du cookie utilisé par symfony pour
-stocker la session utilisateur. Par défaut, le nom est `symfony`, ce qui signifie que
-toutes vos applications stockeront dans le même cookie (ainsi que l'authentification
+L'option `session_name` dÃ©finit le nom du cookie utilisÃ© par symfony pour
+stocker la session utilisateur. Par dÃ©faut, le nom est `symfony`, ce qui signifie que
+toutes vos applications stockeront dans le mÃªme cookie (ainsi que l'authentification
 et les autorisations correspondantes).
 
-### Les paramètres de `session_set_cookie_params()`
+### Les paramÃ¨tres de `session_set_cookie_params()`
 
 Le factory `storage` appelle la fonction
 [`session_set_cookie_params()`](http://www.php.net/session_set_cookie_params)
 avec la valeur des options suivantes :
 
- * ~`session_cookie_lifetime`~: durée de vie du cookie de session, défini en
+ * ~`session_cookie_lifetime`~: durÃ©e de vie du cookie de session, dÃ©fini en
                                 secondes.
- * ~`session_cookie_path`~:   Chemin sur le domaine où le cookie va fonctionner.
+ * ~`session_cookie_path`~:   Chemin sur le domaine oÃ¹ le cookie va fonctionner.
                               Utilisez un simple slash (`/`)  pour tous les chemins sur le
                               domaine.
  * ~`session_cookie_domain`~: domaine de cookie, par exemple `www.php.net`. Pour
                               faire des cookies visible sur tous les sous-domaines alors
-                              le domaine doit être préfixé avec un point comme `.php.net`.
- * ~`session_cookie_secure`~: Si c'est à `true` alors le cookie ne sera envoyée que sur des connexions
-                              sécurisées.
- * ~`session_cookie_httponly`~: Si c'est à `true` alors PHP tentera d'envoyer le flag
-                                `httponly` lors du paramétrage du cookie de session.
+                              le domaine doit Ãªtre prÃ©fixÃ© avec un point comme `.php.net`.
+ * ~`session_cookie_secure`~: Si c'est Ã  `true` alors le cookie ne sera envoyÃ©e que sur des connexions
+                              sÃ©curisÃ©es.
+ * ~`session_cookie_httponly`~: Si c'est Ã  `true` alors PHP tentera d'envoyer le flag
+                                `httponly` lors du paramÃ©trage du cookie de session.
 
 >**NOTE**
 >La description de chaque option provient de la description de la fonction
@@ -485,25 +485,25 @@ avec la valeur des options suivantes :
 
 Si l'option `session_cache_limiter` est mise, la fonction PHP
 [`session_cache_limiter()`](http://www.php.net/session_cache_limiter)
-est appelée et la valeur de l'option est passée en argument.
+est appelÃ©e et la valeur de l'option est passÃ©e en argument.
 
-### Options de la base de données spécifique de stockage
+### Options de la base de donnÃ©es spÃ©cifique de stockage
 
-Lorsque vous utilisez un stockage qui hérite de la classe `sfDatabaseSessionStorage`,
-plusieurs options supplémentaires sont disponibles:
+Lorsque vous utilisez un stockage qui hÃ©rite de la classe `sfDatabaseSessionStorage`,
+plusieurs options supplÃ©mentaires sont disponibles:
 
- * ~`database`~:     Le nom de la base de données (obligatoire)
+ * ~`database`~:     Le nom de la base de donnÃ©es (obligatoire)
  * ~`db_table`~:     Le nom de la table (obligatoire)
- * ~`db_id_col`~:    Le nom de la colonne de la clé primaire (`sess_id` par défaut)
- * ~`db_data_col`~:  Le nom de la colonne donnée (`sess_data` par défaut)
- * ~`db_time_col`~:  Le nom de la colonne temps (`sess_time` par défaut)
+ * ~`db_id_col`~:    Le nom de la colonne de la clÃ© primaire (`sess_id` par dÃ©faut)
+ * ~`db_data_col`~:  Le nom de la colonne donnÃ©e (`sess_data` par dÃ©faut)
+ * ~`db_time_col`~:  Le nom de la colonne temps (`sess_time` par dÃ©faut)
 
 `view_cache_manager`
 --------------------
 
 *sfContext Accessor*: `$context->getViewCacheManager()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     view_cache_manager:
@@ -513,31 +513,31 @@ plusieurs options supplémentaires sont disponibles:
         cache_key_use_host_name:    true
 
 >**CAUTION**
->Ce factory est créé si le paramètre [`cache`](#chapter_04_sub_cache)
->est à `on`.
+>Ce factory est crÃ©Ã© si le paramÃ¨tre [`cache`](#chapter_04_sub_cache)
+>est Ã  `on`.
 
 La plupart de la configuration de ce factory se fait via le factory `view_cache`, qui
-définit l'objet du cache sous-jacent utilisé par le gestionnaire de cache la vue.
+dÃ©finit l'objet du cache sous-jacent utilisÃ© par le gestionnaire de cache la vue.
 
 ### ~`cache_key_use_vary_headers`~
 
-L'option `cache_key_use_vary_headers` précise si les clés du cache doivent être
-inclus dans la partie des entêtes qui varient. En pratique, cela veut dire que le cache de la page doit
-être dépendant de l'entête HTTP, comme spécifié dans le paramètre du cache `vary` (valeur
-par défaut : `true`).
+L'option `cache_key_use_vary_headers` prÃ©cise si les clÃ©s du cache doivent Ãªtre
+inclus dans la partie des entÃªtes qui varient. En pratique, cela veut dire que le cache de la page doit
+Ãªtre dÃ©pendant de l'entÃªte HTTP, comme spÃ©cifiÃ© dans le paramÃ¨tre du cache `vary` (valeur
+par dÃ©faut : `true`).
 
 ### ~`cache_key_use_host_name`~
 
-L'option `cache_key_use_host_name` précise si les clés du cache doivent être
-inclus dans la partie du nom de l'hôte. En pratique, cela veut dire que le cache doit être
-dépendant du nom de l'hôte (valeur par défaut : `true`).
+L'option `cache_key_use_host_name` prÃ©cise si les clÃ©s du cache doivent Ãªtre
+inclus dans la partie du nom de l'hÃ´te. En pratique, cela veut dire que le cache doit Ãªtre
+dÃ©pendant du nom de l'hÃ´te (valeur par dÃ©faut : `true`).
 
 `view_cache`
 ------------
 
-*sfContext Accessor*: none (utilisé directement par le factory `view_cache_manager`)
+*sfContext Accessor*: none (utilisÃ© directement par le factory `view_cache_manager`)
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     view_cache:
@@ -549,10 +549,10 @@ dépendant du nom de l'hôte (valeur par défaut : `true`).
         prefix:                    %SF_APP_DIR%/template
 
 >**CAUTION**
->Ce factory est uniquement défini si le paramètre [`cache`](#chapter_04_sub_cache)
->est à `on`.
+>Ce factory est uniquement dÃ©fini si le paramÃ¨tre [`cache`](#chapter_04_sub_cache)
+>est Ã  `on`.
 
-Le factory `view_cache` définit une classe de cache qui doit hériter de
+Le factory `view_cache` dÃ©finit une classe de cache qui doit hÃ©riter de
 `sfCache` (Voir la section Cache pour plus d'information).
 
 `i18n`
@@ -560,7 +560,7 @@ Le factory `view_cache` définit une classe de cache qui doit hériter de
 
 *sfContext Accessor*: `$context->getI18N()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     i18n:
@@ -579,39 +579,39 @@ Le factory `view_cache` définit une classe de cache qui doit hériter de
             prefix:                    %SF_APP_DIR%/i18n
 
 >**CAUTION**
->Ce factory est uniquement défini si le paramètre [`i18n`](#chapter_04_sub_i18n)
->est à `on`.
+>Ce factory est uniquement dÃ©fini si le paramÃ¨tre [`i18n`](#chapter_04_sub_i18n)
+>est Ã  `on`.
 
 ### ~`source`~
 
-L'option `source` définit le type de conteneur pour les traductions.
+L'option `source` dÃ©finit le type de conteneur pour les traductions.
 
-*Conteneur intégrés* : `XLIFF`, `SQLite`, `MySQL`, et `gettext`.
+*Conteneur intÃ©grÃ©s* : `XLIFF`, `SQLite`, `MySQL`, et `gettext`.
 
 ### ~`debug`~
 
-L'option `debug` définit le mode de débogage. S'il est défini à `on`, les messages
-non-traduits sont décorées avec un préfixe et un suffixe (voir ci-dessous).
+L'option `debug` dÃ©finit le mode de dÃ©bogage. S'il est dÃ©fini Ã  `on`, les messages
+non-traduits sont dÃ©corÃ©es avec un prÃ©fixe et un suffixe (voir ci-dessous).
 
 ### ~`untranslated_prefix`~
 
-Le `untranslated_prefix` définit un préfixe à utiliser pour les messages non-traduits.
+Le `untranslated_prefix` dÃ©finit un prÃ©fixe Ã  utiliser pour les messages non-traduits.
 
 ### ~`untranslated_suffix`~
 
-Le `untranslated_suffix` définit un suffixe à utiliser pour les messages non-traduits.
+Le `untranslated_suffix` dÃ©finit un suffixe Ã  utiliser pour les messages non-traduits.
 
 ### ~`cache`~
 
-L'option `cache` définit un factory de cache anonyme pour être utilisé pour la mise
-en cache des données i18n (voir la section cache pour plus d'informations).
+L'option `cache` dÃ©finit un factory de cache anonyme pour Ãªtre utilisÃ© pour la mise
+en cache des donnÃ©es i18n (voir la section cache pour plus d'informations).
 
 `routing`
 ---------
 
 *sfContext Accessor*: `$context->getRouting()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     routing:
@@ -629,89 +629,89 @@ en cache des données i18n (voir la section cache pour plus d'informations).
 
 ### ~`variable_prefixes`~
 
-*Par défaut* : `:`
+*Par dÃ©faut* : `:`
 
-L'option `variable_prefixes` définit la liste des caractères qui débutent
-le nom d'une variable dans un modèle de parcours.
+L'option `variable_prefixes` dÃ©finit la liste des caractÃªres qui dÃ©butent
+le nom d'une variable dans un modÃ¨le de parcours.
 
 ### ~`segment_separators`~
 
-*Par défaut* : `/` et `.`
+*Par dÃ©faut* : `/` et `.`
 
-L'option `segment_separators` définit la liste des séparateurs de segment du parcours.
-La plupart du temps, vous ne voulez pas réécrire cette option pour l'ensemble
-du routage, mais pour des parcours spécifiques.
+L'option `segment_separators` dÃ©finit la liste des sÃ©parateurs de segment du parcours.
+La plupart du temps, vous ne voulez pas rÃ©Ã©crire cette option pour l'ensemble
+du routage, mais pour des parcours spÃ©cifiques.
 
 ### ~`generate_shortest_url`~
 
-*Par défaut* : `true` pour les nouveaux projets, `false` pour les projets mis à niveau
+*Par dÃ©faut* : `true` pour les nouveaux projets, `false` pour les projets mis Ã  niveau
 
-Si elle est à `true`, l'option `generate_shortest_url` dira au système de
-routage de générer le parcours le plus court possible. Réglez-le à `false` si vous voulez
+Si elle est Ã  `true`, l'option `generate_shortest_url` dira au systÃ¨me de
+routage de gÃ©nÃ©rer le parcours le plus court possible. RÃ©glez-le Ã  `false` si vous voulez
 que vos parcours soient compatible avec symfony 1.0 et 1.1.
 
 ### ~`extra_parameters_as_query_string`~
 
-*Par défaut* : `true` pour les nouveaux projets, `false` pour les projets mis à niveau
+*Par dÃ©faut* : `true` pour les nouveaux projets, `false` pour les projets mis Ã  niveau
 
-Lorsque certains paramètres ne sont pas utilisés dans la génération d'un parcours,
-l'`extra_parameters_as_query_string` permet à ces paramètres supplémentaires d'être
-convertie en une chaîne de caractère d'une query. Réglez-le à `false` pour revenir sur le comportement
-de symfony 1.0 ou 1.1. Dans ces versions, les paramètres supplémentaires étaient tout simplement ignorés
-par le système de routage.
+Lorsque certains paramÃ¨tres ne sont pas utilisÃ©s dans la gÃ©nÃ©ration d'un parcours,
+l'`extra_parameters_as_query_string` permet Ã  ces paramÃ¨tres supplÃ©mentaires d'Ãªtre
+convertie en une chaÃ®ne de caractÃªre d'une query. RÃ©glez-le Ã  `false` pour revenir sur le comportement
+de symfony 1.0 ou 1.1. Dans ces versions, les paramÃ¨tres supplÃ©mentaires Ã©taient tout simplement ignorÃ©s
+par le systÃ¨me de routage.
 
 ### ~`cache`~
 
-*Par défaut* : none
+*Par dÃ©faut* : none
 
-L'option `cache`  L'option cache définit un factory de cache anonyme qui est utilisé pour la mise en cache
-de la configuration du routage et des données (voir la section cache pour plus d'informations).
+L'option `cache`  L'option cache dÃ©finit un factory de cache anonyme qui est utilisÃ© pour la mise en cache
+de la configuration du routage et des donnÃ©es (voir la section cache pour plus d'informations).
 
 ### ~`suffix`~
 
-*Par défaut* : none
+*Par dÃ©faut* : none
 
-La valeur par défaut du suffixe à utiliser pour tous les parcours. Cette option est obsolète et n'est
+La valeur par dÃ©faut du suffixe Ã  utiliser pour tous les parcours. Cette option est obsolÃ¨te et n'est
 plus utile.
 
 ### ~`load_configuration`~
 
-*Par défaut* : `true`
+*Par dÃ©faut* : `true`
 
-L'option `load_configuration` définit si les fichiers `routing.yml` doivent
-être automatiquement chargés et analysés. Réglez le à `false` si vous souhaitez utiliser le
-système de routage de symfony à l'extérieur d'un projet symfony.
+L'option `load_configuration` dÃ©finit si les fichiers `routing.yml` doivent
+Ãªtre automatiquement chargÃ©s et analysÃ©s. RÃ©glez le Ã  `false` si vous souhaitez utiliser le
+systÃ¨me de routage de symfony Ã  l'extÃ©rieur d'un projet symfony.
 
 ### ~`lazy_routes_deserialize`~
 
-*Par défaut* : `false`
+*Par dÃ©faut* : `false`
 
-Si le paramètre `lazy_routes_deserialize` est à `true`, il permet une relecture
-paresseuse du cache de routage. Il peut améliorer les performances de vos
+Si le paramÃ¨tre `lazy_routes_deserialize` est Ã  `true`, il permet une relecture
+paresseuse du cache de routage. Il peut amÃ©liorer les performances de vos
 applications si vous avez un grand nombre de parcours et si la plupart des parcours
-correspondent aux premiers. Il est fortement conseillé de tester le paramètre avant
-de le déployer en production, car il peut nuire sur les performances dans certaines
+correspondent aux premiers. Il est fortement conseillÃ© de tester le paramÃ¨tre avant
+de le dÃ©ployer en production, car il peut nuire sur les performances dans certaines
 circonstances.
 
 ### ~`lookup_cache_dedicated_keys`~
 
-*Par défaut* : `false`
+*Par dÃ©faut* : `false`
 
-Le paramètre `lookup_cache_dedicated_keys` détermine comment le cache de routage est
-construit. Lorsqu'il est positionné à `false`, le cache est stocké comme une grande valeur. Lorsqu'il
-est positionné à `true` chaque parcours a son propre stockage de cache. Ce paramètre est un
-paramètre d'optimisation de performance.
+Le paramÃ¨tre `lookup_cache_dedicated_keys` dÃ©termine comment le cache de routage est
+construit. Lorsqu'il est positionnÃ© Ã  `false`, le cache est stockÃ© comme une grande valeur. Lorsqu'il
+est positionnÃ© Ã  `true` chaque parcours a son propre stockage de cache. Ce paramÃ¨tre est un
+paramÃ¨tre d'optimisation de performance.
 
-En règle générale, la valeur `false` est mieux lorsque vous utilisez une classe de cache
-basée sur un fichier (`sfFileCache` par exemple), et la valeur `true` est mieux
-lorsque vous utilisez une classe de cache basée sur la mémoire (`sfAPCCache` par exemple). 
+En rÃ¨gle gÃ©nÃ©rale, la valeur `false` est mieux lorsque vous utilisez une classe de cache
+basÃ©e sur un fichier (`sfFileCache` par exemple), et la valeur `true` est mieux
+lorsque vous utilisez une classe de cache basÃ©e sur la mÃ©moire (`sfAPCCache` par exemple). 
 
 `logger`
 --------
 
 *sfContext Accessor*: `$context->getLogger()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     logger:
@@ -732,7 +732,7 @@ lorsque vous utilisez une classe de cache basée sur la mémoire (`sfAPCCache` par
               level: debug
               file: %SF_LOG_DIR%/%SF_APP%_%SF_ENVIRONMENT%.log
 
-*Configuration par défaut pour l'environnement de `prod`* :
+*Configuration par dÃ©faut pour l'environnement de `prod`* :
 
     [yml]
     logger:
@@ -742,22 +742,22 @@ lorsque vous utilisez une classe de cache basée sur la mémoire (`sfAPCCache` par
         loggers: ~
 
 >**CAUTION**
->Ce factory est toujours défini, mais la journalisation se produit que si
->le paramètre `logging_enabled` est à `on`.
+>Ce factory est toujours dÃ©fini, mais la journalisation se produit que si
+>le paramÃ¨tre `logging_enabled` est Ã  `on`.
 
 ### ~`level`~
 
-L'option `level` définit le niveau du journal.
+L'option `level` dÃ©finit le niveau du journal.
 
 *Valeurs possibles*: `EMERG`, `ALERT`, `CRIT`, `ERR`, `WARNING`, `NOTICE`,
 `INFO`, or `DEBUG`.
 
 ### ~`loggers`~
 
-L'option `loggers` définit la liste des journaux à utiliser. La liste est un tableau de
+L'option `loggers` dÃ©finit la liste des journaux Ã  utiliser. La liste est un tableau de
 factory de journaux anonymes.
 
-*Les classes de journaux intégrées*: `sfConsoleLogger`, `sfFileLogger`, `sfNoLogger`,
+*Les classes de journaux intÃ©grÃ©es*: `sfConsoleLogger`, `sfFileLogger`, `sfNoLogger`,
 `sfStreamLogger`, et `sfVarLogger`.
 
 `controller`
@@ -765,7 +765,7 @@ factory de journaux anonymes.
 
 *sfContext Accessor*: `$context->getController()`
 
-*Configuration par défaut* :
+*Configuration par dÃ©faut* :
 
     [yml]
     controller:
@@ -775,14 +775,14 @@ Les factories de cache anonyme
 -------------------------
 
 Plusieurs factories (`view_cache`, `i18n`, et `routing`) peuvent profiter
-d'un objet du cache si il est défini dans leur configuration. La configuration
-de l'objet du cache est similaire pour toutes les factories. La clé de `cache` définit
+d'un objet du cache s'il est dÃ©fini dans leur configuration. La configuration
+de l'objet du cache est similaire pour toutes les factories. La clÃ© de `cache` dÃ©finit
 un factory de cache anonyme. Comme tout factory, il prend une `class` et une
-entrée `param`. L'entrée `param` peut prendre n'importe quelle option disponible pour la
+entrÃ©e `param`. L'entrÃ©e `param` peut prendre n'importe quelle option disponible pour la
 classe du cache.
 
 L'option `prefix` est la plus importante car elle permet de partager ou de
-séparer un cache entre différents environnements/applications/projets.
+sÃ©parer un cache entre diffÃ©rents environnements/applications/projets.
 
-*Les classes de cache intégrées*: `sfAPCCache`, `sfEAcceleratorCache`, `sfFileCache`,
+*Les classes de cache intÃ©grÃ©es*: `sfAPCCache`, `sfEAcceleratorCache`, `sfFileCache`,
 `sfMemcacheCache`, `sfNoCache`, `sfSQLiteCache`, et `sfXCacheCache`.
