@@ -29,7 +29,7 @@ Paramètres
   * `.actions`
 
     * [`error_404`](#chapter_04_sub_error_404)
-    * [`login`](#chapter_04_sub_error_404)
+    * [`login`](#chapter_04_sub_login)
     * [`secure`](#chapter_04_sub_secure)
     * [`module_disabled`](#chapter_04_sub_module_disabled)
 
@@ -52,7 +52,6 @@ Paramètres
     * [`file_link_format`](#chapter_04_sub_file_link_format)
     * [`logging_enabled`](#chapter_04_sub_logging_enabled)
     * [`no_script_name`](#chapter_04_sub_no_script_name)
-    * [`max_forwards`](#chapter_04_sub_max_forwards)
     * [`standard_helpers`](#chapter_04_sub_standard_helpers)
     * [`use_database`](#chapter_04_sub_use_database)
     * [`web_debug`](#chapter_04_sub_web_debug)
