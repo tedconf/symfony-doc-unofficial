@@ -1,4 +1,4 @@
-The factories.yml Configuration File
+﻿The factories.yml Configuration File
 ====================================
 
 Factories are core objects needed by the framework during the life of any
@@ -109,8 +109,8 @@ Factories
 
  * [`view_cache_manager`](#chapter_05_view_cache_manager)
 
-   * [`cache_key_use_vary_headers`](chapter_05_sub_cache_key_use_vary_headers)
-   * [`cache_key_use_host_name`](chapter_05_sub_cache_key_use_host_name)
+   * [`cache_key_use_vary_headers`](#chapter_05_sub_cache_key_use_vary_headers)
+   * [`cache_key_use_host_name`](#chapter_05_sub_cache_key_use_host_name)
 
  * [`view_cache`](#chapter_05_view_cache)
  * [`i18n`](#chapter_05_i18n)
