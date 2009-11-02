@@ -197,6 +197,12 @@ in symfony 1.4:
     `validation_error_class`, `validation_error_id_prefix`: These settings are
     used by the Validation helper group, which is deprecated in symfony 1.3.
 
+  * `is_internal` (in `module.yml`): The `is_internal` flag was used to
+    prevent actions from being called from a browser. This was added to
+    protect email sending in symfony 1.0. As email support does not require
+    this trick anymore, this flag will be removed and not checked anymore in
+    the symfony core code.
+
 Tasks
 -----
 
