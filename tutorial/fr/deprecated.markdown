@@ -197,6 +197,12 @@ Les paramètres suivants ont été dépréciés dans symfony 1.3 et seront retir
     `validation_error_class`, `validation_error_id_prefix` : Ces paramètres sont utilisés
     par les helpers du groupe Validation, qui est lui-même déprécié dans symfony 1.3.
 
+  * `is_internal` (dans `module.yml`): Le flag `is_internal` était utilisé pour
+    empêcher des actions d'être appelées d'un navigateur. Cela a été ajouté pour
+    protéger le courrier électronique envoyé dans symfony 1.0. Comme le support de l'email n'exige
+    plus cette ruse, ce flag sera enlevé et désormais ne sera pas vérifié dans
+    le noyau du code symfony.
+
 Tâches automatiques
 -------------------
 
