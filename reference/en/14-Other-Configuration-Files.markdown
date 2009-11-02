@@ -138,3 +138,32 @@ can include [**constants**](#chapter_03_constants).
 >The `core_compile.yml` configuration file is cached as a PHP file; the
 >process is automatically managed by the ~`sfCompileConfigHandler`~
 >[class](#chapter_14_config_handlers_yml).
+
+~`module.yml`~
+--------------
+
+The `module.yml` configuration file allows the configuration of a module. This
+configuration file is rarely used, and can only contain the entries defined
+below.
+
+The `module.yml` file needs to be stored in the `config/` sub-directory of a
+module to be loaded by symfony. The following code shows a typical
+`module.yml` content with the default values for all settings:
+
+    [yml]
+    all:
+      enabled:            true
+      view_class:         sfPHP
+      partial_view_class: sf
+
+If the `enabled` parameter is set to `false`, all actions of a module are
+disabled. They are redirected to the
+~[`module_disabled_module`](#chapter_04_the_actions_sub_section)~/~`module_disabled_action`~
+action (as defined in [`settings.yml`](#chapter_04)).
+
+The `view_class` parameter defines the view class used by all actions of the
+module (without the `View` suffix). It must inherit from `sfView`.
+
+The `partial_view_class` parameter defines the view class used for partials of
+this module (without the `PartialView` suffix). It must inherit from
+`sfPartialView`.
