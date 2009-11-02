@@ -138,3 +138,32 @@ può includere [**costanti**](#chapter_03_costanti).
 >Il file di configurazione `core_compile.yml` è messo in cache come file PHP; il
 >processo è gestito automaticamente dalla [classe](#chapter_14_config_handlers_yml)
 >~`sfCompileConfigHandler`~.
+
+~`module.yml`~
+--------------
+
+Il file di configurazione `module.yml` consente la configurazione di un modulo. Questo
+file di configurazione è utilizzato raramente, e può contenere solo le voci definite 
+di seguito.
+
+Il file `module.yml` richiede di essere memorizzato nella sotto-cartella `config/` di un
+modulo che deve essere caricato da symfony. Il codice seguente mostra il contenuto tipico
+di `module.yml` con i valori predefiniti per tutte le impostazioni:
+
+    [yml]
+    all:
+      enabled:            true
+      view_class:         sfPHP
+      partial_view_class: sf
+
+Se il parametro `enabled` è impostato a `false`, tutte le azioni di un modulo sono
+disabilitate. Queste vengono reindirizzate all'azione
+~[`module_disabled_module`](#chapter_04_the_actions_sub_section)~/~`module_disabled_action`~
+(come definito in [`settings.yml`](#chapter_04)).
+
+Il parametro `view_class` definisce la classe vista usata da tutte le azioni del
+modulo (senza il suffisso `View`). Essa deve ereditare da `sfView`.
+
+Il parametro `partial_view_class` definisce la classe vista usata per i partial di
+questo modulo (senza il suffisso `PartialView`). ssa deve ereditare da
+`sfPartialView`.
