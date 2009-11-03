@@ -389,7 +389,7 @@ selector to pinpoint which portion of the DOM to test:
 
 ### `sfTesterResponse::isValid()`
 
-You can now check whether a repsponse is well-formed XML with the response
+You can now check whether a response is well-formed XML with the response
 tester's `->isValid()` method:
 
     [php]
@@ -460,7 +460,7 @@ equivalent `php data/bin/symfony symfony:test` command.
 The `project:deploy` task has been slightly improved. It now displays the
 progress of the files transfer in real-time, but only if the `-t` option is
 passed. If not, the task is silent, except for errors of course. Speaking of
-errors, if one occurs, the output is on a red background to easy problem
+errors, if one occurs, the output is on a red background to ease problem
 identification.
 
 ### `generate:project`
@@ -515,20 +515,18 @@ You can now pass an associative array of arguments and options to
 
     [php]
     $task = new sfDoctrineConfigureDatabaseTask($this->dispatcher, $this->formatter);
-    $task->run(array(
-      'dsn' => 'mysql:dbname=mydb;host=localhost',
-    ), array(
-      'name' => 'master',
-    ));
+    $task->run(
+      array('dsn' => 'mysql:dbname=mydb;host=localhost'),
+      array('name' => 'master')
+    );
 
 The previous version, which still works:
 
     [php]
-    $task->run(array(
-      'mysql:dbname=mydb;host=localhost',
-    ), array(
-      '--name=master',
-    ));
+    $task->run(
+      array('mysql:dbname=mydb;host=localhost'),
+      array('--name=master')
+    );
 
 ### `sfBaseTask::setConfiguration()`
 
@@ -594,6 +592,16 @@ the project changes.
 The `generate:app` task now checks for a skeleton directory in your project's
 `data/skeleton/app` directory before defaulting to the skeleton bundled in the
 core.
+
+### Sending an Email from a Task
+
+You can now easily send an email from a task by using the `getMailer()`
+method.
+
+### Using the Routing in a Task
+
+You can now easily get the routing object from a task by using the
+`getRouting()` method.
 
 Exceptions
 ----------
@@ -801,8 +809,8 @@ It is now possible to specify additional options for symfony in your Doctrine
 YAML schema files. We've added some options to disable the generation of form
 and filter classes.
 
-For example in a typical many to many reference model, you don't need any form 
-or filter form classes generated. So you can now do the following.
+For example in a typical many to many reference model, you don't need any form
+or filter form classes generated. So you can now do the following:
 
     UserGroup:
       options:
@@ -819,7 +827,7 @@ or filter form classes generated. So you can now do the following.
 
 ### Form Classes Inheritance
 
-When you generate forms from your models, your models contain inheritance. 
+When you generate forms from your models, your models contain inheritance.
 The generated child classes will respect the inheritance and generate forms
 that follow the same inheritance structure.
 
@@ -829,7 +837,7 @@ We have introduced a few new tasks to help you when developing with Doctrine.
 
 #### Create Model Tables
 
-You can now individually create the tables for a specified array of models. It 
+You can now individually create the tables for a specified array of models. It
 will drop the tables first then re-create them for you. This is useful if you
 are developing some new models in an existing project/database and you don't
 want to blow away the whole database and just want to rebuild a subset of tables.
@@ -1157,7 +1165,7 @@ Two params are available in `factories.yml`:
 The view cache manager no longer refuses to cache based on whether there are
 values in the `$_GET` or `$_POST` arrays. The logic now simply confirms the
 current request is of the GET method before checking `cache.yml`. This means
-the following pages are now cachable:
+the following pages are now cacheable:
 
   * `/js/my_compiled_javascript.js?cachebuster123`
   * `/users?page=3`
@@ -1169,11 +1177,11 @@ Request
 
 The content of the request is now accessible via the `getContent()` method.
 
-### PUT and DELETE parameters
+### `PUT` and `DELETE` parameters
 
-When a request comes in with either a PUT or a DELETE HTTP method with a
+When a request comes in with either a `PUT` or a `DELETE` HTTP method with a
 content type set to `application/x-www-form-urlencoded`, symfony now parses
-the raw body and makes the parameters accessible like normal POST parameters.
+the raw body and makes the parameters accessible like normal `POST` parameters.
 
 Actions
 -------
@@ -1237,4 +1245,3 @@ from a plugin.
         }
       }
     }
-
