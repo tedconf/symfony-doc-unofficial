@@ -515,20 +515,18 @@ Vous pouvez désormais passer un tableau associatif d'arguments et d'options pou
 
     [php]
     $task = new sfDoctrineConfigureDatabaseTask($this->dispatcher, $this->formatter);
-    $task->run(array(
-      'dsn' => 'mysql:dbname=mydb;host=localhost',
-    ), array(
-      'name' => 'master',
-    ));
+    $task->run(
+      array('dsn' => 'mysql:dbname=mydb;host=localhost'),
+      array('name' => 'master')
+    );
 
 La version précédente fonctionne encore :
 
     [php]
-    $task->run(array(
-      'mysql:dbname=mydb;host=localhost',
-    ), array(
-      '--name=master',
-    ));
+    $task->run(
+      array('mysql:dbname=mydb;host=localhost'),
+      array('--name=master')
+    );
 
 ### `sfBaseTask::setConfiguration()`
 
@@ -594,6 +592,16 @@ modification du projet.
 La tâche `generate:app` vérifie maintenant un répertoire squelette dans le répertoire
 `data/skeleton/app` de votre projet avant de fournir par défaut un squelette dans le
 noyau.
+
+### Envoyer un email depuis une tâche
+
+Vous pouvez désormais envoyer facilement un email depuis une tâche en utilisant la méthode
+`getMailer()`.
+
+### Utiliser le routage dans une tâche
+
+Vous pouvez désormais récupérer facilement un objet de routage depuis une tâche en utilisant la
+méthode `getRouting()`.
 
 Exceptions
 ----------
@@ -802,7 +810,7 @@ de schéma Doctrine en YAML. Nous avons ajouté quelques options pour désactive
 de formulaire et de filtre.
 
 Par exemple, dans un modèle de référence type many-to-many, vous n'avez pas besoin générer des formulaires
-ou des classes de formulaire de filtre. Ainsi, vous pouvez désormais effectuer les opérations suivantes.
+ou des classes de formulaire de filtre. Ainsi, vous pouvez désormais effectuer les opérations suivantes :
 
     UserGroup:
       options:
@@ -1169,11 +1177,11 @@ Requête
 
 Le contenu de la requête est désormais accessible via la méthode `getContent()`.
 
-### Paramètres de PUT et DELETE
+### Paramètres de `PUT` et `DELETE`
 
-Lorsqu'une requête arrive soit avec PUT ou soit avec une méthode DELETE HTTP dont
+Lorsqu'une requête arrive soit avec `PUT` ou soit avec une méthode `DELETE` HTTP dont
 le type de contenu est `application/x-www-form-urlencoded`, symfony analyse maintenant
-le raw du body et rend accessible les paramètres comme des paramètres normaux de POST.
+le raw du body et rend accessible les paramètres comme des paramètres normaux de `POST`.
 
 Actions
 -------
@@ -1237,4 +1245,3 @@ d'un plugin.
         }
       }
     }
-
