@@ -246,6 +246,8 @@ Available Configuration Options
    * [`credentials`](#chapter_06_sub_credentials)
    * [`renderer`](#chapter_06_sub_renderer)
    * [`renderer_arguments`](#chapter_06_sub_renderer_arguments)
+   * [`type`](#chapter_06_sub_type)
+   * [`date_format`](#chapter_06_sub_date_format)
 
  * [`list`](#chapter_06_list)
 
@@ -356,6 +358,29 @@ by the `renderer_arguments` option.
 The `renderer_arguments` option defines the arguments to pass to the
 `renderer` PHP callback when rendering the field. It is only used if the
 `renderer` option is defined.
+
+### ~`type`~
+
+*Default*: `Text` for virtual columns
+
+The `type` option defines the type of the column. By default, symfony uses the
+type defined in your model definition, but if you create a virtual column, you
+can override the default `Text` type by one of the valid types:
+
+  * `ForeignKey`
+  * `Boolean`
+  * `Date`
+  * `Time`
+  * `Text`
+  * `Enum` (only available for Doctrine)
+
+### ~`date_format`~
+
+*Default*: `f`
+
+The `date_format` option defines the format to use when displaying dates. It
+can be any format recognized by the `date()` PHP function. This option is not
+used when the field type is `Date`.
 
 `actions`
 ---------
