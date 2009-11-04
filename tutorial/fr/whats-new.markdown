@@ -403,6 +403,14 @@ argument :
     [php]
     $browser->with('response')->begin()->
       isValid(true)->
+    end(); 
+
+Alternativement, si vous avez un schéma XSD ou RelaxNG à valider à nouveau, vous
+pouvez fournir le chemin de ce fichier :
+
+    [php] 
+    $browser->with('response')->begin()-> 
+      isValid('/path/to/schema.xsd')->
     end();
 
 ### Ecouter `context.load_factories`
