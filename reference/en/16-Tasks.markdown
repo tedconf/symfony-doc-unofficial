@@ -1953,8 +1953,8 @@ The `project::optimize` task optimizes a project for better performance:
 
 | Argument | Default | Description
 | -------- | ------- | -----------
-| `application` | `-` | The server name
-| `environment` | `prod` | The server name
+| `application` | `-` | The application name
+| `environment` | `prod` | The environment name
 
 
 
