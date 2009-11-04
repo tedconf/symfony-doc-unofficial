@@ -405,6 +405,14 @@ argument:
       isValid(true)->
     end();
 
+Alternatively, if you have a XSD or RelaxNG schema to validate against, you
+can provide the path to this file:
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid('/path/to/schema.xsd')->
+    end();
+
 ### Listen to `context.load_factories`
 
 You can now add listeners for the `context.load_factories` event to your
