@@ -474,29 +474,29 @@ en cache des données i18n (voir la section cache pour plus d'informations).
 *Par défaut* : `:`
 
 L'option `variable_prefixes` définit la liste des caractêres qui débutent
-le nom d'une variable dans un modèle de parcours.
+le nom d'une variable dans un modèle de route.
 
 ### ~`segment_separators`~
 
 *Par défaut* : `/` et `.`
 
-L'option `segment_separators` définit la liste des séparateurs de segment du parcours.
+L'option `segment_separators` définit la liste des séparateurs de segment de la route.
 La plupart du temps, vous ne voulez pas réécrire cette option pour l'ensemble
-du routage, mais pour des parcours spécifiques.
+du routage, mais pour des routes spécifiques.
 
 ### ~`generate_shortest_url`~
 
 *Par défaut* : `true` pour les nouveaux projets, `false` pour les projets mis à niveau
 
 Si elle est à `true`, l'option `generate_shortest_url` dira au système de
-routage de générer le parcours le plus court possible. Réglez-le à `false` si vous voulez
-que vos parcours soient compatible avec symfony 1.0 et 1.1.
+routage de générer la route la plus courte possible. Réglez-le à `false` si vous voulez
+que vos routes soient compatibles avec symfony 1.0 et 1.1.
 
 ### ~`extra_parameters_as_query_string`~
 
 *Par défaut* : `true` pour les nouveaux projets, `false` pour les projets mis à niveau
 
-Lorsque certains paramètres ne sont pas utilisés dans la génération d'un parcours,
+Lorsque certains paramètres ne sont pas utilisés dans la génération d'une route,
 l'`extra_parameters_as_query_string` permet à ces paramètres supplémentaires d'être
 convertie en une chaîne de caractêre d'une query. Réglez-le à `false` pour revenir sur le comportement
 de symfony 1.0 ou 1.1. Dans ces versions, les paramètres supplémentaires étaient tout simplement ignorés
@@ -511,7 +511,7 @@ de la configuration du routage et des données (voir la section cache pour plus 
 
 *Par défaut* : none
 
-La valeur par défaut du suffixe à utiliser pour tous les parcours. Cette option est obsolète et n'est
+La valeur par défaut du suffixe à utiliser pour toutes les routes. Cette option est obsolète et n'est
 plus utile.
 
 ### ~`load_configuration`~
@@ -528,8 +528,8 @@ système de routage de symfony à l'extérieur d'un projet symfony.
 
 Si le paramètre `lazy_routes_deserialize` est à `true`, il permet une relecture
 paresseuse du cache de routage. Il peut améliorer les performances de vos
-applications si vous avez un grand nombre de parcours et si la plupart des parcours
-correspondent aux premiers. Il est fortement conseillé de tester le paramètre avant
+applications si vous avez un grand nombre de route et si la plupart des routes
+correspondent aux premières. Il est fortement conseillé de tester le paramètre avant
 de le déployer en production, car il peut nuire sur les performances dans certaines
 circonstances.
 
@@ -542,7 +542,7 @@ circonstances.
 
 Le paramètre `lookup_cache_dedicated_keys` détermine comment le cache de routage est
 construit. Lorsqu'il est positionné à `false`, le cache est stocké comme une grande valeur. Lorsqu'il
-est positionné à `true` chaque parcours a son propre stockage de cache. Ce paramètre est un
+est positionné à `true` chaque route a son propre stockage de cache. Ce paramètre est un
 paramètre d'optimisation de performance.
 
 En règle générale, la valeur `false` est mieux lorsque vous utilisez une classe de cache
