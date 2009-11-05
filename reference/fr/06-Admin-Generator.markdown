@@ -382,7 +382,7 @@ L'option `date_format` définit le format à utiliser lors de l'affichage des da
 peut être de plusieurs formats reconnus par la classe `sfDateFormat`. Cette option n'est pas
 utilisée quand le champs est de type `Date`.
 
-Les symbols suivants peuvent être utilisés pour le format :
+Les symboles suivants peuvent être utilisés pour le format :
 
  * `G`: Era 
  * `y`: year 
