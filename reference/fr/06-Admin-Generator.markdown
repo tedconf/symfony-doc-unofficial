@@ -379,8 +379,28 @@ pouvez surcharger le type par défaut `Text` par un autre type valide :
 Par défaut* : `f` 
 
 L'option `date_format` définit le format à utiliser lors de l'affichage des dates. Il
-peut être de plusieurs formats reconnus par la fonction PHP `date()`. Cette option n'est pas
+peut être de plusieurs formats reconnus par la classe `sfDateFormat`. Cette option n'est pas
 utilisée quand le champs est de type `Date`.
+
+Les symbols suivants peuvent être utilisés pour le format :
+
+ * `G`: Era 
+ * `y`: year 
+ * `M`: mon 
+ * `d`: mday 
+ * `h`: Hour12 
+ * `H`: hours 
+ * `m`: minutes 
+ * `s`: seconds 
+ * `E`: wday 
+ * `D`: yday 
+ * `F`: DayInMonth 
+ * `w`: WeekInYear 
+ * `W`: WeekInMonth 
+ * `a`: AMPM 
+ * `k`: HourInDay 
+ * `K`: HourInAMPM 
+ * `z`: TimeZone
 
 `actions`
 ---------
