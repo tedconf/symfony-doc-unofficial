@@ -379,8 +379,28 @@ can override the default `Text` type by one of the valid types:
 *Default*: `f`
 
 The `date_format` option defines the format to use when displaying dates. It
-can be any format recognized by the `date()` PHP function. This option is not
+can be any format recognized by the `sfDateFormat` class. This option is not
 used when the field type is `Date`.
+
+The following tokens can be used for the format:
+
+ * `G`: Era
+ * `y`: year
+ * `M`: mon
+ * `d`: mday
+ * `h`: Hour12
+ * `H`: hours
+ * `m`: minutes
+ * `s`: seconds
+ * `E`: wday
+ * `D`: yday
+ * `F`: DayInMonth
+ * `w`: WeekInYear
+ * `W`: WeekInMonth
+ * `a`: AMPM
+ * `k`: HourInDay
+ * `K`: HourInAMPM
+ * `z`: TimeZone
 
 `actions`
 ---------
