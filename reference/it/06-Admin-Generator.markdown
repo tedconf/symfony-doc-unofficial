@@ -379,8 +379,28 @@ virtuale, si può sovrascrivere il tipo `Text` predefinito con uno dei tipi vali
 *Predefinito*: `f`
 
 L'opzione `date_format` definisce il formato da usare quando si visualizzano le date. Può
-essere qualsiasi formato riconosciuto dalla funzione PHP `date()`. Questa opzione non è
+essere qualsiasi formato riconosciuto dalla classe `sfDateFormat`. Questa opzione non è
 usata quando il tipo del campo è `Date`.
+
+Per il formato, possono essere utilizzati i seguenti token:
+
+ * `G`: Era
+ * `y`: year
+ * `M`: mon
+ * `d`: mday
+ * `h`: Hour12
+ * `H`: hours
+ * `m`: minutes
+ * `s`: seconds
+ * `E`: wday
+ * `D`: yday
+ * `F`: DayInMonth
+ * `w`: WeekInYear
+ * `W`: WeekInMonth
+ * `a`: AMPM
+ * `k`: HourInDay
+ * `K`: HourInAMPM
+ * `z`: TimeZone
 
 `actions`
 ---------
