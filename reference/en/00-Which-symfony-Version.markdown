@@ -3,8 +3,8 @@ Which symfony Version?
 
 This book has been written for both symfony 1.3 and symfony 1.4. As writing a
 single book for two different versions of a software is quite unusual, this
-short chapter explains how it is possible, what are the main differences
-between the two version, and how to make the best choice for your projects.
+section explains what are the main differences between the two versions, and
+how to make the best choice for your projects.
 
 Both symfony 1.3 and symfony 1.4 versions have been released at about the same
 time (at the end of 2009). As a matter of fact, they both have the **exact
@@ -12,10 +12,10 @@ same feature set**. The only difference between the two versions is on how
 they support backward compatibility with older symfony versions.
 
 Symfony 1.3 is the release you want to use if you need to upgrade a legacy
-project that uses an older symfony versions (1.0, 1.1, or 1.2). It has a
+project that uses an older symfony version (1.0, 1.1, or 1.2). It has a
 backward compatibility layer and all the features that have been deprecated
-during the 1.3 development life cycle are still available. It means that
-upgrading is easy, simple, and safe.
+during the 1.3 development period are still available. It means that upgrading
+is easy, simple, and safe.
 
 But if you start a new project today, you should use symfony 1.4. This version
 has the same feature set as symfony 1.3 but all the deprecated features and
@@ -29,5 +29,5 @@ your code to remove the deprecated features and eventually move to symfony 1.4
 to benefit from the long term support. You have plenty of time to plan the
 move as symfony 1.3 is supported for a year (until November 2010).
 
-As this book don't describe deprecated features, all examples work equally
+As this book does not describe deprecated features, all examples work equally
 well on both versions.
