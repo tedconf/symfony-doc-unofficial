@@ -1,33 +1,33 @@
-Quelle version symfony ?
+ï»¿Quelle version symfony ?
 ======================
 
-Ce livre a été écrit pour les deux versions (symfony 1.3 et symfony 1.4). Bien que l'écriture
-d'un livre unique pour deux versions différentes d'un logiciel est assez inhabituel, ce
-court chapitre explique comment c'est possible, quelles sont les principales différences
+Ce livre a Ã©tÃ© Ã©crit pour les deux versions (symfony 1.3 et symfony 1.4). Bien que l'Ã©criture
+d'un livre unique pour deux versions diffÃ©rentes d'un logiciel est assez inhabituel, ce
+court chapitre explique comment c'est possible, quelles sont les principales diffÃ©rences
 entre les deux versions, et comment faire le meilleur choix pour vos projets.
 
-Symfony 1.3 et symfony 1.4 ont été livrées à peu près au même
-moment (à la fin de 2009). En fait, ils ont tous les deux **exactement
-les mêmes fonctionnalités**. La seule différence entre les deux versions est sur la manière dont ils
-soutiennent la compatibilité descendante avec les anciennes versions de symfony.
+Symfony 1.3 et symfony 1.4 ont Ã©tÃ© livrÃ©es Ã  peu prÃ¨s au mÃªme
+moment (Ã  la fin de 2009). En fait, ils ont tous les deux **exactement
+les mÃªmes fonctionnalitÃ©s**. La seule diffÃ©rence entre les deux versions est sur la maniÃ¨re dont ils
+soutiennent la compatibilitÃ© descendante avec les anciennes versions de symfony.
 
-Symfony 1.3 est la version à utiliser si vous devez mettre à jour un
+Symfony 1.3 est la version Ã  utiliser si vous devez mettre Ã  jour un
 projet qui utilise une ancienne version de symfony (1.0, 1.1 ou 1.2). Elle a une
-couche de compatibilité ascendante et toutes les fonctionnalités qui ont été dépréciées
-au cours du cycle de vie du développement 1.3 sont encore disponibles. Cela signifie que
-l'évolution est facile, simple et sûr.
+couche de compatibilitÃ© ascendante et toutes les fonctionnalitÃ©s qui ont Ã©tÃ© dÃ©prÃ©ciÃ©es
+au cours du cycle de vie du dÃ©veloppement 1.3 sont encore disponibles. Cela signifie que
+l'Ã©volution est facile, simple et sÃ»r.
 
-Mais si vous démarrez un nouveau projet aujourd'hui, vous devez utiliser symfony 1.4. Cette version
-possède les mêmes fonctionnalités que symfony 1.3, mais toutes les fonctionnalités dépréciées et
-la couche de compatibilité a été supprimée. Cette version est plus propre et aussi un peu plus
+Mais si vous dÃ©marrez un nouveau projet aujourd'hui, vous devez utiliser symfony 1.4. Cette version
+possÃ¨de les mÃªmes fonctionnalitÃ©s que symfony 1.3, mais toutes les fonctionnalitÃ©s dÃ©prÃ©ciÃ©es et
+la couche de compatibilitÃ© a Ã©tÃ© supprimÃ©e. Cette version est plus propre et aussi un peu plus
 rapide que symfony 1.3. Un autre grand avantage de l'utilisation de symfony 1.4 est son
-plus long support. Avoir une version supportée à long terme, c'est un maintien par l'équipe
+plus long support. Avoir une version supportÃ©e Ã  long terme, c'est un maintien par l'Ã©quipe
 de symfony pendant trois ans (jusqu'en Novembre 2012).
 
-Bien sûr, vous pouvez migrer vos projets vers symfony 1.3 et puis, lentement, mettre à jour
-votre code pour supprimer les fonctionnalités obsolètes et finir par passer à symfony 1.4
-pour bénéficier du support à long terme. Vous avez beaucoup plus de temps pour planifier
-le changement de symfony 1.3, qui est pris en charge pour une année (jusqu'en Novembre 2010).
+Bien sÃ»r, vous pouvez migrer vos projets vers symfony 1.3 et puis, lentement, mettre Ã  jour
+votre code pour supprimer les fonctionnalitÃ©s obsolÃ¨tes et finir par passer Ã  symfony 1.4
+pour bÃ©nÃ©ficier du support Ã  long terme. Vous avez beaucoup plus de temps pour planifier
+le changement de symfony 1.3, qui est pris en charge pour une annÃ©e (jusqu'en Novembre 2010).
 
-Comme ce livre ne décrit pas les fonctionnalités dépréciées, tous les exemples fonctionnent aussi
+Comme ce livre ne dÃ©crit pas les fonctionnalitÃ©s dÃ©prÃ©ciÃ©es, tous les exemples fonctionnent aussi
 bien sur les deux versions.
