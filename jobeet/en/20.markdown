@@ -396,7 +396,7 @@ Update the `search` and `delete` actions:
       // ...
     }
 
-Eventually, modify the `routing.yml` file to take these changes into account:
+Now, modify the `routing.yml` file to take these changes into account:
 
     [yml]
     # apps/frontend/config/routing.yml
@@ -481,6 +481,24 @@ Eventually, modify the `routing.yml` file to take these changes into account:
       url:   /
       param: { module: sfJobeetJob, action: index }
 
+Eventually, enable the plugin by hand in `ProjectConfiguration.class.php` as
+it was not installed via the `plugin:install` task:
+
+    [php]
+    // config/ProjectConfiguration.class.php
+    class ProjectConfiguration extends sfProjectConfiguration
+    {
+      public function setup()
+      {
+<propel>
+        $this->enablePlugins('sfPropelPlugin', 'sfGuardPlugin', 'sfFormExtraPlugin', 'sfJobeetPlugin');
+</propel>
+<doctrine>
+        $this->enablePlugins('sfDoctrinePlugin', 'sfDoctrineGuardPlugin', 'sfFormExtraPlugin', 'sfJobeetPlugin');
+</doctrine>
+      }
+    }
+
 If you try to browse the Jobeet website now, you will have exceptions
 telling you that the modules are not enabled. As plugins are shared amongst
 all applications in a project, you need to specifically enable the module you
@@ -500,38 +518,6 @@ need for a given application in its `settings.yml` configuration file:
 
 The last step of the migration is to fix the functional tests where we test
 for the module name.
-
->**SIDEBAR**
->Plugin Activation
->
->For a plugin to be available in a project, it must be enabled in the
->`ProjectConfiguration` class.
->
->This step is not needed with the default configuration, as symfony has a
->"black-list" approach that enables all plugins except some of them:
->
->     [php]
->     // config/ProjectConfiguration.class.php
->     public function setup()
->     {
->       $this->enableAllPluginsExcept(array('sfDoctrinePlugin', 'sfCompat10Plugin'));
->     }
->
->This approach is needed to maintain backward compatibility with older symfony
->versions, but it is better to have a "white-list" approach and use the
->`enablePlugins()` method instead:
->
->     [php]
->     // config/ProjectConfiguration.class.php
->     public function setup()
->     {
-<propel>
->       $this->enablePlugins(array('sfPropelPlugin', 'sfGuardPlugin', 'sfFormExtraPlugin', 'sfJobeetPlugin'));
-</propel>
-<doctrine>
->       $this->enablePlugins(array('sfDoctrinePlugin', 'sfDoctrineGuardPlugin', 'sfFormExtraPlugin', 'sfJobeetPlugin'));
-</doctrine>
->     }
 
 ### The Tasks
 
