@@ -1,11 +1,12 @@
-Installation du ﻿Projet
+﻿Installation du ﻿Projet
 =============
 
 Dans symfony, les **applications** partageant le même modèle de données sont regroupés dans des
 **projets**. Pour la plupart des projets, vous avez deux applications différentes : un
 frontend et un backend.
 
-### Création du projet
+Création du projet
+----------------
 
 Depuis le répertoire `sfproject/`, exécuter la tâche symfony `generate:project` pour
 créer le projet symfony:
@@ -45,7 +46,8 @@ lors de l'exécution d'une tâche.
 Ainsi, à partir de maintenant, au lieu d'utiliser le chemin complet pour le programme
 symfony, vous pouvez utiliser le raccourci `symfony`.
 
-### Configuration de la base de données
+Configuration de la base de données
+------------------------
 
 Le framework Symfony supporte toutes les [PDO](http://www.php.net/PDO)-soutenus
 par des bases de données (MySQL, PostgreSQL, SQLite, Oracle, MSSQL, ...) hors de la boîte. Au
@@ -66,7 +68,8 @@ accéder à votre base de donnée sur le serveur de développement, omettez simp
 >du projet avec la tâche `generate:project`. Et si vous ne voulez pas utiliser un
 >ORM, passer juste --orm=none.
 
-### Création de l'application
+Création de l'application
+--------------------
 
 Maintenant, créez l'application frontend en exécutant la tâche `generate:app` :
 
@@ -112,7 +115,8 @@ répertoire `apps/frontend/` :
 >[CSRF](http://en.wikipedia.org/wiki/CSRF), prenez le temps d'en apprendre d'avantage sur
 >ces failles de sécurité.
 
-### Droits sur les répertoires structurés
+Droits sur les répertoires structurés
+--------------------------
 
 Avant d'essayer d'accéder à votre projet nouvellement créé, vous devez configurer l'écriture
 sur les répertoires `cache/` et `log/` à des niveaux appropriés,
