@@ -1,4 +1,4 @@
-Le fichier de configuration databases.yml
+﻿Le fichier de configuration databases.yml
 ====================================
 
 Le fichier de configuration ~`databases.yml`~ permet la configuration de
@@ -61,6 +61,14 @@ Propel
       propel:
         param:
           classname:  DebugPDO
+          debug:
+            realmemoryusage: true
+            details:
+              time:       { enabled: true }
+              slow:       { enabled: true, threshold: 0.1 }
+              mem:        { enabled: true }
+              mempeak:    { enabled: true }
+              memdelta:   { enabled: true }
 
     test:
       propel:
@@ -91,6 +99,31 @@ Les paramètres suivants peuvent être personnalisés dans la section `param` :
  | `encoding`   | Le jeu de caractères par défaut          | `UTF-8`           |
  | `persistent` | Pour créer des connexions persistantes   | `false`           |
  | `options`    | Une série d'options Propel               | -                 |
+ | `debug`      | Options pour la classe `DebugPDO`        | n/a               |
+
+L'entrée `debug` définit toutes les options décrites dans la
+[documentation](http://propel.phpdb.org/docs/api/1.4/runtime/propel-util/DebugPDO.html#class_details) Propel.
+Le YAML suivant montre toutes les options disponibles :
+
+    [yml]
+    debug:
+      realmemoryusage: true
+      details:
+        time:
+          enabled: true
+        slow:
+          enabled: true
+          threshold: 0.001
+        memdelta:
+          enabled: true
+        mempeak:
+          enabled: true
+        method:
+          enabled: true
+        mem:
+          enabled: true
+        querycount:
+          enabled: true
 
 Doctrine
 --------
