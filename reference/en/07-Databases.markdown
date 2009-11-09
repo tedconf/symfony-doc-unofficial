@@ -61,6 +61,14 @@ Propel
       propel:
         param:
           classname:  DebugPDO
+          debug:
+            realmemoryusage: true
+            details:
+              time:       { enabled: true }
+              slow:       { enabled: true, threshold: 0.1 }
+              mem:        { enabled: true }
+              mempeak:    { enabled: true }
+              memdelta:   { enabled: true }
 
     test:
       propel:
@@ -91,6 +99,31 @@ The following parameters can be customized under the `param` section:
  | `encoding`   | The default charset                      | `UTF-8`       |
  | `persistent` | Whether to create persistent connections | `false`       |
  | `options`    | A set of Propel options                  | -             |
+ | `debug`      | Options for the `DebugPDO` class         | n/a           |
+
+The `debug` entry defines all the options described in the Propel
+[documentation](http://propel.phpdb.org/docs/api/1.4/runtime/propel-util/DebugPDO.html#class_details).
+The following YAML shows all the available options:
+
+    [yml]
+    debug:
+      realmemoryusage: true
+      details:
+        time:
+          enabled: true
+        slow:
+          enabled: true
+          threshold: 0.001
+        memdelta:
+          enabled: true
+        mempeak:
+          enabled: true
+        method:
+          enabled: true
+        mem:
+          enabled: true
+        querycount:
+          enabled: true
 
 Doctrine
 --------
