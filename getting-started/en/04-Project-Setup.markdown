@@ -5,7 +5,8 @@ In symfony, **applications** sharing the same data model are regrouped into
 **projects**. For most projects, you will have two different applications: a
 frontend and a backend.
 
-### Project Creation
+Project Creation
+----------------
 
 From the `sfproject/` directory, run the symfony `generate:project` task to
 actually create the symfony project:
@@ -45,7 +46,8 @@ when running a task.
 So, from now on, instead of using the fully qualified path to the symfony
 program, you can use the `symfony` shortcut.
 
-### Configuring the Database
+Configuring the Database
+------------------------
 
 The symfony framework supports all [PDO](http://www.php.net/PDO)-supported
 databases (MySQL, PostgreSQL, SQLite, Oracle, MSSQL, ...) out of the box. On
@@ -66,7 +68,8 @@ your database on the development server, just omit the third argument.
 >the project with the `generate:project` task. And if you don't want to use an
 >ORM, just pass `--orm=none`.
 
-### Application Creation
+Application Creation
+--------------------
 
 Now, create the frontend application by running the `generate:app` task:
 
@@ -112,7 +115,8 @@ creates the default directory structure needed for the application under the
 >[CSRF](http://en.wikipedia.org/wiki/CSRF), take the time to learn more these
 >security vulnerabilities.
 
-### Directory Structure Rights
+Directory Structure Rights
+--------------------------
 
 Before trying to access your newly created project, you need to set the write
 permissions on the `cache/` and `log/` directories to the appropriate levels,
