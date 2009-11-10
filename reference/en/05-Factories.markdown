@@ -235,8 +235,7 @@ Here are the options available for the built-in queues classes:
 
     * The column name to use for message storage (`message` by default)
 
-    * The method to call to retrieve the messages to send (optional). It
-      receives the queue options as a argument.
+    * The method to call to retrieve the messages to send (optional).
 
  * `Swift_PropelSpool`:
 
@@ -245,7 +244,7 @@ Here are the options available for the built-in queues classes:
     * The column name to use for message storage (`message` by default)
 
     * The method to call to retrieve the messages to send (optional). It
-      receives the queue options as a argument.
+      receives the current Criteria as an argument.
 
 The configuration below shows a typical configuration for a Doctrine spool:
 

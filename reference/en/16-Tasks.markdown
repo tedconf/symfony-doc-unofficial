@@ -1986,7 +1986,7 @@ The `project:permissions` task fixes directory permissions:
 
 The `project::send-emails` task sends emails stored in a queue:
 
-    $ php symfony project:send-emails [--application[="..."]] [--env="..."] 
+    $ php symfony project:send-emails [--application[="..."]] [--env="..."] [--message-limit[="..."]] [--time-limit[="..."]] 
 
 
 
@@ -1996,11 +1996,21 @@ The `project::send-emails` task sends emails stored in a queue:
 | ----------------- | ------- | -----------
 | `--application` | `1` | The application name
 | `--env` | `dev` | The environment
+| `--message-limit` | `0` | The maximum number of messages to send
+| `--time-limit` | `0` | The time limit for sending messages (in seconds)
 
 
 The `project:send-emails` sends emails stored in a queue:
 
     php symfony project:send-emails
+
+You can limit the number of messages to send:
+
+    php symfony project:send-emails --message-limit=10
+
+Or limit to time (in seconds):
+
+    php symfony project:send-emails --time-limit=10
 
 ### ~`project::upgrade1.3`~
 
