@@ -235,8 +235,7 @@ Voici les options disponibles pour les classes intégrées des files d'attente :
 
     * Le nom de la colonne à utiliser pour le stockage de messages (`message` par défaut)
 
-    * La méthode à appeler pour récupérer les messages à envoyer (facultatif). Il
-      reçoit les options de la file d'attente comme un argument.
+    * La méthode à appeler pour récupérer les messages à envoyer (facultatif).
 
  * `Swift_PropelSpool`:
 
@@ -245,7 +244,7 @@ Voici les options disponibles pour les classes intégrées des files d'attente :
     * Le nom de la colonne à utiliser pour le stockage de messages (`message` par défaut)
 
     * La méthode à appeler pour récupérer les messages à envoyer (facultatif). Il
-      reçoit les options de la file d'attente comme un argument.
+      reçoit le Criteria courant comme un argument.
 
 La configuration ci-dessous montre une configuration typique pour un spool de Doctrine :
 
