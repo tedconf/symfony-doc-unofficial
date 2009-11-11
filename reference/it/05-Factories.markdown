@@ -236,8 +236,7 @@ Queste sono le opzioni disponibili per le classi built-in delle code:
 
     * Il nome della colonna da usare per memorizzare il messaggio (Predefinito `message`)
 
-    * Il metodo da chiamare per recuperare i messaggi da inviare (facoltativo). Esso
-      riceve le opzioni della coda come argomento.
+    * Il metodo da chiamare per recuperare i messaggi da inviare (facoltativo).
 
  * `Swift_PropelSpool`:
 
@@ -246,7 +245,7 @@ Queste sono le opzioni disponibili per le classi built-in delle code:
     * Il nome della colonna da usare per memorizzare il messaggio (Predefinito `message`)
 
     * Il metodo da chiamare per recuperare i messaggi da inviare (facoltativo). Esso
-      riceve le opzioni della coda come argomento.
+      riceve il Criteria corrente come argomento.
 
 La configurazione sottostante è una configurazione tipica per uno spool di Doctrine:
 

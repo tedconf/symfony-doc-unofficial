@@ -1999,9 +1999,9 @@ Il task `project:permissions` corregge i permessi delle cartelle:
 
 ### ~`project::send-emails`~
 
-Il task `project::send-emails` invia le email memorizzate in una cosa:
+Il task `project::send-emails` invia le email memorizzate in una coda:
 
-    $ php symfony project:send-emails [--application[="..."]] [--env="..."] 
+    $ php symfony project:send-emails [--application[="..."]] [--env="..."] [--message-limit[="..."]] [--time-limit[="..."]] 
 
 
 
@@ -2011,11 +2011,21 @@ Il task `project::send-emails` invia le email memorizzate in una cosa:
 | --------------------- | ----------- | -----------
 | `--application` | `1` | Il nome dell'applicazione
 | `--env` | `dev` | L'ambiente
+| `--message-limit` | `0` | Il massimo numero di messaggi da inviare
+| `--time-limit` | `0` | Il termine di tempo per l'invio dei messaggi (in secondi)
 
 
 `project:send-emails` invia le email memorizzate in una coda:
 
     php symfony project:send-emails
+
+È possibile limitare il numero di messaggi da inviare:
+
+    php symfony project:send-emails --message-limit=10
+
+O limitare il tempo (in secondi):
+
+    php symfony project:send-emails --time-limit=10
 
 ### ~`project::upgrade1.3`~
 
