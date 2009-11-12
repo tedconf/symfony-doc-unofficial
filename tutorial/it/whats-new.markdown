@@ -191,6 +191,11 @@ I validatori ora implementano un'interfaccia fluida per i seguenti metodi:
   * `sfValidatorBase`: `addMessage()`, `setMessage()`, `setMessages()`,
     `addOption()`, `setOption()`, `setOptions()`, `addRequiredOption()`
 
+### `sfValidatorFile`
+
+Viene lanciata un'eccezione quando si crea un'istanza di sfValidatorFile e
+`file_uploads` è disabilitato nel `php.ini`.
+
 Form
 ----
 
@@ -289,7 +294,7 @@ Alcuni metodi di `sfForm` ora implementano un'interfaccia fluida:
 Autoloader
 ----------
 
-Tutti gli autoloader di symfony ora trascurano le differenze tra maiuscolo e
+Tutti gli autoloader di symfony ora trascurano le differenze tra maiuscole e
 minuscole, seguendo lo stesso comportamento di PHP.
 
 ### `sfAutoloadAgain` (SPERIMENTALE)
@@ -390,6 +395,32 @@ puntare esattamente alla porzione di DOM da testare:
       checkForm('ArticleForm', '#articleForm')->
     end();
 
+### `sfTesterResponse::isValid()`
+
+Si può ora  verificare se una risposta è un XML ben formato, con il metodo
+del tester della risposta `->isValid()`:
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid()->
+    end();
+
+Si può anche validare la risposta rispetto al suo tipo di documento, passando
+`true` come parametro:
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid(true)->
+    end();
+
+In alternativa, se si ha uno schema XSD o RelaxNG per la validazione, si può
+fornire il suo percorso:
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid('/path/to/schema.xsd')->
+    end();
+
 ### Ascoltare `context.load_factories`
 
 Si possono ora aggiungere ai propri test funzionali degli ascoltatori per
@@ -478,6 +509,12 @@ Si possono trovare maggiori informazioni in questo
 [articolo](http://www.symfony-project.org/blog/2009/06/10/new-in-symfony-1-3-project-creation-customization)
 del blog ufficiale di symfony.
 
+Si può anche aggiungere un secondo parametro "author" durante la generazione
+di un progetto, che specifica il valore da usare per il tag `@author` quando
+symfony genera le nuove classi.
+
+    $ php /path/to/symfony generate:project foo "Joe Schmo"
+
 ### `sfFileSystem::execute()`
 
 Il metodo `sfFileSystem::execute()` sostituisce il metodo `sfFileSystem::sh()`
@@ -499,20 +536,18 @@ Si può ora passare un array associativo di parametri ed opzioni al task
 
     [php]
     $task = new sfDoctrineConfigureDatabaseTask($this->dispatcher, $this->formatter);
-    $task->run(array(
-      'dsn' => 'mysql:dbname=mydb;host=localhost',
-    ), array(
-      'name' => 'master',
-    ));
+    $task->run(
+      array('dsn' => 'mysql:dbname=mydb;host=localhost'),
+      array('name' => 'master')
+    );
 
 La versione precedente, che funziona ancora:
 
     [php]
-    $task->run(array(
-      'mysql:dbname=mydb;host=localhost',
-    ), array(
-      '--name=master',
-    ));
+    $task->run(
+      array('mysql:dbname=mydb;host=localhost'),
+      array('--name=master')
+    );
 
 ### `sfBaseTask::setConfiguration()`
 
@@ -572,7 +607,23 @@ mettendo in cache la dislocazione dei file dei template dell'applicazione.
 Questo task dovrebbe essere usato solo su un server di produzione. Non
 dimenticare di eseguire nuovamente il task ogni volta che il progetto cambia.
 
-    $ php symfony project:optimize
+    $ php symfony project:optimize frontend
+
+### `generate:app`
+
+Il task `generate:app` ora cerca uno scheletro di cartelle nella cartella
+`data/skeleton/app` del progetto, prima di usare lo scheletro predefinito
+distribuito con symfony.
+
+### Invio di Email da un Task
+
+Si può ora inviare facilmente una email da un task, usando il metodo
+`getMailer()`.
+
+### Usare il Routing in un Task
+
+Si può ora recuperare facilmente l'oggetto routing da un task, usando
+il metodo `getRouting()`.
 
 Eccezioni
 ---------
@@ -595,11 +646,57 @@ Propel è stato aggiornato alla versione 1.4. Si faccia riferimento al sito
 di Propel per maggior informazioni sull'aggiornamento
 (http://propel.phpdb.org/trac/wiki/Users/Documentation/1.4).
 
+### Comportamenti di Propel
+
+Le classi di build personalizzate su cui symfony si appoggiava per estendere
+Propel sono state migrate al nuovo sistema di comportamenti di Propel 1.4.
+
 ### `propel:insert-sql`
 
 Prima che `propel:insert-sql` rimuova tutti i dati da un database, chiede una
 conferma. Poiché questo task può rimuovere dati da molti database, ora mostra
 il nome della connessione dei database coinvolti.
+
+### `propel:generate-module`, `propel:generate-admin`, `propel:generate-admin-for-route`
+
+The `propel:generate-module`, `propel:generate-admin`, and
+`propel:generate-admin-for-route` tasks now takes a `--actions-base-class` option that allows
+the configuration of the actions base class for the generated modules.
+
+### Comportamenti di Propel
+
+Propel 1.4 ha introdotto un'implementazione dei comportamenti.
+Le classi personalizzate di symfony sono state migrate a questo nuovo sistema.
+
+Se si vogliono aggiungere dei comportamenti nativi ai modelli di Propel, si
+può ora usare lo `schema.yml`:
+
+    [yml]
+    classes:
+      Article:
+        propel_behaviors:
+          timestampable: ~
+
+Oppure, usando la vecchia sintassi di `schema.yml`:
+
+    [yml]
+    propel:
+      article:
+        _propel_behaviors:
+          timestampable: ~
+
+### Disabilitare la generazione di form
+
+Ora si può disabilitare la generazione di form su alcuni modelli, passando
+ dei parametri al comportamento `symfony` di Propel:
+
+    [yml]
+    classes:
+      UserGroup:
+        propel_behaviors:
+          symfony:
+            form: false
+            filter: false
 
 Routing
 -------
@@ -610,6 +707,18 @@ La richiesta predefinita `\d+` è ora applicata a `sfObjectRouteCollection`
 solo quando l'opzione `column` è il predefinito `id`. Questo vuol dire
 che non si ha bisogno di fornire una richiesta alternativa per colonne
 non numeriche (come ad esempio `slug`).
+
+### Opzioni `sfObjectRouteCollection`
+
+Una nuova opzione `default_params` è stata aggiunta a `sfObjectRouteCollection`.
+Consente di registrare dei parametri predefiniti per ogni rotta generata:
+
+    [yml]
+    forum_topic:
+      class: sfDoctrineRouteCollection
+      options:
+        default_params:
+          section: forum
 
 CLI
 ---
@@ -730,8 +839,9 @@ generazione di classi di form e di filtri.
 
 Ad esempio, in un tipico modello di riferimento molti-a-molti, non si ha
 bisogno di generare classi di form né di filtri. Quindi si può fare in
-nel modo seguente.
+nel modo seguente:
 
+    [yml]
     UserGroup:
       options:
         symfony:
@@ -1002,6 +1112,21 @@ per configurare Doctrine. Questo vuol dire che la configurazione di Doctrine
 può essere facilmente personalizzata da un plugin, a patto che il plugin sia
 abilitato prima di `sfDoctrinePlugin`.
 
+### `doctrine:generate-module`, `doctrine:generate-admin`, `doctrine:generate-admin-for-route`
+
+I task `doctrine:generate-module`, `doctrine:generate-admin` e
+`doctrine:generate-admin-for-route` ora accettano un'opzione
+`--actions-base-class`, che consente la configurazione delle classi base delle
+azioni per i moduli generati.
+
+### Tag per i metodi magici
+
+I metodi magici getter e setter che symfony aggiunge ai modelli di Doctrine
+sono ora rappresentati nella testata di documentazione di ogni classe base
+generata. Se l'IDE in uso supporta il completamento del codice, ora si
+dovrebbero avere i metodi degli oggetti del modello come `getPippoPluto()`
+e `setPippoPluto()`, dove `PippoPluto` è un nome di campo in CamelCase.
+
 Web Debug Toolbar
 -----------------
 
@@ -1093,12 +1218,12 @@ Richiesta
 Il contenuto della richiesta è ora accessibile tramite il metodo
 `getContent()`.
 
-### Parametri PUT e DELETE
+### Parametri `PUT` e `DELETE`
 
-Quando una richiesta arriva con metodo HTTP PUT o DELETE ed il
+Quando una richiesta arriva con metodo HTTP `PUT` o `DELETE` ed il
 content-type impostato a `application/x-www-form-urlencoded`, symfony 
 ora analizza il body grezzo e rende i parametri accessibili come
-normali parametri POST.
+normali parametri `POST`.
 
 Azioni
 ------

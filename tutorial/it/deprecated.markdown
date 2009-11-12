@@ -12,7 +12,8 @@ rimossi in symfony 1.4:
 
   * `sfCompat10Plugin`: Deprecando questo plugin, si deprecano anche tutti gli
     altri elementi del framework che si basano su di esso (admin generator 1.0 e
-    sistema dei form 1.0).
+    sistema dei form 1.0). Si include anche il tema predefinito per l'admin
+    generator, che si trova in lib/plugins/sfPropelPlugin/data/generator/sfPropelAdmin`.
 
   * `sfProtoculousPlugin`: Gli helper forniti da questo plugin non supportano
     modalità unobtrusive e quindi non andrebbero più usati.
@@ -89,7 +90,7 @@ Classi
 Le seguenti classi sono state deprecate in symfony 1.3 e saranno rimosse
 in symfony 1.4:
 
-  * `sfDoctrineLogger`: Usaree `sfDoctrineConnectionProfiler` in sostituzione.
+  * `sfDoctrineLogger`: Usare `sfDoctrineConnectionProfiler` in sostituzione.
 
   * `sfNoRouting` e `sfPathInfoRouting`
 
@@ -116,6 +117,12 @@ in symfony 1.4:
     (`sfWidgetFormI18nChoiceLanguage`, `sfWidgetFormI18nChoiceCurrency` e
     `sfWidgetFormI18nChoiceCountry` respectively) che si comportano esattamente
     nello stesso modo, ma hanno più possibilità di personalizzazione
+
+  * `SfExtensionObjectBuilder`, `SfExtensionPeerBuilder`,
+    `SfMultiExtendObjectBuilder`, `SfNestedSetBuilder`,
+    `SfNestedSetPeerBuilder`, `SfObjectBuilder`, `SfPeerBuilder`: Le classi
+    di build personalizzate di Propel sono state migrate al nuovo sistema di
+    comportamenti di Propel 1.4
 
 Le seguenti classi sono state rimosse in symfony 1.3:
 
@@ -182,6 +189,12 @@ in symfony 1.4:
     `validation_error_class`, `validation_error_id_prefix`: Queste impostazioni
     erano usate dal gruppo di helper Validation, che è deprecato in symfony 1.3.
 
+  * `is_internal` (in `module.yml`): Il flag `is_internal` era usato per
+    impedire alle azioni di essere chiamate da browser. Era stato aggiunto
+    per proteggere dall'invio di email in symfony 1.0. Poiché il supporto alle
+    email non richiede più questo trucco, il flag sarà rimosso e non più
+    verificato nel codice base di symfony.
+
 Task
 ----
 
@@ -200,6 +213,9 @@ I seguenti task sono deprecati in symfony 1.3 e saranno rimossi in
 symfony 1.4:
 
   * Tutti gli alias dei task di symfony 1.0.
+
+  * `propel:init-admin`: Questo task generava i moduli per l'admin generator
+    in symfony 1.0.
 
 I seguenti task di Doctrine sono stati fusi in `doctrine:build` e saranno
 rimossi in symfony 1.4:
@@ -239,3 +255,6 @@ rimosso in symfony 1.4.
 Da symfony 1.3, la pagina non disponibile sarà cercata sono nelle cartelle
 `%SF_APP_CONFIG_DIR%/` e `%SF_CONFIG_DIR%/`. Se la si tiene ancora in
 `%SF_WEB_DIR%/errors/`, la si deve spostare prima di migrare a symfony 1.4.
+
+La cartella `doc/` di un progetto non viene più generate, poiché non era usata
+da symfony stesso. Anche la relativa variabile `sf_doc_dir` è stata rimossa.

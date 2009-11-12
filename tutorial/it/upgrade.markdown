@@ -39,13 +39,15 @@ Per aggiornare un progetto:
   * Occorre ricostruire i modelli ed i form, a causa di alcune modifiche
     descritte più avanti:
 
-        $ php symfony doctrine:build-model
-        $ php symfony doctrine:build-forms
-        $ php symfony doctrine:build-filters
+        # Doctrine
+        $ php symfony doctrine:build --all-classes
+
+        # Propel
+        $ php symfony propel:build --all-classes
 
   * Pulire la cache:
 
-        $ php symfony cc
+        $ php symfony cache:clear
 
 Le sezioni seguenti spiegano le modifiche principali fatte in symfony 1.3 che
 necessitano di alcuni aggiornamenti (automatici o meno).
@@ -108,13 +110,14 @@ symfony 1.2, che si può aggiungere nuovamente in `factories.yml`:
 
     [yml]
     routing:
-      cache:
-        class: sfFileCache
-        param:
-          automatic_cleaning_factor: 0
-          cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
-          lifetime:                  31556926
-          prefix:                    %SF_APP_DIR%/routing
+      param:
+        cache:
+          class: sfFileCache
+          param:
+            automatic_cleaning_factor: 0
+            cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
+            lifetime:                  31556926
+            prefix:                    %SF_APP_DIR%/routing
 
 JavaScript e Fogli di Stile
 ---------------------------
@@ -212,18 +215,15 @@ cancellazione di ogni singola riga.
 
 Si può sovrascrivere il modello incluso in uno schema YAML di un plugin,
 semplicemente definendo lo stesso modello nel proprio schema locale.
+Ad esempio, per aggiungere una colonna "email" al modello `sfGuardUser`
+di sfDoctrineGuardPlugin, si aggiungano le seguenti righe a
+`config/doctrine/schema.yml`:
 
-Si veda: http://trac.symfony-project.org/ticket/6656
-
-Con questa modifica, si può ora creare `config/doctrine/sfGuardUser.schema.yml` 
-col seguente contenuto.
-
+    [yml]
     sfGuardUser:
-      package: sfDoctrineGuardPlugin.lib.model.doctrine
-      # ...
-
-Si può personalizzare lo schema e la versione locale sarà usata al posto
-di quella inclusa nel plugin.
+      columns:
+        email:
+          type: string(255)
 
 >**NOTE**
 >L'opzione package è una caratteristiche di Doctrine ed è usata per gli schemi
@@ -305,3 +305,58 @@ parser YAML ad usare le specifiche YAML 1.1, usando il metodo
 
     [php]
     sfYaml::setSpecVersion('1.1');
+  
+Propel
+------
+
+Le classi di build personalizzate di Propel, usate nelle versioni
+precedenti, sono state sostituite dalle nuovi classi di comportamento di
+Propel 1.4. Per sfruttare questo miglioramento, occorre aggiornare il
+file `propel.ini` del progetto.
+
+Rimuovere le vecchie classi di build:
+
+    ; builder settings
+    propel.builder.peer.class              = plugins.sfPropelPlugin.lib.builder.SfPeerBuilder
+    propel.builder.object.class            = plugins.sfPropelPlugin.lib.builder.SfObjectBuilder
+    propel.builder.objectstub.class        = plugins.sfPropelPlugin.lib.builder.SfExtensionObjectBuilder
+    propel.builder.peerstub.class          = plugins.sfPropelPlugin.lib.builder.SfExtensionPeerBuilder
+    propel.builder.objectmultiextend.class = plugins.sfPropelPlugin.lib.builder.SfMultiExtendObjectBuilder
+    propel.builder.mapbuilder.class        = plugins.sfPropelPlugin.lib.builder.SfMapBuilderBuilder
+
+Aggiungere le nuove classi di comportamento:
+
+    ; behaviors
+    propel.behavior.default                        = symfony,symfony_i18n
+    propel.behavior.symfony.class                  = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorSymfony
+    propel.behavior.symfony_i18n.class             = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorI18n
+    propel.behavior.symfony_i18n_translation.class = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorI18nTranslation
+    propel.behavior.symfony_behaviors.class        = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorSymfonyBehaviors
+    propel.behavior.symfony_timestampable.class    = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorTimestampable
+
+Il task `project:upgrade` prova a fare questa modifica, ma potrebbe non riuscirci
+in caso di modifiche locali a `propel.ini`.
+
+La classe `BaseFormFilterPropel` veniva generata in modo non corretto in
+`lib/filter/base` in symfony 1.2. Questo problema è stato risolto in symfony 1.3;
+la classe ora è generata in `lib/filter`. Il task `project:upgrade` si
+occuperà di spostare questo file.
+
+Test
+----
+
+Il file iniziale per i test unitari, `test/bootstrap/unit.php`, è stato migliorato
+per gestire meglio il caricamento automatico dei file delle classi. Le seguenti
+righe devono essere aggiunte a tale script:
+
+    [php]
+    $autoload = sfSimpleAutoload::getInstance(sfConfig::get('sf_cache_dir').'/project_autoload.cache');
+    $autoload->loadConfiguration(sfFinder::type('file')->name('autoload.yml')->in(array(
+      sfConfig::get('sf_symfony_lib_dir').'/config/config',
+      sfConfig::get('sf_config_dir'),
+    )));
+    $autoload->register();
+
+Il task `project:upgrade` prova a fare questa modifica, ma potrebbe non riuscirci
+in caso di modifiche locali a `test/bootstrap/unit.php`.
+
