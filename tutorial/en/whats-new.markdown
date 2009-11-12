@@ -397,7 +397,7 @@ tester's `->isValid()` method:
       isValid()->
     end();
 
-You also validate the response again its document type be passing `true` as an
+You also validate the response against its document type be passing `true` as an
 argument:
 
     [php]
