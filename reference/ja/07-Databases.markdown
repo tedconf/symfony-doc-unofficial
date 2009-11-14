@@ -49,6 +49,14 @@ Propel
       propel:
         param:
           classname:  DebugPDO
+          debug:
+            realmemoryusage: true
+            details:
+              time:       { enabled: true }
+              slow:       { enabled: true, threshold: 0.1 }
+              mem:        { enabled: true }
+              mempeak:    { enabled: true }
+              memdelta:   { enabled: true }
 
     test:
       propel:
@@ -72,13 +80,15 @@ Propel
  | キー         | 説明                     | デフォルトの値 |
  | ------------ | -------------------------| -------------- |
  | `classname`  | Propelのアダプタークラス | `PropelPDO`    |
- | `dsn`        | PDOのDSN (必須)          | -              |
+ | `dsn`        | PDOのDSN (必須)         | -              |
  | `username`   | データベースのユーザー名 | -              |
  | `password`   | データベースのパスワード | -              |
  | `pooling`    | プーリングを有効にするか | `true`         |
  | `encoding`   | デフォルトの文字集合     | `UTF-8`        |
  | `persistent` | 永続的接続を作成するか   | `false`        |
  | `options`    | Propelオプションのセット | -              |
+ | `options`    | Propelオプションのセット | -              |
+ | `debug`      | `DebugPDO`クラスのオプション| n/a         |
 
 Doctrine
 --------

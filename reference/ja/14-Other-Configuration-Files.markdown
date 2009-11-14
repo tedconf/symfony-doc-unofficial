@@ -121,3 +121,27 @@
 >**NOTE**
 >`core_compile.yml`設定ファイルはPHPファイルとしてキャッシュされます; 
 >処理は~`sfCompileConfigHandler`~[クラス](#chapter_14_config_handlers_yml)によって自動的に管理されます。
+
+~`module.yml`~
+--------------
+
+`module.yml`設定ファイルはモジュールのコンフィギュレーションを可能にします。
+この設定ファイルはほとんど使われることはなく、下記の定義されたエントリーのみを格納します。
+
+`module.yml`ファイルはsymfonyによってロードされるモジュールの`config/`サブディレクトリに保存されます。
+次のコードはすべての設定のデフォルト値を持つ`module.yml`の典型的な内容を示しています:
+
+    [yml]
+    all:
+      enabled:            true
+      view_class:         sfPHP
+      partial_view_class: sf
+
+`enabled`パラメーターが`false`にセットされる場合、モジュールのすべてのアクションは無効にされます。
+これらは([`settings.yml`](#chapter_04)で定義される)~[`module_disabled_module`](#chapter_04_the_actions_sub_section)~/~`module_disabled_action`~アクションにリダイレクトされます。
+
+`view_class`パラメーターはモジュールのすべてのアクションによって使われる(サフィックスなしの`View`の)ビュークラスを定義します。 
+これは`sfView`を継承しなければなりません。
+
+`partial_view_class`パラメーターは(サフィックスの`PartialView`なしの)このモジュールのパーシャルに使われるビュークラスを定義します。
+`sfPartialView`を継承しなければなりません。

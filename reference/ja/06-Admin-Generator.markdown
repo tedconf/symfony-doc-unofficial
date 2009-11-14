@@ -20,7 +20,7 @@ adminジェネレーターモジュールは`propel:generate-admin`もしくは`
 
 ### 設定ファイル
 
-上記のようなモジュールの設定は`apps/backend/modules/job/article/generator.yml`ファイルで行います:
+上記のようなモジュールの設定は`apps/backend/modules/model/article/generator.yml`ファイルで行います:
 
     [yml]
     generator:
@@ -140,10 +140,10 @@ adminジェネレーターのクレデンシャル管理機能は表示のみを
  | `executeIndex()`       | `list`ビューアクション
  | `executeFilter()`      | フィルターを更新する
  | `executeNew()`         | `new`ビューアクション
- | `executeCreate()`      | 新しいJobを作成する
+ | `executeCreate()`      | 新しいレコードを作成する
  | `executeEdit()`        | `edit`ビューアクション
- | `executeUpdate()`      | Jobを更新する
- | `executeDelete()`      | Jobを削除する
+ | `executeUpdate()`      | レコードを更新する
+ | `executeDelete()`      | レコードを削除する
  | `executeBatch()`       | バッチアクションを実行する
  | `executeBatchDelete()` | `_delete`バッチアクションを実行する
  | `processForm()`        | Jobフォームを処理する
@@ -226,7 +226,8 @@ adminジェネレーターのクレデンシャル管理機能は表示のみを
    * [`credentials`](#chapter_06_sub_credentials)
    * [`renderer`](#chapter_06_sub_renderer)
    * [`renderer_arguments`](#chapter_06_sub_renderer_arguments)
-
+   * [`type`](#chapter_06_sub_type)
+   * [`date_format`](#chapter_06_sub_date_format)
  * [`list`](#chapter_06_list)
 
    * [`title`](#chapter_06_sub_title)
@@ -332,6 +333,48 @@ adminジェネレーターのクレデンシャル管理機能は表示のみを
 
 `renderer_arguments`オプションはフィールドをレンダリングする際にPHPの`renderer`コールバックに渡す引数を定義します。 
 `renderer`オプションが定義される場合のみ使われます。
+
+### ~`type`~
+
+*デフォルト*: バーチャルカラムの`Text`
+
+`type`オプションはカラムの型を定義します。 
+デフォルトでは、モデルで定義されるカラムの型を使いますが、バーチャルカラムを作る場合、デフォルトの`Text`型を有効な型の1つでオーバーライドできます:
+
+  * `ForeignKey`
+  * `Boolean`
+  * `Date`
+  * `Time`
+  * `Text`
+  * `Enum` (Doctrineのみで利用可)
+
+### ~`date_format`~
+
+*デフォルト*: `f`
+
+`date_format`オプションは日付を表示するときに使うフォーマットを定義します。
+これは`sfDateFormat`クラスによって認識されるフォーマットになります。
+このオプションはフィールドの型が`Date`であるときは使われません。
+
+フォーマットには次のトークンを使うことができます:
+
+ * `G`: Era
+ * `y`: year
+ * `M`: mon
+ * `d`: mday
+ * `h`: Hour12
+ * `H`: hours
+ * `m`: minutes
+ * `s`: seconds
+ * `E`: wday
+ * `D`: yday
+ * `F`: DayInMonth
+ * `w`: WeekInYear
+ * `W`: WeekInMonth
+ * `a`: AMPM
+ * `k`: HourInDay
+ * `K`: HourInAMPM
+ * `z`: TimeZone
 
 `actions`
 ---------
@@ -572,7 +615,7 @@ adminジェネレーターのクレデンシャル管理機能は表示のみを
 このオプションはフィールドをグループに分類するためにも使うことができます:
 
     [yml]
-    # apps/backend/modules/job/config/generator.yml
+    # apps/backend/modules/model/config/generator.yml
     config:
       form:
         display:
