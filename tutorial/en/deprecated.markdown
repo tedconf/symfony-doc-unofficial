@@ -43,6 +43,10 @@ before, and will be removed in symfony 1.4:
     `checkResponseElement()`: These methods have been deprecated since 1.2,
     and replaced with the tester classes.
 
+  * `sfTestFunctional` following methods: `isCached()`, `isUriCached()`: These
+    methods have been deprecated since 1.2, and replaced with the tester
+    classes.
+
   * `sfFilesystem::sh()`: You can replace all occurrences of this method by
     calls to the new `sfFilesystem::execute()` method. Be warned that the
     returned value of this method is an array composed of the `stdout` output
