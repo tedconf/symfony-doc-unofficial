@@ -69,7 +69,7 @@ Doctrineクエリオブジェクト
       $q = Doctrine_Query::create()
         ->from('JobeetJob j')
         ->where('j.created_at > ?',
-         ➥ date('Y-m-d h:i:s', time() - 86400 * 30));
+         ➥ date('Y-m-d H:i:s', time() - 86400 * 30));
 
       $this->jobeet_job_list = $q->execute();
 </doctrine>
@@ -195,7 +195,7 @@ symfonyのWebデバッグツールバーのおかげで、必要な全ての情�
         if ($this->isNew() && !$this->getExpiresAt())
         {
           $now = $this->getCreatedAt() ? strtotime($this->getCreatedAt()) : time();
-          $this->setExpiresAt(date('Y-m-d h:i:s', $now + 86400 * 30));
+          $this->setExpiresAt(date('Y-m-d H:i:s', $now + 86400 * 30));
         }
 
         return parent::save($conn);
@@ -222,7 +222,7 @@ symfonyのWebデバッグツールバーのおかげで、必要な全ての情�
 <doctrine>
       $q = Doctrine_Query::create()
         ->from('JobeetJob j')
-        ->where('j.expires_at > ?', date('Y-m-d h:i:s', time()));
+        ->where('j.expires_at > ?', date('Y-m-d H:i:s', time()));
 
       $this->jobeet_job_list = $q->execute();
 </doctrine>
@@ -333,7 +333,7 @@ symfonyフレームワークは~アプリケーション~固有の~設定~用に
       if ($this->isNew() && !$this->getExpiresAt())
       {
         $now = $this->getCreatedAt() ? strtotime($this->getCreatedAt()) : time();
-        $this->setExpiresAt(date('Y-m-d h:i:s', $now + 86400 * sfConfig::get('app_active_days')));
+        $this->setExpiresAt(date('Y-m-d H:i:s', $now + 86400 * sfConfig::get('app_active_days')));
       }
 
       return parent::save($conn);
@@ -383,7 +383,7 @@ symfonyフレームワークは~アプリケーション~固有の~設定~用に
       public function getActiveJobs()
       {
         $q = $this->createQuery('j')
-          ->where('j.expires_at > ?', date('Y-m-d h:i:s', time()));
+          ->where('j.expires_at > ?', date('Y-m-d H:i:s', time()));
 
         return $q->execute();
       }
@@ -428,7 +428,7 @@ symfonyフレームワークは~アプリケーション~固有の~設定~用に
     public function getActiveJobs()
     {
       $q = $this->createQuery('j')
-        ->where('j.expires_at > ?', date('Y-m-d h:i:s', time()))
+        ->where('j.expires_at > ?', date('Y-m-d H:i:s', time()))
         ->orderBy('j.expires_at DESC');
 
       return $q->execute();
@@ -490,7 +490,7 @@ symfonyフレームワークは~アプリケーション~固有の~設定~用に
       {
         $q = $this->createQuery('c')
           ->leftJoin('c.JobeetJobs j')
-          ->where('j.expires_at > ?', date('Y-m-d h:i:s', time()));
+          ->where('j.expires_at > ?', date('Y-m-d H:i:s', time()));
 
         return $q->execute();
       }
@@ -626,7 +626,7 @@ indexアクションを適宜変更します:
           ->from('JobeetJob j');
       }
 
-      $q->andWhere('j.expires_at > ?', date('Y-m-d h:i:s', time()))
+      $q->andWhere('j.expires_at > ?', date('Y-m-d H:i:s', time()))
         ->addOrderBy('j.expires_at DESC');
 
       return $q->execute();
@@ -701,7 +701,6 @@ symfonyの~YAML~ファイルはファイルを解析する直前に評価され�
 </doctrine>
 
     [php]
-    JobeetJob:
     # Starts at the beginning of the line (no whitespace before)
     <?php for ($i = 100; $i <= 130; $i++): ?>
       job_<?php echo $i ?>:
@@ -801,7 +800,7 @@ YAMLファイルにPHPコードを追加する場合の簡単なティップス�
     {
       public function retrieveActiveJob(Doctrine_Query $q)
       {
-        $q->andWhere('a.expires_at > ?', date('Y-m-d h:i:s', time()));
+        $q->andWhere('a.expires_at > ?', date('Y-m-d H:i:s', time()));
 
         return $q->fetchOne();
       }
