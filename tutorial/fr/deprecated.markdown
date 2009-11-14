@@ -72,7 +72,9 @@ ou versions antérieures, et seront retirées dans Symfony 1.4:
 
   * `sfWebRequest::getMethodName()` : Utilisez la méthode `getMethod()` à la place.
 
-  * `sfDomCssSelector::getTexts()` et `sfDomCssSelector::getElements()`
+  * `sfDomCssSelector::getTexts()`: Utilisez `matchAll()->getValues()`
+
+  * `sfDomCssSelector::getElements()`: Utilisez `matchAll()`
 
   * `sfVarLogger::getXDebugStack()`: Utilisez la méthode `sfVarLogger::getDebugBacktrace()`
     à la place.
