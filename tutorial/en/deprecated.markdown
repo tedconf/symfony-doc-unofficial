@@ -72,7 +72,9 @@ before, and will be removed in symfony 1.4:
 
   * `sfWebRequest::getMethodName()`: Use `getMethod()` instead.
 
-  * `sfDomCssSelector::getTexts()` and `sfDomCssSelector::getElements()`
+  * `sfDomCssSelector::getTexts()`: Use `matchAll()->getValues()`
+
+  * `sfDomCssSelector::getElements()`: Use `matchAll()`
 
   * `sfVarLogger::getXDebugStack()`: Use `sfVarLogger::getDebugBacktrace()`
     instead.
