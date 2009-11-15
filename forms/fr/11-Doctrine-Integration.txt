@@ -632,7 +632,7 @@ Listing 4-18 - Modification du validateur du champ `status`
 
 ### Supprimer un champ
 
-La table `article` a deux colonnes spéciales, `created_at` et `updated_at`, dont la mise à jour est automatiquement gérée par Doctrine. Nous devons donc les supprimer du formulaire comme le montre le Listing 4-19, pour éviter que les utilisateurs les modifient.
+La table `article` a tres colonnes spéciales, `created_at`, `updated_at` et `published_at`, dont la mise à jour est automatiquement gérée par Doctrine. Nous devons donc les supprimer du formulaire comme le montre le Listing 4-19, pour éviter que les utilisateurs les modifient.
 
 Listing 4-19 - Suppression d'un champ
 
@@ -641,11 +641,16 @@ Listing 4-19 - Suppression d'un champ
     {
       public function configure()
       {
+        // ...
+      
         unset($this->validatorSchema['created_at']);
         unset($this->widgetSchema['created_at']);
 
         unset($this->validatorSchema['updated_at']);
         unset($this->widgetSchema['updated_at']);
+
+        unset($this->validatorSchema['published_at']);
+        unset($this->widgetSchema['published_at']);
       }
     }
 
@@ -658,7 +663,7 @@ Listing 4-20 - Suppression d'un champ en utilisant le formulaire comme un tablea
     {
       public function configure()
       {
-        unset($this['created_at'], $this['updated_at']);
+        unset($this['created_at'], $this['updated_at'], $this['published_at']);
       }
     }
 
@@ -686,8 +691,7 @@ Listing 4-21 - Formulaire `ArticleForm`
         $this->validatorSchema['status'] = new sfValidatorChoice(array('choices' => array_keys(ArticlePeer::getStatuses())));
         $this->validatorSchema['author_id']->setOption('query', $authorQuery);
 
-        unset($this['created_at']);
-        unset($this['updated_at']);
+        unset($this['created_at'], $this['updated_at'], $this['published_at']);
       }
     }
 

@@ -630,7 +630,11 @@ Listing 4-18 - Modifying the `status` Field Validator
 
 ### Deleting a field
 
-The `article` table has two special columns, `created_at` and `updated_at`, whose update is automatically handled by Doctrine. We must then delete them from the form as Listing 4-19 show, to prevent the user from modifying them.
+The `article` table has three special columns, `created_at`, `updated_at` 
+and `published_at`. The first two are automatically handled by Doctrine as part
+of the `timestampable` behaviour, the third we will handle at a later date in our
+own code. We must delete them from the form as Listing 4-19 shows, to prevent
+the user from modifying them.
 
 Listing 4-19 - Deleting a Field
 
@@ -639,11 +643,16 @@ Listing 4-19 - Deleting a Field
     {
       public function configure()
       {
+        // ...
+      
         unset($this->validatorSchema['created_at']);
         unset($this->widgetSchema['created_at']);
 
         unset($this->validatorSchema['updated_at']);
         unset($this->widgetSchema['updated_at']);
+
+        unset($this->validatorSchema['published_at']);
+        unset($this->widgetSchema['published_at']);
       }
     }
 
@@ -656,7 +665,7 @@ Listing 4-20 - Deleting a Field using the Form as a PHP Array
     {
       public function configure()
       {
-        unset($this['created_at'], $this['updated_at']);
+        unset($this['created_at'], $this['updated_at'], $this['published_at']);
       }
     }
 
@@ -684,8 +693,7 @@ Listing 4-21 - `ArticleForm` Form
         $this->validatorSchema['status'] = new sfValidatorChoice(array('choices' => array_keys(ArticleTable::getStatuses())));
         $this->validatorSchema['author_id']->setOption('query', $authorQuery);
 
-        unset($this['created_at']);
-        unset($this['updated_at']);
+        unset($this['created_at'], $this['updated_at'], $this['published_at']);
       }
     }
 
