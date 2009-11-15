@@ -32,13 +32,15 @@ symfony 1.3で変更/追加されたものの詳細を知りたければ、[What
 
   * 下記で記述される変更のために、モデルとフォームをリビルドする必要がある:
 
-        $ php symfony doctrine:build-model
-        $ php symfony doctrine:build-forms
-        $ php symfony doctrine:build-filters
+        # Doctrine
+        $ php symfony doctrine:build --all-classes
+
+        # Propel
+        $ php symfony propel:build --all-classes
 
   * キャッシュをクリアする:
 
-        $ php symfony cc
+        $ php symfony cache:clear
 
 残りのセクションはsymfony 1.3で行われなんらかのアップグレード(自動もしくはそうではない)が必要な主要な変更を説明します。
 
@@ -84,13 +86,14 @@ symfony 1.3に関しては、ルーティング用のキャッシュが無効さ
 
     [yml]
     routing:
-      cache:
-        class: sfFileCache
-        param:
-          automatic_cleaning_factor: 0
-          cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
-          lifetime:                  31556926
-          prefix:                    %SF_APP_DIR%/routing
+      param:
+        cache:
+          class: sfFileCache
+          param:
+            automatic_cleaning_factor: 0
+            cache_dir:                 %SF_CONFIG_CACHE_DIR%/routing
+            lifetime:                  31556926
+            prefix:                    %SF_APP_DIR%/routing
 
 JavaScriptとスタイルシート
 -------------------------
@@ -162,17 +165,13 @@ adminジェネレーターバッチの削除機能はレコードをすべて削
 
 ### Doctrineプラグインスキーマをオーバーライドする
 
-ローカルスキーマで同じモデルを定義するだけでプラグインのYAMLスキーマに含まれるモデルをオーバーライドすることができます。
-
-次を参照: http://trac.symfony-project.org/ticket/6656
-
-この変更によって次の内容を持つ`config/doctrine/sfGuardUser.schema.yml`を新しく作ることができます。
+ローカルスキーマで同じモデルを定義することでプラグインのYAMLスキーマに含まれるモデルをオーバーライドできます。
+たとえば、"email"カラムをsfDoctrineGuardPluginの`sfGuardUser`モデルに追加するには、次のコードを`config/doctrine/schema.yml`に追加します:
 
     sfGuardUser:
-      package: sfDoctrineGuardPlugin.lib.model.doctrine
-      # ...
-
-スキーマをカスタマイズすればローカルバージョンがプラグインに含まれるものの代わりに使われます。
+      columns:
+        email:
+          type: string(255)
 
 >**NOTE**
 >packageオプションはDoctrineの機能でsymfonyプラグインのスキーマに使われます。
@@ -240,3 +239,50 @@ sfYAMLは1.2の仕様とより互換性を持ちます。
 
     [php]
     sfYaml::setSpecVersion('1.1');
+
+Propel
+------
+
+symfonyの以前のバージョンで使われていたカスタムのPropelビルダークラスは新しいPropel 1.4のビヘイビアクラスに置き換えられました。 
+この強化を利用するにはプロジェクトの`propel.ini`ファイルをアップデートしなければなりません。
+
+古いビルダークラスを削除します:
+
+    ; builder settings
+    propel.builder.peer.class              = plugins.sfPropelPlugin.lib.builder.SfPeerBuilder
+    propel.builder.object.class            = plugins.sfPropelPlugin.lib.builder.SfObjectBuilder
+    propel.builder.objectstub.class        = plugins.sfPropelPlugin.lib.builder.SfExtensionObjectBuilder
+    propel.builder.peerstub.class          = plugins.sfPropelPlugin.lib.builder.SfExtensionPeerBuilder
+    propel.builder.objectmultiextend.class = plugins.sfPropelPlugin.lib.builder.SfMultiExtendObjectBuilder
+    propel.builder.mapbuilder.class        = plugins.sfPropelPlugin.lib.builder.SfMapBuilderBuilder
+
+そして新しいビヘイビアクラスを追加します:
+
+    ; behaviors
+    propel.behavior.default                        = symfony,symfony_i18n
+    propel.behavior.symfony.class                  = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorSymfony
+    propel.behavior.symfony_i18n.class             = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorI18n
+    propel.behavior.symfony_i18n_translation.class = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorI18nTranslation
+    propel.behavior.symfony_behaviors.class        = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorSymfonyBehaviors
+    propel.behavior.symfony_timestampable.class    = plugins.sfPropelPlugin.lib.behavior.SfPropelBehaviorTimestampable
+
+`project:upgrade`タスクはこの変更を行おうとしますが、`propel.ini`にローカルな変更をする場合、不可能です。
+
+symfony 1.2では`BaseFormFilterPropel`クラスは`lib/filter/base`に正しく生成されませんでしたが、symfony 1.3で訂正されました; クラスは`lib/filter`に生成されます。
+`project:upgrade`タスクはこのファイルを移動させます。
+
+テスト
+------
+
+ユニットテストのブートストラップファイルである`test/bootstrap/unit.php`はプロジェクトのクラスファイルのオートロードをよりうまく処理するよう強化されました。
+次のコードをこのスクリプトに追加しなければなりません:
+
+    [php]
+    $autoload = sfSimpleAutoload::getInstance(sfConfig::get('sf_cache_dir').'/project_autoload.cache');
+    $autoload->loadConfiguration(sfFinder::type('file')->name('autoload.yml')->in(array(
+      sfConfig::get('sf_symfony_lib_dir').'/config/config',
+      sfConfig::get('sf_config_dir'),
+    )));
+    $autoload->register();
+
+`project:upgrade`タスクはこの変更を行おうとしますが、`test/bootstrap/unit.php`へのローカルな変更をする場合は不可能であることがあります。
