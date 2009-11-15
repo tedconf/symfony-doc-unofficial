@@ -1,5 +1,5 @@
 symfony 1.3では何が新しくなったの？
-==========================
+==================================
 
 このチュートリアルではsymfony 1.3のための技術的な内容をおおまかに紹介します。
 このチュートリアルはsymfony 1.2ですでに作業をしており、symfony 1.3の新しい機能を速く学びたい開発者向けです。
@@ -11,7 +11,7 @@ symfony 1.3では何が新しくなったの？
 
 
 メーラー
-------
+--------
 
 symfony 1.3ではSwiftMailer 4.1に基づく新しい標準のメーラーが用意されました。
 
@@ -31,8 +31,8 @@ Eメールの送信はシンプルでアクションから`composeAndSend()`メ�
 
 メーラーはとても強力なので、詳細な情報は公式マニュアルを参照してください。
 
-セキュリティー
---------
+セキュリティ
+-----------
 
 `generate:app`タスクで新しいアプリケーションをつくるとき、セキュリティー設定はデフォルトで有効になるようになりました:
 
@@ -43,7 +43,7 @@ Eメールの送信はシンプルでアクションから`composeAndSend()`メ�
     `settings.yml`設定ファイルを編集するか、`--csrf-secret`オプションを使う事で、デフォルトのパスワードを変更することが強く勧められます。
 
 ウィジット
--------
+---------
 
 ### 標準のラベル
 
@@ -69,9 +69,9 @@ Eメールの送信はシンプルでアクションから`composeAndSend()`メ�
 
 これらの最初の3つは廃止予定の`sfWidgetFormI18nSelectLanguage`、`sfWidgetFormI18nSelectCurrency`と`sfWidgetFormI18nSelectCountry`ウィジェットの置き換えです。
 
-### 流れるようなインターフェース
+### 流れるようなインターフェイス
 
-ウィジットは次のように流れるようなインターフェースを実装するようになりました:
+ウィジットは次のように流れるようなインターフェイスを実装するようになりました:
 
   * `sfWidgetForm`: `setDefault()`, `setLabel()`, `setIdFormat()`,
     `setHidden()`
@@ -157,19 +157,22 @@ symfonyがエラーを表示するとき、次のように使用されるエラ�
   * もし、定義されていないなら、(メッセージが`addMessage()`メソッドで追加され
     ているとき)バリデーター自身で定義された標準のメッセージへ戻ります。
 
-### 流れるようなインターフェース
+### 流れるようなインターフェイス
 
-バリデーターは次のように流れるようなインターフェースを実装するようになりました:
+バリデーターは次のように流れるようなインターフェイスを実装するようになりました:
 
-  * `sfValidatorSchema`: `setPreValidator()`, `setPostValidator()`
+  * `sfValidatorSchema`: `setPreValidator()`、`setPostValidator()`
 
-  * `sfValidatorErrorSchema`: `addError()`, `addErrors()`
+  * `sfValidatorErrorSchema`: `addError()`、`addErrors()`
 
-  * `sfValidatorBase`: `addMessage()`, `setMessage()`, `setMessages()`,
-    `addOption()`, `setOption()`, `setOptions()`, `addRequiredOption()`
+  * `sfValidatorBase`: `addMessage()`、`setMessage()`、`setMessages()`、`addOption()`、`setOption()`、`setOptions()`、`addRequiredOption()`
+
+### `sfValidatorFile`
+
+`php.ini`で`file_uploads`が無効な場合`sfValidatorFile`のインスタンスを作成するときに例外が投げられます。
 
 フォーム
------
+--------
 
 ### `sfForm::useFields()`
 
@@ -188,6 +191,14 @@ symfonyがエラーを表示するとき、次のように使用されるエラ�
 
 デフォルトでは、フィールドの配列はフィールドの順序を変更するためにも使われます。
 自動的な順序づけを無効にするには2番目の引数として`false`を`useFields()`に渡します。
+
+### `sfForm::getEmbeddedForm($name)`
+
+`->getEmbeddedForm()`メソッドを使って特定の組み込みフォームにアクセスできます。
+
+### `sfForm::renderHiddenFields()`
+
+`->renderHiddenFields()`メソッドは組み込みフォームからの隠しフィールドをレンダリングします。
 
 ### `sfFormSymfony`
 
@@ -228,9 +239,9 @@ CSRFからの保護機能を無効にするためには、次のような行を`
 
 `disableLocalCSRFProtection()`をコールすることによって、フォームインスタンスを作成するときにCSRFシークレットを渡していたとしてもCSRFからの保護機能は無効になります。
 
-### 流れるようなインターフェース
+### 流れるようなインターフェイス
 
-`sfForm` メソッドは次のような流れるインターフェースを実装するようになりました: `addCSRFProtection()`,
+`sfForm` メソッドは次のような流れるインターフェイスを実装するようになりました: `addCSRFProtection()`,
 `setValidators()`, `setValidator()`, `setValidatorSchema()`, `setWidgets()`,
 `setWidget()`, `setWidgetSchema()`, `setOption()`, `setDefault()`, そして
 `setDefaults()`.
@@ -295,7 +306,7 @@ symfony1.3では、limeはカラー化に関していえば正しく行うよう
 
 ### `sfTesterResponse::checkForm()`
 
-レスポンステスターはより簡単にフォームにある全てのフィールドがレスポンスに正しくレンダー処理されているかどうかを確認できるメソッドを含むようになりました:
+レスポンステスターはより簡単にフォームにある全てのフィールドがレスポンスに正しくレンダリング処理されているかどうかを確認できるメソッドを含むようになりました:
 
     [php]
     $browser->with('response')->begin()->
@@ -317,7 +328,30 @@ symfony1.3では、limeはカラー化に関していえば正しく行うよう
       checkForm('ArticleForm', '#articleForm')->
     end();
 
-### `context.load_factories`に聞く
+### `sfTesterResponse::isValid()`
+
+レスポンスが整形式XMLであるかをレスポンステスターの`->isValid()`メソッドでチェックできます:
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid()->
+    end();
+
+引数として`true`を渡すことでドキュメントの種類に対するレスポンスをバリデートすることもできます:
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid(true)->
+    end();
+
+代わりに、バリデートするXSDもしくはRelaxNGスキーマがある場合、ファイルへのパスを提供できます:
+
+    [php]
+    $browser->with('response')->begin()->
+      isValid('/path/to/schema.xsd')->
+    end();
+
+### `context.load_factories`をリスニングする
 
 機能テストに`context.load_factories`イベントへのリスナーが追加されました。
 これまでのsymfonyのバージョンではできませんでした。
@@ -325,6 +359,16 @@ symfony1.3では、limeはカラー化に関していえば正しく行うよう
 
     [php]
     $browser->addListener('context.load_factories', array($browser, 'listenForNewContext'));
+
+### よりよい`->click()`
+
+`->click()`メソッドにCSSセレクターを渡すことが可能で、セマンティックにしたい要素をターゲットにするのが楽になります。
+
+    [php]
+    $browser
+      ->get('/login')
+      ->click('form[action$="/login"] input[type="submit"]')
+    ;
 
 タスク
 -----
@@ -372,7 +416,11 @@ PropelもDoctrineのどちらも使いたくない場合は、`--orm`オプシ�
 新しい`--installer`オプションのおかげで新しく生成されるプロジェクトをかなりカスタマイズできるPHPスクリプトを指定することができます。スクリプトはタスク内で実行され、タスクのメソッドで使う事ができます。より利用できるメソッドは次のようなものです。:`installDir()`, `runTask()`, `ask()`, `askConfirmation()`,
 `askAndValidate()`, `reloadTasks()`, `enablePlugin()`, and `disablePlugin()`.
 
-より詳細な情報は公式ブログこの[ポスト](http://www.symfony-project.org/blog/2009/06/10/new-in-symfony-1-3-project-creation-customization)にあります。
+より詳細な情報は公式ブログの[記事](http://www.symfony-project.org/blog/2009/06/10/new-in-symfony-1-3-project-creation-customization)にあります。
+
+プロジェクトを生成するとき、2番目の"著者"の引数を含めることができます。which specifies a value to use for the `@author` doc tag when symfony generates new classes.
+
+    $ php /path/to/symfony generate:project foo "Joe Schmo"
 
 ### `sfFileSystem::execute()`
 
@@ -389,8 +437,8 @@ PropelもDoctrineのどちらも使いたくない場合は、`--orm`オプシ�
 
     [php]
     $task = new sfDoctrineConfigureDatabaseTask($this->dispatcher, $this->formatter);
-    $task->run(array(
-      'dsn' => 'mysql:dbname=mydb;host=localhost',
+    $task->run(
+      array('dsn' => 'mysql:dbname=mydb;host=localhost',
     ), array(
       'name' => 'master',
     ));
@@ -398,11 +446,10 @@ PropelもDoctrineのどちらも使いたくない場合は、`--orm`オプシ�
 これまでのバージョンでは、次のようにすればまだ動作します:
 
     [php]
-    $task->run(array(
-      'mysql:dbname=mydb;host=localhost',
-    ), array(
-      '--name=master',
-    ));
+    $task->run(
+      array('mysql:dbname=mydb;host=localhost'),
+      array('--name=master')
+    );
 
 ### `sfBaseTask::setConfiguration()`
 
@@ -423,9 +470,9 @@ PHPから`sfBaseTask`を拡張しているタスクをコールするとき、`-
       '--env='.$options['env'],
     ));
 
-### `project:disable` と `project:enable`
+### `project:disable`と`project:enable`
 
-`project:disable` と `project:enable` タスクを使うことで環境全体を無効、または有効にすることができるようになりました:
+`project:disable`と`project:enable`タスクを使うことで環境全体を無効、または有効にすることができるようになりました:
 
     $ php symfony project:disable prod
     $ php symfony project:enable prod
@@ -435,7 +482,7 @@ PHPから`sfBaseTask`を拡張しているタスクをコールするとき、`-
     $ php symfony project:disable prod frontend backend
     $ php symfony project:enable prod frontend backend
 
-これらのタスクはこれまでの特徴と後方互換があります:
+これらのタスクはこれまでの機能と後方互換があります:
 
     $ php symfony project:disable frontend prod
     $ php symfony project:enable frontend prod
@@ -451,8 +498,28 @@ PHPから`sfBaseTask`を拡張しているタスクをコールするとき、`-
 
 XML出力はIDEのようなサードパーティーにとって大抵の場合においてとても役立つでしょう。
 
+### `project:optimize`
+
+このタスクを実行すればアプリケーションのテンプレートファイルの位置をキャッシュすることで実行時のディスクの読み込み回数を減らします。
+このタスクは運用サーバーでのみ使われます。 
+プロジェクトを変更するたびにタスクを再実行することをお忘れなく。
+
+    $ php symfony project:optimize frontend
+
+### `generate:app`
+
+`generate:app`タスクはコアに搭載されるデフォルトのスケルトンディレクトリの代わりにプロジェクトの`data/skeleton/app`ディレクトリのスケルトンディレクトリをチェックします。
+
+### タスクからEメールを送信する
+
+`getMailer()`メソッドを使うことでタスクからEメールを簡単に送信することができます。
+
+### タスクでルーティングを使う
+
+`getRouting()`メソッドを使うことでタスクからルーティングオブジェクトを簡単に取得できます。
+
 例外
-----------
+----
 
 ### オートローディング
 
@@ -463,41 +530,73 @@ XML出力はIDEのようなサードパーティーにとって大抵の場合�
 
 可能であれば、Webデバッグツールバーは開発環境の例外ページに表示されます。
 
-Propel
-------
+Propel統合
+----------
+
+Propelはバージョン1.4にアップグレードされました。Propelのアップグレードに関する詳しい情報は[公式サイト](http://propel.phpdb.org/trac/wiki/Users/Documentation/1.4)を訪問してくださるようお願いします。
+
+### Propelのビヘイビア
+
+Propelを拡張するためにsymfonyが依存するカスタムのビルダークラスはPropel 1.4の新しいビヘイビアシステムに移植されました。
 
 ### `propel:insert-sql`
 
 `propel:insert-sql`がデータベースから全てのデータを削除する前に確認を行います。
 このタスクは複数のデータベースからデータを削除することができるので、関連するデータベースの接続名も表示するようになりました。
 
-### `isPrimaryString`カラム属性
+### `propel:generate-module`、`propel:generate-admin`、`propel:generate-admin-for-route`
 
-`schema.yml`に`isPrimaryString`属性を格納することで、symfonyはカラムの値を返すモデルクラスで`__toString()`メソッドを生成することができるようになりました。
+`propel:generate-module`、`propel:generate-admin`と`propel:generate-admin-for-route`タスクは生成モジュールのアクション基底クラスのコンフィギュレーションを可能にする`--actions-base-class`オプションをとります。
 
-    [yml]
+### Propelのビヘイビア
+
+Propel 1.4はPropelのコードのビヘイビアの実装を導入しました。
+カスタムのsymfonyビルダーはこの新しいシステムに移植されました。
+
+PropelモデルネイティブなビヘイビアをPropelモデルに追加したい場合、`schema.yml`でもできます:
+
     classes:
       Article:
-        columns:
-          id:     ~
-          title:  { type: varchar(255), isPrimaryString: true }
-          body:   { type: longvarchar }
+        propel_behaviors:
+          timestampable: ~
 
-この設定で`BaseArticle`には次のようなメソッドが生成されます:
+もしくは、古い`schema.yml`構文を使う場合:
 
-    [php]
-    public function __toString()
-    {
-      return $this->getTitle();
-    }
+    propel:
+      article:
+        _propel_behaviors:
+          timestampable: ~
+
+### フォーム生成を無効にする
+
+`symfony`のPropelビヘイビアにパラメーターを渡すことで特定のモデルでのフォーム生成を無効にできます:
+
+    classes:
+      UserGroup:
+        propel_behaviors:
+          symfony:
+            form: false
+            filter: false
 
 ルーティング
--------
+------------
 
 ### デフォルトの要件
 
 デフォルトの必須要件`\d+`は`column`オプションがデフォルトの`id`になっているとき`sfObjectRouteCollection`にだけ適用されるようになりました。
 (`slug`のような)数字でないカラムが指定されているとき代わりの必須要件を用意する必要はないということです。
+
+### `sfObjectRouteCollection`オプション
+
+新しい`default_params`オプションが`sfObjectRouteCollection`に追加されました。 
+これはそれぞれの生成ルートに登録されるデフォルトパラメーターを可能にします:
+
+    [yml]
+    forum_topic:
+      class: sfDoctrineRouteCollection
+      options:
+        default_params:
+          section: forum
 
 CLI
 ---
@@ -524,7 +623,7 @@ symfonyには約330のロケールファイルが付属しており、symfony 1.
 この目的のために`sfCultureInfo->sortArray()`を使うことができます。
 
 プラグイン
--------
+----------
 
 symfony 1.3以前では、`sfDoctrinePlugin`と`sfCompat10Plugin`以外のすべてのプラグインはデフォルトで有効にされました:
 
@@ -573,7 +672,7 @@ Subversion経由でプラグインをインストールする場合、手動で�
     }
 
 設定
---------
+----
 
 ### `sf_file_link_format`
 
@@ -590,7 +689,7 @@ symfony 1.3は可能であるときにファイルパスをクリック可能な
 `%f`プレースホルダーはファイルの絶対パスに、`%l`プレースホルダーは行数に置き換えられます。
 
 Doctrineの統合
---------------------
+--------------
 
 ### フォームクラスを生成する
 
@@ -701,6 +800,10 @@ YAMLスキーマファイルでモデルを変更したり、名前を変えた�
 
 この例はマイグレーションクラスを生成しTextMateで新しいファイルを開いています。
 
+#### `doctrine:generate-migrations-diff`
+
+この新しいタスクは新旧のスキーマをもとに、完全なマイグレーションクラスを自動的に生成します。
+
 ### 日付のセッターとゲッター
 
 Doctrineの日付とタイムスタンプの値をPHPのDateTimeオブジェクトインスタンスとして取得するための2つの新しいメソッドを追加しました。
@@ -713,6 +816,18 @@ Doctrineの日付とタイムスタンプの値をPHPのDateTimeオブジェク�
 
     [php]
     $article->setDateTimeObject('created_at', new DateTime('09/01/1985'));
+
+### `doctrine:migrate --down`
+
+`doctrine:migrate`はスキーマをリクエストされる方向に一回でマイグレートする`up`と`down`オプションを含みます。
+
+    $ php symfony doctrine:migrate --down
+
+### `doctrine:migrate --dry-run`
+
+データベースがDDLステートメントのロールバックをサポートする場合(MySQLはサポートしない)、新しい`dry-run`オプションを利用できます。
+
+    $ php symfony doctrine:migrate --dry-run
 
 ### DQLタスクをテーブルのデータとして出力する
 
@@ -783,8 +898,45 @@ via the `query` option):
       $query->select('title, body');
     }
 
+フォームフィルターのカスタマイズが簡単になりました。
+フィールドのフィルタリングを追加するには、必要なことはウィジェットとそれを処理するメソッドを追加することだけです。
+
+    [php]
+    class UserFormFilter extends BaseUserFormFilter
+    {
+      public function configure()
+      {
+        $this->widgetSchema['name'] = new sfWidgetFormInputText();
+        $this->validatorSchema['name'] = new sfValidatorString(array('required' => false));
+      }
+
+      public function addNameColumnQuery($query, $field, $value)
+      {
+        if (!empty($value))
+        {
+          $query->andWhere(sprintf('CONCAT(%s.f_name, %1$s.l_name) LIKE ?', $query->getRootAlias()), $value);
+        }
+      }
+    }
+
+以前のバージョンでは、これを動かすためにはウィジェットをメソッドを作ることに加えて`getFields()`を拡張する必要がありました。
+
+### Doctrineを設定する
+
+Doctrineを設定するために`doctrine.configure`と`doctrine.configure_connection`イベントをリスニングできます。
+このことはプラグインが`sfDoctrinePlugin`の先に有効にされている限り、プラグインからDoctrineのコンフィギュレーションを簡単にカスタマイズできることを意味します。
+
+### `doctrine:generate-module`、`doctrine:generate-admin`、`doctrine:generate-admin-for-route`
+
+`doctrine:generate-module`、`doctrine:generate-admin`、`doctrine:generate-admin-for-route`タスクは生成モジュールのアクション基底クラスのコンフィギュレーションを可能にする`--actions-base-class`オプションをとります。
+
+### マジックメソッドはのdocタグ
+
+symfonyがDoctrineモデルに追加するゲッターとセッターのマジックメソッドはそれぞれの生成基底クラスのdocヘッダーに現れます。 
+IDEがコード補完をサポートする場合、これらの`getFooBar()`と`setFooBar()`メソッドがモデルオブジェクトに現れることがわかります。`FooBar`はキャメルケースのフィールド名です。
+
 Webデバッグツールバー
------------------
+---------------------
 
 ### `sfWebDebugPanel::setStatus()`
 
@@ -802,7 +954,7 @@ Webデバッグツールバーのそれぞれのパネルはタイトルの背�
     $requestParameters = $this->webDebug->getOption('request_parameters');
 
 パーシャル
---------
+---------
 
 ### スロットの改善
 
@@ -813,7 +965,7 @@ Webデバッグツールバーのそれぞれのパネルはタイトルの背�
     <?php include_slot('foo', 'bar') // もし`foo`スロットが定義されていなければ 'bar'が出力されます ?>
 
 ページャー
-------
+----------
 
 `sfDoctrinePager`と`sfPropelPager`メソッドは`Iterator`と`Countable`インターフェイスを実装しています。
 
@@ -828,7 +980,7 @@ Webデバッグツールバーのそれぞれのパネルはタイトルの背�
     <?php endif; ?>
 
 ビューキャッシュ
-----------
+---------------
 
 ビューキャッシュマネージャーは`factories.yml`でパラメーターを受け取ります。
 ビュー用のキャッシュキーの生成はクラスを楽に拡張できるように異なる方法でリファクタリングされてきました。
@@ -841,20 +993,28 @@ Webデバッグツールバーのそれぞれのパネルはタイトルの背�
   * `cache_key_use_host_name` (デフォルト: true): キャッシュキーがホスト名の部分を含むか指定します。
     実際には、これはページキャッシュがホスト名に依存するかどうかを伝えます。
 
+### さらにキャッシュ
+
+ビューキャッシュマネージャーは`$_GET`もしくは`$_POST`の配列に値が存在するのかによってキャッシュを拒絶することはありません。
+ロジックは現在のリクエストが`cache.yml`をチェックする前のGETメソッドであることを確認するだけです。
+このことは次のページがキャッシュ可能であることを意味します:
+
+  * `/js/my_compiled_javascript.js?cachebuster123`
+  * `/users?page=3`
 
 リクエスト
--------
+---------
 
 ### `getContent()`
 
 リクエストの内容は`getContent()`メソッドを通してアクセスできるようになりました。
 
-### PUT と DELETE パラメーター
+### `PUT`と`DELETE`パラメーター
 
-リクエストが`aplication/x-www-form-urlencoded`にセットされたコンテントタイプでPUT、DELETE HTTPメソッドで来たばあいに、symfonyは生のbodyを解析し、通常のPOSTパラメータのようにアクセスできるパラメーターを作成します。
+リクエストが`aplication/x-www-form-urlencoded`にセットされたContent-Typeで`PUT`、`DELETE` HTTPメソッドで来たばあいに、symfonyは生のボディを解析し、通常の`POST`パラメーターのようにアクセスできるパラメーターを作成します。
 
 アクション
--------
+----------
 
 ### `redirect()`
 
@@ -870,7 +1030,7 @@ Webデバッグツールバーのそれぞれのパネルはタイトルの背�
 この強化は`redirectIf()`と`redirectUnless()`にも適用されました。
 
 ヘルパー
--------
+--------
 
 ### `link_to_if()`, `link_to_unless()`
 
@@ -882,3 +1042,33 @@ Webデバッグツールバーのそれぞれのパネルはタイトルの背�
 
     // symfony 1.3
     <?php echo link_to_unless($foo, 'article_show', $article) ?>
+
+コンテキスト
+-----------
+
+メソッドを動的に`sfContext`に追加するために`context.method_not_found`をリスニングできます。
+プラグインから遅延ロードファクトリを追加する場合に便利でしょう。
+
+    [php]
+    class myContextListener
+    {
+      protected
+        $factory = null;
+
+      public function listenForMethodNotFound(sfEvent $event)
+      {
+        $context = $event->getSubject();
+
+        if ('getLazyLoadingFactory' == $event['method'])
+        {
+          if (null === $this->factory)
+          {
+            $this->factory = new myLazyLoadingFactory($context->getEventDispatcher());
+          }
+
+          $event->setReturnValue($this->factory);
+
+          return true;
+        }
+      }
+    }
