@@ -15,11 +15,11 @@ view layer. This configuration file is only active if the
 When an application is created, symfony generates a default `cache.yml` file
 in the application `config/` directory which describes the cache for the whole
 application (under the `default` key). By default, the cache is globally set
-to `off`:
+to `false`:
 
     [yml]
     default:
-      enabled:     off
+      enabled:     false
       with_layout: false
       lifetime:    86400
 
@@ -64,7 +64,7 @@ in the following order:
 ~`enabled`~
 -----------
 
-*Default*: `off`
+*Default*: `false`
 
 The `enabled` setting enables or disables the cache for the current scope.
 

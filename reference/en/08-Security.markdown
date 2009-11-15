@@ -16,7 +16,7 @@ the whole application (under the `default` key):
 
     [yml]
     default:
-      is_secure: off
+      is_secure: false
 
 As discussed in the introduction, the `security.yml` file benefits from
 the [**configuration cascade mechanism**](#chapter_03_configuration_cascade),
@@ -54,7 +54,7 @@ application, authorizes access to anybody:
 
     [yml]
     default:
-      is_secure: off
+      is_secure: false
 
 By setting the ~`is_secure`~ key to `on` in the application `security.yml`
 file, the entire application will require authentication for all users.
@@ -68,7 +68,7 @@ file in the `config/` directory of the module and define an `all` key:
 
     [yml]
     all:
-      is_secure: on
+      is_secure: true
 
 To modify authentication requirements for a single action of a module, create
 a `security.yml` file in the `config/` directory of the module and define a
@@ -76,7 +76,7 @@ key after the name of the action:
 
     [yml]
     index:
-      is_secure: off
+      is_secure: false
 
 >**TIP**
 >It is not possible to secure the login action. This is to avoid infinite
@@ -91,7 +91,7 @@ must have the required credentials to access the action:
 
     [yml]
     all:
-      is_secure:   on
+      is_secure:   true
       credentials: admin
 
 The credential system of symfony is simple and powerful. A credential is a

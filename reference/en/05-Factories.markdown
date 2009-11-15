@@ -513,7 +513,7 @@ several additional options are available:
 
 >**CAUTION**
 >This factory is only created if the [`cache`](#chapter_04_sub_cache)
->setting is set to `on`.
+>setting is set to `true`.
 
 Most configuration of this factory is done via the `view_cache` factory, which
 defines the underlying cache object used by the view cache manager.
@@ -549,7 +549,7 @@ hostname dependent (default value: `true`).
 
 >**CAUTION**
 >This factory is only defined if the [`cache`](#chapter_04_sub_cache)
->setting is set to `on`.
+>setting is set to `true`.
 
 The `view_cache` factory defines a cache class that must inherit from
 `sfCache` (see the Cache section for more information).
@@ -566,7 +566,7 @@ The `view_cache` factory defines a cache class that must inherit from
       class: sfI18N
       param:
         source:               XLIFF
-        debug:                off
+        debug:                false
         untranslated_prefix:  "[T]"
         untranslated_suffix:  "[/T]"
         cache:
@@ -579,7 +579,7 @@ The `view_cache` factory defines a cache class that must inherit from
 
 >**CAUTION**
 >This factory is only defined if the [`i18n`](#chapter_04_sub_i18n)
->setting is set to `on`.
+>setting is set to `true`.
 
 ### ~`source`~
 
@@ -589,7 +589,7 @@ The `source` option defines the container type for translations.
 
 ### ~`debug`~
 
-The `debug` option sets the debugging mode. If set to `on`, un-translated
+The `debug` option sets the debugging mode. If set to `true`, un-translated
 messages are decorated with a prefix and a suffix (see below).
 
 ### ~`untranslated_prefix`~

@@ -28,25 +28,25 @@ The default configuration is fine for most projects:
       project:
         name:           project
         path:           %SF_LIB_DIR%
-        recursive:      on
+        recursive:      true
         exclude:        [model, symfony]
 
       project_model:
         name:           project model
         path:           %SF_LIB_DIR%/model
-        recursive:      on
+        recursive:      true
 
       # application
       application:
         name:           application
         path:           %SF_APP_LIB_DIR%
-        recursive:      on
+        recursive:      true
 
       modules:
         name:           module
         path:           %SF_APP_DIR%/modules/*/lib
         prefix:         1
-        recursive:      on
+        recursive:      true
 
 Each configuration has a name and must be set under a key with that name. It
 allows for the default configuration to be overridden.
@@ -75,7 +75,7 @@ boost by modifying the `project` autoload configuration:
       project:
         name:           project
         path:           %SF_LIB_DIR%
-        recursive:      on
+        recursive:      true
         exclude:        [model, symfony, vendor/large_lib]
 
 ~`config_handlers.yml`~
