@@ -54,7 +54,6 @@ inherited configuration file:
     rendering: ~
     security:  ~
     cache:     ~
-    common:    ~
     execution: ~
 
 To remove a filter, you need to disable it by setting the `enabled` key to
@@ -95,7 +94,6 @@ Filters
  * [`rendering`](#chapter_12_rendering)
  * [`security`](#chapter_12_security)
  * [`cache`](#chapter_12_cache)
- * [`common`](#chapter_12_common)
  * [`execution`](#chapter_12_execution)
 
 `rendering`
@@ -152,23 +150,6 @@ The fine-grained configuration of the security filter is done via the
 The cache filter manages the caching of actions and pages. It is also
 responsible for adding the needed HTTP cache headers to the response
 (`Last-Modified`, `ETag`, `Cache-Control`, `Expires`, ...).
-
-`common`
---------
-
-*Default configuration*:
-
-    [yml]
-    common:
-      class: sfCommonFilter
-
-The common filter adds JavaScripts and stylesheets tags to the main response
-if they have not been already included.
-
->**TIP**
->If you use the `include_stylesheets()` and `include_javascripts()`
->helpers in your layout, you can safely disable this filter, and benefit
->from a small performance boost.
 
 `execution`
 -----------
