@@ -8,7 +8,7 @@
 
 次のコアプラグインはsymfony 1.3で廃止予定になりsymfony 1.4で削除されます:
 
-  * `sfCompat10Plugin`: このプラグインを廃止予定にすることで、動作するためにこのプラグインに依存するほかのすべての要素も廃止予定にします(1.0のadminジェネレーターとフォームシステム)。
+  * `sfCompat10Plugin`: このプラグインを廃止予定にすることで、動作するためにこのプラグインに依存するほかのすべての要素も廃止予定にします(1.0のadminジェネレーターとフォームシステム)。これは`lib/plugins/sfPropelPlugin/data/generator/sfPropelAdmin`に設置される1.0用のadminジェネレーターのデフォルトテーマも含みます。
 
   * `sfProtoculousPlugin`: このプラグインによって提供されるヘルパーは控えめなJavaScriptをサポートしないので、今後は使うべきではありません。
 
@@ -49,7 +49,9 @@
 
   * `sfWebRequest::getMethodName()`: 代わりに`getMethod()`を使います。
 
-  * `sfDomCssSelector::getTexts()`と`sfDomCssSelector::getElements()`
+  * `sfDomCssSelector::getTexts()`: `matchAll()->getValues()`を使います。 
+
+  * `sfDomCssSelector::getElements()`: `matchAll()`を使います。
 
   * `sfVarLogger::getXDebugStack()`: 代わりに`sfVarLogger::getDebugBacktrace()`を使います。
 
@@ -86,6 +88,10 @@
 
   * `sfWidgetFormI18nSelectLanguage`、`sfWidgetFormI18nSelectCurrency`と`sfWidgetFormI18nSelectCountry`: 対応する`Choice`ウィジェットを使います(対応するのは順に`sfWidgetFormI18nChoiceLanguage`、`sfWidgetFormI18nChoiceCurrency`と`sfWidgetFormI18nChoiceCountry`)。
     これらをカスタマイズできる可能性があることを除いて、これらはまったく同じように動作します。
+
+  * `SfExtensionObjectBuilder`、`SfExtensionPeerBuilder`、
+    `SfMultiExtendObjectBuilder`、`SfNestedSetBuilder`、
+    `SfNestedSetPeerBuilder`、`SfObjectBuilder`、`SfPeerBuilder`: カスタムのPropelビルダークラスはPropel 1.4の新しいビヘイビアシステムに移植されました。
 
 次のクラスはsymfony 1.3で削除されます:
 
@@ -130,6 +136,10 @@
   * `validation_error_prefix`、`validation_error_suffix`、
     `validation_error_class`、`validation_error_id_prefix`: これらの設定はValidationヘルパーグループによって使われ、symfony 1.3で廃止予定です。
 
+  * `is_internal` (`module.yml`): `is_internal`フラグはブラウザーからアクションが呼び出されるのを防止するために使われました。 
+    これはsymfony 1.0でEメール送信を保護するために追加されました。
+    Eメールのサポートはこのトリックを必要としなくなったので、このフラグは削除されsymfonyコアではチェックされません。
+
 タスク
 ------
 
@@ -144,6 +154,8 @@
 次のタスクはsymfony 1.3で廃止予定で、symfony 1.4で削除されます:
 
   * symfony 1.0のすべてのタスクのエイリアス
+
+  * `propel:init-admin`: このタスクはsymfony 1.0用のadminジェネレーターモジュールを生成しました。
 
 次のDoctrineタスクは`doctrine:build`にマージされsymfony 1.4で削除されます:
 
@@ -172,3 +184,6 @@ symfony CLIはグローバルな`--dry-run`オプションを受け取ること�
 
 symfony 1.3に関して、unavailableページは`%SF_APP_CONFIG_DIR%/`と`%SF_CONFIG_DIR%/`ディレクトリでのみ探されます。
 まだこれを`%SF_WEB_DIR%/errors/`に保存している場合、symfony 1.4へのマイグレーションを行う前に削除しなければなりません。
+
+プロジェクトのルートの`doc/`ディレクトリは生成されることはありません。symfony自身でも使われていないからです。 
+そして関連する`sf_doc_dir`も削除されました。
