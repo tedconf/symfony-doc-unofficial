@@ -808,16 +808,6 @@ For example, if you want to open files in TextMate, add the following to
 The `%f` placeholder will be replaced with file's absolute path and the `%l`
 placeholder will be replaced with the line number.
 
-### `sf_asset_timestamp`
-
-Symfony 1.3 allows to automatically append a timestamp of all assets inside the
-`sf_web_dir` by setting `sf_asset_timestamp` to true. By doing so you can use
-for example `mod_expires` to let assets never expire. To deliver a new version
-of the asset symfony checks the modification time and changes a GET parameter.
-If that changed the browser will load the new resource.
-If you have only few assets that you would like to version, you should do this
-manually, as the modification-time check for all assets will be a bit slower.
-
 Doctrine Integration
 --------------------
 
