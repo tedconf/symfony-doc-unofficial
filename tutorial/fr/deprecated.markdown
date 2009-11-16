@@ -42,6 +42,10 @@ ou versions antérieures, et seront retirées dans Symfony 1.4:
     `isResponseHeader()`, `isUserCulture()`, `isRequestFormat()`, et
     `checkResponseElement()`: Toutes ces méthodes ont été dépréciées depuis la version 1.2,
     et remplacées par les classes de tests.
+ 
+  * `sfTestFunctional` les méthodes suivantes : `isCached()`, `isUriCached()` : Ces
+    méthodes ont été dépréciées depuis la version 1.2, et remplacées par les classes
+    de tests.
 
   * `sfFilesystem::sh()` : Vous pouvez remplacer toutes les occurences de cette méthode par des 
     appels à la nouvelle méthode `sfFilesystem::execute()`. Soyez attentifs à la valeur renvoyée 
