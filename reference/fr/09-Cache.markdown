@@ -15,11 +15,11 @@ couche de la vue. Ce fichier de configuration n'est actif que si le paramètre
 Lorsqu'une application est créée, symfony génère un fichier par défaut `cache.yml`
 dans le répertoire `config/` de l'application qui décrit le cache pour toute
 l'application (sous une clé par défaut). Par défaut, le cache est définie globalement
-sur `off` :
+sur `false` :
 
     [yml]
     default:
-      enabled:     off
+      enabled:     false
       with_layout: false
       lifetime:    86400
 
@@ -64,7 +64,7 @@ dans l'ordre suivant :
 ~`enabled`~
 -----------
 
-*Par défaut* : `off`
+*Par défaut* : `false`
 
 Le paramètre `enabled` active ou désactive le cache pour le périmètre courant.
 
