@@ -513,7 +513,7 @@ plusieurs options supplémentaires sont disponibles:
 
 >**CAUTION**
 >Ce factory est créé si le paramètre [`cache`](#chapter_04_sub_cache)
->est à `on`.
+>est à `true`.
 
 La plupart de la configuration de ce factory se fait via le factory `view_cache`, qui
 définit l'objet du cache sous-jacent utilisé par le gestionnaire de cache la vue.
@@ -549,7 +549,7 @@ dépendant du nom de l'hôte (valeur par défaut : `true`).
 
 >**CAUTION**
 >Ce factory est uniquement défini si le paramètre [`cache`](#chapter_04_sub_cache)
->est à `on`.
+>est à `true`.
 
 Le factory `view_cache` définit une classe de cache qui doit hériter de
 `sfCache` (Voir la section Cache pour plus d'information).
@@ -566,7 +566,7 @@ Le factory `view_cache` définit une classe de cache qui doit hériter de
       class: sfI18N
       param:
         source:               XLIFF
-        debug:                off
+        debug:                false
         untranslated_prefix:  "[T]"
         untranslated_suffix:  "[/T]"
         cache:
@@ -579,7 +579,7 @@ Le factory `view_cache` définit une classe de cache qui doit hériter de
 
 >**CAUTION**
 >Ce factory est uniquement défini si le paramètre [`i18n`](#chapter_04_sub_i18n)
->est à `on`.
+>est à `true`.
 
 ### ~`source`~
 
@@ -589,7 +589,7 @@ L'option `source` définit le type de conteneur pour les traductions.
 
 ### ~`debug`~
 
-L'option `debug` définit le mode de débogage. S'il est défini à `on`, les messages
+L'option `debug` définit le mode de débogage. S'il est défini à `true`, les messages
 non-traduits sont décorées avec un préfixe et un suffixe (voir ci-dessous).
 
 ### ~`untranslated_prefix`~
