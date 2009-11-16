@@ -35,6 +35,7 @@ Paramètres
 
   * `.settings`
 
+    * [`asset_timestamp`](#chapter_04_sub_asset_timestamp)
     * [`cache`](#chapter_04_sub_cache)
     * [`charset`](#chapter_04_sub_charset)
     * [`check_lock`](#chapter_04_sub_check_lock)
@@ -118,7 +119,7 @@ exemple, pour obtenir la valeur du paramètre `charset`, utilisez :
 
 ### ~`escaping_strategy`~
 
-*Par défaut*: `on`
+*Par défaut*: `true`
 
 Le paramètre `escaping_strategy` est un paramètre booléen qui détermine si
 l'échappement de sortie du sous-framework est activé ou non. Lorsqu'il est activé, toutes les variables
@@ -131,7 +132,7 @@ d'une balise d'un script JavaScript.
 
 L'échappement de sortie du sous-framework utilise le paramètre `charset` pour échapper.
 
-Il est fortement recommandé de laisser la valeur par défaut à `on`.
+Il est fortement recommandé de laisser la valeur par défaut à `true`.
 
 >**TIP**
 >Ce réglage peut être activé lorsque vous créez une application avec la tâche
@@ -220,7 +221,7 @@ reconnu par PHP.
 
 ### ~`cache`~
 
-*Par défaut*: `off`
+*Par défaut* : `false`
 
 Le paramètre `cache` active ou désactive le modèle de mise en cache.
 
@@ -233,14 +234,22 @@ Le paramètre `cache` active ou désactive le modèle de mise en cache.
 
 ### ~`etag`~
 
-*Par défaut*: `on` par défaut sauf pour les environnements de `dev` et `test`
+*Par défaut*: `true` par défaut sauf pour les environnements de `dev` et `test`
 
 Le paramètre `etag` active ou désactive la génération automatique d'en-têtes `ETag` HTTP.
-Le ETag généré par symfony est un simple MD5 du contenu des réponses.
+Le ETag généré par symfony est un simple MD5 du contenu des
+réponses.
+
+### ~`asset_timestamp`~
+
+*Par défaut* : `false`
+
+Le paramètre `asset_timestamp` active automatiquement l'ajout d'un horodatage pour tous les
+actifs à l'intérieur de `web_dir` lorsque qu'ils sont utilisés avec le `AssetHelper`.
 
 ### ~`i18n`~
 
-*Par défaut*: `off`
+*Par défaut* : `false`
 
 Le paramètre `i18n` est un booléen qui active ou désactive le sous framework
 i18n. Si votre application estest internationalisée, réglez-le à `on`.
@@ -266,23 +275,23 @@ les templates (nom du groupe de helper sans le suffixe `Helper`).
 
 ### ~`no_script_name`~
 
-*Par défaut*: `on` pour l'environnement de `prod` de la première application créée,
-`off` pour les autres
+*Par défaut*: `true` pour l'environnement de `prod` de la première application créée,
+`false` pour les autres
 
 Le paramètre `no_script_name` détermine si le nom du script du contrôleur frontal
-est ajouté ou non dans l'URL générée. Par défaut il est réglé sur `on` par
+est ajouté ou non dans l'URL générée. Par défaut il est réglé sur `true` par
 la tâche `generate:app` pour l'environnement de `prod` de la première application
 créée. 
 
 De toute évidence, un seul couple application/environnement peut avoir le paramètre à
-`on`, dans le cas où tous les contrôleurs frontaux sont dans le même répertoire (`web/`). Si vous voulez
-plus d'une application avec `no_script_name` à `on`, déplacez le(s) contrôleur(s)
+`true`, dans le cas où tous les contrôleurs frontaux sont dans le même répertoire (`web/`). Si vous voulez
+plus d'une application avec `no_script_name` à `true`, déplacez le(s) contrôleur(s)
 correspondant(s) dans un sous-répertoire du répertoire racine
 web.
 
 ### ~`lazy_cache_key`~
 
-*Par défaut*: `on` pour les nouveaux projets, `off` pour des projets mis à niveau
+*Par défaut*: `true` pour les nouveaux projets, `false` pour des projets mis à niveau
 
 Lorsqu'il est activé, le paramètre `lazy_cache_key` retarde la création d'une clé cache
 jusqu'à ce que la vérification de la mise en cache d'une action ou d'un partial soit terminé. cela peut
@@ -308,7 +317,7 @@ sera remplacé par le numéro de ligne.
 
 ### ~`logging_enabled`~
 
-*Par défaut*: `on` pour tous les environnements sauf `prod`
+*Par défaut*: `true` pour tous les environnements sauf `prod`
 
 Le paramètre `logging_enabled` active la journalisation du sous-framework. Mettez cette option à
 `false` et il contourne le mécanisme de journalisation et cela fournit un petit
@@ -320,7 +329,7 @@ gain de performance.
 
 ### ~`web_debug`~
 
-*Par défaut*: `off` pour tous les environnements sauf `dev`
+*Par défaut*: `false` pour tous les environnements sauf `dev`
 
 Le paramètre `web_debug` active la barre d'outil de déboggage web. Elle
 est incluse dans une page si le contenu de la réponse est du HTML.
@@ -350,29 +359,29 @@ La configuration par défaut est la plus sensible, et ne devrait pas être modif
 
 ### ~`compressed`~
 
-*Par défaut*: `off`
+*Par défaut*: `false`
 
 Le paramètre `compressed` permet la compression native de la réponse PHP. S'il est à
-`on`, symfony utilisera [`ob_gzhandler`](http://www.php.net/ob_gzhandler), une fonction
+`true`, symfony utilisera [`ob_gzhandler`](http://www.php.net/ob_gzhandler), une fonction
 callback de `ob_start()`.
 
-Il est recommandé de le laisser à `off` et utiliser le mécanisme de compression
+Il est recommandé de le laisser à `false` et utiliser le mécanisme de compression
 natif de votre serveur web à la place.
 
 ### ~`use_database`~
 
-*Par défaut*: `on`
+*Par défaut*: `true`
 
 Le `use_database` détermine si l'application utilise une base de données ou non.
 
 ### ~`check_lock`~
 
-*Par défaut*: `off`
+*Par défaut*: `false`
 
 Le paramètre `check_lock` active ou désactive le système de verrouillage de l'application
 déclenchée par des tâches telles que `cache:clear` et `project:disable`.
 
-S'il est défini à `on`, toutes les requêtes vers des applications désactivées seront automatiquement
+S'il est défini à `true`, toutes les requêtes vers des applications désactivées seront automatiquement
 redirigées vers la page du noyau symfony `lib/exception/data/unavailable.php`.
 
 >**TIP**
