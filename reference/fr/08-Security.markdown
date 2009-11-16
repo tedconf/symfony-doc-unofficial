@@ -16,7 +16,7 @@ toute l'application (sous une clé par défaut) :
 
     [yml]
     default:
-      is_secure: off
+      is_secure: false
 
 Comme indiqué dans l'introduction, le fichier `security.yml` bénéficie du
 [**mécanisme de configuration en cascade**](#chapter_03_configuration_en_cascade)
@@ -54,9 +54,9 @@ application, autorise l'accès à n'importe qui :
 
     [yml]
     default:
-      is_secure: off
+      is_secure: false
 
-Par le paramètre ~`is_secure`~ à `on` dans le fichier `security.yml` de
+Par le paramètre ~`is_secure`~ à `true` dans le fichier `security.yml` de
 l'application, l'application entière demandera une authentification pour tous les utilisateurs.
 
 >**NOTE**
@@ -68,7 +68,7 @@ dans le répertoire `config/` du module et définissez la clé `all` :
 
     [yml]
     all:
-      is_secure: on
+      is_secure: true
 
 Pour modifier les conditions d'authentification pour une action individuelle d'un module, créez
 un fichier `security.yml` dans le répertoire `config/` du module et définissez une
@@ -76,7 +76,7 @@ clé après le nom de l'action :
 
     [yml]
     index:
-      is_secure: off
+      is_secure: false
 
 >**TIP**
 >Il n'est pas possible de sécuriser l'action login. Il s'agit d'éviter une récursion
@@ -85,15 +85,13 @@ clé après le nom de l'action :
 ~Authorization~
 ---------------
 
-
-
 Lorsqu'un utilisateur est authentifié, l'accès à certaines actions peuvent être encore
 plus limité en définissant les *~credentials~*. Quand les credentials sont définis, l'utilisateur
 doit disposer des credentials nécessaires pour accéder à l'action :
 
     [yml]
     all:
-      is_secure:   on
+      is_secure:   true
       credentials: admin
 
 Le système des credentials de symfony est simple et puissant. Un credential est une
@@ -102,7 +100,6 @@ de sécurité des applications (comme des groupes ou des autorisations).
 
 Les clés `credentials` supportent les opérations booléennes pour décrire les exigences
 complexes des credentials en utilisant le tableau de notation.
-
 
 Si un utilisateur doit disposer du credential A **et** du credential B, entourez les
 credentials avec des crochets :
