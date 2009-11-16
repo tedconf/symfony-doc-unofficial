@@ -28,25 +28,25 @@ La configuration par défaut est très bien pour la plupart des projets :
       project:
         name:           project
         path:           %SF_LIB_DIR%
-        recursive:      on
+        recursive:      true
         exclude:        [model, symfony]
 
       project_model:
         name:           project model
         path:           %SF_LIB_DIR%/model
-        recursive:      on
+        recursive:      true
 
       # application
       application:
         name:           application
         path:           %SF_APP_LIB_DIR%
-        recursive:      on
+        recursive:      true
 
       modules:
         name:           module
         path:           %SF_APP_DIR%/modules/*/lib
         prefix:         1
-        recursive:      on
+        recursive:      true
 
 Chaque configuration possède un nom et doit être mis sous une clé avec ce nom. Il
 permet pour la configuration par défaut d'être redéfinie.
@@ -75,7 +75,7 @@ performances en modifiant la configuration de chargement automatique de `project
       project:
         name:           project
         path:           %SF_LIB_DIR%
-        recursive:      on
+        recursive:      true
         exclude:        [model, symfony, vendor/large_lib]
 
 ~`config_handlers.yml`~
