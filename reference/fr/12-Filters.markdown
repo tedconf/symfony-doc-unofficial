@@ -54,7 +54,6 @@ du fichier de configuration hérité :
     rendering: ~
     security:  ~
     cache:     ~
-    common:    ~
     execution: ~
 
 Pour supprimer un filtre, vous devez le désactiver en réglant la clé `enabled` sur
@@ -95,7 +94,6 @@ Filters
  * [`rendering`](#chapter_12_rendering)
  * [`security`](#chapter_12_security)
  * [`cache`](#chapter_12_cache)
- * [`common`](#chapter_12_common)
  * [`execution`](#chapter_12_execution)
 
 `rendering`
@@ -152,23 +150,6 @@ le [fichier](#chapter_08) de configuration `security.yml`.
 Le filtre `cache` gère la mise en cache pour les actions et les pages.  Il est également
 responsable de l'ajout des entêtes cache HTTP nécessaires à la réponse
 (`Last-Modified`, `ETag`, `Cache-Control`, `Expires`, ...).
-
-`common`
---------
-
-*Configuration par défaut* :
-
-    [yml]
-    common:
-      class: sfCommonFilter
-
-Le filtre `common` ajoute les tags javascripts et les feuilles de style pour la réponse principale,
-s'ils n'ont pas déjà été inclus.
-
->**TIP**
->Si vous utilisez les helpers `include_stylesheets()` et `include_javascripts()`
->dans votre mise en page, vous pouvez en toute sécurité désactiver ce filtre, et bénéficiez
->d'une petite impulsion de performance.
 
 `execution`
 -----------
