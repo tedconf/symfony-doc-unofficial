@@ -35,7 +35,7 @@ Layout
 
     [yml]
     default:
-      has_layout: on
+      has_layout: true
       layout:     layout
 
 Le fichier de configuration `view.yml` définit le ~layout~ par défaut utilisé par
