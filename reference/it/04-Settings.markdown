@@ -30,7 +30,7 @@ Impostazioni
   * `.actions`
 
     * [`error_404`](#chapter_04_sub_error_404)
-    * [`login`](#chapter_04_sub_error_404)
+    * [`login`](#chapter_04_sub_login)
     * [`secure`](#chapter_04_sub_secure)
     * [`module_disabled`](#chapter_04_sub_module_disabled)
 
