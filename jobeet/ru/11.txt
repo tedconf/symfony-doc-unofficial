@@ -10,44 +10,27 @@
 Это то, чем мы займемся сегодня. Попутно мы также изучим фреймворк форм глубже.
 
 >**SIDEBAR**
->Using the Form Framework without symfony
->
->The symfony framework components are quite ~decoupled|Decoupling~. This means that most of
->them can be used without using the whole MVC framework. That's the case for
->the form framework, which has no dependency on symfony. You can use it in any
->PHP application by getting the `lib/form/`, `lib/widgets/`, and
->`lib/validators/` directories.
->
->Another reusable component is the routing framework. Copy the `lib/routing/`
->directory in your non-symfony project, and benefit from pretty URLs for free.
->
->The components that are symfony independent form the 
->**~symfony platform|Symfony Platform~**:
->
->![The symfony platform](http://www.symfony-project.org/images/jobeet/1_2/11/platform.png)
-
->**SIDEBAR**
 >Использование Фреймворка форм без Symfony
 >
->Компоненты Symfony связаны гибко. Это означает. что большинство из них может использоваться
+>Компоненты Symfony связаны гибко. Это означает, что большинство из них может использоваться
 >отдельно от полного MVC фреймворка. Это касается и фреймворка форм, который не имеет зависимостей
 >от Symfony. Вы можете использовать его в любом PHP приложении, включив в него каталоги `lib/form/`, 
 >`lib/widgets/` и`lib/validators/`.
 >
->Другой компонент. допускающий отдельное использование, это фреймворк маршрутизации. Скопируйте каталог 
+>Другой компонент, допускающий отдельное использование, это фреймворк маршрутизации. Скопируйте каталог 
 >`lib/routing/` в свой проект, не использующий Symfony, и свободно наслаждайтесь красивыми URL.
 >
 >Независимые компоненты формируют **платформу Symfony**:
 >
 >![The symfony platform](http://www.symfony-project.org/images/jobeet/1_2/11/platform.png)
 
-Submitting a Form
------------------
+Сохранения форм (submitting)
+----------------------------
 
-Let's open the `jobActionsTest` file to add functional ~test|Testing~s for the job
-creation and validation process.
+Давайте откроем файл `jobActionsTest`, чтобы добавить функциональные тесты для создания
+вакансии и процесса валидации формы.
 
-At the end of the file, add the following code to get the job creation page:
+В конец файла добавьте следующий код, чтобы получить страницу создания вакансии:
 
     [php]
     // test/functional/frontend/jobActionsTest.php
@@ -61,23 +44,22 @@ At the end of the file, add the following code to get the job creation page:
       end()
     ;
 
-We have already used the `click()` method to simulate clicks on links. The
-same `click()` method can be used to submit a ~form|Forms~. For a form, you can pass
-the values to submit for each field as a second argument of the method. Like
-a real browser, the browser object will merge the default values of the form
-with the submitted values.
+Мы уже использовали метод `click()` для эмуляции перехода по ссылкам. Такой же
+метод `click()` может быть использован для сохранения формы. Для формы Вы можете
+задать значения каждого поля для сохранения в качестве второго аргумента метода. Так же,
+как и настоящий браузер, объект `Browser` объединяет значения по умолчанию с заданными Вами
+значениями.
 
-But to pass the field values, we need to know their names. If you open the
-source code or use the Firefox Web Developer Toolbar "Forms > Display Form
-Details" feature, you will see that the name for the `company` field is
-`jobeet_job[company]`.
+Но чтобы задать значения полей, Вы должны знать их имена. Если Вы откроете исходный код страницы,
+либо воспользуетесь возможностью Firefox Web Developer Toolbar "Forms > Display Form
+Details", Вы увидите, что имя поля для `company` на самом деле выглядит как `jobeet_job[company]`.
 
 >**NOTE**
->When PHP encounters an input field with a name like `jobeet_job[company]`, it
->automatically converts it to an array of name `jobeet_job`.
+>Когда PHP сталкивается с именами вроде `jobeet_job[company]`, он автоматически преобразует их
+>в массив с именем `jobeet_job`.
 
-To make things look a bit more clean, let's change the format to `job[%s]` by adding the
-following code at the end of the `configure()` method of `JobeetJobForm`:
+Чтобы сделать названия более ясными, давайте добавим формат `job[%s]` для полей формы при помощи
+следующего кода в конце метода `configure()` класса `JobeetJobForm`:
 
     [php]
 <propel>
@@ -88,9 +70,9 @@ following code at the end of the `configure()` method of `JobeetJobForm`:
 </doctrine>
     $this->widgetSchema->setNameFormat('job[%s]');
 
-After this change, the `company` name should be `job[company]` in your
-browser. It is now time to actually click on the "Preview your job" button
-and pass valid values to the form:
+После этого изменения имя поля `company` будет выглядеть как `job[company]` в Вашем 
+браузере. Теперь самое время нажать на кнопку "Preview your job" и передать форме
+допустимые значения полей:
 
     [php]
     // test/functional/frontend/jobActionsTest.php
@@ -121,10 +103,9 @@ and pass valid values to the form:
       end()
     ;
 
-The browser also simulates ~file uploads|File Upload~ if you pass the absolute path to the
-file to upload.
+Объект `Browser` может также проэмулировать загрузку файлов, если Вы укажете абсолютный путь к файлу.
 
-After submitting the form, we checked that the executed action is `create`.
+После сохранения формы мы проверили, что было запущено действие `create`.
 
 The Form Tester
 ---------------
