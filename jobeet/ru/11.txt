@@ -104,37 +104,36 @@ Details", Вы увидите, что имя поля для `company` на са
     ;
 
 Объект класса `sfBrowser` может также проэмулировать загрузку файлов, если Вы укажете абсолютный путь к файлу.
-
 После сохранения формы мы проверили, что было запущено действие `create`.
 
-The Form Tester
----------------
+Тестер форм (form tester) 
+-------------------------
 
-The form we have submitted should be valid. You can test this by using the
-**form tester**:
+Форма, которую мы сохранили, должна быть валидна. Вы можете это проверить, используя
+**тестер форм**:
 
     [php]
     with('form')->begin()->
       hasErrors(false)->
     end()->
 
-The form tester has several methods to test the current form status, like the
-errors.
+Тестер форм имеет несколько методов для проверки текущего статуса формы, например,
+наличия ошибок.
 
-If you make a mistake in the test, and the test does not pass, you can use the
-`with('response')->~debug|Debug~()` statement we have seen during day 9. But you will
-have to dig into the generated HTML to check for error messages. That's not
-really convenient. The form tester also provides a `debug()` method that
-outputs the form status and all error messages associated with it:
+Если Вы сделали ошибку в тесте, и он не срабатывает, Вы можете использовать выражение
+`with('response')->debug()`, которое мы уже видели в дне 9. Но Вы будете вынуждены
+погрузиться в сгенерированный HTML, чтобы увидеть сообщения об ошибках. Это неудобно.
+Тестер форм также предоставляет метод `debug()`, который отображает статус формы
+и все связанные с ним сообщения об ошибках:
 
     [php]
     with('form')->debug()
 
-Redirection Test
-----------------
+Тестирование перенаправления (redirect)
+---------------------------------------
 
-As the form is valid, the job should have been created and the user 
-~redirected|Redirection (Test)~ to the `show` page:
+Поскольку форма валидна, вакансия должна быть создана и пользователь перенаправлен 
+на страницу `show`:
 
     [php]
     isRedirected()->
@@ -145,22 +144,22 @@ As the form is valid, the job should have been created and the user
       isParameter('action', 'show')->
     end()->
 
-The `isRedirected()` tests if the page has been redirected and the
-`followRedirect()` method follows the redirect.
+Метод `isRedirected()` проверяет, было ли выполнено перенаправление, а метод
+`followRedirect()` осуществляет перенаправление.
 
 >**NOTE**
->The browser class does not follow redirects automatically as you might want
->to introspect objects before the redirection.
+>Класс `sfBrowser` не выполняет перенаправление автоматически, поскольку Вы можете
+>захотеть проверить состояние объектов перед перенаправлением.
 
-The ##ORM## Tester
------------------
+##ORM##-тестер
+-------------------
 
-Eventually, we want to test that the job has been created in the database and
-check that the `is_activated` column is set to `false` as the user has not
-published it yet.
+В конце концов, мы хотим проверить, что вакансия была создана в базе данных и 
+поле `is_activated` установлено в `false`, поскольку пользователь еще не опубликовал вакансию.
 
-This can be done quite easily by using yet another ~tester|Testers~, the **##ORM##
-tester**. As the ##ORM## tester is not registered by default, let's add it now:
+Это может быть сделано довольно просто при помощи не использовавшегося нами до сих пор 
+**##ORM##-тестера**. Поскольку ##ORM##-тестер по умолчанию не устанавливается, 
+давайте его добавим:
 
 <propel>
     [php]
@@ -171,8 +170,8 @@ tester**. As the ##ORM## tester is not registered by default, let's add it now:
     $browser->setTester('doctrine', 'sfTesterDoctrine');
 </doctrine>
 
-The ##ORM## tester provides the `check()` method to check that one or more
-objects in the database matches the criteria passed as an argument.
+##ORM##-тестер предлагает метод `check()` для проверки, что один или более
+объектов в базе данных удовлетворяют критерию, задаваемому в аргументе метода.
 
     [php]
 <propel>
@@ -188,24 +187,22 @@ objects in the database matches the criteria passed as an argument.
       ))->
     end()
 
+Критерий может задаваться массивом значений, как в примере выше, или экземпляром объекта
 <propel>
-The criteria can be an array of values like above, or a `Criteria` instance
-for more complex queries. You can test the existence of objects matching the
-criteria with a Boolean as the third argument (the default is `true`), or the
-number of matching objects by passing an integer.
+`Criteria`
 </propel>
 <doctrine>
-The criteria can be an array of values like above, or a `Doctrine_Query` 
-instance for more complex queries. You can test the existence of objects
-matching the criteria with a Boolean as the third argument (the default is
-`true`), or the number of matching objects by passing an integer.
+`Doctrine_Query`
 </doctrine>
+для более сложных запросов. Вы можете проверять существование объектов, удовлетворяющих критерию,
+задавая значение Boolean в качестве третьего аргумента (по умолчанию `true`), или количество
+совпадающих объектов, задавая целое число.
 
-Testing for ~Errors~
---------------------
+Тестирование на наличие ошибок валидации
+----------------------------------------
 
-The job ~form|Forms~ creation works as expected when we submit valid values. Let's add
-a test to check the behavior when we submit non-valid data:
+Создание формы вакансии работает как ожидается, если мы сохраняем правильные значения. Давайте
+добавим тест, чтобы проверить поведение, когда делается попытка сохранения невалидных значений:
 
     [php]
     $browser->
@@ -227,23 +224,22 @@ a test to check the behavior when we submit non-valid data:
       end()
     ;
 
-The `hasErrors()` method can test the number of errors if passed an integer.
-The `isError()` method tests the error code for a given field.
+Метод `hasErrors()` может протестировать количество ошибок, если вызывается с целым аргументом.
+Метод `isError()` тестирует код ошибки для данного поля.
 
 >**TIP**
->In the tests we have written for the non-valid data submission, we have not
->re-tested the entire form all over again. We have only added tests for
->specific things.
+>В тестах, которые мы написали для сохранения невалидных данных, мы не вызываем
+>тесты для всей формы. Мы добавили тесты только для специфических полей.
 
-You can also test the generated ~HTML~ to check that it contains the error
-messages, but it is not necessary in our case as we have not customized the
-form layout.
+Вы можете также протестировать сгенерированный HTML, чтобы проверить, что он содержит
+сообщения об ошибках, но это не является необходимым в нашем случае, поскольку мы не меняли 
+отображение формы.
 
-Now, we need to test the admin bar found on the job preview page. When a job
-has not been activated yet, you can edit, delete, or publish the job. To test
-those three links, we will need to first create a job. But that's a lot of copy
-and paste. As I don't like to waste e-trees, let's add a job creator method in
-the `JobeetTestFunctional` class:
+Теперь нам нужно проверить панель администратора на странице предварительного просмотра вакансии.
+Пока вакансия еще не активирована, Вы можете отредактировать, удалить или опубликовать ее. Чтобы проверить
+эти три ссылки, сначала мы должны создать вакансию. Но нам придется скопировать много кода.
+Поскольку я не люблю засорять код копипастом, давайте добавим метод создания вакансии
+в класс `JobeetTestFunctional`:
 
     [php]
     // lib/test/JobeetTestFunctional.class.php
@@ -270,9 +266,10 @@ the `JobeetTestFunctional` class:
       // ...
     }
 
-The `createJob()` method creates a job, follows the redirect and returns the
-browser to not break the fluent interface. You can also pass an array of values
-that will be merged with some default values.
+Метод `createJob()` создает вакансию, выполняет перенаправление и возвращает объект
+браузера, чтобы не прерывать цепочку плавающего синтаксиса (fluent interface). Вы также можете
+передать в метод массив значений, которые будут объединены со значениями по умолчанию перед 
+сохранением.
 
 Forcing the ~HTTP Method~ of a link
 -----------------------------------
