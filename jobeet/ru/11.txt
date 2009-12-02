@@ -271,10 +271,10 @@ Details", Вы увидите, что имя поля для `company` на са
 передать в метод массив значений, которые будут объединены со значениями по умолчанию перед 
 сохранением.
 
-Forcing the ~HTTP Method~ of a link
------------------------------------
+Установка HTTP метода для ссылки
+--------------------------------
 
-Testing the "Publish" link is now more simple:
+Тестирование ссылки "Publish" теперь стало намного проще:
 
     [php]
     $browser->info('  3.3 - On the preview page, you can publish the job')->
@@ -294,15 +294,15 @@ Testing the "Publish" link is now more simple:
       end()
     ;
 
-If you remember from day 10, the "Publish" link has been configured to be
-called with the HTTP `~PUT|PUT (HTTP Method)~` method. As browsers don't understand 
-`PUT` requests, the `link_to()` helper converts the link to a form with some
-JavaScript. As the test browser does not execute JavaScript, we need to force
-the method to `PUT` by passing it as a third option of the `click()` method.
-Moreover, the `link_to()` helper also embeds a ~CSRF token~ as we have enabled
-CSRF protection during day 1; the `_with_csrf` option simulates this token.
+Если Вы помните день 10, то ссылка "Publish" была настроена на то, чтобы использовать
+HTTP метод `PUT`. Поскольку браузеры не понимают `PUT` запросов, то помощник (helper) 
+`link_to()` преобразует ссылку, используя некоторое количество JavaScript. 
+Т.к. тестовый браузер не запускает JavaScript, мы должны установить для метода значение
+`PUT`, передав его в качестве третьего параметра метода `click()`.
+Более того, помощник `link_to()` также встраивает CSRF токен поскольку мы разрешили
+использование CSRF-защиты в первый день; опция `_with_csrf` эмулирует этот токен.
 
-Testing the "Delete" link is quite similar:
+Тестирование ссылки "Delete" выглядит аналогично:
 
     [php]
     $browser->info('  3.4 - On the preview page, you can delete the job')->
@@ -321,16 +321,15 @@ Testing the "Delete" link is quite similar:
       end()
     ;
 
-Tests as a SafeGuard
---------------------
+Тесты как элемент защиты
+------------------------
 
-When a job is published, you cannot edit it anymore. Even if the "Edit" link
-is not displayed anymore on the preview page, let's add some tests for this
-requirement.
+Когда вакансия опубликована, Вы больше не можете ее редактировать. Даже если ссылка "Edit"
+более не показывается на странице просмотра вакансии, давайте добавим несколько тестов
+для проверки этого требования.
 
-First, add another argument to the `createJob()` method to allow automatic
-publication of the job, and create a `getJobByPosition()` method that returns
-a job given its position value:
+Сначала добавим новый аргумент в метод `createJob()` для разрешения автоматической публикации
+вакансии и создадим метод `getJobByPosition()`, возвращающий вакансию по значению позиции:
 
     [php]
     // lib/test/JobeetTestFunctional.class.php
@@ -387,7 +386,7 @@ a job given its position value:
       // ...
     }
 
-If a job is published, the edit page must return a ~404|404 Error~ status code:
+Если вакансия опубликована, страница редактирования должна возвращать код ошибки 404:
 
     [php]
     $browser->info('  3.5 - When a job is published, it cannot be edited anymore')->
@@ -399,12 +398,12 @@ If a job is published, the edit page must return a ~404|404 Error~ status code:
       end()
     ;
 
-But if you run the tests, you won't have the expected result as we forgot to
-implement this ~security|Security~ measure yesterday. Writing tests is also a great way
-to discover bugs, as you need to think about all ~edge cases|Edge Cases~.
+Но если Вы запустите тесты, Вы не получите ожидаемых результатов, поскольку мы забыли
+вчера реализовать защиту в полной мере. Написание тестов - это очень правильный способ
+найти баги, поскольку Вам надо позаботиться обо всех крайних случаях.
 
-Fixing the bug is quite simple as we just need to forward to a 404 page if the
-job is activated:
+Исправление бага делается просто, поскольку нам просто нужно перенаправить пользователя на
+страницу, соответствующую коду ошибки 404, если вакансия активирована:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -416,11 +415,10 @@ job is activated:
       $this->form = new JobeetJobForm($job);
     }
 
-The fix is trivial, but are you sure that everything else still works as
-expected? You can open your browser and start testing all possible
-combinations to access the edit page. But there is a simpler way: run
-your test suite; if you have introduced a ~regression|Regression~, symfony will tell you
-right away.
+Исправление оказалось элементарным, но Вы уверены, что все остальное по-прежнему работает,
+как ожидается? Вы можете открыть свой браузер и начать тестирование всех возможных комбинаций
+доступа к странице редактирования. Но есть способ лучше: запустить свой набор тестов; 
+если Вы используете регрессионное тестирование, Symfony немедленно Вам сообщит о проблемах.
 
 Back to the Future in a Test
 ----------------------------
