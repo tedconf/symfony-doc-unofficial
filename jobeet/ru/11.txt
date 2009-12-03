@@ -1,8 +1,6 @@
 День 11: Тестирование форм
 ==========================
 
-**Внимание: перевод в работе! Пишите anna.tarasenko@equelli.com**
-
 Вчера мы создали нашу первую форму с использованием Symfony. Пользователи теперь
 имеют возможность разместить новую вакансию на Jobeet, но мы вышли за рамки 
 отпущенного времени до того, как успели добавить немного тестов.
@@ -400,9 +398,9 @@ HTTP метод `PUT`. Поскольку браузеры не понимают
 
 Но если Вы запустите тесты, Вы не получите ожидаемых результатов, поскольку мы забыли
 вчера реализовать защиту в полной мере. Написание тестов - это очень правильный способ
-найти баги, поскольку Вам надо позаботиться обо всех крайних случаях.
+найти ошибки в коде, поскольку Вам надо позаботиться обо всех крайних случаях.
 
-Исправление бага делается просто, поскольку нам просто нужно перенаправить пользователя на
+Ошибку исправить просто, поскольку нам просто нужно перенаправить пользователя на
 страницу, соответствующую коду ошибки 404, если вакансия активирована:
 
     [php]
@@ -420,21 +418,20 @@ HTTP метод `PUT`. Поскольку браузеры не понимают
 доступа к странице редактирования. Но есть способ лучше: запустить свой набор тестов; 
 если Вы используете регрессионное тестирование, Symfony немедленно Вам сообщит о проблемах.
 
-Back to the Future in a Test
-----------------------------
+Назад в будущее при помощи тестов
+---------------------------------
 
-When a job is expiring in less than five days, or if it is already expired,
-the user can extend the job validation for another 30 days from the current
-date.
+Когда до истечения срока действия вакансии остается меньше 5 дней, либо если он уже истек,
+пользователь может продлить этот срок еще на 30 дней, начиная с текущей даты.
 
-Testing this requirement in a browser is not easy as the expiration date is
-automatically set when the job is created to 30 days in the future. So, when
-getting the job page, the link to extend the job is not present. Sure, you can
-hack the expiration date in the database, or tweak the template to always
-display the link, but that's tedious and error prone. As you have already
-guessed, writing some tests will help us one more time.
+Тестирование этого требования в браузере - непростая задача, поскольку дата окончания
+срока действия автоматически ставится на 30 дней вперед при создании вакансии. Поэтому
+при открытии страницы вакансий ссылка для продления вакансии отсутствует. Конечно, Вы можете
+переустановить дату прямо в базе данных или изменить шаблон страницы, чтобы ссылка
+отображалась всегда, но это утомительно и чревато ошибками. Как Вы уже догадались,
+написание нескольких тестов поможет нам еще раз.
 
-As always, we need to add a new route for the `extend` method first:
+Как всегда, первым делом мы должны добавить новый маршрут для метода `extend`:
 
     [yml]
     # apps/frontend/config/routing.yml
@@ -447,7 +444,7 @@ As always, we need to add a new route for the `extend` method first:
       requirements:
         token: \w+
 
-Then, update the "Extend" link code in the `_admin` partial:
+Теперь обновим код, формирующий ссылку "Extend" в партиале `_admin`:
 
     [php]
     <!-- apps/frontend/modules/job/templates/_admin.php -->
@@ -455,7 +452,7 @@ Then, update the "Extend" link code in the `_admin` partial:
      - <?php echo link_to('Extend', 'job_extend', $job, array('method' => 'put')) ?> for another <?php echo sfConfig::get('app_active_days') ?> days
     <?php endif; ?>
 
-Then, create the `extend` action:
+Создадим действие `extend` в контроллере:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -476,8 +473,8 @@ Then, create the `extend` action:
       $this->redirect($this->generateUrl('job_show_user', $job));
     }
 
-As expected by the action, the `extend()` method of `JobeetJob` returns `true`
-if the job has been extended or `false` otherwise:
+Контроллер ожидает, что метод `extend()` класса `JobeetJob` возвращает `true`,
+если действие вакансии было продлено, и `false` иначе:
 
 <propel>
     [php]
@@ -522,7 +519,7 @@ if the job has been extended or `false` otherwise:
     }
 </doctrine>
 
-Eventually, add a test scenario:
+Напоследок добавим тестовый сценарий:
 
     [php]
     $browser->info('  3.6 - A job validity cannot be extended before the job expires soon')->
@@ -566,49 +563,44 @@ Eventually, add a test scenario:
     );
 </doctrine>
 
-This test scenario introduces a few new things:
+Тестовый сценарий демонстрирует несколько новых вещей:
 
- * The `call()` method retrieves a URL with a method different from `GET` or
-   `POST`
+ * Метод `call()` осуществляет запрос по URL, позволяя указать метод, отличный от `GET` и `POST`
 <propel>
- * After the job has been updated by the action, we need to reload the local
-   object with `$job->reload()`
+ * После того, как вакансия была обновлена контроллером в базе данных, нам нужно перезагрузить
+   локальный объект при помощи `$job->reload()`
 </propel>
 <doctrine>
- * After the job has been updated by the action, we need to reload the local
-   object with `$job->refresh()`
+ * После того, как вакансия была обновлена контроллером в базе данных, нам нужно перезагрузить
+   локальный объект при помощи `$job->refresh()`
 </doctrine>
- * At the end, we use the embedded `lime` object directly to test the new
-   expiration date.
+ * И наконец, мы используем встроенный объект `lime`, чтобы непосредственно протестировать
+   дату истечения срока действия вакансии.
 
-Forms Security
---------------
+Защита, обеспечиваемая формами
+------------------------------
 
-### Form Serialization Magic!
+### Магия сериализации форм
 
-##ORM## ~form|Forms~s are very easy to use as they automate a lot of work. For
-instance, serializing a form to the database is as simple as a call to
-`$form->save()`.
+##ORM##-формы очень просты в использовании, поскольку они автоматически выполняют массу работы. 
+Например, сохранение полей формы в базу данных выполняется простым вызовом метода `$form->save()`.
 
-But how does it work? Basically, the `save()` method follows the following
-steps:
+Но как это работает? Прежде всего, метод `save()` выполняет следующие шаги:
 
- * Begin a transaction (because nested ##ORM## forms are all saved in one fell
-   swoop)
- * Process the submitted values (by calling `updateCOLUMNColumn()` methods if
-   they exist)
- * Call ##ORM## object `fromArray()` method to update the column values
- * Save the object to the database
- * Commit the transaction
+ * Начинает транзакцию (так как все вложенные ##ORM##-формы сохраняются вместе с основной формой)
+ * Обрабатывает сохраняемые значения полей (вызывая методы `updateCOLUMNColumn()`, если они существуют)
+ * Вызывает метод `fromArray()` ##ORM##-объекта, чтобы обновить значения его свойств
+ * Сохраняет объект в базе данных
+ * Подтверждает транзакцию (commit)
 
-### Built-in Security Features
+### Встроенные методы обеспечения безопасности
 
-The `fromArray()` method takes an array of values and updates the corresponding
-column values. Does this represent a ~security|Security~ issue? What if someone tries to
-submit a value for a column for which he does not have authorization? For
-instance, can I force the `token` column?
+Метод `fromArray()` берет массив значений и обновляет соответствующие им значения столбцов. 
+Может ли это создать проблемы с безопасностью? Что если кто-то попытается сохранить
+значение столбца, для работы с которым он не авторизован? Например, могу ли я принудительно 
+обновить столбец `token`?
 
-Let's write a test to simulate a job submission with a `token` field:
+Давайте напишем тест, который проэмулирует сохранение вакансии вместе с полем `token`:
 
     [php]
     // test/functional/frontend/jobActionsTest.php
@@ -624,17 +616,15 @@ Let's write a test to simulate a job submission with a `token` field:
       end()
     ;
 
-When submitting the form, you must have an `extra_fields` global error.
-That's because by default forms do not allow extra fields to be present in the
-submitted values. That's also why all form fields must have an associated
-validator.
+Когда форма будет сохраняться, Вы должны получить глобальную ошибку `extra_fields`.
+Это происходит потому, что по умолчанию форма не позволяет использовать дополнительные поля
+в качестве сохраняемых значений. Это также объясняет, почему все поля формы должны иметь валидаторы.
 
 >**TIP**
->You can also submit additional fields from the comfort of your browser using
->tools like the Firefox Web Developer Toolbar.
+>Вы также можете попробовать сохранить дополнительные поля при помощи браузера, используя инструменты
+>вроде Firefox Web Developer Toolbar.
 
-You can bypass this security measure by setting the `allow_extra_fields`
-option to `true`:
+Вы можете отключить эту проверку безопасности, установив опцию `allow_extra_fields` в `true`:
 
     [php]
     class MyForm extends sfForm
@@ -647,40 +637,39 @@ option to `true`:
       }
     }
 
-The test must now pass but the `token` value has been filtered out of the
-values. So, you are still not able to bypass the security measure. But if you
-really want the value, set the `filter_extra_fields` option to `false`:
+Тест теперь сработает, но значение поля `token` будет отброшено при сохранении.
+Таким образом, Вы по-прежнему не можете нарушить безопасность сохранения формы. 
+Но если Вам действительно нужно это значение, установите опцию `filter_extra_fields` 
+в `false`:
 
     [php]
     $this->validatorSchema->setOption('filter_extra_fields', false);
 
 >**NOTE**
->The tests written in this section are only for demonstration purpose. You
->can now remove them from the Jobeet project as tests do not need to validate
->symfony features.
+>Тесты, написанные в этом разделе предназначены только для демонстрационных целей. Вы
+>теперь можете их удалить из проекта Jobeet, поскольку Вам не нужны тесты для проверки
+>возможностей самой Symfony.
 
-### ~XSS~ and ~CSRF~ Protection
+### Защита от XSS и CSRF атак
 
-During day 1, we created the `frontend` application with the following command
-line:
+В течение первого дня, мы создали приложение `frontend`, используя следующую командную строку:
 
     $ php symfony generate:app --escaping-strategy=on
        ➥ --csrf-secret=Unique$ecret frontend
 
-The `--escaping-strategy` option enables the protection against XSS. It means
-that all variables used in templates are escaped by default. If you try to
-submit a job description with some HTML tags inside, you will notice that when
-symfony renders the job page, the HTML tags from the description are not
-interpreted, but rendered as plain text.
+Опция `--escaping-strategy` активирует защиту против XSS-атак. Это означает,
+что все переменные, используемые в шаблонах, по умолчанию экранируются (escaped). 
+Если Вы попытаетесь сохранить описание вакансии с HTML тэгами внутри, Вы заметите,
+что когда Symfony обрабатывает страницу, HTML тэги из описания не воспринимаются как тэги,
+а интерпретируются как простой текст.
 
-The `--csrf-secret` option enabled the CSRF protection. When you provide this
-option, all forms embed a `_csrf_token` hidden field.
+Опция `--csrf-secret` активирует защиту против CSRF-атак. Когда Вы используете эту опцию,
+все формы имеют встроенные скрытые поля `_csrf_token`.
 
 >**TIP**
->The escaping strategy and the CSRF secret can be changed at any time by
->editing the `apps/frontend/config/settings.yml` ~configuration|onfiguration~
->file. As for the `databases.yml` file, the settings are configurable by 
->environment:
+>Стратегия экранирования и секретный ключ CSRF могут быть изменены в любое время при помощи
+>редактирования конфигурационного файла `apps/frontend/config/settings.yml`.
+>Так же, как и в файле `databases.yml`, настройки указываются для конкретной среды выполнения: 
 >
 >     [yml]
 >     all:
