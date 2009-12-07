@@ -1,4 +1,4 @@
-﻿Le fichier de configuration factories.yml
+Le fichier de configuration factories.yml
 ====================================
 
 Les factories sont des objets du noyau nécessaires pour le framework au cours de la vie de toutes les
@@ -132,7 +132,7 @@ Factories
 `request`
 ---------
 
-*sfContext Accessor*: `$context->getRequest()`
+*Accesseur de sfContext* : `$context->getRequest()`
 
 *Configuration par défaut* :
 
@@ -182,7 +182,7 @@ et n'a pas besoin d'être changée.
 `response`
 ----------
 
-*sfContext Accessor*: `$context->getResponse()`
+*Accesseur de sfContext* : `$context->getResponse()`
 
 *Configuration par défaut* :
 
@@ -224,7 +224,7 @@ disponible ou par défaut à `HTTP/1.0`.
 `user`
 ------
 
-*sfContext Accessor*: `$context->getUser()`
+*Accesseur de sfContext* : `$context->getUser()`
 
 *Configuration par défaut* :
 
@@ -279,7 +279,7 @@ du temps.
 Le factory storage est utilisé par le factory user pour maintenir les données utilisateur entre
 les requêtes HTTP.
 
-*sfContext Accessor*: `$context->getStorage()`
+*Accesseur de sfContext* : `$context->getStorage()`
 
 *Configuration par défaut* :
 
@@ -315,18 +315,18 @@ Le factory `storage` appelle la fonction
 [`session_set_cookie_params()`](http://www.php.net/session_set_cookie_params)
 avec la valeur des options suivantes :
 
- * ~`session_cookie_lifetime`~: durée de vie du cookie de session, défini en
-                                secondes.
- * ~`session_cookie_path`~:   Chemin sur le domaine où le cookie va fonctionner.
-                              Utilisez un simple slash (`/`)  pour tous les chemins sur le
-                              domaine.
- * ~`session_cookie_domain`~: domaine de cookie, par exemple `www.php.net`. Pour
-                              faire des cookies visible sur tous les sous-domaines alors
-                              le domaine doit être préfixé avec un point comme `.php.net`.
- * ~`session_cookie_secure`~: Si c'est à `true` alors le cookie ne sera envoyée que sur des connexions
-                              sécurisées.
- * ~`session_cookie_httponly`~: Si c'est à `true` alors PHP tentera d'envoyer le flag
-                                `httponly` lors du paramétrage du cookie de session.
+ * ~`session_cookie_lifetime`~ : durée de vie du cookie de session, défini en
+                                 secondes.
+ * ~`session_cookie_path`~ :   Chemin sur le domaine où le cookie va fonctionner.
+                               Utilisez un simple slash (`/`)  pour tous les chemins sur le
+                               domaine.
+ * ~`session_cookie_domain`~ : domaine de cookie, par exemple `www.php.net`. Pour
+                               faire des cookies visible sur tous les sous-domaines alors
+                               le domaine doit être préfixé avec un point comme `.php.net`.
+ * ~`session_cookie_secure`~ : Si c'est à `true` alors le cookie ne sera envoyée que sur des connexions
+                               sécurisées.
+ * ~`session_cookie_httponly`~ : Si c'est à `true` alors PHP tentera d'envoyer le flag
+                                 `httponly` lors du paramétrage du cookie de session.
 
 >**NOTE**
 >La description de chaque option provient de la description de la fonction
@@ -338,21 +338,21 @@ Si l'option `session_cache_limiter` est mise, la fonction PHP
 [`session_cache_limiter()`](http://www.php.net/session_cache_limiter)
 est appelée et la valeur de l'option est passée en argument.
 
-### Options de la base de données spécifique de stockage
+### Options de la base de données spécifiques de stockage
 
 Lorsque vous utilisez un stockage qui hérite de la classe `sfDatabaseSessionStorage`,
-plusieurs options supplémentaires sont disponibles:
+plusieurs options supplémentaires sont disponibles :
 
- * ~`database`~:     Le nom de la base de données (obligatoire)
- * ~`db_table`~:     Le nom de la table (obligatoire)
- * ~`db_id_col`~:    Le nom de la colonne de la clé primaire (`sess_id` par défaut)
- * ~`db_data_col`~:  Le nom de la colonne donnée (`sess_data` par défaut)
- * ~`db_time_col`~:  Le nom de la colonne temps (`sess_time` par défaut)
+ * ~`database`~ :     Le nom de la base de données (obligatoire)
+ * ~`db_table`~ :     Le nom de la table (obligatoire)
+ * ~`db_id_col`~ :    Le nom de la colonne de la clé primaire (`sess_id` par défaut)
+ * ~`db_data_col`~ :  Le nom de la colonne donnée (`sess_data` par défaut)
+ * ~`db_time_col`~ :  Le nom de la colonne temps (`sess_time` par défaut)
 
 `view_cache_manager`
 --------------------
 
-*sfContext Accessor*: `$context->getViewCacheManager()`
+*Accesseur de sfContext* : `$context->getViewCacheManager()`
 
 *Configuration par défaut* :
 
@@ -364,14 +364,14 @@ plusieurs options supplémentaires sont disponibles:
 >Ce factory est créé si le paramètre [`cache`](#chapter_04_sub_cache)
 >est à `on`.
 
-The view cache manager configuration does not include a `param` key. This
-configuration is done via the `view_cache` factory, which defines the
-underlying cache object used by the view cache manager.
+La configuration du manager de cache de la vue n'inclut pas de clé `param`. Cette
+configuration est faite via le factory `view_cache`, qui définit l'objet
+du cache sous-jacent utilisé par le manager de cache de la vue.
 
 `view_cache`
 ------------
 
-*sfContext Accessor*: none (utilisé directement par le factory `view_cache_manager`)
+*Accesseur de sfContext* : aucun (utilisé directement par le factory `view_cache_manager`)
 
 *Configuration par défaut* :
 
@@ -394,7 +394,7 @@ Le factory `view_cache` définit une classe de cache qui doit hériter de
 `i18n`
 ------
 
-*sfContext Accessor*: `$context->getI18N()`
+*Accesseur de sfContext* : `$context->getI18N()`
 
 *Configuration par défaut* :
 
@@ -422,7 +422,7 @@ Le factory `view_cache` définit une classe de cache qui doit hériter de
 
 L'option `source` définit le type de conteneur pour les traductions.
 
-*Conteneur intégrés* : `XLIFF`, `SQLite`, `MySQL`, et `gettext`.
+*Conteneurs intégrés* : `XLIFF`, `SQLite`, `MySQL`, et `gettext`.
 
 ### ~`debug`~
 
@@ -445,7 +445,7 @@ en cache des données i18n (voir la section cache pour plus d'informations).
 `routing`
 ---------
 
-*sfContext Accessor*: `$context->getRouting()`
+*Accesseur de sfContext* : `$context->getRouting()`
 
 *Configuration par défaut* :
 
@@ -555,7 +555,7 @@ lorsque vous utilisez une classe de cache basée sur la mémoire (`sfAPCCache` p
 `logger`
 --------
 
-*sfContext Accessor*: `$context->getLogger()`
+*Accesseur de sfContext* : `$context->getLogger()`
 
 *Configuration par défaut* :
 
@@ -595,21 +595,21 @@ lorsque vous utilisez une classe de cache basée sur la mémoire (`sfAPCCache` p
 
 L'option `level` définit le niveau du journal.
 
-*Valeurs possibles*: `EMERG`, `ALERT`, `CRIT`, `ERR`, `WARNING`, `NOTICE`,
-`INFO`, or `DEBUG`.
+*Valeurs possibles* : `EMERG`, `ALERT`, `CRIT`, `ERR`, `WARNING`, `NOTICE`,
+`INFO`, ou `DEBUG`.
 
 ### ~`loggers`~
 
 L'option `loggers` définit la liste des journaux à utiliser. La liste est un tableau de
 factory de journaux anonymes.
 
-*Les classes de journaux intégrées*: `sfConsoleLogger`, `sfFileLogger`, `sfNoLogger`,
+*Les classes de journaux intégrées* : `sfConsoleLogger`, `sfFileLogger`, `sfNoLogger`,
 `sfStreamLogger`, et `sfVarLogger`.
 
 `controller`
 ------------
 
-*sfContext Accessor*: `$context->getController()`
+*Accesseur de sfContext* : `$context->getController()`
 
 *Configuration par défaut* :
 
@@ -630,5 +630,5 @@ classe du cache.
 L'option `prefix` est la plus importante car elle permet de partager ou de
 séparer un cache entre différents environnements/applications/projets.
 
-*Les classes de cache intégrées*: `sfAPCCache`, `sfEAcceleratorCache`, `sfFileCache`,
+*Les classes de cache intégrées* : `sfAPCCache`, `sfEAcceleratorCache`, `sfFileCache`,
 `sfMemcacheCache`, `sfNoCache`, `sfSQLiteCache`, et `sfXCacheCache`.
