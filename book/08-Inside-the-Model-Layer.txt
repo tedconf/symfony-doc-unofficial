@@ -434,9 +434,10 @@ Listing 8-15 - Custom SQL Query with PDO
 
     [php]
     $connection = Propel::getConnection();
-    $query = 'SELECT MAX(%s) AS max FROM %s';
-    $query = sprintf($query, ArticlePeer::CREATED_AT, ArticlePeer::TABLE_NAME);
+    $query = 'SELECT MAX(?) AS max FROM ?';
     $statement = $connection->prepare($query);
+    $statement->bindValue(1, ArticlePeer::CREATED_AT);
+    $statement->bindValue(2, ArticlePeer::TABLE_NAME);
     $statement->execute();
     $resultset = $statement->fetch(PDO::FETCH_OBJ);
     $max = $resultset->max;
