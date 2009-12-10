@@ -1,8 +1,6 @@
 День 13: Пользователь
 =====================
 
-**Внимание: перевод частичный! Пишите по адресу anna.tarasenko[at]equelli.com**
-
 Вчерашний день был буквально напичкан новой информацией. Всего несколько 
 строк PHP кода, и генератор админки Symfony позволяет разработчику создать
 бэкэнд-интерфейс за несколько минут.
@@ -469,16 +467,16 @@ Plugins
 >используете метод `enableAllPluginsExcept()` в классе `config/ProjectConfiguration.class.php`.
 </doctrine>
 
-Backend Security
-----------------
+Защита бэкэнд приложения
+------------------------
 
-Each plugin has a
+Каждый плагин содежит
 [README](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_readme)
-file that explains how to configure it.
+файл, который объясняет, как его использовать.
 
-Let's see how to configure the new plugin. As the plugin provides several new
-model classes to manage users, groups, and permissions, you need to rebuild
-your model:
+Давайте посмотрим, как настроить новый плагин. Поскольку плагин предоставляет несколько
+новых классов модели для управления пользователями, группами и разрешениями, Вам нужно 
+пересобрать модель:
 
 <propel>
     $ php symfony propel:build-all-load --no-confirmation
@@ -489,26 +487,26 @@ your model:
 
 >**TIP**
 <propel>
->Remember that the `propel:build-all-load` task removes all existing tables
+>Помните, что задача `propel:build-all-load` удаляет все существующие таблицы
 </propel>
 <doctrine>
->Remember that the `doctrine:build-all-reload` task removes all existing tables
+>Помните, что задача `doctrine:build-all-reload` удаляет все существующие таблицы
 </doctrine>
->before re-creating them. To avoid this, you can build the models, forms, and
->filters, and then, create the new tables by executing the generated SQL
->statements stored in `data/sql/`.
+>перед тем, как создать их снова. Чтобы этого избежать, Вы можете собрать отдельно модели, формы
+>и фильтры, а затем создать новые таблицы, запустив соответствующие SQL-команды из файла,
+>создавшегося в директории `data/sql/`.
 
-As always, when new classes are created, you need to clear the symfony ~cache|Cache~:
+Как всегда, когда создаются новые классы, Вам нужно очистить кэш Symfony:
 
     $ php symfony cc
 
 <propel>
-As `sfGuardPlugin` adds several methods to the user class, you need to change
-the base class of `myUser` to `sfGuardSecurityUser`:
+Поскольку класс `sfGuardPlugin` добавляет несколько новых методов к классу пользователя, Вам
+нужно заменить базовый класс для `myUser` на `sfGuardSecurityUser`:
 </propel>
 <doctrine>
-As `sfDoctrineGuardPlugin` adds several methods to the user class, you need to
-change the base class of `myUser` to `sfGuardSecurityUser`:
+Поскольку класс `sfDoctrineGuardPlugin` добавляет несколько новых методов к классу пользователя, Вам
+нужно заменить базовый класс для `myUser` на `sfGuardSecurityUser`:
 </doctrine>
 
     [php]
@@ -518,16 +516,16 @@ change the base class of `myUser` to `sfGuardSecurityUser`:
     }
 
 <propel>
-`sfGuardPlugin` provides a `signin` action in the `sfGuardAuth` module to
-authenticate users.
+`sfGuardPlugin` обеспечивает действие `signin` в модуле `sfGuardAuth` для аутентификации
+пользователей.
 </propel>
 <doctrine>
-`sfDoctrineGuardPlugin` provides a `signin` action in the `sfGuardAuth` module
-to authenticate users.
+`sfDoctrineGuardPlugin` обеспечивает действие `signin` в модуле `sfGuardAuth` для аутентификации
+пользователей.
 </doctrine>
 
-Edit the ~`settings.yml`~ file to change the default action used for the login
-page:
+Отредактируем файл `settings.yml`, чтобы изменить действие по умолчанию, используемое для страницы
+входа в приложение:
 
     [yml]
     # apps/backend/config/settings.yml
@@ -543,25 +541,32 @@ page:
 
         # ...
 
-As plugins are shared amongst all applications of a project, you need to
-explicitly enable the ~modules|Module~ you want to use by adding them in the
-~`enabled_modules` setting|`enabled_modules` (Setting)~.
+Поскольку все плагины доступны из любого приложения проекта, Вам нужно
+просто разрешить модули, которые Вы хотите использовать в каждом приложении, внеся их
+в строку `enabled_modules`.
 
-![sfGuardPlugin login](http://www.symfony-project.org/images/jobeet/1_2/13/sf_guard_login.png)
+![Страница входа из плагина](http://www.symfony-project.org/images/jobeet/1_2/13/sf_guard_login.png)
 
-The last step is to create an administrator user:
+Последний шаг - это создание пользователя с правами администратора:
 
     $ php symfony guard:create-user fabien SecretPass
     $ php symfony guard:promote fabien
 
 >**TIP**
->The `sfGuardPlugin` provides tasks to manage users, groups, and permissions
->from the ~command line|Command Line~. Use the `list` task to list all task 
->belonging to the `guard` namespace:
+<propel>
+>`sfGuardPlugin` предлагает задачи для управления пользователями, группами и разрешениями
+>из командной строки. Используйте задачу `list`, чтобы вывести весь список задач 
+>из пространства имен `guard`:
+</propel>
+<doctrine>
+>`sfDoctrineGuardPlugin` предлагает задачи для управления пользователями, группами и разрешениями
+>из командной строки. Используйте задачу `list`, чтобы вывести весь список задач 
+>из пространства имен `guard`:
+</doctrine>
 >
 >     $ php symfony list guard
 
-When the user is not ~authenticated|Authentication~, we need to hide the menu bar:
+Когда пользователь еще не аутентифицирован, мы должны скрыть панель меню:
 
     [php]
     // apps/backend/templates/layout.php
@@ -580,18 +585,30 @@ When the user is not ~authenticated|Authentication~, we need to hide the menu ba
       </div>
     <?php endif; ?>
 
-And when the user is authenticated, we need to add a logout link in the menu:
+А если он аутентифицирован, то нам нужно добавить в меню ссылку `logout`:
 
     [php]
     // apps/backend/templates/layout.php
     <li><?php echo link_to('Logout', '@sf_guard_signout') ?></li>
 
 >**TIP**
->To list all routes provided by `sfGuardPlugin`, use the `app:routes` task.
+<propel>
+>Чтобы увидеть все маршруты, порожденные `sfGuardPlugin`, используйте задачу `app:routes`.
+</propel>
+<doctrine>
+>Чтобы увидеть все маршруты, порожденные `sfDoctrineGuardPlugin`, используйте задачу `app:routes`.
+</doctrine>
 
-To polish the Jobeet backend even more, let's add a new module to manage the
-administrator users. Thankfully, `sfGuardPlugin` provides such a module. As
-for the `sfGuardAuth` module, you need to enable it in `settings.yml`:
+<propel>
+Чтобы еще улучшить бэкэнд-приложение Jobeet, давайте добавим новый модуль
+для управления пользователями. Замечательно, что `sfGuardPlugin` предоставляет такой модуль.
+Так же, как и для модуля `sfGuardAuth`, Вам надо разрешить его в файле `settings.yml`:
+</propel>
+<doctrine>
+Чтобы еще улучшить бэкэнд-приложение Jobeet, давайте добавим новый модуль
+для управления пользователями. Замечательно, что `sfDoctrineGuardPlugin` предоставляет такой модуль.
+Так же, как и для модуля `sfGuardAuth`, Вам надо разрешить его в файле `settings.yml`:
+</doctrine>
 
     [yml]
     // apps/backend/config/settings.yml
@@ -599,27 +616,26 @@ for the `sfGuardAuth` module, you need to enable it in `settings.yml`:
       .settings:
         enabled_modules: [default, sfGuardAuth, sfGuardUser]
 
-Add a link in the menu:
+Добавим ссылку в меню:
 
     [php]
     // apps/backend/templates/layout.php
     <li><?php echo link_to('Users', '@sf_guard_user') ?></li>
 
-![Backend menu](http://www.symfony-project.org/images/jobeet/1_2/13/menu.png)
+![Меню бэкэнд-приложения](http://www.symfony-project.org/images/jobeet/1_2/13/menu.png)
 
-We are done!
+Мы закончили!
 
-User Testing
-------------
+Тестирование пользователя
+-------------------------
 
-Today's tutorial is not over as we have not yet talked about user testing.
-As the symfony browser simulates ~cookies|Cookies~, it is quite easy to test user
-behaviors by using the built-in
-[`sfTesterUser`](http://symfony-project.org/api/1_2/sfTesterUser) tester.
+Сегодняшний день не закончен, т.к. мы еще не поговорили о тестировании работы с пользователями.
+Поскольку объект браузера Symfony эмулирует куки, очень просто протестировать поведение
+пользователя, используя тестер
+[`sfTesterUser`](http://symfony-project.org/api/1_2/sfTesterUser).
 
-Let's update the ~functional tests|Functional Testing~ for the menu feature we 
-have added today.
-Add the following code at the end of the `job` module functional tests:
+Давайте обновим функциональные тесты для пунктов меню, которые мы уже добавили сегодня.
+Добавьте следующий код в конец функционального теста для модуля `job`:
 
     [php]
     // test/functional/frontend/jobActionsTest.php
@@ -645,22 +661,28 @@ Add the following code at the end of the `job` module functional tests:
       end()
     ;
 
-To ease testing, we first reload the fixtures data and restart the browser to
-start with a clean session.
+Чтобы упростить тестирование, мы сначала перезагрузим начальные данные (fixtures) и браузер,
+чтобы начать с чистой сессии.
 
-The `isAttribute()` method checks a given user attribute.
+Метод `isAttribute()` проверяет установленные пользователю атрибуты.
 
 >**NOTE**
->The `sfTesterUser` tester also provides `isAuthenticated()` and
->`hasCredential()` methods to test user authentication and autorizations.
+>Тестер `sfTesterUser` также предоставляет методы `isAuthenticated()` и
+>`hasCredential()`, чтобы проверять аутентификацтю и авторизацию пользователя.
 
-See you Tomorrow
-----------------
+Увидимся завтра
+---------------
 
-The symfony user classes are a nice way to abstract the PHP session
-management. Coupled with the great symfony plugin system and the
-`sfGuardPlugin` plugin, we have been able to secure the Jobeet backend in a
-matter of minutes. And we have even added a clean interface to manage our
-administrator users for free, thanks to the modules provided by the plugin.
+Классы для работы с пользователями Symfony - это отличный способ абстрагироваться от
+управления PHP-сессией. Вместе с замечательной системой плагинов Symfony и плагином
+<propel>
+`sfGuardPlugin`, 
+</propel>
+<doctrine>
+`sfDoctrineGuardPlugin`, 
+</doctrine>
+мы смогли сделать бэкэнд-приложение Jobeet защищенным за несколько минут. 
+И мы даже создали понятный интерфейс для управлениями пользователями благодаря модулям,
+предоставленным плагином.
 
 __ORM__
