@@ -1,7 +1,7 @@
 День 13: Пользователь
 =====================
 
-***Внимание: перевод частичный! Пишите по адресу anna.tarasenko[at]equelli.com*
+**Внимание: перевод частичный! Пишите по адресу anna.tarasenko[at]equelli.com**
 
 Вчерашний день был буквально напичкан новой информацией. Всего несколько 
 строк PHP кода, и генератор админки Symfony позволяет разработчику создать
@@ -120,11 +120,12 @@
 из пользовательской сессии. И наоборот, метод `setAttribute()` сохраняет любую PHP
 переменную в сессию под заданным именем.
 
-The `getAttribute()` method also takes an optional default value to return if
-the identifier is not yet defined.
+Метод `getAttribute()` также принимает в качестве параметра необязательный аргумент,
+для использования в качестве значения по умолчанию, если данный идентификатор 
+еще не определен.
 
 >**NOTE**
->The default value taken by the `getAttribute()` method is a shortcut for:
+>Значение по умолчанию, принимаемое методом `getAttribute()`, это ярлык (shortcut) для:
 >
 >     [php]
 >     if (!$value = $this->getAttribute('job_history'))
@@ -132,12 +133,12 @@ the identifier is not yet defined.
 >       $value = array();
 >     }
 
-### The `myUser` class
+### Класс `myUser`
 
-To better respect the separation of concerns, let's move the code to the
-`myUser` class. The ~`myUser` class~ overrides the default symfony base
-[`sfUser`](http://www.symfony-project.org/api/1_2/sfUser) class with
-application specific behaviors:
+Чтобы лучше осмыслить разделение понятий, давайте переместим код
+в класс `myUser`. Класс `myUser` расширяет стандартный Symfony-класс
+[`sfUser`](http://www.symfony-project.org/api/1_2/sfUser), реализуя
+поведение, специфичное для приложения:
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -169,16 +170,16 @@ application specific behaviors:
       }
     }
 
-The code has also been changed to take into account all the requirements:
+Код так же был модифицирован, чтобы учесть все требования:
 
-  * `!in_array($job->getId(), $ids)`: A job cannot be stored twice in the
-    history
+  * `!in_array($job->getId(), $ids)`: Вакансия не может быть сохранена в 
+    историю дважды
 
-  * `array_slice($ids, 0, 3)`: Only the latest three jobs viewed by the user
-    are displayed
+  * `array_slice($ids, 0, 3)`: Отображаются только последние три вакансии, просмотренные
+    пользователем
 
-In the layout, add the following code before the `$sf_content` variable is
-output:
+Внесите в основной шаблон следующий код перед тем, как значение переменной `$sf_content` будет
+выведено:
 
     [php]
     // apps/frontend/templates/layout.php
@@ -197,7 +198,7 @@ output:
       <?php echo $sf_content ?>
     </div>
 
-The layout uses a new `getJobHistory()` method to retrieve the current job history:
+Шаблон использует новый метод `getJobHistory()` для получения текущей истории:
 
     [php]
     // apps/frontend/lib/myUser.class.php
@@ -234,15 +235,15 @@ The layout uses a new `getJobHistory()` method to retrieve the current job histo
     }
 
 <propel>
-The `getJobHistory()` method uses the Propel `retrieveByPKs()` method to
-retrieve several `JobeetJob` objects in one call.
+Метод `getJobHistory()` использует метод Propel `retrieveByPKs()` для
+получения нескольких объектов `JobeetJob` в одном вызове.
 </propel>
 
-![Job history](http://www.symfony-project.org/images/jobeet/1_2/13/job_history.png)
+![История вакансий](http://www.symfony-project.org/images/jobeet/1_2/13/job_history.png)
 
 ### `sfParameterHolder`
 
-To complete the job history API, let's add a method to reset the history:
+Чтобы завершить API истории вакансий, давайте добавим метод для очистки истории:
 
     [php]
     // apps/frontend/lib/myUser.class.php
@@ -256,47 +257,48 @@ To complete the job history API, let's add a method to reset the history:
       // ...
     }
 
-The user attributes are managed by an object of class `sfParameterHolder`. The
-`getAttribute()` and `setAttribute()` methods are proxy methods for
-`getParameterHolder()->get()` and `getParameterHolder()->set()`. As the
-`remove()` method has no proxy method in `sfUser`, you need to use the
-parameter holder object directly.
+Атрибуты пользователя управляются объектом класса `sfParameterHolder`. 
+Методы `getAttribute()` и `setAttribute()` это методы-заместители (proxy)
+для методов `getParameterHolder()->get()` и `getParameterHolder()->set()`. 
+Поскольку метод `remove()` не имеет заместителя в классе `sfUser`, Вам придется 
+использовать объект-хранитель параметров непосредственно.
 
 >**NOTE**
->The [`sfParameterHolder`](http://www.symfony-project.org/api/1_2/sfParameterHolder)
->class is also used by `sfRequest` to store its parameters.
+>Класс [`sfParameterHolder`](http://www.symfony-project.org/api/1_2/sfParameterHolder)
+>также используется классом `sfRequest` для хранения его параметров.
 
-Application Security
---------------------
+Обеспечение безопасности приложения
+-----------------------------------
 
-### Authentication
+### Аутентификация
 
-Like many other symfony features, ~security|Security~ is managed by a YAML file,
-`~security.yml~`. For instance, you can find the default configuration for the
-backend application in the `config/` directory:
+Так же, как и многие другие возможности Symfony, безопасность (security) 
+управляется через YAML файл `security.yml`. Например, Вы можете найти конфигурацию
+по умолчанию для приложения backend в директории `config/`:
 
     [yml]
     # apps/backend/config/security.yml
     default:
       is_secure: off
 
-If you switch the `is_secure` entry to `on`, the entire backend application
-will require the user to be authenticated.
+Если Вы переключите запись `is_secure` на `on`, все бэкэнд-приложение будет
+требовать, чтобы пользователь был аутентифицирован.
 
-![Login](http://www.symfony-project.org/images/jobeet/1_2/13/login.png)
+![Защищенная страница](http://www.symfony-project.org/images/jobeet/1_2/13/login.png)
 
 >**TIP**
->In a YAML file, a boolean can be expressed with the string `true` and
->`false`, or `on` and `off`.
+>В YAML файле, логическая величина может быть выражена как `true` и
+>`false` или как `on` и `off`.
 
-If you have a look at the logs in the web debug toolbar, you will notice that
-the `executeLogin()` method of the `defaultActions` class is called for every
-page you try to access.
+Если Вы заглянете в логи на панели отладки, Вы заметите, что метод
+`executeLogin()` класса `defaultActions` вызывается для каждой страницы,
+к которой Вы пытаетесь получить доступ.
 
-![Web debug](http://www.symfony-project.org/images/jobeet/1_2/13/web_debug.png)
+![Панель отладки](http://www.symfony-project.org/images/jobeet/1_2/13/web_debug.png)
 
-When an un-authenticated user tries to access a ~secured action|Security~, 
-symfony forwards the request to the `login` action configured in `settings.yml`:
+Когда неаутентифицированный пользователь пытается получить доступ к защищенному
+действию, Symfony перенапрявляет запрос на действие `login`, настроенное в файле 
+`settings.yml`:
 
     [yml]
     all:
@@ -305,15 +307,15 @@ symfony forwards the request to the `login` action configured in `settings.yml`:
         login_action: login
 
 >**NOTE**
->It is not possible to secure the login action to avoid infinite recursion.
+>Защитить действие `login` нельзя, чтобы не создать бесконечную рекурсию.
 
 -
 
 >**TIP**
->As we saw during day 4, the same configuration file can be defined in several
->places. This is also the case for `security.yml`. To only 
->~secure or un-secure|Access Restriction~ a single action or a whole module, 
->create a ~`security.yml`~ in the `config/` directory of the module:
+>Как мы видели в дне 4, один и тот же конфигурационный файл может присутствовать
+>в нескольких местах. Это относится и к файлу `security.yml`. Чтобы защитить 
+>или открыть единственное действие или целый модуль, создайте файл 
+>`security.yml` в директории `config/` этого модуля:
 >
 >     [yml]
 >     index:
@@ -322,13 +324,13 @@ symfony forwards the request to the `login` action configured in `settings.yml`:
 >     all:
 >       is_secure: on
 
-By default, the `myUser` class extends
+По умолчанию, класс `myUser` расширяет класс
 [`sfBasicSecurityUser`](http://www.symfony-project.org/api/1_2/sfBasicSecurityUser),
-and not `sfUser`. `sfBasicSecurityUser` provides additional methods to manage user
-authentication and authorization.
+а не `sfUser`. `sfBasicSecurityUser` обеспечивает дополнительные методы для
+управления аутентификацией и авторизацией пользователей.
 
-To manage user authentication, use the `isAuthenticated()` and
-`setAuthenticated()` methods:
+Для управления аутентификацией используйте методы `isAuthenticated()` и
+`setAuthenticated()`:
 
     [php]
     if (!$this->getUser()->isAuthenticated())
@@ -336,139 +338,135 @@ To manage user authentication, use the `isAuthenticated()` and
       $this->getUser()->setAuthenticated(true);
     }
 
-### Authorization
+### Авторизация
 
-When a user is authenticated, the access to some actions can be even more
-restricted by defining **~credentials|Credentials~**. A user must have the required
-credentials to access the page:
+Когда пользователь аутентифицирован, доступ к некоторым действиям может быть дополнительно
+ограничен путем определения **удостоверений (credentials)**. Пользователь должен иметь
+требуемые удостоверения для доступа к странице:
 
     [yml]
     default:
       is_secure:   off
       credentials: admin
 
-The credential system of symfony is quite simple and powerful. A credential
-can represent anything you need to describe the application security model
-(like groups or permissions).
+Система управления удостоверениями Symfony очень простая и в то же время мощная. Удостоверение
+может представлять что-то, что Вам нужно для описания системы безопасности приложения
+(например, группы пользователей и разрешения).
 
 >**SIDEBAR**
->Complex Credentials
+>Составные удостоверения
 >
->The `credentials` entry of `security.yml` supports Boolean operations to
->describe complex credentials requirements.
+>Запись `credentials` файла `security.yml` поддерживает логические операции
+>для описания сложных взаимодействий удостоверений.
 >
->If a user must have credential A **and** B, wrap the credentials with
->square brackets:
+>Если пользователь должен иметь удостоверения A **и** B, заключите удостоверения
+>в квадратные скобки:
 >
 >     [yml]
 >     index:
 >       credentials: [A, B]
 >
->If a user must have credential A **or** B, wrap them with two pairs of
->square brackets:
+>Если пользователь должен иметь удостоверение A **или** B, заключите их в две пары
+>квадратных скобок:
 >
 >     [yml]
 >     index:
 >       credentials: [[A, B]]
 >
->You can even mix and match brackets to describe any kind of Boolean
->expression with any number of credentials.
+>Вы можете смешивать и сочетать скобки, чтобы описать любое логическое выражение
+>с любым числом удостоверений.
 
-To manage the user credentials, `sfBasicSecurityUser` provides several
-methods:
+Для управления удостоверениями пользователя, класс `sfBasicSecurityUser` предоставляет
+несколько методов:
 
     [php]
-    // Add one or more credentials
+    // Добавление одного или нескольких удостоверений
     $user->addCredential('foo');
     $user->addCredentials('foo', 'bar');
 
-    // Check if the user has a credential
+    // Проверка, что пользователь имеет удостоверение
     echo $user->hasCredential('foo');                      =>   true
 
-    // Check if the user has both credentials
+    // Проверка, что пользователь имеет оба удостоверения
     echo $user->hasCredential(array('foo', 'bar'));        =>   true
 
-    // Check if the user has one of the credentials
+    // Проверка, что пользователь имеет одно из удостоверений
     echo $user->hasCredential(array('foo', 'bar'), false); =>   true
 
-    // Remove a credential
+    // Удаление удостоверения
     $user->removeCredential('foo');
     echo $user->hasCredential('foo');                      =>   false
 
-    // Remove all credentials (useful in the logout process)
+    // Удаление всех удостоверений (удобно в процессе выхода из приложения (logout))
     $user->clearCredentials();
     echo $user->hasCredential('bar');                      =>   false
 
-For the Jobeet backend, we won't use any credentials as we only have one
-profile: the administrator.
+Для бэкэнд-приложения Jobeet, мы не будем использовать удостоверения, поскольку для 
+него используется только один профиль: администратор.
 
 Plugins
 -------
 
-As we don't like to reinvent the wheel, we won't develop the login action from
-scratch. Instead, we will install a **symfony ~plugin|Plugins~**.
+Поскольку мы не любим изобретать велосипед, мы не будем разрабатывать действие `login`
+с нуля. Вместо этого мы установим **плагины Symfony (plugins)**.
 
-One of the great strengths of the symfony framework is the
-[plugin ecosystem](http://www.symfony-project.org/plugins/). As we will see in
-coming days, it is very easy to create a plugin. It is also quite powerful, as
-a plugin can contain anything from configuration to modules and assets.
+Одной из главных сильных сторон фреймворка Symfony является его
+[система плагинов](http://www.symfony-project.org/plugins/). Как мы увидим в следующих
+уроках, создать плагин очень просто. Плагин хорош еще и тем, что
+может содержать все - от конфигурации до модулей и стилей страниц.
 
 <propel>
-Today, we will install
-[~`sfGuardPlugin`~](http://www.symfony-project.org/plugins/sfGuardPlugin) to
-secure the backend application:
+Сегодня мы установим
+[`sfGuardPlugin`](http://www.symfony-project.org/plugins/sfGuardPlugin) 
+для защиты бэкэнд-приложения:
 
     $ php symfony plugin:install sfGuardPlugin
 </propel>
 <doctrine>
-Today, we will install
-[`sfDoctrineGuardPlugin`](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin) to secure the backend application
+Сегодня мы установим
+[`sfDoctrineGuardPlugin`](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin) 
+для защиты бэкэнд-приложения:
 
     $ php symfony plugin:install sfDoctrineGuardPlugin
 </doctrine>
 
-The `plugin:install` task installs a plugin by name. All plugins are
-stored under the `plugins/` directory and each one has its own directory named
-after the plugin name.
+Задача `plugin:install` устанавливает плагин по имени. Все плагины
+после установки находятся в директории `plugins/`, каждый в своей директории,
+имя которой совпадает с именем плагина.
 
 >**NOTE**
->~PEAR~ must be installed for the `plugin:install` task to work.
+>PEAR должен быть установлен, чтобы задача `plugin:install` работала.
 
-When you install a plugin with the `plugin:install` task, symfony installs
-the latest stable version of it. To install a specific version of a plugin,
-pass the `--release` option.
+Когда Вы устанавливаете плагин при помощи задачи `plugin:install`, Symfony устанавливает
+последнюю стабильную версию. Чтобы установить определенную версию плагина,
+используйте опцию `--release`.
 
 <propel>
-The
-[plugin page](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_all_releases)
-lists all available version grouped by symfony version.
+[Страница плагина](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_all_releases)
+содержит список всех доступных версий плагина, сгруппированный по версии Symfony.
 
-As a plugin is self-contained into a directory, you can also
-[download the package](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_installation)
-from the symfony website and unarchive it, or alternatively make an
-`svn:externals` link to its
-[Subversion repository](http://svn.symfony-project.com/plugins/sfGuardPlugin).
+Поскольку плагин содержится в самостоятельной директории, Вы также можете
+[скачать дистрибутив](http://www.symfony-project.org/plugins/sfGuardPlugin?tab=plugin_installation)
+с сайта Symfony и разархивировать его, либо использовать ссылку `svn:externals` на
+[Subversion репозиторий](http://svn.symfony-project.com/plugins/sfGuardPlugin) плагина.
 
 >**TIP**
->Remember to make sure the plugin is enabled after you install it if you did 
->not use the `enableAllPluginsExcept()` method in your `config/ProjectConfiguration.class.php` class.
+>Не забудьте удостовериться, что плагин разрешен в Вашем проекте после установки, если Вы не  
+>используете метод `enableAllPluginsExcept()` в классе `config/ProjectConfiguration.class.php`.
 
 </propel>
 <doctrine>
-The
-[plugin page](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_all_releases)
-lists all available version grouped by symfony version.
+[Страница плагина](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_all_releases)
+содержит список всех доступных версий плагина, сгруппированный по версии Symfony.
 
-As a plugin is self-contained into a directory, you can also
-[download the package](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_installation)
-from the symfony website and unarchive it, or alternatively make an
-`svn:externals` link to its
-[Subversion repository](http://svn.symfony-project.com/plugins/sfDoctrineGuardPlugin).
+Поскольку плагин содержится в самостоятельной директории, Вы также можете
+[скачать дистрибутив](http://www.symfony-project.org/plugins/sfDoctrineGuardPlugin?tab=plugin_installation)
+с сайта Symfony и разархивировать его, либо использовать ссылку `svn:externals` на
+[Subversion репозиторий](http://svn.symfony-project.com/plugins/sfDoctrineGuardPlugin) плагина.
 
 >**TIP**
->Remember to make sure the plugin is enabled after you install it if you did 
->not use the `enableAllPluginsExcept()` method in your `config/ProjectConfiguration.class.php` class.
-
+>Не забудьте удостовериться, что плагин разрешен в Вашем проекте после установки, если Вы не  
+>используете метод `enableAllPluginsExcept()` в классе `config/ProjectConfiguration.class.php`.
 </doctrine>
 
 Backend Security
