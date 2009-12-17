@@ -337,7 +337,6 @@ The task is equivalent to:
 
     ./symfony doctrine:build-model
     ./symfony doctrine:build-sql
-    ./symfony doctrine:build-forms
     ./symfony doctrine:insert-sql
 
 See those three tasks help page for more information.
