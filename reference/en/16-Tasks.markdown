@@ -329,7 +329,7 @@ The `doctrine::build-all` task generates Doctrine model, SQL and initializes the
 | `--skip-forms`<br />`(-F)` | `-` | Skip generating forms
 
 
-The `doctrine:build-all` task is a shortcut for three other tasks:
+The `doctrine:build-all` task is a shortcut for four other tasks:
 
     ./symfony doctrine:build-all
 
