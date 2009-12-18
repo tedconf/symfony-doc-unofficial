@@ -337,7 +337,6 @@ Cette tâche est équivalent à :
 
     ./symfony doctrine:build-model
     ./symfony doctrine:build-sql
-    ./symfony doctrine:build-forms
     ./symfony doctrine:insert-sql
 
 Regardez les pages d'aides de ces quatre tâches pour plus d'information.
