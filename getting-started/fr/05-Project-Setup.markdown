@@ -17,7 +17,7 @@ Sur Windows:
     c:\> php lib\vendor\symfony\data\bin\symfony generate:project PROJECT_NAME
 
 La tâche `generate:project` génére la structure par défaut des répertoires et
-fichiers nécessaires pour un projet symfony :
+les fichiers nécessaires pour un projet symfony :
 
  | Répertoire  | Description
  | ----------- | ----------------------------------
@@ -81,7 +81,6 @@ répertoire `apps/frontend/` :
 >
 >En passant ces deux options facultatives à la tâche, vous avez sécurisé votre
 >futur développement des deux vulnérabilités les plus répandues trouvées sur le
->web.
 >web. C'est vrai, symfony prend automatiquement des mesures de sécurité à
 >notre place.
 >
