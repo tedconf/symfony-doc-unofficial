@@ -1,108 +1,95 @@
 Jour 4 : Le contrôleur et la vue
-==================================
-
-Précédemment dans Jobeet
--------------------------
+================================
 
 Hier, nous avons appris comment symfony nous simplifie la gestion des bases de données
-en faisant abstraction du moteur de base de données (BDD) utilisé et en convertissant nos
-relations sous forme de classes orientées objets. Nous avons également vu le principe
-de fonctionnement d'##ORM## permettant de définir notre schéma de base de données,
-créer des tables et remplir la base de données avec quelques valeurs initiales.
+en faisant abstraction des différences entre les moteurs de base de données et en convertissant les
+éléments relationnels sous forme de classes orientées objets. Nous avons également vu le principe
+de fonctionnement de ##ORM## permettant de définir le schéma de la base de données, créer les tables et
+remplir la base de données avec quelques valeurs initiales.
 
-Aujourd'hui, nous allons personnaliser le module `job` que nous avons créé hier. Actuellement, 
-ce module a déjà tout le code utile pour Jobeet :
+Aujourd'hui, nous allons personnaliser le module `job` que nous avons créé
+hier. Actuellement, ce module a déjà tout le code utile pour Jobeet :
 
  * Une page listant tous les jobs
  * Une page pour créer un nouveau job
  * Une page pour mettre à jour une job déjà existant
  * Une page pour supprimer un job
 
-Bien que le code est prêt à être utiliser tel qu'il est, nous devons modifier les
-templates afin que nos pages correspondent à notre maquette. 
+Bien que le code est prêt à être utilisé tel qu'il est, nous devons modifier les
+Templates afin que nos pages correspondent à notre maquette. 
 
+L'architecture ~MVC~
+--------------------
 
-L'architecture MVC
-------------------
+Si vous avez l'habitude de développer des sites web en PHP sans framework, vous avez
+probablement utilisé le principe d'un fichier PHP par page HTML. Ces fichiers PHP ayant très
+certainement une structure proche de : l'initialisation et la configuration globale, le traitement
+associé à la page demandée, la récupération des données depuis la base de données et enfin
+la mise en place du code HTML formant la page.
 
-Si vous avez l'habitude de développer des sites web en PHP sans framework, 
-vous avez probablement utilisé le principe d'"un fichier PHP par page HTML".
-Ces fichiers PHP ayant très certainement une structure proche de : 
- * initialisation et configuration globale, 
- * traitement associé à la page demandée,
- * récupération des données depuis la BDD,
- * mise en place du code HTML formant la page,
-
-Vous pouvez également utiliser un moteur de "templates" (gabarits) permettant de séparer les 
-traitements de récupération des données de l'affichage HTML. Vous utilisez également 
-peut-être une couche permettant de faire abstraction de la BDD afin de séparer
-l'interaction avec celle-ci, du traitement des données. Mais la plupart du temps,
-vous vous retrouvez avec un tas de code absolument cauchemardesque à maintenir.
-Le code a rapidement été mis en place mais, la plupart du temps, ce dernier est
-de plus en plus difficile à modifier, notamment parce que personne, excepté vous,
+Vous pouvez également utiliser un moteur de Template permettant de séparer la logique du HTML.
+Vous utilisez peut-être une couche d'abstraction permettant de séparer l'interaction du modèle
+avec celui du traitement des données. Mais la plupart du temps, vous vous retrouvez avec beaucoup de code
+absolument cauchemardesque à maintenir. Le code a rapidement été mis en place, mais la plupart du temps, ce
+dernier est de plus en plus difficile à modifier, notamment parce que personne, excepté vous,
 ne sait comment votre site a été conçu et comment il fonctionne.
 
-Comme toujours : à chaque problème, ses solutions. Pour le développement Web,
-les solutions les plus populaires pour organiser votre code de nos jours est
-la mise en place d'une [**architecture MVC**](http://fr.wikipedia.org/wiki/Mod%C3%A8le-Vue-Contr%C3%B4leur).
-En résumé, l'architecture MVC définit un cadre d'organisation de votre code en accord avec sa nature.
-Ce modèle permet une séparation de votre code en trois couches :
+Comme toujours : à chaque problème, ses solutions. Pour le développement Web, les
+solutions les plus populaires pour organiser votre code de nos jours est la mise en place
+d'une [**architecture MVC**](http://fr.wikipedia.org/wiki/Mod%C3%A8le-Vue-Contr%C3%B4leur).
+En résumé, l'architecture MVC définit un cadre d'organisation de votre code en accord
+avec sa nature. Ce modèle permet une séparation de votre code en
+**trois couches** :
 
-  * La couche **Modèle** contenant le traitement logique de vos données (les accès
-    à la base de données se trouvent dans cette couche). Vous savez déjà que symfony
-    stocke toutes les classes et tous les fichiers relatifs au Modèle dans le
-    répertoire `lib/model`.
-     
-  * La couche **Vue** : ce avec quoi l'utilisateur interagit (un moteur de template
-    fait parti de cette couche). Dans symfony, la couche vue est principalement faite 
-    de templates PHP. Ces fichiers sont stockés dans les différents dossiers `templates`
-    comme nous le verrons plus loin.
-    
-  * La couche **Contrôleur** est une couche contenant du code faisant appel aux
-    méthodes de la couche Modèle afin d'obtenir des données (en fonction de la 
-    requête de l'utilisateur) qui sont ensuite transmises à la couche Vue pour 
-    les mettre en forme pour l'utilisateur final. Quand nous avons installé
-    symfony le premier jour, nous avons vu que toutes les requêtes étaient gérées
-    par des "front" contrôleurs (`index.php` and `frontend_dev.php`). Ces "front" 
-    contrôleurs délèguent le réel travail à des **actions**. Comme nous l'avons vu
-    hier, ces actions sont logiquement regroupées dans des **modules**.
+  * La couche **~Modèle~** contenant le traitement logique de vos données (les accès
+    à la base de données se trouvent dans cette couche). Vous savez déjà que symfony stocke toutes
+    les classes et tous les fichiers relatifs au Modèle dans le répertoire `lib/model`.
+
+  * La **~Vue~** est la couche où interagit l'utilisateur (un moteur de template fait parti de
+    cette couche). Dans symfony, la couche vue est principalement faite de Templates PHP.
+    Ces fichiers sont stockés dans les différents dossiers `templates/` comme nous le verrons
+    plus loin.
+
+  * La **~Contrôleur~** est un morceau de code qui appelle le modèle pour obtenir certaines données
+    qu'il passe à la Vue pour le rendu au client. Quand nous avons installé
+    symfony le premier jour, nous avons vu que toutes les requêtes étaient gérées par des
+    contrôleurs frontaux (`index.php` et `frontend_dev.php`). Ces contrôleurs frontaux
+    délèguent le réel travail à des **actions**. Comme nous l'avons vu hier, ces
+    actions sont logiquement regroupées dans des **modules**.
 
 ![MVC](http://www.symfony-project.org/images/jobeet/1_2/04/mvc.png)
 
 Aujourd'hui, nous allons utiliser la maquette définie le 2ième jour afin de personnaliser
-la page d'accueil, la page d'affichage d'un job et de les rendre dynamique. Tout au long
-de ce chapitre, nous allons modifier, régler un grand nombre de fichiers différents afin
-de découvrir l'arborescence d'un projet symfony et sa manière de séparer le code en
-plusieurs couches.
+la page d'accueil et la page d'un emploi. Nous allons les rendre dynamique. En chemin, nous allons ajuster
+un tas de choses dans beaucoup de fichiers différents afin de montrer la structure de répertoire
+de symfony et la manière de séparer le code entre les couches.
 
-Le Layout
----------
+La mise en page
+---------------
 
-D'abord, si vous regardez de plus prêt la maquette, vous noterez qu'une grande
-partie de toutes les pages se resemblent. Vous devriez savoir que la duplication de
-code n'est pas propre, et ce, que nous parlions de code HTML ou PHP. Nous devons 
-donc trouver un moyen afin d'éviter de dupliquer bêtement du code tout en gardant
-en tête notre objectif définit par la maquette.
+D'abord, si vous regardez de plus prêt la maquette, vous remarquerez que la quantité de
+chaque page vous semble le même. Vous savez déjà que la duplication de code est mauvais,
+si nous parlons de code HTML ou PHP, donc nous devons trouver un moyen
+d'empêcher ces éléments communs de la vue d'aboutir à la duplication du code.
 
-Une manière de résoudre ce problème est de définir un "header" (en-tête) et un
-"footer" (pied de page) et de les inclure dans chaque template :
+Une manière de résoudre le problème est de définir une entête et un pied de page et
+de les inclure dans chaque Template :
 
-![Header and footer](http://www.symfony-project.org/images/jobeet/1_2/04/header_footer.png)
+![Entête et pied de page](http://www.symfony-project.org/images/jobeet/1_2/04/header_footer.png)
 
-Mais dans ce cas, le "header" et le "footer" ne contiennent pas du code HTML valide.
-Il doit y avoir un meilleur moyen. Plutôt que de réinventer la roue, nous allons utiliser
-un autre modèle pour résoudre ce problème : 
-le modèle 
-[Décorateur (patron de conception ou "decorator design pattern")](http://fr.wikipedia.org/wiki/D%C3%A9corateur_(patron_de_conception)).
-Le patron de conception résolve le problème d'une manière différente. Une fois que le contenu
-spécifique de la page demandée est généré, la page est "décorée", "encadrée", mise en page grâce à un
-template global appelé **layout** dans symfony :
+Mais dans ce cas, les fichiers header et footer ne contiennent pas de code HTML valide. Il doit
+y avoir un meilleur moyen. Plutôt que de réinventer la roue, nous allons utiliser un autre modèle
+pour résoudre ce problème : le
+[modèle décorateur](http://fr.wikipedia.org/wiki/D%C3%A9corateur_(patron_de_conception)).
+Le modèle décorateur résout le problème d'une manière différente :  le
+Template est décorée après que le contenu soit mise en page grâce à un template global,
+appelé **~layout|Layout~** dans symfony :
 
 ![Layout](http://www.symfony-project.org/images/jobeet/1_2/04/layout.png)
 
-La mise en page par défaut d'une application est appelée `layout.php` et se trouve 
-dans le dossier `apps/frontend/templates/`. Ce répertoire contient tous les templates
-globaux pour une application.
+La mise en page par défaut d'une application est appelée `layout.php` et se
+trouve dans le dossier `apps/frontend/templates/`. Ce répertoire contient
+tous les Templates globaux pour une application.
 
 Remplacez le contenu par défaut du layout par le code suivant :
 
@@ -150,11 +137,15 @@ Remplacez le contenu par défaut du layout par le code suivant :
 
           <div id="content">
             <?php if ($sf_user->hasFlash('notice')): ?>
-              <div class="flash_notice"><?php echo $sf_user->getFlash('notice') ?></div>
+              <div class="flash_notice">
+                <?php echo $sf_user->getFlash('notice') ?>
+              </div>
             <?php endif; ?>
 
             <?php if ($sf_user->hasFlash('error')): ?>
-              <div class="flash_error"><?php echo $sf_user->getFlash('error') ?></div>
+              <div class="flash_error">
+                <?php echo $sf_user->getFlash('error') ?>
+              </div>
             <?php endif; ?>
 
             <div class="content">
@@ -167,7 +158,8 @@ Remplacez le contenu par défaut du layout par le code suivant :
               <span class="symfony">
                 <img src="/images/jobeet-mini.png" />
                 powered by <a href="http://www.symfony-project.org/">
-                <img src="/images/symfony.gif" alt="symfony framework" /></a>
+                <img src="/images/symfony.gif" alt="symfony framework" />
+                </a>
               </span>
               <ul>
                 <li><a href="">About Jobeet</a></li>
@@ -181,56 +173,54 @@ Remplacez le contenu par défaut du layout par le code suivant :
       </body>
     </html>
 
-Un template symfony n'est ni plus ni moins qu'un fichier PHP. Dans le template layout,
-vous trouverez des appels à des fonctions PHP et des références à des variables PHP.
-`sf_content` est la variable la plus intéressante : elle est définie par le framework lui-même
-et contient le code HTML généré par l'action.
+Un ~template|Templates~ symfony est juste un fichier PHP. Dans le template layout, vous
+trouverez des appels à des fonctions PHP et des références à des variables PHP. ~`$sf_content`~ est
+la variable la plus intéressante : elle est définie par le framework lui-même et
+contient le code HTML généré par l'action.
 
 Si vous parcourez le module `job` (`http://jobeet.localhost/frontend_dev.php/job`),
-vous verrez que toutes les actions sont mises en page selon le modèle définit dans le
-layout.
+vous verrez que toutes les actions sont décorés par le layout.
+
+Les feuilles de style, les images et les Javascripts
+----------------------------------------------------
+
+Comme ce tutoriel n'est pas sur le design web, nous avons déjà préparé toutes les
+ressources que nous utiliserons pour Jobeet :
+[téléchargez les fichiers image](http://www.symfony-project.org/get/jobeet/images.zip)
+et mettez les dans le dossier `web/images/`;
+[téléchargez les fichiers feuilles de style](http://www.symfony-project.org/get/jobeet/css.zip)
+et mettez les dans le dossier `web/css/`.
 
 >**NOTE**
->Dans le layout, nous avons inclu une "favicon". Vous pouvez [télécharger celle de 
->Jobeet](http://www.symfony-project.org/images/jobeet/favicon.ico)
+>Dans le layout, nous avons inclus un *favicon*. Vous pouvez
+>[télécharger celle de Jobeet](http://www.symfony-project.org/images/jobeet/favicon.ico)
 >et la déposer dans le dossier `web/`.
 
-Les feuilles de style, Images, et fichiers Javascripts
-------------------------------------------------------
-
-Comme nous allons organiser un concours "meilleur design" le 21ième jour, nous avons
-préparé un design très basique à utiliser d'ici là :
-[téléchargez l'archive image](http://www.symfony-project.org/get/jobeet/images.zip)
-contenant l'ensemble des images utiles, et copiez les dans le dossier `web/images/`;
-[téléchargez l'archive CSS](http://www.symfony-project.org/get/jobeet/css.zip)
-contenant l'ensemble des feuilles de styles, et copiez les dans le dossier `web/css/`.
-
-![Le module job mit en page](http://www.symfony-project.org/images/jobeet/1_2/04/job_layout_assets.png)
+![Le module job avec le layout et les ressources](http://www.symfony-project.org/images/jobeet/1_2/04/job_layout_assets.png)
 
 >**TIP**
->Par défaut, la tâche `generate:project` a créé trois dossier pour le projet courant :
->`web/images/` pour les images, `web/css/` pour les feuilles de style, et `web/js/` pour
->les fichiers Javascript. Ceci fait partie des nombreuses conventions définies par
->symfony, mais vous pouvez évidemment les placer dans un autre dossier sous le répertoire
->`web/`.
+>Par défaut, la tâche `generate:project` a créé trois dossiers pour les
+>ressources du projet : `web/images/` pour les images, `web/~css|CSS~/` pour
+>les ~feuilles de style|Feuilles de style~ et `web/js/` pour les ~JavaScript~s. Ceci fait partie des
+>nombreuses ~conventions|Conventions~ définies par symfony, mais vous pouvez évidemment les
+>placer dans un autre dossier sous le répertoire `web/`.
 
-Un lecteur avisé aura remarqué que, bien que le fichier `main.css` n'est défini nul part
-dans le layout par défaut, il est nécessairement présent dans le code HTML généré. Mais
-pas les autres. Comment est-ce possible ?
+Un lecteur avisé aura remarqué que, bien que le fichier `main.css` n'est
+défini nul part dans le layout par défaut, il est nécessairement présent dans le
+code HTML généré. Mais pas pour les autres. Comment est-ce possible ?
 
-La feuille de style a été inclue grâce à la fonction `include_stylesheets()` située
-entre les balises `<head>` du fichier layout. La fonction `include_stylesheets()` est
-appelée un **helper**. Un helper est une fonction, définie par symfony, pouvant prendre 
-des paramètres et renvoyant du code HTML. La plupart du temps, les helpers permettent
-de gagner du temps, ils contiennent du code fréquemment utilisé dans les templates.
-Ici, le helper `include_stylesheets()` génère une balise `<link>` spécifique aux feuilles 
-de style.
+La feuille de style a été incluse grâce à la fonction `include_stylesheets()`
+située entre les balises `<head>` du fichier layout. La fonction `include_stylesheets()`
+est appelée un **helper**. Un helper est une fonction, définie par symfony,
+pouvant prendre des paramètres et renvoyant du code HTML. La plupart du temps, les helpers
+permettent de gagner du temps, ils contiennent du code fréquemment utilisé dans les templates. Le
+helper `include_stylesheets()` génère une balise `<link>` spécifique aux feuilles de style.
 
 Mais comment le helper sait quelle feuille de style inclure ?
 
-La couche vue peut être paramétrée en éditant le fichier de configuration `view.yml`
-de l'application. Voici le fichier par défaut généré lors de l'appel à la tâche
-`generate:app`
+La couche de la ~Vue~ peut être paramétrée en éditant le fichier de configuration `view.yml`
+de l'application. Voici le fichier par défaut généré lors de l'appel par la tâche
+`generate:app` :
 
     [yml]
     # apps/frontend/config/view.yml
@@ -252,14 +242,15 @@ de l'application. Voici le fichier par défaut généré lors de l'appel à la t
       has_layout:     on
       layout:         layout
 
-Le fichier `view.yml` contient les paramètres par défaut (`default`) pour tous les templates
-de l'application. Par exemple, l'entrée `stylesheets' définit un tableau de fichiers de feuilles
-de style à inclure pour toutes les pages de l'application (ceci grâce au helper vu ci-dessus).
+Le fichier `view.yml` configure les paramètres par défaut pour tous les Templates de
+l'application. Par exemple, l'entrée `stylesheets` définit un tableau de
+fichiers de feuille de style à inclure pour chaque page de l'application (ceci
+grâce au helper `include_stylesheets()`).
 
 >**NOTE**
->Dans le fichier de configuration par défaut `view.yml`, le fichier référence est
+>Dans le fichier de configuration par défaut `view.yml`, le fichier référencé est
 >`main.css`, et non pas `css/main.css`. En fait, les deux définitions sont équivalentes.
->Symfony préfixe les chemin relatifs avec `/css/`.
+>Symfony ~préfixe|Préfixe~ les chemins relatifs avec `/css/`.
 
 Si plusieurs fichiers sont définis, symfony les inclura dans le même ordre que celui
 dans lequel ils ont été définis :
@@ -275,22 +266,25 @@ Vous pouvez également définir l'attribut `media` et omettre le suffixe `.css` 
 Cette configuration génèrera le code suivant :
 
     [php]
-    <link rel="stylesheet" type="text/css" media="screen" href="/css/main.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="/css/jobs.css" />
-    <link rel="stylesheet" type="text/css" media="screen" href="/css/job.css" />
-    <link rel="stylesheet" type="text/css" media="print" href="/css/print.css" />
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/jobs.css" />
+    <link rel="stylesheet" type="text/css" media="screen"
+      href="/css/job.css" />
+    <link rel="stylesheet" type="text/css" media="print"
+      href="/css/print.css" />
 
 >**TIP**
 >Le fichier de configuration `view.yml` définit également le layout utilisé par
 >défaut pour l'application. Par défaut, son nom est `layout`. Par conséquent, symfony
 >met en page chacune de vos pages à partir du fichier `layout.php`. Vous pouvez également
->désactiver cette mise en page en définissant l'entrée `has_layout` à `false`.
+>désactiver cette mise en page en définissant l'entrée ~`has_layout`~ à `false`.
 
-Tel quel, le site répond à nos attentes. Seulement le fichier `jobs.css` est uniquement utile pour
-la page d'accueil, et le fichier `job.css` uniquement pour la page job. Il serait donc intéressant
-de faire en sorte que chaque fichier ne soit inclu que lorsqu'il est utile. Le fichier
-de configuration `view.yml` peut résoudre ce problème en le personnalisant par module. Modifiez le fichier
-`view.yml` afin de ne faire inclure que le fichier `main.css` :
+Il fonctionne comme `jobs.css`, mais le fichier n'est nécessaire que pour la page d'accueil et le
+fichier `job.css` n'est nécessaire que pour la page emploi. Le fichier de configuration `view.yml`
+peut être personnalisés sur la base de chaque module. Changez la clé `stylesheets` du fichier
+`view.yml` de l'application pour contenir uniquement le fichier `main.css` :
 
     [yml]
     # apps/frontend/config/view.yml
@@ -307,25 +301,27 @@ répertoire `apps/frontend/modules/job/config/` :
     showSuccess:
       stylesheets: [job.css]
 
-Sous les sections `indexSuccess` et `showSuccess` (qui sont les noms des templates associés
-aux actions `index` et `show`, comme nous le verrons plus tard), vous pouvez personnaliser
-les entrées se trouvant sous la section `default` du fichier `view.yml` **de l'application**.
-Toutes les entrées spécifiques sont fusionnées avec celles de l'application. Vous pouvez également
-définir des paramètres pour toutes les actions d'un module avec la section spéciale `all`.
+Sous les sections `indexSuccess` et `showSuccess` (qui sont les noms des Templates
+associés aux actions `index` et `show`, comme nous le verrons plus tard),
+vous pouvez personnaliser les entrées se trouvant sous la section `default` du
+fichier `view.yml` de l'application. Toutes les entrées spécifiques sont fusionnées avec la configuration
+de l'application. Vous pouvez également définir une configuration de toutes les actions d'un
+module avec la section spéciale `all`.
 
 >**SIDEBAR**
 >Principes de configuration dans symfony
 >
->Pour beaucoup de fichiers de configuration de symfony, un même paramètre peut
->être définit à différents niveaux :
+>Pour beaucoup de fichiers de ~configuration|Configuration~ de symfony, un même paramètre peut
+>être défini à différents niveaux :
 >
->  * Au niveau du framework lui-même
->  * Au niveau du projet (dans le répertoire `config/`)
->  * A un niveau plus local, celui de l'application (dans le répertoire `apps/APP/config/`)
->  * Au niveau restreint au module (dans le répertoire `apps/APP/modules/MODULE/config/`)
+>  * La configuration par défaut se trouve dans le framework
+>  * La configuration globale pour le projet (dans le répertoire `config/`)
+>  * La configuration locale pour l'application (dans le répertoire `apps/APP/config/`)
+>  * La configuration locale est restreinte à un module (dans le répertoire
+>    `apps/APP/modules/MODULE/config/`)
 >
->Lors de l'exécution, le système de configuration fusionne tous les paramètres depuis les
->différents fichiers si ils existent et les met en cache pour de meilleurs performances.
+>Lors de l'exécution, le système de configuration fusionne tous les valeurs depuis les
+>différents fichiers si ils existent et met le résultat en cache pour de meilleures performances.
 
 En règle générale, quand quelque chose est configurable via un fichier de configuration,
 la même chose peut être faite avec du code PHP. Au lieu de créer un fichier `view.yml`
@@ -335,21 +331,28 @@ pour inclure une feuille de style depuis un template :
     [php]
     <?php use_stylesheet('main.css') ?>
 
-Vous pouvez également utiliser ce helper dans le layout pour inclure une feuille de style
-globale à l'application.
+Vous pouvez également utiliser ce helper dans le layout pour inclure une feuille de style globale.
 
-Le choix entre une méthode ou l'autre est réellement une question de goût. Le
+Le choix entre une méthode ou une autre est réellement une question de goût. Le
 fichier `view.yml` permet de définir quelque chose pour toutes les actions d'un module,
 ce qui n'est pas possible depuis un template. Cela dit, la configuration est plus statique.
-A l'inverse, le helper `use_stylesheet()` est plus flexible et plus encore, tout se trouve
-au même endroit : la définition des feuilles de style et le code HTML. Pour Jobeet, nous
-allons utiliser le helper `use_stylesheet()`, nous pouvons donc supprimer le fichier `view.yml`
-que nous venons de créer, et mettre à jour le template `job` avec les appels à `use_stylesheet()`.
+A l'inverse, le ~helper|Helpers~ `use_stylesheet()` est plus flexible et
+plus encore, tout se trouve au même endroit : la définition des feuilles de style et le
+code HTML. Pour Jobeet, nous allons utiliser le helper `use_stylesheet()`, nous pouvons donc
+supprimer le fichier `view.yml` que nous venons de créer, et mettre à jour le template `job` avec
+les appels à `use_stylesheet()` :
+
+    [php]
+    <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
+    <?php use_stylesheet('job.css') ?>
 
 >**NOTE**
 >De la même manière, la configuration JavaScript est faite via l'entrée `javascripts`
->du fichier de configuration `view.yml` ou via le helper `use_javascript()` permettant
->d'inclure des fichiers JavaScript dans un template.
+>du fichier de configuration `view.yml` et via le ~helper `use_javascript()`~ permettant
+>d'inclure des fichiers JavaScript dans un Template.
 
 La page d'accueil Job
 ---------------------
@@ -369,10 +372,10 @@ et le template associé, `indexSuccess.php`, fait parti de la couche Vue :
 
 ### L'action
 
-Chaque action est représentée par une méthode de classe. Pour la page d'accueil de job,
+Chaque action est représentée par une méthode de la classe. Pour la page d'accueil job,
 la classe est `jobActions` (le nom du module avec le suffixe `Actions`) et la méthode
 est `executeIndex()` (le nom de l'action avec le préfixe `execute`). Dans notre cas,
-cela renvoie tous les jobs de la BDD :
+cela renvoie tous les jobs de la base de données :
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
@@ -394,19 +397,19 @@ cela renvoie tous les jobs de la BDD :
     }
 
 <propel>
-Analysons de plus près le code : la méthode `executeIndex()` (couche Contrôleur)
-appelle le (couche) Modèle `JobeetJobPeer` pour renvoyer tous les jobs (`new Criteria()`).
+Analysons de plus près le code : la méthode `executeIndex()` (le Contrôleur)
+appelle le Modèle `JobeetJobPeer` pour renvoyer tous les jobs (`new Criteria()`).
 Le modèle renvoie un tableau d'objet de type `JobeetJob` que l'on affecte à la propriété
 `jobeet_job_list` de l'objet courant.
 </propel>
 <doctrine>
-Analysons de plus près le code : la méthode `executeIndex()` (couche Contrôleur)
+Analysons de plus près le code : la méthode `executeIndex()` (le Contrôleur)
 appelle la Table `JobeetJob` pour créer une requête renvoyant tous les jobs.
 La Table renvoie une 'Doctrine_Collection` d'objets de type `JobettJob` que l'on affecte 
 à la propriété `jobeet_job_list` de l'objet courant.
 </doctrine>
 
-Toutes les propriétés des objets sont automatiquement passées au template (la couche Vue).
+Toutes les propriétés des objets sont automatiquement passées au template (la Vue).
 Pour transmettre des données du Contrôleur à la Vue, il vous suffit simplement de créer une
 nouvelle propriété :
 
@@ -421,13 +424,16 @@ Cette méthode rendra les variables `$foo` et `$bar` accessibles depuis le templ
 
 ### Le Template
 
-Par défaut, le nom du template associé à l'action est déduit par symfony : le nom
-de l'action avec le suffixe `Success`.
+Par défaut, le nom du ~template|Templates~ associé à l'action est déduit par symfony
+grâce a une convention (le nom de l'action avec le suffixe `Success`).
 
-Le template `indexSuccess.php` génère une table HTML pour tous les jobs :
+Le template `indexSuccess.php` génère une table HTML pour tous les jobs. Voici
+le code  du Template actuel :
 
     [php]
     <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
+    <?php use_stylesheet('jobs.css') ?>
+
     <h1>Job List</h1>
 
     <table>
@@ -462,14 +468,12 @@ Le template `indexSuccess.php` génère une table HTML pour tous les jobs :
     <a href="<?php echo url_for('job/new') ?>">New</a>
 
 Dans ce code, la boucle `foreach` parcourt la liste d'objets `job` (`$jobeet_job_list`)
-et, pour chaque job, chaque colonne est affichée.
-Souvenez-vous, pour accéder à la valeur d'une colonne (propriété), il suffit simplement de 
-faire appel à un accesseur. Comme d'habitude, le nom de ces accesseurs suit une convention
-établit par symfony : chaque accesseur commence par le préfixe `get` suivit du nom de la 
-colonne (propriété) en **camelCased** (par exemple, la méthode `getCreatedAt()` permet
-d'accéder à la valeur de la colonne `created_at` de l'objet).
+et pour chaque job, chaque valeur de colonne est affichée.
+Souvenez-vous, pour accéder à la valeur d'une colonne, il suffit simplement d'appeller une méthode accesseur.
+dont le nom commence par `get` et suivit du nom de la colonne en ~camelCased|Formattage du code~
+(par exemple, la méthode `getCreatedAt()` permet d'accéder à la colonne `created_at`).
 
-Faisons un peu de tri dans tout ça afin de n'afficher qu'une partie des propriétés :
+Faisons un peu de tri dans tout ça afin de n'afficher qu'une partie des colonnes :
 
     [php]
     <!-- apps/frontend/modules/job/templates/indexSuccess.php -->
@@ -496,13 +500,14 @@ Faisons un peu de tri dans tout ça afin de n'afficher qu'une partie des propri�
 La fonction `url_for()` utilisée dans ce template est un helper symfony que nous détaillerons
 dans le chapitre de demain.
 
-Le template de la page d'un job
--------------------------------
+Le template de la page job
+--------------------------
 
-Personnalisons maintenant le template de la page d'un job. Ouvrez le fichier `showSuccess.php`
+Personnalisons maintenant le template de la page job. Ouvrez le fichier `showSuccess.php`
 et remplacez son contenu par le code suivant :
 
     [php]
+    <!-- apps/frontend/modules/job/templates/showSuccess.php -->
     <?php use_stylesheet('job.css') ?>
     <?php use_helper('Text') ?>
 
@@ -541,33 +546,36 @@ et remplacez son contenu par le code suivant :
       </div>
 
       <div style="padding: 20px 0">
-        <a href="<?php echo url_for('job/edit?id='.$job->getId()) ?>">Edit</a>
+        <a href="<?php echo url_for('job/edit?id='.$job->getId()) ?>">
+          Edit
+        </a>
       </div>
     </div>
 
-
-Ce template utilise la variable `$job` passée en paramètre par l'action servant à 
-afficher les informations sur un job. Comme nous avons renommé la variable utilisée dans le template
-(`$job` au lieu de `$jobeet_job`), vous devez également modifier le nom de la variable envoyée au template
-depuis l'action `show` (attention, elle s'y trouve deux fois) :
+Ce template utilise la variable `$job` passée en paramètre par l'action pour afficher
+les informations sur un job. Comme nous avons renommé la variable utilisée dans le template
+de `$jobeet_job` en `$job`), vous devez également faire modification dans l'action `show`
+(attention, la variable s'y trouve deux fois) :
 
     [php]
     // apps/frontend/modules/job/actions/actions.class.php
     public function executeShow(sfWebRequest $request)
     {
 <propel>
-      $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+      $this->job =
+       ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
 </propel>
 <doctrine>
-      $this->job = Doctrine::getTable('JobeetJob')->find($request->getParameter('id'));
+      $this->job = Doctrine::getTable('JobeetJob')->
+       ➥ find($request->getParameter('id'));
 </doctrine>
       $this->forward404Unless($this->job);
     }
 
 <propel>
-Remarquez que certains accesseurs Propel prennent des paramètres. Comme nous avons
+Remarquez que certains ~accesseurs|Acesseurs~ Propel prennent des argumentss. Comme nous avons
 défini la colonne `created_at` de type timestamp, l'accesseur `getCreatedAt()` prend
-en paramètre le format de la date à renvoyer :
+en paramètre le format de la date à renvoyer comme premier argument :
 
     [php]
     $job->getCreatedAt('m/d/Y');
@@ -577,10 +585,12 @@ en paramètre le format de la date à renvoyer :
 >La description d'un job utilise le helper `simple_format_text()` afin de formater
 >le texte en HTML, en remplaçant notamment les retours chariots par des balises `<br />`.
 >Comme ce helper fait parti du groupe `Text` et que celui-ci n'est pas chargé par défaut,
->nous le chargeons manuellement en utilisant le helper `use_helper()`.
+>nous le chargeons manuellement en utilisant le ~helper `use_helper()`~.
 
-Les Slots
----------
+![La page job](http://www.symfony-project.org/images/jobeet/1_2/04/job.png)
+
+Les ~Slot~s
+-----------
 
 Actuellement, le titre de toutes les pages est défini dans la balise `<title>`
 du layout :
@@ -603,13 +613,16 @@ Ajoutez un slot au layout afin de rendre le titre dynamique :
     <title><?php include_slot('title') ?></title>
 
 Chaque slot est identifié par un nom (ici `title`) et peut être affiché en
-utilisant le helper `include_slot()`. Maintenant, au début du template
+utilisant le helper `~include_slot()~`. Maintenant, au début du template
 `showSuccess.php`, utilisez le helper `slot()` afin de définir le contenu
-du slot pour la page d'un job :
+du slot pour la page job :
 
     [php]
     // apps/frontend/modules/job/templates/showSuccess.php
-    <?php slot('title', sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition())) ?>
+    <?php slot(
+      'title',
+      sprintf('%s is looking for a %s', $job->getCompany(), $job->getPosition()))
+    ?>
 
 Si le titre est complexe à définir, le helper `slot()` peut aussi être utilisé
 dans un block de code :
@@ -632,15 +645,14 @@ nous pouvons définir un titre par défaut dans le layout :
       <?php endif; ?>
     </title>
 
-Le helper `include_slot()` renvoie `true` si le slot a été défini. Ainsi, si
-vous spécifiez une valeur pour le slot `title` depuis un template, c'est cette
-valeur qui sera utilisée comme titre, sinon,ce sera le titre par défaut spécifié
-dans le layout.
+Le helper `include_slot()` renvoie `true` si le slot a été défini. Ainsi,
+lorsque vous spécifiez une valeur pour le slot `title` dans un template, il est utilisé, sinon,
+ce sera le titre par défaut qui sera utilisé.
 
 >**TIP**
 >Nous avons déjà vu quelques helpers commençant par `include_`. Ces helpers
->renvoient du code HTML et dans la plupart des cas ont un helper `get_` permettant
->de renvoyer uniquement le contenu :
+>renvoient du code HTML et dans la plupart des cas, ils  ont un helper `get_`
+>permettant de renvoyer uniquement le contenu :
 >
 >     [php]
 >     <?php include_slot('title') ?>
@@ -649,10 +661,10 @@ dans le layout.
 >     <?php include_stylesheets() ?>
 >     <?php echo get_stylesheets() ?>
 
-L'action de la page d'un job
-----------------------------
+L'action de la page job
+-----------------------
 
-La page d'un job est générée grâce à l'action `show` définie par la méthode
+La page job est générée grâce à l'action `show`, définie par la méthode
 `executeShow()` du module `job` :
 
     [php]
@@ -661,10 +673,12 @@ La page d'un job est générée grâce à l'action `show` définie par la métho
       public function executeShow(sfWebRequest $request)
       {
 <propel>
-      $this->job = JobeetJobPeer::retrieveByPk($request->getParameter('id'));
+        $this->job =
+         ➥ JobeetJobPeer::retrieveByPk($request->getParameter('id'));
 </propel>
 <doctrine>
-      $this->job = Doctrine::getTable('JobeetJob')->find($request->getParameter('id'));
+        $this->job = Doctrine::getTable('JobeetJob')->
+         ➥ find($request->getParameter('id'));
 </doctrine>
         $this->forward404Unless($this->job);
       }
@@ -675,34 +689,34 @@ La page d'un job est générée grâce à l'action `show` définie par la métho
 <propel>
 Comme dans l'action `index`, la classe `JobeetJobPeer` est utilisée pour récupérer
 un job, cette fois en utilisant la méthode `retrieveByPk()`. Le paramètre de cette
-méthode est un identifiant unique d'un job, sa clé primaire. La section suivante
-explique pourquoi et comment la requête `$request->getParameter('id')` renvoie la clé
+méthode est un identifiant unique d'un job, sa ~clé primaire|Clé primaire~. La section
+suivante explique pourquoi l'instruction `$request->getParameter('id')` renvoie la clé
 primaire d'un job.
 </propel>
 <doctrine>
-Comme dans l'action `index`, la classe `JobeetJob` est utilisée pour récupérer un job,
-cette fois en utilisant la méthode `find()`. Le paramètre de cette méthode est 
-l'identifiant unique d'un job, sa clé primaire. La prochaine section explique 
-pourquoi et comment la requête `$request->getParameter('id')` renvoie la clé primaire
-d'un job.
+Comme dans l'action `index`, la classe de la table `JobeetJob` est utilisée pour récupérer un job,
+cette fois en utilisant la méthode `find()`. Le paramètre de cette méthode est
+l'identifiant unique d'un job, sa ~clé primaire|Clé primaire~. La prochaine
+section explique pourquoi l'instruction `$request->getParameter('id')` renvoie la clé
+primaire d'un job.
 </doctrine>
 
 <propel>
 >**TIP**
->Le modèle de classe généré par symfony contient un grand nombre de méthodes
->utiles pour interagir avec les objets du projet. Prenez un peu de temps
->pour parcourir le code situé dans le dossier `lib/om/` et découvrir toute la
->puissance embarqué dans ces classes.
+>Le modèle de classe généré contient un grand nombre de méthodes utiles pour interagir avec
+>les objets du projet. Prenez un peu de temps pour parcourir le code situé dans le dossier
+>`lib/om/` et découvrez toute la puissance embarqué dans ces classes.
 </propel>
 
-Si le job n'existe pas dans la BDD, nous voudrions renvoyer l'utilisateur vers
-une page 404, ce qui est exactement ce que fait la méthode `forward404Unless()`.
-Elle prend en premier paramètre un Booléen et, à moins que ce paramètre ne soit vrai,
-arrête l'exécution normale. Cette méthode génère une exception `sfError404Exception`
-et vous n'avez donc pas besoin de rajouter de `return` après cette méthode.
+Si le job n'existe pas dans la base de données, nous voudrions renvoyer l'utilisateur vers
+une page ~404|erreur 404~, c'est ce que fait exactementla méthode `forward404Unless()`.
+Elle prend en premier paramètre un Booléen et, à moins que ce paramètre ne soit à true,
+elle arrête l'exécution normale. Cette méthode génère une exception `sfError404Exception`
+et vous n'avez donc pas besoin de rajouter de `return` après cette
+méthode.
 
-Comme pour toutes exceptions, la page affichée est différente en fonction de
-l'environnement : `prod` ou `dev` :
+Comme pour toutes ~exceptions|Gestion de l'exception~, la page affichée est différente en fonction de
+l'~environnement|Environnement~ de `prod` ou de `dev` :
 
 ![Erreur 404 dans l'environnement dev](http://www.symfony-project.org/images/jobeet/1_2/05/404_dev.png)
 
@@ -715,7 +729,7 @@ l'environnement : `prod` ou `dev` :
 -
 
 >**SIDEBAR**
->La famille des méthodes "forward"
+>La famille des méthodes "~forward|Action de redirection~"
 >
 >L'appel à la méthode `forward404Unless` est équivalent à :
 >
@@ -738,20 +752,20 @@ l'environnement : `prod` ou `dev` :
 >La méthode `forward()` renvoie vers une autre action de la même application;
 >dans l'exemple précédent, vers l'action `404` du module `default`.
 >Le module `default` fait parti intégrante de symfony et fournit des actions
->par défaut pour afficher les pages 404, de sécurité, et de connexion.
+>par défaut pour afficher les pages 404, de sécurité et de connexion.
 
 Les requêtes et les réponses
 ----------------------------
 
-Quand vous accédez à la page `/job` ou `/job/show/id/1` depuis votre navigateur internet,
-vous provoquez un ensemble de traitements entre le serveur web et votre ordinateur. Votre
-ordinateur envoie des **requêtes** (request) et le serveur vous renvoie des 
-**réponses** (response).
+Quand vous accédez à la page `/job` ou `/job/show/id/1` depuis votre navigateur, vous
+provoquez un ensemble de traitements entre le serveur web et votre ordinateur. Votre navigateur envoie
+une **~requête|Requête HTTP~** et le serveur vous renvoie une **~réponse|Réponse HTTP~**.
 
-Nous avons déjà vu que symfony encapsule les requêtes dans un objet de classe `sfWebRequest`
-(regardez le prototype de la méthode `executeShow()`). Et comme symfony est un framework
-Orienté Objet, la réponse est également un objet de classe `sfWebResponse`. Vous pouvez
-récupérer cet objet dans une action en faisant appel à `$this->getResponse()`.
+Nous avons déjà vu que symfony encapsule les requêtes dans un objet `sfWebRequest`
+(regardez la signature de la méthode `executeShow()`). Et comme symfony est un
+framework Orienté Objet, la réponse est également un objet de classe
+`sfWebResponse`. Vous pouvez récupérer l'objet de la réponse dans une action en appelant
+`$this->getResponse()`.
 
 Ces objets permettent un accès pratique et simple pour obtenir des informations
 sur des fonctions PHP et des variables globales PHP.
@@ -765,8 +779,8 @@ sur des fonctions PHP et des variables globales PHP.
 
 ### La requête
 
-La classe `sfWebRequest` redéfinit les tableaux globaux PHP `$_SERVER`, 
-`$_COOKIE`, `$_GET`, `$_POST`, et `$_FILES` :
+La classe `sfWebRequest` redéfinit les tableaux globaux PHP ~`$_SERVER`~, 
+~`$_COOKIE`~, ~`$_GET`~, ~`$_POST`~, et ~`$_FILES`~ :
 
  Nom de la méthode    | Équivalent PHP
  -------------------- | --------------------------------------------------
@@ -787,24 +801,25 @@ La classe `sfWebRequest` redéfinit les tableaux globaux PHP `$_SERVER`,
  `getRemoteAddress()` | `$_SERVER['REMOTE_ADDR']`
 
 Nous avons déjà accédé aux paramètres d'une requête en utilisant la méthode
-`getParameter()`. Elle renvoie une valeur depuis la variable `$_GET` ou `$_POST`,
-ou depuis la variable `PATH_INFO`.
+`getParameter()`. Elle renvoie une valeur depuis la variable globale `$_GET` ou `$_POST`,
+ou depuis la variable `~PATH_INFO~`.
 
 Si vous voulez être sûr qu'un paramètre demandé provienne de l'une de ces variables en
 particulier, vous devez utiliser respectivement la méthode `getGetParameter()`,
 `getPostParameter()` et `getUrlParameter()`.
 
 >**NOTE**
->Quand vous voulez restreindre une action pour une méthode spécifique, par
->exemple quand vous voulez être sûr qu'un formulaire ait été envoyé via la
->méthode `POST`, vous pouvez utiliser la méthode `isMethod()` :
+>Quand vous voulez restreindre une action pour une ~méthode HTTP|Méthode HTTP~ spécifique,
+>par exemple quand vous voulez être sûr qu'un formulaire ait été envoyé via la méthode `POST`,
+>vous pouvez utiliser la méthode `isMethod()` :
 >`$this->forwardUnless($request->isMethod('POST'));`.
 
 ### La réponse
 
-La classe `sfWebResponse` redéfinit les méthodes PHP `header()` et `setrawcookie()` :
+La classe `sfWebResponse` redéfinit les méthodes PHP `~header|HTTP Headers~()` et
+`setraw~cookie|Cookies~()` :
 
- Method name                   | PHP equivalent
+ Nom de la méthode             | Équivalent PHP
  ----------------------------- | ----------------
  `setCookie()`                 | `setrawcookie()`
  `setStatusCode()`             | `header()`
@@ -814,12 +829,11 @@ La classe `sfWebResponse` redéfinit les méthodes PHP `header()` et `setrawcook
  `addCacheControlHttpHeader()` | `header()`
 
 Évidemment, la classe `sfWebResponse` permet aussi de définir la réponse du serveur web
-(méthode `setContent()`) et de l'envoyer au navigateur web (méthode `send()`).
+(`setContent()`) et de l'envoyer au navigateur (`send()`).
 
-Plus tôt aujourd'hui, nous avons vu comment gérer les feuilles de style et les
-scripts JavaScripts dans le fichier de configuration `view.yml` et dans les templates.
-Finalement, ces deux techniques utilisent les méthodes de la classe réponse 
-`addStylesheet()` et `addJavascript()`.
+Plus tôt aujourd'hui, nous avons vu comment gérer les feuilles de style et les JavaScripts dans le
+fichier `view.yml` et dans les templates. Finalement, ces deux techniques utilisent les méthodes 
+`addStylesheet()` et `addJavascript()` de l'objet réponse.
 
 >**TIP**
 >Les classes [`sfAction`](http://www.symfony-project.org/api/1_2/sfAction),
@@ -827,30 +841,17 @@ Finalement, ces deux techniques utilisent les méthodes de la classe réponse
 >[`sfResponse`](http://www.symfony-project.org/api/1_2/sfResponse)
 >fournissent un grand nombre de méthodes très utiles. N'hésitez pas à
 >parcourir [la documentation de l'API](http://www.symfony-project.org/api/1_2/)
->pour en apprendre plus sur les classes internes à symfony.
+>pour en apprendre plus sur les classes internes de symfony.
 
 À demain
 --------
 
-Aujourd'hui, nous avons vu l'architecture utilisée par symfony pour organiser son code.
-Nous espérons alors que maintenant, l'arborescence d'un projet symfony vous est bien
-moins obscrure. Nous avons également appris le principe de fonctionnement de mise en
-page de symfony en éditant le layout et les fichiers templates. Nous avons également
-vu comment rendre ces pages un peu plus dynamiques grâce aux slots.
-
-Si vous voulez nous envoyer votre design pour notre **concours meilleur design** (qui 
-se déroulera le 21ième jour), vous pouvez commencer à modifier les templates que nous avons
-vu aujourd'hui. Les règles sont simples : vous devez créer un design avec uniquement des
-feuilles de style et des images. Nous avons essayé de vous fournir ici tous les ids et classes
-dont vous pourriez avoir besoin pour votre code HTML, mais si vous pensez que vous pourriez en avoir
-besoin de nouveaux, n'hésitez pas à m'envoyer un mail.
+Aujourd'hui, nous avons décrit quelques modèles de conception utilisés par symfony. Espérons que
+la structure des répertoires du projet ait maintenant plus de sens. Nous avons joué avec les
+Templates en manipulant la mise en page et les fichiers des Templates. Nous avons également rendu
+les pages un peu plus dynamiques grâce aux slots et aux actions.
 
 Demain, nous en apprendrons plus sur le helper `url_for()` que nous avons aperçu aujourd'hui,
 et le "sous-framework" de routage qui lui est associé.
-
-D'ici là, n'hésitez pas à parcourir les sources du tutoriel d'aujourd'hui (SVN mis à jour)
-via l'adresse :
-
-    http://svn.jobeet.org/tags/release_day_04/
 
 __ORM__
