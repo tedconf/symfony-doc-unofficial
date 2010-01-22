@@ -6,7 +6,10 @@ Nous avons vu dans le Chapitre 1 comment créer et afficher un formulaire. Ce ch
 Avant de commencer
 ------------------
 
-Le formulaire de contact que nous avons développé au Chapitre 1 n'est pas encore opérationnel. En effet, que se passerait-il si l'internaute soumettait une adresse email invalide ou si le message était vide ? Dans ce cas, nous souhaiterions afficher à l'utilisateur des messages d'erreurs l'invitant à corriger sa saisie comme l'illustre la Figure 2-1.
+Le formulaire de contact que nous avons développé au Chapitre 1 n'est pas encore opérationnel. En effet,
+que se passerait-il si l'internaute soumettait une adresse email invalide ou si le message était vide ?
+Dans ce cas, nous souhaiterions afficher à l'utilisateur des messages d'erreurs l'invitant à corriger
+sa saisie comme l'illustre la Figure 2-1.
 
 Figure 2-1 - Affichage des Messages d'Erreurs
 
@@ -22,7 +25,7 @@ Voici les règles de validation que nous souhaitons mettre en place :
 >**Note**
 >Pourquoi vouloir valider le champ `subject` ? En effet, avec un tag `<select>`, ne forçons-nous pas déjà l'utilisateur à choisir parmi des valeurs pré-définies ? Pour l'internaute moyen les choix sont contraints par le navigateur. Cependant, il est tout à fait possible de soumettre le formulaire avec d'autres valeurs en utilisant des outils comme la Web Developer Toolbar de Firefox ou en simulant une requête avec des outils comme `curl` ou `wget` disponibles en standard sur Linux ou Mac OS X.
 
-Dans ce chapitre, nous ne modifierons pas la template que nous avons utilisée au Chapitre 1 et qui est rappelée dans le Listing 2-1.
+Dans ce chapitre, nous ne modifierons pas le Template que nous avons utilisée au Chapitre 1 et qui est rappelée dans le Listing 2-1.
 
 Listing 2-1 - Template du Formulaire `contact`
 
@@ -131,7 +134,7 @@ Listing 2-3 - Intégration de la Validation dans le Module `contact`
 
 Le Listing 2-3 introduit de nombreux concepts :
 
-  * Dans le cas de l'appel initial en `GET`, on initialise le formulaire pour le passer à la template. Le formulaire est alors dans un **état initial** :
+  * Dans le cas de l'appel initial en `GET`, on initialise le formulaire pour le passer à le Template. Le formulaire est alors dans un **état initial** :
 
         [php]
         $this->form = new ContactForm();
@@ -153,7 +156,7 @@ Le Listing 2-3 introduit de nombreux concepts :
               $this->redirect('contact/thankyou?'.http_build_query($this->form->getValues()));
             }
 
-      * Sinon, la template `indexSuccess` est évaluée comme lors de l'affichage initial. La validation ayant injecté les messages d'erreurs dans le formulaire, ceux-ci sont affichés à l'internaute.
+      * Sinon, le Template `indexSuccess` est évaluée comme lors de l'affichage initial. La validation ayant injecté les messages d'erreurs dans le formulaire, ceux-ci sont affichés à l'internaute.
 
 >**Note**
 >Lorsqu'un formulaire est dans l'état initial, la méthode `isValid()` renvoie toujours `false` et la méthode `getValues()` renvoie un tableau vide.
@@ -172,32 +175,32 @@ Si le formulaire est valide, pourquoi ces deux constructions de code ne seraient
 
 Le nettoyage peut avoir deux actions principales : **uniformiser** et **convertir** les données saisies.
 
-Nous avons déjà vu un case d'uniformisation des données avec l'option `trim`. Mais l'action d'uniformisation est beaucoup plus importante pour un champ date par exemple. Pour valider une date, on peut utiliser le validateur `sfValidatorDate`. Ce validateur accepte comme valeur d'entrée de très nombreux formats (timestamp, format défini par une expression régulière, ...). Au lieu de renvoyer la valeur d'entrée, il la convertit par défaut dans le format `Y-m-d H:i:s`. De ce fait, le développeur est sûr d'obtenir un format stable quel que soit le format d'entrée utilisé par l'internaute. Le système offre donc une très grande souplesse dans la saisie de l'internaute et garantit l'uniformité au développeur.
+Nous avons déjà vu un cas d'uniformisation des données avec l'option `trim`. Mais l'action d'uniformisation est beaucoup plus importante pour un champ date par exemple. Pour valider une date, on peut utiliser le validateur `sfValidatorDate`. Ce validateur accepte comme valeur d'entrée de très nombreux formats (timestamp, format défini par une expression régulière, ...). Au lieu de renvoyer la valeur d'entrée, il la convertit par défaut dans le format `Y-m-d H:i:s`. De ce fait, le développeur est sûr d'obtenir un format stable quel que soit le format d'entrée utilisé par l'internaute. Le système offre donc une très grande souplesse dans la saisie de l'internaute et garantit l'uniformité au développeur.
 
-Prenons maintenant un cas de conversion, l'upload de fichiers. La validation d'un fichier peut s'effectuer grâce au validateur `sfValidatorFile`. Une fois le fichier validé, au lieu de retourner le nom du fichier uploadé par l'internaute, le validateur retourne un objet `sfValidatedFile` qui permet de manipuler facilement le fichier. L'utilisation de ce validateur est détaillée plus loin dans ce chapitre.
+Prenons maintenant un cas de conversion, le téléchargement de fichiers. La validation d'un fichier peut s'effectuer grâce au validateur `sfValidatorFile`. Une fois le fichier validé, au lieu de retourner le nom du fichier téléchargé par l'internaute, le validateur retourne un objet `sfValidatedFile` qui permet de manipuler facilement le fichier. L'utilisation de ce validateur est détaillée plus loin dans ce chapitre.
 
 >**Tip**
 >La méthode `getValues()` renvoie un tableau contenant toutes les valeurs validées et nettoyées. Mais il est parfois utile de récupérer seulement une valeur. Dans ce cas, il est préférable d'utiliser la méthode `getValue()` : `$email = $this->form->getValue('email')`.
 
 ### Formulaire invalide
 
-Lorsque le formulaire comporte des champs invalides, la template `indexSuccess` est évaluée. La Figure 2-4 montre ce qu'on obtient en soumettant un formulaire invalide.
+Lorsque le formulaire comporte des champs invalides, le Template `indexSuccess` est évaluée. La Figure 2-4 montre ce qu'on obtient en soumettant un formulaire invalide.
 
 Figure 2-4 - Formulaire invalide
 
 ![Formulaire invalide](/images/forms_book/en/02_04.png "Formulaire invalide")
 
-Sans rien changer à la template, l'appel à `<?php echo $form ?>` a pris en compte automatiquement les messages d'erreurs associés à chaque champ et a conservé les données saisies par l'internaute.
+Sans rien changer à le Template, l'appel à `<?php echo $form ?>` a pris en compte automatiquement les messages d'erreurs associés à chaque champ et a conservé les données saisies par l'internaute.
 
 Lorsqu'on lie le formulaire à des données externes, via la méthode `bind()`, le formulaire passe à un état lié, ce qui déclenche les actions suivantes :
 
   * La validation est exécutée
 
-  * Les messages d'erreurs sont stockés dans le formulaire pour qu'ils soient accessibles par la template
+  * Les messages d'erreurs sont stockés dans le formulaire pour qu'ils soient accessibles par le Template
 
   * Les valeurs par défaut du formulaire sont remplacées par les données saisies par l'internaute
 
-Toutes les informations nécessaires à l'affichage des messages d'erreurs et au re-peuplement des données saisies par l'internaute sont donc disponibles automatiquement via la variable `form` depuis la template.
+Toutes les informations nécessaires à l'affichage des messages d'erreurs et au re-peuplement des données saisies par l'internaute sont donc disponibles automatiquement via la variable `form` depuis le Template.
 
 >**Caution**
 >Comme nous l'avons vu au Chapitre 1, il est possible de passer des valeurs par défaut au constructeur des classes de formulaire. Dans l'exemple précédent, ces valeurs n'ont pas été conservées après la soumission d'un formulaire invalide au profit des données soumises par l'utilisateur pour lui permettre de corriger ses erreurs. Il ne faut donc jamais utiliser les données saisies par l'utilisateur comme valeurs par défaut comme dans cet exemple : `$this->form->setDefaults($request->getParameter('contact'))`.
@@ -521,8 +524,7 @@ A partir de symfony 1.2, vous pouvez également utiliser les opérateurs PHP plu
     $this->validatorSchema->setPostValidator(new sfValidatorSchemaCompare('password', '==', 'password_again'));
 
 >**Tip**
->La classe `sfValidatorSchemaCompare` hérite du validateur `sfValidatorSchema` comme tous les validateurs globaux.
-`sfValidatorSchema` est lui-même un validateur global puisqu'il permet de valider l'ensemble des données soumises par l'internaute en déléguant la validation de chaque champ à d'autres validateurs.
+>La classe `sfValidatorSchemaCompare` hérite du validateur `sfValidatorSchema` comme tous les validateurs globaux. `sfValidatorSchema` est lui-même un validateur global puisqu'il permet de valider l'ensemble des données soumises par l'internaute en déléguant la validation de chaque champ à d'autres validateurs.
 
 Le Listing 2-14 montre l'utilisation du même validateur pour valider qu'une date de départ est antérieure à une date de fin avec une personnalisation de message d'erreur.
 
@@ -568,12 +570,16 @@ Listing 2-16 - Combinaison de plusieurs Post-Validateurs grâce à un Validateur
       new sfValidatorSchemaCompare('password', sfValidatorSchemaCompare::EQUAL, 'password_again'),
     )));
 
-L'Upload de Fichiers
---------------------
+Le téléchargement de Fichiers
+-----------------------------
 
-En PHP, comme dans tous les langages utilisés pour le Web, la gestion de l'upload de fichiers nécessite une prise en charge particulière tant au niveau du code HTML que pour la récupération des fichiers côté serveur. Nous allons voir dans cette section les outils que le framework de formulaire met à la disposition du développeur pour lui simplifier la vie. Nous verrons également comment éviter les principaux pièges.
+En PHP, comme dans tous les langages utilisés pour le Web, la gestion du téléchargement de fichiers nécessite
+une prise en charge particulière tant au niveau du code HTML que pour la récupération des fichiers côté
+serveur. Nous allons voir dans cette section les outils que le framework de formulaire met à la disposition
+du développeur pour lui simplifier la vie. Nous verrons également comment éviter les principaux pièges.
 
-Modifions le formulaire de contact pour permettre aux internautes d'attacher une pièce jointe à leur message. Pour cela, ajoutons un champ `file` comme le montre le Listing 2-17.
+Modifions le formulaire de contact pour permettre aux internautes d'attacher une pièce jointe à
+leur message. Pour cela, ajoutons un champ `file` comme le montre le Listing 2-17.
 
 Listing 2-17 - Ajout d'un Champ `file` au Formulaire `ContactForm`
 
@@ -604,7 +610,7 @@ Listing 2-17 - Ajout d'un Champ `file` au Formulaire `ContactForm`
       }
     }
 
-Lorsqu'un formulaire contient un widget de type `sfWidgetFormInputFile` permettant l'upload d'un fichier, il ne faut pas oublier d'ajouter l'attribut `enctype` au tag `form` comme le montre le Listing 2-18.
+Lorsqu'un formulaire contient un widget de type `sfWidgetFormInputFile` permettant le téléchargement d'un fichier, il ne faut pas oublier d'ajouter l'attribut `enctype` au tag `form` comme le montre le Listing 2-18.
 
 Listing 2-18 - Modification de la Template pour prendre en compte le Champ `file`
 
@@ -621,11 +627,11 @@ Listing 2-18 - Modification de la Template pour prendre en compte le Champ `file
     </form>
 
 >**Note**
->Si vous générez dynamiquement la template associée à un formulaire, la méthode `isMultipart()` de l'objet formulaire permet de savoir si un formulaire nécessite l'attribut `enctype`.
+>Si vous générez dynamiquement le Template associée à un formulaire, la méthode `isMultipart()` de l'objet formulaire permet de savoir si un formulaire nécessite l'attribut `enctype`.
 
-En PHP, les informations sur les fichiers uploadés ne sont pas stockées avec les autres valeurs soumises. Il faut donc modifier l'appel à la méthode `bind()` pour lui passer ces informations en deuxième argument comme le montre le Listing 2-19.
+En PHP, les informations sur les fichiers téléchargés ne sont pas stockées avec les autres valeurs soumises. Il faut donc modifier l'appel à la méthode `bind()` pour lui passer ces informations en deuxième argument comme le montre le Listing 2-19.
 
-Listing 2-19 - Passage des Fichiers uploadés à la Méthode `bind()`
+Listing 2-19 - Passage des Fichiers téléchargés à la Méthode `bind()`
 
     [php]
     class contactActions extends sfActions
@@ -652,7 +658,7 @@ Listing 2-19 - Passage des Fichiers uploadés à la Méthode `bind()`
       }
     }
 
-Maintenant que le formulaire est opérationnel, il reste à modifier l'action pour stocker le fichier uploadé. Comme nous l'avons vu au début de ce chapitre, le validateur `sfValidatorFile` convertit les informations concernant le fichier uploadé en un objet `sfValidatedFile`. Le Listing 2-20 montre comment manipuler cet objet pour stocker le fichier dans le répertoire `web/uploads`.
+Maintenant que le formulaire est opérationnel, il reste à modifier l'action pour stocker le fichier téléchargé. Comme nous l'avons vu au début de ce chapitre, le validateur `sfValidatorFile` convertit les informations concernant le fichier téléchargé en un objet `sfValidatedFile`. Le Listing 2-20 montre comment manipuler cet objet pour stocker le fichier dans le répertoire `web/uploads`.
 
 Listing 2-20 - Utilisation de l'Objet `sfValidatedFile`
 
@@ -672,15 +678,15 @@ Le tableau suivant détaille les méthodes de l'objet `sfValidatedFile` :
 
   | **Méthode**            | **Description**
   | ---------------------- | ---------------
-  | save()                 | Sauvegarde le fichier uploadé
+  | save()                 | Sauvegarde le fichier téléchargé
   | isSaved()              | Retourne `true` si le fichier a été sauvegardé
   | getSavedName()         | Retourne le nom du fichier sauvegardé
   | getExtension()         | Retourne l'extension du fichier en fonction du type mime
-  | getOriginalName()      | Retourne le nom du fichier uploadé
-  | getOriginalExtension() | Retourne l'extension du nom du fichier uploadé
+  | getOriginalName()      | Retourne le nom du fichier téléchargé
+  | getOriginalExtension() | Retourne l'extension du nom du fichier téléchargé
   | getTempName()          | Retourne le chemin vers le fichier temporaire
   | getType()              | Retourne le type mime du fichier
   | getSize()              | Retourne la taille du fichier
 
 >**Tip**
->Le type mime fourni par le navigateur lors de l'upload d'un fichier n'est pas considéré comme une donnée fiable. Pour assurer une sécurité maximum, les fonctions `finfo_open`, `mime_content_type` et l'utilitaire `file` sont utilisés à tour de rôle lors de la validation du fichier. Si aucune de ces fonctions n'arrive à déterminer le type mime ou si aucune n'est disponible sur le système, le type mime du navigateur est alors utilisé. Il est possible d'ajouter ou de modifier les fonctions déterminant le mime type en passant l'option `mime_type_guessers` au validateur `sfValidatorFile`.
+>Le type mime fourni par le navigateur lors du téléchargement d'un fichier n'est pas considéré comme une donnée fiable. Pour assurer une sécurité maximum, les fonctions `finfo_open`, `mime_content_type` et l'utilitaire `file` sont utilisés à tour de rôle lors de la validation du fichier. Si aucune de ces fonctions n'arrive à déterminer le type mime ou si aucune n'est disponible sur le système, le type mime du navigateur est alors utilisé. Il est possible d'ajouter ou de modifier les fonctions déterminant le mime type en passant l'option `mime_type_guessers` au validateur `sfValidatorFile`.
