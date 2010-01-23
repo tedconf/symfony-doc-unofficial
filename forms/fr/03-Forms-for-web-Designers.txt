@@ -1,7 +1,7 @@
 Chapitre 3 - Les Formulaires pour les Intégrateurs HTML
 =======================================================
 
-Nous avons vu dans les Chapitres 1 et 2 comment créer des formulaires en définissant des widgets et en y attachant des règles de validation. Pour les afficher, nous avons toujours utilisé l'instruction `<?php echo $form ?>` qui permet au développeur de coder la logique applicative sans se préoccuper du rendu final. En effet, il n'est pas nécessaire de changer la template à chaque modification d'un champ (nom, widget, ...) ou même lors de l'ajout de nouveaux champs. Cette instruction est donc très adaptée à la phase de prototypage et de développement initial où le développeur peut se concentrer sur le modèle et la logique métier associée.
+Nous avons vu dans les Chapitres 1 et 2 comment créer des formulaires en définissant des widgets et en y attachant des règles de validation. Pour les afficher, nous avons toujours utilisé l'instruction `<?php echo $form ?>` qui permet au développeur de coder la logique applicative sans se préoccuper du rendu final. En effet, il n'est pas nécessaire de changer le Template à chaque modification d'un champ (nom, widget, ...) ou même lors de l'ajout de nouveaux champs. Cette instruction est donc très adaptée à la phase de prototypage et de développement initial où le développeur peut se concentrer sur le modèle et la logique métier associée.
 
 Une fois le modèle de données stabilisé et la charte graphique définie, l'intégrateur HTML peut alors prendre le relai pour mettre en forme les différents formulaires de l'application.
 
@@ -19,9 +19,9 @@ Nous allons reprendre le formulaire de contact développé aux Chapitres 1 et 2 
 
   * le formulaire est géré par le module `contact`.
 
-  * l'action `index` passe à la template une variable `form` qui représente le formulaire.
+  * l'action `index` passe au Template une variable `form` qui représente le formulaire.
 
-Le but de ce chapitre est d'illustrer les possibilités offertes pour personnaliser la template prototype que nous avons utilisée jusqu'à maintenant pour l'affichage (Listing 3-1).
+Le but de ce chapitre est d'illustrer les possibilités offertes pour personnaliser le Template prototype que nous avons utilisé jusqu'à maintenant pour l'affichage (Listing 3-1).
 
 Figure 3-1 - Le Formulaire de Contact
 
@@ -58,9 +58,9 @@ Listing 3-1 - La Template Prototype permettant d'afficher le Formulaire de Conta
 La Template Prototype
 ---------------------
 
-Dans la template prototype, vous remarquez l'utilisation de l'instruction `<?php echo $form ?>` qui permet d'afficher automatiquement le contenu du formulaire.
+Dans le Template prototype, vous remarquez l'utilisation de l'instruction `<?php echo $form ?>` qui permet d'afficher automatiquement le contenu du formulaire.
 
-Un formulaire est composé de champs. Au niveau de la template, chaque champ est composé de trois éléments :
+Un formulaire est composé de champs. Au niveau du Template, chaque champ est composé de trois éléments :
 
   * le label
 
@@ -70,7 +70,7 @@ Un formulaire est composé de champs. Au niveau de la template, chaque champ est
 
 L'instruction `<?php echo $form ?>` génère automatiquement l'ensemble de ces éléments comme le montre le Listing 3-2 dans le cas d'une soumission invalide.
 
-Listing 3-2 - Template générée en cas de Soumission invalide
+Listing 3-2 - Template généré en cas de Soumission invalide
 
     [php]
     <form action="/frontend_dev.php/contact" method="POST">
@@ -115,6 +115,11 @@ Listing 3-2 - Template générée en cas de Soumission invalide
       </table>
     </form>
 
+>**TIP**
+>Il existe un raccourci supplémentaire pour générer le tag form d'ouverture du formulaire : `echo $form->renderFormTag(url_for('contact/index'))`.
+>Il permet également de passer un nombre quelconque d'attributs supplémentaires à la balise form plus facilement en fournissant un tableau.
+>L'inconvénient de l'utilisation de ce raccourci est que les outils de conception auront plus de mal à détecter le formulaire correctement.
+
 Décomposons le code généré. La Figure 3-2 souligne les lignes `<tr>` générées pour chaque champ.
 
 Figure 3-2 - Décomposition du Formulaire par Champ
@@ -147,8 +152,8 @@ Figure 3-3 - Décomposition du Champ `email` du Formulaire
 >**TIP**
 >Chaque champ généré possède un attribut `id` par défaut permettant d'ajouter des styles ou des comportements JavaScript.
 
-La personnalisation de la template prototype
---------------------------------------------
+La personnalisation du Template prototype
+-----------------------------------------
 
 Pour des formulaires simples comme le formulaire de contact, l'utilisation de l'instruction `<?php echo $form ?>` peut s'avérer suffisante. Cette instruction est en fait un raccourci pour l'instruction `<?php echo $form->render() ?>`.
 
@@ -203,13 +208,13 @@ Nous accédons ici à chaque champ en manipulant l'object `form` comme si c'éta
 >     // Syntaxe qu'on devrait utiliser si sfForm n'implémentait pas l'interface ArrayAccess
 >     <?php echo $form->getField('email') ?>
 >
->Par contre, la template ne devant avoir accès aux champs qu'en lecture seule, toute tentative de modification se soldera par une exception de type `LogicException` :
+>Par contre, le Template ne devant avoir accès aux champs qu'en lecture seule, toute tentative de modification se soldera par une exception de type `LogicException` :
 >
 >     [php]
 >     <?php $form['email'] = ... ?>
 >     <?php unset($form['email']) ?>
 
-La template est fonctionnellement identique à la template de départ. Si l'affichage reste le même, la personnalisation est plus facile avec la méthode `renderRow()` car elle prend deux arguments : un tableau d'attributs HTML et le nom du label. Le Listing 3-5 met en oeuvre ces deux arguments pour personnaliser le formulaire (le rendu final est visible Figure 3-4).
+Le Template est fonctionnellement identique au Template de départ. Si l'affichage reste le même, la personnalisation est plus facile avec la méthode `renderRow()` car elle prend deux arguments : un tableau d'attributs HTML et le nom du label. Le Listing 3-5 met en oeuvre ces deux arguments pour personnaliser le formulaire (le rendu final est visible Figure 3-4).
 
 Listing 3-5 - Utilisation des Arguments de la Méthode `renderRow()` pour Personnaliser l'Affichage
 
@@ -303,7 +308,7 @@ Listing 3-6 - Personnalisation de l'Affichage sous forme de deux Colonnes
       </table>
     </form>
 
-De même que pour l'affichage complet du formulaire avec `<?php echo $form ?>`, l'utilisation explicite de la méthode `render()` sur un champ n'est pas nécessaire, la template peut-être réécrite comme dans le Listing 3-7.
+De même que pour l'affichage complet du formulaire avec `<?php echo $form ?>`, l'utilisation explicite de la méthode `render()` sur un champ n'est pas nécessaire, le Template peut-être réécrit comme dans le Listing 3-7.
 
 Listing 3-7 - Simplification de la Personnalisation de l'Affichage sous forme de deux Colonnes
 
@@ -383,7 +388,12 @@ Listing 3-10 - Modification du Nom du Label
     // HTML généré
     <label for="contact_message">Votre Message</label>
 
-Mais quelle est l'utilité de la méthode `renderLabel()` si on passe le nom du label en paramètre ? Pourquoi ne pas coder directement en HTML le tag `label` ? Parce qu'en générant le tag `label`, la méthode `renderLabel()` ajoute automatiquement un attribut `for` ayant comme valeur l'identifiant du champ lié (`id`). Cela permet de garantir l'accessibilité du champ ; en cliquant sur le label, le champ correspondant obtient automatiquement le focus :
+Mais quelle est l'utilité de la méthode `renderLabel()` si on passe le nom du label en
+paramètre ? Pourquoi ne pas coder directement en HTML le tag `label` ? Parce qu'en
+générant le tag `label`, la méthode `renderLabel()` ajoute automatiquement un attribut `for`
+ayant comme valeur l'identifiant du champ lié (`id`). Cela permet de garantir l'accessibilité
+du champ ; en cliquant sur le label, le champ correspondant obtient automatiquement le
+focus :
 
     [php]
     <label for="contact_email">Email</label>
@@ -401,7 +411,7 @@ Dans cet exemple, le premier argument passé est `null` pour conserver la géné
 
 ### L'Utilisation de la méthode `renderError()` sur un champ
 
-La template actuelle n'affiche pas les messages d'erreurs. Le Listing 3-11 les rétablit en utilisant la méthode `renderError()`.
+Le Template actuel n'affiche pas les messages d'erreurs. Le Listing 3-11 les rétablit en utilisant la méthode `renderError()`.
 
 Listing 3-11 - Affichage des Messages d'Erreurs avec la méthode `renderError()`
 
@@ -478,6 +488,8 @@ Listing 3-13 - Génération du Code pour les Champs cachés
 
 Comme vous pouvez le constater sur le code généré pour le champ caché `referer`, seul l'élément tag est présent. Il est logique ne pas générer de label mais qu'en est-il des éventuelles erreurs pouvant survenir pour ce champ ? Même si le champ est caché, il peut être corrompu dans le processus soit de façon intentionnelle, soit parce qu'une erreur s'est glissée dans le code. Ces erreurs ne sont pas directement liées au champ `referer` mais sont agrégées avec les erreurs globales. Nous verrons dans le Chapitre 5 que la notion d'erreurs globales recouvre également d'autres cas. La Figure 3-8 illustre l'affichage du message d'erreur sur le champ `referer` et le Listing 3-14 montre le code généré pour ces erreurs.
 
+Vous pouvez rendre tous les champs masqués en une fois (y compris les CSRF) en utilisant la méthode renderHiddenFields().
+
 Figure 3-8 - Affichage du Message d'Erreur global
 
 ![Affichage du Message d'Erreur global](/images/forms_book/en/03_08.png "Affichage du Message d'Erreur global")
@@ -524,22 +536,22 @@ L'appel à la méthode `renderGlobalErrors()` permet d'afficher la liste des err
 
 Listing 3-16 - Utilisation de `hasGlobalErrors()` et `getGlobalErrors()` pour personnaliser l'Affichage des Erreurs Globales
 
-      [php]
-      <?php if ($form->hasGlobalErrors()): ?>
-        <tr>
-          <td colspan="4">
-            <ul class="error_list">
-              <?php foreach ($form->getGlobalErrors() as $name => $error): ?>
-                <li><?php echo $name.': '.$error ?></li>
-              <?php endforeach; ?>
-            </ul>
-          </td>
-        </tr>
-      <?php endif; ?>
+    [php]
+    <?php if ($form->hasGlobalErrors()): ?>
+      <tr>
+        <td colspan="4">
+          <ul class="error_list">
+            <?php foreach ($form->getGlobalErrors() as $name => $error): ?>
+              <li><?php echo $name.': '.$error ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </td>
+      </tr>
+    <?php endif; ?>
 
 Vous remarquez dans le Listing 3-16 que chaque erreur possède un nom (`name`) et un message (`error`). Le nom est vide s'il s'agit d'une erreur globale. Pour les erreurs liées à des champs cachés ou à des champs non affichés, le nom est le label du champ.
 
-La template est maintenant fonctionnellement équivalente à la template de départ (Figure 3-8) mais nous pouvons désormais personnaliser l'affichage du formulaire.
+Le Template est maintenant fonctionnellement équivalent au Template de départ (Figure 3-8) mais nous pouvons désormais personnaliser l'affichage du formulaire.
 
 Figure 3-8 - Formulaire personnalisé grâce aux Méthodes sur les Champs
 
@@ -555,15 +567,15 @@ L'Interaction avec le Développeur
 
 Finissons ce chapitre par la description d'un scénario typique de développement d'un formulaire avec symfony :
 
-  * L'équipe de développement commence par implémenter la classe de formulaire et l'action correspondante. La template se résume alors à l'utilisation de l'instruction de prototypage `<?php echo $form ?>`.
+  * L'équipe de développement commence par implémenter la classe de formulaire et l'action correspondante. Le Template se résume alors à l'utilisation de l'instruction de prototypage `<?php echo $form ?>`.
 
   * Parallèlement, les créatifs définissent la charte graphique et les règles d'affichage liées aux formulaires : structure générale, règles d'affichage des messages d'erreurs, ...
 
-  * Une fois la logique métier implémentée et la charte graphique validée, l'équipe d'intégration peut alors modifier les templates des formulaires pour les mettre en page. Pour cela, elle a uniquement besoin de connaître le nom des champs et l'action qui permet de gérer le cycle de vie du formulaire.
+  * Une fois la logique métier implémentée et la charte graphique validée, l'équipe d'intégration peut alors modifier les Templates des formulaires pour les mettre en page. Pour cela, elle a uniquement besoin de connaître le nom des champs et l'action qui permet de gérer le cycle de vie du formulaire.
 
-Une fois ce premier cycle achevé, les modifications à apporter aux règles métier et aux templates peuvent être réalisées en parallèle.
+Une fois ce premier cycle achevé, les modifications à apporter aux règles métier et aux Templates peuvent être réalisés en parallèle.
 
-Sans aucune incidence sur les templates, et donc sans intervention de l'équipe d'intégration, l'équipe de développement peut :
+Sans aucune incidence sur les Templates, et donc sans intervention de l'équipe d'intégration, l'équipe de développement peut :
 
   * modifier les widgets utilisés
   * personnaliser les messages d'erreurs
