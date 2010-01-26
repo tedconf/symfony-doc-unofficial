@@ -65,7 +65,7 @@ Baseado no nome da aplicação que passamos como *argumento*, a tarefa `generate
 >Passando esses dois parâmetros opcionais você certifica a segurança contra as vulnerabilidades mais conhecidas na web. É claro, o symfony vai automaticamente tomar medidas de segurança em seu nome.
 >
 >Se você souber algo sobre
->[XSS](http://en.wikipedia.org/wiki/Cross-site_scripting) ou
+>[XSS](http://pt.wikipedia.org/wiki/Cross-site_scripting) ou
 >[CSRF](http://en.wikipedia.org/wiki/CSRF), tire um tempo para aprender um pouco sobre vulnerabilidades e segurança.
 
 

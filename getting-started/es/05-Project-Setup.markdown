@@ -84,8 +84,8 @@ el directorio `apps/frontend/`:
 >Así es, symfony automaticamente tomará las medidas de seguridad.
 >
 >Si no sabes nada acerca de
->[XSS](http://en.wikipedia.org/wiki/Cross-site_scripting) o
->[CSRF](http://en.wikipedia.org/wiki/CSRF), tómate un tiempo para aprender más
+>[XSS](http://es.wikipedia.org/wiki/Cross-site_scripting) o
+>[CSRF](http://es.wikipedia.org/wiki/Cross_Site_Request_Forgery), tómate un tiempo para aprender más
 >acercca de estas vulnerabilidades.
 
 ### Permisos en la Estructura de Directorios

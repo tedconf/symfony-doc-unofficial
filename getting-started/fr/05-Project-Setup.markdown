@@ -85,8 +85,8 @@ répertoire `apps/frontend/` :
 >notre place.
 >
 >Si vous ne savez rien sur
->[XSS](http://en.wikipedia.org/wiki/Cross-site_scripting) ou
->[CSRF](http://en.wikipedia.org/wiki/CSRF), prenez le temps d'en apprendre d'avantage à propos
+>[XSS](http://fr.wikipedia.org/wiki/Cross-site_scripting) ou
+>[CSRF](http://fr.wikipedia.org/wiki/Cross-site_request_forgery), prenez le temps d'en apprendre d'avantage à propos
 >de ces failles de sécurité.
 
 ### Droits sur les répertoires structurés

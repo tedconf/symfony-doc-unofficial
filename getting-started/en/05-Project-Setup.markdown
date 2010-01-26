@@ -86,7 +86,7 @@ creates the default directory structure needed for the application under the
 >
 >If you know nothing about
 >[XSS](http://en.wikipedia.org/wiki/Cross-site_scripting) or
->[CSRF](http://en.wikipedia.org/wiki/CSRF), take the time to learn more about
+>[CSRF](http://en.wikipedia.org/wiki/Cross-site_request_forgery), take the time to learn more about
 >these security vulnerabilities.
 
 ### Directory Structure Rights
