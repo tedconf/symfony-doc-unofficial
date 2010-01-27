@@ -1,0 +1,279 @@
+9日目: ローカルの改善
+====================
+
+復習
+----
+
+[8日目](8.txt)の作業でAJAXインタラクションは、askeetに苦もなく採り入れられました。現在アプリケーションは問題なく利用できますが、まだ改善の余地がたくさんあります。質問の`<body>`にはリッチテキストの入力が許可されるべきですし、長いリストはページ分割されなければなりません。そして、URIでは主キーは表示されません。このような機能すべては、symfonyで簡単に実現できます。今日は、これまでに学んだことを使い、MVCアーキテクチャの全てのレイヤーを操る方法を理解していることを確認するのに良い機会です。
+
+質問と答えにリッチテキストを使えるようにする
+--------------------------------------------
+
+### Markdown
+
+今は質問と回答欄はプレーンテキストのみが入力できます。基本フォーマット（太字やイタリック体、リンク、画像など）を使うために車輪の再開発をするのではなく、すでにある外部ライブラリを使います。symfonyのドキュメントをテキストフォーマットで見た方はご存知の通り、私たちは[Markdown](http://daringfireball.net/projects/markdown/)の大ファンなのです。MarkdownはマークアップフォーマットをHTML形式に変換するツールです。Wikiなどの文法に比べてMarkdownのプレーンテキストはとても読みやすいことが大きな利点です:
+
+    Markdownのテキストをテストする
+    ------------------------------
+    
+    これは[Markdown][1]の**とてもシンプルな**例です。
+    markdownに関するベストな機能はコードの塊を_オートエスケープ_することです:
+    
+        <a href="http://www.symfony-project.com">link to symfony</a>
+    
+    >`<`と`>`は適切に`&lt;`と`&gt;`にエスケープされ、
+    >ブラウザによって解釈されません
+    
+    [1]: http://daringfireball.net/projects/markdown/   "Markdown"
+
+このMarkdownは以下のように表示されます。
+
+>Markdownのテキストをテストする
+>------------------------------
+>
+>これは[Markdown][1]の**とてもシンプルな**例です。
+>markdownに関するベストな機能はコードの塊を_オートエスケープ_することです:
+>
+>      <a href="http://www.symfony-project.com">link to symfony</a>
+>
+>>`<`と`>`は適切に`&lt;`と`&gt;`にエスケープされ、
+>>ブラウザによって解釈されません
+
+### Markdownのライブラリ
+
+Markdownのオリジナルは[Perl](http://www.perl.com/)で書かれたものでしたが、[PHP Markdown](http://www.michelf.com/projects/php-markdown/)にPHPのライブラリ版もあります。これが今から使うものです。`markdown.php`ファイルをダウンロードしてaskeetのプロジェクトディレクトリ(`askeet/lib/`)の`lib`フォルダに保存します。これで完了です。次のようにライブラリを読み込むことで、askeetの全てのクラスで使えるようになりました:
+
+    [php]
+    require_once('markdown.php');   
+
+本文を表示するたびにMarkdownで変換することもできますが、サーバーの負荷になります。むしろ、質問が作られたときにテキストからHTMLに変換して`Question`テーブルに保存した方がいいでしょう。そろそろ慣れてきたのでモデルを拡張するのにも驚かなくなってきたでしょう。
+
+### モデルを拡張する
+
+まず、`schema.xml`ファイルの`Question`テーブルにカラムを追加します:
+
+    [php]
+    <column name="html_body" type="longvarchar" />
+
+そして、モデルをリビルドして、データベースを更新します:
+
+    $ symfony propel-build-model
+    $ symfony propel-build-sql
+    $ symfony propel-insert-sql
+
+### setBodyメソッドをオーバーライドする 
+
+`Question`クラスの`setBodyメソッド`が呼ばれたとき、テキストボディのMarkdown規約に従って`html_body`を更新しなければなりません。`askeet/lib/model/Question.php`ファイルを開き次のコードを作成します:
+
+    [php]
+    public function setBody($v)
+    {
+      parent::setBody($v);
+  
+      require_once('markdown.php');
+      
+      // HTMLタグを剥ぎ取る
+      $v = htmlentities($v, ENT_QUOTES, 'UTF-8');
+            
+      $this->setHtmlBody(markdown($v));
+    }
+
+`HtmlBody`をセットする前に`htmlentities()`関数を適用するのはクロスサイトスクリプティング(XSS)から守るためです。こうすれば全ての`<script>`タグはエスケープされます。
+
+### テストデータの更新
+
+テストデータのいくつかの質問(`askeet/data/fixtures/test_data.yml`)にMarkdownのフォーマッティングを追加して、変換が適切に動作しているのかチェックできるようにします:
+
+    Question:
+      q1:
+        title: What shall I do tonight with my girlfriend?
+        user_id: fabien
+        body:  |
+          We shall meet in front of the __Dunkin'Donuts__ before dinner, 
+          and I haven't the slightest idea of what I can do with her. 
+          She's not interested in _programming_, _space opera movies_ nor _insects_.
+          She's kinda cute, so I __really__ need to find something 
+          that will keep her to my side for another evening.
+    
+      q2:
+        title: What can I offer to my step mother?
+        user_id: anonymous
+        body:  |
+          My stepmother has everything a stepmother is usually offered
+          (watch, vacuum cleaner, earrings, [del.icio.us](http://del.icio.us) account). 
+          Her birthday comes next week, I am broke, and I know that 
+          if I don't offer her something *sweet*, my girlfriend 
+          won't look at me in the eyes for another month.
+
+データベースに再投入します:
+
+    $ php batch/load_data.php
+
+### テンプレートを修正する
+
+`question`モジュールの`showSuccess.php`テンプレートを少し修正できます:
+
+    [php]
+    ...
+    <div class="question_body">
+      <?php echo $question->getHtmlBody() ?>
+    </div>
+    ...
+    
+listテンプレートフラグメント(`_list.php`)はbodyも表示しますが、省略バージョンです:
+
+    [php]
+    <div class="question_body">
+      <?php echo truncate_text(strip_tags($question->getHtmlBody()), 200) ?>
+    </div>
+
+テストのための最後の準備はすべて整いました: 修正された3つのページを表示し、テストデータから整形されたテキストを見ることになります:
+
+    http://askeet/question/list
+    http://askeet/recent
+    http://askeet/question/show/stripped_title/what-shall-i-do-tonight-with-my-girlfriend    
+
+![markdownのテキスト](/images/askeet/markdown_question.gif)
+
+`Answer`の`body`にも同じことが当てはまります: `html_body`カラムはモデルの中で作成されなければなりません。`->setBody()`メソッドをオーバーライドすることが必要で、`question/show`に表示される回答は`->getBody()`メソッドの代わりに`->getHtmlBody()`メソッドを使わなければなりません。コードが上記の物とまったく同じなので、ここでは記述しないことにします。しかし、今日のSVNコードの中で見つかります。
+
+すべてのidを隠す
+---------------
+
+symfonyアクションにおける他のグッドプラクティスはリクエストパラメータとしての主キーをできる限り隠して渡すことです。なぜなら主キーは主にオートインクリメントで、ハッカーにデータベースのレコードに関する詳細な情報を与えてしまうからです。加えて、表示されるURIは意味を持たない文字列なので、検索エンジン対策にならないからです。
+
+ユーザーのプロファイルページを例に考えてみましょう。現時点ではユーザー`id`はパラメータとして使われます。しかし、`nickname`が唯一であることを確認すると、リクエスト用のパラメータも同じであるはずです。やってみましょう。
+
+### アクションを変更する
+
+`user/show` アクションを編集します:
+
+    [php]
+    public function executeShow()
+    {
+      $this->subscriber = UserPeer::retrieveByNickname($this->getRequestParameter('nickname'));
+      $this->forward404Unless($this->subscriber);
+    
+      $this->interests = $this->subscriber->getInterestsJoinQuestion();
+      $this->answers   = $this->subscriber->getAnswersJoinQuestion();
+      $this->questions = $this->subscriber->getQuestions();
+    }
+
+### モデルを変更する
+
+`askeet/lib/model/`ディレクトリの`UserPeer`クラスに次のメソッドを追加します。
+
+    [php]
+    public static function retrieveByNickname($nickname)
+    {
+      $c = new Criteria();
+      $c->add(self::NICKNAME, $nickname);
+
+      return self::doSelectOne($c);
+    }
+ 
+### テンプレートを変更する
+
+ユーザープロファイルへのリンクを表示するページは`id`の代わりにユーザーの`nickname`を記載しなければなりません。
+
+`question/showSuccess.php`、`question/_list.php`テンプレートにおいて:
+
+    [php]
+    <?php echo link_to($question->getUser(), 'user/show?id='.$question->getUserId()) ?>
+
+次のコードで置き換えてください:
+
+    [php]
+    <?php echo link_to($question->getUser(), 'user/show?nickname='.$question->getUser()->getNickname()) ?>
+    
+`answer/_answer.php`テンプレートにも同じような修正を行います。
+
+### ルーティングルールを追加する
+
+`url`が`nickname`リクエストパラメータを表示するようにこのアクションに対するルーティング構成に新しいルールを追加します:
+
+    user_profile:
+      url:   /user/:nickname
+      param: { module: user, action: show }    
+
+`symfony clear-cache`を実行した後で、最後に行うのは修正に対するテストです。
+
+ルーティング
+------------
+
+今日の追加とは別に、これまでに多くのアクションがデフォルトのルーティングを利用しているので、モジュール名とアクション名はブラウザのアドレスバーにたびたび表示されます。これらを修正することをすでに学んだので、すべてのアクションに対してURLパターンを定義しましょう。`askeet/apps/frontend/config/routing.yml`を編集します:
+
+    # question
+    question:
+      url:   /question/:stripped_title
+      param: { module: question, action: show }
+
+    popular_questions:
+      url:   /index/:page
+      param: { module: question, action: list, page: 1 }
+
+    recent_questions:
+      url:   /recent/:page
+      param: { module: question, action: recent, page: 1 }
+
+    add_question:
+      url:   /add_question
+      param: { module: question, action: add }
+
+    # answer
+    recent_answers:
+      url:   /recent/answers/:page
+      param: { module: answer, action: recent, page: 1 }
+
+    # user
+    login:
+      url:   /login
+      param: { module: user, action: login }
+
+    logout:
+      url:   /logout
+      param: { module: user, action: logout }
+
+    user_profile:
+      url:   /user/:nickname
+      param: { module: user, action: show }
+
+    # default rules
+    homepage:
+      url:   /
+      param: { module: question, action: list }
+
+    default_symfony:
+      url:   /symfony/:action/*
+      param: { module: default }
+
+    default_index:
+      url:   /:module
+      param: { action: index }
+
+    default:
+      url:   /:module/:action/*
+
+本番環境を操縦するとしたら、この設定修正をテストする前にキャッシュをクリアすることを強くお勧めします。
+
+symfonyルーティングのグッドプラクティスの1つは`module/action`の代わりに`link_to()`ヘルパーにおいて規則名を使用することです。動作を速くするだけでなく(ルーティングエンジンは規則の適用を見つけるためのルーティング設定の解析を行う必要が無くなります)、背後にある規則名に対するアクションの修正もできるようになります。symfony bookの[ルーティングの章](http://www.symfony-project.org/book/1_0/09-Links-and-the-Routing-System)で詳細内容が書かれています。
+
+    [php]
+    <?php link_to('@user_profile?id='.$user->getId()) ?>
+    // 下記のコードよりもベター
+    <?php link_to('user/show?id='.$user->getId()) ?>
+ 
+askeetはsymfonyのグッドプラクティスに従っているので、今日のチュートリアルの終了時にダウンロードするであろうコードにはリンクヘルパーの規則名だけ含まれています。すべてのテンプレートとカスタムヘルパーにおいて`@rule`によって`action/module`を置き換えることはあまり面白くないので、ルーティングに関する最後のアドバイスは次の通りです: アクションを作成するようにルーティングルールを書き、始めからリンクヘルパーにで規則名を使ってください。 
+
+それではまた明日
+----------------
+
+今日の変更内容は理解することよりも読むことの方が長かったです。加えて、チュートリアルで記述された修正は全体のコードにおいて似たようなケースに対して繰り返されました。今日は新しい機能は追加されませんでしたが、コードの変更をたくさん行いました。
+
+今日のチュートリアルであまり多くのことを勉強しなかったと感じたら、あなた自身のプロジェクトを始める準備が整いつつあることを意味します。アクション作成のプロセス、必要なアクションを提供するためのモデルを変更すること、アクションを出力するためにシンプルなテンプレートを書き、新しいアクションをアプリケーションのロジックを統合するために設定を編集することはsymfony開発の基本です。
+
+ここで紹介されたすべてのグッドプラクティス(symfonyのために書き直すことなく外部のライブラリを利用すること、アプリケーションの主キーを表示しないこと、`module/action`の代わりにルーティングルール名を使用すること)によってアプリケーションをすっきりさせ、安全に、動作速度を速くし、持続可能にします。
+
+しかしながら、askeetのアプリケーションは終了とはほど遠いです!最も欠けている機能性は新しい質問を追加することと新しい回答を追加することです。これらは明日開発することにします。
+
+21日の追加機能について提案がありましたら、[askeetのメーリングリスト](mailto:askeet-subscribe@symfony-project.com)に投稿してください。チャンネルはそのままで!

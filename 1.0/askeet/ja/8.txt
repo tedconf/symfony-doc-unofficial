@@ -1,0 +1,251 @@
+8日目: AJAXインタラクション
+==========================
+
+復習
+----
+
+7時間の作業の後で、askeetのアプリケーションはとても進歩しました。ホームページは質問リストを表示し、質問の詳細П胃は回答を表示し、ユーザーはプロファイルページを持ち、議題リストはサイドバーのすべてのページから利用可能です。機能を強化されたコミュニティのFAQは正しい方向にありますが([昨日の時点](7.txt)でのアクションのリストをご覧くださいl)、まだ現時点ではユーザーはデータを変更できません。
+
+Webにおけるデータの操作の基本はフォームであるとすれば、今日はAJAXのテクニックとユーザービリティの強化によってアプリケーションが構築された方法を変更できます。これはaskeetにも当てはまります。このチュートリアルではAJAXによって強化されたaskeetへのインタラクションの追加方法をお見せする予定です。今日の目標は登録ユーザーに質問に関する彼らの関心を表示することができるようにすることです。
+
+レイアウトにインジケータを追加する
+---------------------------------
+
+非同期リクエストが行われようとしている間、AJAXで動作するWebサイトのユーザーは自身のアクションが反映され、結果がすぐに表示されるのかという手がかりを通常は得られません。AJAXインタラクションを含むすべてのページがアクティビティ・インジケータを表示するのが可能なのはそういうわけです。
+
+そのためには、グローバルな`layout.php`の`<body>`のトップに追加します:
+
+    [php]
+    <div id="indicator" style="display: none"></div>
+
+デフォルトでは非表示ですが、AJAXリクエストが動作しているとき、この`<div>`は表示されます。空ですが、`main.css`スタイルシート(`askeet/web/css/`ディレクトリに保存されています)が形と内容を提供します:
+
+    [css]
+    div#indicator
+    {
+      position: absolute;
+      width: 100px;
+      height: 40px;
+      left: 10px;
+      top: 10px;
+      z-index: 900;
+      background: url(/images/indicator.gif) no-repeat 0 0;
+    }
+    
+![活動のインジケータ](/images/askeet/indicator.gif)
+
+興味を宣言するためにAJAxインタラクションを追加する
+--------------------------------------------------
+
+Ajaxインタラクションは3つの部分から構成されます: 呼び出し元、(リンク、ボタンまたはアクションを立ち上げるためにユーザーが操作するコントローラ)、サーバーアクション、アクションの結果をユーザーに表示するページに存在する領域です。
+
+### 呼び出し元
+
+表示された質問に戻りましょう。[4日目](4.txt)を覚えているなら、質問は質問リストと質問の詳細に表示されます。
+
+![質問のリスト](/images/askeet/pager_navigation_day7.gif)
+
+質問タイトルと関心ブロックのためのコードが`_interested_user.php`フラグメントにリファクタリングされたのはそういうわけです。このフラグメントを再び開いて、ユーザーが関心を宣言できるようにリンクを追加してください:
+
+    [php]
+    <?php use_helper('User') ?>
+
+    <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
+      <?php echo $question->getInterestedUsers() ?>
+    </div>
+
+    <?php echo link_to_user_interested($sf_user, $question) ?>
+
+このリンクは単なる他のページへのリダイレクト以上のことを行います。実際のところ、ユーザーがすでに与えられた質問に対する自身の関心を宣言していたら、ユーザーが再び宣言できるようにする必要が無くなります。
+
+リンクはヘルパー関数で書かれていて`askeet/apps/frontend/lib/helper/UserHelper.php`に作られる必要があります:
+
+    [php]
+    <?php
+    
+    use_helper('Javascript');
+    
+    function link_to_user_interested($user, $question)
+    {
+      if ($user->isAuthenticated())
+      {
+        $interested = InterestPeer::retrieveByPk($question->getId(), $user->getSubscriberId());
+        if ($interested)
+        {
+          // すでに興味を持っている
+          return 'interested!';
+        }
+        else
+        {
+          // 興味があることをまだ宣言していなかった
+          return link_to_remote('interested?', array(
+            'url'      => 'user/interested?id='.$question->getId(),
+            'update'   => array('success' => 'block_'.$question->getId()),
+            'loading'  => "Element.show('indicator')",
+            'complete' => "Element.hide('indicator');".visual_effect('highlight', 'mark_'.$question->getId()),
+          ));
+        }
+      }
+      else
+      {
+        return link_to('interested?', 'user/login');
+      }
+    }
+    
+    ?>
+
+`link_to_remote()`関数は最初のAJAXインタラクションのコンポーネント: 呼び出し元です。ユーザーがリンクをクリックしたとき(ここでは: `user/interested`)にアクションがリクエストされページ領域がアクションの結果に対応して更新されることを宣言します(ここでは: id `block_XX`の要素)。2つのイベントハンドラ(`loading`と`complete`)が追加され、JavaScript関数であるprototypeに関連づけされます。[prototype](http://prototype.conio.net/)ライブラリはシンプルな関数呼び出しによってWebページに視覚効果を適用するためのとても手軽なJavaScriptツールを提供します。唯一の欠点はドキュメントがないことですが、ソースはとても簡単です。
+
+この関数はHTMLコードよりもPHPコードを多く含むのでパーシャルの代わりにヘルパーを使うことを選びます。
+
+`question/_list`フラグ`メントに`id="block_<?php echo $question->getId() ?>"`を追加することを忘れないでください。
+
+    [php]
+    <div class="interested_block" id="block_<?php echo $question->getId() ?>">
+      <?php include_partial('interested_user', array('question' => $question)) ?>
+    </div>    
+
+>**Note**: [1日目](1.txt)に説明したように、これはWebサーバーの設定で`sf`エイリアスを適切に定義したときのみ機能します。
+    
+### 結果領域 
+    
+JavaScriptヘルパーである`link_to_remote()`の`update`属性は結果領域を指定します。この場合、`user/interested`アクションの結果はid要素の`block_XX`の内容に置き換えます。もし、混乱していましたら、テンプレートのフラグメントの統合が何をレンダリングするのかをご覧ください:
+
+    [php]
+    ...
+    <div class="interested_block" id="block_<?php echo $question->getId() ?>">
+      <!-- between here -->
+      <?php use_helper('User') ?>
+      <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
+        <?php echo $question->getInterestedUsers() ?>
+      </div>
+      <?php echo link_to_user_interested($sf_user, $question) ?>
+      <!-- and there -->
+    </div>
+    ...
+
+結果領域は2つのコメントの間の部分です。アクションが実行されると、この内容が置き換えられます。
+
+2番目のid(`mark_XX`)の関心は純粋に視覚的なものです。`link_to_remote`ヘルパーの`complete`イベントハンドラはクリックされた関心の`<div>`要素の`interested_mark`をハイライトします。アクションが増加された関心の数字を返した後で。
+
+### サーバーアクション
+
+AJAXの呼び出し元は`user/interested`アクションを示します。このアクションは現在の質問とユーザーのための`Interest`テーブルで新しいレコードを作らなければなりません。symfonyで実現する方法は次の通りです:
+
+    [php]
+    public function executeInterested()
+    {
+      $this->question = QuestionPeer::retrieveByPk($this->getRequestParameter('id'));
+      $this->forward404Unless($this->question);
+
+      $user = $this->getUser()->getSubscriber();
+
+      $interest = new Interest();
+      $interest->setQuestion($this->question);
+      $interest->setUser($user);
+      $interest->save();
+    }
+
+`Interest`オブジェクトの`->save()`メソッドは関連する`User`の`interested_user`フィールドを増分するために修正されることを覚えておいてください。ですので、現在の質問に対する興味を示すユーザー数はアクションの呼び出し後で魔法を使ったように増分されます。
+
+`interestedSuccess.php`テンプレートの結果は何を表示しますか？
+
+    [php]
+    <?php include_partial('question/interested_user', array('question' => $question)) ?>
+    
+これは`question`モジュールの`_interested_user.php`フラグメントを再表示します。これが最初の場所で書かれたこのフラグメントの最大の関心です。
+
+このテンプレート(`modules/user/config/view.yml`)のためにレイアウトを無効にする必要があります:
+
+    interestedSuccess:
+      has_layout: off
+
+### 最後のテスト
+
+AJAXによる関心の表示開発は終わりました。ログインページでlogin/passwordを入力すること、質問リストを表示すること、および 'interested? 'をクリックすることでテストできます。サーバーにリクエストが渡されている間にインディケータが表示されます。それから、サーバーが応答するとき、ハイライトにおいて関心の数が増分されます。`link_to_user_interested`ヘルパーのおかげで、初期の 'interested? 'リンクは現在、リンクを伴わない 'interested! 'テキストです:
+
+![ajax](/images/askeet/ajax.gif)
+
+より多くのAJAXヘルパーの使用例が必要であれば、[ドラッグアンドドロップのショッピングカートチュートリアル](http://www.symfony-project.org/tutorial/1_0/symfony-ajax)を読むか、関連する[スクリーンキャスト](http://downloads.symfony-project.com/demo/cart/cart.mov)を見るか、[symfony bookの関連する章](http://www.symfony-project.org/book/1_0/11-Ajax-Integration)を読んでください。
+
+インラインの'sign-in'フォームを追加する
+---------------------------------------
+
+以前、私たちは登録ユーザーのみが質問に対して関心を宣言できると言いました。このことが意味するのは認証されていないユーザーが'interested?'クリックをクリックすると、ログインページが最初に表示されなければなりません。
+
+しかし、お待ちください。ユーザーがログインするために新しいページをロードし、ユーザーが興味を宣言した質問との接触を失う必要がなぜあるのでしょうか？ベターなアイディアはログインフォームが動的にページに現れるようにすることでしょう。私たちが行おうとしていることはそれです。
+
+### レイアウトに隠しログインフォームを追加する
+
+グローバルレイアウト(`askeet/apps/frontend/templates/layout.php`)を開き(div要素の`header`と`content`の間)次のコードを追加します:
+
+    [php]
+    <?php use_helper('Javascript') ?>
+
+    <div id="login" style="display: none">
+      <h2>Please sign-in first</h2>
+      
+      <?php echo link_to_function('cancel', visual_effect('blind_up', 'login', array('duration' => 0.5))) ?>
+      
+      <?php echo form_tag('user/login', 'id=loginform') ?>
+        nickname: <?php echo input_tag('nickname') ?><br />
+        password: <?php echo input_password_tag('password') ?><br />
+        <?php echo input_hidden_tag('referer', $sf_params->get('referer') ? $sf_params->get('referer') : $sf_request->getUri()) ?>
+        <?php echo submit_tag('login') ?>
+      </form>
+    </div>
+
+繰り返しますが、このフォームはデフォルトでは非表示です。`referer`隠しタグは存在する`referer`リクエストパラメータを、そうでなければ現在のURIを含みます。
+
+### 認証されていないユーザーが関心表示リンクをクリックしたときにフォームを表示させる
+
+以前書いた`User`ヘルパーを覚えていますか？これからユーザーが認証されなかったケースを扱います。`askeet/lib/helper/UserHelper.php`ファイルを再び開き次の行を変更します:
+
+    [php]
+    return link_to('interested?', 'user/login');
+
+変更後は以下の通りです:
+
+    [php]
+    return link_to_function('interested?', visual_effect('blind_down', 'login', array('duration' => 0.5)));
+
+ユーザーが認証されていないとき、'interested?'に張られているリンクはid `login`の要素を明らかにするprototypeのJavaScript効果(blind_down)を立ち上げます - そしてこれが先ほどレイアウトに追加したフォームです。
+
+### ユーザーをログインさせる
+
+すでに`user/login`アクションは5日目に書かれ、6日目にリファクタリングされました。再び修正しなければならないのでしょうか？
+
+    [php]
+    public function executeLogin()
+    {
+      if ($this->getRequest()->getMethod() != sfRequest::POST)
+      {
+        // フォームを表示する
+        $this->getRequest()->getParameterHolder()->set('referer', $this->getRequest()->getReferer());
+    
+        return sfView::SUCCESS;
+      }
+      else
+      {
+        // フォーム投稿を扱う
+        // 最後のページにリダイレクトする
+        return $this->redirect($this->getRequestParameter('referer', '@homepage'));
+      }
+    }
+    
+結局のところ、ノーです。以前のように完璧に動作をし、リンクがクリックされたとき、リファラの処理はユーザーを現在いるページにリダイレクトします。
+
+AJAX機能を今テストしましょう。現在のページを離れることなく、未登録ユーザーにログインフォームが示されます。ニックネームとパスワードが認証されると、ページはリフレッシュされ、ユーザーは以前リンクしようとした 'interested? 'にクリックすることができます。
+
+![表示されるログインフォーム](/images/askeet/div_login_form.gif)
+
+>**Note**: このような多くのAJAXインタラクションにおいてサーバーアクションのテンプレートはシンプルな`include_partial`です。全体のページが最初にロードされたとき、最初の結果がしばし表示されるのはそういうわけです。また、AJAXアクションによってアップデートされた部分が初期のテンプレートでもあるのもそういうわけです。
+
+それではまた明日
+----------------
+
+AJAXインタラクションのデザインで最も難しいのはおそらく呼び出し元、サーバーアクション、結果領域を定義することです。ひとたびそれらを学べば、symfonyは残りをこなしてくれるヘルパーを提供します。それがどのように動くのか理解するのを納得するには、回答関連に興味を宣言した者と同じメカニズムにどのようにして私たちが実装したのかチェックしてください。今回は、呼び出されたAJAXアクションは`user/bote`、`_answer.php`パーシャルは2つの部分に分割されています(このようにして`_user_vote.php`の部分は作られています)。2つのヘルパー、`link_to_user_relevancy_up()`と`link_to_user_relevancy_down()`は`User`ヘルパーの中に作られます。userモジュールは`vote`アクションと`voteSuccess.php`テンプレートも得ます。このテンプレートのためにレイアウトを置くことを忘れないでください。
+
+askeetの外見がWeb 2.0のアプリケーションのようになり始めました。そしてこれは単なる始まりです。数日の間に、我々はAJAXインタラクションを追加します。明日はsymfonyにおけるMVCのテクニック全体のレビューを行い、外部ライブラリを実装する機会を利用します。
+
+次の今日のチュートリアルを試している間に何か問題に遭遇しましたら、[askeetのSVNリポジトリ](http://svn.askeet.com/tags/release_day_8)にある`release_day_8`とタグづけされたソースから全コードをダウンロードできます。問題がありませんっでしたら、[askeetフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)で他の人の質問を回答してあげてください。

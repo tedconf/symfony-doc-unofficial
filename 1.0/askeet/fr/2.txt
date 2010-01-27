@@ -1,0 +1,291 @@
+﻿Symfony - Calendrier de l’avent deuxième jour: configurer un modèle de données
+========================================================
+
+Précédemment dans Symfony
+---------------------
+
+Au cours du [premier jour](1.txt), de ce long mais néanmoins intéressant tutorial, nous avons vu comment installer le framework Symfony, configurer une nouvelle application et l’environnement de développement,  ainsi qu’apporter de la sécurité au code grâce au contrôleur de version. D'ailleurs, le code de l’application généré durant le premier jour est disponible à l’adresse suivante :
+
+    http://svn.askeet.com/
+
+L’objectif du deuxième jour est de définir le résultat final en termes de fonctionnalités, esquisser le modèle de données, et de commencer à coder. Cela implique de générer un modèle d’objet relationnel et de l’utiliser pour créer, rechercher et mettre à jour une base de données grâce à une structure de base de l’application.
+
+C’est beaucoup. Allons-y !
+
+Le projet dévoilé
+--------------------
+
+Que voulez-vous savoir ? C’est une question intéressante. Il y a beaucoup de questions intéressantes comme :
+
+* Que dois-je faire avec ma copine ce soir ?
+* Comment générer du trafic sur mon blog ?
+* Quel est le meilleur Framework web ?
+* Quel est le restaurant le plus abordable de Paris ?	
+* Qu’en est-il de la vie, de l’univers et du reste ?
+
+Toutes ces questions n’ont pas de réponse unique, et la meilleure n’est qu’une question d’opinion. En fait, les questions qui ont qu’une seule réponse sont souvent les moins intéressantes (comme, combien fait 1+1 ?) mais ce sont les seules résolues sur le net. Ce n’est pas juste !
+
+Découvrez [askeet](http://www.askeet.com/). Un site web dont le but est d’aider les personnes à répondre à leurs questions. Qui veut répondre à  ces questions délicates ? Tout le monde.  Et tout le monde devrait avoir la possibilité d’évaluer les réponses des autres, ce qui permettrait aux meilleures réponses d’être le plus visible. À mesure que le nombre de questions augmente, il devient impossible de les organiser en catégories et sous catégories, donc le créateur de la question aura la possibilité de les tagger avec les mots de son choix, à la [del.icio.us](http://del.icio.us/). Bien sur, la popularité des tags doit être prise en compte. Si une personne souhaite suivre les réponses d’une question en particulier, elle pourra s’inscrire au fil RSS de celle-ci. Toutes ces fonctionnalités doivent être claires et légères, donc toutes les interactions qui n’ont pas besoin de nouvelles pages doivent être en AJAX. Par la suite, un back-end est nécessaire pour administrer  les questions et réponses reportées comme spam, ou pour encourager une question.
+
+Maintenant vous pourriez poser la question suivante : n’ais-je pas déjà vu un pareil site sur le web ? Bon, si c’est le cas nous sommes grillés mais si vous faites référence à [faqts](http://www.faqts.com/), [eHow](http://www.ehow.com/), [Ask Jeeves](http://www.ask.com/) ou quelque chose de similaire, sans réponses collectives,  sans AJAX, sans fil RSS et sans tags ce n’est pas le même site. Ici nous parlons d’une application web 2.0.
+
+Le challenge d’askeet c’est que ce n’est pas qu’un site web, mais également une application téléchargeable que l’on peut installer chez soi ou sur un intranet professionnel et d’y ajouter des fonctionnalités.  Le code source va être publié en licence open-source. Vous voulez garder une trace de toutes les astuces que vous avez apprises lorsque vous avez démonté votre voiture ? Vous ne voulez pas développer de FAQ pour votre site web ? Ne cherchez plus, car askeet existe. Enfin, il va exister c’est notre cadeau de noël. 
+
+Par où commencer ?
+---------------
+
+Alors, par où êtes-vous censé commencer une application askeet ? Ca dépend de vous. Vous pouvez écrire des histoires, faire un jeu de planification et trouver un partenaire pour programmer à deux si vous êtes un adepte d’[XP][1], ou rédiger une spécification détaillée de votre site web, accompagnée d’un croquis de tous les objets, états, interactions et plus encore si vous étiez un fan d’[UML][2].
+
+Mais ce tutorial ne traite pas du développement en général, donc nous allons commencer avec un modèle de données relationnel basique, et ajouter les fonctionnalités une à une. Ce que nous avons besoin c’est une application fonctionnelle à la fin de chaque jour, pas un gigantesque et continuel fouillis de code qui ne fais jamais rien. Dans un monde idéal, nous devrions écrire des jeux de tests pour chaque fonctionnalité que nous ajoutons, mais honnêtement nous n’avons pas le temps pour ca. Cependant un jour sera dédié aux jeux de tests, donc continuez à lire.  
+
+Pour ce projet, nous allons utiliser une base MySQL avec le type de table InnoDB pour profiter des contraintes d’intégrités et le support des transactions. Nous aurions pu utiliser une base SQLite pour les premières étapes, pour éviter de mettre en place une vraie base de données. Cela aurai demandé que quelques changements dans le fichier `database.yml`, nous vous laisserons vous y intéresser en tant qu’exercice.
+
+Modèle de données
+----------
+
+### Modèle relationnel 
+
+De toute évidence, il y aura les tables 'question' et 'answer'. Nous avons besoin d’une table ‘user’, et nous stockerons les intérêts des utilisateurs pour une question dans une table ‘interest’, et l’évaluation, par un utilisateur, d’une réponse dans une table ‘relevancy’.
+
+Les utilisateurs devront s’identifier pour ajouter une question, pour évaluer la pertinence d’une réponse, ou pour se déclarer intéressé par une question. Pour répondre ils ne seront pas obligés de s’identifier, mais une réponse devra toujours être reliée à un utilisateur pour que ceux avec des réponses populaires puissent être distingués. Les réponses données sans identification seront visibles en tant que contribution à un utilisateur générique, appelé ‘Anonymous Coward’. Il est plus facile de comprendre cela avec un diagramme de relation entre les entités. 
+
+![ERD](/images/askeet/mcd1.gif)
+
+Notez que nous avons déclaré un champ `created_at` pour chaque table. Symfony reconnaît de tels champs et initialise la valeur à l’heure actuelle du système quand un enregistrement est créé. C’est la même chose pour le champ `updated_at` : leurs valeurs est initialisée à l’heure système quand l’enregistrement est mis à jour.
+
+### `schema.xml`
+
+Le modèle relationnel doit être transcrit en un fichier de configuration pour que Symfony le comprenne. C’est l’objectif du fichier `schema.xml` ou du fichier `schema.yml`, situé dans le répertoire `askeet/config/`. Symfony supporte le schéma au format XML et YAML.
+
+Il y a deux moyens d’écrire ce fichier : à la main, et c’est la façon que nous préférons, ou à partir d’une base existante. Regardons la première solution.
+
+Tout d’abord nous avons besoin de supprimer le fichier YAML installé par défaut : 
+
+    $ svn delete config/schema.yml
+
+La syntaxe du fichier `schema.xml`, expliquée en détails sur le site [Propel website][3], est relativement simple : c’est un fichier XML, dont chaque balise `<table>` contient une balise `<column>`, `<foreign-key>` et `<index>`. Une fois que vous savez en écrire une, vous savez toutes les écrire. Ceci est le fichier `schema.xml` correspondant au modèle relationnel décrit précédemment:
+
+    [xml]
+    <?xml version="1.0" encoding="UTF-8"?>
+     <database name="propel" defaultIdMethod="native" noxsd="true">
+       <table name="ask_question" phpName="Question">
+         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+         <column name="user_id" type="integer" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="title" type="longvarchar" />
+         <column name="body" type="longvarchar" />
+         <column name="created_at" type="timestamp" />
+         <column name="updated_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_answer" phpName="Answer">
+         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+         <column name="question_id" type="integer" />
+         <foreign-key foreignTable="ask_question">
+           <reference local="question_id" foreign="id"/>
+         </foreign-key>
+         <column name="user_id" type="integer" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="body" type="longvarchar" />
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_user" phpName="User">
+         <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+         <column name="nickname" type="varchar" size="50" />
+         <column name="first_name" type="varchar" size="100" />
+         <column name="last_name" type="varchar" size="100" />
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_interest" phpName="Interest">
+         <column name="question_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_question">
+           <reference local="question_id" foreign="id"/>
+         </foreign-key>
+         <column name="user_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+       <table name="ask_relevancy" phpName="Relevancy">
+         <column name="answer_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_answer">
+           <reference local="answer_id" foreign="id"/>
+         </foreign-key>
+         <column name="user_id" type="integer" primaryKey="true" />
+         <foreign-key foreignTable="ask_user">
+           <reference local="user_id" foreign="id"/>
+         </foreign-key>
+         <column name="score" type="integer" />
+         <column name="created_at" type="timestamp" />
+       </table>
+    
+     </database>
+
+Notez que le nom de la base de données est `propel` dans ce fichier, quelque soit le nom de la base de données réelle. C’est un paramètre utilisé pour connecter la couche Propel au framework Symfony. Le nom actuel de la base sera défini dans le fichier de configuration `databases.yml` (voir plus bas).
+
+Il y a un autre moyen de créer un fichier `schema.xml` si vous avez une base de données existante. Ainsi, si vous êtes familiarisé avec un outil de création de base de données graphique, vous préférerez construire votre schéma depuis votre base MySQL générée. Avant cela, vous devez juste éditer le fichier `propel.ini` situé dans le répertoire `askeet/config/` et saisir les paramètres de connexion à votre base de données :
+
+    propel.database.url = mysql://username:password@localhost/databasename
+
+… où `username`, `password`, `localhost` et `databasename` sont vos paramètres de connexion actuels. Vous pouvez maintenant exécuter la commande `propel-build-schema` (depuis le répertoire `askeet/`) pour générer le `schema.xml` de votre base de données :
+
+    $ symfony propel-build-schema
+
+>**Note**: certains outils vous permettent de construire votre base de données graphiquement (par exemple [Fabforce's Dbdesigner](http://www.fabforce.net/dbdesigner4/)) et de générer le fichier `schema.xml` directement (avec [DB Designer 4 TO Propel Schema Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php)).
+
+Plutôt que de créer un fichier `schema.xml`, vous pouvez aussi créer un fichier `schema.yml` utilisant le format YAML: 
+
+    [yml]
+    propel:
+      _attributes:   { noXsd: false, defaultIdMethod: none, package: lib.model }
+
+      ask_question:
+        _attributes: { phpName: Question, idMethod: native }
+        id:          { type: integer, required: true, primaryKey: true, autoIncrement: true }
+        user_id:     { type: integer, foreignTable: ask_user, foreignReference: id }
+        title:       { type: longvarchar }
+        body:        { type: longvarchar }
+        created_at:  ~
+        updated_at:  ~
+
+      ask_answer:
+        _attributes: { phpName: Answer, idMethod: native }
+        id:          { type: integer, required: true, primaryKey: true, autoIncrement: true }
+        question_id: { type: integer, foreignTable: ask_question, foreignReference: id }
+        user_id:     { type: integer, foreignTable: ask_user, foreignReference: id }
+        body:        { type: longvarchar }
+        created_at:  ~
+
+      ask_user:
+        _attributes: { phpName: User, idMethod: native }
+        id:          { type: integer, required: true, primaryKey: true, autoIncrement: true }
+        nickname:    { type: varchar(50), required: true, index: true }
+        first_name:  varchar(100)
+        last_name:   varchar(100)
+        created_at:  ~
+
+      ask_interest:
+        _attributes: { phpName: Interest, idMethod: native }
+        question_id: { type: integer, foreignTable: ask_question, foreignReference: id, primaryKey: true }
+        user_id:     { type: integer, foreignTable: ask_user, foreignReference: id, primaryKey: true }
+        created_at:  ~
+
+      ask_relevancy:
+        _attributes: { phpName: Relevancy, idMethod: native }
+        answer_id:   { type: integer, foreignTable: ask_answer, foreignReference: id, primaryKey: true }
+        user_id:     { type: integer, foreignTable: ask_user, foreignReference: id, primaryKey: true }
+        score:       { type: integer }
+        created_at:  ~
+
+### Construction du modèle objet
+Pour utiliser le moteur InnoDB, une ligne doit être ajoutée au fichier `propel.ini` situé dans le répertoire `askeet/config/` :
+
+	propel.mysql.tableType = InnoDB
+
+Une fois le fichier `schema.xml` construit, vous pouvez générer un modèle objet basé sur le modèle relationnel. Dans Symfony, l'organisation relationnelle des objets est prise en charge par Propel, mais encapsulée dans la commande Symfony:
+
+	$ symfony propel-build-model
+
+Cette commande (vous devez l’exécuter depuis le répertoire racine du projet askeet) va générée les classes correspondantes aux tables définies dans le schéma, ainsi que les accesseurs standards (fonctions `->get()` et `->set()`). Vous pouvez regarder le code généré dans le répertoire `askeet/lib/model/om/`. Si vous vous demandez pourquoi y a deux classes par table, référez vous au [chapitre sur le modèle](http://www.symfony-project.com/book/1_0/08-Inside-the-Model-Layer) du livre Symfony. Ces classes seront réécrites à chaque fois que vous ferez la commande `build-model`, et cela arrivera souvent dans ce projet. Ainsi si vous avez besoin d'ajouter des méthodes aux objets du modèle, vous devrez modifier ceux situés dans le répertoire `askeet/lib/model/` - ces classes héritent de celles de `/om`.
+
+La base de données
+------------------
+
+### Connexion
+
+Maintenant que Symfony possède un modèle objet de la base de données, il est temps de connecter votre projet à la base de données. Premièrement, vous devez créer une base dans MySQL :
+
+    $ mysqladmin -u youruser -p create askeet
+
+Maintenant ouvrez le fichier de configuration `askeet/config/databases.yml`. Si c’est votre première fois avec Symfony, vous allez découvrir que les fichiers de configuration de Symfony sont écris en [YAML][4]. La syntaxe est très simple, mais il y a une contrainte majeure dans les fichiers YAML : n’utiliser jamais de tabulation, toujours des espaces. Maintenant que vous savez cela, vous êtres prêt à éditer le fichier et entrer vos paramètres de connexion actuels à votre base de données sous le `all` : 
+
+    all:
+      propel:
+        class:      sfPropelDatabase
+        param:
+          phptype:  mysql
+          host:     localhost
+          database: askeet
+          username: youruser
+          password: yourpasswd
+
+Si vous voulez en savoir plus sur la configuration de Symfony et les fichiers YAML, lisez le chapitre sur la [configuration en pratique](http://www.symfony-project.com/book/1_0/19-Mastering-Symfony-s-Configuration-Files) du livre Symfony.
+
+### Construction
+
+Si vous n’avez pas écris le fichier `schema.xml` à la main vous avez surement les tables correspondante dans votre base de données. Vous pouvez donc ignorer ce qui suit.
+
+Pour les fans du clavier, voici une surprise : vous n’avez pas besoin de créer les tables et les colonnes dans MySQL. Vous l’avez déjà fait dans le `schema.xml`, donc symfony va construire pour vous les commandes SQL :
+
+    $ symfony propel-build-sql
+
+Cette commande crée un `lib.model.schema.sql` dans le répertoire `askeet/data/sql/`. Utilisez le comme commande SQL dans MySQL:
+
+    $ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
+
+De manière alternative, vous pouvez aussi utiliser l'instruction `propel-insert-sql`:
+
+    $ symfony propel-insert-sql
+
+Test de l’accès aux données via CRUD
+------------------------------------
+
+Il est toujours agréable de voir que le travail effectué est utile. Jusqu'à maintenant, votre navigateur n'était d'aucune utilité, et pourtant nous sommes supposés construire une application web ... Créons donc un ensemble de modèles et d'actions Symfony pour manipuler les données de la table 'question'. Cela nous permettra de créer quelques  questions et de les afficher.
+
+Dans le répertoire `askeet/`, tapez:
+
+    $ symfony propel-generate-crud frontend question Question
+    
+Cela génère une ébauche pour un module `question` dans l'application `frontend`, basé sur le modèle objet Propel `Question`, avec les actions basiques Create Retrieve Update Delete  (Ce qui explique l'acronyme CRUD). Ne vous y trompez pas: Une ébauche n'est pas une application finie, mais la structure basique sur laquelle vous pouvez développer de nouveaux éléments, ajouter des règles de gestion et customiser l’apparence.
+
+La liste de toutes les actions créées par un générateur CRUD est:
+
+| Nom Action   | Description
+|--------------|------------
+| list         | Affiche tous les enregistrements d'une table
+| index        | Retourne à la liste
+| show         | Affiche tous les enregistrements d'un enregistrement donné
+| edit         | Affiche un formulaire pour créer un nouvel nregistrement ou pour éditer un enregistrement existant
+| update       | Modifie un enregistrement selon les paramètres indiqués dans la requête, puis retourne à l'affichage
+| delete       | Supprime un enregistrement donné de la table
+
+Vous trouverez plus d’informations sur les actions générées dans le [chapitre sur les ébauches](http://www.symfony-project.com/book/1_0/14-Generators) du libre Symfony. 
+
+Dans le répertoire `askeet/apps/frontend/modules/`, notez le nouveau module `question` et consultez sa source.
+
+Quelque soit le moment ou vous ajoutez une classe qui doit être chargée automatiquement, n'oubliez pas de vider le cache (pour recharger le cache auto-chargé):
+
+    $ symfony cc frontend config
+
+Vous pouvez maintenant le tester en ligne en consultant la page: 
+	
+    http://askeet/question
+
+![Create a new record](/images/askeet/CRUD1.gif)
+![List all records](/images/askeet/CRUD2.gif)
+
+Allez-y, jouez avec. Ajoutez quelques questions, éditez les, listez les, supprimez les. Si cela fonctionne, c'est que le modèle objet est correct, que la connexion à la base de données est correcte, et que l'agencement entre le modèle relationnel de la base de données et le modèle objet de Symfony est correct. C'est un bon test fonctionnel.
+
+A demain
+--------
+
+Vous n'avez pas écrit une seule ligne de PHP, et pourtant  vous avez une application basique utilisable. Ce n'est pas si mal pour le deuxième jour. Demain, nous commencerons  à écrire du code pour obtenir une page d'accueil avenante qui affiche la liste des questions. Nous ajouterons aussi des données de test à notre base de données en utilisant un processus batch, et apprendrons à étendre le modèle.  
+
+Maintenant que vous savez ce que l'application fera, vous devriez pouvoir imaginer une fonction additionnelle. N'hésitez pas à suggérer quoique ce soit en utilisant la [mailing-list d’askeet](mailto:askeet-subscribe@symfony-project.com), l'idée remportant le plus franc succès sera l'ajout du 21ème jour de ce calendrier de l'avent Symfony.
+
+N'hésitez pas à consulter la source du tutorial d'aujourd'hui (tag release_day_2) à l'adresse:
+
+    http://svn.askeet.com/tags/release_day_2
+
+[1]:  http://www.xprogramming.com/xpmag/whatisxp.htm    "(XP) Extreme Programming Explained"
+[2]:  http://www.uml.org/                               "Unified Modeling Language"
+[3]:  http://propel.phpdb.org/trac/                     "Propel"
+[4]:  http://www.yaml.org/                              "YAML"

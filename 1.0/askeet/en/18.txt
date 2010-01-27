@@ -1,0 +1,270 @@
+Day 18: Filters
+===============
+
+Previously on symfony
+---------------------
+
+We saw yesterday how to make the askeet service available through an XML API. Today's program will focus on filters, and we will illustrate their use with the creation of sub domains to askeet. For instance, 'php.askeet.com' will display only PHP tagged questions, and any new question posted in this domain will be tagged with 'php'. Let's call this new feature 'askeet universe' and develop it right away.
+
+Configurable feature
+--------------------
+
+First, this new feature has to be optional. Askeet is supposed to be a piece of software that you can install on any configuration, and you might not want to allow subdomains in, say, an enterprise Intranet. 
+
+So we will add a new parameter in the application configuration. To enable the universe feature, it must be set to `on`. To add a custom parameter, open the `askeet/apps/frontend/config/app.yml` file and add:
+
+    all:
+      .global:
+        universe: on
+
+This parameter is now available to all the actions of your application. To get its value, use the `sfConfig::get('app_universe')` call.
+
+You will find more about custom settings in the [configuration chapter](http://www.symfony-project.com/book/1_0/05-Configuring-Symfony) of the symfony book.
+
+Create a filter
+---------------
+
+A filter is a piece of code executed before every action. That's what we need to inspect the host name prior to all actions, in search for a tag name in the domain.
+
+Filters have to be declared in a special configuration file to be executed, the `askeet/apps/frontend/config/filters.yml` file. This file is created by default when you initiate an application, and it is empty. Open it and add in:
+
+    myTagFilter:
+      class: myTagFilter
+
+This declares a new `myTagFilter` filter. We will create a `myTagFilter.class.php` class file in the `askeet/apps/frontend/lib/` directory to make it available to the whole `frontend` application:
+
+    [php]
+    <?php
+    
+    class myTagFilter extends sfFilter
+    {
+      public function execute ($filterChain)
+      {    
+        // execute this filter only once
+        if (sfConfig::get('app_universe') && $this->isFirstCall())
+        {
+          // do things
+        }
+    
+        // execute next filter
+        $filterChain->execute();
+      }
+    }
+    
+    ?>
+
+This is the general structure of a filter. If the `app_universe` parameter is not set to `on`, the filter doesn't execute. As we want the filter to be executed only once per request (although there may be more than one action per request, because we use forwards), we check the `->isFirstCall()` method. It is `true` only the first time the filter is executed in a given request.
+
+One word about the `filterChain` object: All the steps of the execution of a request (configuration, front controller, action, view) are a chain of filters. A custom filter just comes very early in this chain (before the execution of an action), and it must not break the execution of the other steps of the chain filter. That's why a custom filter must always end up with `$filterChain->execute();`.
+
+>**Note**: The `sfFilter` class has an `initialize()` method, executed when the filter object is created. You can override it in your custom filter if you need to deal with filter parameters in your own way.
+
+Get a permanent tag from the domain name
+----------------------------------------
+
+We want to inspect the host name to check if it contains a sub domain that might be a tag. Tags like 'www' or 'askeet' must be ignored. In addition, we want to be able to modify the rule of sub domains to ignore, for instance if we use load balancing techniques with alternative domain names such as 'www1', 'www2', etc. This is why we decided to put the rule of universes to ignore (a regular expression) in a parameter of the `filters.yml` configuration file:
+
+    myTagFilter:
+      class: myTagFilter
+      param:
+        host_exclude_regex: /^(www|askeet)/
+    
+Now it is time to have a look at the content of the `execute()` action of the filter (replacing the `// do things` comment):
+
+    [php]
+    // is there a tag in the hostname?
+    $hostname = $this->getContext()->getRequest()->getHost();
+    if (!preg_match($this->getParameter('host_exclude_regex'), $hostname) && $pos = strpos($hostname, '.'))
+    {
+      $tag = Tag::normalize(substr($hostname, 0, $pos));
+
+      // add a permanent tag custom configuration parameter
+      sfConfig::set('app_permanent_tag', $tag);
+
+      // add a custom stylesheet
+      $this->getContext()->getResponse()->addStylesheet($tag);
+    }
+    
+The filter looks for a possible permanent tag in the URI. If one is found, it is added as a custom parameter, and a custom stylesheet is added to the view. So, for instance:
+
+    // calling this URI to display the PHP universe
+    http://php.askeet.com
+
+    // will create a constant
+    sfConfig::set('app_permanent_tag', 'php');
+
+    // and include a custom stylesheet in the view
+    <link rel="stylesheet" type="text/css" media="screen" href="/css/php.css" />
+ 
+>**Note**: As the execution of a custom filter happens very early in the filter chain, and even earlier than the view configuration parsing, the custom stylesheet will appear in the output HTML file *before* the other style sheets. So if you have to override style settings of the main askeet site in a custom stylesheet, these settings need to be declared `!important`.
+
+Model modifications
+-------------------
+
+We now need to modify the actions and model methods that should take the permanent tag into account. As we like to keep the model logic inside the Model layer, and because refactoring becomes really necessary, we take advantage of the permanent tag modifications to take the Propel requests out of the actions, and put them in the model. If you take a look at the list of modifications for today's release in the [askeet trac](http://trac.askeet.com/trac/changeset/40), you will see that a few new model methods were created, and that the actions call these methods instead of doing `doSelect()` by themselves:
+
+    [php]
+    Answer->getRecent()
+    Question->getPopularAnswers()
+    QuestionPeer::getPopular()
+    QuestionPeer::getRecent()
+    QuestionTagPeer::getForUserLike()
+
+### Filter lists according to the permanent tag
+
+When a list of questions, tags, or answers are displayed in an askeet universe, all the requests must take into account a new search parameter. In symfony, search parameters are calls to the `->add()` method of the `Criteria` object.
+
+So add the following method to the `QuestionPeer` and `AnswerPeer` classes:
+
+    [php]
+    private static function addPermanentTagToCriteria($criteria) 
+    { 
+      if (sfConfig::get('app_permanent_tag')) 
+      { 
+        $criteria->addJoin(self::ID, QuestionTagPeer::QUESTION_ID, Criteria::LEFT_JOIN); 
+        $criteria->add(QuestionTagPeer::NORMALIZED_TAG, sfConfig::get('app_permanent_tag')); 
+        $criteria->setDistinct(); 
+      } 
+      
+      return $criteria; 
+    }  
+
+We now need to look for all the model methods that return a list that must be filtered in a universe, and add to the `Criteria` definition the following line:
+
+    [php]
+    $c = self::addPermanentTagToCriteria($c);
+
+For instance, the `QuestionPeer::getHomepagePager()` has to be modified to look like:
+
+    [php]
+    public static function getHomepagePager($page)
+    {
+      $pager = new sfPropelPager('Question', sfConfig::get('app_pager_homepage_max'));
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(self::INTERESTED_USERS);
+      
+      // add this line
+      $c = self::addPermanentTagToCriteria($c);
+      
+      $pager->setCriteria($c);
+      $pager->setPage($page);
+      $pager->setPeerMethod('doSelectJoinUser');
+      $pager->init();
+    
+      return $pager;
+    }
+  
+The same modification must be repeated quite a few times, in the following methods:
+
+    [php]
+    QuestionPeer::getHomepagePager()
+    QuestionPeer::getPopular()
+    QuestionPeer::getPopular()
+    QuestionPeer::getRecentPager()
+    QuestionPeer::getRecent()
+    AnswerPeer::getPager()
+    AnswerPeer::getRecentPager()
+    AnswerPeer::getRecent()
+
+For complex requests not using the `Criteria` object, we need to add the permanent tag as a `WHERE` statement in the SQL code. Check how we did it for the `QuestionTagPeer::getPopularTags()` and `QuestionTagPeer::getPopularTagsFor()` methods in the [askeet trac](http://trac.askeet.com/trac/browser/trunk/lib/model/QuestionTagPeer.php?rev=40) or in the [SVN repository](http://svn.askeet.com/tags/release_day_18/).
+
+### Lists of tags for a question or a user
+
+All the questions of the 'PHP' universe are tagged with 'php'. But if a user is browsing questions in the 'PHP' universe, the 'php' tag must not be displayed in the list of tags since it is implied. When outputting a list of tags for a question or a user in a universe, the permanent tag must be omitted. This can be done easily by bypassing it in loops, as for instance in the `Question->getTags()` method:
+
+    [php]
+    public function getTags()
+    {
+      $c = new Criteria();
+      $c->add(QuestionTagPeer::QUESTION_ID, $this->getId());
+      $c->addGroupByColumn(QuestionTagPeer::NORMALIZED_TAG);
+      $c->setDistinct();
+      $c->addAscendingOrderByColumn(QuestionTagPeer::NORMALIZED_TAG);
+    
+      $tags = array();
+      foreach (QuestionTagPeer::doSelect($c) as $tag)
+      {
+        if (sfConfig::get('app_permanent_tag') == $tag)
+        {
+          continue;
+        }
+    
+        $tags[] = $tag->getNormalizedTag();
+      }
+    
+      return $tags;
+    }
+
+The same kind of technique is to be used in the following methods:
+
+    [php]
+    Question->getTags()
+    Question->getPopularTags()
+    User->getTagsFor()
+    User->getPopularTags()
+
+### Append the permanent tag to new questions
+
+When a question is created in an askeet universe, it must be tagged with the permanent tag in addition to the tags entered by the user. As a reminder, in the `question/add` method, the `Question->addTagsForUser()` method is called:
+
+    [php]
+    $question->addTagsForUser($this->getRequestParameter('tag'), $sf_user->getId());
+
+...where the `tag` request parameters contains the tags entered by the user, separated by blanks (we called this a 'phrase'). So we will just append the permanent tag to the phrase in the first line of the `addTagsForUser` method:
+
+    [php]
+    public function addTagsForUser($phrase, $userId)
+    {
+      // split phrase into individual tags
+      $tags = Tag::splitPhrase($phrase.(sfConfig::get('app_permanent_tag') ? ' '.sfConfig::get('app_permanent_tag') : ''));
+    
+      // add tags
+      foreach ($tags as $tag)
+      {
+        $questionTag = new QuestionTag();
+        $questionTag->setQuestionId($this->getId());
+        $questionTag->setUserId($userId);
+        $questionTag->setTag($tag);
+        $questionTag->save();
+      }
+    }
+
+That's it: if the user hasn't already included the permanent tag, it is added to the list of tags to be given to the new question.
+
+Server configuration
+--------------------
+
+In order to make the new domains available, you have to modify your web server configuration.
+
+In local, i.e. if you don't control the DNS to the askeet site, add a new host for each new universe that you want to add (in the `/etc/hosts` file in a Linux system, or in the `C:\WINDOWS\system32\drivers\etc\hosts` file in a Windows system):
+
+    127.0.0.1         php.askeet
+    127.0.0.1         senseoflife.askeet
+    127.0.0.1         women.askeet
+
+>**Note**: You need administrator rights to do this.
+
+In all cases, you have to add a server alias in your virtual host configuration (in the `httpd.conf` Apache file):
+
+    <VirtualHost *:80>
+      ServerName askeet
+      ServerAlias *.askeet
+      DocumentRoot "/home/sfprojects/askeet/web"
+      DirectoryIndex index.php
+      Alias /sf /usr/local/lib/php/data/symfony/web/sf
+    
+      <Directory "/home/sfprojects/askeet/web">
+       AllowOverride All
+      </Directory>
+    </VirtualHost>
+
+After restarting the web server, you can test one of the universes by requesting, for instance:
+
+    http://php.askeet/    
+
+See you Tomorrow
+----------------
+
+Filters are powerful, and can be used for all kinds of things. Tags allow us to customize content according to a specific theme. Combining tags and filters helped us to partition askeet into several universes, and the possibilities of specialized askeet sites (think about music.askeet.com, programming.askeet.com or doityourself.askeet.com) are endless. As all these sites can be skinned differently, and since the content of the specialized sites still appear in the global askeet site, askeet gets the best of community-based web applications. Universes are small enough to allow a community to build up, and the global site can become the best place to look for the answer to any kind of question.  
+
+Tomorrow, we will focus on performance and see how HTML cache can boost the delivery time of complex pages. In three days comes the mysterious functionality, there is still time for you to vote for the best idea. You can still pay a visit to the [askeet forum](http://www.symfony-project.com/forum/index.php/f/8/) and see how the askeet website behaves [online](http://www.askeet.com/).

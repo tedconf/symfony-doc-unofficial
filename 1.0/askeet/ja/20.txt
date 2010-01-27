@@ -1,0 +1,529 @@
+20日目: アドミニストレーションとモデレーション
+============================================
+
+復習
+----
+
+初期のリリース以前からsymfony開発者がパフォーマンスに関心を寄せていたおかげで、askeetのサービスで悪いことが起きることなく、期待どおりに動いています。しかし、より大きな問題があります: 誰もが投稿できるアプリケーションを公開しておくと、スパム、悪ふざけ、もしくはエラーに晒されています。askeetのようにすべてのサービスが公開され、データベースに手動でアクセスする必要があるのは確実にバッドソリューションです。askeetにバックエンドアプリケーションを追加した方がいいのでしょうか？
+
+アドベントカレンダーチュートリアルではアジャイルな方法論によるWebアプリケーションの開発方法を解説しています。しかしながら、今まで、多くのコーディング方法を話してきましたが、アプリケーションの開発と顧客の要求の関係、実装機能についてはあまり話しませんでした。アジャイル開発のコーディング作業を行う前にバックエンドアプリケーションの必要性を説明するよい機会です。
+
+期待される結果:顧客が言っていること
+---------------------------------
+
+今日の作業はごくわずかな新しいアクション、テンプレートとモデルメソッドで構成され、私たちはすでにどのようにすれば良いのか知っています。おそらく最も難しい部分は、何が必要でどこに設置すればよいのかを定義することです。これは機能とユーザービリティの両方に関係します。たまには開発者がコード以外のことにも集中するのは良いことです。
+
+これが[エクストリームプログラミング(XP)の方法論](http://www.extremeprogramming.org/what.html)のタスクの1つを説明する機会になります: *ストーリー*を書くことと開発者がストーリーを機能に変換しなければならない仕事です。XPはベストなアジャイル開発方法論の1つで、askeetのようなWeb 2.0のプロジェクトにも常に当てはまります。
+
+### ストーリー
+
+XPにおいて、ストーリーはアプリケーションに対応するユーザーの行動に近い説明です。ストーリーはWebサイトの顧客(最終的にお金を払う人)によって書かれます(Webサイトのすべてはオープンソースではありません)。ストーリーは1つか2つのセンテンスを越えることはほとんどありません。これらはテーマに再グループ化されます。
+
+一般的にストーリーはユースケースよりも基本的で説明は短いです。UMLに慣れ親しんでいらっしゃるのでしたら、簡潔ではないストーリーを見つけるかもしれませんが、大きなチャンスであることをすぐにわかるでしょう。
+
+ストーリーは実装の詳細ではなくアクションの結果に焦点をあてます。もちろん、顧客にはインターフェイスに関する選択肢がありますし、この場合、ストーリーおよび人間とコンピュータのやりとりのルック&フィールの要求と推奨を含まなければなりません。
+
+開発期間において開発者によって簡単に評価されるためにストーリーは小さくなければなりません。通常は、エクストリームプログラマのチームはストーリーをユニットで測定します。ユニットの値はプロジェクトのコースを通して、洗練されます。
+
+askeetのバックエンドで顧客がどのように要求を再定義するのか見てみましょう。
+
+### ストーリー #1: プロファイルマネジメント
+
+すべてのユーザーはモデレーター(まとめ役)になることを申請できます。ユーザープロファイルのページにおいて、この権限を申請するためのリンクが利用できます。モデレーターになることを申請した人は回答を受け取るまで、再びモデレーターになることを申請できません。
+
+モデレーター候補者を受諾するもしくは拒否する権限を持つ人は管理者です。彼は候補者リストを閲覧できなければなりません。各人のモデレーターのグレードを与える、拒否するボタンがなければなりません。彼らの貢献が正しいか管理者は候補者のプロファイルへのリンクを用意することが必要です。
+
+モデレーターに権限を与えることは可逆可能なアクションでなければなりません。管理者はモデレーターのリストを閲覧できるようにしなければなりません。お互いに、モデレーターの資格を削除するためです。
+
+管理者は他のユーザーにも管理者権限を与えることが可能です。管理者は管理者リストにアクセスする権限を持ちます。
+
+### ストーリー #2: 問題のある質問もしくは回答のレポート
+
+すべてのユーザーはモデレーターに問題のある質問や回答を報告できなければなりません。すべての質問もしくは回答にシンプルな'report spam 'リンクのボタンを用意するのは、よい解決方法です。
+
+報告スパムを避けるために、特定の質問もしくは回答へのユーザーからの報告は1回だけカウントされるようにします。ユーザーに報告が考慮されたことを視覚的にフィードバックするのはすばらしいことです。
+
+### ストーリー #3: 問題のある質問・回答の取り扱い
+
+モデレーターは2つ以上のリストが利用可能です: 問題のある質問リストと回答リストです。それぞれのリストは報告数の多い順に並べ替えられます。なので多くの報告された質問は報告された質問リストのトップに現れます。
+
+モデレーターは質問を削除する、回答を削除する、どちらか一方に関する報告数をリセットする権限を持ちます。質問を削除するとこの質問へのすべての回答も削除されます。
+
+### ストーリー #4: 問題のあるタグの取り扱い
+
+モデレーターは彼ら、もしくはそうではない人によってタグが与えられたであろうと、質問タグを削除する権限を持ちます。
+
+問題のあるタグ、たとえば意味をなさないものを検知するためにモデレーターは人気の逆順で並べられたタグリストにアクセスする権限をもちます。このタグによってタグづけされた質問リストをリンクすることでリストはタグを隠す機能を持ちます。
+
+### ストーリー #5: 問題のあるユーザーの取り扱い
+
+モデレーターがユーザーの投稿を削除するとき、このユーザーによる問題のある投稿数が増加します。
+
+削除された問題のある投稿数によって並べられた問題ユーザーのリストがあります。管理者はユーザーとそのユーザーのすべての投稿を削除する権限がなければなりません。
+
+### すべてですか？
+
+はいそうです。askeetのサイト管理のために顧客が必要な要求定義はこれで全部です。機能の仕様のすべてのケースをカバーしませんし、ケースの完全な一式ではありませんし、望まない結果を導くかもしれないたくさんのオープンエンドを残しています。
+
+しかし、今始めたアジャイルな開発の仕事は、ストーリーがもっと正確でなければならないことが判明したときにありうる曖昧さとデータの欠落を見つけ出し顧客に助けを求めることです。XPスタイルの開発フェーズにおいて顧客は開発チームの質問に回答することが常に可能です。
+
+ですので、開発者はペアを組み、それぞれのペアで取り組むストーリーを選びます。ストーリーが何を意図するのかを語り、ユニットテストケースは機能を検証します。ユニットテストを書きます。それから、テストに合格するコードを書きます。終わったら、アプリケーション全体に追加するコードをリリースし、以前書いたすべてのユニットテストを動作させることで、統合を検証します。動作したとき、休憩をし、解散します。それから、他の人と新しいペアを組み、新しいストーリーに取りかかります。
+
+最後の結果が顧客の要望を満たさないのであればどうします？少しの仕事のユニット(数時間もしくは数日)をあらわしているだけで、忘れて新しいアプローチを試すのは簡単です。少なくも、顧客は自分が望んでいないことがわかるので、決定するためへの大きなステップです。しかし、開発の大半で、開発者が顧客と直接話す機会が与えられ、書かれたストーリーの行間を読むときに、顧客が期待した以上の優れた方法で機能を生み出すことに取りかかります。加えて、AJAXの可能性とWeb 2.0を理解している開発者は成功することができます。すばらしいアプリケーションで終わるために開発者にイニシアティブを与えるのは良いチャンスです。
+
+XPとアジャイル開発の利点に興味を持ちましたら、[エクストリームプログラミングのWebサイト](http://www.extremeprogramming.org/)かエクストリーム・プログラミングの説明を読んでください:「Embrace Change」(ケント・ベック)
+
+バックエンド VS 強化されたフロントエンド
+---------------------------------------
+
+顧客の要求に開発者がフィードバックするのはアプリケーションの質の向上のために大切です。開発者がアプリケーションをどのように構築し、symfonyがどれだけ強力なのかを顧客にどのように説明できるのか見てみましょう。
+
+いくつかの理由からaskeetにバックエンドアプリケーションを追加するアイディアは良いものではありません。
+
+最初に、多くの機能を必要とするバックエンドを使用するモデレーターはすでにフロントエンドで利用可能です。(最新の質問、ログインモジュールなど)バックエンドアプリケーションがフロントエンドの一部を繰り返すのはリスクです。私たち開発者は繰り返し作業を好みません。複数のアプリケーションをリファクタリングするはめになり、また時間がかかりすぎるからです。第二に、新しいアプリケーションを作ることは、カスタムレイアウトとスタイルシートを使う新しいデザインを意味します。アプリケーション開発において、より時間がかかることです。最後に、一時間でバックエンドアプリケーションを作成するためにはおそらく私たちはCRUDジェネレータをたくさん使わなければなりません。結果として多くの不必要なアクションと適用するのに時間がかかるテンプレートが作成されてしまいます。
+
+近い将来に(0.6のために計画されました)、symfonyは全機能を持つバックオフィスジェネレータを提供します。Webサイトの活動を管理するために必要とされるすべての共通機能を簡単に扱い、一行のコードさえも必要がありません。このすばらしい機能が追加されれば、askeetのバックエンドを構築する方法に対する私たちの考えが変わるでしょう。しかし、フレームワークの現在の状態を考慮すると、管理機能のベストソリューションはフロントエンドアプリケーションに追加することです。
+
+askeetフロントエンドのベースはリストのセットで、質問とユーザーのための詳細ページで、ある種のアクションが利用可能です。まさにこれはサイト管理機能を補強するために必要なスケルトンです。
+
+これは、プロジェクトが複数のアプリケーションを収納する方法を示していますが、このデモンストレーションを見た顧客
+はサイト管理機能をフロントエンドアプリケーションに統合しようとするでしょう。
+
+>**Caution**: symfonyプロジェクトが稼働している複数のアプリケーションに関心がありましたら、[マイファーストプロジェクト](http://www.symfony-project.org/tutorial/1_0/my-first-project) チュートリアルをご覧ください。
+
+機能性: 開発者が理解すること
+----------------------------
+
+開発者が顧客とストーリーに関して話し合った後で、askeetアプリケーションに行われる修正を見積もります。開発者はストーリーをタスクに置き換えます。通常のタスクはストーリーより小さいです。タスクは通常1・2時間単位で開発される一方でストーリーを実施するには1・2日以上の期間が必要だからです。
+
+1. リクエストを効果的にするためにモデルを修正しなければなりません:
+    * `question_id`、`user_id`、`created_at`カラムによって新しい`ReportQuestion`テーブルを作成します
+    * `question_id`と`user_id`と`created_at`カラムによって新しい`ReportAnswer`テーブルを作成します
+    * 新しい`reports`カラムは`Question`と`Answer`カラムに追加します
+    * 新しい`is_administrator`、`is_moderator`と`deletions`カラムを`User`テーブルに追加します
+
+2.  すべてのページで、サイドバーはユーザーの認証に応じて新しいリストへのアクセス権限を提供しなければなりません:
+    * すべてのユーザー: 人気の質問、最新の質問、最新の回答
+    * モデレーター: 報告された質問、報告された回答、不人気なタグ 
+    * 管理者: 管理者、モデレーター、モデレーター候補、問題ユーザー
+    
+3.   詳細な質問ページ(`question/show`)はユーザーの資格に応じて新しいアクションを提供しなければなりません:
+    * 購読者: 質問を報告する、回答を報告する
+    * モデレーター: 質問と回答を削除する、回答を削除する、質問レポートをリセットする、回答をレポートする、タグを削除する
+
+    ユーザーの資格に応じて質問の追加情報を提供しなければなりません: 
+    * 購読者: 購読者によってすでに報告された質問がある場合
+    * モデレーター: 質問と回答についての報告回数
+    
+4.  ユーザープロファイルページ(`user/show`)はユーザーの資格に応じてアクセス権限を提供する必要がある:
+    * 購読者自身のページ: モデレーター候補者として名乗り出る
+    * 管理者: ユーザーとすべての投稿を削除する、モデレーターの資格を与える、モデレーターの資格を拒否する、モデレーターの資格を削除する、管理者の資格を与える
+    
+    ユーザーの資格に応じてユーザープロファイルページは追加情報を提供することが必要です:
+    * すべてのユーザー: ユーザーの資格、適用された資格
+    * 管理者: 削除した投稿数
+
+5.  制限されたアクセス権による新しいリストを作成しなければなりません:
+    * モデレーターへの制限:
+        * `quesition/reports`: 報告された質問リスト、報告数の降順で、それぞれがquesition detailにリンクしている。
+        * `answer/reports`: 報告された回答リスト、報告数の降順で、それぞれがquesiton detailにリンクされている
+        * `tag/unpopular`: タグのリスト、人気順で、それぞれが、このタグによってタグづけされた質問リストへリンクしている
+    * 管理者への制限
+        * `user/administrators`: 管理者のリスト、アルファベット順で、それぞれがユーザープロファイルにリンクしている
+        * `user/moderators`: モデレーターのリスト、アルファベット順で、それぞれがユーザープロファイルにリンクしている
+        * `user/candidates`: モデレーター候補のリスト、アルファベット順で、それぞれがユーザープロファイルにリンクしている
+        * `user/problematic`: 問題ユーザーのリスト、削除された投稿の降順で、それぞれがユーザープロファイルにリンクしている
+
+6.  ２つの新しい資格が作成されなければなりません: 管理者とモデレーター。
+    
+7.  少なくとも、一つの管理者がアプリーションが動くように、手動でデータベースをセットアップしなければなりません。
+
+実装
+----
+
+タスクリストを書いたら、askeetでバックエンド機能を実装する方法は単なる作業です。ユニットテストを書くことを含めて、このタスクにXP方法論を適用するには少なくとも丸一日かかります。アドベントカレンダーチュートリアルの必要性のために、私たちは少し速く、そして、以前説明しなかった新しいテクニックもしくはsymfonyの古典的なテクニックの再検討を手助けするテクニックに取り組むことにします。
+
+### 新しいテーブル
+
+質問と回答報告のために、私たちはaskeetに2つのテーブルを追加します:
+
+    [xml]
+    <table name="ask_report_question" phpName="ReportQuestion">
+      <column name="question_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_question">
+        <reference local="question_id" foreign="id" />
+      </foreign-key>
+      <column name="user_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_user">
+        <reference local="user_id" foreign="id" />
+      </foreign-key>
+      <column name="created_at" type="timestamp" />
+    </table>
+    
+    <table name="ask_report_answer" phpName="ReportAnswer">
+      <column name="answer_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_answer">
+        <reference local="answer_id" foreign="id" />
+      </foreign-key>
+      <column name="user_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_user">
+        <reference local="user_id" foreign="id" />
+      </foreign-key>
+      <column name="created_at" type="timestamp" />
+    </table>
+
+`question_id/answer_ind`と`user id`の組み合わせはユニークな主キーを作成するのに十分で、これらのテーブルのためのオートインクリメントの`id`を追加する必要はありません。
+
+私たちは新しい`reports`カラムを`Quesiton`と`Answer`テーブルに追加します。`reports`の数と`Question`テーブルに`ReportQuestion`にレコード数を同期するために私たちが[4日目](4.txt)に行ったように、トランザクションを追加する`ReportQuestion`オブジェクトの`save()`メソッドをオーバーライドします:
+
+    [php]
+    public function save($con = null)
+    {
+      $con = sfContext::getInstance()->getDatabaseConnection('propel');
+      try
+      {
+        $con->begin();
+    
+        $ret = parent::save();
+    
+        // answerテーブルのspam_countを更新する
+        $answer = $this->getAnswer();
+        $answer->setReports($answer->getReports() + 1);
+        $answer->save();
+    
+        $con->commit();
+    
+        return $ret;
+      }
+      catch (Exception $e)
+      {
+        $con->rollback();
+        throw $e;
+      }
+    }
+
+`ReportAnswer`テーブルについても同じです。
+
+### カスケード削除
+
+質問が削除されたとき、この質問へのすべての回答も削除されます。質問に関する興味、質問に追加されたタグ、すべての回答についての関連レーティングも同様です。私たちのためのすべてのことを管理するためにカスケード削除のメカニズムが必要です。
+
+[2日目](2.txt)において、askeetのデータベース用にInnoDBを使うアイディアがありました。これはカスケード削除を円滑にします。しかし、カスケード削除を考慮しなければならないことをスキーマで示していれば、InnoDBが有効でないデータベースでもPropelのレイヤーはカスケード削除を対処します。これは外部キーを宣言するときに行われなければなりません: テーブル定義の`<foreign-key>`タグに`onDelete="cascade"`属性を追加します。たとえば、`Answer`テーブルに対しては:
+
+    [xml]
+    ...
+    <table name="ask_answer" phpName="Answer">
+      <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+      <column name="question_id" type="integer" />
+      <foreign-key foreignTable="ask_question" onDelete="cascade">
+        <reference local="question_id" foreign="id"/>
+      </foreign-key>
+      <column name="user_id" type="integer" />
+      <foreign-key foreignTable="ask_user">
+        <reference local="user_id" foreign="id"/>
+      </foreign-key>
+      <column name="body" type="longvarchar" />
+      <column name="html_body" type="longvarchar" />
+      <column name="relevancy_up" type="integer" default="0" />
+      <column name="relevancy_down" type="integer" default="0" />
+      <column name="reports" type="integer" default="0" />
+      <column name="created_at" type="timestamp" />
+    </table>
+    ...
+
+ひとたびモデルが再構築されると、`onDelete`属性に関連するリレーションに対してカスケード削除が有効になります。Questionテーブルでレコードを削除されたとき:
+
+* もしデータベースがInnoDBエンジンを使う場合、関連する回答は自動的に削除されます。
+* そうではない場合、Propelレイヤーは自動的に関連する回答を取得して、それらを削除し、そして質問を削除します。
+
+すべてのリレーションはカスケード削除を含まないかもしれません。たとえば、ユーザーを削除すると、ユーザーの関心と回答の関連レーティングが削除されますが、投稿(質問と回答)は削除されません。これらの投稿は削除の後で匿名ユーザーに関連づけされます。
+
+次のリレーションのために`onDelete`属性を`cascade`に設定しなければなりません:
+
+  * `Answer/QuestionId`
+  * `Interest/QuestionId`
+  * `Relevancy/QuestionId`
+  * `QuestionTag/QuestionId`
+  * `ReportQuestion/QuestionId`
+  * `ReportAnswer/AnswerId`
+
+### クレデンシャルを有するユーザーのためにリンクをサイドバーに追加する
+
+モデレーターのすべてのアクションを扱う新しい`moderator`モジュール、および管理者のアクションを扱う`administrator`モジュールを作成します。
+
+[7日目](7.txt)において、`sidebar`モジュールにおいてサイドバーのコードを保存するコンポーネントスロットのテクニックを使いました。新しいリストへのリンクはそこに表示されますが、これらはクレデンシャルによって調整されます。[6日目](6.txt)で見たように`$sf_user->hasCredential()`メソッドを使用することで簡単に実現されます:
+
+    [php]
+    // askeet/apps/frontend/modules/sidebar/templates/_default.php and _question.phpにおいて:
+    ...
+    <?php include_partial('sidebar/moderation') ?>
+
+    <?php include_partial('sidebar/administration') ?>
+    
+    // askeet/apps/frontend/modules/sidebar/templates/_moderation.phpにおいて:
+    <?php if ($sf_user->hasCredential('moderator')): ?>
+      <h2>moderation</h2>
+    
+      <ul>
+        <li><?php echo link_to('reported questions', 'moderator/reportedQuestions') ?> (<?php echo QuestionPeer::getReportCount() ?>)</li>
+        <li><?php echo link_to('reported answers', 'moderator/reportedAnswers') ?> (<?php echo AnswerPeer::getReportCount() ?>)</li>
+        <li><?php echo link_to('unpopular tags', 'moderator/unpopularTags') ?></li>
+      </ul>
+    <?php endif ?>
+    
+    // askeet/apps/frontend/modules/sidebar/templates/_administration.phpにおいて:
+    ...
+    <?php if ($sf_user->hasCredential('administrator')): ?>
+      <h2>administration</h2>
+    
+      <ul>
+        <li><?php echo link_to('moderator candidates', 'administrator/moderatorCandidates') ?> (<?php echo UserPeer::getModeratorCandidatesCount() ?>)</li>
+        <li><?php echo link_to('moderator list', 'administrator/moderators') ?></li>
+        <li><?php echo link_to('administrator list', 'administrator/administrators') ?></li>
+        <li><?php echo link_to('problematic users', 'administrator/problematicUsers') ?> (<?php echo UserPeer::getProblematicUsersCount() ?>)</li>
+      </ul>
+    <?php endif ?>    
+
+![新しいリンク](/images/askeet/moderation_links.gif)
+
+クラスメソッドの`QuestionPeer::getReportCount()`、`AnswerPeer::getReportCount()`、`UserPeer::getModeratorCandidatesCournt()`と`UserPeer::getProblematicUsersCount()`はモデルに追加されます。これらはすべて同じ原則に基づいています:
+
+    [php]
+    public static function getReportCount()
+    {
+      $c = new Criteria();
+      $c->add(self::REPORTS, 0, Criteria::GREATER_THAN);
+      $c = self::addPermanentTagToCriteria($c);
+  
+      return self::doCount($c);
+    }
+
+### AJAXの報告機能
+
+質問が表示されるすべての場所で質問を報告するための'[report to moderator]'リンクを提供します(質問リスト、質問の詳細ページ)。[8日目](8.txt)のチュートリアルのように、このリンクがAJAXならすばらしいでしょう。`askeet/apps/frontend/lib/helper/`ディレクトリの`QuestionHelper.php`ファイルで新しいヘルパーを追加します:
+
+    [php]
+    function link_to_report_question($question, $user)
+    {
+      use_helper('Javascript');
+    
+      $text = '[report to moderator]';
+      if ($user->isAuthenticated())
+      {
+        $has_already_reported_question = ReportQuestionPeer::retrieveByPk($question->getId(), $user->getSubscriberId());
+        if ($has_already_reported_question)
+        {
+          // このユーザーに対してすでに報告された場合
+          return '[reported]';
+        }
+        else
+        {
+          return link_to_remote($text, array(
+            'url'      => '@user_report_question?id='.$question->getId(),
+            'update'   => array('success' => 'report_question_'.$question->getId()),
+            'loading'  => "Element.show('indicator')",
+            'complete' => "Element.hide('indicator');".visual_effect('highlight', 'report_question_'.$question->getId()),
+          ));
+        }
+      }
+      else
+      {
+        return link_to_login($text);
+      }
+    }
+    
+リンクが表示されるテンプレート(`question/templates/showSuccess.php`と`question/templates/_list.php`)はこのヘルパーを使うことができます:
+
+    [php]
+    <div class="options" id="report_question_<?php echo $question->getId() ?>">
+      <?php echo link_to_report_question($question, $sf_user) ?>
+    </div>
+
+`user/reportQuestion`アクションに誘導するものとして`routing.yml`で`@user_report_question`ルールを書きます:
+
+    [php]
+    public function executeReportQuestion()
+    {
+      $this->question = QuestionPeer::retrieveByPk($this->getRequestParameter('id'));
+      $this->forward404Unless($this->question);
+    
+      $spam = new ReportQuestion();
+      $spam->setQuestionId($this->question->getId());
+      $spam->setUserId($this->getUser()->getSubscriberId());
+      $spam->save();
+    }
+    
+このアクションの結果である`user/templates/reportQuestionSuccess.php`テンプレートはシンプルです:
+
+    [php]
+    <?php use_helper('Question') ?>
+    <?php echo link_to_report_question($question, $sf_user) ?>
+
+![質問レポート](/images/askeet/report_question.gif)
+
+報告された回答についても同じです。
+    
+### クレデンシャルを有するユーザーのための新しいアクションリンク
+
+`askeet/apps/frontend/modukes/quesiton/templates/showSuccess.php`の divタグの`question_body`において、AJAXの報告機能に対応するために、モデレーター限定の質問管理アクションを追加します。これらをフラグメントに追加します:
+
+    [php]
+    ...
+    <div class="options" id="report_question_<?php echo $question->getId() ?>">
+      <?php echo link_to_report_question($question, $sf_user) ?>
+      <?php include_partial('moderator/question_options', array('question' => $question)) ?>
+    </div>
+
+`askeet/apps/frontend/modules/moderator/templates/_question_options.php`フラグメントは次のコードを格納します:
+
+    <?php if ($sf_user->hasCredential('moderator')): ?>
+      <?php if ($question->getReports()): ?>
+        &nbsp;[<strong><?php echo $question->getReports() ?></strong> reports]
+        &nbsp;<?php echo link_to('[reset reports]', 'moderator/resetQuestionReports?stripped_title='.$question->getStrippedTitle()) ?>
+      <?php endif ?>
+      &nbsp;<?php echo link_to('[delete question]', 'moderator/deleteQuestion?stripped_title='.$question->getStrippedTitle()) ?>
+    <?php endif ?>
+    ...
+
+![モデレーターのアクション](/images/askeet/question_moderator_options.gif)
+
+同じオプションが`askett/apps/frontend/modules/answer/templates/_answer.php`に追加されます。`moderator/templates/_answer/templates/_answer_options.php`フラグメントへのリンクです。
+
+ユーザープロファイルの管理アクションリンクに同じ種類のことが適用されます。
+
+>**Note**: アクションへのリンクのグッドプラクティスは、アクションがモデルを修正しないときは通常のリンクとして、('GET'リクエストを行いながら)アクションがデータを変更するときはボタンとして実装することです。これは('POST'を行う)検索エンジンのロボットのように、データベースを修正できるリンクをクリックする自動Webクローラーを回避する方法です。JavaScriptで実装されたAJAXリンクなので、ロボットがクリックすることはありません。しかしながら、いましがた追加した'reset'と'report'リンクはロボットによってクリック可能です。幸いにして、ユーザーがモデレーターにアクセスにしない限り、表示されません。意図せずにクリックされるというリスクはありません。
+>
+>'POST'リンクとして宣言することでこれらのリンクに保護機能を追加できます。symfony bookの[リンクの章](http://www.symfony-project.org/book/1_0/09-Links-and-the-Routing-System)で説明されています:
+>
+>      [php]
+>      <?php echo link_to('[delete answer]', 'moderator/deleteAnswer?id='.$answer->getId(), 'post=true') ?>
+>
+
+### アクセス制限
+
+ユーザーが特別な権限を持ってログインしたとき、`sfUser`オブジェクトに適切なクレデンシャルを与えなければなりません。[6日目](6.txt)において作成した`askeet/apps/frontend/lib/myUser.class.php`の`myUser`クラスの`signIn`メソッドで行われます:
+
+    [php]
+    public function signIn($user)
+    {
+      $this->setAttribute('subscriber_id', $user->getId(), 'subscriber');
+      $this->setAuthenticated(true);
+    
+      $this->addCredential('subscriber');
+    
+      if ($user->getIsModerator())
+      {
+        $this->addCredential('moderator');
+      }
+    
+      if ($user->getIsAdministrator())
+      {
+        $this->addCredential('administrator');
+      }
+    
+      $this->setAttribute('nickname', $user->getNickname(), 'subscriber');
+    }
+
+もちろん、モデレーターのすべてのアクションは`askeet/apps/frontend/modules/moderator/config/security.yml`で記述された設定によって制限されなければなりません:
+
+    all:
+      is_secure:   on
+      credentials: moderator
+
+同じ種類の制限は管理者アクションについても当てはまります。
+
+### 新しいmoderatorとadministratorアクション
+
+`moderator`と`administrator`アクションに新しく追加する機能はありません。アクションの一覧をここに示します:
+
+    // administratorのアクション
+    executeProblematicUsers()     ->  usersSuccess.php
+    executeModerators()           ->  usersSuccess.php
+    executeAdministrators()       ->  usersSuccess.php
+    executeModeratorCandidates()  ->  usersSuccess.php
+    
+    executePromoteModerator()     ->  request referrer
+    executeRemoveModerator()      ->  request referrer
+    executePromoteAdministrator() ->  request referrer
+    executeRemoveAdministrator()  ->  request referrer
+    
+    // moderatorのアクション
+    executeUnpopularTags()        ->  unpopularTagsSuccess.php
+    executeReportedQuestions()    ->  reportedQuestions.php
+    executeReportedAnswers()      ->  reportedAnswers.php
+    
+    executeDeleteTag()            ->  request referrer
+    executeDeleteQuestion()       ->  @homepage
+    executeDeleteAnswer()         ->  request referrer
+    
+>**Note**: アクションのためにカスタムテンプレートを指定するには、モジュールに`view.yml`設定ファイルを追加します。たとえば、`administrator`のアクションの半分が`usersSuccess.php`テンプレートを使えるようにするために、次の`askeet/apps/frontend/modules/administrator/config/view.yml`ファイルを作成します:
+>
+>     moderatorsSuccess:
+>       template: users
+>     
+>     administratorsSuccess:
+>       template: users
+>     
+>     moderatorCandidatesSuccess:
+>       template: users
+>     
+>     problematicUsersSuccess:
+>       template: users
+> 
+
+### ログの削除
+
+モデレーターが質問を削除したとき、警告メッセージとログファイルで削除をトレースすることを考えます。本番環境において警告メッセージのロギングを許可するには、`logging.yml`設定ファイルを修正する必要があります:
+
+    prod:
+      level: warning    
+    
+それから、すべての削除アクションにおいて、`moderator/deleteQuestion`アクションとして削除を記録するコードを追加します:
+
+    [php]
+    public function executeDeleteQuestion()
+    {
+      $question = QuestionPeer::getQuestionFromTitle($this->getRequestParameter('stripped_title'));
+      $this->forward404Unless($question);
+  
+      $con = sfContext::getInstance()->getDatabaseConnection('propel');
+      try
+      {
+        $con->begin();
+  
+        $user = $question->getUser();
+        $user->setDeletions($user->getDeletions() + 1);
+        $user->save();
+  
+        $question->delete();
+  
+        $con->commit();
+  
+        // 削除を記録する
+        $log = 'moderator "%s" deleted question "%s"';
+        $log = sprintf($log, $this->getUser()->getNickname(), $question->getTitle());
+        $this->getContext()->getLogger()->warning($log);
+      }
+      catch (PropelException $e)
+      {
+        $con->rollback();
+        throw $e;
+      }
+  
+      $this->redirect('@homepage');
+    }
+
+ロギングの詳細を知りたければ、symfony bookの[デバッグの章](http://www.symfony-project.org/book/1_0/16-Application-Management-Tools)をご覧ください。
+
+すべての`Exceptions`の代わりに、`PropelExceptions`のみに対応する`try/catch`ステートメントを変更します。これは削除のロギングに問題があるというだけでトランザクションが失敗して欲しくないからです。
+
+>**Note**: 上の例の場合、削除されたあとでも`$question`オブジェクトを使います。これは`->delete()`メソッドを呼び出すとレコードもしくは削除のためのレコードリストがマークされるからで、実際の削除はいったんアクションが終了したときPropelによってのみ続行されます。
+
+それではまた明日
+----------------
+
+バックエンド機能を実装する方法がたくさんあるので、考えることに幾分か時間をかけました。今日のチュートリアルはおそらくは1時間内ではなく2時間ぐらいかかったでしょう。しかし、多くのことは新しいことではなく、実装作業はsymfonyのテクニックの復習になったでしょう。[askeetのタイムライン](http://trac.askeet.com/trac/changeset/55)で変更の全体のリストがよくわかります。
+
+明日は秘密の機能の日です。フォーラムやaskeetのベータサイトにまで多くの提案が行われました。私たちが実装する機能を見ればsymfonyが多いに助けになることがわかります。
+
+今日のソースについて何か問題がありましたら、お気軽に[フォーラム](http://www.symfony-project.com/forum/index.php/f/8/)に行ってください。ソースコードは[trac](http://trac.askeet.com/trac/browser/tags/release_day_20)内か[SVNリポジトリ](http://svn.askeet.com/tags/release_day_20/)からダウンロードできます。

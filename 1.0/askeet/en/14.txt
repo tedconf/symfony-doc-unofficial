@@ -1,0 +1,309 @@
+Day 14: Tags, part II
+=====================
+
+Previously on symfony
+---------------------
+
+During yesterday's tutorial, we built the first part of the [folksonomy][1] features of symfony. The `QuestionTag` class and the other extensions to the model helped us to display the tags of a question in the question list and in the question detail. In addition, the list of popular questions for a given tag was also developed.
+
+There are two things that are left to do concerning tags, and they both sound quite 'web 2.0': The ability to add a new tag with an AJAX form, and the global askeet tag bubble. Are you ready to experience the agile development methods of symfony?
+
+Add tags to a question
+----------------------
+
+### The form
+
+Not only do we want to give the ability to a registered user to add a tag for a question, we also want to suggest one of the tags given to other questions before if they match the first letters he/she types. This is called auto complete. If you ever played with [google suggest][2], you know what this is about.
+
+Yesterday, we created a fragment that is inserted in the sidebar when a question detail is displayed. Edit this `askeet/apps/frontend/modules/sidebar/templates/_question.php` file to add a form at the end: 
+
+    [php]
+    ...
+    <?php if ($sf_user->isAuthenticated()): ?>
+      <div>Add your own:
+        <?php echo form_remote_tag(array(
+          'url'    => '@tag_add',
+          'update' => 'question_tags',
+        )) ?>
+          <?php echo input_hidden_tag('question_id', $question->getId()) ?>
+          <?php echo input_auto_complete_tag('tag', '', 'tag/autocomplete', 'autocomplete=off', 'use_style=true') ?>
+          <?php echo submit_tag('Tag') ?>
+        </form>
+      </div>
+    <?php endif; ?>
+
+Of course, as a tag has to be linked to a user, the addition of a new tag is restricted to authenticated users. We will talk in a minute about the `form_remote_tag()` helper. But first, let's have a look at the auto complete `input` tag. It specifies an action (here, `tag/autocomplete`) to get the array of matching options. 
+
+### Autocomplete
+
+The list that the action should return is a list of tags entered by the user that match the entry in the `tag` field, without duplicates, ordered by alphabetical order. The SQL query that returns this is:
+
+    [sql]
+    SELECT DISTINCT tag AS tag
+    FROM question_tag
+    WHERE user_id = $id AND tag LIKE $entry
+    ORDER BY tag
+
+Add this action to the `modules/tag/actions/action.class.php` file:
+
+    [php]
+    public function executeAutocomplete()
+    {
+      $this->tags = QuestionTagPeer::getTagsForUserLike($this->getUser()->getSubscriberId(), $this->getRequestParameter('tag'), 10);
+    }
+
+As usual, the heart of the database query lies in the model. Add the following method to the  `QuestionTagPeer` class: 
+
+    [php]
+    public static function getTagsForUserLike($user_id, $tag, $max = 10)
+    {
+      $tags = array();
+
+      $con = Propel::getConnection();
+      $query = '
+        SELECT DISTINCT %s AS tag
+        FROM %s
+        WHERE %s = ? AND %s LIKE ?
+        ORDER BY %s
+      ';
+
+      $query = sprintf($query,
+        QuestionTagPeer::TAG,
+        QuestionTagPeer::TABLE_NAME,
+        QuestionTagPeer::USER_ID,
+        QuestionTagPeer::TAG,
+        QuestionTagPeer::TAG
+      );
+
+      $stmt = $con->prepareStatement($query);
+      $stmt->setInt(1, $user_id);
+      $stmt->setString(2, $tag.'%');
+      $stmt->setLimit($max);
+      $rs = $stmt->executeQuery();
+      while ($rs->next())
+      {
+        $tags[] = $rs->getString('tag');
+      }
+
+      return $tags;
+    }
+
+Now that the action has determined the list of tags, we only need to shape them in the `autocompleteSuccess.php` template:
+
+    [php]
+    <ul>
+    <?php foreach ($tags as $tag): ?>
+      <li><?php echo $tag ?></li>
+    <?php endforeach; ?>
+    </ul>
+
+Add a new `routing.yml` route (and use it instead of the `module/action` in the `input_auto_complete_tag()` call of the `_question.php` partial):
+
+    tag_autocomplete:
+      url:   /tag_autocomplete
+      param: { module: tag, action: autocomplete }
+
+And configure your `view.yml`:
+
+    autocompleteSuccess:
+      has_layout:   off
+      components:   []
+
+Go ahead, you can try it: After registering with an existing account (for instance: fabpot/symfony), display a question and notice the new field in the sidebar. Type in the first letters of a tag already given by this user (for instance: relatives) and watch the div which appears below the field, suggesting the appropriate entry.
+
+![autocomplete](/images/askeet/autocomplete.gif)
+
+### Remote form
+
+When the form is submitted, there is no need to refresh the full page: Only the list of tags and the form to add a tag have to be refreshed. That's the purpose of the `form_remote_tag()` helper, which specifies the action to be called when the form is submitted (`tag/add`), and the zone of the page to be updated by the result of this action (the element identified 'question_tags'). This has already been explained during the [eighth day](8.txt), with the AJAX form to add a question.
+
+Let's create the `executeAdd()` method in the `tag` actions:
+
+    [php]
+    public function executeAdd()
+    {
+      $this->question = QuestionPeer::retrieveByPk($this->getRequestParameter('question_id'));
+      $this->forward404Unless($this->question);
+
+      $userId = $this->getUser()->getSubscriberId();
+      $phrase = $this->getRequestParameter('tag');
+      $this->question->addTagsForUser($phrase, $userId);
+
+      $this->tags = $this->question->getTags();
+    }
+
+And the `addTagsForUser` in the `Question` class:
+
+    [php]
+    public function addTagsForUser($phrase, $userId)
+    {
+      // split phrase into individual tags
+      $tags = Tag::splitPhrase($phrase);
+
+      // add tags
+      foreach ($tags as $tag)
+      {
+        $questionTag = new QuestionTag();
+        $questionTag->setQuestionId($this->getId());
+        $questionTag->setUserId($userId);
+        $questionTag->setTag($tag);
+        $questionTag->save();
+      }
+    }
+
+The `addSuccess.php` template will determine the code that will replace the `update` zone. As usual with AJAX actions, it contains a simple `include_partial()`:
+
+    [php]
+    <?php include_partial('tag/question_tags', array('question' => $question, 'tags' => $tags)) ?> 
+
+Add a new `routing.yml` route:
+
+    tag_add:
+      url:   /tag_add
+      param: { module: tag, action: add }
+
+And configure your `view.yml`:
+
+    addSuccess:
+      has_layout:    off
+      components:    []
+
+### Test it
+
+Try it on: Login to the site, display a question detail, enter a new tag and submit. The whole list updates, and the new tag inserts were it should in the alphabetical order.
+
+Display the tag bubble
+----------------------
+
+Folksonomy allows to rate a tag with a popularity. But the amount of tags make a list of tags difficult to read. The most satisfying solution, visually speaking, is to increase the size of a tag word according to its popularity, so that the most popular tags - the ones that are given most by users - appear immediately. Check the [del.icio.us popular tags page][3] to understand what a tag bubble is. 
+
+80% of the visits to a website concern less than 20% of its content, that's a rule that many website verify every day, and askeet will probably be no different. So if askeet proposes a list of tags, it will have to be arranged by popularity as well, to limit the perturbation of the most unpopular tags ('grandma', 'chocolate') and to increase the visibility of the most popular ones ('php', 'real life', 'useful').
+
+### Extend the `QuestionTagPeer` class
+
+The provider of the list of popular tags cannot be another class than `QuestionTagPeer`. Extend it with a new method, in which we will experiment an alternative way of writing SQL queries:
+
+    [php]
+    public static function getPopularTags($max = 5)
+    {
+      $tags = array();
+  
+      $con = Propel::getConnection();
+      $query = '
+        SELECT '.QuestionTagPeer::NORMALIZED_TAG.' AS tag,
+        COUNT('.QuestionTagPeer::NORMALIZED_TAG.') AS count
+        FROM '.QuestionTagPeer::TABLE_NAME.'
+        GROUP BY '.QuestionTagPeer::NORMALIZED_TAG.'
+        ORDER BY count DESC';
+        
+      $stmt = $con->prepareStatement($query);
+      $stmt->setLimit($max);
+      $rs = $stmt->executeQuery();
+      $max_popularity = 0;
+      while ($rs->next())
+      {
+        if (!$max_popularity)
+        {
+          $max_popularity = $rs->getInt('count');
+        }
+  
+        $tags[$rs->getString('tag')] = floor(($rs->getInt('count') / $max_popularity * 3) + 1);
+      }
+  
+      ksort($tags);
+  
+      return $tags;
+    }
+
+We limit the number of popularity degrees to 4, because otherwise the tag cloud would become unreadable. The result of the method is an associative array of tag names and popularity. We are ready to display it.
+
+### Display a tag bubble 
+
+Create a simple `popular` action in the `tag` module:
+
+    [php]
+    public function executePopular()
+    {
+      $this->tags = QuestionTagPeer::getPopularTags(sfConfig::get('app_tag_cloud_max'));
+    }
+
+Nearly as simple as the action is the `popularSuccess.php` template:
+
+    [php]
+    <h1>popular tags</h1>
+    
+    <ul id="tag_cloud">
+      <?php foreach($tags as $tag => $count): ?>
+      <li class="tag_popularity_<?php echo $count ?>"><?php echo link_to($tag, '@tag?tag='.$tag, 'rel=tag') ?></li>
+      <?php endforeach; ?>
+    </ul>
+
+Don't forget to add a routing rule for this new action in the `routing.yml` configuration file:
+
+    popular_tags:
+      url:   /popular_tags
+      param: { module: tag, action: popular }
+
+And the `app_tag_cloud_max` parameter in the application `app.yml`:
+
+    all:
+      tag:
+        cloud_max:   40
+
+Everything is ready: display the tag cloud by requesting
+
+    http://askeet/popular_tags
+
+### Style the tag list items
+
+But where is the cloud? All that the action returns is a list of tags, in alphabetical order. The real shaping is done by a stylesheet, as recommended by web standards. Append the following declarations to the `main.css` stylesheet (located in `askeet/web/css`).
+
+    [css]
+    ul#tag_cloud
+    {
+      list-style: none;
+    }
+    
+    ul#tag_cloud li
+    {
+      list-style: none;
+      display: inline;
+    }
+    
+    ul#tag_cloud li.tag_popularity_1
+    {
+      font-size: 60%;
+    }
+    
+    ul#tag_cloud li.tag_popularity_2
+    {
+      font-size: 100%;
+    }
+    
+    ul#tag_cloud li.tag_popularity_3
+    {
+      font-size: 130%;
+    }
+    
+    ul#tag_cloud li.tag_popularity_4
+    {
+      font-size: 160%;
+    }
+    
+Refresh the popular tags page, and voila!
+
+![tag cloud](/images/askeet/tag_cloud.gif)
+
+See you Tomorrow
+----------------
+
+Adding taxonomy to your site is not a big deal with symfony. Complex requests, autocomplete forms and local refresh of a page after a form submission need only a few lines of code.
+
+But the facility to develop applications must not let you forget the good principles of development, and you should always test all the changes you make. The best tool to allow you to develop fast and to refactor often are the [unit tests][4], the latest great advance in computer programming, and we will be dealing with them tomorrow.
+
+Until then, you can post your suggestions for the 21st day to the [askeet mailing-list](mailto:askeet-subscribe@symfony-project.com). If you want to download the entire code of the application so far, head to the [askeet SVN repository](http://svn.askeet.com/tags/release_day_14/), and the `/tags/release_day_14` tag.
+
+[1]: http://en.wikipedia.org/wiki/Folksonomy       "Folksonomy definition at Wikipedia"
+[2]: http://www.google.com/webhp?complete=1&hl=en  "Google suggest"
+[3]: http://del.icio.us/tag/                       "de.icio.us Popular tags"
+[4]: http://en.wikipedia.org/wiki/Unit_test        "Unit test definition at Wikipedia"

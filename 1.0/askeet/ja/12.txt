@@ -1,0 +1,266 @@
+12日目: Eメール
+==============
+
+復習
+----
+
+昨日askeetアプリケーションは、RSSフィードで他のメディアにコンテンツを配信するよう拡張しました。Webページだけがsymfonyではありません。そして今日のチュートリアルでそのことが実証されます。MVC実装を利用してEメールを送信してみようと思います。
+
+パスワードのリカバリ
+--------------------
+
+ログインフォーム(すべてのページにあるAJAXフォームと上側にあるメニューによってアクセスされる古典的なメニュー)はニックネームとパスワードを要求します。ユーザーが忘れてしまうのはよくあることです。この場合、再び接続できるようにするメカニズムを提供しなければなりません。
+
+クリアにパスワードが保存されていないので、パスワードをリセットして、ランダムなパスワードを生成し、Eメールでユーザーに送らざるを得ません。現在、ユーザーは自分のパスワードを修正できないので、ランダムなパスワードは覚えるのが難しいです。しかし、後でこの問題に対処します。
+
+### パスワードリクエストフォーム
+
+`user`モジュールにおいて、Eメールを要求するフォームを表示する新しいアクションを作ります。`askeet/apps/frontend/modules/user/actions/actions.class.php`に次のコードを追加します:
+
+    [php]
+    public function executePasswordRequest()
+    {
+    }
+    
+`modules/user/templates/`で、次の`passwordRequestSuccess.php`を作ります:
+
+    [php]
+    <h2>Receive your login details by email</h2>
+    <p>Did you forget your password? Enter your email to receive your login details:</p>
+    <?php echo form_tag('@user_require_password') ?>
+      <?php echo form_error('email') ?>
+      <label for="email">email:</label>
+      <?php echo input_tag('email', $sf_params->get('email'), 'style=width:150px') ?><br />
+      <?php echo submit_tag('Send') ?>
+    </form>
+
+このフォームはログインフォームからアクセスできるようにする必要があるので、それぞれを追加します(`layout.php`と`loginSuccess.php`):
+
+    [php]
+    <?php echo link_to('Forgot your password?', '@user_require_password') ?>
+
+アプリケーションの`routing.yml`にパスワードのリクエストルールを追加します:
+
+    user_require_password:
+      url:   /password_request
+      param: { module: user, action: passwordRequest }
+
+### フォームバリデーション
+
+最初に、フォーム投稿に対するバリデーションルールを設定します。`modules/user/validate/`ディレクトリで`passwordRequest.yml`ファイルを作ります:
+
+    methods:
+      post:            [email]
+    
+    names:
+      email:
+        required:      Yes
+        required_msg:  You must provide an email
+        validators:    emailValidator
+
+    emailValidator:
+        class:         sfEmailValidator
+        param:
+          email_error: 'You didn''t enter a valid email address (for example: name@domain.com). Please try again.'
+
+次に、エラーが検出されたときにエラーを再表示するように`passwordRequest`フォームに`askeet/apps/frontend/modules/user/actions/actions.class.php`を追加します:
+
+    [php]
+    public function handleErrorPasswordRequest()
+    {
+      return sfView::SUCCESS;
+    }
+
+### リクエストに対処する
+
+[6日目](6.txt)に説明したように、フォーム投稿を処理するのに同じアクションを使うので、このアクションを修正します:
+
+    [php]
+    public function executePasswordRequest()
+    {
+      if ($this->getRequest()->getMethod() != sfRequest::POST)
+      {
+        // フォームを表示する
+        return sfView::SUCCESS;
+      }
+
+      // フォーム投稿を取り扱う
+      $c = new Criteria();
+      $c->add(UserPeer::EMAIL, $this->getRequestParameter('email'));
+      $user = UserPeer::doSelectOne($c);
+
+      // Eメールが存在するか？
+      if ($user)
+      {
+        // 新しいランダムパスワードを設定する
+        $password = substr(md5(rand(100000, 999999)), 0, 6);
+        $user->setPassword($password);
+
+        $this->getRequest()->setAttribute('password', $password);
+        $this->getRequest()->setAttribute('nickname', $user->getNickname());
+
+        $raw_email = $this->sendEmail('mail', 'sendPassword');
+        $this->logMessage($raw_email, 'debug');
+
+        // 新しいパスワードを保存する
+        $user->save();
+
+        return 'MailSent';
+      }
+      else
+      {
+        $this->getRequest()->setError('email', 'There is no askeet user with this email address. Please try again');
+
+        return sfView::SUCCESS;
+      }
+    }
+
+ユーザーが存在する場合、アクションはユーザーに与えるランダムパスワードを決定します。他のアクション(`mail/sendPassword`)にリクエストを渡し、結局`$raw_email`変数を取得します。`sfAction`クラスの`->sendEmail`メソッドは他のアクションを実行した後で戻る特殊な`->forward()`です(現在のアクションの実行を停止しません)。加えて、ログファイルに書き込むことができる生のEメールを返します(symfony bookの[デバッグの章](http://www.symfony-project.org/book/1_0/16-Application-Management-Tools)にロギングに関する多くの方法があります)
+
+Eメールの送信が成功した場合、アクションは特別なテンプレートがデフォルトの`passwordRequestSuccess.php`に使用されていなければならないかを指定します。`return 'mailsent ';`は`passwordRequestMailSent.php`テンプレートを立ち上げます。
+
+>**Note**: 次の[6日目](6.txt)の例に従ったので、Eメールアドレスの存在のバリデーションはカスタムバリデータで行われました。'There Is More Than One Way To Do It'(やり方はひとつじゃない)の通り、`->setError()`メソッドを使えばデータベースへの二重リクエストと長いバリデーションファイルの作成が回避されます。
+
+確認ページのために新しい`passwordRequestMailSent.php`テンプレートを作成します:
+
+    [php]
+    <h2>Confirmation - login information sent</h2>
+    
+    <p>Your login information was sent to</p>
+    <p><?php echo $sf_params->get('email') ?></p>
+    <p>You should receive it shortly, so you can proceed to 
+    the <?php echo link_to('login page', '@login') ?>.</p>
+
+Eメールを送信する
+----------------
+
+ではユーザーが正しいEメールアドレスを入力すると、`mail/sendPassword`アクションが呼び出されます。今これを作成する必要があります。
+    
+### Eメールを送信するアクション
+
+新しい`mail`モジュールを作ります:
+
+    $ symfony init-module frontend mail
+
+このモジュールに`sendPassword`アクションを追加します:
+
+    [php]
+    public function executeSendPassword()
+    {
+      $mail = new sfMail();
+      $mail->addAddress($this->getRequestParameter('email'));
+      $mail->setFrom('Askeet <askeet@symfony-project.com>');
+      $mail->setSubject('Askeet password recovery');
+  
+      $mail->setPriority(1);
+    
+      $mail->addEmbeddedImage(sfConfig::get('sf_web_dir').'/images/askeet_logo.gif', 'CID1', 'Askeet Logo', 'base64', 'image/gif');
+  
+      $this->mail = $mail;
+
+      $this->nickname = $this->getRequest()->getAttribute('nickname');
+      $this->password = $this->getRequest()->getAttribute('password');
+    }
+
+アクションはメール送信機能のインターフェイスである`sfMail`オブジェクトを使用します。すべてのEメールヘッダーはアクションで定義されますが、bodyはシンプルなテキストよりも複雑で、そのためにテンプレートを使うことを選びます - そうでなければ`->setBody()`メソッドが使えます。
+
+埋め込み画像は`->addEmbeddedImage()`メソッドの呼び出しによって追加され、引数として、サーバー上への画像パス、テンプレートへの挿入のためのユニークID、代替テキストとフォーマットの説明を渡さなければなりません。
+
+>**Note**: `sfMail`オブジェクトもメールに添付物を追加する良い手段です:
+>
+>     [php]
+>     // ドキュメントの添付
+>     $mail->addAttachment(sfConfig::get('sf_data_dir').'/MyDocument.doc');
+>     // string attachment
+>     $mail->addStringAttachment('this is some cool text to embed', 'file.txt');
+>
+
+symfony bookの[メールの章](http://www.symfony-project.org/cookbook/1_0/ja/email)で`sfMail`オブジェクトの詳細内容を見ることができます。
+
+### メールテンプレート
+
+いったんアクションが実行されたら、メールビューはEメールボディのためのデフォルトのHTMLテンプレートである`sendPasswordSuccess.php`で定義された変数を処理します:
+
+    [php]
+    <p>Dear askeet user,</p>
+    
+    <p>A request for <?php echo $mail->getSubject() ?> was sent to this address.</p>
+    
+    <p>For safety reasons, the askeet website does not store passwords in clear.
+    When you forget your password, askeet creates a new one that can be used in place.</p>
+    
+    <p>You can now connect to your askeet profile with:</p>
+    
+    <p>
+    nickname: <strong><?php echo $nickname ?></strong><br/>
+    password: <strong><?php echo $password ?></strong>
+    </p>
+    
+    <p>To get connected, go to the <?php echo link_to('login page', '@login', array('absolute' => true)) ?>
+    and enter these codes.</p>
+    
+    <p>We hope to see you soon on <img src="cid:CID1" /></p>
+
+    <p>The askeet email robot</p>    
+
+他のテンプレートのように、標準ヘルパー(ここで使われている`link_to()`ヘルパー)はEメールテンプレートでシームレスに動作します。Eメールの見た目を良くするプレゼンテーション用のHTMLを挿入することもできます。
+
+イメージの埋め込みは`sid:`を渡すことと同じぐらいシンプルです: パラメータはアクションでロードされた画像のユニークIDに一致します。
+
+### mailテンプレートを入れ替える
+
+`sendPasswordSuccess.altbody.php`が見つかると、ビューはEメールの代替(テキスト)ボディを追加するためにこれを使います。これによってHTMLを受け入れないEメールクライアントのためにテキストだけのテンプレートを定義できるようになります:
+
+    [php]
+    親愛なるaskeetユーザーの皆さんへ、
+    
+    <?php echo $mail->getSubject() ?>のためのリクエストはこのアドレスに送信されました。
+    
+    安全のために、askeetWebサイトはパスワードを平文で保存しません。
+    パスワードを忘れたとき、askeetでは正しい手順で新しいパスワードを作ります。
+    
+    次のアカウントで新しいaskeetプロファイルに接続できます:
+    
+    ニックネーム: <?php echo $nickname ?>
+    パスワード: <?php echo $password ?>
+    
+    接続するには、ログインページ(http://www.askeet.com/login)に移動してこれらのコードを入力してください。
+
+    
+    askeetでまたお会いできることを望んでおります!
+    
+    askeetEメールロボット
+
+### 構成
+
+このアクションのために定義されたビューである`sfMail`は追加設定を受けとります。`mailer.yml`設定ファイルを作ります:
+
+    dev:
+      deliver:    off
+    
+    all:
+      mailer:     sendmail
+
+これはメーラープログラムにメールを送信することを要求し、開発環境でメールを送信することを無効化します - テストデータでのEメールはどのみち偽装です。
+
+ユーザーがこの`mailing`アクションに直接アクセスできないようにします。そのためには、モジュールの`config/`ディレクトリで`module.yml`を作成します:
+
+    all:
+      is_internal: on    
+
+### テストする
+
+あなたの個人メールアドレスを含むテストデータでカスタムユーザーを作成して新しいパスワードリカバリーシステムをテストするために`import_data.php`バッチを起動させます。
+
+キャッシュをクリアして、本番環境でパスワードリカバリーページに移動します。Eメールアドレスを入力してフォームに投稿すると、すぐにEメールを受信します。
+
+![Eメール](XXX.gif)
+
+それではまた明日
+----------------
+
+symfonyのEメールシステムはシンプルかつパワフルです。シンプルなEメールは可能な限り簡単です。複雑なEメールは複雑なHTMLのページを書くよりも難しくなく、MVCアーキテクチャをフルに活用します。そこで次のEメールによるキャンペーンのために、商用のEメールソリューションの代わりに、symfonyを使うとよいかもしれません...
+
+ともかく、明日はタグの日です。askeetの質問はタグになり、タグは検索可能になり、最高にすばらしいタグクラウドを提供します。
+
+いつもの通り、今日のコードは`/tags/relase_day_12`とタグづけされた[askeetSVNリポジトリ](http://svn.askeet.com/tags/release_tag_12/)で利用可能です。21日目に何を話せばよいのか、まだ決まっていないことがあるので、[askeetのメーリングリスト](mailto:askeet-subscribe@symfony-project.com)か[askeetのフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)に投稿をお願いします。

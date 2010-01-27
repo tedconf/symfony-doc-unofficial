@@ -1,0 +1,454 @@
+Hari Kesepuluh - Symfony advent calendar
+========================================
+Mengubah data dengan form Ajax
+=========================
+
+Diterjemahkan Oleh : [Wildan Maulana](<mailto:wildan-maulana@fisika.ui.ac.id>)
+
+
+Sebelumnya di symfony 
+---------------------
+
+Setelah review tentang teknik-teknik yang sudah kita ketahui kemarin, 
+mungkin beberapa diantara kalian ada yang haus akan adanya interaksi. 
+Menampilkan pertanyaan  dengan menggunakan rich format, list, bahkan 
+paginasi, tidak cukup untuk membuat sebuah aplikasi hidup. 
+Dan inti dari konsep askeet adalah memperbolehkan semua user terdaftar
+untuk menanyakan pertanyaan baru, dan semua user boleh menjawab pertanyaan
+yang sudah ada. 
+Bukankah sekarang sudah waktunya kita mengimplementasikannya ? 
+
+Menambahkan pertanyaan baru
+------------------
+
+Sidebar yang dibangun pada  [hari ketujuh](7.txt) telah mengandung sebuah 
+link untuk menambahkan pertanyaan baru. Ia dilink ke action `question_add`, 
+yang sudah menunggu untuk dikembangkan. 
+
+
+### Membatasi akses untuk user yang teregistrasi 
+
+Pertama-tama, hanya user yang teregistrasi yang dapat menambahkan 
+pertanyaan baru. 
+Untuk membatasi akses ke action `question/add`, 
+buatlah file `security.yml` di  direktori `askeet/apps/frontend/modules/question/config/`.
+
+    add:
+      is_secure:   on
+      credentials: subscriber
+    
+    all:
+      is_secure:   off
+
+Ketika ada user yang belum terdaftar mencoba mengakses action yang 
+dibatasi, maka symfony akan meredirect dia ke action login. 
+Action ini harus didefinisikan pada `settings.yml` application, 
+dibawah key `login_module` dan  `login_action` :   
+
+    all:
+      .actions:
+        login_module:           user
+        login_action:           login
+
+Informasi lebih lanjut mengenai pembatasan pengaksesan action dapat 
+ditemukan pada [Bab Security](http://www.symfony-project.com/book/1_0/06-Inside-the-Controller-Layer)
+dari buku symfony.
+
+### Template  `addSuccess.php` 
+
+Action `quextion/ass` akan digunakan baik untuk menampilkan form 
+dan menangani form. Ini artinya, untuk menampilkan form, Anda hanya butuh 
+action kosong. Selain itu, form akan ditampilkan kembali ketika terjadi 
+error pada proses validasi data. 
+
+    [php]
+    public function executeAdd()
+    {
+    }
+
+    public function handleErrorAdd()
+    {
+      return sfView::SUCCESS;
+    }
+
+Kedua action akan menampilkan template `addSuccess.php`
+
+    [php]
+    <?php use_helper('Validation') ?>
+
+    <?php echo form_tag('@add_question') ?>
+    
+      <fieldset>
+    
+      <div class="form-row">
+        <?php echo form_error('title') ?>
+        <label for="title">Question title:</label>
+        <?php echo input_tag('title', $sf_params->get('title')) ?>
+      </div>
+    
+      <div class="form-row">
+        <?php echo form_error('body') ?>
+        <label for="label">Your question in details:</label>
+        <?php echo textarea_tag('body', $sf_params->get('body')) ?>
+      </div>
+    
+      </fieldset>
+    
+      <div class="submit-row">
+        <?php echo submit_tag('ask it') ?>
+      </div>
+    </form>
+
+Baik control `title` dan `body` mempunyai nilai default 
+(argumen kedua dari form helper) didefinisikam dari parameter request
+dengan nama yang sama. Kenapa demikian ? Karena kita akan menambahkan 
+sebuah file validasi pada form. Jika proses validasi gagal, 
+form akan ditampilkan kembali, dan entry sebelumnya dari user 
+akan tetap ada pada request parameter. 
+Nilai-nilai  ini dapat digunakan sebagai nilai default untuk elemen form. 
+
+![Errro pada form dengan entri sebelumnya tetap ditampilkan](/images/askeet/add_question_error.gif)
+
+Entry sebelumnya tidak akan hilang jika proses validasi form gagal.
+Ini adalah hal minimum yang dapat Anda harapkan untuk aplikasi 
+yang user-friendly. 
+
+Tetapi, untuk memenuhi hal tersebut, Anda memerlukan sebuah file validasi
+form.
+
+### Validasi Form 
+
+Buatlah sebuah direktori `validate/` pada module `question`, dan tambahkan
+didalamnya file validasi `add.yml`
+
+    methods:
+      post:            [title, body]
+    
+    names:
+      title:
+        required:      Yes
+        required_msg:  You must give a title to your question
+    
+      body:
+        required:      Yes
+        required_msg:  You must provide a brief context for your question
+        validators:    bodyValidator
+    
+    bodyValidator:
+        class:         sfStringValidator
+        param:
+          min:         10
+          min_error:   Please, give some more details
+
+Jika Anda memerlukan informasi tentang validasi form, kembali lagi ke 
+[hari ke enam](6.txt) atau baca [bab validasi form
+](http://www.symfony-project.com/book/1_0/10-Forms) pada
+buku symfony.
+
+## Menangani pengiriman data pada form
+
+Sekarang edit lagi action  `question/add` untuk menangani pengiriman data 
+pada form : 
+
+    [php]
+    public function executeAdd()
+    {
+      if ($this->getRequest()->getMethod() == sfRequest::POST)
+      {
+        // create question
+        $user = $this->getUser()->getSubscriber();
+    
+        $question = new Question();
+        $question->setTitle($this->getRequestParameter('title'));
+        $question->setBody($this->getRequestParameter('body'));
+        $question->setUser($user);
+        $question->save();
+    
+        $user->isInterestedIn($question);
+    
+        return $this->redirect('@question?stripped_title='.$question->getStrippedTitle());
+      }
+    }
+
+
+Perlu diingat method `->setTitle()` juga akan mengeset `stripped_title`
+dan method `->setBody()` akan mengeset field `html_body`, karena kita 
+meng-override method-method ini pada model class `Question.php`. 
+User yang membuat pertanyaan akan dideklarasikan tertarik pada 
+pertanyaan itu sendiri. Hal ini untuk menghindari pertanyaan dengan 
+jumlah yang tertarik 0, kasian kan ? 
+
+Akhir dari action mengandung `->redirect()` ke detail dari pertanyaan 
+yang dibuat. Keuntungan utama daripada `->forward()` adalah jika 
+user merefresh halaman detail pertanyaan setelah diisi, 
+form tidak akan disubmit ulang. Selain itu, tombol 'back'
+bekerja seperti yang diharapkan.
+Aturan umumnya : Anda jangan pernah mengakhiri action penanganan 
+pensubmitan form dengan `->forward()`.
+
+Hal terbaiknya adalah, action masih dapat bekerja untuk menampilkan form, 
+yaitu jika requestnya tidak dalam mode POST.
+Ia bekerja sama persis dengan action kosong yang ditulis sebelumnya, 
+yaotu mengembalikan `sfView::SUCCESS` yang akan memanggil template 
+`addSuccess.php`.
+
+Jangan lupa untuk membuat method `isInterestedIn()` pada model `User` :
+
+    public function isInterestedIn($question)
+    {
+      $interest = new Interest();
+      $interest->setQuestion($question);
+      $interest->setUserId($this->getId());
+      $interest->save();
+    }
+
+Silahkan, silahkan tes aplikasi Anda sekarang. Jika Anda telah terdaftar 
+Anda akan dapat menambahkan  pertanyaan baru.
+
+Menambahkan pertanyaan baru 
+---------------------------
+
+Penambagan jawaban akan diimplementasikan sedikit berbeda. 
+Tidak perlu lagi meredirect user ke halaman baru yang mengandung form,
+kemudian ke halaman lain lagi dimana pertanyaan akan ditampilkan. 
+Jadi, jawaban  baru akan memanfaatkan AJAX, dan jawaban baru 
+akan muncul segera mungkin pada halaman detail pertanyaan. 
+
+### Menghilangkan paginasi jawaban 
+
+Ini artinya Kita harus menghilangkan paginasi jawaban 
+yang sudah ditambahkan pada [hari kelima](5.txt), untuk menampilkan
+seluruh list  jawaban pada halaman detail pertanyaan. 
+Ini bukan masalah yang besar, Kita tinggal mengganti `answer_pager`
+yang lama dengan array `answers` pada action `question/show` :
+
+    [php]
+    public function executeShow()
+    {
+      $this->question = QuestionPeer::getQuestionFromTitle($this->getRequestParameter('stripped_title'));
+      $this->forward404Unless($this->question);
+  
+      $c = new Criteria();
+      $c->add(AnswerPeer::QUESTION_ID, $this->question->getId());
+      $this->answers = AnswerPeer::doSelect($c);
+    }
+
+Pada template `showSuccess.php` dari module `question`, 
+ganti panggilan ke partial `answer/list` dan paginasi dengan : 
+
+    [php]
+    <?php include_partial('answer/list', array('question' => $question, 'answers' => $answers)) ?>
+
+Siklus aplikasi yang dikembangkan dengan metode agile biasanya mengandung
+proses pengembalian/pembalikan seperti ini. Berita baiknya adalah, 
+ia mudah untuk dilakukan jika menggunakan  symfony.
+
+### Menambahkan form AJAX
+
+Ubahlah fragment `modules/answer/templates/_list.php` dengan : 
+
+    [php]
+    <?php use_helper('Global') ?>
+    
+    <div id="answers">
+    <?php foreach ($answers as $answer): ?>
+      <div class="answer">
+      <?php include_partial('answer/answer', array('answer' => $answer)) ?>
+      </div>
+    <?php endforeach ?>
+    
+    <div class="answer" id="add_answer">
+      <?php echo form_remote_tag(array(
+        'url'      => '@add_answer',
+        'update'   => array('success' => 'add_answer'),
+        'loading'  => "Element.show('indicator')",
+        'complete' => "Element.hide('indicator');".visual_effect('highlight', 'add_answer'),
+      )) ?>
+    
+        <div class="form-row">
+          <?php if ($sf_user->isAuthenticated()): ?>
+            <?php echo $sf_user->getNickname() ?>
+          <?php else: ?>
+            <?php echo 'Anonymous Coward' ?>
+            <?php echo link_to_login('login') ?>
+          <?php endif ?>
+        </div>
+    
+        <div class="form-row">
+          <label for="label">Your answer:</label>
+          <?php echo textarea_tag('body', $sf_params->get('body')) ?>
+        </div>
+    
+        <div class="submit-row">
+          <?php echo input_hidden_tag('question_id', $question->getId()) ?>
+          <?php echo submit_tag('answer it') ?>
+        </div>
+      </form>
+    </div>
+    
+    </div>
+
+Jika Anda lihat pada statement `foreach`, Anda akan melihat kita melakukan
+beberapa refactoring untuk  mengambil code yang menampilkan answer 
+keluar dari fragment ini. Buatlah fragment 
+`askeet/apps/frontend/modules/answer/templates/_answer.php` :
+
+    [php]
+    <?php use_helper('Date') ?>
+    
+    <div class="vote_block" id="vote_<?php echo $answer->getId() ?>">
+      <?php echo include_partial('answer/vote_user', array('answer' => $answer)) ?>
+    </div>
+    posted by <?php echo $answer->getUser() ?>
+    on <?php echo format_date($answer->getCreatedAt(), 'p') ?>
+    <div>
+      <?php echo $answer->getHtmlBody() ?>
+    </div>
+
+Meskipun ini masih melibatkan fragment, metode yang  dipilih disini
+untuk menangani request AJAX sedikit berbeda dengan yang diterangkan 
+pada [hari kedelapan](8.txt). Ini karena, kami ingin hasil dari pensubmitan
+formlah yang sebenarnya akan menggantikan form.
+Oleh kerana itulah mengapa parameter `update` dari `form_remote_tag()`
+menunjuk ke container form itu sendiri, daripada ke zona luar.
+Fragment `_answer.php` akan diikutsertakan dengan action penambahan 
+jawaban, jadi, hasil akhirnya akan menjadi seperti berikut : 
+
+    [php]
+    ...
+    <div id="answers">
+      <!-- Answer 1 -->
+      <!-- Answer 2 -->
+      <!-- Answer 3 -->
+      ...
+    </div>
+    
+    <div class="answer" id="add_answer">
+      <!-- The new answer -->
+    </div>
+
+Anda mungkin menduga bagaimana javascript helper  `form_remote_tag()` 
+bekerja : Ia menangani proses pensubmitan form ke action yang ditentukan pada 
+argumen `url` melalui object XMLHttpRequest. Hasil dati action 
+akan menggantikan elemen yang ditentukan pada argumen `update`.
+Dan, seperti helper `link_to_remote()` pada [hari kedelapan](8.txt), 
+ia mengubah visibilitas dari indikator adanya aktivitas dan tidak adanya
+sesuai dengan request dari proses submit, dan menandai bagian yang terupdate 
+pada akhir transaction AJAX.
+
+Mari Kita tambahkan beberapa kata tentang user yang berhubungan dengan
+pertanyaan yang baru. 
+Sebelumnya Kita sudah sebutkan kalau jawaban harus di link ke user yang
+menanyakan pertanyaan ini.  Jika user telah terautentifikasi, maka ia 
+If the user is authenticated, then his/her `user_id` is used for the new answer. 
+In the other case, the `anonymous` user is used in place,
+unless the user chooses to login then. The `link_to_login()` helper, located in the `GlobalHelper.php` helper set, toggles the visibility of the hidden login form in the layout. Browse the askeet source to see its code. 
+
+### Action `answer/add` 
+
+Rule `@add_answer`  yang diberikan sebagai argument `url`  dari form AJAX 
+mengarah ke action `answer/add` :
+
+    add_answer:
+      url:   /add_anwser
+      param: { module: answer, action: add }
+
+(Jaga-jaga kalau Anda bingung, konfigurasi ini akan ditambahkan pada file
+konfigurasi `routing.yml`)
+
+Ini adalah isi dari action tersebut :
+
+    [php]
+    public function executeAdd()
+    {
+      if ($this->getRequest()->getMethod() == sfRequest::POST)
+      {
+        if (!$this->getRequestParameter('body'))
+        {
+          return sfView::NONE;
+        }
+
+        $question = QuestionPeer::retrieveByPk($this->getRequestParameter('question_id'));
+        $this->forward404Unless($question);
+    
+        // user or anonymous coward
+        $user = $this->getUser()->isAuthenticated() ? $this->getUser()->getSubscriber() : UserPeer::getUserFromNickname('anonymous');
+    
+        // create answer
+        $this->answer = new Answer();
+        $this->answer->setQuestion($question);
+        $this->answer->setBody($this->getRequestParameter('body'));
+        $this->answer->setUser($user);
+        $this->answer->save();
+    
+        return sfView::SUCCESS;
+      }
+    
+      $this->forward404();
+    }
+
+Partama-tama, jika action ini tidak dipanggil dengan mode POST, 
+ini berarti seseorang mengetikkan URI nya langsung pada address bar browser.
+Action ini tidak didesign untuk tipe request (hacker)  seperti itu, 
+jadi, ia akan memberikan error 404.
+
+
+Untuk menentukan user yang memasukkan pertanyaan sebagai pengarangnya, 
+action ini mengecek apakah user sekarang sudah terautentifikasi. 
+Jika buka, maka action akan menggunakan user 'Anoymous Coward', 
+terimakasih pada method baru `::getUserFromNickname()` dari class `UserPeer`.
+Cek lah codenya jika Anda ragu apa yang dilakukan oleh method ini sebenarnya. 
+
+Setelah itu, segalanya sudah siap untuk membuat pertanyaan baru dan 
+melewatkan requestnya ke template `addSuccess.php`.
+Seperti yang diharapkan, template ini hanya mengandung 
+sebuah baris, yaitu `include_partial` :
+
+    [php]
+    <?php include_partial('answer', array('answer' => $answer)) ?>
+
+Kita juga perlu mendisable layout untuk action ini pada file 
+`frontend/modules/answer/config/view.yml`:
+
+    addSuccess:
+      has_layout: off
+ 
+Terakhir, jika user mensubmit jawaban kosong, kita tidak akan mensavenya. 
+jadi bagian penanganan data akan dibypass, dan action tidak akan
+mengembalikan apa-apa - ini akan menghapus form pada halaman. 
+Bisa saja kita melakukan error handling pada form AJAX ini, tapi 
+ini hanya akan menempatkan form itu sendiri pada fragment yang lain. 
+Untuk sekarang, ini kurang berguna jika dibandingkan dengan usaha yang
+harus kita lakukan.
+
+ 
+### Teslah aplikasi Anda
+
+Hanya itu ? Ya, form AJAX sudah siap untuk digunakan, bersih dan aman. 
+Teslah dengan menampilkan daftar jawaban sebuah pertanyaan, 
+dan dengan menambahkan jawaban pada pertanyaan itu. Halaman tidak perlu
+direfersh dan jawaban baru akan nampak dibagian bawah daftar ssebelumnya. 
+Bukankah sederhana ? 
+
+Sampai Jumpa Besok
+------------------
+
+Form klasik dan form AJAX sama-sama musah untuk diemplementasikan pada
+aplikasi symfony. Dan dengan dua tambahan ini, aplikasi askeet memiliki semua 
+fitur inti yang diperlukan untuk membuatnya bekerja.
+
+Satu lagi: Kami tidak menulis secara detail bagaimana meregisrasi user baru. 
+Fitur ini telah ditambahkan ke versi askeet yang sekarang [askeet SVN repository](http://svn.askeet.com/tags/release_day_10/) 
+karena cara membuatnya tidak jauh berbeda dengan apa yang telah kita lakukan
+hari ini. 
+
+Jadi 10 hari lewat waktu yang sudah kita habiskan untuk membuat versi (sangat)
+beta FAQ yang dilengkapi dengan AJAX FAQ dengan symfony. Tapi, kita ingin 
+askeet dapat melakukan lebih dari itu. Untuk membantu membangun komunitas 
+askeet, kita perlu situs yang meynyediakan syndicatin feed, sehingga 
+seseorang yang bertanya dapat mendaftar untuk menerima jawaban 
+pada feed aggregator. Ini lah yang akan menjadi bahan tutorial untuk besok.
+
+Beberapa dari kalian sudah menyarankan beberapa use untuk hari ke 21.
+Lihat daftar saran atau tambahkan saran-saran mereka dengan mengunjungi 
+[forum askeet] [askeet forum](http://www.symfony-project.com/forum/index.php/f/8/).

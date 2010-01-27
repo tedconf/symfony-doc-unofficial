@@ -1,0 +1,139 @@
+ファイルをアップロードする方法
+==============================
+
+概要
+----
+
+バックエンドとコラボレーション用のアプリケーションにおいてユーザーがメディアもしくはデータファイルをアップロードできることが必須であることが良くあります。数行のコードだけで、symfonyはファイルのリネーム、アップロードディレクトリへの移動などを必要とするすべてのことに対処します。adminジェネレータのユーザーは実装をシンプルな設定に減らす新しいヘルパーにアクセスできます。
+
+通常のファイルのアップロード
+----------------------------
+
+ファイルをアップロードするにはテンプレートでファイルとそれを処理するアクションが必要です。テンプレートに対して、`multipart`と宣言されたフォームで`input_file_tag()`ヘルパーを使います:
+
+    [php]
+    <?php echo form_tag('media/upload', 'multipart=true') ?>
+      <?php echo input_file_tag('file') ?>
+      <?php echo submit_tag('Send') ?>
+    </form>
+    
+上記のコードは次のHTMLコードを生成します:
+
+    [php]
+    <form method="post" enctype="multipart/form-data" action="media/upload">
+      <input type="file" name="file" id="file" value="" />
+      <input type="submit" name="commit" value="Send" />
+    </form>
+    
+アクション(この場合`media/upload`)はリクエストからのファイルをアップロードディレクトリに移動させます:
+
+    [php]
+    public function executeUpload()
+    {
+      $fileName = $this->getRequest()->getFileName('file');
+      
+      $this->getRequest()->moveFile('file', sfConfig::get('sf_upload_dir').'/'.$fileName);
+  
+      $this->redirect('media/show?filename='.$fileName);    
+    }
+
+`sf_upload_dir`パラメータはサーバー上の絶対パスを保有し、これはファイルがアップロードされる場所を表します。`myproject`という名前のプロジェクトに対して、通常の絶対パスは`/home/production/myproject/web/upload/`です。`config/config.php`でこのパスを簡単に修正できます:
+
+    [php]
+    sfConfig::add(array(
+      'sf_upload_dir_name'  => $sf_upload_dir_name = 'uploads',
+      'sf_upload_dir'       => sfConfig::get('sf_root_dir').DIRECTORY_SEPARATOR.sfConfig::get('sf_web_dir_name').DIRECTORY_SEPARATOR.$sf_upload_dir_name,      
+    ));    
+
+>**Note**: ファイルをリクエストからアップロードディレクトリに移動させる前に、特殊文字を置き換えファイルシステムの問題を回避するためにファイルの名前をサニタイズすべきです。加えて、リクエストパラメータとして渡す前に`$fileName`をエスケープすべきです。
+
+アップロードされたファイルを表示するには、`sf_upload_dir_name`パラメータを使います。たとえば、アップロードされたメディアが画像である場合、`media/show`テンプレートは次のコードで画像を表示します:
+
+    [php]
+    ...
+    <?php echo image_tag('/'.sfConfig::get('sf_upload_dir_name').'/'.$sf_params->get('filename')) ?>
+
+バリデーション
+--------------
+
+通常のフォーム入力と同じように、ファイルのアップロードは[symfonyバリデータ](http://www.symfony-project.org/book/1_0/10-Forms#Validators)の`sfFileValidator`によってバリデートできます。`names`キーの下でカスタムの`file: true`パラメータをバリデータの宣言に設置することを覚えておくだけです。たとえば、以前のフォーム用の`validate/upload.yml`は次のように記述されます:
+
+    methods:
+      post:               [file]
+      
+    names:
+      file:
+        required:         Yes
+        required_msg:     Please upload a file
+        validators:       myFileValidator
+        file:             true
+        
+    myFileValidator:
+      class:              sfFileValidator
+      param:
+        mime_types:       
+          - 'image/jpeg'
+          - 'image/png'
+          - 'image/x-png'
+          - 'image/pjpeg'        
+        mime_types_error: Only PNG and JPEG images are allowed
+        max_size:         512000
+        max_size_error:   Max size is 512Kb
+
+>**Note**: Internet Explorerとその他のブラウザとの互換性がないので、通常のものと同様にIE固有のmimeタイプを使わなければなりません。
+
+`sfFileValidator`はアップロードされたファイルの種類(mimeタイプの配列を指定可能)とサイズ(最大と最小のサイズを指定可能)をバリデートできます。
+
+サムネイル
+----------
+
+画像をアップロードする場合、アップロードされたそれぞれのファイルのサムネイルを作ると良いでしょう。この場合、[`sfThumbnail`プラグイン](http://www.symfony-project.org/plugins/sfThumbnailPlugin)が便利です。
+
+最初に、symfonyコマンドラインを使用してプラグインをインストールします:
+
+    $ symfony plugin-install http://plugins.symfony-project.com/sfThumbnailPlugin
+    $ symfony cc
+    
+>**Note**: GDライブラリが有効ではない場合、PHPの画像処理関数を有効にするために`php.ini`の関連した行のコメントを解除してWebサーバーを再起動させなければならないことがあります。
+
+プラグインがインストールされると、`sfThumbnail`オブジェクトを通して使うことができます。たとえば、上記の例においてアップロードされた画像に関して同時に最大サイズが150×150pxのサムネイルを保存するには、`media/upload`アクションを次のコードで置き換えます:
+
+    [php]
+    public function executeUpload()
+    {
+      $fileName = $this->getRequest()->getFileName('file');
+      
+      $thumbnail = new sfThumbnail(150, 150);
+      $thumbnail->loadFile($this->getRequest()->getFilePath('file'));
+      $thumbnail->save(sfConfig::get('sf_upload_dir').'/thumbnail/'.$fileName, 'image/png');
+      
+      $this->getRequest()->moveFile('file', sfConfig::get('sf_upload_dir').'/'.$fileName);
+  
+      $this->redirect('media/show?filename='.$fileName);    
+    }
+
+アクションを呼び出す前に`uploads/thumbnail/`ディレクトリを作成することを忘れないでください。
+
+adminジェネレータでファイルをアップロードする
+---------------------------------------------
+
+データモデルがメディア用のフィールドを含む場合、そして管理者機能が[adminジェネレータ](http://www.symfony-project.org/book/1_0/14-Generators#Administration)を利用してビルドされた場合、長い名前の`object_admin_input_file_tag()`ヘルパーが使えます。シンプルな設定をするだけでこのヘルパーがすべてを代行してくれます。
+
+たとえば、`photo`カラムを持つ`User`テーブルがある場合、`edit`ビュー用の`generator.yml`は次のように設定できます:
+
+    edit:
+      title:          User profile
+      fields:
+        photo:
+          name:       User photo
+          help:       max width 200px
+          type:       admin_input_file_tag
+          upload_dir: pictures/users
+          params:     include_link=pictures/users include_remove=true
+      display:        [name, email, photo]
+
+`upload_dir`キーはアップロードディレクトリを設定します(`uploads/`ディレクトリの下)。
+
+`include_link`パラメータを含める場合、リンクはアップロードされたメディアに追加されます(すなわち、メディアがアップロードされる場合)。`include_text`パラメータを指定しない限り、リンクのテキストはデフォルトで'[show file]'です。
+
+`include_remove`パラメータを含める場合、ヘルパーはクリックしたときにメディアの削除を簡単にできるようにするリンクを表示します。

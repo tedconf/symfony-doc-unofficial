@@ -1,0 +1,314 @@
+10日目: Ajaxフォームの変更
+=========================
+
+復習
+----
+
+昨日の既知のテクニックのレビューの後で、インタラクション機能が欲しくてたまらない方がいらしたと思います。リッチでページ番号つきのフォーマットされた質問とリストを表示することはアプリケーションを生かすには不十分です。askeetのコンセプトの中心はどんな登録ユーザーにも質問を行い、どのユーザーも既存の質問に対して回答できるようにすることです。そろそろ取り掛かりましょうか？
+
+新しい質問を追加する
+--------------------
+
+[7日目](7.txt)に構築されたサイドバーにはすでに新しい質問を追加するリンクがあります。開発が待ち望まれている`question/add`アクションにリンクします。
+
+### 登録ユーザーへのアクセスを制限する
+
+最初に、登録ユーザーだけが新しい質問を追加できます。`question/add`アクションへのアクセスを制限するために`askeet/apps/frontend/modules/question/cofig/`ディレクトリで`security.yml`を作成します:
+
+    add:
+      is_secure:   on
+      credentials: subscriber
+    
+    all:
+      is_secure:   off
+
+未登録なユーザーが制限されたアクションにアクセスしようとすると、symfonyはユーザーをログインアクションにリダイレクトします。このアクションは`login_module`と`login_action keys`の下の、アプリケーションの`settings.yml`で定義します:
+
+    all:
+      .actions:
+        login_module:           user
+        login_action:           login
+
+アクション、アクセス、制限に関する情報はsymfony bookの[セキュリティの章](http://www.symfony-project.org/book/1_0/06-Inside-the-Controller-Layer)で読むことができます。
+
+### addSuccess.phpテンプレート
+
+`question/add`アクションはフォーム表示とフォーム処理の両方で使われます。これは現時点で、フォームの表示を意味し、空のアクションだけが必要です。加えて、データバリデーションがエラーになると、フォームが再表示されます:
+
+    [php]
+    public function executeAdd()
+    {
+    }
+
+    public function handleErrorAdd()
+    {
+      return sfView::SUCCESS;
+    }
+
+両方のアクションは`addSuccess.php`テンプレートを出力します:
+
+    [php]
+    <?php use_helper('Validation') ?>
+
+    <?php echo form_tag('@add_question') ?>
+    
+      <fieldset>
+    
+      <div class="form-row">
+        <?php echo form_error('title') ?>
+        <label for="title">Question title:</label>
+        <?php echo input_tag('title', $sf_params->get('title')) ?>
+      </div>
+    
+      <div class="form-row">
+        <?php echo form_error('body') ?>
+        <label for="label">Your question in details:</label>
+        <?php echo textarea_tag('body', $sf_params->get('body')) ?>
+      </div>
+    
+      </fieldset>
+    
+      <div class="submit-row">
+        <?php echo submit_tag('ask it') ?>
+      </div>
+    </form>
+
+`title`と`body`コントロールの両方は同名のリクエストパラメータから定義されたデフォルトの値(フォームヘルパーの2番目の引数)を格納します。なぜでしょうか？私たちはフォームにバリデーションファイルを追加しようとしているからです。バリデーションが失敗した場合、フォームは再表示され、リクエストパラメータにはユーザーの以前のエントリがあります。これらはフォーム要素のデフォルト値として使われます。
+
+![保存された以前のエントリでのエラー](/images/askeet/add_question_error.gif)
+
+以前のエントリは失敗したフォームバリデーションの場合に失われるわけではありません。ユーザーフレンドリなアプリケーションに期待されることではありません。
+
+しかし、アーカイブするには、フォームバリデーションのファイルが必要です。
+
+### フォームのバリデーション
+
+`question`モジュールで`validate/`ディレクトリを作成し、`add.yml`バリデーションファイルを追加します:
+
+    methods:
+      post:            [title, body]
+    
+    names:
+      title:
+        required:      Yes
+        required_msg:  You must give a title to your question
+    
+      body:
+        required:      Yes
+        required_msg:  You must provide a brief context for your question
+        validators:    bodyValidator
+    
+    bodyValidator:
+        class:         sfStringValidator
+        param:
+          min:         10
+          min_error:   Please, give some more details
+
+フォームバリデーションに関する詳しい情報が必要でしたら、[6日目](6.txt)もしくはsymfony bookの[フォームバリデーションの章](http://www.symfony-project.org/book/1_0/10-Forms)をご覧ください。
+
+## フォーム投稿を扱う
+
+フォーム投稿を扱うために`quesiton/add`アクションを再び編集します:
+
+    [php]
+    public function executeAdd()
+    {
+      if ($this->getRequest()->getMethod() == sfRequest::POST)
+      {
+        // 質問を作る
+        $user = $this->getUser()->getSubscriber();
+    
+        $question = new Question();
+        $question->setTitle($this->getRequestParameter('title'));
+        $question->setBody($this->getRequestParameter('body'));
+        $question->setUser($user);
+        $question->save();
+    
+        $user->isInterestedIn($question);
+    
+        return $this->redirect('@question?stripped_title='.$question->getStrippedTitle());
+      }
+    }
+
+`->setTitle()`メソッドは`stripped_title`も設定し、`->setBody()`メソッドは`html_body`フィールドも設定することを覚えておいてください。これらのメソッドが`Question.php`モデルクラスでオーバーライドされるからです。質問に関心を寄せている人が誰もいないというとても悲しい状況が表示されるのを防ぐためです。
+
+アクションの最後は作成された質問の詳細内容への`->redirect()`を含みます。`->forward()`を上回るメリットは後でユーザーが質問の詳細ページをリフレッシュしたとき、フォームが再投稿されないことです。加えて、「back」ボタンは期待通り動作します。一般的なルールです。-`>forward()`でアクションを取り扱うフォーム投稿で終える必要はありません。
+
+ベストなことはアクションがフォームを表示するためにまだ動作していることです。つまり、もしリクエストがPOSTモードではないのであるならです。以前書かれた空のアクションのようにきっちりふるまいます。`addSuccess.php`テンプレートを立ち上げるデフォルトの`sfView::SUCCESS`を返します。
+
+`User`モデルで`isInterestedIn()`メソッドを作ることをお忘れなく:
+
+    public function isInterestedIn($question)
+    {
+      $interest = new Interest();
+      $interest->setQuestion($question);
+      $interest->setUserId($this->getId());
+      $interest->save();
+    }
+    
+些細なリファクタリングとして、同じことを行うコードスニペットを置き換える`user/interested`アクションでこのメソッドを使用できます。
+
+行って、テストしてください。テストユーザーの1つを使えば質問を追加できます。
+
+新しい回答を追加する
+--------------------
+
+回答の追加は微妙に異なる方法で実装されます。フォームを伴う新しいページにユーザーをリダイレクトする必要はありませんし、表示される質問のための他のページにもリダイレクトする必要はありません。新しいフォームはAJAXであり、新しい質問は質問の詳細ページで即座に表示されます。
+
+### AJAXフォームを追加する
+
+`modules/question/templates/showSuccess.php`テンプレートの最終行を変更します:
+
+    [php]
+    ...    
+    <div id="answers">
+    <?php foreach ($question->getAnswers() as $answer): ?>
+      <div class="answer">
+      <?php include_partial('answer/answer', array('answer' => $answer)) ?>
+      </div>
+    <?php endforeach; ?>
+    
+    <?php echo use_helper('User') ?>
+    
+    <div class="answer" id="add_answer">
+      <?php echo form_remote_tag(array(
+        'url'      => '@add_answer',
+        'update'   => array('success' => 'add_answer'),
+        'loading'  => "Element.show('indicator')",
+        'complete' => "Element.hide('indicator');".visual_effect('highlight', 'add_answer'),
+      )) ?>
+    
+        <div class="form-row">
+          <?php if ($sf_user->isAuthenticated()): ?>
+            <?php echo $sf_user->getNickname() ?>
+          <?php else: ?>
+            <?php echo 'Anonymous Coward' ?>
+            <?php echo link_to_login('login') ?>
+          <?php endif; ?>
+        </div>
+    
+        <div class="form-row">
+          <label for="label">Your answer:</label>
+          <?php echo textarea_tag('body', $sf_params->get('body')) ?>
+        </div>
+    
+        <div class="submit-row">
+          <?php echo input_hidden_tag('question_id', $question->getId()) ?>
+          <?php echo submit_tag('answer it') ?>
+        </div>
+      </form>
+    </div>
+    
+    </div>
+    
+### 少しのリファクタリング
+
+`link_to_login()`関数は`UserHelper.php`ヘルパーに追加されなければなりません:
+
+    [php]
+    function link_to_login($name, $uri = null)
+    { 
+      if ($uri && sfContext::getInstance()->getUser()->isAuthenticated())
+      {
+        return link_to($name, $uri);
+      }
+      else
+      {
+        return link_to_function($name, visual_effect('blind_down', 'login', array('duration' => 0.5)));
+      }
+    }
+    
+この関数は私たちがすでに他の`User`ヘルパーで見たことを行います: このリンクはAJAXログインフォームを指し示します。`link_to_function()`の呼び出しを`link_to_login()`を呼び出すことで`link_to_user_interested()`と`link_to_user_relevancy()`関数に置き換えます。`modules/sidbar/templates/defaultSuccess.php`の`@add_quesiton`へのリンクを忘れないでください。もちろん、リファクタリングです。
+
+### フォーム投稿を取り扱う
+
+フラグメントをまだ含むとしても、AJAXリクエストを処理するためにここで選ばれたメソッドは[8日](8.txt)の間に記述されたものとは微妙に異なります。 実際にフォームを置き換えるためにフォーム投稿の結果が欲しいからです。`form_remote_tag()`ヘルパーの`update`パラメータが外側の領域よりもそれ自身からのコンテナを示すのはそういうわけです。`_answer.php`フラグメントは質問追加アクションの結果を含むので、最終結果は次のようになります:
+
+    [php]
+    ...
+    <div id="answers">
+      <!-- Answer 1 -->
+      <!-- Answer 2 -->
+      <!-- Answer 3 -->
+      ...
+    </div>
+    
+    <div class="answer" id="add_answer">
+      <!-- The new answer -->
+    </div>
+    
+おそらく`form_remote_tag()`javascriptヘルパーがどのように動作するのか推測したと思います: XMLHttpRequestオブジェクトを通して`url`引数によって指定されるアクションへのフォーム投稿が扱われます。アクションの結果は`update`引数で指定された要素を置き換えます。そして、8日目の`link_to_remote()`ヘルパーのように、リクエスト投稿に従ってアクティビティインディケータのビジビリティを切り替え、AJAXトランザクションの終了時点で更新された箇所をハイライトします。
+
+新しい質問に関連するユーザーについて説明させてください。以前、回答をユーザーにリンクする必要があることを言及しました。ユーザーが認証されると、ユーザーの`user_id`は新しい回答のために使われます。他のケースでは、ユーザーがログインすることを選ばない限り、`anonymous`ユーザーが使われます。`GlobalHelper.php`ヘルパー設定に設置された`link_to_login()`ヘルパーはレイアウトの隠しログインフォームのビジビリティを切り替えます。コードの内容はaskeetのソースを眺めてください。
+
+### answer/addアクション
+
+`@add_answer`ルールは`answer/add`アクションを指し示すAJAXフォームの`url`引数として渡されます:
+
+    add_answer:
+      url:   /add_anwser
+      param: { module: answer, action: add }
+
+(困ったら、この構成は`routing.yml`アプリケーションの設定ファイルに追加されます。)
+
+アクションの内容はこのとおりです:
+
+    [php]
+    public function executeAdd()
+    {
+      if ($this->getRequest()->getMethod() == sfRequest::POST)
+      {
+        if (!$this->getRequestParameter('body'))
+        {
+          return sfView::NONE;
+        }
+
+        $question = QuestionPeer::retrieveByPk($this->getRequestParameter('question_id'));
+        $this->forward404Unless($question);
+    
+        // 通常のユーザーもしくは匿名ユーザー
+        $user = $this->getUser()->isAuthenticated() ? $this->getUser()->getSubscriber() : UserPeer::retriveByNickname('anonymous');
+    
+        // 回答する
+        $this->answer = new Answer();
+        $this->answer->setQuestion($question);
+        $this->answer->setBody($this->getRequestParameter('body'));
+        $this->answer->setUser($user);
+        $this->answer->save();
+    
+        return sfView::SUCCESS;
+      }
+    
+      $this->forward404();
+    }
+
+最初に、このアクションがPOSTモードで呼び出されなかったら、ブラウザのアドレスバーに誰かがURIを入力されたことを意味します。アクションは(ハッカーの)リクエストの入力に対して設計されていないので、その場合は404エラーを返します。
+
+回答の著者として設定するユーザーを決めるために、アクションは現在のユーザーが認証されたかどうかをチェックします。当てはまらない場合、`UserPeer`クラスの`::retrieveByNickname()`メソッドのおかげでアクションは'Anoymous Coward'ユーザーを使用します。このメソッドが何を行うのか疑問を持ちましたらコードを確認してください。
+
+これで、新しい質問を作成し、`addSuccess.php`テンプレートにリクエストを渡す準備が整いました。ご期待通り、このテンプレートには`include_partial`の1行だけが含まれます:
+
+    [php]
+    <?php include_partial('answer', array('answer' => $answer)) ?>
+
+`frontend/modules/answer/config/view.yml`にあるこのアクション用のレイアウトを無効にすることも必要です:
+
+    addSuccess:
+      has_layout: off
+ 
+最後に、ユーザーが空の回答を投稿したときは、保存を望みません。そこで、部分を扱うデータを回避し、アクションは何も返しません - これはシンプルにページのフォームを削除します。このAJAXフォームを処理しているときにエラーを対処できます。しかし、フォーム自身を他のフラグメントに設置することも含まれます。今の時点で、努力する価値はありません。
+ 
+### テストする
+
+これですべてですか？はい、そうです。AJAXフォームはクリーンで安全に使われる準備はできています。質問への回答リストを表示したり新しい回答を追加することでテストしてください。ページをリフレッシュする必要が無く、回答は以前のものリストの一番下に現れます。シンプルでしたね？
+
+それではまた明日
+----------------
+
+古典的なフォームとAJAXフォームはsymfonyのアプリケーションで実装するのはたやすいことです。そしてこれら2つの追加に加えて、askeetアプリケーションはこれを動作させるために必要なすべてのコア機能を持ちます。
+
+1つのこと: 私たちは新しいユーザーを登録する方法を述べていません。今日実行したこととよく似ているので、ともかくこの機能は現在の[askeetのSVNリポジトリ](http://svn.askeet.com/tags/release_day_10/)に追加されました。
+
+10日目の内容はsymfonyでAJAXによって強化されたFAQのベータバージョンを構築することで終わりました。しかしながら、私たちはaskeetの機能をそれよりももっと高めたいです。askeetコミュニティを構築するのを手助けするために、フィードアグリゲータに配信された回答を受け取るために質問をした人が登録できるように私たちはサイトで配信フィードを提供することが必要です。 
+
+21日目のためにいくつかのアイディアを提案してくださった方々がいらっしゃいます。リストを展開するか、[askeetフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)に訪問して提案をサポートしてください。

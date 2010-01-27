@@ -1,0 +1,367 @@
+How to write a Propel behavior
+==============================
+
+Overview
+--------
+
+When you happen to write twice the same method for two classes of the Propel object model, it is time to think about **Behaviors**. Behaviors offer a simple way to extend several model classes the same way, by altering existing methods or adding new ones. Using existing behaviors is quite simple: Read the related part in Chapter 8 of the book, and follow the instructions written in the `README` file bundled with each behavior. But if you want to create a new behavior, you need to understand how they work.
+
+Base example
+------------
+
+To illustrate the process of creating a behavior, let's start with an already extended model. For instance, let's imagine that for security reasons, the records of the `article` table must not be removed from the database. The `$article->delete()` method must still mark records so that they are not returned by a call to `ArticlePeer::doSelect()`, but the underlying data must not be erased. This is how you could extend the Propel model to implement this rule:
+
+    [php]
+    // in lib/model/Article.php
+    class Article extends BaseArticle()
+    {
+      public function delete($con = null)
+      {
+        $this->setDeletedAt(time());
+        $this->save($con);
+      }
+    }
+
+    // in lib/model/ArticlePeer.php
+    class ArticlePeer extends BaseArticlePeer()
+    {
+      public function doSelectRS(Criteria $criteria, $con = null)
+      {
+        $criteria->add(self::DELETED_AT, null, Criteria::ISNULL);
+        
+        return parent::doSelectRS($criteria, $con);
+      }
+    }
+
+Of course, that implies adding a new timestamp field called `deleted_at` to the `article` table.
+
+>**Note**: The reason why the method extension applies to `doSelectRS()` instead of `doSelect()` is because the former is used not only by `doSelect()`, but also by `doCount()`.
+
+The combination of a new field and altered methods gives to the `Article` object a "paranoid" behavior. For now, the word "behavior" just refers to a set of methods.
+
+Enter Mixins
+------------
+
+Now, imagine that you need to keep also the deleted records of the `comment` table. Instead of copying the two methods above in the `Comment` and `CommentPeer` classes, which would not be [D.R.Y.](http://en.wikipedia.org/wiki/Don't_repeat_yourself), you should refactor the code used more than once in a new class, and inject it via the *Mixins* system. You should be familiar with the concept of Mixins and the `sfMixer` class to understand the following, so refer to [Chapter 17](http://www.symfony-project.org/book/1_0/17-Extending-Symfony#chapter_17_mixins) of the symfony book if you wonder what this is about.
+
+The first step is to remove any code from the model classes, and to add hooks to allow them to be extended.
+
+    [php]
+    // Step 1
+    // in lib/model/Article.php
+    class Article extends BaseArticle()
+    {
+      public function delete($con = null)
+      {
+        foreach (sfMixer::getCallables('Article:delete:pre') as $callable)
+        {
+          $ret = call_user_func($callable, $this, $con);
+          if ($ret)
+          {
+            return;
+          }
+        }
+        
+        return parent::delete($con);
+    }
+
+    // in lib/model/ArticlePeer.php
+    class ArticlePeer extends BaseArticlePeer()
+    {
+      public function doSelectRS(Criteria $criteria, $con = null)
+      {
+        foreach (sfMixer::getCallables('ArticlePeer:doSelectRS:doSelectRS') as $callable)
+        {
+          call_user_func($callable, 'ArticlePeer', $criteria, $con);
+        }
+        
+        return parent::doSelectRS($criteria, $con);
+      }
+    }
+    
+    // in lib/model/Comment.php
+    class Comment extends BaseComment()
+    {
+      public function delete($con = null)
+      {
+        foreach (sfMixer::getCallables('Comment:delete:pre') as $callable)
+        {
+          $ret = call_user_func($callable, $this, $con);
+          if ($ret)
+          {
+            return;
+          }
+        }
+        
+        return parent::delete($con);
+    }
+    
+    // in lib/model/CommentPeer.php
+    class CommentPeer extends BaseCommentPeer()
+    {
+      public function doSelectRS(Criteria $criteria, $con = null)
+      {
+        foreach (sfMixer::getCallables('CommentPeer:doSelectRS:doSelectRS') as $callable)
+        {
+          call_user_func($callable, 'CommentPeer', $criteria, $con);
+        }
+        
+        return parent::doSelectRS($criteria, $con);
+      }
+    }
+
+Next, you must put the behavior code in a new class, save this class in a directory where it can be autoloaded:
+
+    [php]
+    // Step 2
+    // In lib/ParanoidBehavior.php
+    class ParanoidBehavior
+    {
+      public function preDelete($object, $con)
+      {
+        $object->setDeletedAt(time());
+        $object->save($con);
+        
+        return true;
+      }
+      
+      public function doSelectRS($class, Criteria $criteria, $con = null)
+      {
+        $criteria->add(constant("$class::DELETED_AT"), null, Criteria::ISNULL);
+      }
+    }
+
+Finally, you must register the methods of the new `ParanoidBehavior` class on the hooks of the `Article` and `Comment` classes:
+
+    [php]
+    // Step 3
+    // in config/config.php
+    sfMixer::register('Article:delete:pre', array('ParanoidBehavior', 'preDelete'));
+    sfMixer::register('ArticlePeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+    sfMixer::register('Comment:delete:pre', array('ParanoidBehavior', 'preDelete'));
+    sfMixer::register('CommentPeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+
+By the power of Mixins, the code of the behavior can be reused across several model objects.
+
+But the task of adding hooks to the model classes and registering the methods make this process longer than a simple copy of the code... This is where the symfony **Behaviors** come as a great help.
+
+Add model hooks automatically
+-----------------------------
+
+Symfony can add hooks to the model automatically. To enable these hooks, set the `AddBehaviors` property to `true` in the `propel.ini` file, as follows:
+
+    [php]
+    propel.builder.AddBehaviors = true     // Default value is false
+
+You need to rebuild the model for the hooks to be inserted in the generated model classes:
+
+    [php]
+    $ php symfony propel-build-model
+
+The hooks are added to the `Base` classes, the ones under the `lib/model/om/` directory. For instance, here is an extract of the generated `BaseArticlePeer` class with behaviors hooks enabled:
+
+    [php]
+    public static function doSelectRS(Criteria $criteria, $con = null)
+    {
+      foreach (sfMixer::getCallables('BaseArticlePeer:doSelectRS:doSelectRS') as $callable)
+      {
+        call_user_func($callable, 'BaseArticlePeer', $criteria, $con);
+      }
+      
+      // Rest of the code
+    }
+
+That's almost exactly the same hook as the one added by hand to the custom `ArticlePeer` during step 1. The difference is that the registered hook name is `BaseArticlePeer:doSelectRS:doSelectRS` instead of `ArticlePeer:doSelectRS:doSelectRS`. So you can remove the code added to the custom classes during Step 1. This means that when Behaviors are enabled in the `propel.ini`, you no longer need to add hooks manually inside your model classes.
+
+As the name of the hooks changed (they are now all prefixed by `Base`), the way the methods of the Paranoid behavior were registered in Step 3 must be changed. But before doing so, have a look at the complete list of hooks added:
+
+    // Hooks added to the base object class
+    [className]:delete:pre     // before deletion
+    [className]:delete:post    // after deletion
+    [className]:save:pre       // before save
+    [className]:save:post      // after save
+    [className]:[methodName]   // inside __call() (allows for new methods)
+    // Hooks added to the base Peer class
+    [PeerClassName]:doSelectRS:doSelectRS
+    [PeerClassName]:doSelectJoin:doSelectJoin
+    [PeerClassName]:doSelectJoinAll:doSelectJoinAll
+    [PeerClassName]:doSelectJoinAllExcept:doSelectJoinAllExcept
+    [PeerClassName]:doUpdate:pre
+    [PeerClassName]:doUpdate:post
+    [PeerClassName]:doInsert:pre
+    [PeerClassName]:doInsert:post
+
+>**Note**: As of symfony 1.0, there is only one hook related to the `doSelect` methods, instead of the four hooks described above. This explains why some behaviors work only with symfony 1.1 and not with symfony 1.0, which has an incomplete support for behaviors.
+
+Adding new methods
+------------------
+
+One of the hooks should get a closer look: the one allowing for new methods in the object class. When Behaviors are enables in `propel.ini`, all the generated base object classes contain a `__call()` method similar to this one:
+
+    [php]
+    // in lib/model/om/BaseArticle.php
+    public function __call($method, $arguments)
+    {
+      if (!$callable = sfMixer::getCallable('BaseArticle:'.$method))
+      {
+        throw new sfException(sprintf('Call to undefined method BaseArticle::%s', $method));
+      }
+
+      array_unshift($arguments, $this);
+
+      return call_user_func_array($callable, $arguments);
+    }
+
+As explained in [Chapter 17](http://www.symfony-project.org/book/1_0/17-Extending-Symfony#chapter_17_mixins) of the symfony book, a hook placed in a `__call()` makes the addition of new methods at runtime possible. For instance, if you want to add an `undelete()` method to the `Article` class to allow to reset the `deleted_at` flag, start by adding it to the Behavior class:
+
+    [php]
+    // In lib/ParanoidBehavior.php
+    public function undelete($object, $con)
+    {
+      $object->setDeletedAt(null);
+      $object->save($con);
+    }
+
+Then, register the new method as follows:
+
+    [php]
+    // in config/config.php
+    sfMixer::register('BaseArticle:undelete', array('ParanoidBehavior', 'undelete'));
+    // other hooks
+
+Now, every call to `$article->undelete()` will make a call to `ParanoidBehavior::undelete($article)`.
+
+>**Note**: Unfortunately, as of PHP 5, static method calls cannot be caught by a `__call()`. This means that symfony behaviors are not able to add new methods to the Peer classes.
+
+Register hooks in a single step
+-------------------------------
+
+You still need to rewrite the other hook registrations to use the `Base` hook names, both for the `Article` and `Comment` classes. That would give something like:
+
+    [php]
+    // Step 3
+    // in config/config.php
+    sfMixer::register('BaseArticle:undelete', array('ParanoidBehavior', 'undelete'));
+    sfMixer::register('BaseArticle:delete:pre', array('ParanoidBehavior', 'preDelete'));
+    sfMixer::register('BaseArticlePeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+
+    sfMixer::register('BaseComment:undelete', array('ParanoidBehavior', 'undelete'));
+    sfMixer::register('BaseComment:delete:pre', array('ParanoidBehavior', 'preDelete'));
+    sfMixer::register('BaseCommentPeer:doSelectRS:doSelectRS', array('ParanoidBehavior', 'doSelectRS'));
+
+But this code is not very D.R.Y., since you need to repeat the whole list of methods for each class. Imagine the pain if the behavior provided several dozens methods! It would be much more efficient if you could separate the registration process in two phases:
+
+1. Register methods of the behavior into a list of class-agnostic hooks.
+2. For each class, transform the class-agnostic hooks into real hooks and register them using the mixins system.
+
+Symfony provides a utility class, called `sfPropelBehavior`, which does this job for you. Here is how the Step 3 can be rewritten to take advantage of this class:
+
+    [php]
+    // Phase 1
+    // in config/config.php
+    sfPropelBehavior::registerMethods('paranoid', array(
+      array('ParanoidBehavior', 'undelete')
+    ));
+    sfPropelBehavior::registerHooks('paranoid', array(
+      ':delete:pre'                => array('ParanoidBehavior', 'preDelete'),
+      'Peer:doSelectRS:doSelectRS' => array('ParanoidBehavior', 'doSelectRS')
+    ));
+    
+    // Phase 2
+    // in lib/model/Article.php
+    sfPropelBehavior::add('Article', array('paranoid'));
+    
+    // in lib/model/Comment.php
+    sfPropelBehavior::add('Comment', array('paranoid'));
+
+Both the `registerMethods` and `registerHooks` methods expect a hook list name as first parameter. This name is then used as a shortcut when the behavior methods are added to the model classes. Notice how the hook names used when calling `registerHooks` don't contain any reference to a specific model class (the `BaseArticle` part of the hook name was removed).
+
+Also, you don't need to specify a method name for the methods added by way of `registerMethods`. The name of the method in the behavior class is used by default.
+
+It's only when the `sfPropelBehavior::add()` statement is executed that hooks are really registered against the `sfMixer` class... with a real hook name. As the first parameter of this call is a model class name, the `sfPropelBehavior` has all the elements to recreate the complete hook names (in this case, by concatenating the string `Base` with the model class name and the behavior hook name).
+
+Packaging a behavior into a plug-in
+-----------------------------------
+
+To package the behavior into a truly reusable piece of code, the best is to create a plugin. 
+
+There is a non-written convention about behavior plugin names. They must be prefixed with 'Propel' since they work only for this ORM, and they must end with 'BehaviorPlugin'. So a good name for our Paranoid behavior could be 'myPropelParanoidBehaviorPlugin'.
+
+As of now, there are only two files to put in the plugin: the `ParanoidBehavior` class, and the code written in `config/config.php` to register the behavior methods and hooks. [Chapter 17](http://www.symfony-project.org/book/1_0/17-Extending-Symfony#chapter_17_plug_ins) explains how to organize these files in a plugin tree structure:
+
+    plugins/
+      myPropelParanoidBehaviorPlugin/
+        lib/
+          ParanoidBehavior.php    // the class containing methods to be mixed in
+        config/
+          config.php              // the registration of the behavior methods
+
+The `config.php` file of every plugin installed in a project is executed at each request, so this is the perfect place to register behavior methods.
+
+To complete the plugin, you must add a `README` file at the root of the plugin's directory, with installation and usage instructions. The best behaviors also bundle unit tests.
+
+Eventually, add a `package.xml` (either manually or by way of [sfPackageMakerPlugin](http://trac.symfony-project.org/trac/wiki/sfPackageMakerPlugin)), package the plugin with PEAR, and you are ready to reuse it. You can also post it in the symfony website.
+
+Passing a parameter to a behavior
+---------------------------------
+
+A well-designed behavior doesn't rely on hard coded values. In the example of the Paranoid behavior above, the `deleted_at` column name is hard coded and should be transformed into a parameter.
+
+To pass a parameter to a behavior, use an associative array as the second parameter of the call to `sfPropelBehavior::add()` instead of a regular array, as follows:
+
+    [php]
+    sfPropelBehavior::add('Article', array('paranoid' => array(
+      'column' => 'deleted_at'
+    )));
+
+Then, to get the value of this parameter in the behavior class, you must use the `sfConfig` registry. The parameter is stored in a `sfConfig` key composed like this:
+
+    [php]
+    'propel_behavior_' . [BehaviorName] . '_' . [ClassName] . '_' . [ParameterName]
+    // in the example above, get the 'deleted_at' value by calling
+    sfConfig::get('propel_behavior_paranoid_Article_column')
+
+The problem is that the behavior methods don't use only column names. They use the various versions of these names according to the operation to achieve:
+
+    Format name                 | Example       | Used in
+    ----------------------------|---------------|-----------
+    `BasePeer::TYPE_FIELDNAME`  | `deleted_at`  | schema.yml
+    `BasePeer::TYPE_PHPNAME`    | `DeletedAt`   | Method names
+    `BasePeer::TYPE_COLNAME`    | `DELETED_AT`  | Criteria parameters
+    
+So the behavior class will need a way to translate a field name from one format to the other. Fortunately, the generated Base Peer class of every model provides a static `translateFieldName()` method. Its syntax is quite simple:
+
+    [php]
+    // translateFieldName($name, $origin_format, $dest_format) 
+    // for instance
+    $name = ArticlePeer::translateFieldName('deleted_at', BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_COLNAME);
+
+So you are now ready to rewrite the `ParanoidBehavior` class to take the `column` parameter into account:
+
+    [php]
+    class sfPropelParanoidBehavior
+    {
+      public function preDelete($object, $con = null)
+      {
+        $class = get_class($object);
+        $peerClass = get_class($object->getPeer());
+
+        $columnName = sfConfig::get('propel_behavior_paranoid_'.$class.'_column', 'deleted_at');
+        $method = 'set'.call_user_func(array($peerClass, 'translateFieldName'), $columnName, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_PHPNAME);
+        $object->$method(time());
+        $object->save();
+
+        return true;
+      }
+      
+      public function doSelectRS($class, $criteria, $con = null)
+      {
+        $columnName = sfConfig::get('propel_behavior_paranoid_'.$class.'_column', 'deleted_at');
+        $criteria->add(call_user_func(array($class, 'translateFieldName'), $columnName, BasePeer::TYPE_FIELDNAME, BasePeer::TYPE_COLNAME), null, Criteria::ISNULL);
+      }
+    }
+
+Conclusion
+----------
+
+Propel Behaviors are nothing more than a set of predefined hooks, and a helper class designed to facilitate the registration of several hooks in a single statement. If you understand Mixins, it shouldn't be too hard to author your own behaviors. Make sure you check the [existing behavior plugins](http://trac.symfony-project.org/wiki/SymfonyPlugins#Propelbehaviorplugins) before starting your own: they are practical examples of the behaviors syntax.

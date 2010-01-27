@@ -1,0 +1,359 @@
+Day 05: forms and pager
+=======================
+
+Previously on symfony
+---------------------
+
+During the long [day four](4.txt), you got used to refactoring your application by moving chunks of code to other files more related to their nature. You also learned to modify the model so that common methods related to the data can be taken out of the action code.
+
+The development is clean, but the number of functionalities is still poor. It is time to allow a bit of interactivity between the askeet site and its users. And the root of HTML interactivity - besides hyperlinks - are forms. 
+
+The objectives for today are to allow a user to login and to paginate the list of questions on the home page. This will be quick to develop, but it will allow you to recover from yesterday.
+
+Login form
+----------
+
+There are users in the test data, but no way for the application to recognize one. Let's give access to a login form from every page of the application. Open the global layout `askeet/apps/frontend/templates/layout.php` and add in the following line before the link to `about`:
+
+    [php]
+    <li><?php echo link_to('sign in', 'user/login') ?></li>
+
+>**Note**: The current layout places this link just behind the web debug toolbar. To see it, fold the toolbar by clicking its 'Sf' icon.
+
+It is time to create the `user` module. While the `question` module was generated during day two, this time we will just ask symfony to create the module skeleton, and we will write the code ourselves.
+
+    $ symfony init-module frontend user
+    
+>**Note**: The skeleton contains a default `index` action and an `indexSuccess.php` template. Get rid of both, since we won't need them.
+
+### Create the `user/login` action
+
+In the `user/actions/action.class.php` file (under the new `askeet/apps/frontend/modules/` directory), add the following `login` action:
+
+    [php]
+    public function executeLogin()
+    {
+      $this->getRequest()->setAttribute('referer', $this->getRequest()->getReferer());
+  
+      return sfView::SUCCESS;
+    }
+
+The action saves the referrer in a request attribute. It will then be available to the template to be put in a hidden field, so that the target action of the form can redirect to the original referer after a successful login.
+
+The `return sfView::SUCCESS` passes the result of the action to the `loginSuccess.php` template. This statement is implied in actions that don't contain a return statement, that's why the default template of an action is called `actionnameSuccess.php`.
+
+Before working more on the action, let's have a look at the template.
+
+### Create the `loginSuccess.php` template
+
+Many human-computer interactions on the web use forms, and symfony facilitates the creation and the management of forms by providing a set of **form helpers**.
+
+In the `askeet/apps/frontend/modules/user/templates/` directory, create the following `loginSuccess.php` template:
+
+    [php]
+    <?php echo form_tag('user/login') ?>
+    
+      <fieldset>
+    
+      <div class="form-row">
+        <label for="nickname">nickname:</label>
+        <?php echo input_tag('nickname', $sf_params->get('nickname')) ?>
+      </div>
+    
+      <div class="form-row">
+        <label for="password">password:</label>
+        <?php echo input_password_tag('password') ?>
+      </div>
+    
+      </fieldset>
+      
+      <?php echo input_hidden_tag('referer', $sf_request->getAttribute('referer')) ?>
+      <?php echo submit_tag('sign in') ?>
+    
+    </form>
+
+This template is your first introduction to the form helpers. These symfony functions help to automate the writing of form tags. The `form_tag()` helper opens a form with a default POST behaviour, and points to the action given as argument. The `input_tag()` helper produces an `<input>` tag (that's a surprise) by automatically adding an `id` attribute based on the name given as first argument; the default value is taken from the second argument. You can find more about form helpers and the HTML code they generate in the [related chapter](http://www.symfony-project.com/book/1_0/10-Forms) of the symfony book.
+
+The essential thing here is that the action called when the form is submitted (the argument of `form_tag()`) is the same `login` action used to display it. So let's go back to the action.
+
+### Handle the login form submission
+
+Replace the `login` action that we just wrote with the following code:
+
+    [php]
+    public function executeLogin()
+    {
+      if ($this->getRequest()->getMethod() != sfRequest::POST)
+      {
+        // display the form
+        $this->getRequest()->setAttribute('referer', $this->getRequest()->getReferer());
+      }
+      else
+      {
+        // handle the form submission
+        $nickname = $this->getRequestParameter('nickname');
+  
+        $c = new Criteria();
+        $c->add(UserPeer::NICKNAME, $nickname);
+        $user = UserPeer::doSelectOne($c);
+      
+        // nickname exists?
+        if ($user)
+        {
+          // password is OK?
+          if (true)
+          {
+            $this->getUser()->setAuthenticated(true);
+            $this->getUser()->addCredential('subscriber');
+    
+            $this->getUser()->setAttribute('subscriber_id', $user->getId(), 'subscriber');
+            $this->getUser()->setAttribute('nickname', $user->getNickname(), 'subscriber');
+  
+            // redirect to last page
+            return $this->redirect($this->getRequestParameter('referer', '@homepage'));
+          }
+        }
+      }
+    }
+
+The login action will be used both to display the login form and to process it. In consequence, it has to know in which context it is called. If the action is not called in POST mode, it is because it is requested from a link: That's the previous case we talked about earlier. If the request is in POST mode, the action is called from a form and it is time to handle it.
+
+The action gets the value of the `nickname` field from the request parameters, and requires the `User` table to see if this user exists in the database. 
+
+Then there will be, in the near future, a control of the password that will grant credentials to the user. For now, the only thing this action does is to store in a session attribute the `id` and the `nickname` of the user. Eventually, the action redirects to the original referer thanks to the hidden `referer` field in the form, passed as a request parameter. If this field is empty, the default value (`@homepage`, which is the routing rule name for `question/list`) is used instead.
+
+Notice the difference between the two types of attributes set in this example: The **request attributes** (`$this->getRequest()->setAttribute()`) are held for the template and forgotten as soon as the answer is sent to the referrer. The **session attributes** (`$this->getUser()->setAttribute()`) are kept during the life of the user's session, and other actions will be able to access them again in the future. If you want to know more about attributes, you should have a look at the [parameter holder chapter](http://www.symfony-project.com/book/1_0/02-Exploring-Symfony-s-Code) of the symfony book.
+
+### Grant privileges
+
+It is a good thing that users can log in to the askeet website, but they won't do it just for fun. Login will be required to post a new question, to declare interest about a question, and to rate a comment. All the other actions will be open to non logged users.
+
+To set a user as authenticated, you need to call the `->setAuthenticated()` method of the `sfUser` object. This object also provides a credentials mechanism (`->addCredential()`), to refine access restriction according to profiles. The [user credentials chapter](http://www.symfony-project.com/book/1_0/06-Inside-the-Controller-Layer) of the symfony book explains all that in detail.
+
+That's the purpose of the two lines:
+
+    [php]
+    $this->getContext()->getUser()->setAuthenticated(true);
+    $this->getContext()->getUser()->addCredential('subscriber');
+
+When the nickname is recognized, not only will the user data put in session attributes, but the user will also be granted access to restricted parts of the site. We'll see tomorrow how to restrict access of some parts of the application to authenticated users.
+
+### Add the `user/logout` action
+
+There is one last trick about the `->setAttribute()` method: The last argument (`subscriber` in the above example) defines the **namespace** where the attribute will be stored. Not only does a namespace allow a name already existing in another namespace to be given to an attribute, it also allows the quick removal of all its attributes with a single command:
+
+    [php]
+    public function executeLogout()
+    {
+      $this->getUser()->setAuthenticated(false);
+      $this->getUser()->clearCredentials();
+    
+      $this->getUser()->getAttributeHolder()->removeNamespace('subscriber');
+    
+      $this->redirect('@homepage');
+    }
+
+Using namespaces saved us from removing the two attributes one by one: That's one less line of code. Talk about laziness!
+
+### Update the layout
+
+The layout still shows a 'login' link even if a user is already logged. Let's quickly fix it. In `askeet/apps/frontend/templates/layout.php`, change the line that we just added at the beginning of today's tutorial with:
+
+    [php]
+    <?php if ($sf_user->isAuthenticated()): ?>
+      <li><?php echo link_to('sign out', 'user/logout') ?></li>
+      <li><?php echo link_to($sf_user->getAttribute('nickname', '', 'subscriber').' profile', 'user/profile') ?></li>
+    <?php else: ?>
+      <li><?php echo link_to('sign in/register', 'user/login') ?></li>
+    <?php endif ?>
+
+It is time to test all this by displaying any page of the application, clicking the 'login' link, entering a valid nickname ('anonymous' should do the trick) and validating it. If the 'login' link on top of the window changes to 'sign out', you did everything right. Eventually, try to logout to check if the 'login' links appears again.
+
+![logged](/images/askeet/logged_day5.gif)
+
+You will find more information about the manipulation of user session attributes in the [user session chapter](http://www.symfony-project.com/book/1_0/06-Inside-the-Controller-Layer) of the symfony book.
+
+Question pager
+--------------
+
+As thousands of symfony enthusiasts will rush to the askeet site, it is very probable that the list of questions displayed in the home page will grow very long. To avoid slow requests and excessive scrolling, it is necessary to paginate the list of questions.
+
+Symfony provides an object just for that purpose: The `sfPropelPager`. It encapsulates the request to the database so that only the records to display on the current page are required. For instance, if a pager is initialized to display 10 records per page, the request to the database will be limited to 10 results, and the offset set to match the page rank. 
+
+### Modify the `question/list` action 
+
+During [day three](3.txt), we saw that the `list` action of the `question` module was quite succinct:
+
+    [php]
+    public function executeList ()
+    {
+      $this->questions = QuestionPeer::doSelect(new Criteria());
+    }
+
+We are going to modify this action to pass a `sfPropelPager` object to the template instead of an array. In the same time, we are going to order the questions by number of interests:
+
+    [php]
+    public function executeList ()
+    {
+      $pager = new sfPropelPager('Question', 2);
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(QuestionPeer::INTERESTED_USERS);
+      $pager->setCriteria($c);
+      $pager->setPage($this->getRequestParameter('page', 1));
+      $pager->setPeerMethod('doSelectJoinUser');
+      $pager->init();
+  
+      $this->question_pager = $pager;
+    }
+
+The initialization of the `sfPropelPager` object specifies which class of object it will contain, and the maximum number of objects that can be put in a page (two in this example). The `->setPage()` method uses a request parameter to set the current page. For instance, if this `page` parameter has a value of `2`, the `sfPropelPager` will return the results 3 to 5. The default value of the `page` request parameter being `1`, this pager will return the results 1 to 2 by default. You will find more information about the `sfPropelPager` object and its methods in the [pager chapter](http://www.symfony-project.com/book/1_0/08-Inside-the-Model-Layer) of the symfony book.
+
+### Use a custom parameter
+
+It is always a good idea to put the constants that you use in configuration files. For instance, the number of results per page (`2` in this example) could be replaced by a parameter, defined in your custom application configuration. Change the `new sfPropelPager` line above by:
+
+    [php]
+    ...
+      $pager = new sfPropelPager('Question', sfConfig::get('app_pager_homepage_max'));
+
+Open the custom application configuration file (`askeet/apps/frontend/config/app.yml`) and add in:
+
+    all:
+      pager:
+        homepage_max: 2
+
+The `pager` key here is used as a namespace, that's why it also appears in the parameter name. You will find more about custom configuration and the rules to name custom parameters in the [configuration chapter](http://www.symfony-project.com/book/1_0/05-Configuring-Symfony) of the symfony book.
+
+### Modify the `listSuccess.php` template
+
+In the `listSuccess.php` template, just replace the line
+
+    [php]
+    <?php foreach($questions as $question): ?>
+
+by 
+
+    [php]
+    <?php foreach($question_pager->getResults() as $question): ?>
+
+so that the page displays the list of results stored in the pager.
+
+### Add page navigation
+
+There is one more thing to add to this template: The page navigation. For now, all that the template does is display the first two questions, but we should add the ability to go to the next page, and then to go back to the previous page. To do that, append at the end of the template:
+
+    [php]
+    <div id="question_pager">
+    <?php if ($question_pager->haveToPaginate()): ?>
+      <?php echo link_to('&laquo;', 'question/list?page=1') ?>
+      <?php echo link_to('&lt;', 'question/list?page='.$question_pager->getPreviousPage()) ?>
+    
+      <?php foreach ($question_pager->getLinks() as $page): ?>
+        <?php echo link_to_unless($page == $question_pager->getPage(), $page, 'question/list?page='.$page) ?>
+        <?php echo ($page != $question_pager->getCurrentMaxLink()) ? '-' : '' ?>
+      <?php endforeach; ?>
+    
+      <?php echo link_to('&gt;', 'question/list?page='.$question_pager->getNextPage()) ?>
+      <?php echo link_to('&raquo;', 'question/list?page='.$question_pager->getLastPage()) ?>
+    <?php endif; ?>
+    </div>
+
+This code takes advantage of the numerous methods of the `sfPropelPager` object, among which `->haveToPaginate()`, which returns `true` only if the number of results to the request exceeds the page size; `->getPreviousPage()`, `->getNextPage()` and `->getLastPage()`, which have obvious meanings; `->getLinks()`, which provides an array of page numbers; and `->getCurrentMaxLink()`, which returns the last page number.
+
+This example also shows one handy symfony link helper: `link_to_unless()` will output a regular `link_to()` if the test given as the first argument is `false`, otherwise the text will be output without a link, enclosed in a simple `<span>`.
+
+Did you test the pager? You should. The modification isn't over until you validate it with your own eyes. To do that, just open the test data file created during day three, and add a few questions for the page navigation to appear. Relaunch the import data batch and request the homepage again. Voila.
+
+![paginated list](/images/askeet/pager_day5.gif)
+
+### Add a routing rule for the subsequent pages
+
+By default, the urls of the pages will look like:
+
+    http://askeet/frontend_dev.php/question/list/page/XX
+    
+Let's take advantage of the routing rules to have those pages understand:
+
+    http://askeet/frontend_dev.php/index/XX
+    
+Just open the `apps/frontend/config/routing.yml` file and add at the top:
+
+    popular_questions: 
+      url:   /index/:page 
+      param: { module: question, action: list } 
+      
+While we are at it, add another routing rule for the login page:
+
+    login: 
+      url:   /login 
+      param: { module: user, action: login } 
+
+Refactoring
+-----------
+
+### Model
+
+The `question/list` action executes code that is closely related to the model, that's why we will move this code to the model. Replace the `question/list` action by:
+
+    [php]
+    public function executeList () 
+    { 
+      $this->question_pager = QuestionPeer::getHomepagePager($this->getRequestParameter('page', 1)); 
+    }
+    
+...and add the following method to the `QuestionPeer.php` class in `lib/model`:
+
+    [php] 
+    public static function getHomepagePager($page)
+    {
+      $pager = new sfPropelPager('Question', sfConfig::get('app_pager_homepage_max'));
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(self::INTERESTED_USERS);
+      $pager->setCriteria($c);
+      $pager->setPage($page);
+      $pager->setPeerMethod('doSelectJoinUser');
+      $pager->init();
+  
+      return $pager;
+    }
+
+The same idea applies to the `question/show` action, written yesterday: The use of Propel objects to retrieve a question from its stripped title should belong to the model. So change the `question/show` action by:
+
+    [php]
+    public function executeShow()
+    {
+      $this->question = QuestionPeer::getQuestionFromTitle($this->getRequestParameter('stripped_title'));
+  
+      $this->forward404Unless($this->question);
+    }
+
+Add to `QuestionPeer.php`:
+
+    [php]
+    public static function getQuestionFromTitle($title)
+    {
+      $c = new Criteria();
+      $c->add(QuestionPeer::STRIPPED_TITLE, $title);
+
+      return self::doSelectOne($c); 
+    }
+
+### Templates
+
+The list of question displayed in `question/templates/listSuccess.php` will be reused somewhere else in the future. So we will put the template code to display a list of question in a `_list.php` fragment and replace the `listSuccess.php` content by a simple:
+
+    [php]
+    <h1>popular questions</h1> 
+    
+    <?php echo include_partial('list', array('question_pager' => $question_pager)) ?> 
+    
+The content of the `_list.php` fragment can be seen in the [askeet SVN repository](http://svn.askeet.com/tags/release_day_5/frontend/modules/question/templates/_question_list.php).
+
+See you Tomorrow
+----------------
+
+Login forms and list pagers are used in almost all web applications nowadays. You saw today that they are quite easy to develop with symfony.
+
+Once again, our day finished by some refactoring. That's the price to pay when you build an application little by little, without designing the big picture first.
+
+Tomorrow, we will continue to work on the login process, by restricting the access of some parts of the site to registered users, and we will do some form validation to avoid incorrect submissions.

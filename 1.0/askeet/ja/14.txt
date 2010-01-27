@@ -1,0 +1,309 @@
+14日目: タグ、パートⅡ
+=====================
+
+復習
+----
+
+昨日のチュートリアルにおいて、[フォークソノミー](http://en.wikipedia.org/wiki/Folksonomy)機能の一部を構築しました。`QuestionTag`クラスとモデルへの他の拡張機能は質問リストと詳細な質問内容で質問タグを表示することを手助けしてくれました。加えて、任意のタグのための人気のある質問のリストも開発されました。
+
+タグに関して行うことが2つあり、これらは'web 2.0'のように聞こえるでしょう: AJAXフォームで新しいタグを追加する機能と、askeetのグローバルなタグバブルです。symfonyのアジャイルな開発方法を経験する準備はよろしいですか？
+
+質問にタグを追加する
+-------------------
+
+### フォーム
+
+登録ユーザーーに質問にタグを追加する能力を付与だけでなく、ユーザーーが入力する最初の文字列と一致する前に、他の質問で与えられたタグの1つを提示したいです。これはオートコンプリート(自動入力補完)と呼ばれています。[google suggest][2]で遊んだことがあるのでしたら、おわかり頂けるでしょう。
+
+昨日、私たちは質問の詳細が表示されたときにサイドバーに挿入されたフラグメントを作成しました。最後にこのフォームを追加するために`askeet/apps/frontend/modules/sidebar/templates/_question.php`ファイルを編集します:
+
+    [php]
+    ...
+    <?php if ($sf_user->isAuthenticated()): ?>
+      <div>Add your own:
+        <?php echo form_remote_tag(array(
+          'url'    => '@tag_add',
+          'update' => 'question_tags',
+        )) ?>
+          <?php echo input_hidden_tag('question_id', $question->getId()) ?>
+          <?php echo input_auto_complete_tag('tag', '', 'tag/autocomplete', 'autocomplete=off', 'use_style=true') ?>
+          <?php echo submit_tag('Tag') ?>
+        </form>
+      </div>
+    <?php endif; ?>
+
+もちろん、ユーザーにタグをリンクしなければならないので、新しいタグの追加は認証ユーザーに制限されます。`form_remote_tag()`ヘルパーについて一分ほど話すことにします。しかし、最初は、オートコンプリートの`input`タグを見てください。これはマッチするオプションの配列を取得するアクション(ここでは、`tag/autocomplete`)を指定します。
+
+### オートコンプリート
+
+アクションが返すリストはユーザーによって入力されたタグリストです。このタグリストは重複することなく、アルファベット順に並べられ、`tag`フォールドのエントリとマッチします。次のようなSQLクエリが返されます:
+
+    [sql]
+    SELECT DISTINCT tag AS tag
+    FROM question_tag
+    WHERE user_id = $id AND tag LIKE $entry
+    ORDER BY tag
+
+このアクションを`mpdules/tag/acitons/action.class.php`ファイルに追加します:
+
+    [php]
+    public function executeAutocomplete()
+    {
+      $this->tags = QuestionTagPeer::getTagsForUserLike($this->getUser()->getSubscriberId(), $this->getRequestParameter('tag'), 10);
+    }
+
+通常は、データベースのクエリの中心はモデルにあります。`QuestionTagPeer`クラスに次のメソッドを追加します:
+
+    [php]
+    public static function getTagsForUserLike($user_id, $tag, $max = 10)
+    {
+      $tags = array();
+
+      $con = Propel::getConnection();
+      $query = '
+        SELECT DISTINCT %s AS tag
+        FROM %s
+        WHERE %s = ? AND %s LIKE ?
+        ORDER BY %s
+      ';
+
+      $query = sprintf($query,
+        QuestionTagPeer::TAG,
+        QuestionTagPeer::TABLE_NAME,
+        QuestionTagPeer::USER_ID,
+        QuestionTagPeer::TAG,
+        QuestionTagPeer::TAG
+      );
+
+      $stmt = $con->prepareStatement($query);
+      $stmt->setInt(1, $user_id);
+      $stmt->setString(2, $tag.'%');
+      $stmt->setLimit($max);
+      $rs = $stmt->executeQuery();
+      while ($rs->next())
+      {
+        $tags[] = $rs->getString('tag');
+      }
+
+      return $tags;
+    }
+
+アクションがタグリストを決定するので、必要なのは`autocompleteSuccess.php`テンプレートでこれらを形作ることだけです:
+
+    [php]
+    <ul>
+    <?php foreach ($tags as $tag): ?>
+      <li><?php echo $tag ?></li>
+    <?php endforeach; ?>
+    </ul>
+
+新しい`routing.yml`ルートを追加します(`_question.php`パーシャルの`input_auto_complet_tag()`呼び出しで`module/action`の代わりにこれを使います):
+
+    tag_autocomplete:
+      url:   /tag_autocomplete
+      param: { module: tag, action: autocomplete }
+
+そして`view.yml`を設定します:
+
+    autocompleteSuccess:
+      has_layout:   off
+      components:   []
+
+前に進んで、試せます。既存のアカウントで登録した後に(たとえばfabpot/symofny)、質問を表示し、サイドバーの新しいフィールドに注目してください。このユーザーによってすでに付与されたタグの最初の文字列を入力してください(たとえば、relatives)そして、適切なエントリを提示するフィールドの下で表示されるdivを見てください。
+
+![オートコンプリート](/images/askeet/autocomplete.gif)
+
+### リモートフォーム
+
+フォームが投稿されたとき、全ページをリフレッシュする必要はありません。タグのリストとタグを追加するフォームだけをリフレッシュする必要があります。それが`form_remote_tag()`ヘルパーの目的です。フォームが投稿されたとき(`tag/add`)に呼び出されるアクションおよびこのアクション('question_tags'によって指定される要素)の結果によって更新されるページの領域を指定します。これは[8日目](8.txt)に質問を追加するAJAXフォームで説明しました。
+
+`tag`アクションで`executeAdd()`メソッドを作りましょう:
+
+    [php]
+    public function executeAdd()
+    {
+      $this->question = QuestionPeer::retrieveByPk($this->getRequestParameter('question_id'));
+      $this->forward404Unless($this->question);
+
+      $userId = $this->getUser()->getSubscriberId();
+      $phrase = $this->getRequestParameter('tag');
+      $this->question->addTagsForUser($phrase, $userId);
+
+      $this->tags = $this->question->getTags();
+    }
+
+そして`Question`クラスに`addTagsForUser`です:
+
+    [php]
+    public function addTagsForUser($phrase, $userId)
+    {
+      // フレーズを個別のタグに分割する
+      $tags = Tag::splitPhrase($phrase);
+
+      // タグを追加する
+      foreach ($tags as $tag)
+      {
+        $questionTag = new QuestionTag();
+        $questionTag->setQuestionId($this->getId());
+        $questionTag->setUserId($userId);
+        $questionTag->setTag($tag);
+        $questionTag->save();
+      }
+    }
+
+`addSuccess.php`テンプレートは`update`の領域を置き換えるコードを決定します。通常はAJAXアクションを伴い、シンプルな`include_partial()`を含みます:
+
+    [php]
+    <?php include_partial('tag/question_tags', array('question' => $question, 'tags' => $tags)) ?> 
+
+新しい`routing.yml`ルートを追加します:
+
+    tag_add:
+      url:   /tag_add
+      param: { module: tag, action: add }
+
+`view.yml`を設定します:
+
+    addSuccess:
+      has_layout:    off
+      components:    []
+
+### テストする
+
+試してください: サイトにログインする、質問の詳細を表示する、新しいタグを入力し投稿する。全体のリストを更新し、アルファベット順で新しいタグの挿入されます。
+
+タグバブルを表示する
+--------------------
+
+フォークソノミーは人気によってタグを評価します。しかしたくさんのタグはタグのリストを見ることを難しくします。もっとも満足する解決方法は、視覚的に言えば、人気に応じて、タグの言葉のサイズを増やすことです。もっとも人気のあるタグ　-多くのユーザーによって付与されます- が即座に表示されるようにします。タグバブルとは何かということを理解するには[del.icio.usの人気タグページ][3]を確認してください。
+
+Webサイトへの80％の訪問者は20％以下の内容にしか興味を示しません。それは毎日多くのWebサイトで確認されるルールで、おそらくaskeetでも違いはないでしょう。そこでaskeetがタグのリストを提示するとしたら、同じように人気によって並べ替える必要があります。もっと不人気なタグ('grandma' 'chocolate')の小さな不統一を制限するため、およびもっとも人気のあるタグ('php' 'real life' 'usefule')の認知度を向上させるためです。
+
+### QuestionTagPeerクラスを拡張する
+
+人気タグのリストの提供クラスは'QuesitonTagPeer'以外にはありえません。新しいメソッドで拡張すると、SQLクエリの代わりを書くことを経験します:
+
+    [php]
+    public static function getPopularTags($max = 5)
+    {
+      $tags = array();
+  
+      $con = Propel::getConnection();
+      $query = '
+        SELECT '.QuestionTagPeer::NORMALIZED_TAG.' AS tag,
+        COUNT('.QuestionTagPeer::NORMALIZED_TAG.') AS count
+        FROM '.QuestionTagPeer::TABLE_NAME.'
+        GROUP BY '.QuestionTagPeer::NORMALIZED_TAG.'
+        ORDER BY count DESC';
+        
+      $stmt = $con->prepareStatement($query);
+      $stmt->setLimit($max);
+      $rs = $stmt->executeQuery();
+      $max_popularity = 0;
+      while ($rs->next())
+      {
+        if (!$max_popularity)
+        {
+          $max_popularity = $rs->getInt('count');
+        }
+  
+        $tags[$rs->getString('tag')] = floor(($rs->getInt('count') / $max_popularity * 3) + 1);
+      }
+  
+      ksort($tags);
+  
+      return $tags;
+    }
+
+人気度の数値を4の度合いまで制限します。そうしないとタグクラウドが読めなくなるからです。メソッドの結果はタグの名前と人気度の連想配列です。表示する準備ができました。
+
+### タグバブルを表示する
+
+`tag`モジュールで`popular`アクションを作ります:
+
+    [php]
+    public function executePopular()
+    {
+      $this->tags = QuestionTagPeer::getPopularTags(sfConfig::get('app_tag_cloud_max'));
+    }
+
+アクションと同じぐらいシンプルな`popularSuccess.php`テンプレートです:
+
+    [php]
+    <h1>popular tags</h1>
+    
+    <ul id="tag_cloud">
+      <?php foreach($tags as $tag => $count): ?>
+      <li class="tag_popularity_<?php echo $count ?>"><?php echo link_to($tag, '@tag?tag='.$tag, 'rel=tag') ?></li>
+      <?php endforeach; ?>
+    </ul>
+
+新しいアクションのために`routing.yml`設定ファイルでルーティングルールを追加することをお忘れなく:
+
+    popular_tags:
+      url:   /popular_tags
+      param: { module: tag, action: popular }
+
+アプリケーションの`app.yml`に`app_tag_cloud_max`パラメータを追加します:
+
+    all:
+      tag:
+        cloud_max:   40
+
+すべての準備が整いました: リクエストしてタグクラウドを表示してください。
+
+    http://askeet/popular_tags
+
+### タグリストの項目を表す
+
+しかし、クラウドはどこにあるのでしょうか？Web標準で推奨されるように、本当の造形はスタイルシートによって行われます。`main.css`スタイルシート(`askeet/web/css`に設置)に次の宣言を追加します。
+
+    [css]
+    ul#tag_cloud
+    {
+      list-style: none;
+    }
+    
+    ul#tag_cloud li
+    {
+      list-style: none;
+      display: inline;
+    }
+    
+    ul#tag_cloud li.tag_popularity_1
+    {
+      font-size: 60%;
+    }
+    
+    ul#tag_cloud li.tag_popularity_2
+    {
+      font-size: 100%;
+    }
+    
+    ul#tag_cloud li.tag_popularity_3
+    {
+      font-size: 130%;
+    }
+    
+    ul#tag_cloud li.tag_popularity_4
+    {
+      font-size: 160%;
+    }
+    
+人気タグのページをリフレッシュして、ほら!
+
+![タグクラウド](/images/askeet/tag_cloud.gif)
+
+それではまた明日
+----------------
+
+symfonyのサイトにタクソノミーを追加するのは大したことではありません。複雑なリクエスト、オートコンプリート、フォーム投稿後のローカルページのリフレッシュには数行のコードだけが必要です。
+
+しかし、アプリケーションを簡単に開発できることで開発のよい原則を忘れてしまうことはありませんし、行った変更は常にテストすべきです。素早く開発してこまめにリファクタリングするための最良のツールはユニットテストです。[ユニットテスト][4]は最新のコンピュータプログラミングにおけるもっとも偉大な進歩です。それらの内容は明日説明します。
+
+それまでは、[askeetのメーリングリスト](mailto:askeet-subscribe@symfony-project.com)で21日目の提案を投稿できます。これまでのアプリケーションのソースコード全体をダウンロードしたければ、`/tags/release_day_14`とタグづけされた[askeetのSVNリポジトリ](http://svn.askeet.com/tags/release_day_14/)にアクセスしてください。
+
+[1]: http://en.wikipedia.org/wiki/Folksonomy       "Folksonomy definition at Wikipedia"
+[2]: http://www.google.com/webhp?complete=1&hl=en  "Google suggest"
+[3]: http://del.icio.us/tag/                       "de.icio.us Popular tags"
+[4]: http://en.wikipedia.org/wiki/Unit_test        "Unit test definition at Wikipedia"

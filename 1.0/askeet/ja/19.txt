@@ -1,0 +1,259 @@
+19日目: パフォーマンスとキャッシュ
+=================================
+
+復習
+----
+
+アドベントカレンダーの日々は過ぎ、あなたはsymfonyフレームワークとそのコンセプトが快適になりつつあります。 アジャイル開発のグッドプラクティスに従っていれば、askeetのようなアプリケーションを開発するのは難しいことではありません。しかしながら、あなたのサイトのプロトタイプが準備が整い次第、すぐに行うべきことはテストとパフォーマンスの最適化です。
+
+とりわけあなたのサイトが共用サーバーでホストされているとしたら、フレームワークが原因のオーバーヘッドは一般的な関心事です。 symfonyはサーバーの応答を遅くすることはないですが、自分自身で見て、ページの配信速度を上げるためにコードを微調整したいと思うかもしれません。そこで今日のチュートリアルはパフォーマンスの測定と改善に焦点を当てます。
+
+テストツールをロードする
+-----------------------
+
+[15日目](15.txt)に説明したユニットテストは*一人のユーザーが接続したときに*アプリケーションが期待通りに動作するか懸賞できます。 インターネット上のアプリケーションのリリースしたら、- 私たちがあなたに対して最小限望むことですが -興奮したファンの一団が一斉にサイトに殺到して、パフォーマンスの問題が発生します。Webサーバーは落ち、手動で再起動する必要が出てきます。何が何でも避けるべき本当に苦痛な経験です。初期のユーザーが結論づけて悪いうわさが広まる前に、アプリケーションの初期においてとりわけ重要なことです。
+
+パフォーマンス問題を避けるには、リリースする前に、あなたのWebサイトがどのように反応するのかを見るために、数多くの同時アクセスをシミュレートすることが必要です。[ロードテスト](http://en.wikipedia.org/wiki/Load_testing)と呼ばれます。基本的には、同時リクエストをあなたのWebサーバーに投稿することを自動化するプログラムを作成し、リターンされる時間を測定します。
+
+>**Note**: ロードテストツールが何であれ、Webサイトを運営しているものよりも異なったサーバーで実行した方が望ましいです。テストツールは一般的にCPUを消費し、それら自身の動作がサーバーのパフォーマンスの結果を不安定にします。加えて、ローカルネットワークでテストをしてください。外部のネットワークのコンポーネント(プロキシ、ファイアーウォール、ルーター、ISPなど)による不安定性を避けるためです。
+
+### JMeter
+
+もっと一般的なロードテストツールは**[JMeter](http://jakarta.apache.org/jmeter/)**で、Apache財団によってメンテナンスされているオープンソースのJavaアプリケーションです。使い始めを手助けしてくれる[オンラインドキュメント](http://jakarta.apache.org/jmeter/usermanual/index.html)があり、[ロードテスト](http://jakarta.apache.org/jmeter/usermanual/boss.html)の紹介も書かれています。
+
+インストールためには、最新の安定版(2.1.1以降)を[Jmeterのダウンロードページ](http://jakarta.apache.org/site/downloads/index.html#jmeter_binaries)から入手してください。[Sunのサイト](http://java.com/en/download/index.jsp)で入手できる最新のJRE([Java Runtime Environment](http://en.wikipedia.org/wiki/Java_programming_language#Java_Runtime_Environment))も必要です。JMeterを始めるには、ディレクトリに移動してjmeter.batファイル(Windowsプラットフォームの場合)を実行するか、`java jmeter.jar`を入力します(Linuxプラットフォーム)。
+
+'Webテスト計画'と呼ばれるロードテストの計画を始める方法は、JMeterのドキュメントの[関連ページ](http://jakarta.apache.org/jmeter/usermanual/build-web-test-plan.html)に詳細が説明されています。ですので、私たちはここでは説明いたしません。
+
+![JMeterのWebテスト計画の結果](/images/askeet/jmeter.gif)
+
+>**Note**:  JMeterは1つもしくは複数のリクエストの平均応答時間を報告するだけでなく、受信ページのコンテンツのアサーションを行います。ですので、ロードテストツールとしてJMeterを使うことに加え、回帰テストとユニットテストを実施するシナリオを作成できます。
+
+### Apacheのab
+
+symfonyにお勧めの第二のツールはApache Bench(ab)で、他のすばらしいユーティリティをあなたにもたらしてくれます。Apache財団が開発しています。[オンラインマニュアル](http://httpd.apache.org/docs/2.2/programs/ab.html)はJMeterの物より少ないですが、abはコマンドラインツールなので、使うのは簡単です。
+
+LinuxではabはApacheの標準パッケージに付属していますので、Apacheサーバーをインストールしていれば、`/usr/local/apache/bin/ab`で見つけることができます。Windowsプラットフォームでは、探すのは難しいので、[symfony](http://www.symfony-project.com/downloads/ab.zip)から直接ダウンロードすると良いでしょう。
+
+このベンチマークツールの使い方はとてもシンプルです:
+
+    $ /usr/local/bin/apache2/bin/ab -c 1 -n 1 http://www.askeet.com/
+    This is ApacheBench, Version 2.0.41-dev <$Revision: 1.121.2.12 $> apache-2.0
+    Copyright   1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+    Copyright   1998-2002 The Apache Software Foundation, http://www.apache.org/
+   
+    Benchmarking www.askeet.com (be patient).....done
+   
+   
+    Server Software:        Apache
+    Server Hostname:        www.askeet.com
+    Server Port:            80
+   
+    Document Path:          /
+    Document Length:        15525 bytes
+   
+    Concurrency Level:      1
+    Time taken for tests:   0.596104 seconds
+    Complete requests:      1
+    Failed requests:        0
+    Write errors:           0
+    Total transferred:      15874 bytes
+    HTML transferred:       15525 bytes
+    Requests per second:    1.68 [#/sec] (mean)
+    Time per request:       596.104 [ms] (mean)
+    Time per request:       596.104 [ms] (mean, across all concurrent requests)
+    Transfer rate:          25.16 [Kbytes/sec] received
+   
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:       61   61   0.0     61      61
+    Processing:   532  532   0.0    532     532
+    Waiting:      359  359   0.0    359     359
+    Total:        593  593   0.0    593     593
+
+>**Note**: ページの名前(少なくとも上の例では`/`)を提供する必要があります。なぜなら、1つのホストだけをターゲットにすると不正にフォーマットされたURLエラーが返されるからです。
+
+`-c`と`-n`パラメータは同時スレッドの数と実行するリクエストの合計数を定義します。もっとも興味深い結果データは最後の行です。平均の合計接続時間(左から2番目の数)この例の場合、1つの接続のみで、接続時間はあまり正確ではありません。ページの実際のパフォーマンスのビューを良くするには、平均で複数のリクエストが必要で、平行で立ち上げる必要があります:
+
+    $ /usr/local/bin/apache2/bin/ab -c 10 -n 20 http://www.askeet.com/
+    ...
+   
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:       59   88  19.9     89     130
+    Processing:   831 1431 510.9   1446    3030
+    Waiting:      632 1178 465.1   1212    2781
+    Total:        906 1519 508.4   1556    3089
+   
+    Percentage of the requests served within a certain time (ms)
+      50%   1556
+      66%   1569
+      75%   1761
+      80%   1827
+      90%   2285
+      95%   3089
+      98%   3089
+      99%   3089
+     100%   3089 (longest request)
+
+多くのリクエストを実行する前にテスト自身によって取得された時間がわかるようにするために、、ab -c 1 -n 1`で始めることになります。 妥当な小さい標準偏差を得るまで、リクエストの合計数(`ab -c 1 -n 30`のように)を増やしてください。重要な平均接続時間の測定を手に入れたときのみ、実際のロードテストの準備ができます。少しずつスレッドを追加し(`ab -c 10 -n 300`のように)リクエストの合計数を増加させることを忘れないでください。数秒を超えて、ロードの平均時間がパスをしたとき、サーバーは対処できる数を超え、並行スレッドはサポートできないでしょう。あなたのサービスの最大チャージを決定しました。これらはストレステストと呼ばれます。
+
+>**Note**: インターネット上で動作している自分のサイト以外にストレステストを行わないようにお願いします。外部のサイトでストレステストを行うことはDoS攻撃([Denial of Service](http://en.wikipedia.org/wiki/Denial-of-service_attack))と見なされます。[askeetWebサイト](http://www.askeet.com/)に違いはありませんが、もう一度繰り返します。ストレステストを行わないでください。
+
+ロードテストは2つの重要な情報のピースを提供します: 特別ページのロードの平均時間と、サーバーの最大キャパシティです。最初の情報はパフォーマンス改善をモニタリングするのにとても有用です。
+
+キャッシュでパフォーマンスを改善する
+-----------------------------------
+
+与えられたページのパフォーマンスを増大させるための方法はたくさんあります。コードプロファイリング、データベースへのリクエストの最適化、インデックスの追加、Webサイトのメディア専用の代替の軽量Webサーバーの作成などがあります。複数のプログラミング言語もしくはPHPの良書を購入したりWebサイトを見てテクニックを学べばパフォーマンスの導師になれます。
+
+symfonyはWebリクエストにある種のオーバロードを追加します。設定とフレームワークのクラスはそれぞれのリクエストごとにロードされ、MVC分離とORMの抽象化は実行コードをより多く増やすことになるからです。(他のフレームワークや言語と比べて)このオーバーヘッドは相対的に低いですが、symfonyはキャッシュの応答時間のバランスを保つ方法も提供します。アクションの結果、もしくは全ページは、Webサーバーのハードディスク上のファイルに書き込まれます。そしてこのファイルは同じリクエストが再び要求されたときに再利用されます。これはパフォーマンスをかなり押し上げます。すべてのデータベース、デコレーションとアクションの実行が完全に回避されるからです。symfony bookの[キャッシュの章](http://www.symfony-project.org/book/1_0/12-Caching)で情報を得られます。
+
+popularタグページの配信を加速するためにHTMLキャッシュを試します。複雑なSQLクエリを含むので、キャッシュの良い対象です。最初に、現在のコードをロードするのにどのくらいの時間がかかるのか見てみます:
+
+    $ ab -c 1 -n 30 http://askeet/popular_tags
+    ...
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:        0    0   0.0      0       0
+    Processing:   147  148   2.4    148     154
+    Waiting:      138  139   2.3    139     145
+    Total:        147  148   2.4    148     154
+    ...
+
+### アクションの結果をキャッシュに保存する
+
+>**Caution**: 次のコードはsymfony0.6では動作しません。このチュートリアルが更新されるまで、次のセクションに移動してください。
+
+popularタグのリストを表示するために実行されるアクションは`tag/popular`です。このアクションの結果をキャッシュするために、私たちがすべきことは`askeet/apps/frotnend/modules/tag/config/ `ディレクトリで`cache.yml`ファイルを作成することです:
+
+    popular:
+      activate:   on
+      type:       slot
+   
+    all:
+      lifeTime:   600
+
+このファイルはこのアクションに対する`slot`型のキャッシュを有効にします。アクションの結果(ビュー)は`cache/frontend/prod/template/askeet/popular_tags/slot.cache`ファイルに保存され、作成された後では次の600秒(10分)の期間はアクションを呼び出す代わりにこのファイルは使用されます。このことが意味するのはpopularタグページは10分ごとに存続し、その間、キャッシュは同じ場所で使われます。
+
+キャッシュの保存は最初のリクエストで行われるので、ブラウザで見る必要があります:
+
+    http://askeet/popular_tags
+   
+...テンプレートのキャッシュを作成するためです。次の10分間このページの呼び出しは速くなり、Apacheベンチマークツールを再び実行してすぐに確認できます:
+
+    $ ab -c 1 -n 30 http://askeet/popular_tags   
+    ...
+    Connection Times (ms)
+                  min  mean[+/-sd] median   max
+    Connect:        0    0   0.0      0       0
+    Processing:   137  138   2.0    138     144
+    Waiting:      128  129   2.0    129     135
+    Total:        137  138   2.0    138     144
+    ...
+
+148msから138msまでの平均をパスしました。パフォーマンスは7％増加しました。キャッシュシステムはパフォーマンスを改善する重要な方法です。
+
+>**Note**: `slot`型はページのデコレーションを回避しません。(たとえばレイアウトでのテンプレートの挿入など)この場合、全体のページをキャッシュすることはできません。なぜならレイアウトはコンテンツに依存する要素を格納するからです。(たとえばトップページのユーザー名)しかし、symfonyは動的ではないレイアウトに対して効果的なページの種類を提供します。
+
+### ステージング環境を構築する
+
+デフォルトでは、キャッシュシステムは開発環境では動作が停止しており、本番環境では動作します。十分に設定されなかった場合、キャッシュページが新しいエラーを作り出す可能性があるからです。Webアプリケーションのテストに関するグッドプラクティスは本番環境と同じような新しいテスト環境を構築することです。しかし、テスト環境ではすべてのデバッグとトレースツールが利用可能です。symfony開発者は'ステージング '環境と呼んでいます。開発環境ではなくステージング環境においてエラーが発生した場合、このエラーがキャッシュによって引き起こされた可能性が大いにあります。
+
+機能を開発するとき、まず開発環境で適切に動作するか確認します。それから、パフォーマンスを改善するために関連アクションのキャッシュパラメータを変更します。そして、キャッシングシステムが機能の不安定性をもたらさないか見るために、再びステージング環境でテストします。すべてがうまくいったとき、改善を図るために本番環境でロードテストを実行する必要があります。アプリケーションの動作が開発環境よりも異なる場合、キャッシュの設定方法を再度確認する必要があります。[ユニットテスト](15.txt)はこの手順を体系的にするための大きな手助けになります。
+
+ステージング環境を作成するには、新しいフロントコントローラを追加し、環境設定を定義する必要があります。
+
+本番用のフロントコントローラ(`askeet/web/index.php`)を`askeet/web/frontend_staging.php`ファイルにコピーし、次のように定義を変更する必要があります:
+
+    [php]
+    <?php
+    
+    define('SF_ROOT_DIR',    realpath(dirname(__FILE__).'/..'));
+    define('SF_APP',         'frontend');
+    define('SF_ENVIRONMENT', 'staging');
+    define('SF_DEBUG',       false);
+    
+    require_once(SF_ROOT_DIR.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.SF_APP.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'config.php');
+    
+    sfContext::getInstance()->getController()->dispatch();
+    
+    ?>
+
+`askeet/apps/frontend/confg/settings.yml`を開き、次の行を追加します:
+
+    staging:
+      .settings:
+        web_debug:              on
+        cache:                  on
+        no_script_name:         off
+
+これでお終いです。デバッグと有効なキャッシュ機能を持つステージング環境がリクエストによって使用される準備が整いました:
+
+    http://askeet/frontend_staging.php/
+
+### テンプレートフラグメントをキャッシュに保存する
+
+askeetページの多くは動的な要素から構成されているので(たとえば質問の説明は'interested?'リンクを含み、それを表示するユーザーがすでにそれをクリックした場合シンプルなテキストに変換される)、私たちのアクションにおいて`slot`型のキャッシュの対象がありません。しかし、たとえば、特定の質問のタグリストのように、テンプレートのチャンク(塊)をキャッシュできます。これはpopularタグクラウドよりもトリッキーです。ユーザーがタグをこの質問に追加するたびにこのチャンクのキャッシュをクリアしなければならないからです。しかし心配しないでください。symfonyは処理方法を簡単にします。
+
+改善を測定するには、`question/show`ページの現在のロードの平均時間を知っておく必要があります。
+
+    $ ab -c 1 -n 30 http://askeet/question/what-can-i-offer-to-my-step-mother
+
+最初に、質問に対するタグリストは2つのバージョンを持ちます: 一つは未登録なユーザー(タグクラウド)のため、もう一つは登録ユーザーのためです(ユーザー自身によって入力された削除リンクを持つタグリストです)。未登録ユーザーのためのタグクラウドだけをキャッシュできます(他はダイナミックです)。これはtag/_question_tagsテンプレートパーシャルに設置されます。このファイル(askeet/apps/frontend/modules/tag/templates/_question_tags.php)を開きif(!cache())ステートメントでキャッシュするフラグメントのブロックを囲みます:
+
+    [php]
+    ...
+    <?php if ($sf_user->isAuthenticated()): ?>
+    ...
+    <?php else: ?>
+      <?php if (!cache('question_tags', 3600)): ?>
+        <?php include_partial('tag/tag_cloud', array('tags' => QuestionTagPeer::getPopularTagsFor($question))) ?>
+        <?php cache_save() ?>
+      <?php endif ?>
+    <?php endif ?>
+
+`if(!cache())`ステートメントはフラグメントのブロック(`fragment_question_tags.cache`と呼びます)のキャッシュがすでに存在しているか、1時間(3600秒)以上経過して古くなっていないかをチェックします。1時間以内であればキャッシュが使用され、`if(!cache())`と`endif`の間のコードは実行されません。そうでなければ、コードが実行され、`cache_save()`によってその結果がフラグメントファイルに保存されます:
+
+フラグメントキャッシュによるパフォーマンスの改善内容を見てみましょう:
+
+    $ ab -c 1 -n 30 http://askeet/question/what-can-i-offer-to-my-step-mother
+   
+もちろん、改善は`slot`タイプと同じぐらい重要ではありませんが、小さな最適化をたくさん行うことはあなたのアプリケーションに目に見えるほどの強化をもたらします。
+
+>**Caution**:  当初は`sidebar/question`アクションによって呼び出されたとしても、フラグメントキャッシュファイルは`cache/frontend/template/askeet/question/what-can-i-offer-to-my-step-mother/fragment_question_tags.cache`に設置されます。コードのスロットが呼び出されたメインアクションに依存するからです。
+
+### 一部のキャッシュをクリアする
+
+質問のタグリストはフラグメントの寿命の範囲以内で変わることがあります。ユーザーが質問へのタグを追加もしくは削除をするたびに、タグリストは変わります。このことは関連アクションがフラグメントのためにキャッシュをクリアできるということを意味します。これは`viewCacheManager`オブジェクトの`->remove()`メソッドによって可能です。
+
+`tag`モジュールの`add`と`delete`アクションの最終行を修正します:
+
+    [php]
+    // キャッシュの質問タグリストのフラグメントをクリアする
+    $this->getContext()->getViewCacheManager()->remove('@question?stripped_title='.$this->question->getStrippedTitle(), 'fragment_question_tags');
+
+タグリストのフラグメントキャッシュが質問からタグを追加もしくは削除すること、適切に更新されるリストのタグをすぐに見れば表示ページで不整合が生じていないかチェックできます。
+
+ページの一部がキャッシュの中に存在するか確認するために、開発環境のキャッシュを有効にできます。`settings.yml`設定ファイルを変更します:
+
+    dev:
+      .settings:
+        cache:                  on
+
+これで、ページ、フラグメント、もしくはスロットがすでにキャッシュされているのかわかります:
+
+![キャッシュ内のフラグメント](/images/askeet/fragment_cache.gif)
+
+もしくはフレッシュなコピーの時です:
+
+![キャッシュされていないフラグメント](/images/askeet/fragment_no_cache.gif)
+
+それではまた明日
+----------------
+
+symfonyは高レベルのオーバーヘッドを生み出しませんし、Webアプリケーションのパフォーマンスを適切に調節する簡単な方法を提供します。キャッシュシステムはパワフルで順応性が高いです。このチュートリアルのいくつかの箇所がよくわからなければ、symfony bookの[キャッシュの章](http://www.symfony-project.com/book/1_0/12-Caching)を参照してください。詳しい説明と新しい例題がたくさんあります。
+
+明日は、Webサイトの活動の管理を考えることを始めます。 半匿名の書き込みを開いたときにスパムからの防衛、誤った記入項目の訂正はWebサイトに必要な機能です。そのためにaskeetのバックオフィスを作るか、特定のプロファイルを持つユーザーに新しいオプションセットへのアクセス権を与えます。ともかく、symfonyで開発するのであれば一時間もかからないです。
+
+[フォーラム](http://www.symfony-project.com/forum/index.php/f/8/)に訪問するか、バグレポート、バージョンの詳細、wikiの変更や[askeetのタイムライン](http://trac.askeet.com/trac/timeline)をみたりして最新の[askeet](http://www.askeet.com/)のニュースを確認しておいてください。

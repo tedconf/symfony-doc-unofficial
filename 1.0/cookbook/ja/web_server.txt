@@ -1,0 +1,200 @@
+Webサーバーの設定方法
+=======================
+
+概要
+----
+
+symfonyアプリケーションにアクセスできるようにするためにWebサーバーを設定する方法は複数あります。この章では異なる設定方法とアクセスを最適化するためのこつを説明します。
+
+はじめに
+--------
+
+上で説明した例において、`myproject`プロジェクトは`myapp`アプリケーションを含みます。このアプリケーションのフロントコントローラは`index.php`と呼ばれ`/home/steve/myproject/web/`ディレクトリ内に存在します。symfonyのデータディレクトリは`$data_dir`です。
+
+バーチャルホスト
+----------------
+
+バーチャルホスティングのおかげでsymfonyアプリケーションがドメイン(もしくはサブドメイン)のrootに表示されるようにWebサーバーをセットアップできます:
+
+    http://myapp.example.com/
+
+Apacheサーバーを稼働させることを前提とします。`myapp`アプリケーションのためにバーチャルホストをセットアップするために、次の行を`httpd.conf`ファイルに追加します:
+
+    <Directory "/$data_dir/symfony/web/sf">
+     AllowOverride All
+     Allow from All
+    </Directory>
+    <VirtualHost *:80>
+      ServerName myapp.example.com
+      DocumentRoot "/home/steve/myproject/web"
+      DirectoryIndex index.php
+      Alias /sf /$data_dir/symfony/web/sf
+
+      <Directory "/home/steve/myproject/web">
+       AllowOverride All
+       Allow from All
+      </Directory>
+    </VirtualHost>
+
+真ん中の`Alias`ディレクティブはデバッグ用のサイドバーの画像を表示するために必要です。`$data_dir`プレースホルダはPEARのdataディレクトリに置き換えなければなりません。たとえば、*nixに対しては、次の行を入力します:
+
+    Alias /sf /usr/local/lib/php/data/symfony/web/sf
+
+PEARディレクトリについてもっと詳しい情報は[インストールの章](http://www.symfony-project.com/book/1_0/03-Running-Symfony)で見つかります
+
+Apacheを再起動すれば作業は終了です: Webアプリケーションは呼び出し可能になり標準的なWebブラウザを通して次のURLで閲覧できます:
+
+    http://myapp.example.com/
+
+デバッグモードの場合次のURLです:
+
+    http://myapp.example.com/myapp_dev.php/
+
+URLの書き換え
+-------------
+
+デフォルトでは、WebサーバーはURL内で本番環境のフロントコントローラ(`index.php`)を参照することを回避するように設定されます。このことは次のURLを表示する代わりに:
+
+    http://myapp.example.com/index.php/
+
+サーバーは下記のURLを表示し認知することを意味します:
+
+    http://myapp.example.com/
+
+これを実現するためにはApacheの`mod_rewrite`モジュールを利用して、`myproject/web/.htaccess`内に存在する次の行を必要とします(下記はデフォルトの場合):
+
+    # .somethingを持つすべてのファイルをスキップする
+    RewriteCond %{REQUEST_URI} \..+$
+    RewriteCond %{REQUEST_URI} !\.html$
+    RewriteRule .* - [L]
+    # その他はWebフロントコントローラにリダイレクトされる
+    RewriteRule ^(.*)$ index.php [QSA,L]
+
+URLの最後に`.html`を追加したい場合、見た目の修正方法は複数存在します。通常、`main`モジュールの`index`アクションを呼び出すとき、デフォルトのルーティング設定によって、表示されるURLは次のようになります:
+
+    http://myapp.example.com/main/index
+
+アプリケーションのデフォルトの`settings.yml`ファイルはコメントになっている`suffix`パラメータを含みます:
+
+    all:
+    #  .settings:
+    #    suffix:        .
+
+`main`モジュールの`index`アクションを次のように表示するためには:
+
+    http://myapp.example.com/main/index.html
+
+コメントを解除して`suffix`パラメータの値を`.html`に設定できます:
+
+    all:
+      .settings:
+        suffix:        .html
+
+エイリアス
+----------
+
+既存のドメイン名の上にWebサイトを持っており、symfonyのアプリケーションをそのドメイン内でアクセスできるようにしたい場合、バーチャルホストの解決方法ではうまくゆきません。たとえば、symfonyのアプリケーションにアクセスしたい場合を考えましょう:
+
+    http://www.example.com/myapp/
+
+これを実現するためには、`httpd.conf`ファイルを開き、次の行を追加します:
+
+    Alias /myapp/ /home/steve/myproject/web/
+    <Directory "/home/steve/myproject/web">
+       AllowOverride All
+       Allow from All
+    </Directory>
+
+`myproject/web/`ディレクトリに設置されている`.htaccess`ファイルも編集し、最後の書き換えルール
+
+    RewriteRule ^(.*)$ index.php [QSA,L]
+
+を次のように変更します
+
+    RewriteRule ^(.*)$ /myapp/index.php [QSA,L]
+
+Apacheを再起動し、Webアプリケーションにアクセスしてみます:
+
+    http://www.example.com/myapp/
+
+1つのプロジェクト内で複数のアプリケーション
+-------------------------------------------
+
+プロジェクトの設計過程の期間において、1つもしくは複数のアプリケーションの問題に遭遇します。たとえば、`myproject`プロジェクト内で、`myapp`アプリケーションを公開して`admin`アプリケーションが内容を管理するとします(通常はバックオフィスと呼ばれます)。1つのプロジェクトの範囲内で複数のアプリケーションにアクセスすることを許可するためにはどうしたらよいでしょうか？
+
+### バーチャルホスト
+
+新しいバーチャルホストをApacheの`httpd.conf`ファイルに追加します。これはかなり簡単に理解できます:
+
+    <Directory "/$data_dir/symfony/web/sf">
+     AllowOverride All
+     Allow from All
+    </Directory>
+
+    <VirtualHost *:80>
+      ServerName myapp.example.com
+      DocumentRoot "/home/steve/myproject/web"
+      DirectoryIndex index.php
+      Alias /sf /$data_dir/symfony/web/sf
+
+      <Directory "/home/steve/myproject/web">
+       AllowOverride All
+       Allow from All
+      </Directory>
+    </VirtualHost>
+        
+    <VirtualHost *:80>
+      ServerName admin.example.com
+      DocumentRoot "/home/steve/myproject/web"
+      DirectoryIndex admin.php
+      Alias /sf /$data_dir/symfony/web/sf
+
+      <Directory "/home/steve/myproject/web">
+        AllowOverride All
+        Allow from All
+      </Directory>
+    </VirtualHost>
+
+### エイリアス
+
+別の方法としては、新しいエイリアスを追加できます。この設定によってそれぞれのアプリケーションごとに切り離されたWebの内容(.css、.js、images、など)を持つことができるようになります。これによって`httod.conf`ファイルを直接編集しなくて済みます。
+
+最初に、`web`ディレクトリ内に新しいディレクトリを作ります:
+
+    $ mkdir /home/steve/myproject/web/admin
+
+それから、`admin`アプリケーションのフロントコントローラをこの新しいディレクトリに移動させて、この新しいアプリーションのために`.htaccess`ファイルをコピーします:
+
+    $ cd /home/steve/myproject/web
+    $ mv admin.php admin/index.php
+    $ mv admin_dev.php admin/
+    $ cp .htaccess admin/
+    
+それから、エイリアスをセットアップするために上で説明した2つのステップを実行します。`myproject/web/admin/`ディレクトリに設置された`.htaccess`ファイルのコード:
+
+    RewriteRule ^(.*)$ index.php [QSA,L]
+
+を下記のように変更します
+
+    RewriteRule ^(.*)$ /admin/index.php [QSA,L]
+
+最終的に、両方のフロントコントローラ(`myproject/web/admin/index.php`と`myproject/web/admin/admin_dev.php`)を編集し変更します:
+
+    [php]
+    define('SF_ROOT_DIR', realpath(dirname(__FILE__).'/..'));
+
+変更後は次の通りです:
+
+    [php]
+    define('SF_ROOT_DIR', realpath(dirname(__FILE__).'/../..'));
+    
+`admin`アプリケーションにアクセスできるようにするためにはこれで十分です
+
+    http://whateveryourmainurlis/admin/
+
+>**Note**: (`css`、`js`、`images`、`uploads`ディレクトリを持つ)古典的な`web`ディレクトリのように`web/admin`ディレクトリ内で同じファイル構造を再現する必要があります。現時点でのrootへのすべてのパスはこの`admin`ディレクトリを指し示すからです。
+
+IIS
+---
+
+symfonyはIISと互換性があります。IIS環境でsymfonyプロジェクトのインストールと設定方法についてすべてを学ぶためには、[関連チュートリアル](http://www.symfony-project.org/cookbook/1_0/ja/web_server_iis)をご覧ください。

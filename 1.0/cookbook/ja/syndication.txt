@@ -1,0 +1,296 @@
+配信フィードを生成する方法
+=========================
+
+概要
+----
+
+アプリケーションが投稿、画像、ニュース、質問もしくは何であれ一覧を表示するかどうか、更新率は一ヶ月に1回以上の場合、ユーザーがフィードアグリゲーターからあなたのWebサイトについて最新の情報を知ることができるように配信フィード(RSS、Atomなど)を提供しなければなりません。よいニュースは、オブジェクトモデルがビルドされると、symfonyはあなたに代わってすべての作業を行ってくれるフィードビルダープラグインを提供するので機能を開発するためにコードを書く必要はありません。
+
+導入
+------------
+
+この章で考える例は`Post`と`Author`テーブルでシンプルなblogアプリケーションです:
+
+Post        | Author
+----------- | ---------
+id          | id
+author_id   | first_name
+title       | last_name
+description | email
+body        |
+created_at  |
+
+`Post`クラスは`getStrippedTitle()`メソッドによって拡張されます。このメソッドはタイトルをURIで使用できる文字列に変換し、空白をダッシュに、大文字を小文字に置き換え、すべての特殊文字を除去します:
+
+    [php]
+    public function getStrippedTitle()
+    {
+      $text = strtolower($this->getTitle());
+
+      // 単語でない文字列すべてを除去する
+      $text = preg_replace('/\W/', ' ', $text);
+      // すべての空白セクションをダッシュに置き換える
+      $text = preg_replace('/\ +/', '-', $text);
+      // ダッシュを整える
+      $text = preg_replace('/\-$/', '', $text);
+      $text = preg_replace('/^\-/', '', $text);
+
+      return $text;
+    }
+
+次のように`Author`クラスはカスタムの`->getName()`メソッドによって拡張されます:
+
+    [php]
+    public function getName()
+    {
+      return $this->getFirstName().' '.$this->getLastName()
+    }
+
+モデルを拡張する詳細な方法が知りたければ[8章](http://www.symfony-project.org/book/1_0/08-Inside-the-Model-Layer#chapter_08_extending_the_model)をご覧ください。
+
+`routing.yml`は次のルールを含みます:
+
+    post:
+        url:   /permalink/:stripped_title
+        param: { module: post, action: read }
+
+ルーティングシステムの詳細な情報が必要でしたら[9章](http://www.symfony-project.org/book/1_0/09-Links-and-the-Routing-System)を参照してください。
+
+特別な`feed`モジュールは必要な時にビルドされ、すべてのアクションとテンプレートはそれに設置されます。
+
+    $ symfony init-module myapp feed
+
+期待される結果
+--------------
+
+フィードアクションは[Atom][1]フィードを出力しなければなりません。すべての情報がAtomフィードに含まれる必要があります。例です:
+
+    [xml]
+    <?xml version="1.0" encoding="utf-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+
+      <title>The mouse blog</title>
+      <link href="http://www.myblog.com/" />
+      <updated>2005-12-11T16:23:51Z</updated>
+      <author>
+        <name>Peter Clive</name>
+        <author_email>pclive@myblog.com</author_email>
+      </author>
+      <id>4543D55FF756G734</id>
+
+      <entry>
+        <title>I love mice</title>
+        <link href="http://www.myblog.com/permalink/i-love-mice" />
+        <id>i-love-mice</id>
+        <author>
+          <name>Peter Clive</name>
+          <author_email>pclive@myblog.com</author_email>
+        </author>
+        <updated>2005-12-11T16:23:51Z</updated>
+        <summary>Ever since I bought my first mouse, I can't live without one.</summary>
+      </entry>
+
+      <entry>
+        <title>A mouse is better than a fish</title>
+        <link href="http://www.myblog.com/permalink/a-mouse-is-better-than-a-fish" />
+        <id>a-mouse-is-better-than-a-fish</id>
+        <author>
+          <name>Bob Walter</name>
+          <author_email>bwalter@myblog.com</author_email>
+        </author>
+        <updated>2005-12-09T09:11:42Z</updated>
+        <summary>I had a fish for four years, and now I'm sick. They smell.</summary>
+      </entry>
+
+    </feed>
+
+プラグインをインストールする
+----------------------------
+
+symfonyはたいていのフィード生成を自動化する`sfFeed`プラグインを提供します。インストールするために、symfonyコマンドラインを使います:
+
+    $ symfony plugin-install http://plugins.symfony-project.com/sfFeedPlugin
+    
+これは`plugins/`ディレクトリでプラグインのクラスをインストールします。symfonyがこれらをオートロードできるようにするために、設定キャッシュをクリアする必要があります:
+
+    $ symfony cc
+
+プラグインがフレームワークを拡張する方法、複数のプロジェクトにまたがって使える機能のパッケージを作る方法などを学びたければ、symfony bookの[17章](http://www.symfony-project.org/book/1_0/17-Extending-Symfony#chapter_17_plug_ins)を参照してください。
+
+手動でフィードをビルドする
+---------------------------
+
+`feed`モジュールにおいて、`lastPosts`アクションを作ります:
+
+    [php]
+    public function executeLastPosts()
+    {
+      $feed = sfFeed::newInstance('atom1');
+
+      $feed->setTitle('The mouse blog');
+      $feed->setLink('http://www.myblog.com/');
+      $feed->setAuthorEmail('pclive@myblog.com');
+      $feed->setAuthorName('Peter Clive');
+
+      $c = new Criteria;
+      $c->addDescendingOrderByColumn(PostPeer::CREATED_AT);
+      $c->setLimit(5);
+      $posts = PostPeer::doSelect($c);
+
+      foreach ($posts as $post)
+      {
+        $item = new sfFeedItem();
+        $item->setFeedTitle($post->getTitle());
+        $item->setFeedLink('@permalink?stripped_title='.$post->getStrippedTitle());
+        $item->setFeedAuthorName($post->getAuthor()->getName());
+        $item->setFeedAuthorEmail($post->getAuthor()->getEmail());
+        $item->setFeedPubdate($post->getCreatedAt('U'));
+        $item->setFeedUniqueId($post->getStrippedTitle());
+        $item->setFeedDescription($post->getDescription());
+
+        $feed->addItem($item);
+      }
+
+      $this->feed = $feed;
+    }
+
+初めの[factory][2]メソッドは'Atom'フォーマットのために`sfFeed`クラスのインスタンスを作ります。`sfFeed`と`sfFeedItem`クラスはフィードコンストラクションのために特別に作られたsymfonyアドオンです。アクションの最後の部分で、変数`$feed`はいくつかの`sfFeedItem`オブジェクトを内包する`sfFeed`オブジェクトを含みます。オブジェクトを実際のAtomフィードに変換するために、`lastPostsSuccess.php`テンプレートは次の内容を含みます:
+
+    [php]
+    <?php echo $feed->getFeed() ?>
+
+テンプレートはレイアウトによってデコレートされる必要はありません。加えて結果ページのcontent-typeは`text/xml`として宣言されます。`view.yml`を`feed`モジュールの`config/`ディレクトリに追加します:
+
+    all:
+      has_layout: off
+
+      http_metas:
+        content-type: text/xml
+
+フィードアグリゲータから呼び出されるとき、上で説明されたようにアクションの結果はAtomフィードそのものです:
+
+    http://www.myblog.com/feed/lastPosts
+
+省略構文を使う
+---------------
+
+定義するための情報がたくさんあるので、アイテムのコンストラクト用のセッターを使うことは少し煩わしいかもしれません。symfonyは連想配列を利用して同じ効果を生み出す省略構文を提供します:
+
+    [php]
+    public function executeLastPosts()
+    {
+
+      $feed = sfFeed::newInstance('atom1');
+
+      $feed->setTitle('The mouse blog');
+      $feed->setLink('http://www.myblog.com/');
+      $feed->setAuthorEmail('pclive@myblog.com');
+      $feed->setAuthorName('Peter Clive');
+
+      $c = new Criteria;
+      $c->addDescendingOrderByColumn(PostPeer::CREATED_AT);
+      $c->setLimit(5);
+      $posts = PostPeer::doSelect($c);
+
+      foreach ($posts as $post)
+      {
+        $item = array(
+          'title'       => $post->getTitle(),
+          'link'        => '@permalink?stripped_title='.$post->getStrippedTitle(),
+          'authorName'  => $post->getAuthor()->getName(),
+          'authorEmail' => $post->getAuthor()->getEmail(),
+          'pubdate'     => $post->getCreatedAt(),
+          'uniqueId'    => $post->getStrippedTitle(),
+          'description' => $post->getDescription(),
+        );
+
+        $feed->addItemFromArray($item);
+      }
+
+      $this->feed = $feed;
+    }
+
+まったく同じ効果を持ちますが、構文はより明確です。
+
+symfonyに任せる
+---------------
+
+新しいフィールドをビルドするために使われるメソッドの名前はたいていは同じなので、上記の内容は次の方法で実現できます:
+
+    [php]
+    public function executeLastPosts()
+    {
+
+      $feed = sfFeed::newInstance('atom1');
+
+      $feed->setTitle('The mouse blog');
+      $feed->setLink('http://www.myblog.com/');
+      $feed->setAuthorEmail('pclive@myblog.com');
+      $feed->setAuthorName('Peter Clive');
+
+      $c = new Criteria;
+      $c->addDescendingOrderByColumn(PostPeer::CREATED_AT);
+      $c->setLimit(5);
+      $posts = PostPeer::doSelect($c);
+
+      $feed->setFeedItemsRouteName('@permalink');
+      $feed->setItems($posts);
+
+      $this->feed = $feed;
+    }
+
+本当のマジックだと思いませんか？
+
+`sfFeed`オブジェクトのマジック
+-------------------------------
+
+`Post`オブジェクトのゲッターメソッドは明確なのでsymfonyはそれらを理解することもできます。`sfFeed`クラスはよく編成されたクラスから適切な情報を推定する組み込みのメカニズムを持つからです:
+
+-   `title`アイテムを設定するために、`getFeedTitle()`、`getTitle()`、`getName()`もしくは`__toString`メソッドを探します。
+
+    例題において`Post`オブジェクトは`getName()`メソッドを持ちます。
+
+-   `link`を設定するために、フィードアイテムのrouteの名前が捜索されます(`setFeedItemsRouteName()`によって定義されます)。1つある場合、オブジェクトメソッドのゲッターを見つけるためにパラメータ用のroute URLで探します。そうではない場合、`getFeedLink()`、`getLink()`、`getUrl()`メソッドを探します。
+
+    例題において、1つのrouteの名前は上記のアクション(`@permalink`)で定義されます。ルーティングルールは`:stripped_title`パラメータを含み、`Post`オブジェクトは`getStripped_Title()`メソッドを持つので、`sfFeed`オブジェクトはリンクするURIを定義できます。
+
+-   著者のEメールを設定するために、`getFeedAuthorEmail`もしくは`getAuthorEmail`が捜索されます。そのようなメソッドが存在しない場合、`getAuthor()`、`getUser()`もしくは`getPerson()`メソッドが捜索されます。返された結果がオブジェクトの場合、このオブジェクトでで`getEmail`もしくは`getMail`メソッドが捜索されます。
+
+    例題では、`Post`オブジェクトは`getAuthor()`を持ち、`Author`オブジェクトは`getName()`を持ちます。同じ種類のルールは著者の名前とURLに対して使用されます。
+
+-   公開の日付を設定するために、`getFeedPubdate()`、`getPubdate()`、`getCreateAt()`もしくは`getDate()`メソッドが捜索されます。
+
+    例題では、`Post`オブジェクトは`getCreatedAt`を持ちます
+
+同じことがAtomフィード(カテゴリ、要約、ユニークIDなど)の他のフィールドにも当てはまり、すべての推測メカニズムを見つけるには[`sfFeed`クラスのソース](http://www.symfony-project.org/trac/browser/plugins/sfFeedPlugin/lib)を見ることをお勧めします。
+
+全体的に、`Post`と`Author`オブジェクトのアクセサがビルドされる方法によって`sfFeed`の組み込みのショートカットが利用できるので、フィードの作成がシンプルになります。
+
+フィード用のカスタムの値を定義する
+----------------------------------
+
+上述で説明されたリストにおいて、`sfFeed`オブジェクトが最初に探すメソッド名が常に`getFeedXXX()`であることを確認できます。このことでシンプルに拡張されたモデルによってフィードアイテムのそれぞれのフィールドのためにカスタムの値を指定することが可能です。
+
+たとえば、著者のEメールをフィードに公開したくない場合、`Post`オブジェクトに次の`getFeedAuthorEmail()`メソッドを追加してください:
+
+    [php]
+    public function getFeedAuthorEmail()
+    {
+      return '';
+    }
+
+このメソッドは`getAuthor()`メソッドの前で見つかり、フィードは公開者のEメールアドレスを公開しません。
+
+他のフォーマットを使用する
+--------------------------
+
+下記で説明されているメソッドは他のRSSフィードをビルドするために置き換えることができます。フィードファクトリに与えられたパラメータを変更するだけです:
+
+    [php]
+    // RSS 0.91
+    $feed = sfFeed::newInstance('rssUserland091');
+    // RSS 2.01
+    $feed = sfFeed::newInstance('rss201rev2');
+
+[1]: http://en.wikipedia.org/wiki/Atom_%28standard%29  "Atom definition at Wikipedia"
+[2]: http://en.wikipedia.org/wiki/Factory_object       "Factory definition at Wikipedia"

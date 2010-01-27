@@ -1,0 +1,491 @@
+7日目: モデルとビューの操作
+==========================
+
+復習
+----
+
+すでに6日が過ぎ、アプリケーションは今のところ、便利ではないと考えている方もいらっしゃるかもしれません。なぜなら利用可能なページ数によってアプリケーションの実用性を考える人がいて、askeetは質問リストを表示できる、それに対する回答を表示できる、ユーザーーセッションを扱うことしかできないことを見ているからです。
+
+我々がページ数を重要視しないのはsymfonyに新しいページを追加するのが簡単だからです。証明して欲しいですか？よろしい、今日は最後に求められた質問リストを表示し、最後に投稿された回答リストを表示し、質問に関心を示したユーザーリスト、ユーザーのプロファイルを表示し、それらの機能にアクセスするすべてのページにナビゲーションバーを追加します。作業は一時間程度もないので、ビューの設定もセットアップして、今週何が行われたのか一覧します。準備はいいですか？では行きましょう。
+
+リファクタリング
+----------------
+
+`question/templates/_list.php`に存在するものと似たページ分割機能によって番号つきのリストを追加しようとしています。私たちは同じ作業を繰り返したくないので、ページ分割コードをこのパーシャルからカスタムヘルパーに抽出します。ヘルパーはテンプレートにアクセス可能なPHP関数です(`link_to()`や`format_date()`ヘルパーのようなものです)。
+
+`askeet/apps/frontend/lib/helper`で`GlobalHelper.php`を作成し、次のコードを追加します:
+
+    [php]
+    <?php
+    
+    function pager_navigation($pager, $uri)
+    {
+      $navigation = '';
+     
+      if ($pager->haveToPaginate())
+      {  
+        $uri .= (preg_match('/\?/', $uri) ? '&' : '?').'page=';
+    
+        // 最初のページと以前のページ
+        if ($pager->getPage() != 1)
+        {
+          $navigation .= link_to(image_tag('first.gif', 'align=absmiddle'), $uri.'1');
+          $navigation .= link_to(image_tag('previous.gif', 'align=absmiddle'), $uri.$pager->getPreviousPage()).'&nbsp;';
+        }
+        
+        // 1つずつのページ
+        $links = array();
+        foreach ($pager->getLinks() as $page)
+        {
+          $links[] = link_to_unless($page == $pager->getPage(), $page, $uri.$page);
+        }
+        $navigation .= join('&nbsp;&nbsp;', $links);
+    
+        // 次と最後のページ
+        if ($pager->getPage() != $pager->getCurrentMaxLink())
+        {
+          $navigation .= '&nbsp;'.link_to(image_tag('next.gif', 'align=absmiddle'), $uri.$pager->getNextPage());
+          $navigation .= link_to(image_tag('last.gif', 'align=absmiddle'), $uri.$pager->getLastPage());
+        }
+    
+      }
+    
+      return $navigation;
+    }    
+
+ページ分割のナビゲーションヘルパーは以前私たちが書いたコードを改善します。最初のページに`previous`リンクを表示せず、最後のページに'next'リンクを表示しないようにするルーティングルールを使用します。リンクの見栄をよくするために4つの新しい画像(`first.gif`、`previous.gif`、`next.gif`、`last.gif`)も追加しました。[askeetのSVNリポジトリ](http://svn.askeet.com/tags/release_day_7/web/images/)から入手してください。将来のあなた自身のプロジェクトでもこのヘルパーを再利用できるでしょう。
+
+`question/templates/_list.php`フラグメントに存在するこのヘルパーを使うため、次のようにヘルパー関数を呼び出してください:
+
+    [php]
+    <?php use_helper('Text', 'Global') ?>
+    
+    <?php foreach($question_pager->getResults() as $question): ?>
+      <div class="question">
+        <div class="interested_block">
+          <?php include_partial('interested_user', array('question' => $question)) ?>
+        </div>
+    
+        <h2><?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?></h2>
+    
+        <div class="question_body">
+          <?php echo truncate_text($question->getBody(), 200) ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
+    
+    <div id="question_pager">
+      <?php echo pager_navigation($question_pager, 'question/list') ?>
+    </div>
+
+`Global`という名称はさきほど作成した`GlobalHelper.php`ファイルを参照します。
+
+リクエストによってすべてが以前と同じように動作することを確認してください:
+
+    http://askeet/frontend_dev.php/
+
+![リファクタリングされたページャのナビゲーション](/images/askeet/pager_navigation_day7.gif)
+
+最近の質問リスト
+----------------
+
+`question`モジュールに、新しいアクションである`recent`を作成します:
+
+    [php]
+    public function executeRecent()
+    {
+      $this->question_pager = QuestionPeer::getRecentPager($this->getRequestParameter('page', 1));
+    }
+
+このように簡単です。最新の質問を取り込む機能は`QuestionPeer`クラスのメソッドが妥当であると私たちは考えています。`-Peer`クラスは与えられたクラスのオブジェクトのリストを返すことに特化されています。これはsymfony bookの[モデルの章](http://www.symfony-project.org/book/1_0/08-Inside-the-Model-Layer)に詳細が説明されています。しかし`getRecent()`クラスメソッドはまだ作成されていません。`askeet/lib/model/QuestionPeer.php`クラスを開き、次のコードを追加してください:
+
+    [php]
+    public static function getRecentPager($page)
+    {
+      $pager = new sfPropelPager('Question', sfConfig::get('app_pager_homepage_max'));
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(self::CREATED_AT);
+      $pager->setCriteria($c);
+      $pager->setPage($page);
+      $pager->setPeerMethod('doSelectJoinUser');
+      $pager->init();
+
+      return $pager;
+    }
+  
+日付の降順の基準は最新の質問を選択します、このメソッドは`parent`の代わりに`self`を使用します。なぜならクラスメソッドであって、オブジェクトメソッドではないからです。単純な`doSelect()`のかわりに`doSelectJoinUser()`をここで使う理由はテンプレートは質問の作者の詳細を必要とするからです。質問リストのための最初のリクエストを意味し、さらに関連ユーザーを取得するための1つの質問ごとのリクエストも意味します。私たちが求めたとき、`doSelectJoinUser()`メソッドは1つのリクエストにおいてすべてを行います:
+
+    [php]
+    $question->getUser();
+    
+...データベースにはリクエストがまったく送信されません。`joinUser`は1つ以上のリクエストをたった1つの質問に減らすことができるようにします。データベースはこの簡単な最適化をした私たちに感謝してくれることでしょう。
+
+[Propelのドキュメント](http://propel.phpdb.org/docs/user_guide/)にこのすばらしい機能についてのすべての説明があります。
+
+最近の質問リストのテンプレートはホームページに表示された質問リストのように見えます。`askeet/apps/frontend/module/question/templates/recentSuccess.php`を作成してください:
+
+    [php]
+    <h1>recent questions</h1>
+
+    <?php include_partial('list', array('question_pager' => $question_pager)) ?>
+
+あなたは今、[5日目](5.txt)になぜ私たちが質問リストをフラグメントにリファクタリングしたのか理解しています。最後に、[4日目](4.txt)に触れたように、`frontend/confg/routing.yml`設定ファイルに`recent_questions`ルールを追加する必要があります:
+
+    recent_questions:
+      url:   /question/recent/:page
+      param: { module: question, action: recent, page: 1 }
+
+しかしお待ちください: `question/_list`フラグメントはルーティングルールを伴った`question/list`リンクを作成しますので、これを使っては最近の質問リストは動作しません。私たちはさまざまなページャのために再利用できるようにするためにルーティングルールをパラメータとしてフラグメントに渡す必要があります。ですので`recentSuccess.php`の最後の行を次のように変更してください:
+
+    [php]
+    <?php include_partial('list', array('question_pager' => $question_pager, 'rule' => 'question/recent')) ?>
+
+`_list.php` フラグメントの最後の行を次のように変更してください:
+
+    [php]
+    <div id="question_pager">
+      <?php echo pager_navigation($question_pager, $rule) ?>
+    </div>
+
+`modules/question/templates/listSuccess.php`の`_list`フラグメントの呼び出しにルールパラメータを追加することを忘れないでください。
+
+    [php]
+    <h1>popular questions</h1>
+    
+    <?php echo include_partial('list', array('question_pager' => $question_pager, 'rule' => 'question/list')) ?>
+    
+キャッシュをクリアして(設定は修正されました)、これでお終いです。
+
+最近の質問リストを表示するには、次のURLブラウザバーに入力します:
+
+    http://askeet/question/recent
+
+![最近の質問リスト](/images/askeet/recent_questions.gif)
+
+最近の回答リスト
+----------------
+
+上記の作業とまったく同じなので、まっしぐらに進みます:
+
+* `answer`モジュールを作成してください:
+
+        $ symfony init-module frontend answer
+    
+* 新しいアクションである`recent`を作成してください:
+
+        [php]
+        public function executeRecent()
+        {
+          $this->answer_pager = AnswerPeer::getRecentPager($this->getRequestParameter('page', 1));
+        }   
+
+* `AnswerPeer`クラスを拡張してください:
+
+        [php]
+        public static function getRecentPager($page)
+        {
+          $pager = new sfPropelPager('Answer', sfConfig::get('app_pager_homepage_max'));
+          $c = new Criteria();
+          $c->addDescendingOrderByColumn(self::CREATED_AT);
+          $pager->setCriteria($c);
+          $pager->setPage($page);
+          $pager->setPeerMethod('doSelectJoinUser');
+          $pager->init();
+          
+          return $pager;
+        }
+
+* 新しい`recentSuccess.php`テンプレートを作成してください:
+
+        [php]
+        <?php use_helper('Date', 'Global') ?>
+        
+        <h1>recent answers</h1>
+        
+        <div id="answers">
+        <?php foreach ($answer_pager->getResults() as $answer): ?>
+          <div class="answer">
+            <h2><?php echo link_to($answer->getQuestion()->getTitle(), 'question/show?stripped_title='.$answer->getQuestion()->getStrippedTitle()) ?></h2>
+            <?php echo count($answer->getRelevancys()) ?> points
+            posted by <?php echo link_to($answer->getUser(), 'user/show?id='.$answer->getUser()->getId()) ?> 
+            on <?php echo format_date($answer->getCreatedAt(), 'p') ?>
+            <div>
+              <?php echo $answer->getBody() ?>
+            </div>
+          </div>
+        <?php endforeach ?>
+        </div>        
+        
+        <div id="question_pager">
+          <?php echo pager_navigation($answer_pager, 'answer/recent') ?>
+        </div>
+
+* ブラウザでテストしてください:
+
+        http://askeet/answer/recent
+    
+![最近の回答リスト](/images/askeet/recent_answers.gif)
+
+慣れてきましたか？
+
+>**Note**: [4日目](4.txt)に注意を払った方々なら回答の詳細を表示するコードのチャンクを認識したでしょう。コードは少なくとも2つの場所で使われているので、私たちはリファクタリングして、`qestion/show`と`answer/recent`の両方を使用されている`_answer.php`の一部分を作成します。詳細は[askeetのSVNリポジトリ](http://svn.askeet.com/tags/release_day_7/apps/frontend/modules/answer/templates/)で見ることができます。
+
+ユーザーのプロファイル
+----------------------
+
+回答にあるユーザー名はまだ書かれていない`user/show`アクションにリンクをします。これはユーザープロファイルになり、ユーザーについてのわずかな詳細と同じように最近投稿された質問と回答を表示します。
+
+最初に行うべきはことはアクションを作成することです:
+
+    [php]
+    public function executeShow()
+    {
+      $this->subscriber = UserPeer::retrieveByPk($this->getRequestParameter('id', $this->getUser()->getSubscriberId()));
+      $this->forward404Unless($this->subscriber);
+  
+      $this->interests = $this->subscriber->getInterestsJoinQuestion();
+      $this->answers   = $this->subscriber->getAnswersJoinQuestion();
+      $this->questions = $this->subscriber->getQuestions();
+    }
+
+`->getInterestsJoinQuestion()`と`->getAnswersJoinQuestion()`メソッドは`User`クラスのネイティブメソッドです。どのように動くのか理解するには`askeet/lib/model/om/BaseUser.php`クラスを調べます。
+
+`askeet/apps/frontend/modules/user/templates/showSuccess.php`テンプレートで問題が起きることはないでしょう:
+
+    [php]
+    <h1><?php echo $subscriber ?>'s profile</h1>
+    
+    <h2>Interests</h2>
+    
+    <ul>
+    <?php foreach ($interests as $interest): $question = $interest->getQuestion() ?>
+      <li><?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?></li>
+    <?php endforeach; ?>
+    </ul>
+    
+    <h2>Contributions</h2>
+    
+    <ul>
+    <?php foreach ($answers as $answer): $question = $answer->getQuestion() ?>
+      <li>
+        <?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?><br />
+        <?php echo $answer->getBody() ?>
+      </li>
+    <?php endforeach; ?>
+    </ul>
+    
+    <h2>Questions</h2>
+    
+    <ul>
+    <?php foreach ($questions as $question): ?>
+      <li><?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?></li>
+    <?php endforeach; ?>
+    </ul>
+
+もちろん、あなたは、並び順と同様に、`->getInterestsJoinQuestion()`と `->getAnswersJoinQuestion()`と` User`オブジェクトの`getQuestion()`の各メソッドによって返された結果の数字を制限できることを望んでいるでしょう。`askeet/lib/model/User.php`クラスファイルに存在するこれらのメソッドをオーバーライドすることで簡単に実現できます。そして、どのように実現するのかここで終わらせることはしません - しかし今日のリリースはこれを含みます。
+
+テストの最終段階です。最初のユーザーが行ったことを見てみましょう:
+
+    http://askeet/user/show/id/1
+
+![ユーザーのプロファイル](/images/askeet/user_profile.gif)
+
+今、質問からユーザープロファイルにリンクできます。`quesiton/templates/showSuccess.php`と`question/templates_list.php`のdiv要素の`question_body`の始めに次のリンクを追加してください:
+
+    [php]
+    <div>asked by <?php echo link_to($question->getUser(), 'user/show?id='.$question->getUser()->getId()) ?> on <?php echo format_date($question->getCreatedAt(), 'f') ?></div>
+    
+`_list.php`の中で`Date`ヘルパーの使用を宣言することを忘れないでください。
+
+ナビゲーションバーを追加する
+----------------------------
+
+横のバーを追加するためにグローバルレイアウトを変更します。このバーは動的なコンテンツを格納しますが、レイアウトのこの位置に置きたいですが、それぞれのテンプレートの一部になることはできません。加えて、テンプレートにバーのコードを加えることはたくさんの繰り返しになるので、あなたは私たちがそんなことをしたくないことをご存じでしょう。
+
+バーが**コンポーネント(component)**である理由はそういうわけです。コンポーネントは変数の中で利用可能なアクションです(すなわち、HTMLコードはテンプレート実行からの結果)。symfony bookの[ビューの章](http://www.symfony-project.org/book/1_0/07-Inside-the-View-Layer)ではコンポーネントとは何か、コンポーネントとフラグメントの違いを説明しています。
+
+### レイアウトにコンポーネントを追加する
+
+グローバルレイアウト(`askeet/apps/frontend/templates/layout.php`)を開いてください。コードのこの部分を覚えてますか:
+
+    [php]
+    <div id="content_bar">
+      <!-- Nothing for the moment -->
+      <div class="verticalalign"></div>
+    </div>
+
+コメントを次のコードで置き換えてください。
+
+    [php]
+      <?php include_component_slot('sidebar') ?>
+      
+それでお終いです。
+
+### どのアクションがコンポーネントになるのか定義する
+
+シンプルなコンポーネントよりも小さくて強力な機能を使うことに決めました。これはコンポーネントスロットです。コンテキスト上の内容を許可する呼び出し元のアクションに従ってそのアクションを修正するのが可能なコンポーネントです。ビューの構成(`view.yml`ファイル)はアクションがコンポーネントスロットに対応するのかを定義します:
+
+    default:
+      components:
+        sidebar:      [sidebar, default]
+
+この例の場合、`sidebar`という名前のコンポーネントスロットは`sidebar`モジュールの`default`アクションの結果として宣言されます。
+
+全体のアプリケーション(`askeet/apps/frontend/config/`ディレクトリ)もしくは特別なモジュール(`askeet/apps/frontend/modules/mymodule/config`ディレクトリ)のためにビューを定義するのは可能です。私たちの事例では、全体のアプリケーションに対して定義を行い、サイドバーのコンテキスト上の特別なリンクが必要な時にオーバーライドすることにします。
+
+ですので`askeet/apps/frontend/config/view.yml`を開き、上記で示されたコンポーネントスロットの設定に追加してください。synmfony bookの[関連する章](http://www.symfony-project.org/book/1_0/07-Inside-the-View-Layer)でビューの設定について詳しい情報が得られます。
+
+### sidebar/defaultアクションとテンプレートを書く
+
+最初に、新しい`sidebar`モジュールを初期化します:
+
+    $ symfony init-module frontend sidebar
+
+次に、デフォルトのコンポーネントを書く必要があります。`askeet/apps/frontend/modules/sidebar/actions`ディレクトリにおいて`actions.class.php`を`components.class.php`にリネームをして内容を次のように変更します:
+
+    [php]
+    <?php 
+    
+    class sidebarComponents extends sfComponents
+    {
+      public function executeDefault()
+      {
+      }
+    }
+    
+コンポーネントビューはテンプレートで、あたかもアクションのために存在します。違いはネーミングにあります: コンポーネントビューは通常のテンプレート(`Success`で終わる)というよりもフラグメント(`_`で始まる)のように命名されました。`askeet/apps/frontend/modules/sidebar/templates/_default.php`フラグメント(使われない`indexSuccess.php`は削除してください)を次のように作成してください:
+
+    [php]
+    <?php echo link_to('ask a new question', 'question/add') ?>
+    
+    <ul>
+      <li><?php echo link_to('popular questions', 'question/list') ?></li>
+      <li><?php echo link_to('latest questions', 'question/recent') ?></li>
+      <li><?php echo link_to('latest answers', 'answer/recent') ?></li>
+    </ul>
+
+askeetのWebサイトのページを移動しようとすると、エラーになるでしょう。設定がキャッシュされ、それぞれのリクエストで解析されない本番環境でサイトをナビゲートしているからです。`view.yml`設定ファイルを修正しますが、本番環境のアクションは理解できません。キャッシュバージョンを使用します - コンポーネントスロットを含まないものです。変更を見たい場合、キャッシュをクリアするか開発環境でナビゲートしてください:
+
+    $ symfony clear-cache
+    
+もしくは
+
+    http://askeet/frontend_dev.php/
+
+ナビゲーションバーはすべてのページ上で正しく表示されます
+
+![サイドバー](/images/askeet/sidebar.gif)
+
+>**Note**: 本番環境の設定の一般的な効果です。ですので開発フェーズの間(設定をたくさん変更しているとき)、開発環境を使っていることを覚えておくこと、および本番環境をナビゲートするとき、設定を変更したあとにキャッシュをクリアすることを覚えておく必要があります。
+
+少々のビュー構成
+----------------
+
+私たちが目指している間に、`apps/config/`にあるアプリケーションの`view.yml`設定ファイルを見てみましょう:
+
+    default:
+      http_metas:
+        content-type: text/html; charset=utf-8
+    
+      metas:
+        title:        symfony project
+        robots:       index, follow
+        description:  symfony project
+        keywords:     symfony, project
+        language:     en
+    
+      stylesheets:    [main, layout]
+    
+      javascripts:    []
+    
+      has_layout:     on
+      layout:         layout
+
+      components:
+        sidebar:      [sidebar, default]
+
+`metas`セクションは全体のサイトのメタタグのための設定を含みます。`title`キーはブラウザウィンドウのバーに表示されるタイトルも定義します。このタイトルは非常に重要です。なぜなら、ユーザーが検索インデックスによって見つけたときに最初にサイトで見るものだからです。それゆえ、askeetサイトに採用されたものを変更するために必要です:
+
+      metas:
+        title:        askeet! ask questions, find answers
+        robots:       index, follow
+        description:  askeet!, a symfony project built in 24 hours
+        keywords:     symfony, project, askeet, php5, question, answer
+        language:     en
+    
+現在のページをリフレッシュしてください。変化が見られない場合は、本番環境にいるからです。適切なウィンドウタイトルが表示されるためにはまずキャッシュをクリアする必要があります:
+
+![ウィンドウのタイトル](/images/askeet/window_title.gif)
+
+>**Note**: 加えて、プロジェクトページのデフォルトタイトルを提供するために、Webのrootディレクトリ(`askeet/web/`)でデフォルトの`robots.txt`と`favicon.ico`を作成します。これらも変更することを忘れないでください!
+
+>**Note**: あなたのサイトの各ページのタイトルを変更する必要があるかもしれません。各モジュールのためのカスタム`view.yml`設定ファイルを定義できます。しかし、静的なタイトルのみです。[ビュー構成の章](http://www.symfony-project.org/book/1_0/07-Inside-the-View-Layer)に書かれているように、代わりに`->setTitle()`メソッドによるアクションから動的な値を使うことができます:
+>
+>       [php]
+>       $this->getResponse()->setTitle($title);
+
+私たちが何を実現したのか見てみましょう
+----------------------------------
+
+作業を止めて7日目までに実現したことを見直しましょう。現在のデータモデルと利用可能なアクションを含む少しの内容のドキュメントを作るのによい機会です。
+
+実際のところ、書いている間にコードを記録した方がよいです。たとえば各メソッドごとに[phpDocumentor](http://www.phpdoc.org/)スタイルのコメントなどです。symfonyのプロジェクトにおいて、よく使われるメソッドや関数で使用される名前はそれぞれの目的と利用の説明として提供されます。メソッドは短くとても読みやすいです。多くの時間において、テンプレートは一目瞭然のforeachとifステートメントしか使用しません。なぜ[askeetのSVNリポジトリ](http://svn.askeet.com/)で見かけるコードが多くのドキュメントを含まないのはそういうわけです - 加えて、私たちが7時間書いたという事実は私たちが行ったことの説明に値します！
+
+更新されたエンティティのリレーションダイアグラムを見てみましょう:
+
+![ERD](/images/askeet/mcd2.gif)
+
+利用可能なリストは以下の通りです:
+
+    answer/
+      recent
+    question/
+      list
+      show
+      recent
+    sidebar/
+      default (component)
+    user/
+      show
+      login
+      logout
+      handleErrorLogin
+
+モデルは次のメソッドも含みます:
+
+    Anwser()
+      getRelevancyUpPercent()
+      getRelevancyDownPercent()
+    AnswerPeer::
+      getRecentPager()
+    Interest->
+      save()
+    Question->
+      setTitle()
+    QuestionPeer::
+      getQuestionFromTitle()
+      getHomepagePager()
+      getRecentPager()
+    Relevancy
+      save()
+    User->
+      __toString()
+      setPassword()
+    
+    myUser->
+      signIn()
+      signOut()
+      getSubscriberId()
+      getSubscriber()
+      getNickName()
+      
+...加えて、カスタムツールクラスとカスタムバリデータは`askeet/appss/frontend/lib/`ディレクトリに設置されています。
+ 
+そのために7時間は悪くないでしょう？
+ 
+それではまた明日
+----------------
+
+今日はアプリケーションの開発が大きく進展し、またとても早かったです。人間とコンピュータとやりとりにおいて、AJAXを投入する準備はすべて整いました。明日はユーザーがログインとAJAXを使用して、質問に対する関心を宣言できるようにします。見逃さないでください。
+
+`release_day_7`とタグづけされた[askeetのSVNリポジトリ](http://svn.askeet.com/tags/release_day_7/)からまだ今日の分の全コードをダウンロードできます。[askeetのメーリングリスト](mailto:askeet-subscribe@symfony-project.com)は光よりも速くあなたの質問に回答してくれます。

@@ -1,0 +1,297 @@
+Calendario de symfony día veintidós: Transferir a producción
+==============================================================
+
+Anteriormente en symfony
+---------------------
+
+Ayer añadimos un backend a askeet. Por lo tanto todo está listo para que la aplicación funcione y se libere en Internet (de todos modos, **ya** está online, intenta navegar a [www.askeet.com](http://www.askeet.com) si no lo has hecho todavía). Este es el momento perfecto para centrarnos en las técnicas envueltas en la sincronización de dos servidores, ya que habrás desarrollado askeet en tu ordenador y probablemente lo tendrás hospedado en otro servidor, conectado a Internet.
+
+Sincronización
+---------------
+
+### Buenas prácticas
+
+Hay muchas maneras de sincronizar dos entornos de un sitio web. La transferencia básica de ficheros puede realizarse mediante una conexión [FTP](http://es.wikipedia.org/wiki/Ftp), pero hay dos inconvenientes importantes. Primero, no es seguro, los datos se transmiten en claro por internet y cualquiera puede interceptarlos. En segundo lugar, enviar todo el directorio base del proyecto está bien si es la primera vez, pero cuando tienes que subir una actualización de tu aplicación, dónde sólo cambian unos pocos ficheros, no es la mejor manera de hacerlo. Aunque transfieras todo el proyecto de nuevo (que puede tardar mucho), o busques los archivos modificados en sus directorios y sólo transfieras los nuevos, puede ser una tarea larga y te puedes equivocar fácilmente. Además el sitio web puede que no sea accesible o que no se vea bien durante el tiempo de transferencia.
+
+La solución que brinda symfony es sincronización **rsync** a través de una capa **SSH**.
+
+[Rsync](http://samba.anu.edu.au/rsync/) es una utilidad de código abierto de la línea de comandos que permite transferencia de archivos rápida e incremental. Por 'incremental' entendemos que sólo los datos modificados se transferirán. Si un archivo no ha cambiado no será enviado al host remoto. Si un archivo sólo ha cambiado parcialmente, sólo la parte diferente será enviada. La mayor ventaja es que la sincronización con rsync transfiere pocos datos y es muy rápida.
+
+Symfony añade [SSH](http://en.wikipedia.org/wiki/Secure_Shell) encima de rsync para hacer la transferencia segura. Más y más hosts comerciales soportan túneles SSH para hacer las subidas de ficheros a sus servidores más seguras, y eso es una buena práctica que symfony recomienda.
+
+Para saber como instalar rsync y SSH en linux, lee las instrucciones en sus respectivas webs. Para usuarios de windows, existe una alternativa de código abierto [cwRsync](http://www.itefix.no/phpws/index.php?module=pagemaster&PAGE_user_op=view_page&PAGE_id=6&MMN_position=23:23), o puedes intentar instalar los archivos binarios a mano (las instrucciones las puedes encontrar [aquí](http://optics.ph.unimelb.edu.au/help/rsync/rsync_pc1.html)). Por supuesto, para ser capaz de configurar un túnel SSH entre un servidor y otro, el servicio SSH tiene que estar instalado y ejecutándose en _ambos_ ordenadores.
+
+### El comando `symfony sync`
+
+Hacer un rsync dentro de un túnel SSH requiere unos cuantos comandos, y se puede necesitar la sincronización muchas veces en la vida de una aplicación. Afortunadamente, symfony automatiza este proceso con solo un comando:
+
+    $ symfony sync production
+
+Este comando, ejecutado desde el directorio raíz del proyecto de symfony, lanza la sincronización del código del proyecto con el host servidor de `producción`. Los detalles de conexión para este servidor se tienen que escribir en el proyecto `properties.ini`, que puedes encontrar en `askeet/config`:
+
+
+    [symfony]
+      name=askeet
+    
+    [production]
+      host=myaskeetprodserver.com
+      port=22
+      user=myuser
+      dir=/home/myaccount/askeet/
+
+Los parámetros de conexión serán usado por el cliente SSH al llamar el comando de symfony `sync`.
+
+Si sólo ejecutas `symfony sync` como se menciona arriba, la utilidad rsync correrá en modo dry por defecto (`--dry-run`), i. e. mostrará los ficheros que se tienen que sincronizar pero _sin sincronizarlos_. Si quieres que la sincronización se haga, se tiene que mencionar explícitamente:
+
+    $ symfony sync production go
+
+### Ignorando archivos irrelevantes
+
+Si sincronizas tu proyecto symfony con un host de producción, hay algunos archivos y directorios que no deberían ser transferidos:
+
+* Todos los directorios `.svn` y su contenido: contienen información acerca del control de versiones, sólo necesario para el desarrollo e integración
+* `askeet/web/frontend_dev.php`: El controlador web frontal para el entorno de desarrollo no debería estar disponible a los usuarios finales. Las herramientas de debug y log (registro) disponibles cuando se usa la aplicación a través de este controlador hacen relentizar la ejecución, y dan información acerca de las variables de las acciones. Es algo que se tiene que mantener fuera del servidor host
+* Los directorios `cache/` y `log/` de un proyecto no se tienen que eliminar del servidor host cada vez que haces una sincronización. Estos directorios se tienen que ignorar también. Si tienes un directorio `stats/` se debería tratar de igual forma
+* Los archivos subidos por los usuarios: una de las buenas prácticas de los proyectos hechos con symfony es guardar los archivos subidos en el directorio `web/uploads`. Eso nos permite excluir todos esos archivos con solo hacer referencia a un directorio.
+
+Para excluir archivos para las sincronizaciones rsync, abre y edita el fichero `rsync_exlude.txt` en el directorio `askeet/config`. Cada línea puede contener un archivo, un directorio o un patrón:
+    .svn
+    web/frontend_dev.php
+    cache
+    log
+    stats
+    web/uploads
+
+Gracias a la estructura de archivos de symfony, no tienes demasiados archivos o directorios a excluir manualmente para la sincronización. Si quieres aprender más acerca de la forma en que los archivos están organizados en un proyecto symfony, lee el [capítulo de estructura de archivos](http://www.symfony-project.com/content/book/page/file_structure.html) del libro de symfony.
+
+
+>**Note**: Los directorios `cache/` y `log/` no se deben sincronizar con el servidor de desarrollo, pero como mínimo deben existir en el servidor de producción. Créalos a mano si el árbol de directorios de askeet no los contiene.
+
+Configuración del servidor de producción
+-------------------------------
+
+Para que tu proyecto funcione en el servidor de producción, se tiene que instalar symfony en el host.
+
+
+### Instalando symfony en el servidor de producción
+
+Hay muchas maneras de instalar symfony en el servidor de producción, pero no todas están adaptadas a un entorno de producción. Por ejemplo, hacer una instalación mediante PEAR requiere privilegios de administración en directorios en los que no deberías tener acceso si compartes un servidor web.
+
+Basado en el principio que probablemente hospedarás varios proyectos usando symfony en el servidor web de producción, la instalación recomendada de symfony es descomprimir los archivos del framework en una carpeta específica. Sólo los directorios `lib/`y `data/` son necesarios en un servidor de producción, por lo tanto puedes deshacerte de los otros archivos (`bin/`, `doc/`, `test/`y los archivos del directorio raíz).
+
+Deberías terminar con una estructura de archivos parecida a:
+
+    /home/myaccount/    
+      symfony/
+        lib/
+        data/
+      askeet/
+        apps/
+          frontend/
+        batch/
+        cache/
+        config/
+        data/
+        doc/
+        lib/
+        log/
+        test/
+        web/
+        
+Para que el proyecto askeet use las clases de symfony, tienes que configurar dos links simbólicos entre los directorios de la aplicación `lib/symfony` y `data/symfony`, y los directorios correspondientes de la instalación de `symfony`:
+
+    $ cd /home/myaccount/askeet
+    $ ln -sf /home/myaccount/symfony/lib lib/symfony
+    $ ln -sf /home/myaccount/symfony/data data/symfony
+
+Alternativamente, si no tienes acceso a la línea de comandos, los archivos del framework se pueden copiar directamente en los directorios `lib/` y `data/:
+
+
+    copy /home/myaccount/symfony/lib/*   into /home/myaccount/askeet/lib/symfony
+    copy /home/myaccount/symfony/data/*  into /home/myaccount/askeet/data/symfony
+    
+Ten cuidado que en este caso, cada vez que actualices el framework, lo tienes que hacer en todos los tus proyectos.
+
+>**NOTE**: `Nota del traductor` Este método está deprecado y las nuevas características de la versión 1.0 de symfony permiten hacer esto automáticamente. Para más información, lee el [capítulo del libro correspondiente](http://www.librosweb.es/symfony/capitulo16/instalando_aplicaciones.html).
+
+Para más información, todas las maneras de instalar symfony están descritas en el [capítulo de instalación](http://www.symfony-project.com/content/book/page/installation.html) del libro de symfony .
+
+### Acceso a los comandos de symfony en producción
+
+Durante el desarrollo, tuviste el buen hábito de usar:
+
+    $ symfony clear-cache
+
+...cada vez que modificabas la configuración o el modelo del proyecto. Cuando subas una nueva versión de tu proyecto a producción, la cache también tiene que ser limpiada si quieres que la aplicación funciones. Puedes hacerlo de manera muy fácil eliminando todo el contenido del directorio `askeet/cache/` (mediante ftp o con una consola ssh). Alternativamente, puedes tener el poder de la línea de comandos de symfony por una instalación ligeramente más larga.
+
+Para usar la línea de comandos, tienes que instalar la [utilidad pake](http://www.pake-project.org). Pake es una herramienta PHP similar al comando make. Automatiza algunas tareas de administración a un archivo de configuración llamado `pakefile.php`. La línea de comandos usa la utilidad pake, y cada vez que escribes `symfony`, en realidad estás llamando `pake` con un `pakefile.php` especial ubicado en el directorio `symfony/bin/` (puedes encontrar más acerca de pake en symfony en el [capítulo de creación del proyecto](http://www.librosweb.es/symfony/capitulo3/crear_una_aplicacion_web.html) del libro de symfony). Si instalas symfony mediante PEAR, pake se instala como dependencia, por lo que normalmente no lo verás para nada y no tienes que preocuparte de lo que viene ahora. Pero si lo instalas manualmente, tienes que descomprimir el directorio pake (cógelo de tu instalación pear de symfony o [bájatelo](http://www.pake-project.org/download.html) del sito web de pake) en tu directorio del servidor de producción. Igual que como con las bibliotecas de symfony, también tienes que añadir un link simbólico para habilitar el uso de pake para symfony:
+
+    $ ln -sf /home/myaccount/pake/lib lib/pake
+
+Deberías terminar con algo como:
+
+    /home/myaccount/
+      pake/
+        lib/      
+      symfony/
+        lib/
+        data/
+      askeet/
+        apps/
+          frontend/
+        batch/
+        cache/
+        config/
+        data/
+          symfony/ -> /home/myaccount/symfony/data
+        doc/
+        lib/
+          symfony/ -> /home/myaccount/symfony/lib
+          pake     -> /home/myaccount/pake/data
+        log/
+        test/
+        web/
+
+Para llamar al comando symfony y hacer un clear-cache, necesitas hacer:
+
+    $ cd /home/myaccount/askeet/
+    $ php lib/pake/bin/pake.php -f lib/symfony/data/symfony/bin/pakefile.php clear-cache
+
+Alternativamente, puedes crear un archivo `symfony` en el `home/myaccount/askeet/` con:
+
+    #!/bin/sh
+    
+    php lib/pake/bin/pake.php -f lib/symfony/data/symfony/bin/pakefile.php $@
+
+Luego, todo lo que necesitas para limpiar la cache es el viejo
+
+    $ symfony clear-cache
+
+### Comandos Web
+
+Si quieres tener el poder de la utilidad pake sin tener acceso a la linea de comandos, también puedes crear un acceso web para el comando clear-cache.
+
+Por ejemplo, puedes guardar el siguiente `webpake.php` en tu directorio `/home/myacount/askeet/web/`:
+
+    [php]
+    <?php
+    
+    // as we are in the web/ dir, we need to go up one level to get to the project root
+    chdir(dirname(__FILE__).DIRECTORY_SEPARATOR.'..');
+    
+    include_once('/lib/symfony/pake/bin/pake.php');
+    
+    $pake = pakeApp::get_instance();
+    try
+    {
+      $ret = $pake->run('/data/symfony/bin/pakefile.php', 'clear-cache');
+    }
+    catch (pakeException $e)
+    {
+      print "<strong>ERROR</strong>: ".$e->getMessage();
+    }
+    
+    ?>
+
+Luego, limpiar la cache puede hacerse navegando a:
+
+    http://myaskeetprodserver.com/webpake.php
+    
+>**Note**: Ten presente que permitiendo acceso web a las herramientas de administración puedes comprometer la seguridad de tu sitio web.
+
+>**Note**: `Nota del Traductor` Si no te sientes cómodo con la línea de órdenes o no puedes usarla, no dejes de echar un vistazo al plugin [sfControlPanelPlugin](http://trac.symfony-project.org/trac/wiki/sfControlPanelPlugin). TEN PRESENTE EL TEMA DE LA SEGURIDAD!!
+
+Actualizando tu aplicación
+--------------------------
+
+Habrá algunas veces en la vida de tu proyecto que necesitarás cambiar entre dos versiones de una aplicación. Puede ser para corregir bugs, o añadir nuevas funcionalidades. También te puedes encontrar con el problema de cambiar entre dos versiones de la base de datos. Si sigues buenas prácticas, estas acciones serán fáciles e inofensivas.
+
+### Mostrar nota de no disponible
+
+Entre el momento en que empiezas la transferencia de datos y el momento en que limpias la caché (si modificas la configuración el los datos del modelo), a veces hay más de unos pocos segundos de espera. Deberías planear de mostrar en la pantalla un aviso de no disponibilidad para los usuario que traten de navegar el sito en este justo momento.
+
+En el `settings.yml` de la aplicación, define los parámetros `unavailable_module` y `unavailable_action`:
+
+    all:
+      .settings:
+        unavailable_module:     content
+        unavailable_action:     unavailable
+
+Crea una acción `content/unavailable` vacía y un `unavailableSuccess.php ` template:
+
+    [php]
+    // askeet/apps/frontend/modules/content/actions/actions.class.php
+    public function executeUnavailable()
+    {
+      $this->setTitle('askeet! &raquo; maintenance');
+    }
+
+    // askeet/apps/frontend/modules/content/templates/unavailableSuccess.php
+    <h1>Askeet: Site maintenance</h1>
+    
+    <p>The askeet website is currently being updated.</p>
+    
+    <p>Please try again in a few minutes.</p>
+    
+    <p><i>The askeet team</i></p>
+
+Ahora cada vez que quieras deshabilitar tu aplicación, sólo cambia el parámetro `available`:
+
+    all:
+
+      .settings:
+    
+        available:              off
+
+No olvides que para que un cambio de la configuración se tenga en cuenta en producción, necesitas limpiar la caché.
+
+>**Note**: El hecho de que la aplicación entera se pueda apagar con sólo un parámetro es posible porque las aplicaciones symfony usan un solo punto de entrada, el controlador web frontal. Encontrarás más información acerca de él en [la página del controlador](http://www.librosweb.es/symfony/capitulo6/el_controlador_frontal.html) del libro de symfony.
+
+### Usar dos versiones de tu aplicación
+
+Una buena forma de evitar la indisponibilidad es tener el directorio raíz del proyecto como un link simbólico. Por ejemplo, imagina que actualmente estás usando la versión 123 de tu aplicación y quieres cambiar a la versión 134. Si tu directorio raíz del servidor web está configurado a `/home/myaccount/asket/web/` y el directorio de producción se parece a:
+
+    /home/myaccount/
+      pake/
+        lib/      
+      symfony/
+        lib/
+        data/
+      askeet/     -> /home/production/askeet.123/
+      askeet.123/
+      askeet.134/
+
+Luego puedes cambiar instantáneamente entre las dos versiones cambiando el link simbólico:
+
+    $ ln -sf /home/myaccount/askeet/ /home/myaccount/askeet.134/
+
+Los usuarios no verán interrupción alguna, y además todos los archivos usados después del cambio del link simbólico serán los de la nueva release. Si, además, vaciaste la cache de tu release 134, ni siquiera necesitas llamar a clear-cache después del cambio de aplicaciones.
+
+### Cambiando la base de datos
+
+Puedes extrapolar la misma técnica para cambiar las bases de datos. Recuerda que la ubicación de la base de datos usada por tu aplicación se define en el archivo de configuración `databases.yml`. Si creaste una copia de la base de datos con un nuevo nombre, digamos `asket134`, sólo tienes que escribir en `askeet.134/apps/frontend/config/databases.yml`:
+
+    all:
+      propel:
+        class:          sfPropelDatabase
+        param:
+          phptype:      mysql
+          hostspec:     localhost
+          database:     askeet.134
+          username:     myuser
+          password:     mypassword
+          compat_assoc_lower:  true
+          compat_rtrim_string: true
+
+Como el `databases.yml` se cambiará en el mismo instante que la aplicación misma, tu askeet instantáneamente empezará a usar la nueva base de datos.
+ 
+Esa técnica es especialmente útil si tu aplicación tiene mucho tráfico y si no puedes permitirte ninguna interrupción del servicio.
+
+Nos vemos mañana
+----------------
+
+La sincronización es a menudo un gran problema para los sitios web con mucho tráfico, pero gracias a la estructura de archivos de los proyectos symfony, no ha creado ningún problema para askeet.
+
+Mañana, hablaremos acerca de cómo adaptar askeet a otros idiomas. Los oradores pacientes lo llaman _internacionalización_, y hay otros que encuentran más conveniente hablar de _i18n_. Symfony tiene incorporado soporto para sitios multi-idioma, por lo tanto no debería ser un gran reto.
+
+Todavía puedes publicar tus preguntas y sugerencias en el [fórum de askeet](http://www.symfony-project.com/forum/index.php/f/8/). Ya has intentado preguntar algo en nuevo [sitio askeet](http://www.askeet.com)?

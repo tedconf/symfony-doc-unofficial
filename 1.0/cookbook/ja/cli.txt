@@ -1,0 +1,238 @@
+コマンドラインインターフェイス
+==============================
+
+概要
+----
+
+Webアプリケーションの開発とメンテナンスの期間に開発者が実行する多くのタスクはsymfonyのコマンドラインインターフェイス(CLI)によって取り扱われます。[16章](http://www.symfony-project.org/book/1_0/16-Application-Management-Tools)では詳細にこれらのいくつかのタスクが説明されているのに対して、この章では手短にこれらすべての一覧を示します。
+
+CLIのコア
+--------
+
+`symfony`スクリプトはプロジェクトのroot内に位置するPHPスクリプトです。symfonyコマンドはタスクを求め、いくつかのタスクは追加パラメータを必要とします。このコマンドを呼び出すためには、次の構文を使います:
+
+    $ cd myproject
+    $ php symfony <TASK> [parameters]
+
+>**Note**: symfonyのCLIはsymfonyプロジェクトのrootからのみ動作します。
+
+[symfonyのサンドボックス](http://www.symfony-project.org/book/1_0/03-Running-Symfony#chapter_03_installing_the_sandbox)はより速く呼び出すことができるWindowsと*nixプラットフォームのための実行ファイルを含みます:
+
+    $ ./symfony <TASK> [parameters]      #  *nix
+    $ symfony <TASK> [parameters]        #  Windows
+ 
+この章の例文では`php`実行ファイルを使いますが、プロジェクトが適切な実行ファイルを持つ場合は省略できます。
+
+利用できるすべてのタスクの一覧を表示するためには、次のコマンドを呼び出します:
+
+    $ php symfony
+
+インストールされたsymfonyパッケージのバージョンを表示するためには、次のコマンドを入力します:
+
+    $ php symfony -V
+
+いくつかのタスクは、より速く入力できて、同じ効果を持つショートカットを持ちます。
+
+    $ php symfony cc
+    // 下記と同じ
+    $ php symfony clear-cache
+    
+例外が起きたとき、スタックトレースと詳細な説明を取得するとよいでしょう。トレースを取得するタスク名の前に`-t`オプションを追加します。
+
+>**Note**: レコードに対して、symfonyは[Pake][1]と呼ばれる共通のタスクを管理する専用ツールを使います。Pakeは`make`コマンドをRubyに翻訳した、[Rake][2]コマンドに似ているPHPツールです。Pakeはsymfonyチームによって開発されました。`pakefile.php`と呼ばれる設定ファイルを指定することでいくつかの管理タスクを自動化します。しかし`symfony`とコマンドラインで`pake`ツールを利用するので、pakeが何を行いどのように動作するのかを学ぶ必要はありません。
+
+
+CLIタスク
+---------
+
+### 構造の生成
+
+    $ php symfony init-project <PROJECT_NAME>
+
+新しいsymfonyプロジェクトを初期化します(ショートカット: `new`)。
+
+    $ php symfony init-app <APPLICATION_NAME>
+
+新しいsymfonyアプリケーションを初期化します(ショートカット: `app`)。  
+
+    $ php symfony init-module <APPLICATION_NAME> <MODULE_NAME>
+
+新しいsymfonyモジュールを初期化します(ショートカット: `module`)。
+
+    $ php symfony init-batch <SKELETON_NAME> [...]
+
+新しいバッチファイルを初期化します(ショートカット: `batch`)。初期化するバッチスケルトンを選択しプロンプトに従わなければなりません。
+
+    $ php symfony init-controller <APPLICATION_NAME> <ENVIRONMENT_NAME> [<SCRIPT_NAME>] [true|false]
+
+新しいコントローラを初期化します(ショートカット: `controller`)。デフォルトのスクリプト名はsymfonyの規約に従います。
+
+これらのコマンドについてもっと詳しい情報は[16章](http://www.symfony-project.org/book/1_0/16-Application-Management-Tools)で見つけてください。
+
+### モデルの生成
+
+    $ php symfony propel-build-model
+
+現在のモデルに対して、`config/`ディレクトリのスキーマファイル(YAMLもしくはXML)に基づいて、Propelクラスを生成します。
+
+次のコマンドによって使われる接続設定は`config/propel.ini`設定ファイルから取得されます。 
+
+    $ php symfony propel-build-sql
+
+`schema.xml`内に記述されたテーブルを作るSQLコードを`data/schema.sql`ファイルに生成します。
+
+    $ php symfony propel-build-db
+
+接続設定に基づいて空のデータベースを作成します。
+
+    $ php symfony propel-insert-sql
+
+`data/schema.sql`からSQLコードをデータベースに挿入します。
+
+    $ php symfony propel-build-all
+
+`propel-build-model`、`propel-build-sql`そして`propel-insert-sql`のすべてを1つのコマンドで実行します。
+
+これらのコマンドについて詳細な内容は[8章](http://www.symfony-project.org/book/1_0/08-Inside-the-Model-Layer)で見つけてください。
+
+### スキーマの管理
+
+    $ php symfony propel-build-schema [xml]
+
+既存のデータベースから`schema.yml`ファイルを作成します。`xml`パラメータが追加された場合、タスクはYAMLバージョンの代わりに`schema.xml`ファイルを作ります。
+
+    $ php symfony propel-convert-xml-schema
+
+見つかるXMLスキーマのYAMLバージョンを作ります。
+
+    $ php symfony propel-convert-yml-schema
+
+見つかるYAMLスキーマのXMLバージョンを作ります。
+
+### データの管理
+
+    $ php symfony propel-load-data  <APPLICATION_NAME> [<ENVIRONMENT_NAME>] [<FIXTURES_DIR_OR_FILE>]
+
+他に指定されていなければデフォルトの`data/fixtures/`ディレクトリからすべてのデータを読み込みます。デフォルトの環境は`dev`です。フィクスチャディレクトリはプロジェクトのデータディレクトリに対して相対的に指定しなければなりません。たとえば`fixtures`(デフォルト)、もしくは`testdata`もしくは単独のファイルである`fixtures/file.yml`を指定します。
+
+    $ php symfony propel-build-all-load  <APPLICATION_NAME> [<ENVIRONMENT_NAME>] [<FIXTURES_DIR_OR_FILE>]
+
+`propel-build-all`と`propepl-load-data`を実行します。`propel-load-data`と同じ引数を受け取ります。
+
+    $ php symfony propel-dump-data  <APPLICATION_NAME> <FIXTURES_DIR_OR_FILE> [<ENVIRONMENT_NAME>]
+
+データベースのデータをYAMLフォーマットでフィクスチャファイル内のファイルにダンプします。
+
+### 開発ツール
+
+    $ php symfony clear-cache [<APPLICATION_NAME>] [template|config]
+
+キャッシュ情報(ショートカット: `cc`)をクリアします(詳細は[12章](http://www.symfony-project.org/book/1_0/12-Caching)で見つけてください)。
+
+    $ php symfony clear-controllers
+
+本番環境で動作しているもの以外のすべてのコントローラのwebディレクトリをクリアします。本番サーバーにデプロイする前にとても役立ちます。
+
+    $ php symfony fix-perms
+
+ディレクトリのパーミッションを修正して書き込み権限が必要なディレクトリを`777`に変更してください。SVNリポジトリからチェックアウトする場合、パーミッションが壊れる可能性があります。
+
+    $ php symfony freeze
+    $ php symfony unfreeze
+
+すべての必要なsymfonyライブラリをプロジェクトの`data/`、`lib/`と`web/sf/`ディレクトリにコピーしてください。あなたのプロジェクトは一種のサンドボックスになります。すなわち依存しないスタンドアロンのアプリケーションで、FTP経由で本番のサーバーに転送する準備ができています。シンボリックリンクと同様にPEARインストールで立派に動作します。`unfreeze`タスクでプロジェクトを解凍します。
+
+    $ php symfony sync <ENVIRONMENT_NAME> [go]
+
+現在のプロジェクトを他のマシンに同期化してください([16章](http://www.symfony-project.org/book/1_0/16-Application-Management-Tools#Deploying%20Applications)で詳細な内容を見つけてください)。 
+
+### テスト
+
+    $ php symfony test-unit <UNIT_TEST>
+
+`test/unit/`ディレクトリに設置されたユニットテストを立ち上げます。パラメータは1つのユニットテストのファイル(`Test.php`接尾辞は省略)、ユニットテストファイルのグループ、もしくはワイルドカードを持つファイルパスの名前です。テスト名が渡されない場合、すべてのテストが実行されます。
+
+    $ php symfony test-unit
+
+ハーネスモードですべてのユニットテストを起動します。
+
+    $ php symfony test-functional <APPLICATION_NAME> <TEST>
+
+特定のアプリケーションに対して機能テストを立ち上げます。`TEST`パラメータは単独の機能テストのファイル((`Test.php`の接尾辞は省略)、もしくはグループのユニットテストファイル、もしくはワイルドカードによるファイルパスの名前になります。
+
+    $ php symfony test-functional <APPLICATION_NAME>
+
+ハーネスモードですべてのアプリケーションの機能テストを立ち上げます。
+
+    $ php symfony test-all 
+    
+ハーネスモードですべてのユニットテストと機能テストを立ち上げます。
+
+テストについてもっと詳細な内容は[15章](http://www.symfony-project.org/book/1_0/15-Unit-and-Functional-Testing)をご覧ください。
+
+### プロジェクトの管理
+
+    $ php symfony disable <APPLICATION_NAME> <ENVIRONMENT_NAME>
+
+ユーザーを`settings.yml`ファイル内の利用不可能であることを伝えるモジュールとアクションに転送し`settings.yml`ファイル内で利用不可能であることを伝える設定をしたようにふるまいます。`settings.yml`ファイルを上回る利点はプロジェクト全体だけでなく単独のアプリケーションを無効にできることです。
+
+    $ php symfony enable <APPLICATION_NAME> <ENVIRONMENT_NAME>
+
+アプリケーションを有効にしてキャッシュをクリアします。
+
+    $ php symfony purge-logs
+
+`logging.yml`が`purge: on`(デフォルト値)を指定するアプリケーションと環境のログディレクトリにおけるログファイルをクリアします。
+
+    $ php symfony rotate-log <APPLICATION_NAME> <ENVIRONMENT_NAME>
+ 
+`rotate`が`loggin.yml`内のログファイルに対して有効になっている場合ログファイルのローテーションを強制します。ローテーションパラメータは`period`(1つのファイルが終わる日数)と`history`(保存されるアックアップログファイル数)です。下記のコードはローテーションの設定を持つ`logging.yml`の例です:
+
+    prod:
+      rotate:  on
+      period:  7       ## ログファイルはデフォルトで7日ごとにローテーションされる
+      history: 10      ## 最大10のログファイルが保存される   
+
+### scaffoldingとadminの生成
+
+    $ php symfony propel-generate-crud <APPLICATION_NAME> <MODULE_NAME> <CLASS_NAME>
+    $ php symfony propel-init-crud <APPLICATION_NAME> <MODULE_NAME> <CLASS_NAME>
+
+モデルからのクラスに基づいた新しいPropelのCRUDモジュールを生成します。`generate`バージョンはフレームワークからのコードを新しいモジュールにコピーし、`init`バージョンはフレームワーク内のモジュールを継承する空のモジュールを作成します。この例において、生成されたコードは`cache/`フォルダ内でのみ見えます(生成されたアクションとテンプレートはフレームワークから継承します)。
+
+    $ php symfony propel-init-admin <APPLICATION_NAME> <MODULE_NAME> <CLASS_NAME>
+
+モデルからのクラスに基づいて新しいPropelのadminモジュールを初期化します
+
+これらのコマンドについてもっと詳細な情報は[14章](http://www.symfony-project.org/book/1_0/14-Generators)を調べてください。
+
+### プラグインの管理
+
+    $ php symfony plugin-install <CHANNEL_NAME>/<PLUGIN_NAME>
+
+新しいプラグインをインストールします。symfonyのwikiから新しいプラグインをインストールするために、`http://plugins.symfony-project.com`をチャネル名として使います。
+
+    $ php symfony plugin-upgrade <CHANNEL_NAME>/<PLUGIN_NAME>
+
+プラグインをアップグレードします。
+
+    $ php symfony plugin-upgrade-all
+
+以前ローカルにインストールされたすべてのプラグインをアップグレードします。
+
+    $ php symfony plugin-uninstall <CHANNEL_NAME>/<PLUGIN_NAME>
+
+プラグインをアンインストールします。
+
+プラグインについて詳細な内容は[17章](http://www.symfony-project.org/book/1_0/17-Extending-Symfony)を調べてください。
+
+自動入力補完
+------------
+
+symfonyのwikiにはユーザーが投稿したsymfonyコマンドの自動入力補完を可能にする設定ファイルが含まれます。利用しているシェルに適したものをチェックアウトしてください:
+
+* [Bashの入力補完](http://trac.symfony-project.org/wiki/BashCompletion)
+* [Zshの入力補完](http://trac.symfony-project.org/wiki/ZshCompletion)
+
+[1]: http://www.pake-project.org/    "Pake"
+[2]: http://rake.rubyforge.org/      "Rake"

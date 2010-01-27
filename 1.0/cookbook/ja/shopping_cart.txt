@@ -1,0 +1,298 @@
+ショッピングカートを管理する方法
+================================
+
+概要
+----
+
+symfonyはEコマースのWebサイトのショッピングカートを管理するプラグインを提供します。アイテムを追加し、量を変更しショッピングカートの内容を表示する機能を作るのは苦痛無しで簡単にできます。
+
+インストール方法
+----------------
+
+ショッピングカートクラスはデフォルトのsymfonyインストールに搭載されていませんが、`sfShoppingCart`と呼ばれるプラグインパッケージがあります。symfonyプラグインはPEARを通してインストールされます(プラグインについて詳細な内容は[17章](http://www.symfony-project.org/book/1_0/17-Extending-Symfony#chapter_17_plug_ins)で見つかります)。
+
+`sfShoppingCart`プラグインのインストールは[プラグインのページ](http://www.symfony-project.org/plugins/sfShoppingCartPlugin)で説明されているように、とてもわかりやすいです。必要なのは次のコマンドラインを入力するあるだけです:
+
+    $ symfony plugin-install http://plugins.symfony-project.com/sfShoppingCartPlugin
+
+プラグインクラスのオートロード機能を有効にするためにキャッシュをクリアします:
+
+    $ symfony cc
+
+コンストラクタ
+--------------
+
+`sfShoppingCart`クラスはショッピングカートを管理することを目的としています。さまざまな種類のオブジェクトを格納できます。
+
+コンストラクタによってショッピングカートに適用する税率を宣言できます:
+
+    [php]
+    $my_shopping_cart = new sfShoppingCart(sfConfig::get('app_cart_tax'));
+
+この例において、ショッピングカートの税率は簡単に変更するためにアプリケーションの`app.xml`設定ファイルに書き込みます:
+
+    all:
+      cart:
+        tax:  19.6
+
+ユーザーのショッピングカートを作成する
+--------------------------------------
+
+`new`コンストラクタによるアクションで新しい`sfShoppingCart`オブジェクトを簡単に作成できます。しかしながら、ユーザーセッションにリンクされないのであれば何の役にも立ちません。ショッピングカートでユーザーの選択を保持するもっとも簡単な方法は`sfShoppingCart`オブジェクトの[コンポジション][1]を`sfUser`オブジェクトにすることです。それを行うためには、カスタムメソッドを`myproject/apps/myapp/lib/myUser.php`クラスに追加してください:
+
+    [php]
+    class myUser extends sfUser
+    {
+      public function getShoppingCart()
+      {
+        if (!$this->hasAttribute('shopping_cart'))
+        {
+          $this->setAttribute('shopping_cart', new sfShoppingCart(sfConfig::get('app_cart_tax')));
+        }
+
+        return $this->getAttribute('shopping_cart');
+      }
+
+      // ...
+    }
+
+ユーザーがまだ作成されていなければ`$user->getShoppingCart()`メソッドは新しいショッピングカートを作成します。
+
+>**Note**: カスタムの`myUser`クラスでデフォルトの`sfUser`クラスをオーバーライドする方法についてもっと詳しい情報が必要でしたら、[17章](http://www.symfony-project.org/book/1_0/17-Extending-Symfony#chapter_17_factories)の**ファクトリ**のセクションをご覧ください。
+
+アイテムを追加、修正、削除する
+------------------------------
+
+ショッピングカートは異なったクラスからのオブジェクトの量を収納できます。ショッピングカートに保存されたそれぞれのアイテムは`sfShoppingCartItem`クラスのインスタンスです。
+
+`sfShoppingCart`クラスは`addItem()`と`deleteItem()`メソッドを持ちます。任意のタイプのオブジェクトを追加もしくは削除できるので、これらのメソッドコールの最初の引数はオブジェクトのクラスの名前です。
+
+1つのアイテムの量を修正するには、(`sfShoppingCart`オブジェクトの`getItems()`メソッド経由で)`sfShoppingCartItem`オブジェクト自身を取得し`setQuantity()`メソッドを呼び出します。
+
+### ショッピングカートモジュール
+
+'Product'クラス(製品を表す)のオブジェクトが'add'、'update'と'delete'アクションによって追加、修正もしくは制限できるショッピングカート管理モジュールの実装は次の通りです:
+
+    [php]
+    class shoppingcartActions extends sfActions
+    {
+      // ...
+
+      public function executeIndex()
+      {
+        $this->shopping_cart = $shopping_cart;
+        $this->items = $shopping_cart->getItems();
+
+        // ...
+      }
+
+      public function executeAdd()
+      {
+        // ...
+
+        if ($this->hasRequestParameter('id'))
+        {
+          $product = ProductPeer::retrieveByPk($this->getRequestParameter('id'));
+          $item = new sfShoppingCartItem('Product', $this->getRequestParameter('id'));
+          $item->setQuantity(1);
+          $item->setPrice($product->getPrice());
+          $shopping_cart = $this->getUser()->getShoppingCart();
+          $shopping_cart->addItem($item);
+        }
+
+        // ...
+      }
+
+      public function executeUpdate()
+      {
+        $shopping_cart = $this->getUser()->getShoppingCart();
+        foreach ($shopping_cart->getItems() as $item)
+        {
+          if ($this->hasRequestParameter('quantity_'.$item->getId()))
+          {
+            $item->setQuantity($this->getRequestParameter('quantity_'.$item->getId()));
+          }
+        }
+
+        // ...
+      }
+
+      public function executeDelete()
+      {
+        if ($this->hasRequestParameter('id'))
+        {
+          $shopping_cart = $this->getUser()->getShoppingCart();
+          $shopping_cart->deleteItem('Product', $requets->getParameter('id'));
+        }
+
+        // ...
+      }
+
+      ...
+    }
+
+### アイテムを追加する
+
+このコードをより詳しく見てみましょう。
+
+ショッピングカートにアイテムを追加するために、`addItem()`メソッドを呼び出し、`sfShoppingCartItem`オブジェクトを渡します。このオブジェクトはオブジェクトクラス、追加されるアイテムのユニークID、追加される量、アイテムの価格を含みます。このことによってショッピングカートは任意のクラスのオブジェクトを含むことができます。この例においては、本とCDを含むショッピングカートを持つことができます。
+
+バックオフィスにおいて製品の価格が修正される場合(もしくはカートがセッション期間を保持する場合)、製品追加時と会計時の間の価格の変動を避けるためにこの瞬間の価格は保存されます。これによって顧客が注文した量に応じて割り引きすることも可能になります:
+
+    [php]
+    if ($quantity > 10)
+    {
+      $item->setPrice($product->getPrice() * 0.8);
+    }
+    else
+    {
+      $item->setPrice($product->getPrice());
+    }
+
+問題はこの方法で割引する場合オリジナルの価格を失われることです。`sfShoppingCartItem`オブジェクトが割引率を要求する`setDiscount()`メソッドを持つ理由です:
+
+    [php]
+    if ($quantity > 10)
+    {
+      $item->setPrice($product->getPrice());
+      $item->setDiscount(20);
+    }
+    else
+    {
+      $item->setPrice($product->getPrice());
+    }
+
+### アイテムを修正する
+
+アイテムの量を変更するには、`sfShoppingCartItem`オブジェクトの`setQuantity()`メソッドを使います。アイテムを削除するには、`deleteItem()`メソッドを呼び出す、もしくは`setQuantity(0)`メソッドを呼び出して量を0に変更します。
+
+ユーザーが同じアイテム(同じクラスと同じid)を何度も追加する場合、ショッピングカートはアイテムの量を増やし、新しいアイテムは追加しません:
+
+    [php]
+    $item = new sfShoppingCartItem('Product', $this->getRequestParameter('id'));
+    $item->setQuantity(1);
+    $item->setPrice($product->getPrice());
+    $shopping_cart = $this->getUser()->getShoppingCart();
+    $shopping_cart->addItem($item);
+    $shopping_cart->addItem($item);
+
+    //同上
+
+    $item = new sfShoppingCartItem('Product', $this->getRequestParameter('id'));
+    $item->setQuantity(2);
+    $item->setPrice($product->getPrice());
+    $shopping_cart = $this->getUser()->getShoppingCart();
+    $shopping_cart->addItem($item);
+    
+結局、`update`アクションが'id=2313&quantity=4'の代わりに'quantity_2313=4'のような引数を使用するのはなぜなのかと不思議に思うかもしれません。当然のことながら、このアクションが実装されている方法によって一度に複数の記事の量の更新が可能です。
+
+### ショッピングカート全体を削除する
+
+ショッピングカートをリセットするには`sfShoppingCart`インスタンスの`clear()`メソッドを呼び出します。
+
+    [php]
+    $this->getUser()->getShoppingCart()->clear();
+
+テンプレートにショッピングカートを表示する
+------------------------------------------
+
+`shoppingcart/index`アクションはショッピングカートの内容を表示します。実現可能な実装を試してみましょう。
+
+### ショッピングカートの内容を取得する
+
+`sfShoppingCart`オブジェクトの3つのメソッドがショッピングカートの内容の取得を手助けしてくれます:
+
+* ショッピングカートの`sfShoppingCartItem`オブジェクトすべての配列
+* `->getItem($class_name, $object_id)`: 1つの特定の`sfShoppingCartItem`オブジェクト
+* `->getTotal()`: ショッピングカートの総量(アイテムごとの量×価格の合計)
+
+ショッピングカートのアイテムは[パラメータホルダー](http://www.symfony-project.org/book/1_0/02-Exploring-Symfony-s-Code#chapter_02_sub_parameter_holders)を保持します。このことはカスタムの情報をどのアイテムにも追加できることを意味します。
+
+たとえば、自動車の部品を売るWebサイトにおいて、`sfShoppingCartItem`オブジェクトは追加されたオブジェクトを保存する必要がありますが、部品が購入された乗用車も保存します。これは次のコードを追加することでシンプルに行われます:
+
+    [php]
+    $item->setParameter('vehicle', $vehicle_id);
+
+>**Note**: `getItems()`メソッドの代わりに`getObjects()`が必要かもしれません。このメソッドは存在しますが、[Propel][2]データアクセスレイヤーに依存します。Propelの利用はオプションなので、これを使用することはできないかもしれません。データアクセスレイヤーについては[8章](http://www.symfony-project.org/book/1_0/08-Inside-the-Model-Layer)でもっと多くのことを学んでください。
+
+### テンプレートに値を渡す
+
+ショッピングカートの内容を表示するために、`index`アクションはテンプレートにアクセスできる変数をいくつか定義しなければなりません:
+
+    [php]
+    // ...
+
+    $this->shopping_cart = $shopping_cart;
+    $this->items = $shopping_cart->getItems();
+
+次の例はそれぞれのアイテムについての情報を示すショッピングカートのすべてのアイテムについてのイテレーションに基づいた`indexSuccess.php`テンプレートを示しています:
+
+    [php]
+    <?php if ($shopping_cart->isEmpty()): ?>
+
+      Your shopping cart is empty.
+
+    <?php else: ?>
+
+      <?php foreach ($items as $item): ?>
+        <?php $object = call_user_func(array($item->getClass().'Peer', 'retrieveByPK'), $item->getId()) ?> 
+        <?php echo $object->getLabel() ?><br />
+        <?php echo $item->getQuantity() ?><br />
+        <?php echo currency_format($item->getPrice(), 'EUR' ) ?> 
+        <?php if ($item->getDiscount()): >
+           (- <?php echo $item->getDiscount() ?> %)
+        <?php endif; ?><br />
+      <?php endforeach; ?>
+
+      Total : <?php echo currency_format($shopping_cart->getTotal(), 'EUR' ) ?><br />
+
+    <?php endif; ?>
+
+この例ではPropelデータアクセスレイヤーが使用していることに注目してください。あなたのプロジェクトが他のデータベースアクセスレイヤーを使用している場合、この例を修正することが必要になることがあります。
+
+税金有りもしくは無し
+---------------------
+
+デフォルトでは、すべての実行(`$shoppinng_cart->addItem()`に加えて、`$get->getPrice()`と`$shopping_cart->getTotal()`によるアクセス)は**税金無しで**価格を使用します。
+
+税金を含めた合計金額を取得するために、次のコードを呼び出さなければなりません:
+
+    [php]
+    $total_with_taxes = $shopping_cart->getTotalWithTaxes()
+
+必要な場合、`sfShoppingCart`オブジェクトは初期化され`add`と`get`メソッドは税金を含む価格を使用します:
+
+    [php]
+    class myUser extends sfUser
+    {
+      public function getShoppingCart()
+      {
+        if (!$this->hasAttribute('shopping_cart'))
+        {
+          $this->setAttribute('shopping_cart', new sfShoppingCart(sfConfig::get('app_cart_tax')));
+        }
+        $this->getAttribute('shopping_cart')->setUnitPriceWithTaxes(sfConfig::get('app_cart_withtaxes'));
+
+        return $this->getAttribute('shopping_cart');
+      }
+
+      // ...
+    }
+
+`sfConfig::get('app_cart_withtaxes')`が`true`に設定される場合、`$shopping_cart->addItem()`と`$item->getPrice()`メソッドは税を含む価格を使用します。`getTotal()`と`getTotalWithTaxes()`メソッドはまだ正しい結果を返します。
+
+繰り返しますが、設定ファイルに税の設定を保存することは良い習慣です: 上記の例ではシンプルな`true`の代わりに`sfConfig::get('app_cart_withtaxes')`を使用するのはそういうわけです。`myproject/apps/myapp/config/app.yml`は次の内容を含みます:
+
+    [yml]
+    all:
+      cart:
+        tax:       19.6
+        withtaxes: true
+
+税が処理される方法に信頼がおけない場合、ショッピングカートに尋ねてください:
+
+    [php]
+    $uses_tax = $shopping_cart->getUnitPriceWithTaxes();
+
+[1]: http://en.wikipedia.org/wiki/Object_composition  "Object composition definition at Wikipedia"
+[2]: http://propel.phpdb.org/trac/                    "Propel"

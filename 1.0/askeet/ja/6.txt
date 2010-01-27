@@ -1,0 +1,362 @@
+6日目: セキュリティとフォームのバリデーション
+===========================================
+
+復習
+----
+
+[5日目](5.txt)において、テンプレートとアクションの操作に慣れました; フォームとページャはもはや秘密では無くなりました。ログインフォームを構築したあとに、認証されていないユーザーが特定の機能のセットに対してアクセスするのをどのように制限するのか、もしかしたらあなたは私たちに期待したかもしれません。それはまさに今日私たちが実装しようとしていることです。フォームのバリデーションと一緒に行います。アプリケーションをカスタムクラスで拡張するにつれて、symfony bookの[カスタムの拡張の章](http://www.symfony-project.org/book/1_0/07-Inside-the-View-Layer)で公開されているコンセプトに満足することでしょう。
+
+ログインフォームのバリデーション
+-------------------------------
+
+### バリデーションファイル
+
+ログインフォームは`nickname`と`password`フィールドを持ちます。しかし、ユーザーが不正なデータを投稿したら、何が起きるでしょうか？このケースに対処できるように、`/frontend/modules/user/validate`ディレクトリで`login.yml`ファイルを作成します(`login`はバリデートするアクション名)。次のコードを追加します:
+
+    methods:
+      post: [nickname, password]
+    
+    names:
+      nickname:
+        required:     true
+        required_msg: your nickname is required
+        validators:   nicknameValidator
+    
+      password:
+        required:     true
+        required_msg: your password is required
+    
+    nicknameValidator:
+        class:        sfStringValidator
+        param:
+          min:        5
+          min_error:  nickname must be 5 or more characters
+
+最初に、`method`ヘッダーの下で、フォームのメソッドに対してバリデートされるフィールドのリストが定義されます(POSTメソッドだけを定義します。GETメソッドはログインフォームを表示しいバリデーションを必要としないからです)。それから`names`ヘッダーの下で、チェックされるべきそれぞれのフィールドのための要求がエラーメッセージに対応して、リストとして表示されます。結局は、'nickname'フィールドは特別のバリデーションのセットを持つように宣言されているので、これらはヘッダー対応の下で詳細に記述されます。この例では、`sfStringValidator`はsymfonyに組み込まれているバリデータで文字列のフォーマットをチェックします(デフォルトのバリデータはsymfony bookの[フォームをバリデートする方法](http://www.symfony-project.org/book/1_0/10-Forms)で説明されています)。
+
+### エラーの処理
+
+ではユーザーが間違ったデータを入力したら何が起きるでしょうか？`login.yml`ファイルで書かれた設定を見つけられずsymfonyコントローラは`form_tag` 引数で予定された`executeLogin()`メソッドの代わりに`userActions`クラスの`handleErrorLogin()`メソッドへリクエストを渡します。このメソッドが存在しなければ、デフォルトのふるまいは`loginError.php`テンプレートを表示します。デフォルトの`HandleError()`メソッドが返すのはそういうわけです:
+
+    [php]
+    public function handleError()
+    {
+      return sfView::ERROR;
+    }
+
+これはまったく新しいテンプレートです。しかし、私たちはむしろ問題のあるフォールドに近いメッセージでログインフォームを再表示することを望みます。ではログインエラー表示のふるまいを修正しましょう。この場合、`loginSuccess.php`テンプレートです:
+
+    [php]
+    public function handleErrorLogin()
+    {
+      return sfView::SUCCESS;
+    }
+
+>**Note**: アクションの名前にリンクする命名ルール、`return`の値とテンプレートファイルはsymfony bookの[ビューの章](http://www.symfony-project.org/book/1_0/07-Inside-the-View-Layer)に公開されています。
+
+### テンプレートエラーヘルパー
+
+`loginSuccess.php`テンプレートが再び呼び出されたとき、エラーが表示されます。その目的のために`Validation`ヘルパーグループの`form_error()`ヘルパーを使用します。テンプレートの2つの`form-row`のdivを次のように変更してください:
+
+    [php]
+    <?php use_helper('Validation') ?>
+
+    <div class="form-row">
+      <?php echo form_error('nickname') ?>
+      <label for="nickname">nickname:</label>
+      <?php echo input_tag('nickname', $sf_params->get('nickname')) ?>
+    </div>
+    
+    <div class="form-row">
+      <?php echo form_error('password') ?>
+      <label for="password">password:</label>
+      <?php echo input_password_tag('password') ?>
+    </div>
+ 
+エラーがパラメータとして渡されたフィールドで宣言された場合`form_error()`ヘルパーは`login.yml`で定義されたエラーメッセージを出力します。
+
+5文字以下のニックネームが入力を試すか、2つのフィールドの1つを省略することでフォームバリデーションをテストしましょう。エラーメッセージは上述のconcernedフィールドを表示します:
+
+![ログインフォームのエラー](/images/askeet/login_form_error.gif)
+
+現在パスワードは強制です。しかし、データーベースにはパスワードがありません! どんなパスワードでも入力した直後にログインが成功します。しかしそれはセキュアなプロセスでありませんよね？
+
+### スタイルエラー
+
+フォームをテストしてエラーを得たのであれば、エラーが上記のキャプチャーのものと同じ方法で表されていないことに気づいているでしょう。それは `.form_error`クラス(`web/main.css`)のスタイルを定義したからです。`.form_error`クラスは`form_error()`ヘルパーによって生成されたフォームエラーのデフォルトクラスです:
+
+    [css]
+    .form_error
+    {
+      padding-left: 85px;
+      color: #d8732f;
+    }
+    
+ユーザーを認証する
+-----------------
+
+### カスタムバリデータ
+
+`login`アクションに入力されたニックネームの存在について昨日のチェックを覚えているでしょうか？フォームバリデーションのように聞こえるでしょう。このコードはアクションから持ち出され、カスタムバリデータに含まれています。複雑だと思いますか？実際にはそうではないです。次のように`login.yml`のバリデーションファイルを編集してください:
+
+    ...
+    names:
+      nickname:
+        required:      true
+        required_msg:  your nickname is required
+        validators:    [nicknameValidator, userValidator]
+    ...
+    userValidator:
+        class:         myLoginValidator
+        param:
+          password:    password
+          login_error: this account does not exist or you entered a wrong password
+
+`myLoginValidator`クラスの`nickname`フィールドのための新しいバリデータを追加しました。このバリデータはまだ存在していません。しかし、ユーザーを十分に認証するためのパスワードが必要になることは私たちは知っています。ですので、`password`ラベルでパラメータとして渡されます。
+
+### パスワードの保存
+
+しかし、少しお待ちください。テストデータと同じように、データモデルにパスワードの設定がありませんので定義しましょう。しかし、データベースに平文のパスワードを保存することはセキュリティの理由からバッドアイディアであることは分かっています。ハッシュ化されたランダムキーと同じようにパスワードの[sha1ハッシュ](http://en.wikipedia.org/wiki/SHA_hash_functions)を保存します。'salt'プロセスに慣れていませんでしたら、[パスワードクラッキングの練習](http://en.wikipedia.org/wiki/Password_cracking)を確認してください。
+
+`schema.xml`を開き、`User`テーブルに次のコラムを追加してください:
+
+    [xml]
+    <column name="email" type="varchar" size="100" />
+    <column name="sha1_password" type="varchar" size="40" />
+    <column name="salt" type="varchar" size="32" />
+
+`symfony propel-build-model`でPropelモデルをリビルドしてください。手動か`symfony prpel-build-sql`の後に生成された`lib.model.schema.sql`を使うかでデータベースに2つのカラムも追加します。`askeet/lib/mode/User.php`を開き、`setPassword()`メソッドを追加してください:
+
+    [php]
+    public function setPassword($password)
+    {
+      $salt = md5(rand(100000, 999999).$this->getNickname().$this->getEmail());
+      $this->setSalt($salt);
+      $this->setSha1Password(sha1($salt.$password));
+    }
+
+この関数はパスワード保存を直接シミュレートします。しかし、代わりに `salt`ランダムキー(ハッシュ化されたランダムな文字列による32文字)を保存し、パスワードをハッシュ化(40文字)します。
+
+### テストデータにパスワードを追加する
+
+3日目のテストデータファイルを覚えていますか？ テストユーザーにパスワードとEメールを追加しましょう。`askeet/fixtures/test_data.yml`を開き次のように修正します:
+
+    User:
+      ...
+      fabien:
+        nickname:   fabpot
+        first_name: Fabien
+        last_name:  Potencier
+        password:   symfony
+        email:      fp@example.com
+    
+      francois:
+        nickname:   francoisz
+        first_name: François
+        last_name:  Zaninotto
+        password:   adventcal
+        email:      fz@example.com
+
+`User`クラスに対して`setPassword()`メソッドが定義されたので、`sfPropelData`オブジェクトは呼び出されたときスキーマで定義された新しい`sha1_password`とsaltカラムを正しく投入します:
+
+    $ php batch/load_data.php
+
+>**Note**: `sfPropelData`オブジェクトが'real'データベースカラムにバインドされていないメソッドを取り扱うことができることを注目してください(伝統的なSQLダンプを上回ります!)。
+>
+>どのようにして可能であるのか悩んでいましたら、symfony bookの[データベース投入の章](http://www.symfony-project.com/book/1_0/08-Inside-the-Model-Layer)をご覧ください。
+
+-
+
+>**Note**: 'Anonymous Coward'のログインを禁止するので、パスワードを定義する必要はありません。あなたがここで提供された2つのパスワードを私たちの銀行のアカウントで試さないことを本当に評価したいと思います。これらは機密情報です!
+
+### カスタムバリデータ
+
+ではこのカスタムの`myLoginValidator`を書きましょう。モジュールがアクセス可能な`lib/`ディレクトリに作成することができます。(つまり、`askeet/lib/`、または`askeet/apps/frontend/lib/`または`askeet/apps/frontend/modules/user/lib/`)今やアプリケーション全体に渡るバリデータと考えられています。ですので `myLoginValidator.class.php`は`askeet/apps/frontend/lib/`ディレクトリで作成されます:
+
+    [php]
+    <?php
+    
+    class myLoginValidator extends sfValidator
+    {    
+      public function initialize($context, $parameters = null)
+      {
+        // 親クラスを初期化する
+        parent::initialize($context);
+    
+        // デフォルトを設定する
+        $this->setParameter('login_error', 'Invalid input');
+    
+        $this->getParameterHolder()->add($parameters);
+    
+        return true;
+      }
+
+      public function execute(&$value, &$error)
+      {
+        $password_param = $this->getParameter('password');
+        $password = $this->getContext()->getRequest()->getParameter($password_param);
+    
+        $login = $value;
+
+        // anonymousは実際のユーザーではない
+        if ($login == 'anonymous')
+        {
+          $error = $this->getParameter('login_error');
+          return false;
+        }
+    
+        $c = new Criteria();
+        $c->add(UserPeer::NICKNAME, $login);
+        $user = UserPeer::doSelectOne($c);
+    
+        // nicknameが存在するか？
+        if ($user)
+        {
+          // passwordはOKか？
+          if (sha1($user->getSalt().$password) == $user->getSha1Password())
+          {
+            $this->getContext()->getUser()->setAuthenticated(true);
+            $this->getContext()->getUser()->addCredential('subscriber');
+  
+            $this->getContext()->getUser()->setAttribute('subscriber_id', $user->getId(), 'subscriber');
+            $this->getContext()->getUser()->setAttribute('nickname', $user->getNickname(), 'subscriber');
+      
+            return true;
+          }
+        }
+    
+        $error = $this->getParameter('login_error');
+        return false;
+      }
+    }
+
+バリデータが要求されたとき、- ログインフォームの投稿の後で - `initialize()`メソッドが最初に呼び出されます。このメソッドはデフォルトの`login_error`メッセージ('Invalid Input')を初期化し、パラメータ(`param:`の下: `login.yml`ファイルへのヘッダー)をパラメータホルダオブジェクトに統合します。
+
+それで`excecute()`メソッドは...実行されました。`$password_param`は `password`ヘッダーの下にある`login.yml`に提供されるフィールド名です。リクエストパラメータからの値を取り出すフィールド名として使用されます。`$password`はユーザーによって入力されたパスワードを含みます。`$value`はカレントフィールドの値を取ります。そして`myLoginValidator`クラスは`nickname`フィールドのために呼び出されます。`$login`はユーザーによって入力されたニックネームを含みます。最後です! これでバリデータはユーザーを実際にバリデートするために必要なデータを持ちます。
+
+次のコードは`login`アクションによって始まります。しかし、加えて、パスワードバリデートのテスト(前回は常に`true`)は埋め込まれています: ユーザーによって入力されたパスワードのハッシュ(データベースに保存されたsalt)はユーザーのハッシュ化されたパスワードと比較されます。
+
+ログインとパスワードが正しい場合、バリデータは`true`を返し、フォームのターゲットアクション(`executeLogin()`)は実行されます。そうでなければ`false`を返し、`handleErrorLogin()`が実行されます。
+
+### アクションからコードを除去する
+
+バリデーションのコードはバリデータの内側に設置されているので、`login`アクションからこれを取り除く必要があります。実際に、POSTメソッドでアクションが呼び出されたときには、バリデータがリクエストをバリデートしたことを意味し、これはユーザーが正しいということです。この場合においてアクションがすべき唯一のことは`referer`ページにリダイレクトすることを意味します:
+
+    [php]
+    public function executeLogin()
+    {
+      if ($this->getRequest()->getMethod() != sfRequest::POST)
+      {
+        // フォームを表示する
+        $this->getRequest()->getParameterHolder()->set('referer', $this->getRequest()->getReferer());
+        
+        return sfView::SUCCESS;
+      }
+      else
+      {
+        // フォーム投稿を取り扱う
+        // 最後のページにリダイレクトする
+        return $this->redirect($this->getRequestParameter('referer', '@homepage'));
+      }
+    }
+
+テストユーザーの1つでログインを試して、修正をテストしてください(オートロードする必要のある新しいバリデータクラスを作成したのでキャッシュをクリアした後で)。
+
+アクセスを制限する
+------------------
+
+アクションへのアクセスを制限したいのであれば、モジュールの`config/`ディレクトリの`security.yml`に次のようなコードを追加する必要があります(今はしないでください):
+
+    all:
+      is_secure:   on
+      credentials: subscriber
+
+このようなモジュールのアクションが実行されるときは、ユーザーが認証され、`subscriver`の認証を持つときのみです。
+
+askeetにおいて、ログインは、新しい質問を投稿するため、質問に対する関心を表す、コメントを評価するときなどに求められます。すべての他のアクションはログインしていないユーザーに対してオープンです。
+
+`question/add`アクションのアクセス (まだ書かれていません) を制限するために、`askeet/apps/frontend/modules/question/config`ディレクトリに次の `security.yml`ファイルを追加してください:
+
+    add:
+      is_secure:   on
+      credentials: subscriber
+
+    all:
+      is_secure:   off
+
+少しのリファクタリングはいかがですか？
+------------------------------------
+
+今日はほとんど終わりましたが、少しの間、私たちの好きなゲームを遊んでみたいと思います。move-the-code-to-an-unlikely-placeゲームです。
+
+パスワードがバリデートされるときに実行される4行のコードはユーザーにアクセス権限を与え、将来のリクエストのために`id`を保存します。`myUser`クラスのメソッドとみなすことができます(セッションクラスで、`User`カラムに対応している`User`クラスではありません)。遊ぶのは簡単です。次のメソッドを`askeet/apps/frontend/lib/myUser.php`クラスに追加してください:
+
+    [php]
+    public function signIn($user)
+    {
+      $this->setAttribute('subscriber_id', $user->getId(), 'subscriber');
+      $this->setAuthenticated(true);
+
+      $this->addCredential('subscriber');
+      $this->setAttribute('nickname', $user->getNickname(), 'subscriber');
+    }
+
+    public function signOut()
+    {
+      $this->getAttributeHolder()->removeNamespace('subscriber');
+
+      $this->setAuthenticated(false);
+      $this->clearCredentials();
+    }
+
+では、`myLoginValidator`クラスの`$this->getContext()->getUser()`で始まる4行を変更してください:
+
+    [php]
+    $this->getContext()->getUser()->signIn($user);
+
+そして`user/logout`アクション(忘れましたか？)も変更してください:
+
+    [php]
+    public function executeLogout()
+    {
+      $this->getUser()->signOut();
+    
+      $this->redirect('@homepage');
+    }
+
+`subscriver_id`と`nickname`セッション属性もゲッターメソッドを通して抽象化されます。`myUser`クラスに次の3つのメソッドを追加してください:
+
+    [php]
+    public function getSubscriberId()
+    {
+      return $this->getAttribute('subscriber_id', '', 'subscriber');
+    }
+  
+    public function getSubscriber()
+    {
+      return UserPeer::retrieveByPk($this->getSubscriberId());
+    }
+
+    public function getNickname()
+    {
+      return $this->getAttribute('nickname', '', 'subscriber');
+    }
+
+`layout.php`でこれらの新しいメソッドの1つを利用できます:
+
+    [php]
+    <li><?php echo link_to($sf_user->getAttribute('nickname', '', 'subscriber').' profile', 'user/profile') ?></li>
+    
+上記のコードを下記のコードに変更してください
+
+    [php]
+    <li><?php echo link_to($sf_user->getNickname().' profile', 'user/profile') ?></li>
+
+修正をテストすることを忘れないでください。以前と同じログインプロセスはまだ動作します - しかし、現在はもっとよいコードで動きます。
+
+それではまた明日
+----------------
+
+明日は、カスタマイズし、CSSと一貫したコンポーネントをカスタマイズし、ページヘッダーに注意を払うためにビューの設定に少し取り組みます。
+
+release_day_6とタグがついた[askeetのSVNリポジトリ](http://svn.askeet.com/tags/release_day_6/)から今日の分の全コードをまだダウンロードできることを忘れないでください。askeetに質問をしたり回答をしたくなりましたら、[askeetフォーラム](http://www.symfony-project.com/forum/index.php/f/8/)に気楽に行ってみてください。21日目のプログラムはまだみなさん次第であることを忘れないでください。

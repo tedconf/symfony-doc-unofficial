@@ -1,0 +1,530 @@
+ Calendario de symfony día veinte: Administración i moderación
+=================================================================
+
+Anteriormente en symfony
+---------------------
+
+El servicio de askeet debería funcionar tal como se espera y sin ninguna sorpresa, gracias a nuestra preocupación por el rendimiento antes de la primera entrega. Per hay un problema mayor: siendo una aplicación abierta para todo el mundo, está sujeta al SPAM, excesos o errores que pueden molestar. Todos los servicios como askeet necesitan una manera de moderar las publicaciones, y acceder a la base de datos a mano seguro que es una mala solución. Deberíamos añadir una aplicación de backend para askeet?
+
+Se supone que los tutoriales del calendario de symfony hablan del desarrollo de una aplicación web usando métodos ágiles. De todas formas, hasta ahora, hemos hablado mucho de hacer código y no tanto acerca del desarrollo de aplicaciones y las relaciones entre los requisitos de un cliente y la funcionalidad implementada. La necesidad de un backend será una buena oportunidad para ilustrar qué viene antes de empezar a hacer código en el desarrollo ágil.
+
+El resultado esperado: lo que el cliente dice
+-----------------------------------------
+
+El trabajo de hoy consiste en unas pocas nuevas acciones, nuevas plantillas y un nuevo método del modelo, y ya sabemos como hacer todo esto. La parte más difícil es probablemente definir qué necesitamos y dónde ponerlo. Es una preocupación de funcionalidad y usabilidad, y es una buena cosa que los desarrolladores piensen otras cosas antes de empezar a codificar enseguida.
+
+Será la oportunidad de ilustrar una de las tareas de la [metodología eXtreme Programming (XP)](http://www.extremeprogramming.org/what.html): la escritura de **historias**, y el trabajo que los desarrolladores tienen que hacer para transformar las historias en funcionalidades. XP es una de las mejores aproximaciones al desarrollo ágil, y normalmente es aplicable a los proyectos web 2.0 como askeet.
+
+### Historias
+
+En XP, una historia es una breve descripción de la forma en que una acción del usuario lanza una reacción de la aplicación. La historias están escritas por el cliente de los sitios web (el que paga - la web no es toda acerca de código abierto). Las historias raramente exceden de una o dos líneas. Están reagrupadas en temas.
+
+Las historias, generalmente, están menos detalladas y más elementales que los casos de uso. Si el UML te es familiar, quizás encuentres que las historias no son suficientemente precisas, pero pronto veremos que puede ser una buena opción.
+
+Las historias se centran en el resultado de una acción, no en los detalles de la implementación. Por supuesto, el cliente puede tener preferencias acerca de la interface, y en este caso la historia tiene que contener las peticiones y recomendaciones acerca de cómo debe hacerse la interacción con el ordenador.
+
+Las historias tienen que ser lo suficientemente pequeñas para ser evaluadas fácilmente por los desarrolladores en términos de tiempo de desarrollo. Normalmente, un equipo de programadores siguiendo el método de la programación extrema mide las historias en unidades. El valor de una unidad es redefinido durante el curso de un proyecto, y puede variar en un día o unos pocos días.
+
+Ahora, vamos a echar una ojeada a como el cliente va a definir los requisitos para el backend de askeet.
+
+### Historia #1: Administración del perfil
+
+Cada usuario puede pedir ser un moderador. En la página de perfil del usuario, un link debería hacer posible hacer una petición para este privilegio. Una persona que haya pedido ser moderador no debería de poder pedirlo otra vez hasta que haya recibido una respuesta.
+
+Las personas que pueden aceptar o rechazar un candidato a moderador son los administradores. Deberían de ser capaces de navegar por la lista de candidatos y tener un botón para permitir o rechazar el grado de moderador para cada uno de ellos. Los administradores necesitan tener un link al perfil de los candidatos para ver si todas sus contribuciones son correctas.
+
+Permitir permisos de moderación tiene que ser una acción reversible: los administradores tienen que poder navegar por una lista de moderadores, y para cada uno, eliminar la credencial de moderador.
+
+Los administradores pueden dar derechos de administración a otros usuarios. Tienen acceso a la lista de administradores.
+
+### Historia #2: Informe de las preguntas o respuestas problemáticas
+
+Cada usuario debe de ser capaz de votar por una pregunta o respuesta problemática a un moderador. Un simple link a 'informe de spam' al principio de cada pregunta o respuesta puede ser una buena solución.
+
+Para evitar el spam de los votos, el voto de un usuario sobre una pregunta o respuesta sólo se puede contar una vez. Seria bueno si el usuario tuviera una respuesta visual sobre el echo de que su voto se ha tenido en cuenta.
+
+### Historia #3: Manejo de las preguntas o respuesta problemáticas
+
+Los moderadores tienen dos listas más disponibles: la lista de las preguntas problemáticas y la lista de las respuestas problemáticas. Cada lista está ordenada según el número de votos en orden decreciente. Por lo tanto la pregunta que sea votada más veces aparecerá al principio de la lista de las preguntas votadas como spam.
+
+Los moderadores tienen la habilidad de eliminar una pregunta, eliminar una respuesta y de poner a cero los votos de spam de ambas. La eliminación de una pregunta también implica la eliminación de todas sus respuestas.
+
+### Historia #4: Manejo de las etiquetas problemáticas
+
+Los moderadores tienen la habilidad de eliminar una etiqueta de una pregunta, *aunque la etiqueta no fuese establecida por ellos*
+
+Los moderadores tienen acceso a la lista de etiquetas, ordenada por orden inverso de popularidad, por lo cual se pueden detectar las etiquetas problemáticas - las que no tienen sentido. Enlazando a la lista de las preguntas etiquetadas con una etiqueta, la lista da la posibilidad de eliminar la lista de etiquetas.
+
+### Historia #5: Manejo de usuarios problemáticos
+
+Cuando un moderador elimina una contribución de un usuario se incrementar el número de contribuciones problemáticas de ese usuario.
+
+Los administradores tienen una lista de los usuarios problemáticos ordenada por el número de publicaciones problemáticas eliminadas. Los administradores tienen que ser capaces de eliminar el usuario y todas sus contribuciones. 
+
+### Es todo?
+
+Sí, eso es todo lo que el cliente necesita definir acerca de la funcionalidad requerida para la administración del sitio askeet. No cubre todos los casos como lo haría una especificación funcional, no es tan acurado como un conjunto completo de casos de uso y se deja abiertas muchas posibilidades que nos pueden llevar a resultados que no queremos.
+
+Pero el trabajo de los desarrolladores de métodos ágiles, que empieza ahora, es detectar las posibles ambigüedades y la falta de información para requerir asistencia del cliente cuando una historia debería ser más precisa. En la fase de desarrollo del estilo XP, el cliente siempre está disponible para responder las preguntas del equipo de desarrollo.
+
+Los desarrolladores se juntan en pareja y cada pareja escoge una historia con la que trabajar. Hablan un poco de lo que la historia significa y las unidades de prueba que validarán las funcionalidades. Escriben las unidades de prueba. Luego, escriben el código para pasar esas pruebas. Cuando está hecho, meten el código en la aplicación y validan la integración ejecutando todas las unidades de prueba escritas anteriormente. Cuando funcione, se toman una taza de café y rompen. Luego forman otra pareja con otras personas y se centran en otra historia.
+
+Qué pasa si el resultado final no se parece a lo que quería el cliente? Bueno, sólo representa unas pocas unidades de trabajo (unas pocas horas o días), por lo tanto es fácil olvidar el trabajo e intentar una nueva aproximación. Como mínimo, el cliente ahora sabe lo que no quiere, y eso es un gran paso hacia el determinismo. Pero la mayoría de veces, como los desarrolladores tienen la oportunidad de hablar directamente con el cliente, se tiende a producir una funcionalidad incluso mejor de lo que el cliente espera. Además, es el desarrollador quién conoce las posibilidades de AJAX y la manera en la que la web 2.0 puede tener éxito. Por lo tanto dándoles la iniciativa es una buena opción para acabar con una buena aplicación.
+
+Si estás interesado en la XP y los beneficios del desarrollo ágil, hecha un vistazo a [la página web de la eXtreme Programming](http://www.extremeprogramming.org/) o lee _Extreme Programming Explained: Embrace Change_ de Kent Beck_
+
+Backend vs. frontend mejorado
+-----------------------------
+
+El feedback del desarrollador a los requisitos del cliente es crucial para la calidad de la aplicación.  Vamos a ver lo que el desarrollador, quién conoce como está hecha la aplicación y como de poderoso es symfony, le puede decir al cliente.
+
+La idea de añadir una aplicación de backend no es tan buena por muchas razones.
+
+Primero, un moderador usando el backend puede necesitar muchas de las características que ya están disponible en el frontend (incluyendo la lista de las últimas preguntas, el módulo de login, etc.). Por lo tanto hay un riesgo que la aplicación de backend repita parte del frontend. Cómo no nos gusta repetirnos, eso implicaría mucha refactorización para entrelazar las aplicaciones, y eso es demasiado largo para la hora dedicada a ello. En segundo lugar, una nueva aplicación probablemente significaría un nuevo diseño para el sitio con un layout y hojas de estilo personalizados. Eso es en lo que se emplea más tiempo durante el desarrollo de la aplicación. Finalmente, para crear el backend en una hora posiblemente tengamos que usar el generador de CRUD muchas veces, obteniendo muchas acciones innecesarias y plantillas costosas de adaptar.
+
+En un futuro próximo (está planeado para la versión 0.6) symfony proveerá un generador de backend con todas las funcionalidades (N. del T: efectivamente esto ya está incluido). Toda la funcionalidad para manejar la actividad de un sitio web será fácilmente manejable, casi sin una línea de código. Ese brillante añadido cambiaría nuestra manera de pensar la forma en la que desarrollar el backend de askeet, pero considerando el estado actual del framework, la mejor solución para manejar estas funcionalidades es añadiéndolas a la aplicación de frontend (N. del T.: eso ya no es aplicable con el comando *symfony propel-init-admin* que ya está disponible).
+
+La base del frontend de askeet es un conjunta de listas y un páginas detalladas para las preguntas y usuarios dónde ciertas acciones estarán disponibles. Ese es exactamente el esqueleto que necesitamos para construir la funcionalidad del mantenimiento del sitio.
+
+Aunque sería de ayuda mostrar como un proyecto puede contener más de una aplicación, el cliente, impresionado por esta demostración, escoge una integración de las características de administración del sitio en el frontend de la aplicación.
+
+>**Nota**: Si sientes curiosidad acerca de la manera de tener más de una aplicación ejecutándose en un proyecto de symfony, hecha un vistazo al tutorial de [Mi primer proyecto](http://www.symfony-project.com/tutorial/my_first_project.html), que lo describe en detalle.
+
+La funcionalidad: lo que el desarrollador entiende
+---------------------------------------------------
+
+Después de que los desarrolladores tengan una charla con el cliente acerca de las historias, deciden las modificaciones que se tienen que hacer a la aplicación askeet. El desarrollador transforma las *historias* en *tareas*. Las  tareas normalmente son más pequeñas que las historias porqué implementar una historia lleva un día o dos, mientras que una tarea normalmente puede llevar una o dos unidades de tiempo.
+
+1.  El modelo tiene que modificarse para permitir peticiones más eficientes:
+    * crear una nueva tabla `ReportQuestion`, con las columnas `question_id`, `user_id` y `created_at`
+    * crear una nueva tabla `ReportAnswer`, con las columnas `question_id`, `user_id` y `created_at`
+    * añadir una nueva columna `reports` a las tablas `Question` y `Answer`
+    * añadir las columnas `is_administrator`, `is_moderator` y `deletions` a la tabla `User`
+
+2.  En cada página, la barra lateral tiene que proveer acceso a las nuevas listas en función de las credenciales del usuario:
+    * Para todos los usuarios: preguntas populares, últimas preguntas, últimas respuestas
+    * Para los moderadores: preguntas reportadas, respuestas reportadas y etiquetas impopulares
+    * Administradores: administradores, moderadores, candidatos a moderador, usuarios problemáticos
+
+3.  La página de detalle de una pregunta (`question/show`) tiene que proveer acceso a las nuevas acciones según las credenciales del usuario:
+    * Suscritor: reportar pregunta, reportar respuesta
+    * Moderador: eliminar preguntas y respuestas, eliminar respuestas, resetear los reportes de una pregunta, resetar los reportes de una respuesta, eliminar etiquetas.
+    
+    El detalle de una pregunta tiene que dar información adicional según los credenciales del usuario:
+    * Suscritor: si la pregunta ya ha sido reportada por el suscritor
+    * Moderador: el número de reportes de las preguntas y respuestas.
+
+4.  La página del perfil de usuario (`user/show`) tiene que proveer acceso a las nuevas acciones según las credenciales del usuario:    
+    * Suscritor en su página: pasar a ser un candidato a moderador
+    * Administradores: eliminar el usuario y todas sus contribuciones, dar credenciales de moderador, quitar credenciales de moderador, eliminar credenciales de moderador, dar credenciales de administrador.
+
+    La página del perfil de usuario tiene que dar información adicional según las credenciales del usuario:  
+    * Todos los usuarios: credenciales del usuario, credenciales que se requieren para las acciones
+    * Administradores: número de posts eliminados.
+
+5.  Se tienen que crear nuevas listas con acceso restringido:
+    * Restringido a los moderadores:
+        * `question/reports`: lista de preguntas reportadas, en orden decreciente según el número de reportes; Para cada uno, un enlace a los detalles de la pregunta.
+        * `answer/reports`: lista de respuestas reportadas, en orden decreciente según el número de reportes; Para cada uno, un enlace a los detalles de la respuesta.
+        * `tag/unpopular`: lista de etiquetas, en orden creciente según la popularidad; Para cada uno, un enlace a las preguntas etiquetadas con esta etiqueta.
+    * Restringido a los administradores:
+        * `user/administradors`: lista de administradores, ordenados alfabéticamente; Para cada uno, un enlace al perfil de usuario
+        * `user/moderators`: lista de moderadores, ordenados alfabéticamente; Para cada uno, un enlace al perfil de usuario
+        * `user/candidates`: lista de candidatos a moderador, ordenados alfabéticamente; Para cada uno, un enlace al perfil de usuario
+        * `user/problematic`: lista de los usuarios problemáticos, en orden decreciente según el número de contribuciones eliminadas; Para cada uno, un enlace al perfil de usuario
+
+6.  Se tienen que crear dos nuevas credenciales: Administrador y Moderador.
+
+7.  Almenos un administrador se tiene que crear a mano en la base de datos para que la aplicación funciones.    
+
+Implementación
+--------------
+
+Una vez la tarea está escrita, la manera de implementar las funcionalidades del backend para askeet con symfony es una cuestión de trabajo. Aplicando la metodología XP a la lista de tareas, con la escritura de unidades de test incluida, nos puede llevar un buen día de trabajo. Por las necesidades del calendario del tutorial de symfony, lo vamos a hacer un poco más rápido, y sólo nos centraremos en las nuevas técnicas que no se han descrito anteriormente o las que deberían ayudarte a repasar las técnicas clásicas de symfony.
+
+### Nuevas tablas.
+
+Para el informe de preguntas y respuestas, añadimos dos tablas nuevas a la base de datos de askeet:
+
+    [xml]
+    <table name="ask_report_question" phpName="ReportQuestion">
+      <column name="question_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_question">
+        <reference local="question_id" foreign="id" />
+      </foreign-key>
+      <column name="user_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_user">
+        <reference local="user_id" foreign="id" />
+      </foreign-key>
+      <column name="created_at" type="timestamp" />
+    </table>
+    
+    <table name="ask_report_answer" phpName="ReportAnswer">
+      <column name="answer_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_answer">
+        <reference local="answer_id" foreign="id" />
+      </foreign-key>
+      <column name="user_id" type="integer" primaryKey="true" />
+      <foreign-key foreignTable="ask_user">
+        <reference local="user_id" foreign="id" />
+      </foreign-key>
+      <column name="created_at" type="timestamp" />
+    </table>
+
+La combinación de `question_id`/`answer_id` (id_pregunta/id_respuesta) y el `user id` es suficiente para crear una clave primaria única, por lo tanto no necesitamos añadir un campo autoincremental `id` para esas tablas.
+
+También vamos a añadir una nueva columna `reports` a las tablas `Question` y `Answer`. Para sincronizar el número de registros en las tablas `ReportQuestion` y número de `reports` en la `Question`, vamos a sobreescribir el método `save()` del objeto `ReportQuestion` para añadir una nueva transacción como hicimos durante el [día 4](4.txt):
+
+    [php]
+    public function save($con = null)
+    {
+      $con = sfContext::getInstance()->getDatabaseConnection('propel');
+      try
+      {
+        $con->begin();
+    
+        $ret = parent::save();
+    
+        // actualizar contador_spam en la tabla respuesta
+        $answer = $this->getAnswer();
+        $answer->setReports($answer->getReports() + 1);
+        $answer->save();
+    
+        $con->commit();
+    
+        return $ret;
+      }
+      catch (Exception $e)
+      {
+        $con->rollback();
+        throw $e;
+      }
+    }
+
+Lo mismo para la tabla `ReportAnswer`.
+
+### Eliminación en cascada
+
+Cuando una pregunta es eliminada, todas la respuestas a esta pregunta se deben de eliminar también, así como todos los intereses sobre esta pregunta, las etiquetas y los votos de importancia de todas las respuestas. Necesitamos un mecanismo de eliminación en cascada para que se ocupe de todo por nosotros.
+
+Durante el [día dos](2.txt), tuvimos la idea de usar el motor InnoDB para la base de datos de askeet. Eso hace más fácil las eliminación en cascada. Pero la capa de Propel puede manejar las eliminaciones en cascada incluso en una base de datos no-InnoDB, indicando en el esquema que la eliminación en cascada se tiene que tener en cuenta. Se tiene que hacer cuando se declaran las llaves foráneas (foreign key): añadir el atributo `onDelete="cascade"` a la etiqueta `<foreign-key>` en la definición de la tabla. Por ejemplo para la tabla `Answer`:
+
+    [xml]
+    ...
+    <table name="ask_answer" phpName="Answer">
+      <column name="id" type="integer" required="true" primaryKey="true" autoIncrement="true" />
+      <column name="question_id" type="integer" />
+      <foreign-key foreignTable="ask_question" onDelete="cascade">
+        <reference local="question_id" foreign="id"/>
+      </foreign-key>
+      <column name="user_id" type="integer" />
+      <foreign-key foreignTable="ask_user">
+        <reference local="user_id" foreign="id"/>
+      </foreign-key>
+      <column name="body" type="longvarchar" />
+      <column name="html_body" type="longvarchar" />
+      <column name="relevancy_up" type="integer" default="0" />
+      <column name="relevancy_down" type="integer" default="0" />
+      <column name="reports" type="integer" default="0" />
+      <column name="created_at" type="timestamp" />
+    </table>
+    ...
+
+Una vez el modelo es reconstruido, la eliminación en cascada está habilitada para las relaciones que llevan el atributo `onDelete`. Cuando eliminas un registro de la tabla `Question`:
+
+* si la base de datos usa el motor InnoDB, las respuestas relacionadas se eliminarán automáticamente por la misma base de datos.
+* sino, la capa Propel obtendrá automáticamente todas la respuestas, las eliminará y luego eliminará la pregunta.
+
+Puede que no todas las relaciones se vean involucradas en una eliminación en cascada. Eliminar un usuario, por ejemplo, debería eliminar sus intereses y las puntuación para las respuestas relevantes, pero no sus contribuciones (preguntas y respuestas). Esas contribuciones deberían asociarse al usuario anónimo después de la eliminación. 
+
+Por lo tanto el atributo `onDelete` tiene que ser establecido a `cascade` para las relaciones siguientes:
+
+* `Answer/QuestionId`
+* `Interest/QuestionId`
+* `Relevancy/QuestionId`
+* `QuestionTag/QuestionId`
+* `ReportQuestion/QuestionId`
+* `ReportAnswer/AnswerId`
+
+### Añadir enlaces a la barra lateral para los usuarios con credenciales
+
+Hemos creado un módulo `moderator` para manejar todas las acciones de moderación y uno `administrador` para manejar las acciones de administración.
+
+Durante el [día siete](7.txt) usamos la técnica del *componenent slot* para almacenar el código de la barra lateral en el módulo `sidebar`. Los enlaces a las nuevas listas aparecerán ahí, pero sólo según las credenciales. Simplemente tenemos que usar el método `$sf_user->hasCredential()` tal como vimos durante el [día seis](6.txt):
+
+    [php]
+    // en askeet/apps/frontend/modules/sidebar/templates/_default.php and _question.php:
+    ...
+    <?php include_partial('sidebar/moderation') ?>
+
+    <?php include_partial('sidebar/administration') ?>
+    
+    // en askeet/apps/frontend/modules/sidebar/templates/_moderation.php:
+    <?php if ($sf_user->hasCredential('moderator')): ?>
+      <h2>moderation</h2>
+    
+      <ul>
+        <li><?php echo link_to('reported questions', 'moderator/reportedQuestions') ?> (<?php echo QuestionPeer::getReportCount() ?>)</li>
+        <li><?php echo link_to('reported answers', 'moderator/reportedAnswers') ?> (<?php echo AnswerPeer::getReportCount() ?>)</li>
+        <li><?php echo link_to('unpopular tags', 'moderator/unpopularTags') ?></li>
+      </ul>
+    <?php endif ?>
+    
+    // en askeet/apps/frontend/modules/sidebar/templates/_administration.php:
+    ...
+    <?php if ($sf_user->hasCredential('administrator')): ?>
+      <h2>administration</h2>
+    
+      <ul>
+        <li><?php echo link_to('moderator candidates', 'administrator/moderatorCandidates') ?> (<?php echo UserPeer::getModeratorCandidatesCount() ?>)</li>
+        <li><?php echo link_to('moderator list', 'administrator/moderators') ?></li>
+        <li><?php echo link_to('administrator list', 'administrator/administrators') ?></li>
+        <li><?php echo link_to('problematic users', 'administrator/problematicUsers') ?> (<?php echo UserPeer::getProblematicUsersCount() ?>)</li>
+      </ul>
+    <?php endif ?>    
+
+![nuevos links](/images/askeet/moderation_links.gif)
+
+Los métodos de clase `QuestionPeer:getReportCount()`, `AnswerPeer::getReportCount()`, `UserPeer::getModeratorCandidatesCount()` y `UserPeer::getProblematicUsersCount()` se tienen que añadir al modelo. Todos se basan en el siguiente principio:
+
+    [php]
+    public static function getReportCount()
+    {
+      $c = new Criteria();
+      $c->add(self::REPORTS, 0, Criteria::GREATER_THAN);
+      $c = self::addPermanentTagToCriteria($c);
+  
+      return self::doCount($c);
+    }
+
+### Informe AJAX
+
+Vamos a ofrecer un enlace a '[informar a moderador]' para informar de una pregunta en todos los sitios donde se muestra la pregunta (en la lista de preguntas, en la página ). 
+Estaría bien que ese link fuera con AJAX como en el tutorial del [día ocho](8.txt). Por lo tanto añadiremos un nuevo helper al fichero `QuestionHelper.php` en el directorio `askeet/apps/frontend/lib/helper`:
+
+    [php]
+    function link_to_report_question($question, $user)
+    {
+      use_helper('Javascript');
+    
+      $text = '[report to moderator]';
+      if ($user->isAuthenticated())
+      {
+        $has_already_reported_question = ReportQuestionPeer::retrieveByPk($question->getId(), $user->getSubscriberId());
+        if ($has_already_reported_question)
+        {
+          // ya informado por ese usuario
+          return '[reported]';
+        }
+        else
+        {
+          return link_to_remote($text, array(
+            'url'      => '@user_report_question?id='.$question->getId(),
+            'update'   => array('success' => 'report_question_'.$question->getId()),
+            'loading'  => "Element.show('indicator')",
+            'complete' => "Element.hide('indicator');".visual_effect('highlight', 'report_question_'.$question->getId()),
+          ));
+        }
+      }
+      else
+      {
+        return link_to_login($text);
+      }
+    }
+    
+Ahora, las plantillas en las que tiene que aparecer el enlace (`question/templates/showSuccess.php`, `question/templates/_list.php`) pueden usar este helper:
+
+    [php]
+    <div class="options" id="report_question_<?php echo $question->getId() ?>">
+      <?php echo link_to_report_question($question, $sf_user) ?>
+    </div>
+
+La regla `@user_report_question` se tiene que escribir en `routing.yml` liderando la acción `user/reportQuestion`:
+
+    [php]
+    public function executeReportQuestion()
+    {
+      $this->question = QuestionPeer::retrieveByPk($this->getRequestParameter('id'));
+      $this->forward404Unless($this->question);
+    
+      $spam = new ReportQuestion();
+      $spam->setQuestionId($this->question->getId());
+      $spam->setUserId($this->getUser()->getSubscriberId());
+      $spam->save();
+    }
+    
+Y el resultado de esta acción, la plantilla `user/templates/reportQuestionSuccess.php`, es simple:
+
+    [php]
+    <?php use_helper('Question') ?>
+    <?php echo link_to_report_question($question, $sf_user) ?>
+
+![report question](/images/askeet/report_question.gif)
+
+Se aplica lo mismo a la respuestas informadas.
+
+### Nuevos enlaces de acciones para los usuarios con credenciales
+
+En el div `questin_body` de `askeet/apps/frontend/modules/question/templates/showSuccess.php`, añadiremos el manejo de las acciones de las preguntas sólo para los moderadores, por hacerlas compatibles con el informe AJAX, las pondremos en un fragmento:
+
+    [php]
+    ...
+    <div class="options" id="report_question_<?php echo $question->getId() ?>">
+      <?php echo link_to_report_question($question, $sf_user) ?>
+      <?php include_partial('moderator/question_options', array('question' => $question)) ?>
+    </div>
+
+El fragmento `askeet/apps/frontend/modules/moderator/templates/_question_options.php` contiene:
+
+    <?php if ($sf_user->hasCredential('moderator')): ?>
+      <?php if ($question->getReports()): ?>
+        &nbsp;[<strong><?php echo $question->getReports() ?></strong> reports]
+        &nbsp;<?php echo link_to('[reset reports]', 'moderator/resetQuestionReports?stripped_title='.$question->getStrippedTitle()) ?>
+      <?php endif ?>
+      &nbsp;<?php echo link_to('[delete question]', 'moderator/deleteQuestion?stripped_title='.$question->getStrippedTitle()) ?>
+    <?php endif ?>
+    ...
+
+![acciones de moderación](/images/askeet/question_moderator_options.gif)
+
+Las mismas opciones se añaden en `askeet/apps/frontend/modules/answer/templates/_answer.php`, con un enlace al fragmento `moderator/templates/_answer_options.php`.
+
+La misma adaptación se hará para las acciones de administración en la página del perfil de usuario.
+
+>**Nota**: Una de las buenas practicas acerca de los enlaces de las acciones es implementarlos como un enlace normal (haciendo una petición `GET`) cuando  la acción no modifica el modelo, y como un botón (haciendo un `POST`) cuando la acción modifica los datos. Esto es para evitar que los webs crawlers, como los robots de los motores de búsqueda, puedan hacer clic en un link que pueda modificar la base de datos. Los enlaces AJAX implementados con javascript no pueden ser cliqueados por los robots. Los enlaces `reset` y `report` que acabamos de añadir, sin embargo, pueden ser cliqueados por un robot. Afortunadamente, no se muestran a no ser que el usuario tenga acceso de moderador, por lo tanto no hay riesgo de que se cliqueen sin querer.
+>
+>Podemos añadir una protección extra en estos enlaces declarándolos como enlaces `POST`, como se describe en el [capítulo de enlaces](http://www.symfony-project.com/content/book/page/templating_link_helpers.html) del libro de symfony:
+>
+>      [php]
+>      <?php echo link_to('[delete answer]', 'moderator/deleteAnswer?id='.$answer->getId(), 'post=true') ?>
+>
+
+### Restricción de acceso
+
+Cuando un usuario con unos derechos específicos se loguea, se le tiene que dar las credenciales apropiadas a su objeto `sfUser`. Esto se hace en el método `signIn` de la clase `myUser` en `askeet/apps/frontend/lib/myUser.class.php`, que creamos durante el [día seis](6.txt):
+
+    [php]
+    public function signIn($user)
+    {
+      $this->setAttribute('subscriber_id', $user->getId(), 'subscriber');
+      $this->setAuthenticated(true);
+    
+      $this->addCredential('subscriber');
+    
+      if ($user->getIsModerator())
+      {
+        $this->addCredential('moderator');
+      }
+    
+      if ($user->getIsAdministrator())
+      {
+        $this->addCredential('administrator');
+      }
+    
+      $this->setAttribute('nickname', $user->getNickname(), 'subscriber');
+    }
+
+Por supuesto, todas las acciones de moderación se tienen que restringir a los moderadores con la configuración adecuada en `askeet/apps/frontend/modules/moderator/config/security.yml`:
+
+    all:
+      is_secure:   on
+      credentials: moderator
+
+La misma restricción se tiene que aplicar a las acciones de administración.
+
+### Nuevas acciones de `moderador` y `administrador`
+
+No hay nada nuevo en las acciones para añadir al `moderador` y `administrador`. Sólo damos la lista para que se sepa acerca de ellas:
+
+    // acciones de administrador
+    executeProblematicUsers()     ->  usersSuccess.php
+    executeModerators()           ->  usersSuccess.php
+    executeAdministrators()       ->  usersSuccess.php
+    executeModeratorCandidates()  ->  usersSuccess.php
+    
+    executePromoteModerator()     ->  request referrer
+    executeRemoveModerator()      ->  request referrer
+    executePromoteAdministrator() ->  request referrer
+    executeRemoveAdministrator()  ->  request referrer
+    
+    // acciones de moderador
+    executeUnpopularTags()        ->  unpopularTagsSuccess.php
+    executeReportedQuestions()    ->  reportedQuestions.php
+    executeReportedAnswers()      ->  reportedAnswers.php
+    
+    executeDeleteTag()            ->  request referrer
+    executeDeleteQuestion()       ->  @homepage
+    executeDeleteAnswer()         ->  request referrer
+    
+>**Nota**: Para especificar una plantilla personalizada para una acción, puedes añadir un fichero de configuración `view.yml` al módulo. Por ejemplo, para tener la mitad de las acciones de `administrador` utiliza la plantilla `usersSuccess.php`, puedes crear el siguiente fichero `askeet/apps/frontend/modules/administrator/config/view.yml`:
+
+>
+>     moderatorsSuccess:
+>       template: users
+>     
+>     administratorsSuccess:
+>       template: users
+>     
+>     moderatorCandidatesSuccess:
+>       template: users
+>     
+>     problematicUsersSuccess:
+>       template: users
+> 
+
+### Loguear las eliminaciones
+
+Cuando un moderador elimina una pregunta, queremos mantener un seguimiento de la eliminación en un archivo de registro con un mensaje de aviso. Para permitir el logueo de los mensajes de aviso en el entorno de producción necesitamos modificar el fichero de configuración `logging.yml`:
+
+    prod:
+      level: warning    
+    
+Luego, en todas las acciones de eliminación, añade el código para loguear la eliminación, como en la acción `moderator/deleteQuestion`:
+
+    [php]
+    public function executeDeleteQuestion()
+    {
+      $question = QuestionPeer::getQuestionFromTitle($this->getRequestParameter('stripped_title'));
+      $this->forward404Unless($question);
+  
+      $con = sfContext::getInstance()->getDatabaseConnection('propel');
+      try
+      {
+        $con->begin();
+  
+        $user = $question->getUser();
+        $user->setDeletions($user->getDeletions() + 1);
+        $user->save();
+  
+        $question->delete();
+  
+        $con->commit();
+  
+        // loguer la eliminación
+        $log = 'moderator "%s" deleted question "%s"';
+        $log = sprintf($log, $this->getUser()->getNickname(), $question->getTitle());
+        $this->getContext()->getLogger()->warning($log);
+      }
+      catch (PropelException $e)
+      {
+        $con->rollback();
+        throw $e;
+      }
+  
+      $this->redirect('@homepage');
+    }
+
+Si quieres saber más acerca de cómo loguear, puedes echar un vistazo en el [capítulo de debug](http://www.symfony-project.com/content/book/page/debug.html) del libro de symfony.
+
+Hemos cambiado la sentencia `try/catch` para que reaccione sólo a las `PropelExceptions` en vez de a todas las `Exceptions`. Eso es porqué no queremos que las transacciones fallen sólo porqué hay un problema con el logueo de una eliminación.
+
+>**Note**: En el ejemplo de arriba, usamos el objeto `$question` *incluso después de que fuera eliminado*. Eso es porqué la llamada al método `->delete()` marca un registro o una lista de registros a eliminar, y la eliminación sólo se procesa por Propel una vez la acción ha finalizado.
+
+Nos vemos mañana
+----------------
+
+Mientras nos preníamos nuestro tiempo pensando en la manera de implementar las funcionalidades del backend, y porque hay unas cuantas de ellas, el tutorial de hoy ha empleado un par de horas en vez de sólo una. Pero no hay muchas cosas nuevas aquí, por lo tanto la implementación debería ser una revisión de las técnicas de symfony. Puedes ver la lista total de cambios navegando al [askeet timeline](http://trac.askeet.com/trac/changeset/55)
+
+Mañana es el día de la funcionalidad misteriosa. Muchas sugerencias han sido enviadas al fórum, o también en la misma beta de askeet. Verás cuál hemos decidido implementar y como symfony puede ser una gran ayuda para hacerlo.
+
+No dudes en acudir al [fórum](http://www.symfony-project.com/forum/index.php/f/8/) si tienes algún problema con el código de hoy, que puedes bajar del [repositorio SVN](http://svn.askeet.com/tags/release_day_20/) o verlo en el navegador en el [trac](http://trac.askeet.com/trac/browser/tags/release_day_20).

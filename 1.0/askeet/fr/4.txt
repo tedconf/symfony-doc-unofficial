@@ -1,0 +1,565 @@
+Symfony - Calendrier de l'Avent, 4ème jour : Refactorisation
+==================================================
+
+Précédemment dans Symfony 
+-------------------------
+
+Au cours du [troisième jour](3.txt), toutes les couches de l'architecture MVC ont été vues et modifiées pour obtenir la liste des questions correctement affichée sur la page d'accueil. L'application commence à être plus agréable mais manque toujours de contenu.
+
+Les objectifs du quatrième jour sont d'afficher la liste des réponses concernant une question, de donner une belle URL à la page de détail d'une question,  d'ajouter une classe personnalisée, et de migrer des bouts de code vers un meilleur endroit. Ceci devrait vous aider à comprendre les concepts de template, de modèle, de politique de routage, et de refactorisation. Vous pouvez penser qu'il est trop tôt pour réécrire du code qui est vieux de seulement quelques jours, mais nous allons voir ce que vous en penserez à la fin de ce tutoriel.
+
+Pour lire ce tutoriel, vous devriez être familiarisé avec les concepts liés à [l'implémentation du MVC dans symfony] (http://www.symfony-project.com/book/1_0/02-Exploring-Symfony-s-Code). Ça pourrait aussi vous aider si vous aviez une idée de ce qu'est la [Méthode agile][1].
+
+Afficher les réponses d'une question
+------------------------------------
+
+Premièrement, continuons l'adaptation des template générés par le CRUD `Question` lors du [deuxième jour](2.txt).
+
+L'action `question/show` est dédiée à l'affichage des détails d'une question, à condition que vous lui passiez un `id`. Pour le tester, appelez juste (vous devez changer le `2` par le bon `id` de la question de votre table):
+
+    http://askeet/frontend_dev.php/question/show/id/2
+
+[question detail](/images/askeet/question_day4.gif)
+
+Vous avez surement déjà vu la page `show` si vous avez déjà manipulé l'application. C'est ici que nous allons ajouter les réponses à une question.
+
+### Un coup d'oeil rapide à l'action
+
+Premièrement, jetons un coup d'oeil à l'action `show`, située dans le fichier `askeet/apps/frontend/modules/question/actions/actions.class.php`:
+
+    [php]
+    public function executeShow()
+     {
+       $this->question = QuestionPeer::retrieveByPk($this->getRequestParameter('id'));
+       $this->forward404Unless($this->question);
+     }
+
+Si vous connaissez Propel, vous reconnaitrez ici une simple requête sur la table `Question`. Elle a pour but de récupérer l'unique enregistrement ayant comme clé primaire la valeur du paramètre `id` de la requête. Dans l'exemple donné dans l'URL ci-dessus, le paramètre `id` a la valeur `1`, donc la méthode `->retrieveByPk()` de la classe `QuestionPeer` va retourner l'objet de la classe `Question` avec `1` comme clé primaire. Si vous ne connaissez pas Propel, revenez après avoir lu [un peu de documentation][2] sur leur site web.
+
+Le résultat de cette requête est passé au template `showSuccess.php` grâce à la variable `$question`.
+
+La méthode `->getRequestParameter('id')` de l'objet `sfAction` récupère ... le paramètre `id`, qu'il soit passé par la méthode GET ou POST. Par exemple si vous demandez:
+
+    http://askeet/frontend_dev.php/question/show/id/1/myparam/myvalue
+
+... ensuite l'action `show` sera capable de rechercher `myvalue` en faisant `$this->getRequestParameter('myparam')`.
+
+>**Note**: La méthode `forward404Unless()` envoie au navigateur une page 404 si la question n'existe pas dans la base de données. C'est toujours bon de traiter les cas inconnus et les erreurs qui peuvent apparaître pendant l'exécution. Symfony vous fournit des méthodes simples pour vous aider à faire des choses correctes, facilement.
+
+### Modifier le template `showSuccess.php`
+
+Le template généré `showSuccess.php` n'est pas exactement ce dont nous avons besoin, donc nous allons complètement le réécrire. Ouvrez le fichier `frontend/modules/question/templates/showSuccess.php` et remplacez le contenu par: 
+
+    [php]
+    <?php use_helper('Date') ?>
+    
+    <div class="interested_block">
+      <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
+        <?php echo count($question->getInterests()) ?>
+      </div>
+    </div>
+        
+    <h2><?php echo $question->getTitle() ?></h2>
+        
+    <div class="question_body">
+      <?php echo $question->getBody() ?>
+    </div>
+    
+    <div id="answers">
+    <?php foreach ($question->getAnswers() as $answer): ?>
+      <div class="answer">
+        posted by <?php echo $answer->getUser()->getFirstName().' '.$answer->getUser()->getLastName() ?> 
+        on <?php echo format_date($answer->getCreatedAt(), 'p') ?>
+        <div>
+          <?php echo $answer->getBody() ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
+    </div>
+
+Vous reconnaissez ici le div `interested_block` qui a déjà été ajouté hier au template `listSuccess.php`. Il affiche juste le nombre d'utilisateur intéressé par une question. Ensuite, les markup ressemblent beaucoup à ceux de `list`, mis à part qu'il n'y a pas de `link_to` dans le titre. C'est juste une réécriture du code initial pour afficher seulement les informations nécessaires à une question. 
+
+La nouvelle partie est le div `answers`. Il affiche toutes les réponses d'une question (utilisant simplement la méthode Propel `$question->getAnswers()`), et pour chaque réponse, affiche le taux de pertinence, le nom de l'auteur et la date de création en plus du contenu.
+
+La fonction `format_date()` est un autre exemple d'assistants pour les template, qui nécessite une déclaration initiale. Vous pouvez en apprendre plus sur la syntaxe de cet assistant et sur d'autres dans [le chapitre sur l'internationalisation](http://www.symfony-project.com/book/1_0/13-I18n-and-L10n) du livre symfony (ces assistants accélèrent les taches pénibles en affichant les dates dans le bon format).
+
+>**Note**: Propel crée le nom des méthodes, liés à une table, en ajoutant automatiquement un 's' à la fin du nom de la table. Veuillez pardonner l'affreuse méthode `->getRelevancys()` puisqu'elle vous évitera plusieurs lignes de code SQL. 
+
+### Ajouter quelques données de test
+
+Il est temps d'ajouter quelques données aux tables `answer` et `relevancy` à la fin du fichier `data/fixtures/test_data.yml` (vous êtes libre d'ajouter les vôtres):
+
+    Answer:
+      a1_q1:
+        question_id: q1
+        user_id:     francois
+        body:        |
+          You can try to read her poetry. Chicks love that kind of things.
+      
+      a2_q1:
+        question_id: q1
+        user_id:     fabien
+        body:        |
+          Don't bring her to a donuts shop. Ever. Girls don't like to be
+          seen eating with their fingers - although it's nice. 
+      
+      a3_q2:
+        question_id: q2
+        user_id:     fabien
+        body:        |
+          The answer is in the question: buy her a step, so she can 
+          get some exercise and be grateful for the weight she will
+          lose.
+      
+      a4_q3:
+        question_id: q3
+        user_id:     fabien
+        body:        |
+          Build it with symfony - and people will love it.
+
+Recharger les données avec:
+
+    $ php batch/load_data.php
+
+Naviguez jusqu'à l'action affichant la première question pour vérifier si les modifications sont correctes:
+
+    http://askeet/frontend_dev.php/question/show/id/XX
+
+>**Note**: Remplacez XX par l'`id` de votre première question.
+
+![question answers](/images/askeet/answers_day4.gif)
+
+La question est maintenant affichée de manière plus fantaisiste, suivie de ses réponses. C'est mieux, non?
+
+Modifier le modèle, partie I
+----------------------------
+
+Il est presque sûr que le nom complet de l'auteur sera nécessaire à un autre endroit de l'application. Vous pouvez donc considérer que c'est un attribut de l'objet `User`. Cela veut dire qu'il va y avoir une méthode dans le modèle de `User` permettant de récupérer le nom complet, au lieu de le construire dans une action supplémentaire. Ecrivons cette méthode. Ouvrez le fichier `askeet/lib/model/User.php` et ajouter la méthode suivante:
+
+    [php]
+    public function __toString()
+    {
+      return $this->getFirstName().' '.$this->getLastName();
+    }
+
+Pourquoi la méthode est nommée `__toString()` au lieu de `getFullName()` ou quelque chose de similaire? Parce que la méthode `__toString()` est la méthode par défaut utilisée par PHP5 pour représenter un objet sous la forme d'un string. Cela signifie que vous pouvez simplement le remplacer
+
+    [php]
+    posted by <?php echo $answer->getUser()->getFirstName().' '.$answer->getUser()->getLastName() ?> 
+
+du template `askeet/apps/frontend/modules/question/templates/showSuccess.php` par un simple
+
+    [php]
+    posted by <?php echo $answer->getUser() ?> 
+
+pour obtenir le même résultat. Chouette, n'est ce pas ?
+
+Ne vous répétez pas
+-------------------
+
+Un des principes de la méthode agile est d'éviter la duplication de code. Il dit "Don't Repeat Yourself" (D.R.Y.). C'est parce que le code dupliqué est deux fois plus long à revoir, modifier, tester et valider plutôt qu'un unique bout de code encapsulé. Il rend la maintenance de l'application plus complexe. Et si vous prêtez attention à la dernière partie du tutoriel d'aujourd'hui, vous noterez probablement, un peu de code dupliqué entre le template `listSuccess.php` d'hier et le template `showSuccess.php`:
+
+    [php]
+    <div class="interested_block">
+      <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
+        <?php echo count($question->getInterests()) ?>
+      </div>
+    </div>
+
+Donc notre première session de [refactorisation](http://en.wikipedia.org/wiki/Refactoring) enlèvera ce bout de code des deux template et le mettra dans un **fragment**, ou un bout de code réutilisable. Créez le fichier `_interested_user.php` dans le répertoire `askeet/apps/frontend/modules/question/templates/` avec le code suivant:
+
+    [php]
+    <div class="interested_mark" id="mark_<?php echo $question->getId() ?>">
+      <?php echo count($question->getInterests()) ?>
+    </div>
+
+Ensuite, remplacez le code original des deux templates (`listSuccess.php` et `showSuccess.php`) par:
+
+    [php]
+    <div class="interested_block">
+      <?php include_partial('interested_user', array('question' => $question)) ?>
+    </div>
+
+Un fragment n'a pas d'accès natif aux objets courants. Le fragment utilise la variable `$question`, donc elle doit être définie dans l'appel de `include_partial`. L'additionnel `_` devant le nom du fichier du fragment aide à distinguer ceux des template actuels du dossier `templates/`. Si vous souhaitez en savoir plus sur les fragments, lisez le  [chapitre sur la Vue](http://www.symfony-project.com/book/1_0/07-Inside-the-View-Layer) du livre symfony.
+
+Modifier le modèle, partie II
+-----------------------------
+
+L'appel `$question->getInterests()` du nouveau fragment fait une requête à la base de données et renvoie un tableau d'objets de la classe `Interest`. C'est une requête lourde juste pour le nombre de personne intéressé, et elle pourrait surcharger la base de données. Rappelez-vous que cet appel est aussi fait dans le template `listSuccess.php`, mais cette fois en boucle, pour chaque question de la liste. Ca serait une bonne idée de l'optimiser.
+
+Une bonne solution est d'ajouter une colonne à la table `Question` appelée `interested_users`, et de mettre à jour cette colonne chaque fois qu'un intérêt est créé pour cette question.
+
+>**Caution**: Nous sommes sur le point de modifier le modèle sans manière apparente de le tester, puisqu'il n'y a actuellement aucune manière d'ajouter des enregistrements `Interest` grâce à askeet. Vous ne devriez jamais modifier quelque chose sans pouvoir le tester.
+>
+> Heureusement, nous avons une manière de tester cette modification, et vous la découvrirez plus tard dans cette partie.
+
+### Ajouter un champ dans le modèle objet de `User`
+
+Allez y sans crainte et modifiez le modèle de données `askeet/config/schema.xml` en ajoutant à la table `ask_question`:
+
+    [xml]
+    <column name="interested_users" type="integer" default="0" />
+
+Ensuite reconstruisez le modèle:
+
+    $ symfony propel-build-model
+
+C'est exact, nous reconstruisons déjà le modèle sans nous inquiéter des extensions de celui ci. C'est parce que l'extension de la classe User faite dans `askeet/lib/model/User.php`, hérite de la classe générée par Propel `askeet/lib/model/om/BaseUser.php`. C'est pourquoi nous devrions jamais éditer le code du répertoire `askeet/lib/model/om/`: il est remplacé chaque fois que la commande `build-model` est appelée. Symfony aide à soulager le cycle de vie normal des changements de modèles dans les étapes de n'importe quel projet Web.
+
+Vous avez besoin également de mettre à jour la base de données actuelle. Pour éviter d'écrire quelques déclarations SQL, vous pouvez reconstruire votre schéma SQL et recharger vos données de test:
+
+    $ symfony propel-build-sql
+    $ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
+    $ php batch/load_data.php
+
+>**Note**: TIMTOWTDI: There is more than one way to do it (il y a plus d'une manière de le faire). Au lieu de reconstruire la base de données, vous pouvez ajouter une nouvelle colonne à la main:
+>
+>     $ mysql -u youruser -p askeet -e "alter table ask_question add interested_users int default '0'"
+>
+
+### Modifier la méthode `save()` de l'objet `Interest`
+
+La mise à jour de la valeur de ce nouveau champ doit être faite chaque fois qu'un utilisateur déclare son intérêt pour une question, par exemple à chaque fois qu'un enregistrement est ajouté dans la table `Interest`. Vous pouvez implémenter ceci avec les trigger de MySQL, mais cela serait une solution dépendant de la base de données, et nous voulons pouvoir changer de base de données facilement.
+
+La meilleur solution est de modifier le modèle en remplaçant la méthode `save()` de la classe `Interest`. Cette méthode est appelée chaque fois qu'un objet de la classe `Interest` est créé. Donc ouvrez le fichier  `askeet/lib/model/Interest.php` et écrivez la méthode suivante: 
+
+    [php]
+    public function save($con = null)
+    {  
+        $ret = parent::save($con);
+        
+        // update interested_users in question table
+        $question = $this->getQuestion();
+        $interested_users = $question->getInterestedUsers();
+        $question->setInterestedUsers($interested_users + 1);
+        $question->save($con);
+
+        return $ret;
+    }
+
+La nouvelle méthode `save()` renvoie la question correspondant à l'intérêt courant, et incrémente son champ `interested_users`. Puis, il fait l'habituel `save()`. Par contre`$this->save() ferait une boucle infinie, donc nous utilisons la méthode de classe `parent::save()` à la place.
+
+### Sécuriser la requête de mise à jour avec une transaction
+
+Que se passe t-il si la base de données crash entre la mise à jour de l'objet `Question` et celui de l'objet `Interest`? Vous finiriez avec des données corrompues. C'est le même problème qui est rencontré dans une banque lors d'un transfert d'argent. Une première requête diminue le montant d'un compte, et une seconde augmente un autre compte.
+
+Si  deux requêtes sont hautement dépendantes, vous devriez sécuriser leur exécution avec une **transaction**. Une transaction est une assurance que les deux requêtes réussiront, ou aucunes d'elles. Si quelque chose de mauvais arrive à l'une des requêtes de la transaction, toutes les précédentes réussies sont annulées, et la base de données retourne dans l'état avant la transaction.
+
+Notre méthode `save()` est une bonne opportunité pour illustrer l'implémentation des transactions dans Symfony. Remplacez le code par:
+
+    [php]
+    public function save($con = null)
+    {
+      $con = Propel::getConnection();
+      try
+      {
+        $con->begin();
+  
+        $ret = parent::save($con);
+  
+        // update interested_users in question table
+        $question = $this->getQuestion();
+        $interested_users = $question->getInterestedUsers();
+        $question->setInterestedUsers($interested_users + 1);
+        $question->save($con);
+  
+        $con->commit();
+  
+        return $ret;
+      }
+      catch (Exception $e)
+      {
+        $con->rollback();
+        throw $e;
+      }
+    }
+
+Premièrement, la méthode ouvre une connexion directe à la base de données par Creole. Entre les déclarations de `->begin()` et `->commit()`, la transaction s'assure que tout sera fait ou rien. Si quelque chose échoue, une exception sera envoyée, et la base de données exécutera un retour à l'état précédent.
+
+### Changer le template
+
+Maintenant que la méthode `->getInterestedUsers()` de l'objet `Question` fonctionne correctement, il est temps de simplifier le fragment `_interested_user.php` en remplaçant: 
+
+    [php]
+    <?php echo count($question->getInterests()) ?>
+
+par
+
+    [php]
+    <?php echo $question->getInterestedUsers() ?>
+
+>**Note**: Grâce à notre brillante idée d'employer un fragment au lieu de laisser le code reproduit dans les template, cette modification nécessite seulement que nous le fassions qu'une fois. Sinon, nous aurions du modifier les template `listSuccess.php` et `showSuccess.php` et pour des gens paresseux comme nous, cela aurait été accablant.
+
+En termes de nombre de requêtes et temps d'exécution, cela devrait être meilleur. Vous pouvez le vérifier grâce au nombre de requêtes à la base de données indiquée dans la barre d'outils de débogage, après l'icône base de données. Notez que vous pouvez aussi récupérer des détails sur les requêtes SQL de la page courante en cliquant sur l'icône base de données:
+
+![database queries before refactoring](/images/askeet/debug_before_day4.gif)
+![database queries after refactoring](/images/askeet/debug_after_day4.gif)
+
+### Tester la validité de la modification
+
+Nous allons vérifier que rien n'est cassé en rappelant l'action `show`, mais avant ça, relancer l'importation batch des données que nous avons écrites hier:
+
+    $ cd /home/sfprojects/askeet/batch
+    $ php load_data.php
+
+Quand nous créons les enregistrements de la table `Interest`, l'objet `sfPropelData` utilisera la méthode `save()` et devrait correctement mettre à jour les enregistrements `User` connexes. Donc c'est une bonne manière de tester les modifications du modèle, même s'il n'y a encore aucune interface CRUD établie avec l'objet `Interest`.
+
+Vérifiez-le en demandant la page d'accueil et le détail de la première question:
+
+    http://askeet/frontend_dev.php/
+    http://askeet/frontend_dev.php/question/show/id/XX
+
+Le nombre d'utilisateurs intéressés n'a pas changé. Cest une modification réussie! 
+
+La même chose pour les réponses
+-------------------------------
+
+Ce qui a été fait pour `count($question->getInterests())` peut être aussi bien fait pour `count($answer->getRelevancys())`. La seule différence sera qu'une réponse peut avoir des votes positifs et négatifs, alors qu'une question peut seulement être notée comme intéressante. Maintenant que vous avez compris comment modifier le modèle, nous pouvons aller plus vite. Voici les changements, juste pour rappel. Vous n'avez pas à les copier à la main pour le tutoriel de demain, si vous utilisez [l'espace de stockage SVN d'askeet](http://svn.askeet.com/tags/release_day_4/).
+
+* Ajoutez les colonnes suivantes à la table `answer` dans `schema.xml`
+
+        [xml]
+        <column name="relevancy_up" type="integer" default="0" />
+        <column name="relevancy_down" type="integer" default="0" />
+
+* Reconstruisez le modèle et mettez à jour en conséquence la base de données
+
+        $ symfony propel-build-model
+        $ symfony propel-build-sql
+        $ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
+        
+* La fonction `->save()` de la classe `Relevancy` dans `lib/model/Relevancy.php`
+
+        [php]
+        public function save($con = null)
+        {
+          $con = Propel::getConnection();
+          try
+          {
+            $con->begin();
+      
+            $ret = parent::save();
+      
+            // update relevancy in answer table
+            $answer = $this->getAnswer();
+            if ($this->getScore() == 1)
+            {
+              $answer->setRelevancyUp($answer->getRelevancyUp() + 1);
+            }
+            else
+            {
+              $answer->setRelevancyDown($answer->getRelevancyDown() + 1);
+            }
+            $answer->save($con);
+      
+            $con->commit();
+      
+            return $ret;
+          }
+          catch (Exception $e)
+          {
+            $con->rollback();
+            throw $e;
+          }
+        }
+
+* Ajoutez les deux méthodes suivantes dans la classe `Answer` du modèle:
+
+        [php]
+        public function getRelevancyUpPercent()
+        {
+          $total = $this->getRelevancyUp() + $this->getRelevancyDown();
+        
+          return $total ? sprintf('%.0f', $this->getRelevancyUp() * 100 / $total) : 0;
+        }
+        
+        public function getRelevancyDownPercent()
+        {
+          $total = $this->getRelevancyUp() + $this->getRelevancyDown();
+        
+          return $total ? sprintf('%.0f', $this->getRelevancyDown() * 100 / $total) : 0;
+        }
+
+* Changez la partie concernant la réponse dans `question/templates/showSuccess.php` par:
+
+        [php]
+        <div id="answers">
+        <?php foreach ($question->getAnswers() as $answer): ?>
+          <div class="answer">
+            <?php echo $answer->getRelevancyUpPercent() ?>% UP <?php echo $answer->getRelevancyDownPercent() ?> % DOWN
+            posted by <?php echo $answer->getUser()->getFirstName().' '.$answer->getUser()->getLastName() ?> 
+            on <?php echo format_date($answer->getCreatedAt(), 'p') ?>
+            <div>
+              <?php echo $answer->getBody() ?>
+            </div>
+          </div>
+        <?php endforeach; ?>
+        </div>
+
+* Ajoutez quelques données de test
+
+        Relevancy:
+          rel1:
+            answer_id: a1_q1
+            user_id:   fabien
+            score:     1
+    
+          rel2:
+            answer_id: a1_q1
+            user_id:   francois
+            score:     -1
+    
+* Lancez le batch de popularisation
+
+* Vérifiez la page `question/show`
+
+![relevancies on answers](/images/askeet/home_day4.gif)
+
+Routage
+-------
+
+Depuis le début du tutorial, nous appelons l'URL
+
+    http://askeet/frontend_dev.php/question/show/id/XX
+    
+Les règles de routage par défaut de Symfony comprennent cette requête comme si vous aviez réellement demandé
+
+    http://askeet/frontend_dev.php?module=question&action=show&id=XX
+
+Mais avoir un systême de routage ouvre beaucoup d'autres possibilités. Nous pouvons utiliser le titre de la question comme une URL, pour pouvoir demander la même page avec:
+
+    http://askeet/frontend_dev.php/question/what-shall-i-do-tonight-with-my-girlfriend
+
+Ceci optimise la manière dont les moteurs de recherche indexent les pages de votre site Web, et rend les urls plus lisibles.
+
+### Créons une version alternative au titre
+
+Premièrement, nous avons besoin d'une version convertie du titre - un titre dépouillé - pour être employée comme URL. [Il y a plus d'une façon de le faire](http://en.wikipedia.org/wiki/Perl), et nous allons choisir de stocker la version alternative dans une nouvelle colonne de la table `Question`. Dans le `schema.xml`, ajoutez la ligne suivante dans la table `Question`: 
+
+    [xml]
+    <column name="stripped_title" type="varchar" size="255" />
+    <unique name="unique_stripped_title">
+      <unique-column name="stripped_title" />
+    </unique>
+
+... et reconstruisez le modèle et mettez à jour la base de données:
+
+    $ symfony propel-build-model
+    $ symfony propel-build-sql
+    $ mysql -u youruser -p askeet < data/sql/lib.model.schema.sql
+
+Nous allons redéfinir la méthode `setTitle()` de l'objet `Question` de sorte qu'il mette le titre dépouillé en même temps.
+
+### Classe personnalisée
+
+Avant cela, nous allons créer une classe personnalisée pour réellement transformer un titre en titre dépouillé, puisque cette fonction ne concerne pas vraiment l'objet `Question` (nous l'utiliserons probablement aussi pour l'objet `Answer`). 
+
+Créons un nouveau fichier `myTools.class.php` dans le répertoire `askeet/lib/`: 
+
+    [php]
+    <?php
+    
+    class myTools
+    {
+      public static function stripText($text)
+      {
+        $text = strtolower($text);
+    
+        // strip all non word chars
+        $text = preg_replace('/\W/', ' ', $text);
+    
+        // replace all white space sections with a dash
+        $text = preg_replace('/\ +/', '-', $text);
+    
+        // trim dashes
+        $text = preg_replace('/\-$/', '', $text);
+        $text = preg_replace('/^\-/', '', $text);
+    
+        return $text;
+      }
+    }
+
+Maintenant ouvrez le fichier classe `askeet/lib/model/Question.php` et ajoutez-y:
+
+    [php]
+    public function setTitle($v)
+    {
+      parent::setTitle($v);
+      
+      $this->setStrippedTitle(myTools::stripText($v));
+    }
+
+Notez que la classe personnalisée `myTools` n'a pas besoin d'être déclarée: Symfony la charge automatiquement quand elle est nécessaire, à condition quelle soit située dans le répertoire `lib/`.
+
+Vous pouvez maintenant recharger vos données.
+
+    $ symfony cc
+    $ php batch/load_data.php
+
+Si vous voulez en savoir plus sur les classes personnalisées et l'aide personnalisée, lisez le [chapitre sur les extensions](http://www.symfony-project.com/book/1_0/07-Inside-the-View-Layer) du livre symfony.
+
+### Changer les liens de l'action `show`
+
+Dans le template `listSuccess.php`, changez la ligne
+
+    [php]
+    <h2><?php echo link_to($question->getTitle(), 'question/show?id='.$question->getId()) ?></h2>
+
+par
+
+    [php]
+    <h2><?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?></h2>
+
+Maintenant ouvrez `actions.class.php` du module `question`, et changez l'action `show` en: 
+
+    [php]
+    public function executeShow()
+    {
+      $c = new Criteria();
+      $c->add(QuestionPeer::STRIPPED_TITLE, $this->getRequestParameter('stripped_title'));
+      $this->question = QuestionPeer::doSelectOne($c);
+  
+      $this->forward404Unless($this->question);
+    }
+
+Essayer à nouveau d'afficher la liste des questions et d'accéder à chacune en cliquant sur le titre:
+
+    http://askeet/frontend_dev.php/
+    
+Les urls affichent correctement les titres dépouillés des questions:
+
+    http://askeet/frontend_dev.php/question/show/stripped-title/what-shall-i-do-tonight-with-my-girlfriend
+
+### Changer les règles de routage
+
+Mais ce n'est pas exactement comme nous cherchons à les afficher. Il est maintenant temps d'éditer les règles de routage. Ouvrez le fichier de configuration `routing.yml` (situé dans le répertoire `askeet/apps/frontend/config/` et ajoutez la règle suivante au début du fichier:
+
+    question:
+      url:   /question/:stripped_title
+      param: { module: question, action: show }
+
+Dans la ligne `url`, le mot `question` est un texte personnalisé qui apparait dans l'url finale, alors que `stripped_title` est un paramètre (il est précédé de `:`). Ils forment un **pattern** que le système de routage de Symfony applique aux liens de l'action `question/show`  parce que tous les liens de nos template utilisent l'assistant `link_to()`.
+
+Il est temps pour le test final: réaffichez la page d'accueil, cliquez sur le titre de la première question. Non seulement la première question s'affiche (montrant que rien n'est cassé) mais la barre d'adresse de votre navigateur affiche:
+
+    http://askeet/frontend_dev.php/question/what-shall-i-do-tonight-with-my-girlfriend
+
+Si vous voulez en apprendre plus à propos des dispositifs de routages, lisez le [chapitre sur la politique de routage](http://www.symfony-project.com/book/1_0/09-Links-and-the-Routing-System) du livre symfony.
+
+A demain
+--------
+
+Aujourdhui, le site web en lui-même n'a pas beaucoup de nouvelles fonctionnalités. Cependant, nous avons vu plus de codage sur les template, vous savez comment modifier le modèle, et globalement le code a été refait dans beaucoup d'endroit. 
+
+Cela arrive tout le temps dans la vie dun projet Symfony: le code qui peut être réutilisé est refait en fragment ou en classe personnalisée, le code qui apparait dans une action ou un template et qui appartient réellement au modèle est déplacé dans celui-ci. Même si cela sépare le code en un bon nombre de petits fichiers disséminés dans beaucoup de dossiers, la maintenance et l'évolution est plus facile. De plus, la structure de fichiers d'un projet Symfony le rend facile à localiser selon sa nature (Aide, modèle, template, action, classe personnalisée, etc.).
+
+Le travail de refactorisation réalisé aujourdhui va accélérer le développement dans les jours à venir. Et nous ferons périodiquement encore plus de refactorisation dans la vie de ce projet, puisque la manière dont nous développons - faire une fonctionnalité utilisable sans se préoccuper des  fonctionnalités à venir - requiert une bonne structure du code si nous ne voulons pas finir avec un désordre total.
+
+Qu'est-il prévu pour demain? Nous allons commencer à écrire un formulaire et voir comment récupérer ses informations. Nous allons également diviser la liste des questions de la page d'accueil en plusieurs pages. Dans le même temps, n'hésitez pas à télécharger le code d'aujourd'hui dans l'espace de stockage SVN (tagged release_day_4): 
+
+    http://svn.askeet.com/tags/release_day_4/
+    
+et à nous envoyer vos questions en utilisant la [mailing-list askeet](mailto:askeet-subscribe@symfony-project.com) ou le [forum dédié](http://www.symfony-project.com/forum/index.php/f/8/).
+
+[1]: http://en.wikipedia.org/wiki/Agile_software_development  "Agile Software development definition at Wikipedia"
+[2]: http://propel.phpdb.org/docs/user_guide/                 "Propel documentation"

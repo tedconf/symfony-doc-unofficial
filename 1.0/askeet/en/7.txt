@@ -1,0 +1,491 @@
+Day 07: model and view manipulation
+===================================
+
+Previously on symfony
+---------------------
+
+It has already been six days, and some of you may be thinking that the application is not very useful so far. That is because some consider the usefulness of an application by the number of pages available, and they see that askeet can only display a list of questions, display the answers to it, and handle user sessions.
+
+The reason why we don't give so much importance to the number of pages is because it is so easy to add new pages with symfony. You want proof? Ok, today we will display a list of the last questions asked and a list of the last answers posted, a list of users interested in a question, the profile of a user, and we will add a navigation bar on every page to access these features. Because that wouldn't be much work for an hour, we will also setup the view configuration and have a look at what has been done during this week. Ready? Let's go.
+
+Prefactoring
+------------
+
+So, we are going to add paginated lists with pagination controls similar to the ones in `question/templates/_list.php`. We don't like to repeat ourselves, so we will extract the pagination code from this partial into a **custom helper**. A helper is a PHP function made accessible to the templates (just like the `link_to()` and `format_date()` helpers).
+
+Create a `GlobalHelper.php` in `askeet/apps/frontend/lib/helper` and add in:
+
+    [php]
+    <?php
+    
+    function pager_navigation($pager, $uri)
+    {
+      $navigation = '';
+     
+      if ($pager->haveToPaginate())
+      {  
+        $uri .= (preg_match('/\?/', $uri) ? '&' : '?').'page=';
+    
+        // First and previous page
+        if ($pager->getPage() != 1)
+        {
+          $navigation .= link_to(image_tag('first.gif', 'align=absmiddle'), $uri.'1');
+          $navigation .= link_to(image_tag('previous.gif', 'align=absmiddle'), $uri.$pager->getPreviousPage()).'&nbsp;';
+        }
+        
+        // Pages one by one
+        $links = array();
+        foreach ($pager->getLinks() as $page)
+        {
+          $links[] = link_to_unless($page == $pager->getPage(), $page, $uri.$page);
+        }
+        $navigation .= join('&nbsp;&nbsp;', $links);
+    
+        // Next and last page
+        if ($pager->getPage() != $pager->getCurrentMaxLink())
+        {
+          $navigation .= '&nbsp;'.link_to(image_tag('next.gif', 'align=absmiddle'), $uri.$pager->getNextPage());
+          $navigation .= link_to(image_tag('last.gif', 'align=absmiddle'), $uri.$pager->getLastPage());
+        }
+    
+      }
+    
+      return $navigation;
+    }    
+
+The pagination navigation helper improves the code we previously wrote: it can use any routing rule, doesn't display the 'previous' links for the first page nor the 'next' links for the last page. We also added four new images (`first.gif`, `previous.gif`, `next.gif` and `last.gif`) to make the links look prettier. Grab them from the [askeet SVN repository](http://svn.askeet.com/tags/release_day_7/web/images/). You will probaby reuse this helper in the future for your own projects.
+
+To use this helper in the `question/templates/_list.php` fragment, call the helper function as follows:
+
+    [php]
+    <?php use_helper('Text', 'Global') ?>
+    
+    <?php foreach($question_pager->getResults() as $question): ?>
+      <div class="question">
+        <div class="interested_block">
+          <?php include_partial('interested_user', array('question' => $question)) ?>
+        </div>
+    
+        <h2><?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?></h2>
+    
+        <div class="question_body">
+          <?php echo truncate_text($question->getBody(), 200) ?>
+        </div>
+      </div>
+    <?php endforeach; ?>
+    
+    <div id="question_pager">
+      <?php echo pager_navigation($question_pager, 'question/list') ?>
+    </div>
+
+The name `Global` refers to the `GlobalHelper.php` file we just created.
+
+Check that everything works as before by requesting:
+
+    http://askeet/frontend_dev.php/
+
+![refactored pager navigation](/images/askeet/pager_navigation_day7.gif)
+
+List of the recent questions
+----------------------------
+
+In the `question` module, create a new action `recent`:
+
+    [php]
+    public function executeRecent()
+    {
+      $this->question_pager = QuestionPeer::getRecentPager($this->getRequestParameter('page', 1));
+    }
+
+That's as simple as that. We consider that the ability to grab the latest questions should be a method of the `QuestionPeer` class. The `-Peer` classes are dedicated to return lists of objects of a given class - this is explained in detail in the [model chapter](http://www.symfony-project.com/book/1_0/08-Inside-the-Model-Layer) of the symfony book. But the `getRecent()` class method still has to be created. Open the `askeet/lib/model/QuestionPeer.php` class and add in:
+
+    [php]
+    public static function getRecentPager($page)
+    {
+      $pager = new sfPropelPager('Question', sfConfig::get('app_pager_homepage_max'));
+      $c = new Criteria();
+      $c->addDescendingOrderByColumn(self::CREATED_AT);
+      $pager->setCriteria($c);
+      $pager->setPage($page);
+      $pager->setPeerMethod('doSelectJoinUser');
+      $pager->init();
+
+      return $pager;
+    }
+  
+The creation date descending order criteria will select the latest questions. This method uses `self` instead of `parent` because it is a class function, not an object function. The reason why we do a `doSelectJoinUser()` here instead of a simple `doSelect()` is because we know that the template will need the details of the question's author. That would mean a first request for the list of questions, plus one request per question to get the related user. The `doSelectJoinUser()` method does all that in only one request: when we ask
+
+    [php]
+    $question->getUser();
+    
+...there is no request sent to the database. The `joinUser` allows us to reduce the number of requests from 1 + the number of questions to only 1. The database will thank us for this easy optimization.
+
+The [Propel documentation](http://propel.phpdb.org/docs/user_guide/) will give you all the explanations about this great feature.
+
+The template of the list of recent questions will look a lot like the list of questions displayed in the homepage. Create the `askeet/apps/frontend/module/question/templates/recentSuccess.php` with:
+
+    [php]
+    <h1>recent questions</h1>
+
+    <?php include_partial('list', array('question_pager' => $question_pager)) ?>
+
+You now understand why we refactored the question list into a fragment during [day five](5.txt). Finally, you need to add a `recent_questions` rule in the `frontend/config/routing.yml` configuration file, as exposed during [day four](4.txt):
+
+    recent_questions:
+      url:   /question/recent/:page
+      param: { module: question, action: recent, page: 1 }
+
+But wait: the `question/_list` fragment creates links with the routing rule `question/list`, so using it will not work for the recent questions list. We need to have the routing rule passed as a parameter to the fragment so that it can be reused for various pagers. So change the final line of `recentSuccess.php` to: 
+
+    [php]
+    <?php include_partial('list', array('question_pager' => $question_pager, 'rule' => 'question/recent')) ?>
+
+and also change the final lines of the `_list.php` fragment to:
+
+    [php]
+    <div id="question_pager">
+      <?php echo pager_navigation($question_pager, $rule) ?>
+    </div>
+
+Don't forget to also add the rule parameter in the call to the `_list` fragment in `modules/question/templates/listSuccess.php`.
+
+    [php]
+    <h1>popular questions</h1>
+    
+    <?php echo include_partial('list', array('question_pager' => $question_pager, 'rule' => 'question/list')) ?>
+    
+Clear the cache (the configuration was modified), and that's it.
+
+To display the list of latest questions, type in your browser URL bar:
+
+    http://askeet/question/recent
+
+![list of recent questions](/images/askeet/recent_questions.gif)
+
+List of the recent answers
+--------------------------
+
+It is pretty much the same thing as above, so we will be quite straightforward on this one:
+
+* Create an `answer` module:
+
+        $ symfony init-module frontend answer
+    
+* Create a new action `recent`:
+
+        [php]
+        public function executeRecent()
+        {
+          $this->answer_pager = AnswerPeer::getRecentPager($this->getRequestParameter('page', 1));
+        }   
+
+* Extend the `AnswerPeer` class:
+
+        [php]
+        public static function getRecentPager($page)
+        {
+          $pager = new sfPropelPager('Answer', sfConfig::get('app_pager_homepage_max'));
+          $c = new Criteria();
+          $c->addDescendingOrderByColumn(self::CREATED_AT);
+          $pager->setCriteria($c);
+          $pager->setPage($page);
+          $pager->setPeerMethod('doSelectJoinUser');
+          $pager->init();
+          
+          return $pager;
+        }
+
+* Create a new `recentSuccess.php` template:
+
+        [php]
+        <?php use_helper('Date', 'Global') ?>
+        
+        <h1>recent answers</h1>
+        
+        <div id="answers">
+        <?php foreach ($answer_pager->getResults() as $answer): ?>
+          <div class="answer">
+            <h2><?php echo link_to($answer->getQuestion()->getTitle(), 'question/show?stripped_title='.$answer->getQuestion()->getStrippedTitle()) ?></h2>
+            <?php echo count($answer->getRelevancys()) ?> points
+            posted by <?php echo link_to($answer->getUser(), 'user/show?id='.$answer->getUser()->getId()) ?> 
+            on <?php echo format_date($answer->getCreatedAt(), 'p') ?>
+            <div>
+              <?php echo $answer->getBody() ?>
+            </div>
+          </div>
+        <?php endforeach ?>
+        </div>        
+        
+        <div id="question_pager">
+          <?php echo pager_navigation($answer_pager, 'answer/recent') ?>
+        </div>
+
+* Test it in your browser:
+
+        http://askeet/answer/recent
+    
+![list of latest answers](/images/askeet/recent_answers.gif)
+
+You are getting used to it, aren't you?
+
+>**Note**: Those who paid attention to the [day 4](4.txt) probably recognized the chunk of code used to show the details of an answer. Since this code is used in at least two places, we will refactor it and create an `_answer.php` partial, to be used both in `question/show` and `answer/recent`. Details are to be found in the [askeet SVN repository](http://svn.askeet.com/tags/release_day_7/apps/frontend/modules/answer/templates/).
+
+User profile
+------------
+
+The user name in an answer will link to a `user/show` action yet to be written. This will be the  user profile, and it will display the latest questions and answers contributed, as well as a few details about the user.
+
+The first thing to do is to create the action:
+
+    [php]
+    public function executeShow()
+    {
+      $this->subscriber = UserPeer::retrieveByPk($this->getRequestParameter('id', $this->getUser()->getSubscriberId()));
+      $this->forward404Unless($this->subscriber);
+  
+      $this->interests = $this->subscriber->getInterestsJoinQuestion();
+      $this->answers   = $this->subscriber->getAnswersJoinQuestion();
+      $this->questions = $this->subscriber->getQuestions();
+    }
+
+The `->getInterestsJoinQuestion()` and `->getAnswersJoinQuestion()` methods are native methods of the `User` class. You can inspect the `askeet/lib/model/om/BaseUser.php` class to see how they work.
+
+The `askeet/apps/frontend/modules/user/templates/showSuccess.php` template should not give you any problem:
+
+    [php]
+    <h1><?php echo $subscriber ?>'s profile</h1>
+    
+    <h2>Interests</h2>
+    
+    <ul>
+    <?php foreach ($interests as $interest): $question = $interest->getQuestion() ?>
+      <li><?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?></li>
+    <?php endforeach; ?>
+    </ul>
+    
+    <h2>Contributions</h2>
+    
+    <ul>
+    <?php foreach ($answers as $answer): $question = $answer->getQuestion() ?>
+      <li>
+        <?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?><br />
+        <?php echo $answer->getBody() ?>
+      </li>
+    <?php endforeach; ?>
+    </ul>
+    
+    <h2>Questions</h2>
+    
+    <ul>
+    <?php foreach ($questions as $question): ?>
+      <li><?php echo link_to($question->getTitle(), 'question/show?stripped_title='.$question->getStrippedTitle()) ?></li>
+    <?php endforeach; ?>
+    </ul>
+
+Of course, you could wish to limit the number of result returned by each of the `->getInterestsJoinQuestion()`, `->getAnswersJoinQuestion()` and `getQuestion()` methods of the `User` object, as well as the sorting order. It is simply done by overriding these methods in the `askeet/lib/model/User.php` class file, and we won't disclose here how to do it - but today's release will include it. 
+
+It is time for the final test. Let's see what the first user did:
+
+    http://askeet/user/show/id/1
+
+![user profile](/images/askeet/user_profile.gif)
+
+Now we can also link to a user profile from a question. Add the following line to `question/templates/showSuccess.php` and `question/templates/_list.php` at the beginning of the `question_body` div:
+
+    [php]
+    <div>asked by <?php echo link_to($question->getUser(), 'user/show?id='.$question->getUser()->getId()) ?> on <?php echo format_date($question->getCreatedAt(), 'f') ?></div>
+    
+Don't forget to declare the use of the `Date` helper in `_list.php`.
+
+Add a navigation bar
+--------------------
+
+We will change the global layout to add a lateral bar. This bar will contain dynamic content, but as we want to settle its position in the layout, it can't be part of each template. In addition, putting the code of the bar in the template would mean repeating it a lot, and you know we don't like to do that.
+
+That's why the bar will be a **component**. A component is the result of an action (i.e. the HTML code resulting from the template execution) made available in a variable. The [view chapter](http://www.symfony-project.com/book/1_0/07-Inside-the-View-Layer) of the symfony book explains what a component is, and the differences between a component and a fragment.
+
+### Add the component in the layout
+
+Open the global layout (`askeet/apps/frontend/templates/layout.php`). Do you remember this part of code:
+
+    [php]
+    <div id="content_bar">
+      <!-- Nothing for the moment -->
+      <div class="verticalalign"></div>
+    </div>
+
+Replace the comment by
+
+    [php]
+      <?php include_component_slot('sidebar') ?>
+      
+And that's it.
+
+### Define what action goes into the component
+
+We decided to use something a little more powerful than a simple component: a component slot. It is a component whose action can be modified according to the caller action - allowing contextual content. It's the view configuration (written in a `view.yml` file) that defines which action corresponds to a component slot:
+
+    default:
+      components:
+        sidebar:      [sidebar, default]
+
+In this example, the component slot named `sidebar` is declared to be the result of the `default` action of the `sidebar` module.
+
+The view configuration can be defined for the whole application (in the `askeet/apps/frontend/config/` directory) or specifically for a module (in a `askeet/apps/frontend/modules/mymodule/config/` directory). For our case, we will define it for the whole application, and override it when necessary to provide context-specific links in the sidebar.
+
+So open the `askeet/apps/frontend/config/view.yml` and add in the component slot configuration shown above. You will find more information about the view configuration in the [related chapter](http://www.symfony-project.com/book/1_0/07-Inside-the-View-Layer) of the symfony book.
+
+### Write the `sidebar/default` action and template
+
+First, we will let symfony initialize the new `sidebar` module:
+
+    $ symfony init-module frontend sidebar
+
+Next, we need to write a `default` component. In the `askeet/apps/frontend/modules/sidebar/actions/` directory, rename `actions.class.php` into `components.class.php`, and change its content by:
+
+    [php]
+    <?php 
+    
+    class sidebarComponents extends sfComponents
+    {
+      public function executeDefault()
+      {
+      }
+    }
+    
+A component view is a template, just like for an action. The difference is in the naming: A component view is named like a fragment (starting with `_`) rather than like a regular template (ending with `Success`). So create a `askeet/apps/frontend/modules/sidebar/templates/_default.php` fragment (and erase the `indexSuccess.php` that will not be used) with the following content:
+
+    [php]
+    <?php echo link_to('ask a new question', 'question/add') ?>
+    
+    <ul>
+      <li><?php echo link_to('popular questions', 'question/list') ?></li>
+      <li><?php echo link_to('latest questions', 'question/recent') ?></li>
+      <li><?php echo link_to('latest answers', 'answer/recent') ?></li>
+    </ul>
+
+If you try to navigate in any page of your askeet website now, you might get an error. That's because you are navigating the site in the production environment, where the configuration is cached and not parsed at each request. We modified the `view.yml` configuration file, but the actions in the production environment don't see it. They use the cached version - the one that doesn't contain the component slot configuration. If you want to see the changes, either clear the cache or navigate in the development environment:
+
+    $ symfony clear-cache
+    
+or
+
+    http://askeet/frontend_dev.php/
+
+The navigation bar is correctly displayed on every page
+
+![sidebar](/images/askeet/sidebar.gif)
+
+>**Note**: This is a general effect of the production environment configuration. So you need to remember to use the development environment during the development phase (when you change the configuration a lot), and clear the cache when you navigate in the production environment after each change in the configuration.
+
+A little more view configuration
+--------------------------------
+
+While we are at it, let's have a look at the application `view.yml` configuration file in `apps/config/`:
+
+    default:
+      http_metas:
+        content-type: text/html; charset=utf-8
+    
+      metas:
+        title:        symfony project
+        robots:       index, follow
+        description:  symfony project
+        keywords:     symfony, project
+        language:     en
+    
+      stylesheets:    [main, layout]
+    
+      javascripts:    []
+    
+      has_layout:     on
+      layout:         layout
+
+      components:
+        sidebar:      [sidebar, default]
+
+The `metas` section contains a configuration for the meta tags of the whole site. The `title` key also defines the title that is displayed in the title bar of the browser window. This title is very important, because it is the first thing that a user sees of the site if it is found by a search index. It is therefore necessary to change it to something more adapted to the askeet site: 
+
+      metas:
+        title:        askeet! ask questions, find answers
+        robots:       index, follow
+        description:  askeet!, a symfony project built in 24 hours
+        keywords:     symfony, project, askeet, php5, question, answer
+        language:     en
+    
+Refresh the current page. If you don't see any change, that's because you are in the production environment, and you should clear the cache first, to get the proper window title:
+
+![window title](/images/askeet/window_title.gif)
+
+>**Note**: In addition to providing a default title for your project pages, symfony creates a default `robots.txt` and `favicon.ico` in the web root directory (`askeet/web/`). Don't forget to change them also!
+
+>**Note**: You might need to change the title for each page of your site. You can do that by defining a custom `view.yml` configuration for each module, but that would only let you give static titles. Alternatively, you can use a dynamic value from an action with the `->setTitle()` method, as described in the [view configuration chapter](http://www.symfony-project.com/book/1_0/07-Inside-the-View-Layer):
+>
+>       [php]
+>       $this->getResponse()->setTitle($title);
+
+Look at what we have done
+-------------------------
+
+It is a general tradition to stop and look at what you've done when you reach the seventh day. That's a good opportunity to document a few things, including the current data model and the available actions. 
+
+As a matter of fact, you should document your code while you write it, for instance using [PHP doc](http://www.phpdoc.org/)-style comments for each method. The thing with a symfony project is that the names used in the methods or functions often serve as an explanation of their purpose and use. The methods are kept short, and so are very readable. Most of the time, the templates only use `foreach` and `if` statements that are pretty self-explanatory. That's why the code you will find in the [askeet SVN repository](http://svn.askeet.com/) doesn't contain much documentation - plus the fact that we've already written seven hours worth of explanations about the work we've done!
+
+Now let's have a look at the updated entity relationship diagram:
+
+![ERD](/images/askeet/mcd2.gif)
+
+The list of available actions is the following:
+
+    answer/
+      recent
+    question/
+      list
+      show
+      recent
+    sidebar/
+      default (component)
+    user/
+      show
+      login
+      logout
+      handleErrorLogin
+
+The model also contains the following methods:
+
+    Anwser()
+      getRelevancyUpPercent()
+      getRelevancyDownPercent()
+    AnswerPeer::
+      getRecentPager()
+    Interest->
+      save()
+    Question->
+      setTitle()
+    QuestionPeer::
+      getQuestionFromTitle()
+      getHomepagePager()
+      getRecentPager()
+    Relevancy
+      save()
+    User->
+      __toString()
+      setPassword()
+    
+    myUser->
+      signIn()
+      signOut()
+      getSubscriberId()
+      getSubscriber()
+      getNickName()
+      
+...plus a custom tools class and a custom validator, placed in the `askeet/apps/frontend/lib/` directory.
+ 
+That's not bad for seven hours, is it?
+ 
+See you Tomorrow
+----------------
+
+The application progressed a lot today, and it was quite fast to do. Everything is now prepared to inject some AJAX in the human-computer interaction. Tomorrow, users will be able to login and to declare their interest for a question using AJAX. Don't miss it!
+
+You can still download today's full code from the [askeet SVN repository](http://svn.askeet.com/tags/release_day_7/), tagged `release_day_7`. The [askeet mailing-list](mailto:askeet-subscribe@symfony-project.com) will answer any of your questions faster than lightspeed.

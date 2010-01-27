@@ -1,0 +1,490 @@
+Día quince del calendario de symfony: Pruebas unitarias
+=======================================================
+
+Anteriormente en symfony
+------------------------
+
+Ahora las preguntas están bien organizadas en la web de askeet, gracias a la característica de etiquetado para la comunidad que añadimos [ayer](14.txt).
+
+Pero hay una cosa que no ha sido descrita hasta ahora, a pesar de su importancia en el ciclo de vida de las aplicaciones web. Las [Pruebas unitarias][1] son uno de los mayores avances en la programación desde la orientación a objetos. Permiten un proceso de desarrollo seguro, refactorizar sin miedo, y pueden a veces reemplazar la documentación ya que ilustran claramente lo que se supone que debe hacer la aplicación. Symfony permite y recomienda las pruebas unitarias, y provee herramientas para ellas. La descripción de estas herramientas - y la adición de unas pocas pruebas unitarias para probar askeet - nos llevarán la mayor parte de nuestro tiempo de hoy.
+
+Simple test
+-----------
+
+Hay muchos frameworks de pruebas unitarias en el mundo de PHP, la mayoría basadas en [Junit][11]. Nosotros no desarrollamos otra más para symfony, pero sin embargo integramos la más maduras de todas ellas, [Simple Test][2]. Es estable, bien documentada, y ofreces montones de características que son de considerable valor para todos lo proyectos PHP, incluyendo los de symfony. Si no aún no la conoces, quedas avisado para buscar su [documentación][3], que es muy clara y progresiva.
+
+Simple Test no viene empaquetado con symfony, pero es muy fácil de instalar. Lo primero, descarga el archivo PEAR instalable de Simple Test desde [SourceForge][4]. Instálalo vía pear llamando a:
+
+    $ pear install simpletest_1.0.0.tgz
+
+Si quieres escribir un batch script que use la librería de Simple Test, lo único que tienes que hacer es insertar estas pocas líneas de código al principio del script:
+
+    [php]
+    <?php
+    
+    require_once('simpletest/unit_tester.php');
+    require_once('simpletest/reporter.php');
+    
+    ?>
+
+Symfony hace esto por ti si usas la línea de comandos del test; pronto hablaremos sobre esto.
+
+>**Note**: Debido a los cambios en PHP 5.0.5 que nos son compatibles con versiones anteriores, actualmente Simple Test no funciona si tienes una versión de PHP superior a la 5.0.4. Esto cambiará en breve (hay disponible una versión alfa que trata este problema), pero desafortunadamente es probable que el resto de este tutorial no funcione si tienes una versión posterior.
+
+Pruebas unitarias en un proyecto symfony
+----------------------------------------
+
+### Pruebas unitarias por defecto
+
+Cada proyecto symfony tiene un directorio `test/`, dividido en subdirectorios por cada aplicación. Para askeet, si buscas en el directorio `askeet/test/functional/frontend/`, verás que ya hay unos pocos archivos:
+
+    answerActionsTest.php
+    feedActionsTest.php
+    mailActionsTest.php
+    sidebarActionsTest.php
+    userActionsTest.php
+
+Todos contienen el mismo código inicial:
+
+    [php]
+    <?php
+    
+    class answerActionsWebBrowserTest extends UnitTestCase
+    {
+      private
+        $browser = null;
+    
+      public function setUp ()
+      {
+        // create a new test browser
+        $this->browser = new sfTestBrowser();
+        $this->browser->initialize('hostname');
+      }
+    
+      public function tearDown ()
+      {
+        $this->browser->shutdown();
+      }
+    
+      public function test_simple()
+      {
+        $url = '/answer/index';
+        $html = $this->browser->get($url);
+        $this->assertWantedPattern('/answer/', $html);
+      }
+    }
+    
+    ?>
+
+La clase `UnitTestCase` es la clase núcleo de las pruebas unitarias de Simple Test. El método `setUp()` se ejecuta justo antes de cada método de la prueba, y  `tearDown()` se ejecuta justo después de cada método de la prueba. Los métodos reales de la prueba comienzan con la palabra 'test'. Para comprobar si un trozo de código se está comportando como esperas, se usa una aserción, que es un método que comprueba que algo es cierto. En Simple Test, las aserciones comienzan con `assert`. En este ejemplo, se implementa una prueba unitaria, y busca por la palabra 'user' en la página por defecto del módulo. Este archivo autogenerado es una pequeña ayuda para que comiences.
+
+De hecho, cada vez que llamas a `symfony init-module`, symfony crea un esqueleto como este en el directorio `test/[appname]/`para almacenar las pruebas unitarias asociadas al módulo creado. El problema es que tan pronto como modifiques la plantilla por defecto, los test
+creados para ayudarte serán pasados nunca más (estos comprueban que el título de la página por defecto, que es 'module $modulename'). Así que por ahora, borraremos esos archivos y trabajaremos en nuestros propios casos de prueba.
+
+### Añadir una prueba unitaria
+
+Durante el [día 13](13.txt), creamos un archivo `Tag.class.php` con dos funciones dedicadas a la manipulación de etiquetas. Añadiremos unas pocas pruebas unitarias para nuestra librería de etiquetas.
+
+Crea el archivo `TagTest.php` (todos los archivos de casos de prueba deben terminar en `Test` para que Simple Test los encuentre):
+
+    [php]
+    <?php
+    
+    require_once('Tag.class.php');
+    
+    class TagTest extends UnitTestCase
+    {
+      public function test_normalize()
+      {
+        $tests = array(
+          'FOO'       => 'foo',
+          '   foo'    => 'foo',
+          'foo  '     => 'foo',
+          ' foo '     => 'foo',
+          'foo-bar'   => 'foobar',
+        );
+    
+        foreach ($tests as $tag => $normalized_tag)
+        {
+          $this->assertEqual($normalized_tag, Tag::normalize($tag));
+        }
+      }
+    }
+    
+    ?>
+
+El primer caso de prueba que implementaremos concierne al método `Tag::normalize()`. Las pruebas unitarias están pensadas para probar un caso cada vez, así que descomponemos el resultado esperado del método del texto en casos básicos. Sabemos que el método `Tag::normalize()` debería devolver una versión en minúsculas de su argumento, sin espacios - tanto antes como después del argumento - y sin ningún carácter especial. Los cinco casos de prueba en el array `$test` son suficientes para probar esto.
+
+Para cada uno de los casos de prueba básicos, comparamos la versión normalizada de la entrada con el resultado esperado, con una llamada al método `->assertEqual()`. Esto es el corazón de una prueba unitaria. Si falla, el nombre del caso de prueba será mostrado cuando el conjunto de pruebas sea ejecutado. Si lo pasa, simplemente se añadirá al número de pruebas pasadas.
+
+Podríamos añadir una última prueba con la palabra `' FOo-bar '`, pero esto mezcla casos básicos. Si este caso falla , no tendrás una idea clara de la causa precisa del problema, y necesitarás investigar más. Mantener los casos básicos te da la seguridad de que el error será fácilmente localizado.
+ 
+>**Nota**: La extensa lista de métodos `assert` puede ser encontrada en la [documentación de Simple Test][3].
+
+### Ejecutando pruebas unitarias
+
+La línea de comandos de symfony permite ejecutar todas las pruebas de una vez con un único comando (recuerda llamarlo desde el directorio raíz de tu proyecto):
+
+    $ symfony test-functional frontend
+
+Al llamar a este comando se ejecutan todas las pruebas del directorio `test/functional/frontend/`, y por ahora estas son solo algunas de nuestro nuevo conjunto `TagTest.php`. Estas pruebas serán pasadas y la línea de comandos mostrará:
+
+    $ symfony test-functional frontend
+    Test suite in (test/frontend)
+    OK
+    Test cases run: 1/1, Passes: 5, Failures: 0, Exceptions: 0
+
+>**Nota**: Las pruebas lanzadas por la línea de comandos de symfony no necesitan incluir la librería Simple Test  (`unit_tester.php` y `reporter.php` son incluídas automáticamente).
+
+### La otra manera
+
+El mayor beneficio de las pruebas unitarias se aprecia cuando se hace [desarrollo basado en pruebas][9]. En esta metodología, las pruebas son escritas antes de escribir la función.
+
+Con el ejemplo de arriba, escribirías un método vacío `Tag::normalize()`, luego escribirías el primer caso de prueba ('Foo'/'foo'), y luego ejecutarías el conjunto de pruebas. La prueba fallaría. Entonces añadirías el código necesario para convertir el argumento en minúsculas y devolverlo en el método `Tag::normalize()`, luego ejecutas la prueba de nuevo. Esta vez la prueba se pasaría la prueba.
+
+Así pues añadirías las pruebas para espacios en blanco, las ejecutarías, verías que fallan, añadirías el código necesario para eliminar los espacios, ejecutarías las pruebas de nuevo, verías que se pasan. Entonces harías lo mismo para los caracteres especiales.
+
+Escribir primero las pruebas ayuda para enfocarte en las cosas que la función debería hacer antes de desarrollarla realmente. Ésta es una buena práctica tal como otras metodologías, como [Programación Extrema][10], que también es recomendable. Además ten en cuenta el innegable hecho de que si no escribes las pruebas primero, nunca las escribirás.
+
+Una última recomendación: mantén tus conjuntos de pruebas tan simples como el descrito aquí. Una aplicación construida con la metodología basada en pruebas termina aproximadamente con tanto código de pruebas como código real, así que si no quieres perder tiempo depurando tus casos de prueba...
+
+
+###Cuando falla una prueba
+
+Ahora añadiremos las pruebas para comprobar el segundo método del objeto `Tag`, el cual divide una cadena compuesta de varias etiquetas en un array de etiquetas. Añade el siguiente método a la clase `TagTest`:
+
+    [php]
+    public function test_splitPhrase()
+    {
+      $tests = array(
+        'foo'              => array('foo'),
+        'foo bar'          => array('foo', 'bar'),
+        '  foo    bar  '   => array('foo', 'bar'),
+        '"foo bar" askeet' => array('foo bar', 'askeet'),
+        "'foo bar' askeet" => array('foo bar', 'askeet'),
+      );
+ 
+      foreach ($tests as $tag => $tags)
+      {
+        $this->assertEqual($tags, Tag::splitPhrase($tag));
+      }
+    }
+
+>**Nota**: Como buena práctica, recomendamos nombrar los archivos de las pruebas fuera de las clases que deben probar, y los casos de prueba fuera de los métodos que deben probar. Pronto tu directorio `test/` contendrá un montón de archivos, y encontrar una prueba podría resultar difícil a la larga si no lo haces.
+
+Si intentas ejecutar las pruebas de nuevo, fallan:
+
+    $ symfony test-functional frontend
+    Test suite in (test/frontend)
+    1) Equal expectation fails as key list [0, 1] does not match key list [0, 1, 2] at line [35]
+            in test_splitPhrase
+            in TagTest
+            in /home/production/askeet/test/functional/frontend/TagTest.php
+    FAILURES!!!
+    Test cases run: 1/1, Passes: 9, Failures: 1, Exceptions: 0
+
+De acuerdo, uno de los casos de prueba de `test_splitPhrase` falla. Para encontrar cuál, necesitarás quitarlos uno por uno para ver cuando pasa la prueba. En este caso, es el último, cuando probamos el manejo de las comillas simples. El método `Tag::splitPhrase()` actual no traduce adecuadamente esta cadena. Como parte de tu tarea, tendrás que corregirlo para mañana.
+
+Esto ilustra el hecho de que si apilas demasiados casos de prueba básicos en un array, es difícil localizar un fallo. Siempre es preferible partir los casos de prueba largos en métodos, ya que Simple Test muestra el nombre del método donde falló la prueba.
+
+Simulando una sesión de navegación
+----------------------------------
+
+Las aplicaciones web no son solo objetos que se comportan más o menos como funciones. El complejo mecanismo de la petición de una página, el HTML resultado y las interacciones del navegador requieren más de lo que se ha mostrado antes para construir un completo conjunto de pruebas unitarias para una aplicación web de symfony.
+
+Examinaremos tres formas diferentes de implementar una sencilla prueba de una aplicación web. La prueba tiene que hacer una petición para ver el detalle de la primera pregunta, y supone que algún texto de la respuesta está presente.
+
+### El objeto `sfTestBrowser`
+
+Symfony proporciona un objeto llamado `sfTestBrowser`, que permite simular la navegación si un navegador y, más importante, sin un servidor web. Su situación dentro del framework permite a este objeto evitar completamente la capa de transporte http. Esto significa que la navegación simulada por el `sfTestBrowser` es rápida, e independiente de la configuración del servidor. ya que no lo usa.
+
+Veamos como hacer una petición de una página con este objeto:
+
+    [php]
+    $browser = new sfTestBrowser();
+    $browser->initialize();
+    $html = $browser->get('uri');
+    
+    // do some test on $html
+    
+    $browser->shutdown();
+
+La petición `get()` tiene una URI enrutada como parámetro (no una URI interna), y devuelve un página HTML en crudo (una cadena de texto). Así puedes proceder a hacer todo tipo de pruebas a esta página, usando el método `assert*()` del objeto `UnitTestCase`.
+
+Puedes pasar parámetros a tus llamadas como harías en la barra de URL de tu navegador:
+
+    $html = $browser->get('/frontend_test.php/question/what-can-i-offer-to-my-stepmother');
+    
+La razón por la que usamos una controlador frontal específico (`frontend_test.php`) se explicará en la próxima sección.
+
+El `sfTestBrowser` simula una cookie. Esto significa que con un simple objeto `sfTestBrowser`, puedes pedir varias páginas una tras otra, y serán consideradas parte de una única sesión por el framework. Además, el hecho de que `sfTestBrowser` use URIs enrutadas en vez de URIs internas te permite probar el sistema de enrutamiento.
+
+Para implementar nuestra prueba de la web, el método `test_QuestionShow()` debe ser construido así:
+
+    [php]
+    <?php
+    
+    class QuestionTest extends UnitTestCase
+    {
+      public function test_QuestionShow()
+      {
+        $browser = new sfTestBrowser();
+        $browser->initialize();
+        $html = $browser->get('frontend_test.php/question/what-can-i-offer-to-my-step-mother');
+        $this->assertWantedPattern('/My stepmother has everything a stepmother is usually offered/', $html);
+        $browser->shutdown();
+      }
+    }
+
+Ya que casi todos las pruebas unitarias de la web necesitarán inicializar un nuevo `sfTestBrowser` y cerrarlo después del test, sería mejor que movieras parte del código a los métodos `->setUp()` y `->tearDown()`:
+
+    [php]
+    <?php
+    
+    class QuestionTest extends UnitTestCase
+    {
+      private $browser = null;
+
+      public function setUp()
+      {
+        $this->browser = new sfTestBrowser();
+        $this->browser->initialize();
+      }
+      
+      public function tearDown()
+      {
+        $this->browser->shutdown();
+      }
+      
+      public function test_QuestionShow()
+      {
+        $html = $this->browser->get('frontend_test.php/question/what-can-i-offer-to-my-step-mother');
+        $this->assertWantedPattern('/My stepmother has everything a stepmother is usually offered/', $html);
+      }
+    }
+
+Ahora, cada nuevo método `test` que añadas tendrá un objeto `sfTestBrowser` limpio para empezar con él. Aquí puedes reconocer los casos de prueba auto-generados mencionados al principio de este tutorial.
+
+### El objeto `WebTestCase`
+
+Simple Test viene con una clase `WebTestCase`, que incluye facilidades para la navegación, comprueba contenido y cookies, y manejo de formularios. Las pruebas amplían esta clase permitiéndote simular una sesión de navegación con la capa de transporte http. De nuevo, la [documentación de Simple Test][5] explica en detalle cómo usar esta clase.
+
+Las pruebas construidas con `WebTestCase` son más lentas que las construidas con `sfTestBrowser`,  ya que el servidor web está en medio de cada petición. También requieren que tengas una configuración del servidor web funcionando. Sin embargo, el objeto `WebTestCase` viene con mucho métodos de navegación con `assert*()` como principal. Usando estos métodos, puedes simular una sesión de navegación compleja, Aquí está el subconjunto de los métodos de navegación de `WebTestCase`:
+
+-                         | -                            | -
+------------------------- | ---------------------------- | --------------------------------
+`get($url, $parameters)`  | `setField($name, $value)`    | `authenticate($name, $password)`
+`post($url, $parameters)` | `clickSubmit($label)`        | `restart()`                      
+`back()`                  | `clickImage($label, $x, $y)` | `getCookie($name)`               
+`forward()`               | `clickLink($label, $index)`  | `ageCookies($interval)`          
+
+Fácilmente podríamos hacer el mismo caso de prueba con un `WebTestCase`. Ten cuidado ya que ahora necesitas introducir las URIs completas, ya que serán pedidas por el servidor web:
+
+    [php]
+    require_once('simpletest/web_tester.php');
+    
+    class QuestionTest extends WebTestCase
+    {
+      public function test_QuestionShow()
+      {
+        $this->get('http://askeet/frontend_test.php/question/what-can-i-offer-to-my-step-mother');
+        $this->assertWantedPattern('/My stepmother has everything a stepmother is usually offered/');
+      }
+    }
+
+Los métodos adicionales de este objeto podrían ayudarnos a probar cómo se maneja un formulario enviado, por ejemplo para la prueba unitaria del proceso de identificación:
+
+    [php]
+    public function test_QuestionAdd()
+    {
+      $this->get('http://askeet/frontend_dev.php/');
+      $this->assertLink('sign in/register');
+      $this->clickLink('sign in/register');
+      $this->assertWantedPattern('/nickname:/');
+      $this->setField('nickname', 'fabpot');
+      $this->setField('password', 'symfony');
+      $this->clickSubmit('sign in');
+      $this->assertWantedPattern('/fabpot profile/');      
+    }
+
+Esto es muy práctico para permitir establecer un valor a los campos y enviar el formulario tal como harías a mano. Si tuvieras que simular esto haciendo una petición `POST` (esto es posible mediante una llamada a `->post($uri, $parameters)`), deberías escribir en la función de prueba el objetivo de la acción y todos los campos ocultos, así dependería demasiado de la implementación. Para más información sobre las pruebas de formularios con Simple Test, lee el [capítulo relacionado](http://www.lastcraft.com/form_testing_documentation.php) de la documentación de Simple Test.
+
+### Selenium
+
+El principal inconveniente de las pruebas de `sfTestBrowser` y `WebTestCase` es que no pueden simular JavaScript. Para interacciones más complejas, como interacciones AJAX por ejemplo, necesitas la posibilidad de reproducir exactamente lo que haría un usuario con el ratón y el teclado. Normalmente, estas pruebas se hacen a mano, pero consumen mucho tiempo y son propensas a errores.
+
+La solución, esta vez, viene del mundo de JavaScript. Se llama [Selenium][6] y es mejor cuando se usa con la [extensión para Firefox Selenium Recorder][7]. Selenium ejecuta un conjunto de acciones en una página tal como lo haría un usuario normal, usando la ventana del navegador.
+
+Selenium no viene empaquetado con symfony por defecto. Para instalarlo, necesitas crear un nuevo directorio `selenium/` en tu directorio `web/`,  y desempaquetar allí el contenido del [archivo Selenium][8]. Esto es debido a que Selenium depende de JavaScript, y las opciones de seguridad estándar en la mayoría de los navegadores no permitirían ejecutarlo a menos que esté disponible en el mismo host y puerto que tu aplicación.
+
+>**Nota**: Ten cuidado de no transferir el directorio `selenium/` a tu host de producción, ya que estaría accesible desde el exterior.
+
+Las pruebas de Selenium se escriben en HTML y se guardan en el directorio `selenium/tests/`. Por ejemplo, para hacer la prueba unitaria simple sobre el detalle de una pregunta, crea el siguiente archivo llamado `testQuestion.html`:
+
+    [php]
+    <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+    <html>
+    <head>
+      <meta content="text/html; charset=UTF-8" http-equiv="content-type">
+      <title>Question tests</title>
+    </head>
+    <body>
+    <table cellspacing="0">
+    <tbody>
+      <tr><td colspan="3">First step</td></tr>
+    
+      <tr>
+        <td>open</td>
+        <td>/frontend_test.php/</td>
+        <td>&nbsp;</td>
+      </tr>
+      
+      <tr>
+        <td>clickAndWait</td>
+        <td>link=What can I offer to my step mother?</td>
+        <td>&nbsp;</td>
+      </tr>
+
+      <tr>
+        <td>assertTextPresent</td>
+        <td>My stepmother has everything a stepmother is usually offered</td>
+        <td>&nbsp;</td>
+      </tr>
+    
+    </tbody>
+    </table>
+    </body>
+    </html>
+ 
+Un caso de prueba se representa en un documento HTML, conteniendo una tabla con 3 columnas: comando, objetivo, valor. No todos los comandos tienen valor, sin embargo. En este caso dejamos la columna en blanco o usamos `&nbsp;` para que la tabla luzca mejor.
+
+También necesitas añadir esta prueba a la suite de pruebas global insertando una nueva línea en la tabla del archivo `TestSuite.html`, situado en el mismo directorio:
+
+    [php]
+    ...
+    <tr><td><a href='./testQuestion.html'>My First Test</a></td></tr>
+    ...
+
+Para ejecutar la prueba, simplemente navega hasta
+
+    http://askeet/selenium/index.html
+
+Selecciona 'Main Test Suite', pincha en el botón para ejecutar todos los tests, y observa cómo tu navegador reproduce los pasos que le has dicho que haga.
+
+![suite de pruebas en Selenium](/images/askeet/selenium.gif)
+
+>**Nota**: Como las pruebas de Selenium se ejecutan en un navegador real, también permiten probar inconsistencias de navegación. Construye pruebas con un navegador, y pruébalas en todos los otros navegadores en los que se supone que debe funcionar tu sitio con una simple petición.
+
+El hecho de que las pruebas de Selenium estén escritas en HTML podría convertir la escritura de las pruebas en una molestia. Pero gracias a la extensión de Firefox de Selenium, todo lo que se necesita para crear pruebas es ejecutar la prueba una vez en una sesión de grabación. Mientras navegas en una sesión de grabación, puedes añadir pruebas de tipo aserción haciendo clic con el botón derecho en la ventana del navegador y marcando la casilla correspondiente bajo el Appende Selenium Command en el menú desplegado.
+
+Por ejemplo, la siguiente prueba de Selenium comprueba la puntuación AJAX de una pregunta. El usuario 'fabpot' se identifica, muestra la segunda página de preguntas para acceder a la única en la que no se ha interesado, entonces pincha en el enlace 'interested?', y comprueba que cambia el '?' por '!'. Esto será grabado con la extensión de Firefox, y lleva menos de 30 segundos:
+
+    [php]
+    <html>
+    <head><title>New Test</title></head>
+    <body>
+    <table cellpadding="1" cellspacing="1" border="1">
+    <thead>
+    <tr><td rowspan="1" colspan="3">New Test</td></tr>
+    </thead><tbody>
+    <tr>
+        <td>open</td>
+        <td>/frontend_dev.php/</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>clickAndWait</td>
+        <td>link=sign in/register</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>type</td>
+        <td>//div/input[@value="" and @id="nickname" and @name="nickname"]</td>
+        <td>fabpot</td>
+    </tr>
+    <tr>
+        <td>type</td>
+        <td>//div/input[@value="" and @id="password" and @name="password"]</td>
+        <td>symfony</td>
+    </tr>
+    <tr>
+        <td>clickAndWait</td>
+        <td>//input[@type='submit' and @value='sign in']</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>clickAndWait</td>
+        <td>link=2</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>click</td>
+        <td>link=interested?</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>pause</td>
+        <td>3000</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>verifyTextPresent</td>
+        <td>interested!</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>clickAndWait</td>
+        <td>link=sign out</td>
+        <td></td>
+    </tr>
+
+    </tbody></table>
+    </body>
+    </html>
+
+No olvides reiniciar los datos de prueba (llamando a `php batch/load_data.php`) antes de lanzar las pruebas de Selenium.
+
+>**Nota**: Tenemos que añadir una acción `pause` después de pinchar en el enlace AJAX, ya que Selenium no debería sgurio adelante con la prueba. Esto es una viso general para las pruebas de interacciones AJAX con Selenium.
+
+Puedes salvar la prueba en un archivo HTML para construir una Suite de Pruebas para tu aplicación. La extensión de Firefox te permite incluso ejecutar las pruebas de Selenium que has grabado con ella.
+
+Unas palabras sobre entornos
+----------------------------
+
+Las pruebas de webs tienen que usar un controlador frontal, y pueden usar un entorno específico (es decir, una configuración). Symfony proporciona un entorno `test` por defecto para todas las aplicaciones, especialmente para las pruebas unitarias. Puedes definir un conjunto personalizado de opciones para esto en el directorio `config/` de tu aplicación. Los parámetros de configuración por defecto son (extraídos de `askeet/apps/frontend/config/settings.yml`):
+
+    test:
+      .settings:
+        # E_ALL | E_STRICT & ~E_NOTICE = 2047
+        error_reporting:        2047
+        cache:                  off
+        stats:                  off
+        web_debug:              off
+
+La caché, las estadísticas y la barra de herramientas de depuración web se desactivan. Sin embargo, la ejecución del código aún deja trazas en el archivo de log (`askeet/log/frontend_test.log`). Puedes tener una configuración de conexión para una base de datos específica, por ejemplo para usar otra base de datos con los datos de prueba.
+
+Esto es por lo que todas las URIs externas mencionadas anteriormente muestran `frontend_test.php`: el controlador frontal del `test` tiene que especificarse -  de otro modo, se usará el controlador de producción `index.php` en su lugar, y no deberías permitir usar diferentes bases de datos o tener que separa logs para tus pruebas unitarias.
+
+>**Nota**: se presupone que las pruebas web no se ejecutarán en producción. Son una herramienta de desarrollo, y como tal, deberían ejecutarse en el ordenador del desarrollador, no en el servidor de host.
+
+Nos vemos mañana
+----------------
+
+De momento no hay una solución ideal para las pruebas unitarias de las aplicaciones PHP hechas con symfony. Cada una de las tres soluciones presentadas hoy tienen grandes ventajas, pero si tienes un amplío acercamiento de las pruebas unitarias, probablemente necesitarás usar las tres. Para askeet, las pruebas unitarias serán añadidas poco a poco en el código SVN. Compruébalo de vez en cuando, o propónte tú mismo aumentar la solidez de la aplicación.
+
+Las pruebas unitarias también pueden ser usadas para evitar la regresión. Refactorizar un método puede crear nuevos errores que no aparecían antes. Por esto es por lo que también es una buena práctica ejecutar todas las pruebas unitarias antes de desplegar una nueva versión de una aplicación en producción - esto se llama [pruebas de regresión][12].  Hablaremos más sobre esto cuando entremos en la utilización de la aplicación
+
+Mañana... bueno, mañana será otro día. Si tienes alguna pregunta sobre el tutorial de hoy, no te cohibas de preguntárnosla en el [foro de askeet](http://www.symfony-project.com/forum/index.php/f/8/).
+
+[1]: http://en.wikipedia.org/wiki/Unit_test                          "Definición de Pruebas Unitarias en la Wikipedia"
+[2]: http://www.lastcraft.com/simple_test.php                        "Simple test"
+[3]: http://www.lastcraft.com/unit_test_documentation.php            "Documentación de Simple test"
+[4]: https://sourceforge.net/project/showfiles.php?group_id=76550    "Simple Test en SourceForge"
+[5]: http://www.lastcraft.com/web_tester_documentation.php           "Documentación de Web test"
+[6]: http://selenium.thoughtworks.com/                               "Selenium"
+[7]: http://seleniumrecorder.mozdev.org/                             "Selenium Recorder for Firefox"
+[8]: http://www.openqa.org/selenium/download.action                  "Download Selenium"
+[9]: http://en.wikipedia.org/wiki/Test_driven_development            "Definición de Desarrollo Dirigido por Pruebas en la Wikipedia"
+[10]: http://en.wikipedia.org/wiki/Extreme_Programming               "Definición de eXtreme Programming en la Wikipedia"
+[11]: http://junit.org                                               "JUnit"
+[12]: http://en.wikipedia.org/wiki/Regression_testing                "Definición de pruebas de Regresión en la Wikipedia"
