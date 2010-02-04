@@ -34,7 +34,7 @@ Do symfony framework có vài phiên bản khác nhau, bạn cần đọc thông
 Chuyển đến trang cài đặt của phiên bản bạn đã chọn, ví dụ
 [symfony 1.2](http://www.symfony-project.org/installation/1_2).
 
-Dưới mục "**Source Download**", bạn sẽ thấy file nén ở định dạng
+Dưới mục "**Download as an Archive**", bạn sẽ thấy file nén ở định dạng
 `.tgz` hoặc `.zip`. Tải file nén về, đặt nó vào trong thư mục `lib/vendor/` và giải nén:
 
     $ cd lib/vendor
