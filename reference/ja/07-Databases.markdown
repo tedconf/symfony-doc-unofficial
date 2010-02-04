@@ -76,7 +76,7 @@ Propel
  | `username`   | データベースのユーザー名 | -              |
  | `password`   | データベースのパスワード | -              |
  | `pooling`    | プーリングを有効にするか | `true`         |
- | `encoding`   | デフォルトの文字集合     | `UTF-8`        |
+ | `encoding`   | デフォルトの文字集合     | `utf8`        |
  | `persistent` | 永続的接続を作成するか   | `false`        |
  | `options`    | Propelオプションのセット | -              |
 
@@ -108,7 +108,7 @@ Doctrine
  | `dsn`        | PDOのDSN (必須)          | -            |
  | `username`   | データベースのユーザー名 | -            |
  | `password`   | データベースのパスワード | -            |
- | `encoding`   | デフォルトの文字コード   | `UTF-8`      |
+ | `encoding`   | デフォルトの文字コード   | `utf8`      |
  | `attributes` | Doctrine属性のセット     | -            |
 
 次の属性は`attributes`セクションの下でカスタマイズできます:

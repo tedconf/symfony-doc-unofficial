@@ -88,7 +88,7 @@ I seguenti parametri possono essere personalizzati nella sezione `param`:
  | `username`   | Nome utente per il database              | -                  |
  | `password`   | Password per il database                 | -                  |
  | `pooling`    | Abilita il pooling                       | `true`             |
- | `encoding`   | L'insieme di caratteri predefinito       | `UTF-8`            |
+ | `encoding`   | L'insieme di caratteri predefinito       | `utf8`            |
  | `persistent` | Per creare connessioni persistenti       | `false`            |
  | `options`    | Un insieme di opzioni per Propel         | -                  |
 
@@ -120,7 +120,7 @@ I seguenti parametri possono essere personalizzati sotto la sezione `param`:
  | `dsn`        | Il DSN PDO (obbligatorio)                | -                  |
  | `username`   | Nome utente per il database              | -                  |
  | `password`   | Password per il database                 | -                  |
- | `encoding`   | L'insieme di caratteri predefinito       | `UTF-8`            |
+ | `encoding`   | L'insieme di caratteri predefinito       | `utf8`            |
  | `attributes` | Un insieme di attributi per Doctrine     | -                  |
 
 I seguenti attributi possono essere personalizzati sotto la sezione `attributes`:
