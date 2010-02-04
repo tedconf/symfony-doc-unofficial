@@ -42,7 +42,7 @@ site de symfony.
 Aller à la page d'installation de la version que vous venez de choisir,
 [symfony 1.2](http://www.symfony-project.org/installation/1_2) par exemple.
 
-Sous la section "**Source Download**", vous trouverez l'archive sous le format `.tgz`
+Sous la section "**Download as an Archive**", vous trouverez l'archive sous le format `.tgz`
 ou `.zip`. Téléchargez l'archive, puis mettez-la sous le nouveau répertoire créé
 `lib/vendor/` et décompressez la :
 
