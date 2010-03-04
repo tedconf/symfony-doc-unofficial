@@ -166,7 +166,7 @@ La classe générée ressemble fortement aux formulaires que nous avons déjà v
 >**SIDEBAR**
 >Personnalisation globale des Formulaires Propel
 >
->En plus des classes générées pour chaque table, la tâche `propel:build-forms` génère également une classe `BaseFormPropel`. Cette classe vide est la classe de base de toutes les classes générées dans le répertoire `base/` et permet de configurer de façon globale le comportement de tous les formulaires Propel. Il est par exemple possible de changer le formateur utilisé par défaut :
+>En plus des classes générées pour chaque table, la tâche `propel:build-forms` génère également une classe `BaseFormPropel`. Cette classe vide est la classe de base de toutes les classes générées dans le répertoire `lib/form/base/` et permet de configurer de façon globale le comportement de tous les formulaires Propel. Il est par exemple possible de changer le formateur utilisé par défaut :
 >
 >     [php]
 >     abstract class BaseFormPropel extends sfFormPropel
@@ -184,7 +184,7 @@ La classe générée ressemble fortement aux formulaires que nous avons déjà v
 
 Le nom des champs du formulaire sont les mêmes que le nom des colonnes que nous avons définies dans le schéma : `id`, `first_name`, `last_name` et `email`.
 
-Pour chaque colonne de la table `author`, la tâche `propel:build-forms` a généré un widget et un validateur en fonction de la définition du schéma. La tâche génère toujours le validateur le plus sécurisé possible. Prenons l'exemple du champ `id`. On pourrait se limiter à vérifier que la valeur est un entier valide. Mais ici, le validateur généré permet également de s'assurer que l'identifiant existe (correspondant à l'édition d'un objet existant) ou que l'identifiant est vide (pour permettre la création d'un nouvel objet).
+Pour chaque colonne de la table `author`, la tâche `propel:build-forms` a généré un widget et un validateur en fonction de la définition du schéma. La tâche génère toujours le validateur le plus sécurisé possible. Prenons l'exemple du champ `id`. On pourrait se limiter à vérifier que la valeur est un entier valide. Mais ici, le validateur généré permet également de s'assurer que l'identifiant existe (correspondant à l'édition d'un objet existant) ou que l'identifiant est vide (pour permettre la création d'un nouvel objet). Il s'agit d'une validation plus forte.
 
 Les formulaires générés sont immédiatement prêt à l'emploi, ce qui, couplé avec l'instruction `<?php echo $form ?>`, permet de réaliser des formulaires fonctionnels **sans avoir à écrire une seule ligne de code**.
 
@@ -195,7 +195,8 @@ Enfin, à chaque évolution du schéma de la base de données, la tâche permet 
 Le Générateur CRUD
 ------------------
 
-Maintenant que nous avons généré les classes de formulaire, voyons comment créer un module symfony pour manipuler les objets depuis un navigateur. Nous souhaitons pouvoir créer, modifier et supprimer les objets des classes `Article`, `Author`, `Category` et `Tag`. Voyons dans un premier temps la création du module pour la classe `Author`. Même s'il est possible de créer le module manuellement, le plugin Propel propose la tâche `propel:generate-crud` qui permet de générer un module CRUD basé sur une classe Propel en utilisant le formulaire généré dans la section précédente :
+Maintenant que nous avons généré les classes de formulaire, voyons comment créer un module symfony pour manipuler les objets depuis un navigateur. Nous souhaitons pouvoir créer, modifier et supprimer les objets des classes `Article`, `Author`, `Category` et `Tag`.
+Voyons dans un premier temps la création du module pour la classe `Author`. Même s'il est possible de créer le module manuellement, le plugin Propel propose la tâche `propel:generate-crud` qui permet de générer un module CRUD basé sur une classe Propel en utilisant le formulaire généré dans la section précédente :
 
     $ ./symfony propel:generate-crud frontend author Author
 
@@ -264,7 +265,7 @@ Dans ce module, le cycle de vie du formulaire est géré par trois méthodes : `
 
     $ ./symfony propel:generate-crud frontend author Author --non-atomic-actions
 
-Le code généré (Listing 4-5) est plus concis et moins redondant.
+Le code généré utilisant `--non-atomic-actions` (Listing 4-5) est plus concis et moins redondant.
 
 Listing 4-5 - Classe `authorActions` générée avec l'option `--non-atomic-actions`
 
@@ -302,7 +303,7 @@ Listing 4-5 - Classe `authorActions` générée avec l'option `--non-atomic-acti
       }
     }
 
-La tâche a également généré deux templates, `indexSuccess` et `editSuccess`. La template `editSuccess` a été générée sans utiliser l'instruction `<?php echo $form ?>`. Il est possible de changer ce comportement en utilisant l'option `--non-verbose-templates` :
+La tâche a également généré deux templates, `indexSuccess` et `editSuccess`. Le template `editSuccess` a été généré sans utiliser l'instruction `<?php echo $form ?>`. Il est possible de changer ce comportement en utilisant l'option `--non-verbose-templates` :
 
     $ ./symfony propel:generate-crud frontend author Author --non-verbose-templates
 
@@ -335,7 +336,7 @@ Listing 4-6 - Template `editSuccess`
     </form>
 
 >**TIP**
->L'option `--with-show` génère une action et une template permettant de visualiser un objet (lecture seule).
+>L'option `--with-show` génère une action et un template permettant de visualiser un objet (lecture seule).
 
 Vous pouvez désormais ouvrir un navigateur à l'URL `/frontend_dev.php/author` pour visualiser le module généré (Figure 4-1 et Figure 4-2). Prenez le temps de jouer avec l'interface. Elle permet de visualiser la liste des auteurs contenus dans la base de données, d'en ajouter, de les éditer, de les modifier et même de les supprimer. Vous remarquerez également que les règles de validation sont opérationnelles.
 
@@ -679,7 +680,7 @@ L'utilisation de la tâche `propel:build-forms` permet donc de générer automat
 
   * De plus, lors de la mise à jour du schéma de base de données, les formulaires générés vont se mettre à jour automatiquement. Le développeur n'aura qu'à ajuster la personnalisation qu'il a réalisé.
 
-La section suivante va maintenant décrire la personnalisation des actions et des templates générées par la tâche `propel:generate-crud`.
+La section suivante va maintenant décrire la personnalisation des actions et des templates générés par la tâche `propel:generate-crud`.
 
 La Sérialisation des Formulaires
 --------------------------------
@@ -758,7 +759,7 @@ Le code du Listing 4-23 permet de gérer avec une seule méthode la création et
 
   * Cas de la création d'un nouvel objet `Author` :
 
-      * L'action `index` est appelée sans paramètre `id` (`$request->getParameter('id')` vaut `null`)
+      * L'action `edit` est appelée sans paramètre `id` (`$request->getParameter('id')` vaut `null`)
 
       * L'appel à la méthode `retrieveByPk()` retourne donc `null`
 
@@ -768,7 +769,7 @@ Le code du Listing 4-23 permet de gérer avec une seule méthode la création et
 
   * Cas de la modification d'un objet `Author` existant :
 
-      * L'action `index` est appelée avec un paramètre `id` (`$request->getParameter('id')` représentant la clé primaire de l'objet `Author` à modifier)
+      * L'action `edit` est appelée avec un paramètre `id` (`$request->getParameter('id')` représentant la clé primaire de l'objet `Author` à modifier)
 
       * L'appel à la méthode `retrieveByPk()` retourne l'objet `Author` lié à la clé primaire
 
@@ -780,12 +781,10 @@ Le code du Listing 4-23 permet de gérer avec une seule méthode la création et
 
 Lorsqu'un formulaire Propel est valide, la méthode `save()` met à jour l'objet lié et le sauvegarde dans la base de données. En fait, cette méthode sauvegarde non seulement l'objet principal mais également les éventuels objets liés. Par exemple, le formulaire `ArticleForm` permet de mettre à jour les tags liés à un article. La relation entre la table `article` et la table `tag` étant une relation n-n, les tags liés à un article sont sauvegardés dans la table `article_tag` (via la méthode générée `saveArticleTagList()`).
 
-Afin de toujours garantir une sérialisation consistante, la méthode `save()` englobe toutes les mises à jour dans une transaction.
-
 >**Note**
 >Nous verrons dans le Chapitre 9 que la méthode `save()` permet également de mettre à jour automatiquement les tables internationalisées.
 
--
+Afin de toujours garantir une sérialisation consistante, la méthode `save()` englobe toutes les mises à jour dans une transaction.
 
 >**SIDEBAR**
 >Utilisation de la Méthode `bindAndSave()`
@@ -844,7 +843,7 @@ Listing 4-25 - Modification du Champ `file` du formulaire `ArticleForm`
       }
     }
 
-Comme pour tout formulaire permettant l'upload d'un fichier, n'oubliez pas d'ajouter également l'attribut `enctype` au tag `form` de la template (voir le Chapitre 2 pour plus d'information sur la gestion de l'upload de fichiers).
+Comme pour tout formulaire permettant l'upload d'un fichier, n'oubliez pas d'ajouter également l'attribut `enctype` au tag `form` du template (voir le Chapitre 2 pour plus d'information sur la gestion de l'upload de fichiers).
 
 Le Listing 4-26 montre les modifications à apporter lors de la sauvegarde du formulaire pour sauvegarder le fichier sur le disque et stocker son chemin dans l'objet `article`.
 
@@ -887,23 +886,23 @@ Listing 4-27 - Surcharge de la Méthode `save()` de la classe `ArticleForm`
     class ArticleForm extends BaseFormPropel
     {
       // ...
-      
+     
       public function save(PropelPDO $con = null)
       {
         if (file_exists($this->getObject()->getFile()))
         {
           unlink($this->getObject()->getFile());
         }
-    
+   
         $file = $this->getValue('file');
         $filename = sha1($file->getOriginalName()).$file->getExtension($file->getOriginalExtension());
         $file->save(sfConfig::get('sf_upload_dir').'/'.$filename);
-    
+   
         return parent::save($con);
       }
     }
 
-Après déplacement du code vers le formulaire, l'action `edit` est identique au code généré initialement par la tâche `propel:generate-crud`.
+Après le déplacement du code vers le formulaire, l'action `edit` est identique au code généré initialement par la tâche `propel:generate-crud`.
 
 >**SIDEBAR**
 >Refactoriser son Code dans le Modèle ou dans le Formulaire
@@ -947,7 +946,7 @@ Listing 4-28 - Surcharge de la Méthode `doSave()` de la classe `ArticleForm`
     class ArticleForm extends BaseFormPropel
     {
       // ...
-      
+     
       protected function doSave($con = null)
       {
         if (file_exists($this->getObject()->getFile()))
@@ -980,9 +979,9 @@ Listing 4-29 - Surcharge de la Méthode `updateObject()` de la classe `ArticleFo
     {
       // ...
 
-      public function updateObject()
+      public function updateObject($values = null)
       {
-        $object = parent::updateObject();
+        $object = parent::updateObject($values);
 
         $object->setFile(str_replace(sfConfig::get('sf_upload_dir').'/', '', $object->getFile()));
 
