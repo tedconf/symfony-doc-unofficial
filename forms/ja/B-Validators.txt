@@ -1,23 +1,23 @@
-付録B - バリデーター
-====================
+付録 B - バリデーター
+======================
 
 はじめに
 --------
 
-symfonyフォームフレームワークはたくさんの便利なバリデーターを搭載しています。
+symfony フォームフレームワークはたくさんの便利なバリデーターを搭載しています。
 これらのバリデーターはたいていのプロジェクトの共通のニーズをカバーします。
-この章ではsymfonyに搭載されたデフォルトのフォームバリデーターを説明します。
-`sfPropelPlugin`と`sfDoctrinePlugin`プラグインにもバリデーターが含まれています。
+この章では symfony に搭載されるデフォルトのフォームバリデーターを説明します。
+`sfPropelPlugin` と `sfDoctrinePlugin` プラグインにもバリデーターが含まれています。
 これらのプラグインはコアチームによってサポートされており、とても便利なバリデーターを含みます。
 
 >**TIP**
->symfony MVCフレームワークを使わない場合でも、プロジェクトのどこかの`validator/`ディレクトリに設置することで、[`sfFormExtraPlugin`](http://svn.symfony-project.com/plugins/sfFormExtraPlugin)、`sfPropelPlugin`と`sfDoctrinePlugin`プラグインで定義されたバリデーターを使うことができます。
+>symfony MVC フレームワークを使わない場合でも、プロジェクトのどこかの `validator/` ディレクトリに設置することで、[`sfFormExtraPlugin`](http://svn.symfony-project.com/plugins/sfFormExtraPlugin)、`sfPropelPlugin` と `sfDoctrinePlugin` プラグインで定義されたバリデーターを使うことができます。
 
 それぞれのバリデーターの詳細内容に飛び込む前に、バリデーターが共通に持つ機能を見てみましょう。
 
-### `sfValidatorBase`基底クラス
+### `sfValidatorBase` 基底クラス
 
-symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承します。
+symfonyのすべてのバリデーターは `sfValidator` 基底クラスを継承します。
 このクラスはすべてのバリデーターで利用可能なデフォルト機能を提供します。
 
 バリデーターは2つの目標: 汚染された値をクリーンにすることとバリデートすることを持ちます。
@@ -30,76 +30,76 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
       array('required' => 'This value is required.')
     );
 
-オプションとメッセージは`setOptions()`と`setMessages()`メソッドを使うことでも設定できます:
+オプションとメッセージは `setOptions()` と `setMessages()`メ ソッドを使うことでも設定できます:
 
     [php]
     $v = new sfValidatorString();
     $v->setOptions(array('required' => true));
     $v->setMessages(array('required' => 'This value is required.'));
 
-`setOption()`と`setMessage()`メソッドによって個別のオプションもしくはエラーメッセージを設定できます:
+`setOption()` と `setMessage()` メソッドによって個別のオプションもしくはエラーメッセージを設定できます:
 
     [php]
     $v = new sfValidatorString();
     $v->setOption('required', true);
     $v->setMessage('required', 'This value is required.');
 
-汚染された値は`clean()`メソッドを呼び出すことでバリデートできます:
+汚染された値は `clean()` メソッドを呼び出すことでバリデートできます:
 
     [php]
     $cleaned = $v->clean('name', 'value', array('class' => 'foo'));
 
-`clean()`メソッドは引数として汚染された値を受け取りクリーンな値を返します。
-バリデーションエラーが起きるとき、`sfValidatorError`が投げられます。
+`clean()` メソッドは引数として汚染された値を受け取りクリーンな値を返します。
+バリデーションエラーが起きるとき、`sfValidatorError` が投げられます。
 
 >**NOTE**
 >バリデーターはステートレスなので、単独のバリデーターインスタンスは望む数だけ入力値をバリデートできることを意味します。
 
-`sfValidatorBase`によって定義されるデフォルトオプションは次のとおりです:
+`sfValidatorBase` によって定義されるデフォルトオプションは次のとおりです:
 
-| オプション    | エラー      | 説明
+| オプション    | エラー    | 説明
 | ------------- | ---------- | -----------------------------------------------------------------------------
-| `required`    | `required` | 値が必須の場合は`true`、そうでなければ`false`(デフォルトは`true`)
-| `trim`        | n/a        | 値がトリムされなければならない場合は`true`、そうでなければ`false`(デフォルトは`false`)
+| `required`    | `required` | 値が必須の場合は `true`、そうでなければ `false` (デフォルトは `true`)
+| `trim`        | n/a        | 値がトリムされなければならない場合は `true`、そうでなければ `false` (デフォルトは `false`)
 | `empty_value` | n/a        | 値が必須ではないときに返される空の値
 
-`sfValidatorBase`によって定義されるデフォルトのエラーメッセージは次のとおりです:
+`sfValidatorBase` によって定義されるデフォルトのエラーメッセージは次のとおりです:
 
 | エラー     | 説明
 | ---------- | -------------------------------------------------------------------------------------
-| `required` | 汚染された値が空で必須であるときに使われるエラーメッセージ(デフォルトは`Required.`)。
-| `invalid`  | エラーが起きるときに一般的なエラーメッセージ(デフォルトは`Invalid.`)。
+| `required` | 汚染された値が空で必須であるときに使われるエラーメッセージ (デフォルトは `Required.`)。
+| `invalid`  | エラーが起きるときに一般的なエラーメッセージ (デフォルトは `Invalid.`)。
 
-`setRequiredMessage()`と`setInvalidMessage()`メソッドをそれぞれ呼び出すことで`required`と`invalid`エラーメッセージに使われるデフォルトの文字列を変更できます:
+`setRequiredMessage()` と `setInvalidMessage()` メソッドをそれぞれ呼び出すことで `required` と `invalid` エラーメッセージに使われるデフォルトの文字列を変更できます:
 
     [php]
     sfValidatorBase::setRequiredMessage('This value is required.');
     sfValidatorBase::setInvalidMessage('This value is invalid.');
 
 エラーメッセージはプレースホルダーを持つことができます。
-プレースホルダーは`%`で囲まれた文字列です。
+プレースホルダーは `%` で囲まれた文字列です。
 実行時にプレースホルダーは置き換えされます。
-すべてのエラーメッセージは`%value%`プレースホルダーで汚染された値にアクセスできる権限を持ちます。
+すべてのエラーメッセージは `%value%` プレースホルダーで汚染された値にアクセスできる権限を持ちます。
 それぞれのエラーメッセージは特定のプレースホルダーも定義できます。
 
 >**NOTE**
->次のセクションでは、デフォルトの`%value%`プレースホルダーは常に利用可能ではないので、
+>次のセクションでは、デフォルトの `%value%` プレースホルダーは常に利用可能ではないので、
 >言及されません。
 
 バリデーターの中には汚染された値によって使用される文字集合(キャラクタセット)を知る必要があるものがあります。
-デフォルトの文字集合は`UTF-8`ですが、`setCharset()`メソッドを呼び出すことで設定できます:
+デフォルトの文字集合は `UTF-8` ですが、`setCharset()` メソッドを呼び出すことで設定できます:
 
     [php]
     sfValidatorBase::setCharset('ISO-8859-1');
 
 >**NOTE**
->symfony MVCフレームワークでsymfonyのバリデーターを使う場合、`settings.yml`のcharsetに従って文字集合は自動的に設定されます。
+>symfony MVC フレームワークで symfony のバリデーターを使う場合、`settings.yml` の charset に従って文字集合は自動的に設定されます。
 
 ### バリデータースキーマ
 
 バリデータースキーマは1つもしくは複数の他のバリデーター用のラッパーバリデーターです。
 
-エラーが起きるとき、バリデータースキーマは`sfValidatorErrorSchema`例外を投げます。
+エラーが起きるとき、バリデータースキーマは `sfValidatorErrorSchema` 例外を投げます。
 
 
 次のセクションでは、バリデーターは複数のカテゴリに再分類されます。
@@ -147,7 +147,7 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: No
 
-`sfValidatorString`バリデーターは文字列をバリデートして汚染された値を文字列に変換します。
+`sfValidatorString` バリデーターは文字列をバリデートして汚染された値を文字列に変換します。
 
 | オプション   | エラー       | 説明
 | ------------ | ------------ | ------------------
@@ -160,33 +160,33 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 | `min_length` | `min_length`     | "%value%" is too short (%min_length% characters min).
 
 >**CAUTION**
->このバリデーターを正しく動作させるには`mb_string`エクステンションをインストールすることが必須です。
->インストールされていれば、文字列の長さは`mb_strlen()`関数で算出されます;
->インストールされていなければ`strlen()`関数が使われますが、文字列の中にASCII文字ではないものがある場合、本当の文字列の長さは返されません。
+>このバリデーターを正しく動作させるには `mb_string` エクステンションをインストールすることが必須です。
+>インストールされていれば、文字列の長さは `mb_strlen()` 関数で算出されます;
+>インストールされていなければ `strlen()` 関数が使われますが、文字列の中に ASCII 文字ではないものがある場合、本当の文字列の長さは返されません。
 
 ### `sfValidatorRegex`
 
 *スキーマバリデーター*: No
 
-`sfValidatorRegex`バリデーターは正規表現に対して文字列をバリデートします。
+`sfValidatorRegex` バリデーターは正規表現に対して文字列をバリデートします。
 
-| オプション| エラー     | 説明
-| --------- | --------- | ----------------------
-| `pattern` | `invalid` | PCRE正規表現のパターン
+| オプション| エラー   | 説明
+| --------- | --------- | ------------------------
+| `pattern` | `invalid` | PCRE 正規表現のパターン
 
 ### `sfValidatorEmail`
 
 *スキーマバリデーター*: No
 
-`sfValidatorEmail`バリデーターはEメールをバリデートできます。
-このバリデーターは`sfValidatorRegex`を継承します。
+`sfValidatorEmail` バリデーターはEメールをバリデートできます。
+このバリデーターは `sfValidatorRegex` を継承します。
 
 ### `sfValidatorUrl`
 
 *スキーマバリデーター*: No
 
-`sfValidatorUrl`バリデーターはHTTPとFTP URLをバリデートできます。
-これは`sfValidatorRegex`を継承します。
+`sfValidatorUrl` バリデーターは HTTP と FTP URLをバリデートできます。
+これは `sfValidatorRegex` を継承します。
 
 ### `sfValidatorInteger`
 
@@ -204,13 +204,13 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 | `max`  | `max`            | "%value%" must be less than %max%.
 | `min`  | `min`            | "%value%" must be greater than %min%.
 
-デフォルトの`invalid`エラーメッセージは `"%value%" is not an integer.`です。
+デフォルトの `invalid` エラーメッセージは `"%value%" is not an integer.` です。
 
 ### `sfValidatorNumber`
 
 *スキーマバリデーター*: No
 
-`sfValidatorNumber`バリデーターは数をバリデートし(PHPが[`floatval()`](www.php.net/floatval) 関数で理解できる文字列)
+`sfValidatorNumber` バリデーターは数をバリデートし (PHP が [`floatval()`](www.php.net/floatval) 関数で理解できる文字列)
 汚染された値を浮動小数に変換します。
 
 | オプション | エラー | 説明
@@ -223,24 +223,24 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 | `max`  | `max`            | "%value%" must be less than %max%.
 | `min`  | `min`            | "%value%" must be greater than %min%.
 
-デフォルトの`invalid`エラーメッセージは`"%value%" is not a number.`です。
+デフォルトの `invalid` エラーメッセージは `"%value%" is not a number.` です。
 
 ### `sfValidatorBoolean`
 
 *スキーマバリデーター*: No
 
-`sfValidatorBoolean`バリデーターブール値をバリデートして`true`もしくは`false`のどちらかを返します。
+`sfValidatorBoolean` バリデーターブール値をバリデートして `true` もしくは `false` のどちらかを返します。
 
 | オプション     | エラー| 説明
-| -------------  | ----- | -----------
-| `true_values`  | n/a   | trueの値のリスト(デフォルト: `true`, `t`, `yes`, `y`, `on`, `1`)
-| `false_values` | n/a   | falseの値のリスト (デフォルト: `false`, `f`, `no`, `n`, `off`, `0`)
+| -------------  | ----- | ---------------------------------------------------------------------
+| `true_values`  | n/a   | true の値のリスト (デフォルト: `true`, `t`, `yes`, `y`, `on`, `1`)
+| `false_values` | n/a   | false の値のリスト (デフォルト: `false`, `f`, `no`, `n`, `off`, `0`)
 
 ### `sfValidatorChoice`
 
 *スキーマバリデーター*: No
 
-`sfValidatorChoice`バリデーターは汚染された値が期待する値のリストの間に収まっているかバリデートします。
+`sfValidatorChoice` バリデーターは汚染された値が期待する値のリストの間に収まっているかバリデートします。
 
 | オプション | エラー| 説明
 | ---------- | ----- | ----------------------------------------------------
@@ -254,15 +254,15 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: No
 
-`sfValidatorPass`バリデーターは何もしないバリデーターで汚染された値をそのまま返します。
+`sfValidatorPass` バリデーターは何もしないバリデーターで汚染された値をそのまま返します。
 
 ### `sfValidatorCallback`
 
 *スキーマバリデーター*: No
 
-`sfValidatorCallback`バリデーターは実際のバリデーション作業をPHPコールバックに委譲します。
+`sfValidatorCallback` バリデーターは実際のバリデーション作業を PHP コールバックに委譲します。
 
-コールバックは現在のバリデーターインスタンスに、(`arguments`オプションから)汚染された値と引数の配列は引数として渡されます:
+コールバックは現在のバリデーターインスタンスに、(`arguments` オプションから) 汚染された値と引数の配列は引数として渡されます:
 
     [php]
     function constant_validator_callback($validator, $value, $arguments)
@@ -282,7 +282,7 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 | オプション  | エラー| 説明
 | ----------- | ----- | ---------------------------
-| `callback`  | n/a   | 有効なPHPコールバック(必須)
+| `callback`  | n/a   | 有効な PHP コールバック(必須)
 | `arguments` | n/a   | コールバックに渡す引数の配列
 
 日付バリデーター
@@ -292,32 +292,32 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: No
 
-`sfValidatorDate`は日付と時間の組をバリデートします(日付と時間の組は`with_time`オプションをセットすることでサポートされます)。
+`sfValidatorDate` は日付と時間の組をバリデートします(日付と時間の組は `with_time` オプションをセットすることでサポートされます)。
 日付フォーマットをバリデートすることとは別に、最大と最小の有効な日付を強制できます。
 
 バリデーターはいくつかの入力タイプを受け取ります:
 
  * 次のキーで構成される配列: `year`、`month`、`day`、`hour`、
-   `minute`、と`second`
- * 提供されるのであれば`date_format`正規表現にマッチする文字列
- * PHPの`strtotime()`関数によって解析できる文字列
+   `minute` と `second`
+ * 提供されるのであれば `date_format` 正規表現にマッチする文字列
+ * PHP の `strtotime()` 関数によって解析できる文字列
  * タイムスタンプを表す整数
 
-`date_output`もしくは`datetime_output`の書式を適用することで汚染された値は日付に変換されます。
+`date_output` もしくは `datetime_output` の書式を適用することで汚染された値は日付に変換されます。
 
 | オプション                | エラー       | 説明
 | ------------------------- | ------------ | --------------------------------------------------------------
 | `date_format`             | `bad_format` | 日付がマッチしなければならない正規表現
-| `with_time`               | n/a          | バリデーターが時間を返さなければならないのであれば`true`、そうでなければ`false`
-| `date_output`             | n/a          | 日付を返す際に使う書式(デフォルトは`Y-m-d`)
-| `datetime_output`         | n/a          | 日付と時間の組を返す際に使う書式(デフォルトは`Y-m-d H:i:s`)
-| `date_format_error`       | n/a          | `bad_format`エラーに対してエラーを表示する際に使う日付書式(use `date_format` if not provided)
-| `max`                     | `max`        | 許容される最大の日付(タイムスタンプ)
-| `min`                     | `min`        | 許容される最小の日付(タイムスタンプ)
-| `date_format_range_error` | n/a          | 最大/最小に対してエラーを表示する際に使う日付書式(デフォルトは`d/m/Y H:i:s`)
+| `with_time`               | n/a          | バリデーターが時間を返さなければならないのであれば `true`、そうでなければ `false`
+| `date_output`             | n/a          | 日付を返す際に使う書式 (デフォルトは `Y-m-d`)
+| `datetime_output`         | n/a          | 日付と時間の組を返す際に使う書式 (デフォルトは `Y-m-d H:i:s`)
+| `date_format_error`       | n/a          | `bad_format` エラーに対してエラーを表示する際に使う日付書式 (use `date_format` if not provided)
+| `max`                     | `max`        | 許容される最大の日付 (タイムスタンプ)
+| `min`                     | `min`        | 許容される最小の日付 (タイムスタンプ)
+| `date_format_range_error` | n/a          | 最大/最小に対してエラーを表示する際に使う日付書式 (デフォルトは `d/m/Y H:i:s`)
 
 >**NOTE**
->`date_output`と`datetime_output`オプションはPHPの`date()`関数が理解できる任意の書式を使うことができます
+>`date_output` と `datetime_output` オプションは PHP の `date()` 関数が理解できる任意の書式を使うことができます
 
 
 | エラー       | プレースホルダー | デフォルト値
@@ -330,25 +330,25 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: No
 
-`sfValidatorTime`は時間をバリデートします。
+`sfValidatorTime` は時間をバリデートします。
 
 バリデーターはいくつかの入力のタイプを受け取ります:
 
  * 次のキーで構成される配列: `hour`、`minute`、と`second`
- * 提供される場合`time_format`正規表現にマッチする文字列
- * PHPの`strtotime()`関数によって解析できる文字列
+ * 提供される場合 `time_format` 正規表現にマッチする文字列
+ * PHP の `strtotime()` 関数によって解析できる文字列
  * タイムスタンプを表現する整数
 
-`datetime_output`書式を適用することで汚染された値は日付に変換されます。
+`datetime_output` 書式を適用することで汚染された値は日付に変換されます。
 
 | オプション          | エラー       | 説明
 | ------------------- | ------------ | ---------------------------------------------------------------------
 | `time_format`       | `bad_format` | 日付がマッチしなければならない正規表現
-| `time_output`       | n/a          | 時間を返す際に使う書式(デフォルトは`H:i:s`)
-| `time_format_error` | n/a          | `bad_format`エラーに対してエラーを表示する際に使う日付書式(提供されなければ`date_format`を使う)
+| `time_output`       | n/a          | 時間を返す際に使う書式 (デフォルトは `H:i:s`)
+| `time_format_error` | n/a          | `bad_format` エラーに対してエラーを表示する際に使う日付書式 (提供されなければ `date_format` を使う)
 
 >**NOTE**
->`time_output`オプションはPHPの`date()`関数が理解する任意のフォーマットを使うことができます。
+>`time_output` オプションは PHP の `date()` 関数が理解する任意のフォーマットを使うことができます。
 
 | エラー       | プレースホルダー | デフォルト値
 | ------------ | ---------------- | ---------------------------------------------------------
@@ -358,7 +358,7 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: No
 
-`sfValidatorDateTime`は時間でdatetimeをバリデートします。
+`sfValidatorDateTime` は時間で datetime をバリデートします。
 
 これは次の内容のショートカットです:
 
@@ -369,16 +369,16 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: No
 
-`sfValidatorDateTime`は日付の範囲をバリデートします。
+`sfValidatorDateTime` は日付の範囲をバリデートします。
 
 | オプション  | エラー    | 説明
 | ----------- | --------- | --------------------------
-| `from_date` | `invalid` | from dateバリデーター(必須)
-| `to_date`   | `invalid` | to dateバリデーター(必須)
+| `from_date` | `invalid` | from date バリデーター (必須)
+| `to_date`   | `invalid` | to date バリデーター (必須)
 
-`from_date`と`to_date`バリデーターは`sfValidatorDate`クラスのインスタンスでなければなりません。
+`from_date` と `to_date` バリデーターは`sfValidatorDate`クラスのインスタンスでなければなりません。
 
-`invalid`エラーメッセージは`"%value%" does not match the time format
+`invalid` エラーメッセージは `"%value%" does not match the time format
 (%time_format%).`です。
 
 ファイルバリデーター
@@ -388,20 +388,20 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: No
 
-`sfValidatorFile`バリデーターはアップロードされたファイルをバリデートします。
+`sfValidatorFile` バリデーターはアップロードされたファイルをバリデートします。
 
-バリデーターはアップロードされたファイルを`sfValidatedFile`クラスのインスタンス、もしくは設定されているのであれば、`validated_file_class`オプションのインスタンスに変換します。
+バリデーターはアップロードされたファイルを `sfValidatedFile` クラスのインスタンス、もしくは設定されているのであれば、`validated_file_class` オプションのインスタンスに変換します。
 
 | オプション             | エラー       | 説明
 | ---------------------- | ------------ | --------------------------------------------------------------------
 | `max_size`             | `max_size`   | 最大のファイルサイズ
-| `mime_types`           | `mime_types` | 許可されたmime typeの配列もしくはカテゴリ(利用可能なカテゴリ: `web_images`)
-| `mime_type_guessers`   | n/a          | mime typeを推測するPHP callableの配列(mime typeもしくは`null`を返さなければならない)
-| `mime_categories`      | n/a          | mime typeカテゴリの配列(デフォルトで`web_images`が定義される)
-| `path`                 | n/a          | ファイルを保存するパス - `sfValidatedFile`クラスによって使用される(オプション)
+| `mime_types`           | `mime_types` | 許可された mime type の配列もしくはカテゴリ (利用可能なカテゴリ: `web_images`)
+| `mime_type_guessers`   | n/a          | mime type を推測する PHP callable の配列(mime type もしくは `null` を返さなければならない)
+| `mime_categories`      | n/a          | mime type カテゴリの配列 (デフォルトで `web_images` が定義される)
+| `path`                 | n/a          | ファイルを保存するパス - `sfValidatedFile` クラスによって使用される(オプション)
 | `validated_file_class` | n/a          | クリーンにされたアップロードファイルを管理するクラスの名前(オプション)
 
-`web_images`カテゴリは次のmime-typeを含みます:
+`web_images` カテゴリは 次のmime-type を含みます:
 
  * `image/jpeg`
  * `image/pjpeg`
@@ -409,12 +409,12 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
  * `image/x-png`
  * `image/gif`
 
-`mime_types`オプションが設定されている場合、バリデーターはアップロードされたファイルのmime-typeをテストする方法が必要です。
+`mime_types` オプションが設定されている場合、バリデーターはアップロードされたファイルの mime-type をテストする方法が必要です。
 バリデーターは3つの方法を搭載しています:
 
- * `guessFromFileinfo`:        `finfo_open()`関数を使う(PECLの`Fileinfo`エクステンションから)
- * `guessFromMimeContentType`: `mime_content_type()`関数を使う(非推奨)
- * `guessFromFileBinary`:      ファイルバイナリを使う(Unix系システムでのみ動作する)
+ * `guessFromFileinfo`:        `finfo_open()` 関数を使う(PECL の `Fileinfo` エクステンションから)
+ * `guessFromMimeContentType`: `mime_content_type()` 関数を使う (非推奨)
+ * `guessFromFileBinary`:      ファイルバイナリを使う (Unix 系システムでのみ動作する)
 
 | エラー       | プレースホルダー              | デフォルト値
 | ------------ | ----------------------------- | -------------------------------------------------
@@ -441,9 +441,9 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: No
 
-バリデーターのリストを渡す場合、`sfValidatorAnd`バリデーターは汚染された値をバリデートします。
+バリデーターのリストを渡す場合、`sfValidatorAnd` バリデーターは汚染された値をバリデートします。
 
-`sfValidatorAnd`コンストラクターは最初の引数としてバリデーターのリストを受け取ります:
+`sfValidatorAnd` コンストラクターは最初の引数としてバリデーターのリストを受け取ります:
 
     [php]
     $v = new sfValidatorAnd(
@@ -456,23 +456,23 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
     );
 
 デフォルトでは、バリデーターはすべての埋め込みバリデーターによって投じられるエラーメッセージの配列を投げます。
-`invalid`エラーメッセージが空ではない文字列に設定されている場合、次のように単独のエラーメッセージを投げることもできます。
+`invalid` エラーメッセージが空ではない文字列に設定されている場合、次のように単独のエラーメッセージを投げることもできます。
 
 | オプション      | エラー| 説明
 | --------------- | ----- | -----------
-| `halt_on_error` | `n/a` | 最初のエラーで停止するかどうか(デフォルトは`false`)
+| `halt_on_error` | `n/a` | 最初のエラーで停止するかどうか (デフォルトは `false`)
 
-`halt_on_error`オプションが`true`に設定されている場合、バリデーターの順序は重要です。
+`halt_on_error` オプションが `true` に設定されている場合、バリデーターの順序は重要です。
 
-バリデーターの埋め込みリストは`getValidators()`と`addValidator()`メソッドを使うことで管理もできます。
+バリデーターの埋め込みリストは `getValidators()` と `addValidator()` メソッドを使うことで管理もできます。
 
 ### `sfValidatorOr`
 
 *スキーマバリデーター*: No
 
-少なくともリストからのバリデーターから汚染された値が通る場合、`sfValidatorOr`バリデーターはその汚染された値をバリデートします。
+少なくともリストからのバリデーターから汚染された値が通る場合、`sfValidatorOr` バリデーターはその汚染された値をバリデートします。
 
-`sfValidatorOr`コンストラクターは最初の引数としてバリデーターのリストを受け取ります:
+`sfValidatorOr` コンストラクターは最初の引数としてバリデーターのリストを受け取ります:
 
     [php]
     $v = new sfValidatorOr(
@@ -485,16 +485,16 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
     );
 
 デフォルトでは、すべての埋め込みバリデーターによって投げられたエラーメッセージの配列をバリデーターは投げます。
-`invalid`エラーメッセージが空ではない文字列に設定されている場合、上述の例のようにこのバリデーターは単独のエラーメッセージを投げることもできます。
+`invalid` エラーメッセージが空ではない文字列に設定されている場合、上述の例のようにこのバリデーターは単独のエラーメッセージを投げることもできます。
 
-バリデーターの埋め込みリストは`getValidators()`と`addValidator()`メソッドを使うことでも管理できます。
+バリデーターの埋め込みリストは `getValidators()` と `addValidator()` メソッドを使うことでも管理できます。
 
 
 ### `sfValidatorSchema`
 
 *スキーマバリデーター*: Yes
 
-`sfValidatorSchema`はいくつかのフィールドで構成されるバリデーターを表します。
+`sfValidatorSchema` はいくつかのフィールドで構成されるバリデーターを表します。
 フィールドはシンプルな名前つきのバリデーターです:
 
     [php]
@@ -504,16 +504,16 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
     ));
 
 >**NOTE**
->フォームは`sfValidatorSchema`クラスのバリデータースキーマで定義されます。
+>フォームは `sfValidatorSchema` クラスのバリデータースキーマで定義されます。
 
-このバリデーターは配列を入力値としてのみ受け取りこれが当てはまらない場合`InvalidArgumentException`を投げます。
+このバリデーターは配列を入力値としてのみ受け取りこれが当てはまらない場合 `InvalidArgumentException` を投げます。
 
 バリデーターはプレバリデーターとポストバリデーターを持つことができます。
 プレバリデーターは他のすべてのバリデーターの前に実行され、
 ポストバリデーターは他のすべてのバリデーターの後でクリーンナップされた値で実行されます。
 
 プレバリデーターとポストバリデーターはすべての値を受け取るバリデータースキーマそのものです。
-これらは`setPreValidator()`と`setPostValidator()`メソッドで設定できます:
+これらは`setPreValidator()` と `setPostValidator()` メソッドで設定できます:
 
     [php]
     $v->setPostValidator(
@@ -522,14 +522,14 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 | オプション            | エラー         | 説明
 | --------------------- | -------------- | --------------------------------------------------------------
-| `allow_extra_fields`  | `extra_fields` | `false`の場合、追加フィールドが値の入力配列に渡される場合、バリデーターはエラーを追加します(デフォルトは`false`)
-| `filter_extra_fields` | n/a            | `true`の場合、バリデーターはクリーンになり、返される値の配列からの追加フィールドをフィルタリングします(デフォルトは`true`)
+| `allow_extra_fields`  | `extra_fields` | `false`の場合、追加フィールドが値の入力配列に渡される場合、バリデーターはエラーを追加します (デフォルトは `false`)
+| `filter_extra_fields` | n/a            | `true`の場合、バリデーターはクリーンになり、返される値の配列からの追加フィールドをフィルタリングします (デフォルトは `true`)
 
 | エラー         | プレースホルダー | デフォルト値
 | -------------- | ---------------- | ---------------------------------------------
 | `extra_fields` | `%field%`        | Unexpected extra form field named "%field%".
 
-埋め込みのバリデーターにアクセスするために`sfValidatorSchema`を配列として使うことができます:
+埋め込みのバリデーターにアクセスするために `sfValidatorSchema` を配列として使うことができます:
 
     [php]
     $vs = new sfValidatorSchema(array('name' => new sfValidatorString()));
@@ -547,7 +547,7 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: Yes
 
-`sfValidatorSchemaCompare`バリデーターは汚染された値の配列からいくつかの値を比較します:
+`sfValidatorSchemaCompare` バリデーターは汚染された値の配列からいくつかの値を比較します:
 
     [php]
     $v = new sfValidatorSchemaCompare('password', '==', 'password_again');
@@ -557,7 +557,7 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 | `left_field`         | n/a   | 左側フィールドの名前
 | `operator`           | n/a   | 比較演算子
 | `right_field`        | n/a   | 右側フィールドの名前
-| `throw_global_error` | n/a   | グローバルエラー(デフォルトは`false`)もしくは左側フィールドに結びつけられたエラーを投げるかどうか
+| `throw_global_error` | n/a   | グローバルエラー (デフォルトは `false`) もしくは左側フィールドに結びつけられたエラーを投げるかどうか
 
 利用可能な演算子は次の通りです:
 
@@ -569,15 +569,15 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
  * `sfValidatorSchemaCompare::GREATER_THAN_EQUAL` or `>=`
 
 デフォルトでは、バリデーターはグローバルエラーを投げます。
-`throw_global_error`が`true`に設定されている場合、左側フィールド用のエラーが投げられます。
+`throw_global_error` が `true` に設定されている場合、左側フィールド用のエラーが投げられます。
 
-`invalid`エラーメッセージは次の値: `%left_field%`、`%right_field%`、と`%operator%`を受け取ります。
+`invalid` エラーメッセージは次の値: `%left_field%`、`%right_field%` と `%operator%` を受け取ります。
 
 ### `sfValidatorSchemaFilter`
 
 *スキーマバリデーター*: Yes
 
-`sfValidatorSchemaFilter`バリデーターはスキーマではないバリデーターをスキーマバリデーターに変換します。
+`sfValidatorSchemaFilter` バリデーターはスキーマではないバリデーターをスキーマバリデーターに変換します。
 これはポストバリデーターのコンテキストで便利である場合があります:
 
     [php]
@@ -593,17 +593,17 @@ symfonyのすべてのバリデーターは`sfValidator`基底クラスを継承
 
 *スキーマバリデーター*: No
 
-`sfValidatorI18nChoiceCountry`は有効なISO 3166の国コードで汚染された値をバリデートします。
+`sfValidatorI18nChoiceCountry` は有効な ISO 3166 の国コードで汚染された値をバリデートします。
 
 | オプション  | エラー    | 説明
-| ----------- | --------- | -----------
-| `countries` | `invalid` | 使用する国コードの配列(ISO 3166)
+| ----------- | --------- | ----------------------------------
+| `countries` | `invalid` | 使用する国コードの配列 (ISO 3166)
 
 ### `sfValidatorI18nChoiceLanguage`
 
 *スキーマバリデーター*: No
 
-`sfValidatorI18nChoiceLanguage`は汚染された値が有効な言語コードであることをバリデートします。
+`sfValidatorI18nChoiceLanguage` は汚染された値が有効な言語コードであることをバリデートします。
 
 | オプション  | エラー    | 説明
 | ----------- | --------- | ------------------------------------
@@ -616,21 +616,20 @@ Propelバリデーター
 
 *スキーマバリデーター*: No
 
-`sfValidatorPropelChoice`バリデーターは汚染された値が
-Propelモデルのレコードのリストの間にあることをバリデートします。
+`sfValidatorPropelChoice` バリデーターは汚染された値が
+ Propel モデルのレコードのリストの間にあることをバリデートします。
 
-レコードのリストは`criteria`オプションを使うことで制限できます。
+レコードのリストは `criteria` オプションを使うことで制限できます。
 
-汚染された値はレコードの主キーでなければなりません。
-これは`column`オプションを渡すことで変更できます。
+汚染された値はレコードの主キーでなければなりません。これは `column` オプションを渡すことで変更できます。
 
 | オプション   | エラー| 説明
 | ------------ | ----- | ----------------------------------------------------------------------------------
-| `model`      | n/a   | モデルクラス(必須)
+| `model`      | n/a   | モデルクラス (必須)
 | `criteria`   | n/a   | オブジェクトを読み取るときに従う基準
-| `column`     | n/a   | カラム名(デフォルトはnullで主キーが使われることを意味する) - フィールド名のフォーマットでなければならない
-| `connection` | n/a   | 使用するPropelの接続(デフォルトは`null`)
-| `multiple`   | n/a   | selectタグが複数の選択を許可しなければならない場合は`true`
+| `column`     | n/a   | カラム名 (デフォルトは null で主キーが使われることを意味する) - フィールド名のフォーマットでなければならない
+| `connection` | n/a   | 使用する Propel の接続 (デフォルトは `null`)
+| `multiple`   | n/a   | select タグが複数の選択を許可しなければならない場合は `true`
 
 >**NOTE**
 >このバリデーターは複合主キーを持つモデルに対しては機能しません。
@@ -639,7 +638,7 @@ Propelモデルのレコードのリストの間にあることをバリデー�
 
 *スキーマバリデーター*: No
 
-`sfValidatorPropelChoiceMany`バリデーターは汚染された値がPropelモデルのレコードのリストの間にあることをバリデートします。
+`sfValidatorPropelChoiceMany` バリデーターは汚染された値が Propel モデルのレコードのリストの間にあることをバリデートします。
 
 >**NOTE**
 >このバリデーターは入力値を配列として期待します。
@@ -654,29 +653,29 @@ Propelモデルのレコードのリストの間にあることをバリデー�
 
 *スキーマバリデーター*: Yes
 
-`sfValidatorPropelUnique`バリデーターはPropelモデルのカラムもしくはカラムのグループ(`column`オプション)の唯一性をバリデートします。
+`sfValidatorPropelUnique` バリデーターは Propel モデルのカラムもしくはカラムのグループ (`column` オプション) の唯一性をバリデートします。
 
-唯一性がいくつのものカラムに及ぶ場合、`throw_global_error`オプションを設定することでエラーはグローバルに投げられます。
+唯一性がいくつのものカラムに及ぶ場合、`throw_global_error` オプションを設定することでグローバルエラーが投げられます。
 
 | オプション           | エラー| 説明
 | -------------------- | ----- | ---------------------------------------------------------------------------
-| `model`              | n/a   | モデルクラス(必須)
-| `column`             | n/a   | Propelフィールド名フォーマットのユニークカラム名(必須)。いくつかのカラムがユニークであれば、フィールド名の配列を渡すことができる
+| `model`              | n/a   | モデルクラス (必須)
+| `column`             | n/a   | Propel フィールド名フォーマットのユニークカラム名 (必須)。いくつかのカラムがユニークであれば、フィールド名の配列を渡すことができる
 | `field`              | n/a   | カラム名以外で、フォームによって使用されるフィールド名
-| `primary_key`        | n/a   | Propelのフィールド名のフォーマットでの主キーのカラム名(オプションで、提供されなければイントロスペクトされます)。テーブルがいくつかの主キーを持つ場合は配列を渡すこともできる
-| `connection`         | n/a   | 使用するPropel接続(デフォルトは`null`)
-| `throw_global_error` | n/a   | グローバルエラー(デフォルトは`false`)もしくはカラムオプションの配列に関連した最初のフィールドに結びつけられたエラーを投げるかどうか
+| `primary_key`        | n/a   | Propel のフィールド名のフォーマットでの主キーのカラム名 (オプションで、提供されなければイントロスペクトされます)。テーブルがいくつかの主キーを持つ場合は配列を渡すこともできる
+| `connection`         | n/a   | 使用する Propel 接続 (デフォルトは `null`)
+| `throw_global_error` | n/a   | グローバルエラー (デフォルトは `false`) もしくはカラムオプションの配列に関連した最初のフィールドに結びつけられたエラーを投げるかどうか
 
-Doctrineバリデーター
+Doctrine バリデーター
 ---------------------
 
 ### `sfValidatorDoctrineChoice`
 
 *スキーマバリデーター*: No
 
-`sfValidatorDoctrineChoice`バリデーターは汚染された値がDoctrineモデルのレコードのリストの間にあることをバリデートします。
+`sfValidatorDoctrineChoice` バリデーターは汚染された値が Doctrine モデルのレコードのリストの間にあることをバリデートします。
 
-レコードのリストは`query`オプションを使用することで制限できます。
+レコードのリストは `query` オプションを使用することで制限できます。
 
 汚染された値はレコードの主キーでなければなりません。
 これは`column`オプションを渡すことで変更できます。
@@ -684,10 +683,10 @@ Doctrineバリデーター
 | オプション   | エラー| 説明
 | ------------ | ----- | ----------------------------------------------------------------------
 | `model`      | n/a   | モデルクラス(必須)
-| `alias`      | n/a   | クエリで使われるrootコンポーネントのエイリアス
+| `alias`      | n/a   | クエリで使われるルートコンポーネントのエイリアス
 | `query`      | n/a   | オブジェクトを読み取るときに使うクエリ
-| `column`     | n/a   | カラム名(デフォルトは`null`で主キーが使われることを意味する) - フィールド名のフォーマットでなければならない
-| `connection` | n/a   | 使うDoctrineの接続(デフォルトは`null`)
+| `column`     | n/a   | カラム名 (デフォルトは `null` で主キーが使われることを意味する) - フィールド名のフォーマットでなければならない
+| `connection` | n/a   | 使う Doctrine の接続 (デフォルトは `null`)
 
 >**NOTE**
 >このバリデーターは複合主キーを持つモデルに対しては機能しません。
@@ -696,26 +695,26 @@ Doctrineバリデーター
 
 *スキーマバリデーター*: No
 
-`sfValidatorDoctrineChoiceMany`バリデーターは汚染された値がDoctrineモデルのレコードのリストの間にあることをバリデートします。
+`sfValidatorDoctrineChoiceMany` バリデーターは汚染された値が Doctrine モデルのレコードのリストの間にあることをバリデートします。
 
 >**NOTE**
 >このバリデーターは配列を入力値として期待します。
 >文字列が渡されると、これは自動的に配列に変換されます。
 
-このバリデーターは`sfValidatorDoctrineChoice`バリデーターからのすべてのオプションを継承します。
+このバリデーターは`sfValidatorDoctrineChoice` バリデーターからのすべてのオプションを継承します。
 
 ### `sfValidatorDoctrineUnique`
 
 *スキーマバリデーター*: Yes
 
-`sfValidatorDoctrineUnique`バリデーターはDoctrineモデルに対する1つのカラムもしくはカラムのグループ(`column`オプション)の唯一性をバリデートします。
+`sfValidatorDoctrineUnique` バリデーターは Doctrine モデルに対する1つのカラムもしくはカラムのグループ (`column` オプション)の唯一性をバリデートします。
 
-複数のカラムがユニークである場合、`throw_global_error`オプションを設定することでエラーがグローバルに投げられます。
+複数のカラムがユニークである場合、`throw_global_error` オプションを設定することでグローバルエラーに投げられます。
 
-| オプション           | エラー| 説明
+| オプション          | エラー| 説明
 | -------------------- | ----- | ----------------------------------------------------------------------------
 | `model`              | n/a   | モデルクラス(必須)
 | `column`             | n/a   | Doctrineのフィールド名フォーマットのユニークカラムの名前(必須)。複数のカラムがユニークである場合、フィールド名の配列を渡すことができる
 | `primary_key`        | n/a   | Doctrineフィールド名フォーマットでの主キーのカラム名(オプションで、提供されなければイントロスペクトされる)。テーブルが複数の主キーを持つ場合配列を渡すこともできる
-| `connection`         | n/a   | 使用するDoctrine接続(デフォルトは`null`)
-| `throw_global_error` | n/a   | グローバルエラー(デフォルトは`false`)もしくはカラムのオプション配列に関連した最初のフィールドに結びつけられたエラーを投げるかどうか
+| `connection`         | n/a   | 使用する　Doctrine　接続　(デフォルトは　`null`)
+| `throw_global_error` | n/a   | グローバルエラー　(デフォルトは　`false`)　もしくはカラムのオプション配列に関連した最初のフィールドに結びつけられたエラーを投げるかどうか
