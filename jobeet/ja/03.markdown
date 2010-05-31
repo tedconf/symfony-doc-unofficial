@@ -1,0 +1,575 @@
+3日目: ~データモデル~
+====================
+
+テキストエディタを開いて PHP コードを書きたい方は、今日のチュートリアルで開発を進めることを知ったらしあわせになるでしょう。Jobeet のデータモデルを定義し、データベースとの情報のやりとりに ORM を使い、アプリケーションの最初のモジュールを作ります。symfony が多くの作業を私たちの代わりにやってくれるので、PHP コードをあまり書かなくても十分な機能をもつ Web モジュールが手に入ります。
+
+リレーションシップ~モデル|Model~
+--------------------------
+
+昨日のユーザーストーリーではプロジェクトの主要なオブジェクト: jobs (求人)、affiliates (アフィリエイト)、categories (カテゴリ) を詳しく説明しました。下図は対応するエンティティ関係図です:
+
+![ER図](http://www.symfony-project.org/images/jobeet/1_4/03/diagram.png)
+
+ストーリーで説明したカラムに加えて、いくつかのテーブルには `created_at` フィールドが追加されています。このフィールドには、レコードが生成されたときの現在のシステム時刻が symfony によって自動的にセットされます。`updated_at` フィールドも同様です。レコードが更新されたときのシステム時刻がセットされます。
+
+~スキーマ~
+----------
+
+求人、アフィリエイト、カテゴリを保存するために、当然リレーショナルデータベースが必要となります。
+
+しかし symfony はオブジェクト指向のフレームワークですから、可能ならいつでも~オブジェクト|OOP~として操作したいでしょう。たとえば、データベースからレコードを取得する SQL 文を書くのではなく、オブジェクトを使います。
+
+リレーショナルデータベースの情報をオブジェクトモデルとしてマッピングする必要があります。このマッピングには [ORM ツール](http://ja.wikipedia.org/wiki/ORM)を使いますが、symfony には2つの ORM ([Propel](http://www.propelorm.org/) と [Doctrine](http://www.doctrine-project.org/)) が搭載されています。このチュートリアルでは ##ORM## を使います。
+
+ORM には、関連するクラスを生成するために、テーブルとリレーションシップ (関係) についての定義が必要になります。スキーマの記述には2つの方法があります。既存のデータベースからスキーマを作る方法と、手書きでスキーマを作る方法です。
+
+<propel>
+>**Note**
+>([Fabforce の Dbdesigner](http://www.fabforce.net/dbdesigner4/)など) でデータベースをグラフィカルにビルドしたり ([DB Designer 4 TO Propel Schema Converter](http://blog.tooleshed.com/docs/dbd2propel/transform.php) で) `schema.xml`を直接生成できます。
+
+データベースがまだ存在していないのと、Jobeet をデータベースエンジンに依存しないようにするために、空の ~`config/schema.yml`|データベーススキーマ~ ファイルを編集してスキーマファイルを手作業で作りましょう (注:  コピー＆ペーストする際には➥ の箇所の修正をお忘れなく):
+
+    [yml]
+    # config/schema.yml
+    propel:
+      jobeet_category:
+        id:           ~
+        name:         { type: varchar(255), required: true, index: unique }
+
+      jobeet_job:
+        id:           ~
+        category_id:  { type: integer, foreignTable: jobeet_category,
+          ➥ foreignReference: id, required: true }
+        type:         { type: varchar(255) }
+        company:      { type: varchar(255), required: true }
+        logo:         { type: varchar(255) }
+        url:          { type: varchar(255) }
+        position:     { type: varchar(255), required: true }
+        location:     { type: varchar(255), required: true }
+        description:  { type: longvarchar, required: true }
+        how_to_apply: { type: longvarchar, required: true }
+        token:        { type: varchar(255), required: true, index: unique }
+        is_public:    { type: boolean, required: true, default: 1 }
+        is_activated: { type: boolean, required: true, default: 0 }
+        email:        { type: varchar(255), required: true }
+        expires_at:   { type: timestamp, required: true }
+        created_at:   ~
+        updated_at:   ~
+
+      jobeet_affiliate:
+        id:           ~
+        url:          { type: varchar(255), required: true }
+        email:        { type: varchar(255), required: true, index: unique }
+        token:        { type: varchar(255), required: true }
+        is_active:    { type: boolean, required: true, default: 0 }
+        created_at:   ~
+
+      jobeet_category_affiliate:
+        category_id:  { type: integer, foreignTable: jobeet_category,
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
+        affiliate_id: { type: integer, foreignTable: jobeet_affiliate,
+          ➥ foreignReference: id, required: true, primaryKey: true,
+          ➥ onDelete: cascade }
+</propel>
+<doctrine>
+データベースがまだ存在していないのと、Jobeet をデータベースエンジンに依存しないようにするために、空の `config/doctrine/schema.yml` ファイルを編集してスキーマファイルを手作業で作りましょう:
+
+    [yml]
+    # config/doctrine/schema.yml
+    JobeetCategory:
+      actAs: { Timestampable: ~ }
+      columns:
+        name: { type: string(255), notnull: true, unique: true }
+
+    JobeetJob:
+      actAs: { Timestampable: ~ }
+      columns:
+        category_id:  { type: integer, notnull: true }
+        type:         { type: string(255) }
+        company:      { type: string(255), notnull: true }
+        logo:         { type: string(255) }
+        url:          { type: string(255) }
+        position:     { type: string(255), notnull: true }
+        location:     { type: string(255), notnull: true }
+        description:  { type: string(4000), notnull: true }
+        how_to_apply: { type: string(4000), notnull: true }
+        token:        { type: string(255), notnull: true, unique: true }
+        is_public:    { type: boolean, notnull: true, default: 1 }
+        is_activated: { type: boolean, notnull: true, default: 0 }
+        email:        { type: string(255), notnull: true }
+        expires_at:   { type: timestamp, notnull: true }
+      relations:
+        JobeetCategory: { onDelete: CASCADE, local: category_id, foreign: id, foreignAlias: JobeetJobs } 
+
+    JobeetAffiliate:
+      actAs: { Timestampable: ~ }
+      columns:
+        url:       { type: string(255), notnull: true }
+        email:     { type: string(255), notnull: true, unique: true }
+        token:     { type: string(255), notnull: true }
+        is_active: { type: boolean, notnull: true, default: 0 }
+      relations:
+        JobeetCategories:
+          class: JobeetCategory
+          refClass: JobeetCategoryAffiliate
+          local: affiliate_id
+          foreign: category_id
+          foreignAlias: JobeetAffiliates
+
+    JobeetCategoryAffiliate:
+      columns:
+        category_id:  { type: integer, primary: true }
+        affiliate_id: { type: integer, primary: true }
+      relations:
+        JobeetCategory:  { onDelete: CASCADE, local: category_id, foreign: id }
+        JobeetAffiliate: { onDelete: CASCADE, local: affiliate_id, foreign: id }
+</doctrine>
+
+>**TIP**
+>SQL 文を書いてテーブルを作る場合は、`propel:build-schema`  もしくは `doctrine:build-schema` タスクを実行すると、対応する `schema.yml` 設定ファイルを生成できます:
+>
+>     $ php symfony propel:build-schema
+>
+>このタスクを実行する前に、`databases.yml` でデータベースに関する情報を設定しておく必要があります。後のステップでデータベースの設定の仕方を説明します。現時点では、スキーマをビルドする対象のデータベースがわからないので、タスクを実行しようとしても動作しません。
+
+スキーマは、ER 図の内容を YAML フォーマットで記述したものです。
+
+>**SIDEBAR**
+>~YAML~ フォーマット
+>
+>[YAML](http://yaml.org/) の公式サイトによれば、YAML は"人間にフレンドリな、すべてのプログラミング言語用の標準データシリアライゼーション"と説明されています。
+>
+>言い換えると、YAML はデータ (文字列、整数、日付、配列およびハッシュ) を記述するためのシンプルな言語です。
+>
+>YAML において、構造はインデントで示され、連番のアイテムはダッシュで示され、マップのキー/値の組はコロンによって分離されます。また、YAML には同じ構造をより短い行で記述するための省略記法もあります。配列は `[]` で、ハッシュは `{}` で明示的に示されます。
+>
+>まだ YAML に慣れていなければ、使い始めるよい機会です。symfony フレームワークでは広範囲にわたって、設定ファイルで YAML フォーマットを使っています。よい出発点は symfony YAML コンポーネントの[ドキュメント](http://components.symfony-project.org/yaml/documentation)です。
+>
+>YAML ファイルを編集する際に覚える必要がある大切なことが1つあります:
+>**インデントは1つ以上のスペースで行わなければならず、~タブ|コードのフォーマッティング~は使ってはなりません**。
+
+`schema.yml` ファイルには、すべてのテーブルとカラムの説明を記述します。各カラムの説明の記述には、次の情報を使います:
+
+<propel>
+  * `type`: カラムの型 (`boolean`、`tinyint`、`smallint`、`integer`、`bigint`、`double`、`float`、`real`、`decimal`、`char`、`varchar(size)`、`longvarchar`、`date`、`time`、`timestamp`、`blob` および `clob`)
+  * `required`: カラムを必須にしたい場合は `true` にセットする
+  * `~index|データベースインデックス~`: カラム用にインデックスを作りたい場合は `true` にセットする。カラムでユニークインデックスを作りたい場合は `unique` にセットする
+  * `primaryKey`: カラムをテーブル用の~主キー~として定義する
+  * `foreignTable`、`foreignReference`: 別のテーブルへの~外部キー~としてカラムを定義する
+
+`~`は YAML では `null` を意味します。カラムの値を`~`に設定 (`id`、`created_at` と `updated_at`) すると、symfony はベストな設定を推測します (`id` に対しては主キー、`created_at` と `updated_at` に対してはタイムスタンプ)。
+
+>**NOTE**
+>`onDelete` 属性を使って外部キーの `ON DELETE` ~ビヘイビア|整合性制約~を定義でき、Propel では `CASCADE`、`SETNULL` および `RESTRICT` をサポートしています。たとえば、`job` レコードが削除されると、データベースエンジンによって、またはデータベースエンジンでサポートされていなければ Propel によって、`jobeet_category_affiliate` テーブルにあるすべての関連レコードが自動的に削除されます。
+</propel>
+<doctrine>
+  * `type`: ~カラムの型~ (`boolean`、`integer`、`float`、`decimal`、`string`、`array`、`object`、`blob`、`clob`、`timestamp`、`time`、`date`、`enum`、`gzip`)
+  * `notnull`: カラムを必須にしたい場合は `true` にセットする
+  * `unique`: カラム用のユニークインデックスを作りたい場合は `true` にセットする
+
+>**NOTE**
+>`onDelete` 属性を使って外部キーの `ON DELETE` ビヘイビアを定義でき、Doctrine では `CASCADE`、`SET NULL` および `RESTRICT` をサポートしています。たとえば、`job` レコードが削除されると、データベースエンジンによって `jobeet_category_affiliate` テーブルにあるすべての関連レコードが自動的に削除されます。
+</doctrine>
+
+~データベース~
+--------------
+
+symfony フレームワークは、PDO がサポートするすべてのデータベースをサポートします (MySQL、PostgreSQL、SQLite、Oracle、MSSQLなど)。[~PDO~](http://www.php.net/PDO) は PHP に搭載されている~データベース抽象化レイヤー~です。
+
+このチュートリアルでは ~MySQL~ を使いましょう:
+
+    $ mysqladmin -uroot -p create jobeet
+    Enter password: mYsEcret ## The password will echo as ********
+
+>**Note**
+>使う~データベースエンジン~はご自由に選んでください。私たちに代わって ORM が SQL を生成するので、これから書くコードをデータベースエンジンに合わせることは難しくありません。
+
+symfony で、Jobeet プロジェクト用にこのデータベースを使うよう指定します:
+
+    $ php symfony configure:database
+      ➥ "mysql:host=localhost;dbname=jobeet" root mYsEcret
+
+`configure:database` タスクはデータベースにアクセスするために3つの引数: [~PDO の DSN~](http://www.php.net/manual/pdo.drivers.php)、ユーザー名およびパスワードを受け取ります。開発サーバーでデータベースにアクセスするパスワードが不要であれば、第3引数を省略します。
+
+>**NOTE**
+>`configure:database` ~タスク~は `config/databases.yml` ファイルに~データベースコンフィギュレーション~を保存します。タスクを使う代わりに手動で編集することもできます。
+
+-
+
+>**CAUTION**
+>コマンドラインでデータベースパスワードを渡すのは手軽ですが[~安全ではありません|セキュリティ~](http://dev.mysql.com/doc/refman/5.1/ja/password-security.html)。環境にアクセスできる人によっては、`config/databases.yml` を編集してパスワードを変更するとよいでしょう。もちろん、パスワードを安全に保つために、設定ファイルのアクセスモードも制限すべきです。
+
+~ORM~
+-----
+
+`schema.yml` に記述したデータベース定義を使い、##ORM## の組み込みタスクを利用して、データベースにテーブルを生成するための ~SQL~ を作れます:
+
+<doctrine>
+SQL を生成するためには、最初にスキーマファイルからモデルを生成しなければなりません。
+
+    $ php symfony doctrine:build --model
+
+モデルが生成されたので、SQL を生成してインサートできます。
+</doctrine>
+
+    $ php symfony propel:build --sql
+
+`propel:build --sql` タスクを実行すると、設定したデータベース用に最適化された SQL 文が `data/sql/` ディレクトリに生成されます:
+
+<propel>
+    [sql]
+    # data/sql/lib.model.schema.sql からのスニペット
+    CREATE TABLE `jobeet_category`
+    (
+            `id` INTEGER  NOT NULL AUTO_INCREMENT,
+            `name` VARCHAR(255)  NOT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `jobeet_category_U_1` (`name`)
+    )Type=InnoDB;
+</propel>
+<doctrine>
+    [sql]
+    # data/sql/schema.sql からのスニペット
+    CREATE TABLE jobeet_category (id BIGINT AUTO_INCREMENT, name VARCHAR(255)
+    NOT NULL COMMENT 'test', created_at DATETIME, updated_at DATETIME, slug
+    VARCHAR(255), UNIQUE INDEX sluggable_idx (slug), PRIMARY KEY(id))
+    ENGINE = INNODB;
+</doctrine>
+
+実際にデータベース上でテーブルを生成するには、`propel:insert-sql` タスクを実行する必要があります:
+
+    $ php symfony propel:insert-sql
+
+>**TIP**
+>~コマンドライン~ツールに関して、symfony は引数とオプションを受け取ることができます。それぞれのタスクにはヘルプメッセージが組み込まれ `help` タスクを実行すると表示されます:
+>
+>     $ php symfony help propel:insert-sql
+>
+>ヘルプメッセージは利用可能なすべての引数とオプションの一覧を表示し、それぞれのデフォルト値、および便利な使い方の例を示します。
+
+ORM を使って、テーブルのレコードをオブジェクトにマッピングする PHP クラスを生成することもできます:
+
+    $ php symfony propel:build --model
+
+`propel:build --model` タスクを実行すると、データベースと情報をやりとりするために使用する PHP ファイルが `lib/model/` ディレクトリに生成されます。
+
+<propel>
+生成されたファイルを見てみると、Propel によって~テーブル|テーブル (データベース)~ごとに4つのクラスが生成されていることがわかります。たとえば `jobeet_job` テーブルの場合は次のようになります:
+
+  * `JobeetJob`: このクラスのオブジェクトは `jobeet_job` テーブルの**単独の~レコード|データベースのレコード~**を表します。デフォルトではこのクラスは空です。
+  * `BaseJobeetJob`: `JobeetJob` の親クラス。`propel:build --model` を実行するたびにこのクラスは上書きされるので、すべてのカスタマイズは `JobeetJob` クラスで行わなければなりません。
+
+  * `JobeetJobPeer`: このクラスでは、**`JobeetJob` オブジェクトのコレクションを返す**スタティックメソッドなどを定義します。デフォルトではこのクラスは空です。
+  * `BaseJobeetJobPeer`: `JobeetJobPeer` の親クラス。`propel:build --model` を実行するたびにこのクラスは上書きされるので、カスタマイズは `JobeetJobPeer` クラスで行わなければなりません。
+
+</propel>
+<doctrine>
+生成ファイルを見てみると、Doctrine によってテーブルごとに3つのクラスが生成されていることがわかります。たとえば `jobeet_job` テーブルの場合は次のようになります:
+
+ * `JobeetJob`: このクラスのオブジェクトは `jobeet_job` テーブルの単独のレコードを表します。デフォルトではこのクラスは空です。
+ * `BaseJobeetJob`: `JobeetJob` の親クラス。`doctrine:build --model` を実行するたびにこのクラスは上書きされるので、すべての~カスタマイズ~は `JobeetJob` クラスで行わなければなりません。
+ * `JobeetJobTable`: このクラスでは、`JobeetJob` オブジェクトのコレクションを返すメソッドなどを定義します。デフォルトではこのクラスは空です。
+</doctrine>
+
+レコードのカラム値は、モデルオブジェクトの~アクセサ~ (`get*()` メソッド) やミューテータ (`set*()` メソッド) を使って操作できます:
+
+    [php]
+    $job = new JobeetJob();
+    $job->setPosition('Web developer');
+    $job->save();
+
+    echo $job->getPosition();
+
+    $job->delete();
+
+オブジェクトをリンクすることで、直接~外部キー~を定義できます:
+
+    [php]
+    $category = new JobeetCategory();
+    $category->setName('Programming');
+
+    $job = new JobeetJob();
+    $job->setCategory($category);
+
+`propel:build --all` タスクは、この章で行ったタスクを一括して実行するショートカットです。Jobeet モデルクラス用のフォームやバリデータを生成するために、このタスクを今実行します:
+
+    $ php symfony propel:build --all --no-confirmation
+
+今日の最後にアクションにおけるバリデータを見ることができます。フォームに関しては、10日目に詳しく説明する予定です。
+
+初期データ
+----------
+
+データベースにテーブルが作成されました。しかしデータがありません。Web アプリケーションには3種類のデータがあります:
+
+  * **初期データ**: アプリケーションを動作させるのに必要なデータ。たとえば、Jobeet ではカテゴリが必要となります。もしカテゴリがなければ誰も仕事を投稿できなくなります。また、backend にログインできる admin ユーザーが必要になります。
+
+  * **テストデータ**: アプリケーションのテストに必要です。開発者にとって、ストーリーどおりに Jobeet が動作するのを確認するためにテストを書きます。自動化テストを書くのが1番よい方法です。テストを実施するたびに~テストデータ~でデータベースをクリアする必要があります。
+
+  * **ユーザーデータ**: アプリケーションの運用中にユーザーによって作られたデータ
+
+symfony がデータベースのテーブルを作成するたびに、すべてのデータは失われます。初期データのあるデータベースを生成するには、PHP スクリプトを作るか、もしくは `mysql` プログラムで SQL ステートメントを実行します。しかしこれはよくある要件なので、symfony ではよりよい方法を用意しました: `data/fixtures/` ディレクトリに YAML ファイルを作り、`propel:data-load` タスクを使って YAML ファイルのデータをデータベースにロードします。
+
+最初に、次の~フィクスチャ~ファイルを作ります:
+
+<propel>
+    [yml]
+    # data/fixtures/010_categories.yml
+    JobeetCategory:
+      design:        { name: Design }
+      programming:   { name: Programming }
+      manager:       { name: Manager }
+      administrator: { name: Administrator }
+
+    # data/fixtures/020_jobs.yml
+    JobeetJob:
+      job_sensio_labs:
+        category_id:  programming
+        type:         full-time
+        company:      Sensio Labs
+        logo:         sensio-labs.gif
+        url:          http://www.sensiolabs.com/
+        position:     Web Developer
+        location:     Paris, France
+        description:  |
+          You've already developed websites with symfony and you want to
+          work with Open-Source technologies. You have a minimum of 3
+          years experience in web development with PHP or Java and you
+          wish to participate to development of Web 2.0 sites using the
+          best frameworks available.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_sensio_labs
+        email:        job@example.com
+        expires_at:   2010-10-10
+
+      job_extreme_sensio:
+        category_id:  design
+        type:         part-time
+        company:      Extreme Sensio
+        logo:         extreme-sensio.gif
+        url:          http://www.extreme-sensio.com/
+        position:     Web Designer
+        location:     Paris, France
+        description:  |
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+          enim ad minim veniam, quis nostrud exercitation ullamco laboris
+          nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+          in reprehenderit in.
+
+          Voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+          Excepteur sint occaecat cupidatat non proident, sunt in culpa
+          qui officia deserunt mollit anim id est laborum.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_extreme_sensio
+        email:        job@example.com
+        expires_at:   2010-10-10
+</propel>
+<doctrine>
+    [yml]
+    # data/fixtures/categories.yml
+    JobeetCategory:
+      design:
+        name: Design
+      programming:
+        name: Programming
+      manager:
+        name: Manager
+      administrator:
+        name: Administrator
+
+    # data/fixtures/jobs.yml
+    JobeetJob:
+      job_sensio_labs:
+        JobeetCategory: programming
+        type:         full-time
+        company:      Sensio Labs
+        logo:         sensio-labs.gif
+        url:          http://www.sensiolabs.com/
+        position:     Web Developer
+        location:     Paris, France
+        description:  |
+          You've already developed websites with symfony and you want to work
+          with Open-Source technologies. You have a minimum of 3 years
+          experience in web development with PHP or Java and you wish to
+          participate to development of Web 2.0 sites using the best
+          frameworks available.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_sensio_labs
+        email:        job@example.com
+        expires_at:   '2010-10-10'
+
+      job_extreme_sensio:
+        JobeetCategory:  design
+        type:         part-time
+        company:      Extreme Sensio
+        logo:         extreme-sensio.gif
+        url:          http://www.extreme-sensio.com/
+        position:     Web Designer
+        location:     Paris, France
+        description:  |
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do
+          eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+          enim ad minim veniam, quis nostrud exercitation ullamco laboris
+          nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor
+          in reprehenderit in.
+
+          Voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+          Excepteur sint occaecat cupidatat non proident, sunt in culpa
+          qui officia deserunt mollit anim id est laborum.
+        how_to_apply: |
+          Send your resume to fabien.potencier [at] sensio.com
+        is_public:    true
+        is_activated: true
+        token:        job_extreme_sensio
+        email:        job@example.com
+        expires_at:   '2010-10-10'
+</doctrine>
+
+>**NOTE**
+>job フィクスチャファイルは2つの画像を参照します。(`http://www.symfony-project.org/get/jobeet/sensio-labs.gif`、`http://www.symfony-project.org/get/jobeet/extreme-sensio.gif`) からダウンロードして `web/uploads/jobs/` ディレクトリに設置してください。
+
+フィクスチャファイルは YAML で記述され、一意性のある名前でラベルづけされたモデルオブジェクトを定義できます。たとえば、`job_sensio_labs` と `job_extreme_sensio` のラベルがつけられた2つの求人を定義しました。このラベルは、~主キー~を定義しなくても関連オブジェクトをリンクするためにとても便利です (主キーにはよく auto-increment が使われ、値をセットできません)。たとえば、job の `job_sensio_labs` カテゴリは `programming` で、これは 'Programming' カテゴリを示すラベルです。
+
+>**TIP**
+>YAML ファイルにおいて、(job フィクスチャファイルの `description` カラムのように) 文字列が改行を含むとき、文字列がいくつかの行に分割されることを示すためにパイプ (`|`) を利用します。
+
+1つのフィクスチャフィルで、1つもしくは複数のモデルからオブジェクトを格納できますが、今回は Jobeet フィクスチャとして、1つのモデルごとに1つのファイルを作るようにしましょう。
+
+<propel>
+>**TIP**
+>ファイルの名前の~プレフィックス~に数字がついてることに注意が必要です。これはデータロードの順序をコントロールする簡単な方法です。プロジェクトで将来、新しいフィクスチャファイルをいくつか挿入することになった場合は、現在使ってる番号の間で番号づけをするだけです。
+</propel>
+<doctrine>
+>**NOTE**
+>Propel では、ファイルがロードされる順序を決定するためにフィクスチャファイルのプレフィックスを番号にする必要がありました。Doctrine ではこのような必要はありません。外部キーが適切に設定されていることを確認するために、すべてのフィクスチャがロードされた後、正しい順序で保存されます。
+</doctrine>
+
+フィクスチャファイルにおいて、すべてのカラムの値を定義する必要はありません。カラムの値が定義されていない場合、symfony はデータベーススキーマで定義されたデフォルト値を使います。symfony では ##ORM## を使用してデータベースにデータをロードするので、すべての組み込みの~ビヘイビア|ビヘイビア (ORM)~(たとえば `created_at` もしくは `updated_at` カラムを自動的に設定するもの) とモデルクラスに追加されたカスタムビヘイビアが有効になります。
+
+データベースに初期データをロードするには `propel:data-load` タスクを実行するだけです:
+
+    $ php symfony propel:data-load
+
+>**TIP**
+>`propel:build --all --and-load` タスクは、`propel:data-load` タスクが後に続く `propel:build --all --and-load` タスク用のショートカットです。
+
+<doctrine>
+スキーマから可能なすべてを生成するには、`doctrine:build --all --and-load` タスクを実行します。このタスクによってフォーム、フィルタ、モデルを生成し、データベースを削除してからすべてのテーブルを再作成します。
+
+    $ php symfony doctrine:build --all --and-load
+</doctrine>
+
+ブラウザ上での動作確認
+------------------------
+
+たくさんの CLI を使いましたが、あまりおもしろいものではありませんね。とりわけ Web プロジェクトとしては。ようやく、データベースと情報をやり取りする Web ページを作る準備ができました。
+
+求人の一覧の表示方法、既存の求人を編集する方法、求人を削除する方法を見てみましょう。1日目で説明したように、symfony プロジェクトは複数のアプリケーションで構成されます。それぞれの~アプリケーション~は**~モジュール~** (module) に分割されます。1つのモジュールは自己完結した PHP コードの集まりで、アプリケーションの機能 (たとえば API モジュール)、もしくはユーザーがモデルオブジェクトで実行可能な操作の一式 (たとえば job モジュール) をあらわします。
+
+symfony では、指定したモデル用の、基本的な操作機能を提供するモジュールを自動生成できます:
+
+    $ php symfony propel:generate-module --with-show
+      ➥ --non-verbose-templates frontend job JobeetJob
+
+`propel:generate-module` タスクで、`frontend` アプリケーションに `JobeetJob` モデルの `job` モジュールが生成されます。たいていの symfony タスクと同じように、ファイルとディレクトリは `apps/frontend/modules/job/` ディレクトリの元に作られます:
+
+ | ディレクトリ | 説明
+ | ------------ | ------------------------
+ | `actions/`   | モジュールのアクション
+ | `templates/` | モジュールのテンプレート
+
+`actions/actions.class.php` ファイルは `job` モジュールに対して利用可能なすべての**~アクション~**を定義します:
+
+ | アクションの名前 | 説明
+ | ---------------- | ----------------------------------------------
+ | `index`          | テーブルのレコードを表示する
+ | `show`           | 任意のレコード用のフィールドと値を表示する
+ | `new`            | 新しいレコードを作成するフォームを表示する
+ | `create`         | 新しいレコードを作成する
+ | `edit`           | 既存のレコードを編集するフォームを表示する
+ | `update`         | ユーザーが投稿した値に応じてレコードを更新する
+ | `delete`         | 渡されたレコードをテーブルから削除する
+
+ブラウザで job モジュールをテストできます:
+
+     http://jobeet.localhost/frontend_dev.php/job
+
+![job モジュール](http://www.symfony-project.org/images/jobeet/1_4/03/job.png)
+
+<propel>
+求人情報を編集しようとすると、カテゴリオブジェクトのテキスト表現が必要なため、例外が表示されます。PHP オブジェクトのテキスト表現は~`__toString()`~ というマジックメソッドを使って定義できます。カテゴリレコードのテキスト表現は、`JobeetCategory` モデルクラスで定義します:
+
+    [php]
+    // lib/model/JobeetCategory.php
+    class JobeetCategory extends BaseJobeetCategory
+    {
+      public function __toString()
+      {
+        return $this->getName();
+      }
+    }
+
+これで、symfony がカテゴリのテキスト表現を必要とするたびに ~`__toString()`~ メソッドが呼び出され、カテゴリ名が返されます。ほかのモデルクラスでも必要となるので、すべてのモデルに対して `__toString()` を定義しましょう:
+</propel>
+<doctrine>
+求人情報を編集しようとすると、Category id のドロップダウンに、すべてのカテゴリ名のリストが表示されていることがわかります。それぞれのオプションの値は `__toString()` メソッドから取得されます。
+
+Doctrine は `title`、`name`、`subject` など説明用のカラム名を推測して、基本的な `__toString()` メソッドを提供しようとします。何かをカスタマイズしたい場合は、次のように独自の `__toString()` メソッドを追加する必要があります。`JobeetCategory` モデルでは、`jobeet_category` テーブルの `name` カラムを利用して `__toString()` メソッドを推測できます。
+
+</doctrine>
+
+    [php]
+<propel>
+    // lib/model/JobeetJob.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetJob.class.php
+</doctrine>
+    class JobeetJob extends BaseJobeetJob
+    {
+      public function __toString()
+      {
+        return sprintf('%s at %s (%s)', $this->getPosition(),
+         ➥ $this->getCompany(), $this->getLocation());
+      }
+    }
+
+<propel>
+    // lib/model/JobeetAffiliate.php
+</propel>
+<doctrine>
+    // lib/model/doctrine/JobeetAffiliate.class.php
+</doctrine>
+    class JobeetAffiliate extends BaseJobeetAffiliate
+    {
+      public function __toString()
+      {
+        return $this->getUrl();
+      }
+    }
+
+これで求人情報の作成と編集が使えるようになりました。必須項目を空にしたり、無効な日付を入力して保存してみてください。
+symfony によって、データベーススキーマから基本的なバリデーションルールが自動生成されていることがわかります。
+
+![バリデーション](http://www.symfony-project.org/images/jobeet/1_4/03/validation.png)
+
+明日お会いしましょう
+--------------------
+
+今日はここまでです。導入部分で予告しました。今日は、PHP コードをほとんど書いていませんが、job モデル用の web モジュールに取り組み、調整とカスタマイズする準備はできています。PHP コードがないことは、バグが存在しないことも意味することを覚えておいてください！
+
+まだエネルギーが残っていたら、モジュールとモデル用に生成されたコードを読んでどのように動くのか理解を深めてください。
+そうでなければ、気にせずによく寝てください。明日は、Web フレームワークでもっともよく使われるパラダイムの1つである [MVC  デザインパターン](http://ja.wikipedia.org/wiki/Model_View_Controller)について話します。
+
+__ORM__
